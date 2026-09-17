@@ -3,7 +3,7 @@ CREATE TABLE idempotency_records (
     actor_id UUID NOT NULL,
     operation VARCHAR(100) NOT NULL,
     idempotency_key VARCHAR(128) NOT NULL,
-    request_fingerprint CHAR(64) NOT NULL,
+    request_fingerprint VARCHAR(64) NOT NULL,
     status VARCHAR(16) NOT NULL,
     completed_at TIMESTAMPTZ,
     expires_at TIMESTAMPTZ NOT NULL,

@@ -1,15 +1,501 @@
-import {FormEvent,useEffect,useState} from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import AppShell from '../components/AppShell';
-import {api,Lookup,ObjectiveLookup,TeacherClass,QuestionType} from '../lib/api';
+import {
+  api,
+  Lookup,
+  ObjectiveLookup,
+  SkillLookup,
+  TeacherClass,
+  QuestionType,
+} from '../lib/api';
 
-export default function TeacherStudio(){
- const [subjects,setSubjects]=useState<Lookup[]>([]),[skills,setSkills]=useState<ObjectiveLookup[]>([]),[hubs,setHubs]=useState<Lookup[]>([]),[objectives,setObjectives]=useState<ObjectiveLookup[]>([]),[classes,setClasses]=useState<TeacherClass[]>([]);
- const [subject,setSubject]=useState(''),[hub,setHub]=useState(''),[objective,setObjective]=useState(''),[skill,setSkill]=useState(''),[title,setTitle]=useState(''),[prompt,setPrompt]=useState(''),[correct,setCorrect]=useState(''),[optionA,setA]=useState(''),[optionB,setB]=useState(''),[activityTitle,setActivityTitle]=useState(''),[activityType,setActivityType]=useState('QUIZ'),[challengeTitle,setChallengeTitle]=useState(''),[classId,setClassId]=useState('');
- const [status,setStatus]=useState(''); const [busy,setBusy]=useState(false); const [publishedActivityVersion,setPublishedActivityVersion]=useState(''); const [curriculumId,setCurriculumId]=useState('');
- useEffect(()=>{Promise.all([api.listTeacherSubjects(),api.listAgeHubs(),api.listMyClasses()]).then(([s,h,c])=>{setSubjects(s);setHubs(h);setClasses(c);if(s[0])setSubject(s[0].id);if(h[0])setHub(h[0].id);if(c[0])setClassId(c[0].id);}).catch(e=>setStatus(e.message));},[]);
- useEffect(()=>{if(subject)Promise.all([api.listObjectives(subject),api.listSkills(subject)]).then(([o,k])=>{setObjectives(o);setSkills(k);if(k[0])setSkill(k[0].id);}).catch(()=>{setObjectives([]);setSkills([])});},[subject]);
- async function createContent(e:FormEvent){e.preventDefault();setBusy(true);setStatus('Publishing your lesson…');try{const l=await api.createLesson(subject,title);const lv=await api.createLessonVersion(l.id,title);await api.publishLesson(lv.id);const a=await api.createActivity(l.id,activityType,activityTitle);const av=await api.createActivityVersion(a.id,'Practice this skill',3);const q=await api.createQuestion(subject,'MULTIPLE_CHOICE' as QuestionType);const qv=await api.createQuestionVersion(q.id,prompt,correct,3);await api.addQuestionOption(qv.id,optionA,optionA===correct,0);await api.addQuestionOption(qv.id,optionB,optionB===correct,1);await api.publishQuestion(qv.id);await api.tagActivity(a.id,skill);await api.addActivityItem(av.id,qv.id);await api.publishActivity(av.id);setPublishedActivityVersion(av.id);setStatus(`Published “${activityTitle}”. You can now assign it through a curriculum or make it a challenge.`);}catch(e:any){setStatus(e.message||'Could not publish content.')}finally{setBusy(false);}}
- async function createCurriculum(e:FormEvent){e.preventDefault();setBusy(true);try{if(!objective)throw new Error('Select a learning objective first.');const c=await api.createCurriculum(subject,hub,title);const v=await api.createCurriculumVersion(c.id);await api.addCurriculumObjective(v.id,objective);await api.publishCurriculum(v.id);setCurriculumId(c.id);setStatus(`Published curriculum “${title}”.`);}catch(e:any){setStatus(e.message||'Could not publish curriculum.')}finally{setBusy(false);}}
- async function assignCurriculum(){if(!classId||!curriculumId)return;setBusy(true);try{await api.assignCurriculumToClass(classId,curriculumId);setStatus('Curriculum assigned to the class roster.');}catch(e:any){setStatus(e.message)}finally{setBusy(false);}}
- async function createChallenge(){if(!publishedActivityVersion||!classId)return;setBusy(true);try{const c:any=await api.createChallenge(publishedActivityVersion,challengeTitle||activityTitle,'Complete this challenge through practice.',1);await api.assignChallenge(c.id,classId);setStatus('Challenge created and assigned to the class.');}catch(e:any){setStatus(e.message)}finally{setBusy(false);}}
- return <AppShell workspace="teacher"><div className="page-title"><div><span className="eyebrow">TEACHER STUDIO</span><h1>Build, publish, and challenge.</h1><p>Create real learning content and put it in front of a class.</p></div></div>{status&&<div className="form-error" style={{marginBottom:20}}>{status}</div>}<div className="dashboard-grid"><section className="auth-card"><h2>1. Create a lesson + quiz</h2><form onSubmit={createContent}><label>Subject<select value={subject} onChange={e=>setSubject(e.target.value)}>{subjects.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><label>Lesson title<input value={title} onChange={e=>setTitle(e.target.value)} required placeholder="Addition practice"/></label><label>Skill<select value={skill} onChange={e=>setSkill(e.target.value)}>{skills.map(x=><option key={x.id} value={x.id}>{x.code} — {x.name}</option>)}</select></label><label>Activity title<input value={activityTitle} onChange={e=>setActivityTitle(e.target.value)} required placeholder="Quick addition quiz"/></label><label>Type<select value={activityType} onChange={e=>setActivityType(e.target.value)}><option>QUIZ</option><option>EXERCISE</option><option>PRACTICE</option></select></label><label>Question<input value={prompt} onChange={e=>setPrompt(e.target.value)} required placeholder="What is 2 + 3?"/></label><label>Option A<input value={optionA} onChange={e=>setA(e.target.value)} required/></label><label>Option B<input value={optionB} onChange={e=>setB(e.target.value)} required/></label><label>Correct answer<input value={correct} onChange={e=>setCorrect(e.target.value)} required/></label><button className="btn primary full" disabled={busy}>Publish learning activity →</button></form></section><section className="auth-card"><h2>2. Publish a curriculum</h2><form onSubmit={createCurriculum}><label>Age hub<select value={hub} onChange={e=>setHub(e.target.value)}>{hubs.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><label>Learning objective<select value={objective} onChange={e=>setObjective(e.target.value)}>{objectives.map(x=><option key={x.id} value={x.id}>{x.code} — {x.title}</option>)}</select></label><label>Curriculum name<input value={title} onChange={e=>setTitle(e.target.value)} required/></label><button className="btn primary full" disabled={busy}>Publish curriculum →</button></form>{curriculumId&&<button className="btn full" onClick={assignCurriculum} disabled={busy}>Assign to selected class</button>}<label>Class<select value={classId} onChange={e=>setClassId(e.target.value)}>{classes.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label></section><section className="auth-card"><h2>3. Create a challenge</h2><p>Challenges are separate from adaptive direction: teachers set the activity and goal for a class.</p><label>Challenge title<input value={challengeTitle} onChange={e=>setChallengeTitle(e.target.value)} placeholder="Beat your best score"/></label><button className="btn primary full" onClick={createChallenge} disabled={!publishedActivityVersion||!classId||busy}>Create + assign challenge →</button></section></div></AppShell>}
+export default function TeacherStudio() {
+  const [subjects, setSubjects] = useState<Lookup[]>([]);
+  const [skills, setSkills] = useState<SkillLookup[]>([]);
+  const [hubs, setHubs] = useState<Lookup[]>([]);
+  const [objectives, setObjectives] = useState<ObjectiveLookup[]>([]);
+  const [classes, setClasses] = useState<TeacherClass[]>([]);
+
+  const [subject, setSubject] = useState('');
+  const [hub, setHub] = useState('');
+  const [objective, setObjective] = useState('');
+  const [skill, setSkill] = useState('');
+  const [title, setTitle] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [correct, setCorrect] = useState('');
+  const [optionA, setA] = useState('');
+  const [optionB, setB] = useState('');
+  const [activityTitle, setActivityTitle] = useState('');
+  const [activityType, setActivityType] = useState('QUIZ');
+  const [challengeTitle, setChallengeTitle] = useState('');
+  const [classId, setClassId] = useState('');
+
+  const [status, setStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [publishedActivityVersion, setPublishedActivityVersion] =
+    useState('');
+  const [curriculumId, setCurriculumId] = useState('');
+
+  useEffect(() => {
+    Promise.all([
+      api.listTeacherSubjects(),
+      api.listAgeHubs(),
+      api.listMyClasses(),
+    ])
+      .then(([s, h, c]) => {
+        setSubjects(s);
+        setHubs(h);
+        setClasses(c);
+
+        if (s[0]) setSubject(s[0].id);
+        if (h[0]) setHub(h[0].id);
+        if (c[0]) setClassId(c[0].id);
+      })
+      .catch((e) => setStatus(e.message));
+  }, []);
+
+  useEffect(() => {
+    if (!subject) return;
+
+    Promise.all([
+      api.listObjectives(subject),
+      api.listSkills(subject),
+    ])
+      .then(([o, k]) => {
+        setObjectives(o);
+        setSkills(k);
+
+        if (o[0]) setObjective(o[0].id);
+        if (k[0]) setSkill(k[0].id);
+      })
+      .catch(() => {
+        setObjectives([]);
+        setSkills([]);
+        setObjective('');
+        setSkill('');
+      });
+  }, [subject]);
+
+  async function createContent(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setStatus('Publishing your lesson…');
+
+    try {
+      const lesson = await api.createLesson(subject, title);
+      const lessonVersion = await api.createLessonVersion(
+        lesson.id,
+        title,
+      );
+
+      await api.publishLesson(lessonVersion.id);
+
+      const activity = await api.createActivity(
+        lesson.id,
+        activityType,
+        activityTitle,
+      );
+
+      const activityVersion = await api.createActivityVersion(
+        activity.id,
+        'Practice this skill',
+        3,
+      );
+
+      const question = await api.createQuestion(
+        subject,
+        'MULTIPLE_CHOICE' as QuestionType,
+      );
+
+      const questionVersion = await api.createQuestionVersion(
+        question.id,
+        prompt,
+        correct,
+        3,
+      );
+
+      await api.addQuestionOption(
+        questionVersion.id,
+        optionA,
+        optionA === correct,
+        0,
+      );
+
+      await api.addQuestionOption(
+        questionVersion.id,
+        optionB,
+        optionB === correct,
+        1,
+      );
+
+      await api.publishQuestion(questionVersion.id);
+      await api.tagActivity(activity.id, skill);
+      await api.addActivityItem(activityVersion.id, questionVersion.id);
+      await api.publishActivity(activityVersion.id);
+
+      setPublishedActivityVersion(activityVersion.id);
+
+      setStatus(
+        Published “${activityTitle}”. You can now assign it through a curriculum or make it a challenge.,
+      );
+    } catch (e: any) {
+      setStatus(e.message || 'Could not publish content.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createCurriculum(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+
+    try {
+      if (!objective) {throw new Error('Select a learning objective first.');
+      }
+
+      const curriculum = await api.createCurriculum(
+        subject,
+        hub,
+        title,
+      );
+
+      const version = await api.createCurriculumVersion(
+        curriculum.id,
+      );
+
+      await api.addCurriculumObjective(
+        version.id,
+        objective,
+      );
+
+      await api.publishCurriculum(version.id);
+
+      setCurriculumId(curriculum.id);
+      setStatus(`Published curriculum “${title}”.`);
+    } catch (e: any) {
+      setStatus(e.message || 'Could not publish curriculum.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function assignCurriculum() {
+    if (!classId || !curriculumId) return;
+
+    setBusy(true);
+
+    try {
+      await api.assignCurriculumToClass(
+        classId,
+        curriculumId,
+      );
+
+      setStatus('Curriculum assigned to the class roster.');
+    } catch (e: any) {
+      setStatus(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createChallenge() {
+    if (!publishedActivityVersion || !classId) return;
+
+    setBusy(true);
+
+    try {
+      const challenge: any = await api.createChallenge(
+        publishedActivityVersion,
+        challengeTitle || activityTitle,
+        'Complete this challenge through practice.',
+        1,
+      );
+
+      await api.assignChallenge(
+        challenge.id,
+        classId,
+      );
+
+      setStatus('Challenge created and assigned to the class.');
+    } catch (e: any) {
+      setStatus(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <AppShell workspace="teacher">
+      <div className="page-title">
+        <div>
+          <span className="eyebrow">TEACHER STUDIO</span>
+          <h1>Build, publish, and challenge.</h1>
+          <p>
+            Create real learning content and put it in front of a class.
+          </p>
+        </div>
+      </div>
+
+      {status && (
+        <div
+          className="form-error"
+          style={{ marginBottom: 20 }}
+        >
+          {status}
+        </div>
+      )}
+
+      <div className="dashboard-grid">
+        <section className="auth-card">
+          <h2>1. Create a lesson + quiz</h2>
+
+          <form onSubmit={createContent}>
+            <label>
+              Subject
+              <select
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+              >
+                {subjects.map((x) => (
+                  <option
+                    key={x.id}
+                    value={x.id}
+                  >
+                    {x.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Lesson title
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                placeholder="Addition practice"
+              />
+            </label>
+
+            <label>
+              Skill
+              <select
+                value={skill}
+                onChange={(e) => setSkill(e.target.value)}
+              >
+                {skills.map((x) => (
+                  <option
+                    key={x.id}
+                    value={x.id}
+                  >
+                    {x.code} — {x.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Activity title
+              <input
+                value={activityTitle}
+                onChange={(e) =>
+                  setActivityTitle(e.target.value)
+                }
+                required
+                placeholder="Quick addition quiz"
+              />
+            </label>
+
+            <label>
+              Type
+              <select
+                value={activityType}
+                onChange={(e) =>
+                  setActivityType(e.target.value)
+                }
+              >
+                <option>QUIZ</option>
+                <option>EXERCISE</option>
+                <option>PRACTICE</option>
+              </select>
+</label>
+
+            <label>
+              Question
+              <input
+                value={prompt}
+                onChange={(e) =>
+                  setPrompt(e.target.value)
+                }
+                required
+                placeholder="What is 2 + 3?"
+              />
+            </label>
+
+            <label>
+              Option A
+              <input
+                value={optionA}
+                onChange={(e) =>
+                  setA(e.target.value)
+                }
+                required
+              />
+            </label>
+
+            <label>
+              Option B
+              <input
+                value={optionB}
+                onChange={(e) =>
+                  setB(e.target.value)
+                }
+                required
+              />
+            </label>
+
+            <label>
+              Correct answer
+              <input
+                value={correct}
+                onChange={(e) =>
+                  setCorrect(e.target.value)
+                }
+                required
+              />
+            </label>
+
+            <button
+              className="btn primary full"
+              disabled={busy}
+            >
+              Publish learning activity →
+            </button>
+          </form>
+        </section>
+
+        <section className="auth-card">
+          <h2>2. Publish a curriculum</h2>
+
+          <form onSubmit={createCurriculum}>
+            <label>
+              Age hub
+              <select
+                value={hub}
+                onChange={(e) =>
+                  setHub(e.target.value)
+                }
+              >
+                {hubs.map((x) => (
+                  <option
+                    key={x.id}
+                    value={x.id}
+                  >
+                    {x.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Learning objective
+              <select
+                value={objective}
+                onChange={(e) =>
+                  setObjective(e.target.value)
+                }
+              >
+                {objectives.map((x) => (
+                  <option
+                    key={x.id}
+                    value={x.id}
+                  >
+                    {x.code} — {x.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Curriculum name
+              <input
+                value={title}
+                onChange={(e) =>
+                  setTitle(e.target.value)
+                }
+                required
+              />
+            </label>
+
+            <button
+              className="btn primary full"
+              disabled={busy}
+            >
+              Publish curriculum →
+            </button>
+          </form>
+
+          {curriculumId && (
+            <button
+              className="btn full"
+              onClick={assignCurriculum}
+              disabled={busy}
+            >
+              Assign to selected class
+            </button>
+          )}
+
+          <label>
+            Class
+            <select
+              value={classId}
+              onChange={(e) =>
+                setClassId(e.target.value)
+              }
+            >
+              {classes.map((x) => (
+                <option
+                  key={x.id}
+                  value={x.id}
+                >
+                  {x.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+
+        <section className="auth-card">
+          <h2>3. Create a challenge</h2>
+
+          <p>
+            Challenges are separate from adaptive direction:
+            teachers set the activity and goal for a class.
+          </p>
+
+          <label>
+            Challenge title
+            <input
+              value={challengeTitle}
+              onChange={(e) =>
+                setChallengeTitle(e.target.value)
+              }
+              placeholder="Beat your best score"
+            />
+          </label>
+
+          <buttonclassName="btn primary full"
+            onClick={createChallenge}
+            disabled={
+              !publishedActivityVersion ||
+              !classId ||
+              busy
+            }
+          >
+            Create + assign challenge →
+          </button>
+        </section>
+      </div>
+    </AppShell>
+  );
+}
