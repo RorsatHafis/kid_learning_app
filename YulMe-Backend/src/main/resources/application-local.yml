@@ -1,0 +1,41 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/learning_platform}
+    username: ${POSTGRES_USER:learning_platform}
+    password: ${POSTGRES_PASSWORD:learning_platform}
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+platform:
+  security:
+    jwt:
+      # Dev-only fallback; production must provide JWT_SECRET.
+      secret: ${JWT_SECRET:local-development-only-secret-not-for-production-use-0123456789}
+      issuer: ${JWT_ISSUER:yulme-api}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+    lockout:
+      max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
+      duration: ${LOGIN_LOCKOUT_DURATION:15m}
+  mastery:
+    learning-rate: ${MASTERY_LEARNING_RATE:0.2}
+    confidence-saturation-count: ${MASTERY_CONFIDENCE_SATURATION_COUNT:10}
+    objective-mastery-threshold: ${MASTERY_OBJECTIVE_THRESHOLD:0.8}
+
+logging:
+  level:
+    root: INFO
+    com.platform: DEBUG
+    org.hibernate.SQL: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,flyway

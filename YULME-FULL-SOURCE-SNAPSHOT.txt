@@ -1,0 +1,6 @@
+YulMe full deployment source snapshot
+
+This archive is assembled from the latest full MVP source-of-truth checkpoint plus the subsequent Admin MVP and UI/learning/settings fixes produced in this session.
+
+Deployment source: GitHub repository used by Render/Vercel.
+Generated/runtime directories are intentionally excluded.

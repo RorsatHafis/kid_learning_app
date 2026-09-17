@@ -1,0 +1,35 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+
+platform:
+  security:
+    jwt:
+      secret: test-secret-key-for-automated-tests-only-0123456789ab
+      issuer: yulme-test
+      access-token-ttl: 15m
+    lockout:
+      max-attempts: 5
+      duration: 15m
+  mastery:
+    learning-rate: 0.2
+    confidence-saturation-count: 10
+    objective-mastery-threshold: 0.8
+
+logging:
+  level:
+    root: WARN
+    com.platform: DEBUG
+    org.testcontainers: INFO
+    org.flywaydb: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

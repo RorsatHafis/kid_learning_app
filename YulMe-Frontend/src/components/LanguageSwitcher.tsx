@@ -1,0 +1,2 @@
+import { useEffect, useState } from 'react';
+export default function LanguageSwitcher(){const [lang,setLang]=useState(localStorage.getItem('yulme.language')||'en'); useEffect(()=>{document.documentElement.lang=lang==='km'?'km':'en';},[lang]); function change(v:string){setLang(v);localStorage.setItem('yulme.language',v);window.location.reload();} return <label className="language-switcher"><span>Language</span><select value={lang} onChange={e=>change(e.target.value)} aria-label="Language"><option value="en">English</option><option value="km">ខ្មែរ</option></select></label>}

@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: learning-platform-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-learning_platform}
+      POSTGRES_USER: ${POSTGRES_USER:-learning_platform}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-learning_platform}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-learning_platform} -d ${POSTGRES_DB:-learning_platform}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: learning-platform-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-learning_platform}
+      DB_USERNAME: ${POSTGRES_USER:-learning_platform}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-learning_platform}
+      JWT_SECRET: ${JWT_SECRET:-local-docker-secret-not-for-production-use-0123456789}
+      JWT_ISSUER: ${JWT_ISSUER:-yulme-api}
+      JWT_ACCESS_TOKEN_TTL: ${JWT_ACCESS_TOKEN_TTL:-15m}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
+      LOGIN_LOCKOUT_DURATION: ${LOGIN_LOCKOUT_DURATION:-15m}
+      MASTERY_LEARNING_RATE: ${MASTERY_LEARNING_RATE:-0.2}
+      MASTERY_CONFIDENCE_SATURATION_COUNT: ${MASTERY_CONFIDENCE_SATURATION_COUNT:-10}
+      MASTERY_OBJECTIVE_THRESHOLD: ${MASTERY_OBJECTIVE_THRESHOLD:-0.8}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../YulMe-Frontend
+      dockerfile: Dockerfile
+    container_name: learning-platform-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  minio:
+    image: minio/minio:latest
+    container_name: learning-platform-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-learning_platform}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-learning_platform_dev}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: learning-platform-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  postgres_data:
+  minio_data:

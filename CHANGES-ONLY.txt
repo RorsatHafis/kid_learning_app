@@ -1,0 +1,23 @@
+YulMe final role-separation + branding checkpoint
+
+Changed/new files only.
+
+Role separation:
+- Parent routes remain parent-only.
+- Teacher Studio is TEACHER-only.
+- Principal gets a separate /school workspace.
+- Admin gets an ADMIN-only /admin workspace.
+- Admin and Principal no longer expose Teacher Studio navigation.
+- /login is now a role/workspace chooser.
+- Dedicated /login/parent, /login/teacher, /login/principal, /login/admin routes.
+- Wrong-role login clears the session and shows the correct workspace.
+
+Branding:
+- Rebuilt the Logo component around the YulMe child/growth mark instead of treating a full artwork image as the logo.
+- Added a character-only mascot asset so auth/landing artwork no longer displays the embedded duplicate YulMe wordmark.
+- Removed decorative emoji/sticker branding from the affected landing/auth role surfaces.
+
+Principal:
+- Added PrincipalDashboard.tsx using the existing authenticated school/class APIs.
+
+Apply by replacing the matching files and adding the new PrincipalDashboard.tsx and mascot asset.

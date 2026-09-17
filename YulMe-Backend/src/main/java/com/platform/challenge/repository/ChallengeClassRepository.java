@@ -1,0 +1,2 @@
+package com.platform.challenge.repository; import com.platform.challenge.entity.ChallengeClass; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
+public interface ChallengeClassRepository extends JpaRepository<ChallengeClass,UUID>{Optional<ChallengeClass> findByChallengeIdAndSchoolClassId(UUID challengeId,UUID classId); List<ChallengeClass> findBySchoolClassId(UUID classId);}

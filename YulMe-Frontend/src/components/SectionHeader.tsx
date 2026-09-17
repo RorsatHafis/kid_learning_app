@@ -1,0 +1,1 @@
+import {ReactNode} from 'react';import {Link} from 'react-router-dom';export default function SectionHeader({title,sub,action,children}:{title:string;sub?:string;action?:string;children?:ReactNode}){return <div className="section-head"><div><h2>{title}</h2>{sub&&<p>{sub}</p>}</div>{action&&<Link className="text-link" to={action}>{children||'See all'} <span>→</span></Link>}</div>}
