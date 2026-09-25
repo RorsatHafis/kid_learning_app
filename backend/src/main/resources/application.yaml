@@ -1,0 +1,90 @@
+spring:
+  application:
+    name: learning-platform-api
+
+  # No defaults on purpose: every environment (local, test, staging, production) must
+  # supply these explicitly via env vars. A missing value should fail startup loudly,
+  # never silently fall back to a local or wrong database.
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  flyway:
+    # Values some data migrations need from application configuration (V34 converts
+    # stored mastery using the same learning rate MasteryEngine computed it with).
+    # Defaults match the documented platform.mastery defaults (.env.example).
+    placeholders:
+      "[mastery_learning_rate]": ${platform.mastery.learning-rate:0.2}
+      "[objective_mastery_threshold]": ${platform.mastery.objective-mastery-threshold:0.8}
+
+  jpa:
+    # Flyway owns the schema. Hibernate only validates entity mappings against it;
+    # it must never create or alter tables itself.
+    hibernate:
+      ddl-auto: validate
+    # Default is true; disabling forces lazy-loading issues to surface where transactions
+    # are actually managed (the application service layer), not hidden behind view rendering.
+    open-in-view: false
+    properties:
+      hibernate:
+        # Persist and compare all instants in UTC regardless of server/DB host timezone.
+        jdbc:
+          time_zone: UTC
+
+# External configuration contract (the full list is ConfigurationContract.VARIABLES).
+# Operators set the environment variables named here; every profile honours them.
+# Setting the underlying property through its own environment variable
+# (PLATFORM_SECURITY_JWT_SECRET, ...) is refused at startup, so no setting can be
+# controlled by two variables. Values without a default are required: a missing one
+# fails startup. Defaults are the documented values (see .env.example), and every value
+# is validated when it binds (SecurityProperties, MasteryProperties, SecurityConfig).
+platform:
+  security:
+    jwt:
+      # Required. At least 32 bytes (HS256). Only the local profile supplies a dev value.
+      secret: ${JWT_SECRET}
+      # Required. Tokens from any other issuer are rejected, so give each environment its own.
+      issuer: ${JWT_ISSUER}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+      refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:30d}
+    lockout:
+      max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
+      duration: ${LOGIN_LOCKOUT_DURATION:15m}
+    cors:
+      # Exact browser origins (scheme://host[:port]) the frontend is served from,
+      # comma-separated. No default on purpose, like the datasource: staging and
+      # production must name their own frontend origin(s) - a missing value fails
+      # startup instead of silently trusting a development origin. An explicitly
+      # empty value allows no cross-origin browser access at all.
+      allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  mastery:
+    learning-rate: ${MASTERY_LEARNING_RATE:0.2}
+    confidence-saturation-count: ${MASTERY_CONFIDENCE_SATURATION_COUNT:10}
+    objective-mastery-threshold: ${MASTERY_OBJECTIVE_THRESHOLD:0.8}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    readiness-state:
+      enabled: true
+    liveness-state:
+      enabled: true
+
+
+logging:
+  pattern:
+    # Deliberately simplified vs. Boot's default colorized pattern — adds the
+    # correlation id without trying to precisely recreate Boot's internal
+    # pattern DSL. Can be prettified later; correctness over cosmetics for now.
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [correlationId=%X{correlationId}] %logger{36} - %msg%n"

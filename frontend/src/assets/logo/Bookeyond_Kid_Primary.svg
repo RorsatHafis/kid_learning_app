@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4096" height="2048" viewBox="0 0 1600 800">
+<rect width="1600" height="800" fill="none"/>
+<g transform="translate(90,145)">
+  <path d="M90 470 L90 95 Q90 55 130 55 L285 55 Q390 55 390 165 Q390 235 330 260 Q420 285 420 380 Q420 510 295 510 L90 510 Z" fill="#2563EB"/>
+  <path d="M120 95 L190 95 L190 470 L120 510 Z" fill="#FFBF24"/>
+  <path d="M190 95 L245 70 L245 455 L190 470 Z" fill="#06B6D4" opacity=".95"/>
+  <path d="M245 105 Q320 100 320 175 Q320 225 245 230 Z M245 300 Q345 295 345 375 Q345 440 245 440 Z" fill="#FFFFFF" opacity=".98"/>
+  <path d="M365 28 l12 30 30 12-30 12-12 30-12-30-30-12 30-12z" fill="#FFBF24"/>
+</g>
+<text x="560" y="430" font-family="Inter, sans-serif" font-size="300" font-weight="800" fill="#0F172A">Bookeyond</text>
+<text x="1050" y="430" font-family="Inter, sans-serif" font-size="330" font-weight="800" fill="#FFBF24">K</text><text x="1168" y="430" font-family="Inter, sans-serif" font-size="330" font-weight="800" fill="#10B981">i</text><text x="1278" y="430" font-family="Inter, sans-serif" font-size="330" font-weight="800" fill="#EC4899">d</text>
+<text x="575" y="535" font-family="Inter, sans-serif" font-size="78" font-weight="600" fill="#0F172A" opacity=".8">Learn Today  ✦  Build Tomorrow</text>
+</svg>

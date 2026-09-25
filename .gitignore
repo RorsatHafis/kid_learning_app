@@ -1,0 +1,26 @@
+# Build output (frontend/.gitignore also covers node_modules and dist)
+backend/target/
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# JVM crash / compiler replay artifacts
+hs_err_pid*.log
+replay_pid*.log
+
+# Local environment files - templates (.env.example) stay tracked
+.env
+.env.*
+!.env.example
+
+# IDE / OS state
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Claude Code per-user settings (the shared .claude/ project config is tracked)
+.claude/settings.local.json
+
+# Checkpoint archives, superseded by git history
+*.zip

@@ -1,0 +1,42 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/learning_platform}
+    # DB_USERNAME / DB_PASSWORD (the names every profile uses, and what docker-compose
+    # passes to the backend container) win. Locally they fall back to POSTGRES_USER /
+    # POSTGRES_PASSWORD, which .env also uses to create the Compose database.
+    username: ${DB_USERNAME:${POSTGRES_USER:learning_platform}}
+    password: ${DB_PASSWORD:${POSTGRES_PASSWORD:learning_platform}}
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# Local-only fallbacks for the values application.yaml requires. The same variables
+# still override them; TTL, lockout and mastery defaults come from application.yaml.
+platform:
+  security:
+    jwt:
+      # Dev-only fallback; every other profile must provide JWT_SECRET.
+      secret: ${JWT_SECRET:local-development-only-secret-not-for-production-use-0123456789}
+      issuer: ${JWT_ISSUER:yulme-api}
+    cors:
+      # Dev-only fallback: the Vite dev server. Its proxy forwards the browser's
+      # Origin while rewriting Host, so the backend sees these calls as cross-origin.
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+logging:
+  level:
+    root: INFO
+    com.platform: DEBUG
+    org.hibernate.SQL: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,flyway

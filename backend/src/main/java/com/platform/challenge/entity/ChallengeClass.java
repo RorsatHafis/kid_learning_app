@@ -1,0 +1,3 @@
+package com.platform.challenge.entity;
+import com.platform.common.entity.BaseEntity; import jakarta.persistence.*; import java.util.UUID;
+@Entity @Table(name="challenge_classes") public class ChallengeClass extends BaseEntity { @Column(name="challenge_id",nullable=false,updatable=false) private UUID challengeId; @Column(name="school_class_id",nullable=false,updatable=false) private UUID schoolClassId; protected ChallengeClass(){} private ChallengeClass(UUID c,UUID s){challengeId=c;schoolClassId=s;} public static ChallengeClass create(UUID c,UUID s){return new ChallengeClass(c,s);} public UUID getChallengeId(){return challengeId;} public UUID getSchoolClassId(){return schoolClassId;} }
