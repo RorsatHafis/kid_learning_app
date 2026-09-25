@@ -20,6 +20,20 @@ export interface AuthResponse {
   refreshTokenExpiresAt: string | null;
 }
 
+// ---- identity/web/AccountController.java ----
+
+export type AccountStatus = "ACTIVE" | "DISABLED" | "PENDING_VERIFICATION";
+
+export interface AccountProfile {
+  id: string;
+  email: string;
+  platformRole: PlatformRole;
+  status: AccountStatus;
+  /** null until the email address has been verified (no verification flow exists yet). */
+  emailVerifiedAt: string | null;
+  createdAt: string;
+}
+
 // ---- child/entity/ChildStatus.java, child/web/ChildDtos.java ----
 
 export type ChildStatus = "ACTIVE" | "ARCHIVED";

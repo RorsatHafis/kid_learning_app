@@ -240,6 +240,22 @@ public class AccountSessionService {
     }
 
     /**
+     * Revokes every usable session the account has, on every device. Access tokens
+     * already issued stay valid until their own short expiry (PD-02).
+     *
+     * @return how many live sessions (signed-in devices) were ended - the ACTIVE rows;
+     *         ROTATED rows are earlier links of those same sessions' refresh chains
+     */
+    @Transactional
+    public int revokeAllSessions(UUID accountId) {
+
+        int live = (int) sessions.countByAccountIdAndStatus(accountId, AccountSessionStatus.ACTIVE);
+        sessions.revokeAllForAccount(accountId, Instant.now());
+        return live;
+
+    }
+
+    /**
      * Revokes every session descended from the same login/registration as the
      * session identified by {@code memberId}: finds the root of the {@code
      * replacedBySessionId} chain, reads the *entire* chain from root to its

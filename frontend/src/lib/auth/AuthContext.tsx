@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { authApi } from "../api/endpoints";
+import { accountApi, authApi } from "../api/endpoints";
 import { SESSION_EXPIRED_EVENT, refreshSession } from "../api/client";
 import { tokenStore } from "../api/tokenStore";
-import type { PlatformRole } from "../api/types";
+import type { AuthResponse, PlatformRole } from "../api/types";
 
 interface Session {
   accountId: string;
@@ -19,6 +19,11 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<Session>;
   register: (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL" }) => Promise<Session | "PENDING_APPROVAL">;
   logout: () => Promise<void>;
+  /** Changes the password (current one required). The server ends every session and
+   * returns a fresh one, which this adopts so this device stays signed in. */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  /** Ends every session on every device, this one included, then signs out here. */
+  signOutEverywhere: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -69,8 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const data = await authApi.login({ email, password });
+  const adopt = useCallback((data: AuthResponse) => {
     tokenStore.setSession({
       accessToken: data.accessToken,
       accessTokenExpiresAt: data.expiresAt,
@@ -80,6 +84,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextSession = toSession(data);
     setSession(nextSession);
     return nextSession;
+  }, []);
+
+  const login = useCallback(
+    async (email: string, password: string) => adopt(await authApi.login({ email, password })),
+    [adopt],
+  );
+
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string) => {
+      adopt(await accountApi.changePassword({ currentPassword, newPassword }));
+    },
+    [adopt],
+  );
+
+  const signOutEverywhere = useCallback(async () => {
+    await accountApi.signOutEverywhere();
+    tokenStore.clear();
+    setSession(null);
   }, []);
 
   const register = useCallback(
@@ -113,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, login, register, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ session, isLoading, login, register, logout, changePassword, signOutEverywhere }}>{children}</AuthContext.Provider>
   );
 }
 

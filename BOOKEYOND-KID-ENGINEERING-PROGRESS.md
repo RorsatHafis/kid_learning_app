@@ -6,9 +6,9 @@ project actually stands against it. Where the two disagree on a verification lev
 evidence recorded here is newer (see §26 note under Battle 4A) — `CLAUDE.md` is not edited
 from here.
 
-- **Last reconciled:** 2026-09-25, after Wave 1 slice 1 (W1.1 — child & parent learning experience, N7).
+- **Last reconciled:** 2026-09-25, after Wave 1 slice 2 (W1.2 — parent account & security settings).
 - **Reconciled against:** current source, Flyway migrations V1–V36, the last full test run
-  (`./mvnw -Pintegration test`: **190 run, 189 pass, 1 known stale failure** — TD-04), and the
+  (`./mvnw -Pintegration test`: **195 run, 194 pass, 1 known stale failure** — TD-04), and the
   runtime/browser evidence gathered in each battle.
 - **Version control:** git repository at `D:\Bookeyond-Kid` (baseline commit `4db89ad`,
   then one commit per battle). TD-01 resolved.
@@ -82,6 +82,7 @@ deployment. Do not describe the product as complete.
 | **3R** | Content lifecycle | **L4/L5 core fix accepted.** RETIRED = superseded; learner-visible = PUBLISHED or RETIRED; new work = current PUBLISHED only; existing path items and in-progress attempts keep their pinned version; history reconstructable | TESTED (8, with a mutation check); RUNTIME VERIFIED (journeys A–F) | `PublishableVersion.wasPublished`, `ActivityAttemptService.startAttempt`, `ContentLifecycleIntegrationTests` | **Broader version-consumer follow-up still open (3R.1).** Not browser-verified |
 | **5D** | Core learning loop: server-authoritative post-completion | Completing an attempt, in one transaction under the attempt's row lock, records a REVIEW placement's outcome, re-evaluates Smart Review for every exercised skill, makes and records exactly one adaptive decision (`adaptation_decisions`, unique per attempt — V36), and places a due review. No client follow-up is needed (L8). Review items and streaks are created race-free with `INSERT … ON CONFLICT DO NOTHING` + row lock (N2, N8); answers take the attempt lock (N9). `/adaptive-next` and `/smart-review-check` became read-only compatibility views and the frontend no longer calls them. Golden journey rehabilitated (TD-03). Multi-skill decisions made deterministic under a provisional rule (L7 → PD-11) | TESTED (golden journey + 9 completion integration tests, 3 mutation checks); RUNTIME VERIFIED (journeys A–E on persisted state); **BROWSER VERIFIED** (UI play-through: complete, then reads only; reload resumes the next state) | `PostCompletionService`, `ActivityAttemptService.completeAttempt`, `SmartReviewService`, `ReviewItemRepository`, `LearnerStreakRepository`, `AdaptationDecision`, V36; `GoldenLearningJourneyIntegrationTests`, `LearningLoopCompletionIntegrationTests`; `PlaySession.tsx` | PD-11, PD-12, OD-10, TD-06, TD-08, TD-09 |
 | **W1.1** | Wave 1 slice 1 — child & parent learning experience; content tenancy (N7) | **N7:** a path draws only from platform content (ownerless lesson/standalone activity) plus, for a teacher-owned curriculum, that owner's content — enforced in enrollment seeding, the Adaptive Engine, Smart Review and free practice; the family catalog and family enrollment accept platform curricula only; ADMIN-authored content is platform content. **Read APIs:** a child's enrollments (replacing the client-side pointer, N13), the journey with a per-step explanation derived from recorded decisions, skills with evidence level and standing (no raw mastery), activity history with the decision taken, child detail + rename, correct-answer feedback on recorded answers. **Frontend:** child space (journey home, activity intro, 4 question types, explanatory feedback, Learning Buddy, sound, completion with the server's next step, grown-up gate); parent family home and child overview rebuilt; enrollment pointer removed; AA contrast fixes | TESTED (ContentTenancyIntegrationTests 8 with 3 mutation checks; LearningJourneyApiIntegrationTests 5 over HTTP); RUNTIME VERIFIED (journeys A–E incl. N7 via real teacher authoring); **BROWSER VERIFIED** (desktop + 375 px mobile: family home, overview, journey, play MC/TF/numeric, wrong-answer feedback, reload resume, completion, keep going, keyboard-only play, grown-up gate, legacy route redirect) | `PathContentScope`, `LearningJourneyService`, `SkillProgressService`, `AnswerFeedbackService`, `EvidenceStandard`, `LearningJourneyController`; `features/child/*`, `features/parent/*`, `features/buddy/*` | PD-13–PD-17, TD-10–TD-13; frontend has no automated tests |
+| **W1.2** | Wave 1 slice 2 — parent account & security settings | `GET /account` (own profile, never the hash); `POST /account/password` — current password required, a wrong one counts towards the login lockout (422 with a field error, then 423), policy-checked, must differ, then **every session is revoked** and a fresh one returned so this device stays signed in; `POST /account/sign-out-everywhere`; both audited (`sessionsEnded` = live devices, not chain rows). Frontend: Account page (details, change password, sign out everywhere with in-page confirmation), parent navigation that works on phones, login notice; login page lockout time made readable and link contrast fixed | TESTED (`AccountSettingsIntegrationTests` 5, HTTP); RUNTIME VERIFIED (password journey: wrong/weak/success, both old devices' refresh → 401, old password refused, audit row); **BROWSER VERIFIED** for the account page, sign-out-everywhere (other device's refresh → 401 afterwards) and mobile navigation. **Password form submission NOT browser-verified**: entering passwords in the browser is outside what the agent may do — verified over HTTP only | `AccountSettingsService`, `AccountController`, `AccountSessionRepository.revokeAllForAccount`; `AccountPage.tsx`, `ParentLayout.tsx`, `AuthContext` | PD-02 (≤ 15 min access-token tail, stated in the UI); PD-18; password reset/verification remain Wave 4 |
 | **4C** | School ↔ child authorization | **NOT IMPLEMENTED** — design only | — | Battle 4C design report | PD-01 |
 
 ---
@@ -145,7 +146,9 @@ deployment. Do not describe the product as complete.
 | Access-token revocation latency | PD | ≤ 15 min after logout/disable/role change | 4D | 4D | PD-02 | — |
 | Refresh token storage | TD | Refresh token in `localStorage` (XSS exposure) | `tokenStore.ts` | 4D | Hardening option: httpOnly cookie + CSRF design | Security hardening |
 | Email / phone verification | FP | `Account.emailVerifiedAt` exists; no verification flow or endpoints | `AuthController` has only register/login/refresh/logout | — | Real tokens, expiry, resend limits (`CLAUDE.md` §11) | Identity phase |
-| Password reset / change | FP | None | `AuthController` | — | Whole flow | Identity phase |
+| Password change | VC | Current password required, lockout-counted, all sessions revoked, fresh session issued, audited | 5 integration tests; runtime; UI rendered (submission verified over HTTP only) | W1.2 | — | — |
+| Sign out everywhere | VC | Revokes every live session of the account; audited | Integration test; runtime; **browser** | W1.2 | Access tokens live ≤ 15 min (PD-02) | — |
+| Password reset | FP | None — needs real email delivery (CLAUDE.md §11) | `AuthController` | — | Whole flow | Wave 4 identity |
 | PRINCIPAL self-registration | PD | 202 pending ADMIN approval; approve endpoint exists | `AuthController`, `AdminController`; TD-04 | — | Stale test contradicts code | PD-07 |
 | Staff provisioning / bootstrap admin | PV | ADMIN creates TEACHER/PRINCIPAL; optional bootstrap admin via `platform.bootstrap-admin.*` | Exercised at runtime in 3R | — | No automated tests; bootstrap vars aren't in the N6 contract (documented as YAML only) | Admin phase |
 
@@ -332,6 +335,7 @@ and CI. None of these is complete; see sections B, L, M, O–U.
 | PD-15 | Canonical curriculum content (Khmer, English, more Maths) must come from educators — directive §10 forbids generative AI determining canonical curriculum. The catalog is one Maths curriculum of 6 numeric activities | W1.1 |
 | PD-16 | After a wrong answer the child is shown the correct answer (directive §12.4 "explanatory"). Alternative: one retry before revealing | W1.1 |
 | PD-17 | Grown-up gate style (press-and-hold 1.5 s) for leaving the child space | W1.1 |
+| PD-18 | Privacy notice and Terms of Service text — legal content, not engineering; no page is shown until it exists (a placeholder would be fake) | W1.2 |
 
 ---
 
@@ -345,7 +349,7 @@ and CI. None of these is complete; see sections B, L, M, O–U.
   BROWSER VERIFIED; configuration and content lifecycle are RUNTIME VERIFIED; the
   learning-state battles (5A–5C) were RUNTIME VERIFIED at battle time and are TESTED now,
   including through the green golden journey.
-- **Test suite:** 190 run, 189 pass; the 1 failure is the known stale PRINCIPAL test (TD-04, PD-07).
+- **Test suite:** 195 run, 194 pass; the 1 failure is the known stale PRINCIPAL test (TD-04, PD-07).
 - **Version control:** git, one commit per battle.
 - **FULL BOOKEYOND KID PRODUCT: NOT COMPLETE.**
 
@@ -388,9 +392,9 @@ the open product decisions PD-01 to PD-10.
 
 **Wave 1 continues** (child + parent), in this order:
 
-1. **Parent account & settings** — profile, sign-out everywhere, password change (needs the
-   identity work of Wave 4 for reset/verification; change-password with the current password
-   can land now), privacy page, child management (archive with data kept).
+1. ~~Parent account & settings~~ — **done in W1.2** (profile, password change, sign out
+   everywhere). Still open: privacy/terms text (PD-18), child archive (needs a product
+   decision on what archiving does to learning and data — not invented).
 2. **Parent goals** (directive §13.5) — needs a product decision on what a goal is (e.g.
    minutes per week vs skills to secure) before any code; do not invent it.
 3. **Automated frontend tests** for the child play session and parent overview (none exist).

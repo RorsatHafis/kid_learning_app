@@ -13,6 +13,8 @@ public interface AccountSessionRepository extends JpaRepository<AccountSession, 
 
     Optional<AccountSession> findByRefreshTokenHash(String refreshTokenHash);
 
+    long countByAccountIdAndStatus(UUID accountId, AccountSessionStatus status);
+
     /** The session, if any, that {@code childSessionId} replaced - i.e. its parent in the rotation chain. */
     Optional<AccountSession> findByReplacedBySessionId(UUID childSessionId);
 
@@ -76,5 +78,26 @@ public interface AccountSessionRepository extends JpaRepository<AccountSession, 
                                  com.platform.security.session.AccountSessionStatus.ROTATED)
             """)
     int revokeIfRevocable(@Param("id") UUID id, @Param("now") Instant now);
+
+    /**
+     * Revokes every usable (ACTIVE or ROTATED) session of an account in one statement:
+     * "sign out everywhere" and the session reset after a password change. Same
+     * REVOKED transition and {@code replacedBySessionId} clearing as
+     * {@link #revokeIfRevocable}; already REVOKED/EXPIRED rows are untouched.
+     *
+     * @return the number of sessions revoked
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update AccountSession s
+               set s.status = com.platform.security.session.AccountSessionStatus.REVOKED,
+                   s.revokedAt = :now,
+                   s.replacedBySessionId = null,
+                   s.version = s.version + 1
+             where s.accountId = :accountId
+               and s.status in (com.platform.security.session.AccountSessionStatus.ACTIVE,
+                                 com.platform.security.session.AccountSessionStatus.ROTATED)
+            """)
+    int revokeAllForAccount(@Param("accountId") UUID accountId, @Param("now") Instant now);
 
 }

@@ -5,6 +5,7 @@ import com.platform.content.exception.IncompleteQuestionException;
 import com.platform.learning.exception.InvalidAnswerException;
 import com.platform.learning.exception.UnscorableAnswerException;
 import com.platform.identity.exception.AccountLockedException;
+import com.platform.identity.exception.CurrentPasswordMismatchException;
 import com.platform.identity.exception.EmailAlreadyRegisteredException;
 import com.platform.identity.exception.InvalidCredentialsException;
 import com.platform.identity.exception.WeakPasswordException;
@@ -110,6 +111,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
         problem.setTitle("Weak Password");
+
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
+
+    }
+
+    @ExceptionHandler(CurrentPasswordMismatchException.class)
+    public ResponseEntity<Object> handleCurrentPasswordMismatch(CurrentPasswordMismatchException ex, WebRequest request) {
+
+        // 422 with a field error, like a validation failure on currentPassword - not 401:
+        // the caller is authenticated; only the confirmation was wrong.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        problem.setTitle("Incorrect Password");
+        problem.setProperty("errors", java.util.Map.of("currentPassword", ex.getMessage()));
 
         return createResponseEntity(problem, new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
 

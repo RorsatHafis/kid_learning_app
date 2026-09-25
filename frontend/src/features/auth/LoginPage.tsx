@@ -17,6 +17,8 @@ export function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // e.g. "You've been signed out on every device." from the account page.
+  const notice = (location.state as { notice?: string } | null)?.notice;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -32,7 +34,8 @@ export function LoginPage() {
         if (err.validationErrors) {
           setFieldErrors(err.validationErrors);
         } else if (err.status === 423) {
-          setFormError(`Too many attempts. Try again after ${err.problem?.lockedUntil ?? "a short wait"}.`);
+          const until = err.problem?.lockedUntil ? new Date(err.problem.lockedUntil).toLocaleTimeString() : null;
+          setFormError(`Too many attempts. Try again ${until ? `after ${until}` : "after a short wait"}.`);
         } else {
           // 401 for wrong credentials — GlobalExceptionHandler keeps the
           // detail generic on purpose (no "email not found" vs "wrong
@@ -49,10 +52,16 @@ export function LoginPage() {
 
   return (
     <AuthLayout title="Welcome back" subtitle="Log in to continue your child's learning journey.">
+      {notice && (
+        <p role="status" className="mb-4 rounded-2xl bg-kid-mint p-3 text-sm font-semibold text-kid-mintDeep">
+          {notice}
+        </p>
+      )}
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField
           label="Email"
           type="email"
+          autoComplete="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -61,19 +70,24 @@ export function LoginPage() {
         <FormField
           label="Password"
           type="password"
+          autoComplete="current-password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           error={fieldErrors.password}
         />
-        {formError && <p className="text-sm font-medium text-brand-red">{formError}</p>}
+        {formError && (
+          <p role="alert" className="text-sm font-medium text-brand-red">
+            {formError}
+          </p>
+        )}
         <Button type="submit" size="lg" disabled={isSubmitting} className="mt-2 w-full">
           {isSubmitting ? "Logging in…" : "Log in"}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         New to Bookeyond Kid?{" "}
-        <Link to="/register" className="font-semibold text-brand-blue">
+        <Link to="/register" className="font-semibold text-brand-blueStrong">
           Create an account
         </Link>
       </p>

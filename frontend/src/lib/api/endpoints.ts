@@ -1,5 +1,6 @@
 import { apiClient } from "./client";
 import type {
+  AccountProfile,
   ActivityAttempt,
   ActivityVersionDetail,
   AnswerRecord,
@@ -33,6 +34,14 @@ export const authApi = {
   login: (input: { email: string; password: string }) =>
     apiClient.post<AuthResponse>("/auth/login", input, { skipAuth: true }),
   logout: (refreshToken: string) => apiClient.post<void>("/auth/logout", { refreshToken }, { skipAuth: true }),
+};
+
+// identity/web/AccountController.java — always the signed-in account; no id in any path.
+export const accountApi = {
+  me: () => apiClient.get<AccountProfile>("/account"),
+  changePassword: (input: { currentPassword: string; newPassword: string }) =>
+    apiClient.post<AuthResponse>("/account/password", input),
+  signOutEverywhere: () => apiClient.post<{ sessionsEnded: number }>("/account/sign-out-everywhere"),
 };
 
 // child/web/ChildController.java

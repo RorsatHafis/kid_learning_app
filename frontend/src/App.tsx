@@ -9,6 +9,7 @@ import { ComingSoon } from "@/features/app/AppShell";
 import { ParentLayout } from "@/features/parent/ParentLayout";
 import { ParentHome } from "@/features/parent/ParentHome";
 import { ChildOverviewPage } from "@/features/parent/ChildOverviewPage";
+import { AccountPage } from "@/features/parent/AccountPage";
 import { ChildHome } from "@/features/child/ChildHome";
 import { PlaySession } from "@/features/child/PlaySession";
 import { TeacherLayout } from "@/features/teacher/TeacherLayout";
@@ -37,6 +38,7 @@ export default function App() {
           >
             <Route index element={<ParentHome />} />
             <Route path="children/:childId" element={<ChildOverviewPage />} />
+            <Route path="account" element={<AccountPage />} />
           </Route>
 
           {/* The child's space — deliberately outside ParentLayout's chrome (a child
