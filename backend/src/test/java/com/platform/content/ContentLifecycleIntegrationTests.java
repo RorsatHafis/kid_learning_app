@@ -29,8 +29,8 @@ import com.platform.family.repository.FamilyRepository;
 import com.platform.knowledge.entity.Skill;
 import com.platform.knowledge.service.LearningObjectiveSkillService;
 import com.platform.knowledge.service.SkillService;
+import com.platform.learner.repository.AdaptationDecisionRepository;
 import com.platform.learner.repository.LearnerSkillHistoryRepository;
-import com.platform.learner.service.AdaptiveEngine;
 import com.platform.learning.entity.ActivityAttempt;
 import com.platform.learning.entity.ActivityAttemptStatus;
 import com.platform.learning.entity.AnswerRecord;
@@ -89,9 +89,9 @@ class ContentLifecycleIntegrationTests {
     @Autowired private LearningPathRepository learningPathRepository;
     @Autowired private LearningPathService learningPathService;
     @Autowired private ActivityAttemptService activityAttemptService;
-    @Autowired private AdaptiveEngine adaptiveEngine;
     @Autowired private SmartReviewService smartReviewService;
     @Autowired private LearnerSkillHistoryRepository learnerSkillHistoryRepository;
+    @Autowired private AdaptationDecisionRepository adaptationDecisionRepository;
 
     // ------------------------------------------------------------------ lifecycle basics
 
@@ -250,19 +250,22 @@ class ContentLifecycleIntegrationTests {
     void adaptiveAndSmartReviewOnlyPlaceUsableCurrentVersions() {
         Catalog catalog = catalog();
         Learner learner = enroll(catalog);
-        LearningPathItem item = learningPathService.getNextItem(learner.pathId());
-        ActivityAttempt attempt = activityAttemptService.startAttempt(learner.childId(), item.getActivityVersionId(), item.getId(), null);
-        answerAll(attempt, activityContentController.getActivityVersion(item.getActivityVersionId()).getBody(), false);
-        activityAttemptService.completeAttempt(attempt.getId());
-
         QuestionVersion q1v2 = republishQuestion(catalog.q1(), "1 + 1 = ? (v2)", "2");
         ActivityVersion firstV2 = republishFirstActivity(catalog, q1v2, catalog.q2v1());
         republishQuestion(catalog.q2(), "2 + 1 = ? (v2)", "3"); // secondV1 stays current but pins a superseded question
 
-        LearningPathItem adaptive = adaptiveEngine.recommendNext(learner.childId(), catalog.skill().getId(), learner.pathId(),
-                catalog.firstV1().getId()).orElseThrow().insertedItem();
-        smartReviewService.evaluateAndSchedule(learner.childId(), catalog.skill().getId()).orElseThrow();
-        LearningPathItem review = smartReviewService.insertDueReviewOnPath(learner.childId(), learner.pathId()).orElseThrow();
+        // The child plays their existing (now superseded) placement. Since Battle 5D the
+        // adaptive and review decisions are made by completing it, so they are selections
+        // made after the republish.
+        LearningPathItem item = learningPathService.getNextItem(learner.pathId());
+        assertThat(item.getActivityVersionId()).isEqualTo(catalog.firstV1().getId());
+        ActivityAttempt attempt = activityAttemptService.startAttempt(learner.childId(), item.getActivityVersionId(), item.getId(), null);
+        answerAll(attempt, activityContentController.getActivityVersion(item.getActivityVersionId()).getBody(), false);
+        activityAttemptService.completeAttempt(attempt.getId());
+
+        LearningPathItem adaptive = learningPathService.getItem(
+                adaptationDecisionRepository.findByActivityAttemptId(attempt.getId()).orElseThrow().getLearningPathItemId());
+        LearningPathItem review = smartReviewService.findPendingReviewOnPath(learner.pathId()).orElseThrow();
 
         for (LearningPathItem placed : List.of(adaptive, review)) {
             ActivityVersion version = activityVersionRepository.findById(placed.getActivityVersionId()).orElseThrow();

@@ -61,6 +61,7 @@ public class ActivityAttemptService {
     private final LearningPathItemRepository learningPathItemRepository;
     private final LearningPathRepository learningPathRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final PostCompletionService postCompletionService;
 
     @Autowired(required = false)
     private LearnerStreakService learnerStreakService;
@@ -70,7 +71,8 @@ public class ActivityAttemptService {
                                    ActivityVersionRepository activityVersionRepository, ChildRepository childRepository,
                                    IdempotencyService idempotencyService, AnswerSubmissionWriter answerSubmissionWriter,
                                    LearningPathItemRepository learningPathItemRepository,
-                                   LearningPathRepository learningPathRepository, EnrollmentRepository enrollmentRepository) {
+                                   LearningPathRepository learningPathRepository, EnrollmentRepository enrollmentRepository,
+                                   PostCompletionService postCompletionService) {
         this.attemptRepository = attemptRepository;
         this.answerRecordRepository = answerRecordRepository;
         this.activityItemRepository = activityItemRepository;
@@ -81,6 +83,7 @@ public class ActivityAttemptService {
         this.learningPathItemRepository = learningPathItemRepository;
         this.learningPathRepository = learningPathRepository;
         this.enrollmentRepository = enrollmentRepository;
+        this.postCompletionService = postCompletionService;
     }
 
     /**
@@ -281,7 +284,10 @@ public class ActivityAttemptService {
      */
     @Transactional
     public ActivityAttempt completeAttempt(UUID activityAttemptId) {
-        ActivityAttempt attempt = getAttempt(activityAttemptId);
+        // Battle 5D: locked, so a concurrent or retried completion waits for this one and
+        // then returns the already-COMPLETED attempt without re-running anything below.
+        ActivityAttempt attempt = attemptRepository.findByIdForUpdate(activityAttemptId)
+                .orElseThrow(() -> new ResourceNotFoundException("ActivityAttempt", activityAttemptId));
         if (attempt.getStatus() == ActivityAttemptStatus.COMPLETED) {
             return attempt;
         }
@@ -292,6 +298,9 @@ public class ActivityAttemptService {
         if (attempt.getLearningPathItemId() != null) {
             markPathItemCompletedIfApplicable(attempt.getLearningPathItemId());
         }
+        // Battle 5D (L8): the review and adaptive decisions are part of completing, in
+        // this same transaction - not left to the client's follow-up calls.
+        postCompletionService.apply(attempt);
         return attempt;
     }
 

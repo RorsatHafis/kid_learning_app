@@ -69,6 +69,7 @@ class ActivityAttemptServiceTests {
     @Mock private LearningPathItemRepository learningPathItemRepository;
     @Mock private LearningPathRepository learningPathRepository;
     @Mock private EnrollmentRepository enrollmentRepository;
+    @Mock private PostCompletionService postCompletionService;
 
     private ActivityAttemptService service;
 
@@ -76,7 +77,7 @@ class ActivityAttemptServiceTests {
     void setUp() {
         service = new ActivityAttemptService(attemptRepository, answerRecordRepository, activityItemRepository,
                 activityVersionRepository, childRepository, idempotencyService, answerSubmissionWriter,
-                learningPathItemRepository, learningPathRepository, enrollmentRepository);
+                learningPathItemRepository, learningPathRepository, enrollmentRepository, postCompletionService);
         lenient().when(activityVersionRepository.findById(ACTIVITY_VERSION_ID))
                 .thenReturn(Optional.of(publishedActivityVersion(ACTIVITY_VERSION_ID)));
     }
@@ -86,7 +87,7 @@ class ActivityAttemptServiceTests {
     @Test
     void completeAttemptDerivesScoreFromPersistedAnswersRegardlessOfWhatAnyCallerMightWish() {
         ActivityAttempt attempt = ActivityAttempt.start(CHILD_ID, ACTIVITY_VERSION_ID, null, null, Instant.now());
-        when(attemptRepository.findById(ATTEMPT_ID)).thenReturn(Optional.of(withId(attempt, ATTEMPT_ID)));
+        when(attemptRepository.findByIdForUpdate(ATTEMPT_ID)).thenReturn(Optional.of(withId(attempt, ATTEMPT_ID)));
         // 3 correct out of 4 -> 75.00, and there is no parameter anywhere on this
         // method a caller could use to say otherwise - the fix is structural, not
         // just "validate the number".
@@ -108,7 +109,7 @@ class ActivityAttemptServiceTests {
     @Test
     void completeAttemptScoresZeroWhenEveryAnswerWasWrong() {
         ActivityAttempt attempt = ActivityAttempt.start(CHILD_ID, ACTIVITY_VERSION_ID, null, null, Instant.now());
-        when(attemptRepository.findById(ATTEMPT_ID)).thenReturn(Optional.of(withId(attempt, ATTEMPT_ID)));
+        when(attemptRepository.findByIdForUpdate(ATTEMPT_ID)).thenReturn(Optional.of(withId(attempt, ATTEMPT_ID)));
         UUID firstQuestion = UUID.randomUUID();
         UUID secondQuestion = UUID.randomUUID();
         when(activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(ACTIVITY_VERSION_ID))
@@ -125,7 +126,7 @@ class ActivityAttemptServiceTests {
     void completingAnAlreadyCompletedAttemptIsARetrySafeNoOpAndDoesNotRescoreIt() {
         ActivityAttempt attempt = ActivityAttempt.start(CHILD_ID, ACTIVITY_VERSION_ID, null, null, Instant.now());
         attempt.complete(Instant.now(), new BigDecimal("50.00"));
-        when(attemptRepository.findById(ATTEMPT_ID)).thenReturn(Optional.of(withId(attempt, ATTEMPT_ID)));
+        when(attemptRepository.findByIdForUpdate(ATTEMPT_ID)).thenReturn(Optional.of(withId(attempt, ATTEMPT_ID)));
 
         ActivityAttempt result = service.completeAttempt(ATTEMPT_ID);
 
@@ -138,7 +139,7 @@ class ActivityAttemptServiceTests {
         ActivityAttempt attempt = ActivityAttempt.start(CHILD_ID, ACTIVITY_VERSION_ID, null, null, Instant.now());
         UUID answeredQuestion = UUID.randomUUID();
         UUID missingQuestion = UUID.randomUUID();
-        when(attemptRepository.findById(ATTEMPT_ID)).thenReturn(Optional.of(withId(attempt, ATTEMPT_ID)));
+        when(attemptRepository.findByIdForUpdate(ATTEMPT_ID)).thenReturn(Optional.of(withId(attempt, ATTEMPT_ID)));
         when(activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(ACTIVITY_VERSION_ID))
                 .thenReturn(requiredItems(answeredQuestion, missingQuestion));
         when(answerRecordRepository.findByActivityAttemptId(ATTEMPT_ID))

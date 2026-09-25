@@ -113,14 +113,30 @@ public class AdaptiveEngine {
     @Transactional
     public Optional<Recommendation> recommendNext(UUID childId, UUID skillId, UUID learningPathId,
                                                    UUID justCompletedActivityVersionId) {
+        Decision decision = decide(childId, skillId, learningPathId, justCompletedActivityVersionId);
+        return decision.placedItem().map(item -> new Recommendation(decision.direction(), decision.targetSkillId(), item));
+    }
+
+    /**
+     * Battle 5D: the full outcome of one adaptive decision - including CONTINUE and a
+     * REINFORCEMENT/CHALLENGE for which no activity could be placed - so the caller
+     * that runs it on completion can record what was decided, not only what was
+     * placed. Empty when the child has no evidence for the skill yet.
+     */
+    public record Decision(Direction direction, UUID skillId, UUID targetSkillId, Optional<LearningPathItem> placedItem) {
+    }
+
+    /** Decides and applies an adaptive step, reporting the direction even when nothing is placed. */
+    @Transactional
+    public Decision decide(UUID childId, UUID skillId, UUID learningPathId, UUID justCompletedActivityVersionId) {
         Optional<LearnerSkillState> maybeState = skillStateRepository.findByChildIdAndSkillId(childId, skillId);
         if (maybeState.isEmpty()) {
-            return Optional.empty();
+            return new Decision(Direction.CONTINUE, skillId, skillId, Optional.empty());
         }
 
         Direction direction = decideDirection(maybeState.get());
         if (direction == Direction.CONTINUE) {
-            return Optional.empty();
+            return new Decision(Direction.CONTINUE, skillId, skillId, Optional.empty());
         }
 
         UUID targetSkillId = direction == Direction.REINFORCEMENT
@@ -140,7 +156,7 @@ public class AdaptiveEngine {
         Optional<ActivityVersion> candidate = pickActivity(
                 targetSkillId, direction, justCompletedActivityVersionId, completedActivityVersionIds);
         if (candidate.isEmpty()) {
-            return Optional.empty();
+            return new Decision(direction, skillId, targetSkillId, Optional.empty());
         }
 
         // A recommendation endpoint is intentionally retryable.  Do not append a
@@ -155,13 +171,13 @@ public class AdaptiveEngine {
                 .findFirst();
 
         if (existingPlacement.isPresent()) {
-            return Optional.of(new Recommendation(direction, targetSkillId, existingPlacement.get()));
+            return new Decision(direction, skillId, targetSkillId, existingPlacement);
         }
 
         LearningPathItem inserted = learningPathService.appendItem(
                 learningPathId, candidate.get().getId(), LearningPathItemSource.ADAPTIVE);
 
-        return Optional.of(new Recommendation(direction, targetSkillId, inserted));
+        return new Decision(direction, skillId, targetSkillId, Optional.of(inserted));
     }
 
     private Direction decideDirection(LearnerSkillState state) {

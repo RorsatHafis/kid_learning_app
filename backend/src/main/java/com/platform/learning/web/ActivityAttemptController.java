@@ -1,20 +1,10 @@
 package com.platform.learning.web;
 
-import com.platform.content.entity.ActivitySkill;
-import com.platform.content.entity.ActivityVersion;
-import com.platform.content.repository.ActivitySkillRepository;
-import com.platform.content.service.ActivityService;
 import com.platform.family.service.FamilyAccessGuard;
-import com.platform.learner.service.AdaptiveEngine;
 import com.platform.learning.entity.ActivityAttempt;
-import com.platform.learning.entity.ActivityAttemptStatus;
 import com.platform.learning.entity.AnswerRecord;
-import com.platform.learning.entity.LearningPathItem;
-import com.platform.learning.entity.LearningPathItemSource;
 import com.platform.learning.service.ActivityAttemptService;
-import com.platform.learning.service.LearningPathService;
-import com.platform.review.entity.ReviewItem;
-import com.platform.review.service.SmartReviewService;
+import com.platform.learning.service.PostCompletionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.platform.learning.web.ActivityAttemptDtos.AdaptiveRecommendationResponse;
@@ -42,8 +31,9 @@ import static com.platform.learning.web.ActivityAttemptDtos.SubmitAnswerRequest;
  * for the transport layer. The scoring/evidence/mastery part of that chain already
  * happened (ActivityAttemptService -&gt; AnswerSubmissionWriter -&gt; MasteryEngine, fixed
  * earlier this session); this controller is what makes it reachable over HTTP at
- * all. "determine next activity" is {@link #getAdaptiveNext}; Smart Review is
- * {@link #getSmartReviewCheck} - see their javadocs.
+ * all. "Determine next activity" (Adaptive Engine, Smart Review) happens inside
+ * completion since Battle 5D - see {@link PostCompletionService}; {@link #getAdaptiveNext}
+ * and {@link #getSmartReviewCheck} only read what it decided.
  *
  * Every attempt-scoped endpoint loads the attempt first and guards on its
  * {@code childId}, rather than trusting a childId supplied by the client -
@@ -53,23 +43,13 @@ import static com.platform.learning.web.ActivityAttemptDtos.SubmitAnswerRequest;
 public class ActivityAttemptController {
 
     private final ActivityAttemptService activityAttemptService;
-    private final ActivityService activityService;
-    private final ActivitySkillRepository activitySkillRepository;
-    private final LearningPathService learningPathService;
-    private final AdaptiveEngine adaptiveEngine;
-    private final SmartReviewService smartReviewService;
+    private final PostCompletionService postCompletionService;
     private final FamilyAccessGuard familyAccessGuard;
 
-    public ActivityAttemptController(ActivityAttemptService activityAttemptService, ActivityService activityService,
-                                      ActivitySkillRepository activitySkillRepository,
-                                      LearningPathService learningPathService, AdaptiveEngine adaptiveEngine,
-                                      SmartReviewService smartReviewService, FamilyAccessGuard familyAccessGuard) {
+    public ActivityAttemptController(ActivityAttemptService activityAttemptService,
+                                      PostCompletionService postCompletionService, FamilyAccessGuard familyAccessGuard) {
         this.activityAttemptService = activityAttemptService;
-        this.activityService = activityService;
-        this.activitySkillRepository = activitySkillRepository;
-        this.learningPathService = learningPathService;
-        this.adaptiveEngine = adaptiveEngine;
-        this.smartReviewService = smartReviewService;
+        this.postCompletionService = postCompletionService;
         this.familyAccessGuard = familyAccessGuard;
     }
 
@@ -150,16 +130,12 @@ public class ActivityAttemptController {
     }
 
     /**
-     * The Adaptive Engine entry point: derives the (first) skill the just-completed
-     * activity addresses, hands it to {@link AdaptiveEngine#recommendNext}, and - if
-     * a recommendation was made - the new ADAPTIVE LearningPathItem is already
-     * appended to the path by the time this returns; {@code insertedLearningPathItemId}
-     * in the response is what the frontend should present as "what's next."
-     * Returns 204 (no body) when there's nothing to recommend yet: the attempt isn't
-     * COMPLETED, its activity is untagged with any skill, it isn't on a
-     * LearningPath at all (free practice), or there's no published activity
-     * reachable for the chosen target skill - all legitimate non-error outcomes, not
-     * failures.
+     * Battle 5D: a compatibility READ. Completing the attempt already made and recorded
+     * the adaptive decision (PostCompletionService); this returns what that decision
+     * placed on the path and never writes, so neither calling it nor skipping it
+     * changes the child's learning state. 204 when nothing was placed: the decision was
+     * CONTINUE, no activity was available, the attempt isn't completed, or it was free
+     * practice.
      */
     @PostMapping("/api/v1/activity-attempts/{attemptId}/adaptive-next")
     public ResponseEntity<AdaptiveRecommendationResponse> getAdaptiveNext(@PathVariable UUID attemptId,
@@ -167,41 +143,18 @@ public class ActivityAttemptController {
         ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
         familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
 
-        Optional<SkillContext> context = deriveSkillContext(attempt);
-        if (context.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-
-        Optional<AdaptiveEngine.Recommendation> recommendation = adaptiveEngine.recommendNext(
-                attempt.getChildId(), context.get().skillId(), context.get().currentItem().getLearningPathId(),
-                attempt.getActivityVersionId());
-
-        return recommendation
-                .map(rec -> ResponseEntity.ok(new AdaptiveRecommendationResponse(
-                        rec.direction().name(), rec.targetSkillId(), rec.insertedItem().getId(),
-                        rec.insertedItem().getActivityVersionId())))
+        return postCompletionService.findPlacedAdaptiveStep(attemptId)
+                .map(step -> ResponseEntity.ok(new AdaptiveRecommendationResponse(
+                        step.direction(), step.targetSkillId(), step.learningPathItemId(), step.activityVersionId())))
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     /**
-     * The Smart Review entry point, run alongside (not instead of) the Adaptive
-     * Engine on the same just-completed attempt. Three things happen, in order:
-     * <ol>
-     *   <li>if the just-completed attempt's LearningPathItem was itself
-     *       {@code source == REVIEW}, the outcome is recorded against that skill's
-     *       ReviewItem and its schedule is rescheduled (SM-2-style) -
-     *       {@code reviewOutcomeRecorded} in the response;</li>
-     *   <li>the skill is re-evaluated against current mastery - flagged for review,
-     *       unflagged, or left alone - {@code flaggedForReview} in the response;</li>
-     *   <li>if anything for this child is now due (this skill or any other
-     *       previously-flagged one), one REVIEW LearningPathItem is appended to the
-     *       path - {@code insertedLearningPathItemId} in the response, or absent if
-     *       nothing is due yet.</li>
-     * </ol>
-     * "Successful" for step 1 is majority-correct across the attempt's own answers
-     * (at least half correct) - a documented, simple choice, not the same number as
-     * the skill's overall mastery probability, which reflects the whole history,
-     * not just this one attempt.
+     * Battle 5D: a compatibility READ. Completing the attempt already recorded any
+     * review outcome, re-evaluated Smart Review for every skill the activity exercises,
+     * and placed a due review. This reports the persisted result - the review outcome,
+     * whether the governing skill is flagged, and the review waiting on the path -
+     * without writing. 204 for an attempt that isn't completed or was free practice.
      */
     @PostMapping("/api/v1/activity-attempts/{attemptId}/smart-review-check")
     public ResponseEntity<SmartReviewCheckResponse> getSmartReviewCheck(@PathVariable UUID attemptId,
@@ -209,49 +162,11 @@ public class ActivityAttemptController {
         ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
         familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
 
-        Optional<SkillContext> context = deriveSkillContext(attempt);
-        if (context.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        UUID childId = attempt.getChildId();
-        UUID skillId = context.get().skillId();
-        UUID learningPathId = context.get().currentItem().getLearningPathId();
-
-        boolean outcomeRecorded = false;
-        if (context.get().currentItem().getSource() == LearningPathItemSource.REVIEW) {
-            List<AnswerRecord> answers = activityAttemptService.listAnswers(attemptId);
-            boolean successful = !answers.isEmpty()
-                    && answers.stream().filter(AnswerRecord::isCorrect).count() * 2 >= answers.size();
-            smartReviewService.recordOutcomeForSkill(childId, skillId, attemptId, successful);
-            outcomeRecorded = true;
-        }
-
-        Optional<ReviewItem> flagged = smartReviewService.evaluateAndSchedule(childId, skillId);
-        Optional<LearningPathItem> inserted = smartReviewService.insertDueReviewOnPath(childId, learningPathId);
-
-        return ResponseEntity.ok(new SmartReviewCheckResponse(
-                outcomeRecorded, flagged.isPresent(), skillId,
-                inserted.map(LearningPathItem::getId).orElse(null),
-                inserted.map(LearningPathItem::getActivityVersionId).orElse(null)));
-    }
-
-    /** Shared by {@link #getAdaptiveNext} and {@link #getSmartReviewCheck}: both need "which skill, on which path" from a completed attempt. */
-    private Optional<SkillContext> deriveSkillContext(ActivityAttempt attempt) {
-        if (attempt.getStatus() != ActivityAttemptStatus.COMPLETED || attempt.getLearningPathItemId() == null) {
-            return Optional.empty();
-        }
-
-        ActivityVersion activityVersion = activityService.getVersion(attempt.getActivityVersionId());
-        List<ActivitySkill> taggedSkills = activitySkillRepository.findByActivityId(activityVersion.getActivityId());
-        if (taggedSkills.isEmpty()) {
-            return Optional.empty();
-        }
-
-        LearningPathItem currentItem = learningPathService.getItem(attempt.getLearningPathItemId());
-        return Optional.of(new SkillContext(taggedSkills.get(0).getSkillId(), currentItem));
-    }
-
-    private record SkillContext(UUID skillId, LearningPathItem currentItem) {
+        return postCompletionService.findReviewState(attempt)
+                .map(state -> ResponseEntity.ok(new SmartReviewCheckResponse(
+                        state.reviewOutcomeRecorded(), state.flaggedForReview(), state.skillId(),
+                        state.pendingReviewLearningPathItemId(), state.pendingReviewActivityVersionId())))
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
 }

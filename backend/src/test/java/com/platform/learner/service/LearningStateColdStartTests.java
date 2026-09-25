@@ -106,12 +106,20 @@ class LearningStateColdStartTests {
         when(learningPathService.appendItem(eq(PATH), any(UUID.class), any())).thenAnswer(i ->
                 LearningPathItem.place(PATH, i.getArgument(1), 0, i.getArgument(2), Instant.now()));
 
-        when(reviewItemRepository.findByChildIdAndSkillId(CHILD, SKILL)).thenReturn(Optional.empty());
-        when(reviewItemRepository.save(any(ReviewItem.class))).thenAnswer(i -> {
-            ReviewItem item = i.getArgument(0); // JPA would assign the id on persist
-            ReflectionTestUtils.setField(item, "id", UUID.randomUUID());
-            return item;
+        // Battle 5D (N2): review items are created with insert-if-absent and then read back
+        // under a row lock; this stands in for that table.
+        java.util.concurrent.atomic.AtomicReference<ReviewItem> storedReviewItem = new java.util.concurrent.atomic.AtomicReference<>();
+        when(reviewItemRepository.insertIfAbsent(any(UUID.class), eq(CHILD), eq(SKILL))).thenAnswer(i -> {
+            if (storedReviewItem.get() != null) {
+                return 0;
+            }
+            ReviewItem item = ReviewItem.create(CHILD, SKILL);
+            ReflectionTestUtils.setField(item, "id", i.getArgument(0));
+            storedReviewItem.set(item);
+            return 1;
         });
+        when(reviewItemRepository.findByChildIdAndSkillIdForUpdate(CHILD, SKILL))
+                .thenAnswer(i -> Optional.ofNullable(storedReviewItem.get()));
         when(reviewScheduleRepository.findByReviewItemId(any(UUID.class))).thenReturn(Optional.empty());
         when(reviewScheduleRepository.save(any(ReviewSchedule.class))).thenAnswer(i -> i.getArgument(0));
     }

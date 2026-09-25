@@ -35,7 +35,6 @@ type Phase =
   /** The attempt IS completed and saved; only the adaptive / smart-review
    * follow-up failed. Both endpoints are safe to call again for the same
    * attempt, so this state offers a retry instead of pretending it worked. */
-  | { kind: "next-steps-failed"; attemptId: string; score: number | null }
   | { kind: "completed"; score: number | null; hasMore: boolean };
 
 /** The server's recorded answer for this question in this attempt, if any. */
@@ -73,20 +72,13 @@ export function PlaySession() {
     }
   }, [childId]);
 
-  /** Adaptive Engine + Smart Review for a completed attempt. They run
-   * concurrently; the backend serializes their path insertions (per-path
-   * lock), so this needs no client-side ordering to stay consistent. */
-  const runNextSteps = useCallback(
-    async (attemptId: string, score: number | null) => {
-      setPhase({ kind: "completing" });
-      const results = await Promise.allSettled([
-        activityAttemptApi.adaptiveNext(attemptId),
-        activityAttemptApi.smartReviewCheck(attemptId),
-      ]);
-      if (results.some((result) => result.status === "rejected")) {
-        setPhase({ kind: "next-steps-failed", attemptId, score });
-        return;
-      }
+  /** Completion is the whole learning-state transition: by the time complete
+   * returns, the backend has recorded evidence and made the Adaptive Engine and
+   * Smart Review decisions in the same transaction (Battle 5D), so there is no
+   * follow-up call whose failure could leave a completed activity without its
+   * next steps. All that's left is to read whether the path has more. */
+  const showCompleted = useCallback(
+    async (score: number | null) => {
       setPhase({ kind: "completed", score, hasMore: await hasPendingWork() });
     },
     [hasPendingWork],
@@ -105,9 +97,9 @@ export function PlaySession() {
         setPhase({ kind: "error", message: SAVE_FAILED });
         return;
       }
-      await runNextSteps(attemptId, score);
+      await showCompleted(score);
     },
-    [runNextSteps],
+    [showCompleted],
   );
 
   const loadNext = useCallback(async () => {
@@ -236,14 +228,6 @@ export function PlaySession() {
     return (
       <PlayShell childId={childId}>
         <LoadingState label="Saving progress…" />
-      </PlayShell>
-    );
-  }
-
-  if (phase.kind === "next-steps-failed") {
-    return (
-      <PlayShell childId={childId}>
-        <NextStepsFailed childId={childId} onRetry={() => void runNextSteps(phase.attemptId, phase.score)} />
       </PlayShell>
     );
   }
@@ -416,28 +400,6 @@ function FeedbackPanel({ correct, onContinue }: { correct: boolean; onContinue: 
       <Button size="lg" onClick={onContinue}>
         Continue
       </Button>
-    </div>
-  );
-}
-
-function NextStepsFailed({ childId, onRetry }: { childId: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col items-center gap-6 rounded-[32px] border-[6px] border-ink bg-white p-10 text-center shadow-soft">
-      <Sparkles size={48} className="text-brand-amber" />
-      <div>
-        <p className="text-2xl font-extrabold text-ink">Activity complete!</p>
-        <p className="mt-1 text-muted">Your answers are saved, but we couldn't get your next step ready.</p>
-      </div>
-      <div className="flex gap-3">
-        <Button size="lg" onClick={onRetry}>
-          Try again
-        </Button>
-        <Link to={`/parent/children/${childId}`}>
-          <Button size="lg" variant="outline">
-            Done for now
-          </Button>
-        </Link>
-      </div>
     </div>
   );
 }

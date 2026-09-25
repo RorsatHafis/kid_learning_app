@@ -83,22 +83,31 @@ public class SmartReviewService {
     @Transactional
     public Optional<ReviewItem> evaluateAndSchedule(UUID childId, UUID skillId) {
         Optional<LearnerSkillState> maybeState = skillStateRepository.findByChildIdAndSkillId(childId, skillId);
-        Optional<ReviewItem> existing = reviewItemRepository.findByChildIdAndSkillId(childId, skillId);
 
         boolean needsReview = maybeState.isPresent()
                 && maybeState.get().getEvidenceCount() >= MIN_EVIDENCE_FOR_REVIEW
                 && maybeState.get().getMasteryProbability().compareTo(REVIEW_TRIGGER_THRESHOLD) < 0;
+
+        // Battle 5D (N2): create-if-absent is decided by the database, then the row is
+        // locked, so concurrent evaluations of one (child, skill) converge on a single
+        // item and apply their status/schedule changes one at a time.
+        if (needsReview) {
+            reviewItemRepository.insertIfAbsent(UUID.randomUUID(), childId, skillId);
+        }
+        Optional<ReviewItem> existing = reviewItemRepository.findByChildIdAndSkillIdForUpdate(childId, skillId);
 
         if (!needsReview) {
             existing.filter(item -> item.getStatus() == ReviewItemStatus.ACTIVE).ifPresent(ReviewItem::retire);
             return Optional.empty();
         }
 
-        ReviewItem item = existing.orElseGet(() -> reviewItemRepository.save(ReviewItem.create(childId, skillId)));
+        ReviewItem item = existing.orElseThrow(() -> new IllegalStateException(
+                "Review item for child %s, skill %s missing right after insert-if-absent".formatted(childId, skillId)));
         if (item.getStatus() == ReviewItemStatus.RETIRED) {
             item.reactivate();
         }
 
+        // Serialized by the item lock above; uq_review_schedules_review_item is the backstop.
         reviewScheduleRepository.findByReviewItemId(item.getId())
                 .orElseGet(() -> reviewScheduleRepository.save(ReviewSchedule.initial(item.getId(), Instant.now())));
 
@@ -124,11 +133,7 @@ public class SmartReviewService {
         // lock - otherwise two simultaneous calls both see "no pending review" and both
         // append one. The lock is held until this transaction commits.
         learningPathService.lockPath(learningPathId);
-        Optional<LearningPathItem> pendingReview = learningPathService.listItems(learningPathId).stream()
-                .filter(item -> item.getSource() == LearningPathItemSource.REVIEW)
-                .filter(item -> item.getStatus() == LearningPathItemStatus.PENDING
-                        || item.getStatus() == LearningPathItemStatus.IN_PROGRESS)
-                .findFirst();
+        Optional<LearningPathItem> pendingReview = pendingReviewOn(learningPathId);
         if (pendingReview.isPresent()) {
             return pendingReview;
         }
@@ -189,9 +194,64 @@ public class SmartReviewService {
      */
     @Transactional
     public ReviewAttempt recordOutcomeForSkill(UUID childId, UUID skillId, UUID activityAttemptId, boolean successful) {
-        ReviewItem item = reviewItemRepository.findByChildIdAndSkillId(childId, skillId)
+        ReviewItem item = reviewItemRepository.findByChildIdAndSkillIdForUpdate(childId, skillId)
                 .orElseThrow(() -> new ResourceNotFoundException("ReviewItem for child/skill", skillId));
         return recordOutcome(item.getId(), activityAttemptId, successful);
+    }
+
+    /**
+     * Battle 5D: records the outcome of a completed REVIEW placement, on the server as
+     * part of completion. A REVIEW path item does not record which review item it was
+     * placed for, so this uses the child's review item for one of the completed
+     * activity's skills: ACTIVE before RETIRED, then earliest due (the order
+     * {@link #insertDueReviewOnPath} places reviews in), then skill id. That is
+     * deterministic and, for a single-skill activity, exactly the one it was placed for.
+     *
+     * <p>Returns empty, recording nothing, when none of those skills has a review item.
+     * That only happens if the activity's skill tags changed after the review was
+     * placed. The review then stays due and is placed again, so nothing is lost.
+     */
+    @Transactional
+    public Optional<ReviewAttempt> recordReviewCompletion(UUID childId, List<UUID> skillIdsInLockOrder,
+                                                          UUID activityAttemptId, boolean successful) {
+        List<ReviewItem> candidates = skillIdsInLockOrder.stream()
+                .map(skillId -> reviewItemRepository.findByChildIdAndSkillIdForUpdate(childId, skillId))
+                .flatMap(Optional::stream)
+                .toList();
+        Comparator<ReviewItem> activeFirstThenEarliestDue = Comparator
+                .comparing((ReviewItem item) -> item.getStatus() != ReviewItemStatus.ACTIVE)
+                .thenComparing(item -> reviewScheduleRepository.findByReviewItemId(item.getId())
+                        .map(ReviewSchedule::getDueAt).orElse(Instant.MAX))
+                .thenComparing(ReviewItem::getSkillId);
+        return candidates.stream()
+                .min(activeFirstThenEarliestDue)
+                .map(item -> recordOutcome(item.getId(), activityAttemptId, successful));
+    }
+
+    /** Read-only: the REVIEW placement currently waiting on this path, if any. */
+    @Transactional(readOnly = true)
+    public Optional<LearningPathItem> findPendingReviewOnPath(UUID learningPathId) {
+        return pendingReviewOn(learningPathId);
+    }
+
+    /** Read-only: the review outcome recorded for this activity attempt, if it was a review. */
+    @Transactional(readOnly = true)
+    public Optional<ReviewAttempt> findOutcome(UUID activityAttemptId) {
+        return reviewAttemptRepository.findByActivityAttemptId(activityAttemptId);
+    }
+
+    /** Read-only: this child's review item for the skill, in whatever status. */
+    @Transactional(readOnly = true)
+    public Optional<ReviewItem> findItem(UUID childId, UUID skillId) {
+        return reviewItemRepository.findByChildIdAndSkillId(childId, skillId);
+    }
+
+    private Optional<LearningPathItem> pendingReviewOn(UUID learningPathId) {
+        return learningPathService.listItems(learningPathId).stream()
+                .filter(item -> item.getSource() == LearningPathItemSource.REVIEW)
+                .filter(item -> item.getStatus() == LearningPathItemStatus.PENDING
+                        || item.getStatus() == LearningPathItemStatus.IN_PROGRESS)
+                .findFirst();
     }
 
     @Transactional(readOnly = true)

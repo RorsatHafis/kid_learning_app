@@ -6,13 +6,12 @@ project actually stands against it. Where the two disagree on a verification lev
 evidence recorded here is newer (see §26 note under Battle 4A) — `CLAUDE.md` is not edited
 from here.
 
-- **Last reconciled:** 2026-09-25, after Battle 3R.
-- **Reconciled against:** current source, Flyway migrations V1–V35, the last full test run
-  (`./mvnw -Pintegration test`: **168 run, 166 pass, 2 known stale failures**), and the
+- **Last reconciled:** 2026-09-25, after Battle 5D.
+- **Reconciled against:** current source, Flyway migrations V1–V36, the last full test run
+  (`./mvnw -Pintegration test`: **177 run, 176 pass, 1 known stale failure** — TD-04), and the
   runtime/browser evidence gathered in each battle.
-- **Not under version control:** neither `D:\Bookeyond-Kid` nor `backend/` is a git
-  repository. The only checkpoint is `Bookeyond-Kid-Backend-Battle4-SecurityBoundaryIntegrity.zip`
-  (Battle 4). Everything since exists only in this working tree — see TD-01.
+- **Version control:** git repository at `D:\Bookeyond-Kid` (baseline commit `4db89ad`,
+  then one commit per battle). TD-01 resolved.
 
 ### How to maintain this document
 
@@ -42,9 +41,10 @@ Verification levels (`CLAUDE.md` §6): INSPECTED · COMPILED · TESTED · RUNTIM
 
 **BACKEND FOUNDATION: integrity baseline established — not production-complete.**
 The core learning loop (content → path → attempt → evidence → mastery → adaptive/review →
-parent insight), authentication/session state, configuration and content versioning have
-each been hardened and verified to the levels below. Known open defects remain in the
-post-completion loop (L8, N2, L7), tenancy (N7) and security hardening (rate limiting).
+parent insight) is server-authoritative end to end since 5D, and authentication/session
+state, configuration and content versioning have each been hardened and verified to the
+levels below. Open items remain in tenancy (N7), learning-loop policy (PD-11, PD-12,
+OD-10) and security hardening (rate limiting).
 
 **FULL BOOKEYOND KID PRODUCT: NOT COMPLETE.**
 The child experience, parent dashboard depth, school domain authorization, admin/content
@@ -60,7 +60,7 @@ describe the product as complete because the backend integrity battles are.
 | **2A** | Learning-path / attempt integrity | An attempt's path item must belong to the child and pin the same ActivityVersion ("Known Backend Fix #2/#2b") | TESTED (unit); RUNTIME VERIFIED (3R: another child's path item → 403) | `ActivityAttemptService.requireLearningPathItemBelongsToChild`; `ActivityAttemptServiceTests` (3 start cases) | Verification level at original acceptance not recorded in the repo |
 | **2B** | Auto-enrollment | Best-effort enrollment when exactly one ACTIVE curriculum matches the child's age hub; never a fabricated default | INSPECTED only | `ChildService.completeAutoEnrollment`, `EnrollmentService.autoEnrollIfUnambiguous` | **No automated test** (no test references `autoEnroll`) → PV |
 | **2C** | Evidence-strength Parent Insight | Claims require minimum evidence; weak evidence is not shown as mastery | TESTED | `ParentInsightService` (`MIN_EVIDENCE_*`); `ObjectiveInsightTruthfulnessTests` (12), `ParentInsightTruthfulnessIntegrationTests` (4) | Extended by 5C |
-| **2D** | Adaptive / Smart Review transactional reliability | Answer persistence, evidence, mastery and the idempotency guard commit in one transaction | TESTED (idempotency, persistence) | `ActivityAttemptService`/`AnswerSubmissionWriter` ("Fix B + Battle 2D"); `IdempotencyServiceTests` (11), `IdempotencyPersistenceIntegrationTests` (3) | End-to-end loop test is red (golden journey, TD-03) |
+| **2D** | Adaptive / Smart Review transactional reliability | Answer persistence, evidence, mastery and the idempotency guard commit in one transaction | TESTED (idempotency, persistence; end-to-end loop via the 5D golden journey) | `ActivityAttemptService`/`AnswerSubmissionWriter` ("Fix B + Battle 2D"); `IdempotencyServiceTests` (11), `IdempotencyPersistenceIntegrationTests` (3) | — |
 | **3** | Content read-back / localization / audio | Learner-safe DTOs (no answer keys); DRAFT never served; an ActivityVersion cannot publish over unpublished questions | TESTED (3R lifecycle tests re-cover the read path) | `ActivityContentController`, `ActivityService.publish`, `ContentLifecycleIntegrationTests` | Localization/audio portion **not re-inspected** in this reconciliation |
 | **4A** | Refresh-token security | Family revocation survives the reuse/race exception (`noRollbackFor`) | TESTED + RUNTIME VERIFIED (via 4D) | `SessionReliabilityIntegrationTests` replay/concurrency cases | `CLAUDE.md` §26 still says COMPILED; the 4D evidence supersedes it |
 | **4B** | System-owned content authorization | Null-owner (system) content writable by ADMIN only | COMPILED; RUNTIME (positive path only: ADMIN republished system questions in 3R) | `ContentAccessGuard.requireOwnerWrite` | **No test that a TEACHER is refused** system content → PV |
@@ -72,6 +72,7 @@ describe the product as complete because the backend integrity battles are.
 | **N5** | CORS | `CORS_ALLOWED_ORIGINS` actually bound; exact-origin validation (no `*`/`null`/wildcards); no credentials; required outside local | TESTED; RUNTIME; **BROWSER VERIFIED** (allowed vs untrusted origin, dev proxy flow) | `SecurityConfig`; `CorsPolicyIntegrationTests` (10), `CorsAllowedOriginsValidationTests` (14) | Production origin undecided (OD-12) |
 | **N6** | Configuration binding | One contract: documented env names bind in every profile; missing/invalid values fail startup; relaxed-binding bypass variables refused | TESTED; RUNTIME VERIFIED (prod, staging, local) | `ConfigurationContract`, `SecurityProperties`, `MasteryProperties`, `application*.yaml`; `ConfigurationContractTests` (39) | `docker compose up` not run; `.env.example` stale (TD-02) |
 | **3R** | Content lifecycle | **L4/L5 core fix accepted.** RETIRED = superseded; learner-visible = PUBLISHED or RETIRED; new work = current PUBLISHED only; existing path items and in-progress attempts keep their pinned version; history reconstructable | TESTED (8, with a mutation check); RUNTIME VERIFIED (journeys A–F) | `PublishableVersion.wasPublished`, `ActivityAttemptService.startAttempt`, `ContentLifecycleIntegrationTests` | **Broader version-consumer follow-up still open (3R.1).** Not browser-verified |
+| **5D** | Core learning loop: server-authoritative post-completion | Completing an attempt, in one transaction under the attempt's row lock, records a REVIEW placement's outcome, re-evaluates Smart Review for every exercised skill, makes and records exactly one adaptive decision (`adaptation_decisions`, unique per attempt — V36), and places a due review. No client follow-up is needed (L8). Review items and streaks are created race-free with `INSERT … ON CONFLICT DO NOTHING` + row lock (N2, N8); answers take the attempt lock (N9). `/adaptive-next` and `/smart-review-check` became read-only compatibility views and the frontend no longer calls them. Golden journey rehabilitated (TD-03). Multi-skill decisions made deterministic under a provisional rule (L7 → PD-11) | TESTED (golden journey + 9 completion integration tests, 3 mutation checks); RUNTIME VERIFIED (journeys A–E on persisted state); **BROWSER VERIFIED** (UI play-through: complete, then reads only; reload resumes the next state) | `PostCompletionService`, `ActivityAttemptService.completeAttempt`, `SmartReviewService`, `ReviewItemRepository`, `LearnerStreakRepository`, `AdaptationDecision`, V36; `GoldenLearningJourneyIntegrationTests`, `LearningLoopCompletionIntegrationTests`; `PlaySession.tsx` | PD-11, PD-12, OD-10, TD-06, TD-08, TD-09 |
 | **4C** | School ↔ child authorization | **NOT IMPLEMENTED** — design only | — | Battle 4C design report | PD-01 |
 
 ---
@@ -81,24 +82,28 @@ describe the product as complete because the backend integrity battles are.
 | ID | Finding | Status | Evidence | Next dependency |
 |---|---|---|---|---|
 | **3R.1** | Remaining version consumers after 3R: challenge lifecycle (OD-09), adaptive version-completion (OD-10), lesson/assessment lifecycle audit (OD-08), localization/media ↔ version relationships, withdrawal semantics (PD-04) | OD / PD | 3R report §7, §14 | PD-04 before any Content Studio work |
-| **L7** | Multi-skill activities: adaptive/review decisions use an arbitrary first skill of the activity | OD | Carried from 5A/5B reports (`deriveSkillContext`) | Battle 5D design |
-| **L8** | Adaptive and Smart Review decisions run only if the client calls `/adaptive-next` and `/smart-review-check` after completion | OD | `ActivityAttemptController`; the frontend drives these calls | **Battle 5D** |
-| **N2** | Smart Review item find-or-create is not serialized (race can duplicate review items) | OD | 5A reconnaissance; **not re-verified in this reconciliation** | Battle 5D |
+| **L7** | Multi-skill activities: decisions used an unordered `get(0)` skill | **Technically resolved (5D); policy open** | Review is evaluated for every exercised skill; the single adaptive decision is governed by the lowest-mastery exercised skill (ties by id) and the decision context records it. Integration test + runtime journey E | PD-11 |
+| **L8** | Adaptive and Smart Review decisions ran only if the client called `/adaptive-next` and `/smart-review-check` | **RESOLVED (5D)** | Decisions happen inside completion; golden journey and completion tests call nothing else; the browser makes no follow-up calls | — |
+| **N2** | Smart Review find-or-create race (concurrent evaluations failed on the duplicate key) | **RESOLVED (5D)** | `INSERT … ON CONFLICT (child_id, skill_id) DO NOTHING` + `FOR UPDATE`; 8-way concurrency test; the mutation check fails it | — |
+| **N8** | Streak find-or-create race inside completion: concurrent first completions for one child failed, and concurrent updates hit the version check | **RESOLVED (5D)** | Found in 5D; same insert-if-absent + row lock | — |
+| **N9** | An answer could be written after completion had scored the attempt (no shared lock) | **RESOLVED (5D)** | Answer submission and completion both take the attempt row lock; the answer re-checks IN_PROGRESS | — |
 | **L9** | MATCHING has no scoring or interaction; refused at publish | FP / PD | `QuestionService.validateCompleteness`; `AnswerScoringServiceTests.matchingIsNeverScored`; frontend renders none | Interaction architecture phase |
 | **N7** | Teacher-authored content tagged to a system skill is placed into **every** family child's path for that skill | OD (tenancy / content governance) | Raised in Battle 5 reconnaissance; observed again at runtime in 3R journey B (a teacher activity landed in a new family learner's path) | PD-01 / PD-05 |
-| **TD-03** | Golden learning journey test is stale: it answers 1 of 2 required questions, so completion is refused (ERROR) since 5A | TD + PD on test intent | `GoldenLearningJourneyIntegrationTests` | Decide intent, then rehabilitate (first step of 5D) |
+| **TD-03** | Golden learning journey test was stale (answered 1 of 2 required questions; drove decisions by hand) | **RESOLVED (5D)** | Rewritten to play each path through next → start → answer all → complete and assert only persisted state; green | — |
 | **TD-04** | PRINCIPAL registration test expects rejection; `AuthController` returns 202 pending approval | TD + PD-07 | `PublicRegistrationRoleSecurityTests.registrationRequestingPrincipalIsRejected` | PD-07 |
 | **OD-01** | No rate limiting anywhere (refresh, login, register) | OD | No limiter in source or pom; lockout covers password guessing only | Security hardening battle |
 | **PD-02** | Access tokens stay valid for up to 15 min after logout/revocation/disable (stateless JWT) | PD | 4D §13 | Product/security decision |
 | **TD-05** | `account_sessions.replaced_by_session_id` has no index; family walks are one query per link | TD | 4D §13; migrations | Index migration (small) |
 | **OD-12** | Production CORS / deployment topology undecided: no production frontend origin; compose `frontend` builds from nonexistent `../YulMe-Frontend`; no production frontend serving config; staging lacks `forward-headers-strategy` | OD / PD | N5 §2, §9 | Deployment decision |
 | **TD-02** | `backend/.env.example` is stale (JWT_ISSUER shown optional, JWT_SECRET/JWT_REFRESH_TOKEN_TTL/DB_USERNAME/DB_PASSWORD missing, CORS default wording) | TD | N6 §9; **the file is blocked by the user's permission settings** | User edit or permission change |
-| **TD-06** | Adaptive threshold/configuration drift: `AdaptiveEngine` hard-codes 0.4/0.8 and `MIN_EVIDENCE_*` (also in `SmartReviewService`, `ParentInsightService`), while `MASTERY_OBJECTIVE_THRESHOLD` is configurable and unlinked | TD / PD | Source constants | Battle 5D or a config follow-up |
+| **TD-06** | Threshold/configuration drift: `AdaptiveEngine` hard-codes 0.4/0.8 and `MIN_EVIDENCE_*` (also `SmartReviewService` 0.5/2 and `ParentInsightService`), while `MASTERY_OBJECTIVE_THRESHOLD` is configurable and unlinked | TD / PD — reviewed in 5D: distinct concepts (skill-level direction vs objective mastery), no correctness defect in the completion decisions, left unchanged | Source constants | Config follow-up if thresholds become operator-tunable |
 | **PD-04** | Withdrawal / unsafe-content semantics: no way to pull a wrong or harmful version; RETIRED only means superseded, so a wrong answer key keeps being served wherever pinned | PD | 3R §7 #7, §13 | Product decision |
 | **OD-08** | Lesson and assessment versions share the lifecycle; their learner consumers are not audited | OD (unaudited) | 3R §14 | 3R.1 |
 | **OD-09** | Challenges pin one exact ActivityVersion; progress counts only that version, so it stalls once children move on to v2 | OD / PD | `Challenge.activityVersionId`, `ChallengeService.progress` | PD: count by activity or by version |
-| **OD-10** | Adaptive treats "completed" per version id: a child who finished v1 can be recommended v2 of the same activity | OD / PD | `AdaptiveEngine.pickActivity` (`completedActivityVersionIds`) | Battle 5D design |
-| **TD-01** | Workspace is not under version control; the only checkpoint is the Battle 4 zip | TD (high) | `git rev-parse` fails at the root and in `backend/` | User: initialise git and commit the baseline |
+| **OD-10** | Adaptive treats "completed" per version id: a child who finished v1 can be recommended v2 of the same activity | OD / PD — **left unchanged in 5D**: not inseparable from the loop, and changing it would set content-version policy | `AdaptiveEngine.pickActivity` (`completedActivityVersionIds`) | Product decision |
+| **TD-01** | Workspace was not under version control | **RESOLVED** | Git baseline `4db89ad` | — |
+| **TD-08** | The compatibility views keep their POST mappings although they now only read | TD (minor) | `ActivityAttemptController` | Convert to GET, or remove once no client needs them |
+| **TD-09** | A REVIEW path item doesn't record which review item it served; completion chooses one deterministically (ACTIVE, then earliest due, then skill id) — exact for single-skill activities | TD | `SmartReviewService.recordReviewCompletion` | Link placement to review item if multi-skill review becomes common |
 | **TD-07** | Resuming an existing attempt answers 201 Created instead of 200 | TD (minor) | 3R runtime journey C | Contract cleanup when attempt APIs are next touched |
 
 ---
@@ -108,10 +113,10 @@ describe the product as complete because the backend integrity battles are.
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
 | Stack | VC | Spring Boot 4.1.1 / Java 21, PostgreSQL 18, Flyway (V1–V35), JPA `ddl-auto: validate`; Vite + React 18 + TypeScript + Tailwind frontend | `pom.xml`, `application.yaml`, `frontend/package.json` | — | — | — |
-| Backend authority | VC | Scores, evidence, mastery, adaptive/review decisions, lifecycle and authorization are server-side | Code across `learning`, `learner`, `review`, `parent` | 2A–5C | L8: the server doesn't *trigger* post-completion decisions itself | 5D |
+| Backend authority | VC | Scores, evidence, mastery, adaptive/review decisions, lifecycle and authorization are server-side; completion itself triggers the decisions | Code across `learning`, `learner`, `review`, `parent`; 5D tests + browser | 2A–5D | — | — |
 | Versioned, pinned content | VC | Immutable published versions; learner references pin exact ids (RESTRICT FKs) | 3R reconstruction | 3, 3R | 3R.1 | — |
 | Observability | PV | Correlation-id filter + MDC in logs; actuator health/info; audit events | `CorrelationIdFilter`, `CorrelationIdFilterTests` (2), `AuditService` tests | — | No metrics/alerting/production log strategy | Release-readiness phase |
-| Version control / checkpoints | TD | **Not a git repository**; one zip checkpoint (Battle 4) | `git rev-parse` fails at root and in `backend/` | — | All work since Battle 4 lives only in the working tree | **TD-01: initialise git and commit the current baseline** (user action/approval) |
+| Version control / checkpoints | VC | Git at the workspace root; baseline `4db89ad`, one commit per battle | `git log` | — | No remote backup configured | User decision |
 
 ## B. Identity / authentication
 
@@ -150,9 +155,9 @@ describe the product as complete because the backend integrity battles are.
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Start / resume / answer / complete / abandon | VC | Server-scored; one IN_PROGRESS attempt per child+version; resume returns the same attempt | `ActivityAttemptServiceTests`; 3R journeys | 2A, 5A, 3R | Resume answers 201, not 200 (TD-07) | — |
+| Start / resume / answer / complete / abandon | VC | Server-scored; one IN_PROGRESS attempt per child+version; resume returns the same attempt; completion and answers serialize on the attempt row lock; completion is idempotent under retry and concurrency | `ActivityAttemptServiceTests`; 3R journeys; 5D completion tests; runtime D1 (6 simultaneous completions → one decision) | 2A, 5A, 3R, 5D | Resume answers 201, not 200 (TD-07) | — |
 | Answer contract | VC | MC = option id; canonical TF/NUMERIC; SHORT_ANSWER trimmed and case-insensitive; invalid → 422 | `AnswerScoringServiceTests` (7) | 5A | L9 | — |
-| Required-question completion | VC | Completion refused until every item is answered | `completeAttemptRejectsAnAttemptWithMissingRequiredAnswers` | 5A | Golden test not updated (TD-03) | 5D |
+| Required-question completion | VC | Completion refused until every item is answered | `completeAttemptRejectsAnAttemptWithMissingRequiredAnswers`; the golden journey answers every question | 5A, 5D | — | — |
 | Duplicate answers / idempotency | VC | Idempotency guard + unique answer per attempt+question (V30) | `IdempotencyServiceTests` (11) | 2D | — | — |
 
 ## F. Evidence / mastery
@@ -168,20 +173,20 @@ describe the product as complete because the backend integrity battles are.
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Recommendation | PV | REINFORCEMENT / CHALLENGE / CONTINUE from mastery + evidence gates; selects current PUBLISHED versions | `AdaptiveEngineTests` (1), cold-start tests, 3R test | 5A, 5B, 3R | L8 (client-triggered), L7, OD-10, TD-06 | **5D** |
-| End-to-end loop coverage | TD | The golden journey (the only E2E loop test) is red | TD-03 | — | Rehabilitate | 5D |
+| Recommendation | VC | Decided on completion, exactly once per attempt and recorded (`adaptation_decisions`, V36): REINFORCEMENT / CHALLENGE / CONTINUE from mastery + evidence gates, current PUBLISHED versions, reusing a waiting placement rather than duplicating it | Golden journey (A challenged, B reinforced on the prerequisite); completion tests; runtime A–E; browser | 5A, 5B, 3R, 5D | Multi-skill policy (PD-11); version-completion (OD-10); TD-06 | PD-11 |
+| End-to-end loop coverage | VC | The golden journey plays two learners' paths through the real services and is green | `GoldenLearningJourneyIntegrationTests`; fails when completion's decisions are removed (mutation check) | 5D | — | — |
 
 ## H. Smart Review
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Flag / schedule / insert / outcome | PV | Evidence-gated flagging; due review inserted under the path lock; current PUBLISHED versions only | Cold-start tests; 3R test and journey E | 2D, 5A, 3R | N2 race; L8 client trigger | **5D** |
+| Flag / schedule / insert / outcome | VC | Run by completion for every exercised skill; race-free item creation (N2); a REVIEW placement's outcome recorded on completion; due review inserted under the path lock; current PUBLISHED versions only | Cold-start tests; 3R test; 5D concurrency tests (8-way evaluation → one item; concurrent completions → one item, one pending REVIEW); runtime D2/D3 | 2D, 5A, 3R, 5D | Free practice doesn't evaluate review (PD-12); TD-09 | PD-12 |
 
 ## I. Progression
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Progress summary / streaks | PV | Completed activities, minutes, streak, path counts | `LearnerProgressController`, `StreakController` | — | No automated tests; no progression model beyond counts | Child/parent product phases |
+| Progress summary / streaks | PV | Completed activities, minutes, streak, path counts; the streak is updated race-free inside completion (N8) | `LearnerProgressController`, `StreakController`; 5D concurrency tests exercise the streak path | 5D | No dedicated progress/streak tests; no progression model beyond counts | Child/parent product phases |
 
 ## J. Parent Insight
 
@@ -237,7 +242,7 @@ describe the product as complete because the backend integrity battles are.
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Play session | PV | `PlaySession.tsx`: next → start → content → answer → complete, inside the parent's session (no child account) | API journeys verified (3R); **no recent browser play-through** | 3R | Child-grade UX, Learning Buddy, motion, audio, accessibility pass (`CLAUDE.md` §18–19) | Child product phase |
+| Play session | PV | `PlaySession.tsx`: next → start → content → answer → complete, then reads next-activity; no follow-up decision calls (5D). Runs inside the parent's session (no child account) | **Browser play-through (5D)**: one activity answered in the UI, completion 200, only reads afterwards, reload resumes the next item | 3R, 5D | Child-grade UX, Learning Buddy, motion, audio, accessibility pass (`CLAUDE.md` §18–19) | Child product phase |
 
 ## R. Admin / content platform
 
@@ -257,7 +262,7 @@ describe the product as complete because the backend integrity battles are.
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Build / lint | PV | `tsc -b` + `vite build` pass; lint 0 errors (1 pre-existing warning) | 4D | 4D | Not re-run after 4D (no frontend changes since) | — |
+| Build / lint | PV | `tsc -b` + `vite build` pass; lint 0 errors (1 pre-existing warning) | Re-run in 5D after the `PlaySession` change | 4D, 5D | No automated frontend tests | Testing phase |
 | Auth / session | VC | See B | Browser (4D) | 4D | — | — |
 | Automated tests | TD | **None** — no test script or framework | `package.json` | — | Unit/component tests; E2E for critical flows | Testing phase |
 | README accuracy | TD | Still says authenticated shells are placeholders; parent/learning/teacher pages now exist | `frontend/README.md` §Current status | — | Update | Next frontend battle |
@@ -266,7 +271,7 @@ describe the product as complete because the backend integrity battles are.
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Backend suite | PV | 168 tests (unit + Testcontainers integration); 166 pass | Last run 2026-09-25 | all | TD-03, TD-04 red; 2B, 4B, challenges, school, progress untested | 5D (golden journey first) |
+| Backend suite | PV | 177 tests (unit + Testcontainers integration); 176 pass | Last run 2026-09-25 (5D) | all | TD-04 red (PD-07); 2B, 4B, challenges, school, progress untested | PD-07; test backfill |
 | CI | TD | **None** (no `.github` or other pipeline) | Repository | — | Every verification is manual | TD-01 then CI |
 | E2E browser automation | FP | Browser verification is manual per battle | Battle reports | — | Automated critical-flow E2E | Testing phase |
 
@@ -300,33 +305,38 @@ and CI. None of these is complete; see sections B, L, M, O–U.
 | PD-08 | Versioned vs identity-level skill mappings | 3R |
 | PD-09 | Subscription / entitlement business model | — |
 | PD-10 | Unstarted path items on a superseded version: keep pinned (current) vs an explicit refresh rule | 3R |
+| PD-11 | Multi-skill activities: one adaptive decision governed by the weakest exercised skill (provisional, current) vs one decision per skill vs a designated primary skill | 5D |
+| PD-12 | Whether free-practice completions (no path item) should evaluate Smart Review; today they record evidence only, as before 5D | 5D |
 
 ---
 
 # CURRENT VERIFIED PROJECT STATE
 
 - **Backend foundation integrity baseline: established.** Accepted and evidenced: 2A, 2B
-  (inspected only), 2C, 2D, 3, 4A, 4B (partial), 4.1, 5A, 5B, 5C, 4D, N5, N6, and 3R
-  (L4/L5 core).
-- **Highest evidence:** the session/auth flow and CORS are BROWSER VERIFIED; configuration
-  and content lifecycle are RUNTIME VERIFIED; the learning-state battles (5A–5C) were
-  RUNTIME VERIFIED at battle time and are TESTED now.
-- **Test suite:** 168 run, 166 pass; the 2 failures are the known stale tests (TD-03, TD-04).
-- **Not under version control;** the last checkpoint is Battle 4.
+  (inspected only), 2C, 2D, 3, 4A, 4B (partial), 4.1, 5A, 5B, 5C, 4D, N5, N6, 3R
+  (L4/L5 core), and **5D (server-authoritative learning loop)**.
+- **Highest evidence:** the session/auth flow, CORS and learning-loop completion are
+  BROWSER VERIFIED; configuration and content lifecycle are RUNTIME VERIFIED; the
+  learning-state battles (5A–5C) were RUNTIME VERIFIED at battle time and are TESTED now,
+  including through the green golden journey.
+- **Test suite:** 177 run, 176 pass; the 1 failure is the known stale PRINCIPAL test (TD-04, PD-07).
+- **Version control:** git, one commit per battle.
 - **FULL BOOKEYOND KID PRODUCT: NOT COMPLETE.**
 
 # REMAINING ENGINEERING GAPS
 
-1. Post-completion loop is client-triggered and race-prone: **L8, N2, L7**, OD-10, TD-06.
-2. End-to-end learning-loop test red (**TD-03**); PRINCIPAL test red (TD-04, needs PD-07).
+1. Learning-loop policy left open by 5D: multi-skill decisions (**PD-11**), free-practice
+   review (PD-12), version-completion (OD-10), thresholds (TD-06); TD-08, TD-09.
+2. PRINCIPAL test red (TD-04, needs PD-07).
 3. Tenancy: teacher content in family paths (**N7**).
 4. Version consumers beyond activities/questions (**3R.1**: OD-08, OD-09, localization/media).
 5. Security hardening: **rate limiting (OD-01)**, `replaced_by_session_id` index (TD-05),
    token storage, identity verification, password reset, 4B negative test.
 6. Deployment: production origin/topology (OD-12), compose frontend context, staging
    forwarded headers, stale `.env.example` (TD-02).
-7. Engineering infrastructure: **no git (TD-01)**, no CI, no frontend tests, no automated E2E;
-   untested areas (2B auto-enrollment, school, challenges, progress/streaks).
+7. Engineering infrastructure: no CI, no remote backup of the git repository, no frontend
+   tests, no automated E2E; untested areas (2B auto-enrollment, school, challenges,
+   progress/streaks).
 8. Dead or unlinked state: `confidence` never read; hard-coded thresholds.
 
 # PRODUCT GAPS
@@ -339,7 +349,7 @@ the open product decisions PD-01 to PD-10.
 
 # FUTURE PHASES
 
-1. **Learning-loop completion:** 5D (L8 + N2 + golden journey), then L7 and adaptive semantics.
+1. **Learning-loop policy:** decide PD-11, PD-12 and OD-10, then small follow-up battles.
 2. **Security hardening:** rate limiting, revocation strategy, token storage, identity
    verification, password reset.
 3. **Content platform:** 3R.1, withdrawal semantics, Content Studio, localization/media.
@@ -350,16 +360,16 @@ the open product decisions PD-01 to PD-10.
 
 # IMMEDIATE NEXT BATTLE
 
-**Prerequisite (user action):** put the workspace under version control and commit this
-baseline (TD-01). This takes minutes and protects every later battle.
+**Battle N7 — Content tenancy boundary (needs PD-05 first).**
+Teacher-authored content tagged to a system skill still flows into every family child's
+learning path. It was observed again in 5D's runtime journeys: a teacher activity landed
+on a family learner's path, and the completion-time adaptive decision pointed at it. That
+is a child-safety and privacy boundary (`CLAUDE.md` §10, §21), and it matters more now
+that the server acts on those placements automatically.
 
-**Battle 5D — Server-authoritative post-completion (L8 + N2), starting with the golden journey.**
-1. Decide what `GoldenLearningJourneyIntegrationTests` is meant to prove and rehabilitate
-   it, so the whole loop has one end-to-end regression check.
-2. Make adaptive and review decisions happen server-side when an attempt completes (L8).
-3. Serialize Smart Review find-or-create (N2).
+1. Product decision PD-05: may teacher content ever enter family (non-school) curricula?
+2. Then enforce it wherever content is selected for a path (enrollment seeding, adaptive,
+   review) and verify with real HTTP.
 
-Why now: content can no longer strand a child (3R), sessions and configuration are
-trustworthy (4D/N5/N6), and the post-completion loop is the largest remaining
-learning-integrity risk. L7 and OD-10 feed into 5D's design but should stay separate
-unless they prove inseparable.
+**If PD-05 can't be decided yet:** Battle S1 — abuse protection (rate limiting, OD-01;
+`replaced_by_session_id` index, TD-05), which needs no product decision.

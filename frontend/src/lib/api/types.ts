@@ -119,26 +119,6 @@ export interface AnswerRecord {
   occurredAt: string;
 }
 
-/** insertedLearningPathItemId is what the frontend should treat as "what's
- * next" — it's already appended to the child's path server-side. A 204 (no
- * body) from the endpoint means "nothing to recommend yet", not an error —
- * ActivityAttemptController's javadoc lists why (attempt not completed,
- * activity untagged with a skill, free practice not on a path, etc). */
-export interface AdaptiveRecommendation {
-  direction: string;
-  targetSkillId: string;
-  insertedLearningPathItemId: string;
-  activityVersionId: string;
-}
-
-export interface SmartReviewCheck {
-  reviewOutcomeRecorded: boolean;
-  flaggedForReview: boolean;
-  skillId: string;
-  insertedLearningPathItemId: string | null;
-  activityVersionId: string | null;
-}
-
 // ---- learning/web/LearnerProgressController.java (inline Response record) ----
 
 export interface ProgressSummary {

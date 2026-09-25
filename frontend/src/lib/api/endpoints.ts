@@ -2,7 +2,6 @@ import { apiClient } from "./client";
 import type {
   ActivityAttempt,
   ActivityVersionDetail,
-  AdaptiveRecommendation,
   AnswerRecord,
   AuthResponse,
   Child,
@@ -13,7 +12,6 @@ import type {
   ParentInsight,
   ProgressSummary,
   SchoolClassSummary,
-  SmartReviewCheck,
   StreakSummary,
 } from "./types";
 
@@ -78,16 +76,6 @@ export const activityAttemptApi = {
   ) => apiClient.post<AnswerRecord>(`/activity-attempts/${attemptId}/answers`, input),
   complete: (attemptId: string) => apiClient.post<ActivityAttempt>(`/activity-attempts/${attemptId}/complete`),
   abandon: (attemptId: string) => apiClient.post<ActivityAttempt>(`/activity-attempts/${attemptId}/abandon`),
-  /** Returns null on a 204 ("nothing to recommend yet" — a legitimate
-   * outcome per the controller's javadoc, not an error). */
-  adaptiveNext: async (attemptId: string): Promise<AdaptiveRecommendation | null> => {
-    const res = await apiClient.post<AdaptiveRecommendation | null>(`/activity-attempts/${attemptId}/adaptive-next`);
-    return res ?? null;
-  },
-  smartReviewCheck: async (attemptId: string): Promise<SmartReviewCheck | null> => {
-    const res = await apiClient.post<SmartReviewCheck | null>(`/activity-attempts/${attemptId}/smart-review-check`);
-    return res ?? null;
-  },
 };
 
 // learning/web/LearnerProgressController.java, streak/web/StreakController.java
