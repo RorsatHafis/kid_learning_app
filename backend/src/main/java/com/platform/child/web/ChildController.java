@@ -2,11 +2,14 @@ package com.platform.child.web;
 
 import com.platform.child.entity.Child;
 import com.platform.child.service.ChildService;
+import com.platform.family.service.FamilyAccessGuard;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +20,7 @@ import java.util.UUID;
 
 import static com.platform.child.web.ChildDtos.ChildResponse;
 import static com.platform.child.web.ChildDtos.CreateChildRequest;
+import static com.platform.child.web.ChildDtos.UpdateChildRequest;
 
 /**
  * The missing "step 2" of the golden journey (login -&gt; child -&gt; enrollment -&gt; ...):
@@ -31,9 +35,24 @@ import static com.platform.child.web.ChildDtos.CreateChildRequest;
 public class ChildController {
 
     private final ChildService childService;
+    private final FamilyAccessGuard familyAccessGuard;
 
-    public ChildController(ChildService childService) {
+    public ChildController(ChildService childService, FamilyAccessGuard familyAccessGuard) {
         this.childService = childService;
+        this.familyAccessGuard = familyAccessGuard;
+    }
+
+    @GetMapping("/{childId}")
+    public ResponseEntity<ChildResponse> getChild(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
+        return ResponseEntity.ok(ChildResponse.from(familyAccessGuard.requireChildAccess(accountId, childId)));
+    }
+
+    @PatchMapping("/{childId}")
+    public ResponseEntity<ChildResponse> updateChild(@PathVariable UUID childId,
+                                                     @Valid @RequestBody UpdateChildRequest request,
+                                                     @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return ResponseEntity.ok(ChildResponse.from(childService.rename(childId, request.displayName())));
     }
 
     @GetMapping

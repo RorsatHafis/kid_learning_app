@@ -49,7 +49,7 @@ public class EnrollmentController {
                                                        @AuthenticationPrincipal UUID accountId) {
         familyAccessGuard.requireChildAccess(accountId, childId);
 
-        Enrollment enrollment = enrollmentService.enroll(childId, request.curriculumId());
+        Enrollment enrollment = enrollmentService.enrollInPlatformCurriculum(childId, request.curriculumId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(EnrollmentResponse.from(enrollment));
     }

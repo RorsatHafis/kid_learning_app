@@ -53,13 +53,14 @@ public class EnrollmentService {
     private final ActivityVersionRepository activityVersionRepository;
     private final ChildRepository childRepository;
     private final AgeHubRepository ageHubRepository;
+    private final PathContentScope pathContentScope;
 
     public EnrollmentService(EnrollmentRepository enrollmentRepository, LearningPathRepository learningPathRepository,
                               LearningPathService learningPathService, CurriculumService curriculumService,
                               LearningObjectiveSkillService learningObjectiveSkillService,
                               ActivitySkillRepository activitySkillRepository,
                               ActivityVersionRepository activityVersionRepository, ChildRepository childRepository,
-                              AgeHubRepository ageHubRepository) {
+                              AgeHubRepository ageHubRepository, PathContentScope pathContentScope) {
         this.enrollmentRepository = enrollmentRepository;
         this.learningPathRepository = learningPathRepository;
         this.learningPathService = learningPathService;
@@ -69,6 +70,21 @@ public class EnrollmentService {
         this.activityVersionRepository = activityVersionRepository;
         this.childRepository = childRepository;
         this.ageHubRepository = ageHubRepository;
+        this.pathContentScope = pathContentScope;
+    }
+
+    /**
+     * N7: a family enrolls a child only in a platform curriculum. A teacher-owned
+     * curriculum reaches children through its owner's class assignment
+     * ({@code SchoolController#assignCurriculum}), never by a parent naming its id -
+     * answered as "not found" so a family can't probe for another tenant's curricula.
+     */
+    @Transactional
+    public Enrollment enrollInPlatformCurriculum(UUID childId, UUID curriculumId) {
+        if (!pathContentScope.isPlatformCurriculum(curriculumId)) {
+            throw new ResourceNotFoundException("Curriculum", curriculumId);
+        }
+        return enroll(childId, curriculumId);
     }
 
     /**
@@ -143,13 +159,14 @@ public class EnrollmentService {
         }
 
         List<Curriculum> candidates = curriculumService.listActiveForAgeHub(ageHub.get().getId()).stream()
+                .filter(curriculum -> curriculum.getOwnerAccountId() == null)
                 .filter(curriculum -> curriculumService.hasPublishedVersion(curriculum.getId()))
                 .toList();
         if (candidates.size() != 1) {
             return Optional.empty();
         }
 
-        return Optional.of(enroll(child.getId(), candidates.get(0).getId()));
+        return Optional.of(enrollInPlatformCurriculum(child.getId(), candidates.get(0).getId()));
     }
 
     /**
@@ -161,10 +178,13 @@ public class EnrollmentService {
      * reachable through more than one skill/objective is only placed once
      * (addedActivityIds). An Activity with no PUBLISHED version yet is silently
      * skipped rather than failing the whole enrollment - draft-only content simply
-     * isn't placeable yet.
+     * isn't placeable yet. N7: so is an Activity outside the curriculum's content
+     * scope (see {@link PathContentScope}) - a platform curriculum never seeds a
+     * teacher's activity just because it is tagged with one of its skills.
      */
     private void seedInitialPath(UUID learningPathId, UUID curriculumVersionId) {
         Set<UUID> addedActivityIds = new LinkedHashSet<>();
+        PathContentScope.Scope scope = pathContentScope.forCurriculumVersion(curriculumVersionId);
 
         for (CurriculumObjective objective : curriculumService.listObjectives(curriculumVersionId)) {
             for (LearningObjectiveSkill skillMapping
@@ -172,7 +192,7 @@ public class EnrollmentService {
 
                 for (ActivitySkill activitySkill : activitySkillRepository.findBySkillId(skillMapping.getSkillId())) {
                     UUID activityId = activitySkill.getActivityId();
-                    if (!addedActivityIds.add(activityId)) {
+                    if (!pathContentScope.admitsActivity(scope, activityId) || !addedActivityIds.add(activityId)) {
                         continue;
                     }
 

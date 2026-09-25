@@ -11,6 +11,9 @@ public interface LessonRepository extends JpaRepository<Lesson, UUID> {
 
     List<Lesson> findByOwnerAccountId(UUID ownerAccountId);
 
+    /** Platform lessons (no owner) - what an ADMIN authors and manages. */
+    List<Lesson> findByOwnerAccountIdIsNull();
+
     List<Lesson> findBySubjectIdAndStatus(UUID subjectId, CatalogStatus status);
 
 }

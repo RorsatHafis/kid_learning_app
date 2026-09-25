@@ -5,6 +5,7 @@ import com.platform.child.entity.ChildStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -15,8 +16,13 @@ public final class ChildDtos {
     }
 
     public record CreateChildRequest(
-            @NotBlank String displayName,
+            @NotBlank @Size(max = 80) String displayName,
             @NotNull @PastOrPresent LocalDate dateOfBirth
+    ) {
+    }
+
+    public record UpdateChildRequest(
+            @NotBlank @Size(max = 80) String displayName
     ) {
     }
 

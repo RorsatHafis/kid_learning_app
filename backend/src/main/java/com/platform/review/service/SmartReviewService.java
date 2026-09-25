@@ -12,6 +12,7 @@ import com.platform.learning.entity.LearningPathItem;
 import com.platform.learning.entity.LearningPathItemSource;
 import com.platform.learning.entity.LearningPathItemStatus;
 import com.platform.learning.service.LearningPathService;
+import com.platform.learning.service.PathContentScope;
 import com.platform.review.entity.ReviewAttempt;
 import com.platform.review.entity.ReviewItem;
 import com.platform.review.entity.ReviewItemStatus;
@@ -56,13 +57,14 @@ public class SmartReviewService {
     private final ActivitySkillRepository activitySkillRepository;
     private final ActivityVersionRepository activityVersionRepository;
     private final LearningPathService learningPathService;
+    private final PathContentScope pathContentScope;
 
     public SmartReviewService(ReviewItemRepository reviewItemRepository, ReviewScheduleRepository reviewScheduleRepository,
                                ReviewAttemptRepository reviewAttemptRepository,
                                LearnerSkillStateRepository skillStateRepository,
                                ActivitySkillRepository activitySkillRepository,
                                ActivityVersionRepository activityVersionRepository,
-                               LearningPathService learningPathService) {
+                               LearningPathService learningPathService, PathContentScope pathContentScope) {
         this.reviewItemRepository = reviewItemRepository;
         this.reviewScheduleRepository = reviewScheduleRepository;
         this.reviewAttemptRepository = reviewAttemptRepository;
@@ -70,6 +72,7 @@ public class SmartReviewService {
         this.activitySkillRepository = activitySkillRepository;
         this.activityVersionRepository = activityVersionRepository;
         this.learningPathService = learningPathService;
+        this.pathContentScope = pathContentScope;
     }
 
     /**
@@ -148,8 +151,9 @@ public class SmartReviewService {
                         .map(ReviewSchedule::getDueAt).orElse(Instant.MAX)))
                 .toList();
 
+        PathContentScope.Scope scope = pathContentScope.forPath(learningPathId);
         for (ReviewItem item : due) {
-            Optional<ActivityVersion> candidate = pickActivityForSkill(item.getSkillId());
+            Optional<ActivityVersion> candidate = pickActivityForSkill(item.getSkillId(), scope);
             if (candidate.isPresent()) {
                 LearningPathItem inserted = learningPathService.appendItem(
                         learningPathId, candidate.get().getId(), LearningPathItemSource.REVIEW);
@@ -259,10 +263,12 @@ public class SmartReviewService {
         return reviewItemRepository.findByChildIdAndStatus(childId, ReviewItemStatus.ACTIVE);
     }
 
-    private Optional<ActivityVersion> pickActivityForSkill(UUID skillId) {
+    /** N7: only content the path's scope admits (see {@link PathContentScope}). */
+    private Optional<ActivityVersion> pickActivityForSkill(UUID skillId, PathContentScope.Scope scope) {
         return activitySkillRepository.findBySkillId(skillId).stream()
                 .map(ActivitySkill::getActivityId)
                 .distinct()
+                .filter(activityId -> pathContentScope.admitsActivity(scope, activityId))
                 .map(activityId -> activityVersionRepository
                         .findFirstByActivityIdAndStatusOrderByVersionNumberDesc(activityId, PublicationStatus.PUBLISHED))
                 .flatMap(Optional::stream)

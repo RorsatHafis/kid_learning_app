@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
@@ -9,7 +9,8 @@ import { ComingSoon } from "@/features/app/AppShell";
 import { ParentLayout } from "@/features/parent/ParentLayout";
 import { ParentHome } from "@/features/parent/ParentHome";
 import { ChildOverviewPage } from "@/features/parent/ChildOverviewPage";
-import { PlaySession } from "@/features/learning/PlaySession";
+import { ChildHome } from "@/features/child/ChildHome";
+import { PlaySession } from "@/features/child/PlaySession";
 import { TeacherLayout } from "@/features/teacher/TeacherLayout";
 import { TeacherHome } from "@/features/teacher/TeacherHome";
 import { ClassRosterPage } from "@/features/teacher/ClassRosterPage";
@@ -38,12 +39,21 @@ export default function App() {
             <Route path="children/:childId" element={<ChildOverviewPage />} />
           </Route>
 
-          {/* Full-bleed child play session — deliberately outside ParentLayout's
-              chrome (see the Child Design Rule: this should not look like a
-              parent dashboard), but still gated by the same auth/role guards
-              since there is no separate child login — see PlatformRole. */}
+          {/* The child's space — deliberately outside ParentLayout's chrome (a child
+              surface must not look like a parent dashboard), but gated by the same
+              auth/role guards: there is no child login (see PlatformRole). */}
           <Route
-            path="/parent/children/:childId/learn"
+            path="/learn/:childId"
+            element={
+              <RequireAuth>
+                <RequireRole roles={["PARENT"]}>
+                  <ChildHome />
+                </RequireRole>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/learn/:childId/play/:enrollmentId"
             element={
               <RequireAuth>
                 <RequireRole roles={["PARENT"]}>
@@ -52,6 +62,8 @@ export default function App() {
               </RequireAuth>
             }
           />
+          {/* The child space's former address, kept so saved links still work. */}
+          <Route path="/parent/children/:childId/learn" element={<LegacyLearnRedirect />} />
 
           <Route
             path="/teacher"
@@ -93,4 +105,9 @@ export default function App() {
       </AuthProvider>
     </BrowserRouter>
   );
+}
+
+function LegacyLearnRedirect() {
+  const { childId = "" } = useParams<{ childId: string }>();
+  return <Navigate to={`/learn/${childId}`} replace />;
 }

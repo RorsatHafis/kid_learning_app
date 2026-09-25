@@ -23,6 +23,7 @@ import com.platform.review.service.SmartReviewService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import com.platform.learning.service.ContentScopes;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -88,9 +89,10 @@ class LearningStateColdStartTests {
         masteryEngine = new MasteryEngine(skillStateRepository, skillHistoryRepository, objectiveStateRepository,
                 learningObjectiveSkillRepository, new MasteryProperties(new BigDecimal("0.2"), 10, new BigDecimal("0.8")));
         adaptiveEngine = new AdaptiveEngine(skillStateRepository, skillPrerequisiteRepository, activitySkillRepository,
-                activityVersionRepository, learningPathService);
+                activityVersionRepository, learningPathService, ContentScopes.admittingEverything());
         smartReviewService = new SmartReviewService(reviewItemRepository, reviewScheduleRepository, reviewAttemptRepository,
-                skillStateRepository, activitySkillRepository, activityVersionRepository, learningPathService);
+                skillStateRepository, activitySkillRepository, activityVersionRepository, learningPathService,
+                ContentScopes.admittingEverything());
 
         // One published, not-yet-placed activity for the skill, so any REINFORCEMENT or
         // CHALLENGE decision has something to place and becomes observable.

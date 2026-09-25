@@ -1,5 +1,7 @@
 package com.platform.learning.web;
 
+import com.platform.learning.service.AnswerFeedbackService;
+
 import com.platform.learning.entity.ActivityAttempt;
 import com.platform.learning.entity.ActivityAttemptStatus;
 import com.platform.learning.entity.AnswerRecord;
@@ -47,17 +49,23 @@ public final class ActivityAttemptDtos {
         }
     }
 
+    /**
+     * {@code correctAnswer} is feedback on an answer already given (see
+     * {@link com.platform.learning.service.AnswerFeedbackService}), so a mistake can be
+     * explained. It is only ever returned for a recorded answer.
+     */
     public record AnswerRecordResponse(
             UUID id,
             UUID questionVersionId,
             boolean correct,
             Integer timeSpentSeconds,
-            Instant occurredAt
+            Instant occurredAt,
+            AnswerFeedbackService.CorrectAnswer correctAnswer
     ) {
-        public static AnswerRecordResponse from(AnswerRecord record) {
+        public static AnswerRecordResponse from(AnswerRecord record, AnswerFeedbackService.CorrectAnswer correctAnswer) {
             return new AnswerRecordResponse(
                     record.getId(), record.getQuestionVersionId(), record.isCorrect(),
-                    record.getTimeSpentSeconds(), record.getOccurredAt());
+                    record.getTimeSpentSeconds(), record.getOccurredAt(), correctAnswer);
         }
     }
 

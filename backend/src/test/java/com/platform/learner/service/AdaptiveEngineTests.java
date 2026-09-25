@@ -13,6 +13,7 @@ import com.platform.learning.entity.LearningPathItemSource;
 import com.platform.learning.service.LearningPathService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import com.platform.learning.service.ContentScopes;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -67,7 +68,8 @@ class AdaptiveEngineTests {
         when(learningPathService.listItems(pathId)).thenReturn(List.of(pendingHarder));
 
         AdaptiveEngine engine = new AdaptiveEngine(skillStateRepository, skillPrerequisiteRepository,
-                activitySkillRepository, activityVersionRepository, learningPathService);
+                activitySkillRepository, activityVersionRepository, learningPathService,
+                ContentScopes.admittingEverything());
 
         Optional<AdaptiveEngine.Recommendation> recommendation = engine.recommendNext(
                 childId, skillId, pathId, currentVersionId);

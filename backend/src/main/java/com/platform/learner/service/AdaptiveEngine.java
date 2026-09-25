@@ -13,6 +13,7 @@ import com.platform.learning.entity.LearningPathItem;
 import com.platform.learning.entity.LearningPathItemSource;
 import com.platform.learning.entity.LearningPathItemStatus;
 import com.platform.learning.service.LearningPathService;
+import com.platform.learning.service.PathContentScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,17 +74,19 @@ public class AdaptiveEngine {
     private final ActivitySkillRepository activitySkillRepository;
     private final ActivityVersionRepository activityVersionRepository;
     private final LearningPathService learningPathService;
+    private final PathContentScope pathContentScope;
 
     public AdaptiveEngine(LearnerSkillStateRepository skillStateRepository,
                            SkillPrerequisiteRepository skillPrerequisiteRepository,
                            ActivitySkillRepository activitySkillRepository,
                            ActivityVersionRepository activityVersionRepository,
-                           LearningPathService learningPathService) {
+                           LearningPathService learningPathService, PathContentScope pathContentScope) {
         this.skillStateRepository = skillStateRepository;
         this.skillPrerequisiteRepository = skillPrerequisiteRepository;
         this.activitySkillRepository = activitySkillRepository;
         this.activityVersionRepository = activityVersionRepository;
         this.learningPathService = learningPathService;
+        this.pathContentScope = pathContentScope;
     }
 
     public enum Direction {
@@ -153,8 +156,8 @@ public class AdaptiveEngine {
                 .map(LearningPathItem::getActivityVersionId)
                 .collect(java.util.stream.Collectors.toSet());
 
-        Optional<ActivityVersion> candidate = pickActivity(
-                targetSkillId, direction, justCompletedActivityVersionId, completedActivityVersionIds);
+        Optional<ActivityVersion> candidate = pickActivity(targetSkillId, direction, justCompletedActivityVersionId,
+                completedActivityVersionIds, pathContentScope.forPath(learningPathId));
         if (candidate.isEmpty()) {
             return new Decision(direction, skillId, targetSkillId, Optional.empty());
         }
@@ -200,10 +203,14 @@ public class AdaptiveEngine {
 
     private Optional<ActivityVersion> pickActivity(UUID skillId, Direction direction,
                                                     UUID excludeActivityVersionId,
-                                                    Set<UUID> completedActivityVersionIds) {
+                                                    Set<UUID> completedActivityVersionIds,
+                                                    PathContentScope.Scope scope) {
+        // N7: only content this path's scope admits - a family path never gets a
+        // teacher's activity just because it is tagged with the same skill.
         List<ActivityVersion> publishedCandidates = activitySkillRepository.findBySkillId(skillId).stream()
                 .map(ActivitySkill::getActivityId)
                 .distinct()
+                .filter(activityId -> pathContentScope.admitsActivity(scope, activityId))
                 .map(activityId -> activityVersionRepository
                         .findFirstByActivityIdAndStatusOrderByVersionNumberDesc(
                                 activityId, PublicationStatus.PUBLISHED))

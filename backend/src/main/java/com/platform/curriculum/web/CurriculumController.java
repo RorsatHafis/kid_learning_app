@@ -23,6 +23,10 @@ import static com.platform.curriculum.web.CurriculumDtos.CurriculumSummaryRespon
  * content, same as every other unauthenticated-within-the-app content lookup in
  * this codebase - see {@code ActivityContentController}), so this only requires an
  * authenticated caller, not a {@code FamilyAccessGuard} check.
+ *
+ * <p>N7: the catalog lists platform curricula only. A teacher-owned curriculum is
+ * that teacher's (or school's) content and reaches children through class
+ * assignment, not through the family catalog.
  */
 @RestController
 public class CurriculumController {
@@ -41,6 +45,8 @@ public class CurriculumController {
     @GetMapping("/api/v1/curricula")
     public ResponseEntity<List<CurriculumSummaryResponse>> listCurricula() {
         List<CurriculumSummaryResponse> curricula = curriculumService.listActive().stream()
+                .filter(curriculum -> curriculum.getOwnerAccountId() == null)
+                .filter(curriculum -> curriculumService.hasPublishedVersion(curriculum.getId()))
                 .map(this::toSummary)
                 .toList();
 

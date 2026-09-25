@@ -6,9 +6,9 @@ project actually stands against it. Where the two disagree on a verification lev
 evidence recorded here is newer (see §26 note under Battle 4A) — `CLAUDE.md` is not edited
 from here.
 
-- **Last reconciled:** 2026-09-25, after Battle 5D.
+- **Last reconciled:** 2026-09-25, after Wave 1 slice 1 (W1.1 — child & parent learning experience, N7).
 - **Reconciled against:** current source, Flyway migrations V1–V36, the last full test run
-  (`./mvnw -Pintegration test`: **177 run, 176 pass, 1 known stale failure** — TD-04), and the
+  (`./mvnw -Pintegration test`: **190 run, 189 pass, 1 known stale failure** — TD-04), and the
   runtime/browser evidence gathered in each battle.
 - **Version control:** git repository at `D:\Bookeyond-Kid` (baseline commit `4db89ad`,
   then one commit per battle). TD-01 resolved.
@@ -39,17 +39,25 @@ Verification levels (`CLAUDE.md` §6): INSPECTED · COMPILED · TESTED · RUNTIM
 
 ## Headline
 
+**Working mode changed (2026-09-25):** the master production build directive replaces
+battle-by-battle findings with product waves (W1 child + parent, W2 teacher + school, W3
+admin + Content Studio, W4 identity + security, W5 subscription, W6 release). Finding IDs
+stay stable; wave slices are recorded in the register below like battles.
+
 **BACKEND FOUNDATION: integrity baseline established — not production-complete.**
 The core learning loop (content → path → attempt → evidence → mastery → adaptive/review →
 parent insight) is server-authoritative end to end since 5D, and authentication/session
 state, configuration and content versioning have each been hardened and verified to the
-levels below. Open items remain in tenancy (N7), learning-loop policy (PD-11, PD-12,
-OD-10) and security hardening (rate limiting).
+levels below. The content tenancy boundary (N7) is enforced since W1.1. Open items
+remain in learning-loop policy (PD-11, PD-12, OD-10) and security hardening (rate limiting).
 
 **FULL BOOKEYOND KID PRODUCT: NOT COMPLETE.**
-The child experience, parent dashboard depth, school domain authorization, admin/content
-studio, identity verification, subscription and deployment are unbuilt or partial. Do not
-describe the product as complete because the backend integrity battles are.
+W1.1 delivered the first real child and parent learning experience (journey, play, feedback,
+Learning Buddy, evidence-grounded parent overview) — BROWSER VERIFIED on desktop and mobile.
+Still unbuilt or partial: canonical content beyond one Maths curriculum (educator-authored,
+PD-15), Khmer UI (PD-14), parent account/settings, goals, school domain authorization,
+principal/admin consoles and Content Studio, identity verification, subscription and
+deployment. Do not describe the product as complete.
 
 ---
 
@@ -73,6 +81,7 @@ describe the product as complete because the backend integrity battles are.
 | **N6** | Configuration binding | One contract: documented env names bind in every profile; missing/invalid values fail startup; relaxed-binding bypass variables refused | TESTED; RUNTIME VERIFIED (prod, staging, local) | `ConfigurationContract`, `SecurityProperties`, `MasteryProperties`, `application*.yaml`; `ConfigurationContractTests` (39) | `docker compose up` not run; `.env.example` stale (TD-02) |
 | **3R** | Content lifecycle | **L4/L5 core fix accepted.** RETIRED = superseded; learner-visible = PUBLISHED or RETIRED; new work = current PUBLISHED only; existing path items and in-progress attempts keep their pinned version; history reconstructable | TESTED (8, with a mutation check); RUNTIME VERIFIED (journeys A–F) | `PublishableVersion.wasPublished`, `ActivityAttemptService.startAttempt`, `ContentLifecycleIntegrationTests` | **Broader version-consumer follow-up still open (3R.1).** Not browser-verified |
 | **5D** | Core learning loop: server-authoritative post-completion | Completing an attempt, in one transaction under the attempt's row lock, records a REVIEW placement's outcome, re-evaluates Smart Review for every exercised skill, makes and records exactly one adaptive decision (`adaptation_decisions`, unique per attempt — V36), and places a due review. No client follow-up is needed (L8). Review items and streaks are created race-free with `INSERT … ON CONFLICT DO NOTHING` + row lock (N2, N8); answers take the attempt lock (N9). `/adaptive-next` and `/smart-review-check` became read-only compatibility views and the frontend no longer calls them. Golden journey rehabilitated (TD-03). Multi-skill decisions made deterministic under a provisional rule (L7 → PD-11) | TESTED (golden journey + 9 completion integration tests, 3 mutation checks); RUNTIME VERIFIED (journeys A–E on persisted state); **BROWSER VERIFIED** (UI play-through: complete, then reads only; reload resumes the next state) | `PostCompletionService`, `ActivityAttemptService.completeAttempt`, `SmartReviewService`, `ReviewItemRepository`, `LearnerStreakRepository`, `AdaptationDecision`, V36; `GoldenLearningJourneyIntegrationTests`, `LearningLoopCompletionIntegrationTests`; `PlaySession.tsx` | PD-11, PD-12, OD-10, TD-06, TD-08, TD-09 |
+| **W1.1** | Wave 1 slice 1 — child & parent learning experience; content tenancy (N7) | **N7:** a path draws only from platform content (ownerless lesson/standalone activity) plus, for a teacher-owned curriculum, that owner's content — enforced in enrollment seeding, the Adaptive Engine, Smart Review and free practice; the family catalog and family enrollment accept platform curricula only; ADMIN-authored content is platform content. **Read APIs:** a child's enrollments (replacing the client-side pointer, N13), the journey with a per-step explanation derived from recorded decisions, skills with evidence level and standing (no raw mastery), activity history with the decision taken, child detail + rename, correct-answer feedback on recorded answers. **Frontend:** child space (journey home, activity intro, 4 question types, explanatory feedback, Learning Buddy, sound, completion with the server's next step, grown-up gate); parent family home and child overview rebuilt; enrollment pointer removed; AA contrast fixes | TESTED (ContentTenancyIntegrationTests 8 with 3 mutation checks; LearningJourneyApiIntegrationTests 5 over HTTP); RUNTIME VERIFIED (journeys A–E incl. N7 via real teacher authoring); **BROWSER VERIFIED** (desktop + 375 px mobile: family home, overview, journey, play MC/TF/numeric, wrong-answer feedback, reload resume, completion, keep going, keyboard-only play, grown-up gate, legacy route redirect) | `PathContentScope`, `LearningJourneyService`, `SkillProgressService`, `AnswerFeedbackService`, `EvidenceStandard`, `LearningJourneyController`; `features/child/*`, `features/parent/*`, `features/buddy/*` | PD-13–PD-17, TD-10–TD-13; frontend has no automated tests |
 | **4C** | School ↔ child authorization | **NOT IMPLEMENTED** — design only | — | Battle 4C design report | PD-01 |
 
 ---
@@ -88,7 +97,15 @@ describe the product as complete because the backend integrity battles are.
 | **N8** | Streak find-or-create race inside completion: concurrent first completions for one child failed, and concurrent updates hit the version check | **RESOLVED (5D)** | Found in 5D; same insert-if-absent + row lock | — |
 | **N9** | An answer could be written after completion had scored the attempt (no shared lock) | **RESOLVED (5D)** | Answer submission and completion both take the attempt row lock; the answer re-checks IN_PROGRESS | — |
 | **L9** | MATCHING has no scoring or interaction; refused at publish | FP / PD | `QuestionService.validateCompleteness`; `AnswerScoringServiceTests.matchingIsNeverScored`; frontend renders none | Interaction architecture phase |
-| **N7** | Teacher-authored content tagged to a system skill is placed into **every** family child's path for that skill | OD (tenancy / content governance) | Raised in Battle 5 reconnaissance; observed again at runtime in 3R journey B (a teacher activity landed in a new family learner's path) | PD-01 / PD-05 |
+| **N7** | Teacher-authored content tagged to a system skill is placed into **every** family child's path for that skill | **RESOLVED (W1.1)** — PD-05 answered by the product directive §14.1 ("a teacher's content MUST NOT accidentally enter unrelated family children's learning paths; enforce on the server") | `PathContentScope` applied at every selection point; 8 integration tests, each filter mutation-checked; runtime: a teacher's published activity on a platform skill reaches 0 family paths, teacher curriculum enroll/free practice → 404 | — |
+| **N10** | A teacher publishing a curriculum for an age group silently stopped auto-enrollment for every new family child of that age (two candidates = ambiguous) | **RESOLVED (W1.1)** | Found during W1.1 runtime; auto-enrollment considers platform curricula only | — |
+| **N11** | The family catalog listed curricula with no published version, so "Start" failed | **RESOLVED (W1.1)** | `CurriculumController` filters to published platform curricula | — |
+| **N12** | Primary buttons used white on #3B82F6 (3.7:1), failing WCAG AA for normal text | **RESOLVED (W1.1)** | `brand.blueStrong` #2563EB (5.2:1); child palette deep tones checked ≥ 4.9:1 on their fills | — |
+| **N13** | Enrollment discovery lived in browser localStorage: progress was invisible on another device or browser, and the enrollment created automatically with a child was never reachable | **RESOLVED (W1.1)** | `GET /children/{id}/enrollments`; pointer store deleted, stale key cleared on load; browser-verified | — |
+| **TD-10** | ADMIN-authored content is now ownerless platform content; rows an ADMIN authored before W1.1 still carry the admin's id and are treated as that admin's private content | TD | `TeacherAuthoringController.ownerFor` | Data audit before any production data migration |
+| **TD-11** | Class challenges pin an activity version; with N7 a teacher's challenge activity can be started (free practice) only by children enrolled in that teacher's curriculum | TD / W2 | `PathContentScope.admitsActivityForChild` | Wave 2 challenge + class scope |
+| **TD-12** | `SchoolController.assignCurriculum` lets a class teacher assign any curriculum, including another teacher's | OD / W2 | Code | Wave 2 school boundary |
+| **TD-13** | `GET /activity-versions/{id}` stays unscoped: any authenticated user can read any learner-visible version, including teacher content (answer keys are never included) | PV by design / W2 | `ActivityContentController` | Revisit with school tenancy |
 | **TD-03** | Golden learning journey test was stale (answered 1 of 2 required questions; drove decisions by hand) | **RESOLVED (5D)** | Rewritten to play each path through next → start → answer all → complete and assert only persisted state; green | — |
 | **TD-04** | PRINCIPAL registration test expects rejection; `AuthController` returns 202 pending approval | TD + PD-07 | `PublicRegistrationRoleSecurityTests.registrationRequestingPrincipalIsRejected` | PD-07 |
 | **OD-01** | No rate limiting anywhere (refresh, login, register) | OD | No limiter in source or pom; lockout covers password guessing only | Security hardening battle |
@@ -139,14 +156,15 @@ describe the product as complete because the backend integrity battles are.
 | Family → child access | VC | `FamilyAccessGuard` on child-scoped endpoints | 4D test (stranger → 403); 3R runtime (other child's path item → 403) | 2A, 4D | — | — |
 | Content write authorization | PV | `ContentAccessGuard`: owner, or ADMIN/PRINCIPAL; system content ADMIN-only | Code; positive runtime path (3R) | 4B | No test for the TEACHER-refused case | Test |
 | School ↔ child authorization | PD | Class enrollment endpoint exists; the school-authorization relationship does not | Battle 4C design | 4C | **PD-01**: the school authorization model | Product decision, then implementation |
-| Content catalog reads | PV (by design) | `GET /activity-versions/{id}` is not child-scoped: any authenticated user reads any learner-visible version | `ActivityContentController` javadoc | 3, 3R | Acceptable while content is shared catalog; revisit with school-private content (N7) | PD-05 |
-| Teacher content reaching family children | OD | N7 | Runtime observation (3R) | — | Tenancy boundary for authored content | PD-01/PD-05 |
+| Content catalog reads | PV (by design) | `GET /activity-versions/{id}` is not child-scoped: any authenticated user reads any learner-visible version | `ActivityContentController` javadoc | 3, 3R | TD-13 | Wave 2 |
+| Teacher content reaching family children | VC | N7 resolved: `PathContentScope` at every selection point; family catalog/enrollment platform-only | 8 integration tests + mutation checks; runtime | W1.1 | Class-side scoping (TD-11, TD-12, TD-13) | Wave 2 |
 
 ## D. Learning Path
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Path seeding | VC | Curriculum objectives → skills → current PUBLISHED activity versions | `EnrollmentService.seedInitialPath`; 3R tests (new learner gets v2) | 2B, 3R | N7 (unscoped teacher content) | PD-05 |
+| Path seeding | VC | Curriculum objectives → skills → current PUBLISHED activity versions within the path's content scope (N7) | `EnrollmentService.seedInitialPath`; 3R tests; `ContentTenancyIntegrationTests` | 2B, 3R, W1.1 | — | — |
+| Journey read model | VC | Enrollments, journey steps with explanation from recorded decisions, history with decision, skills with evidence standing | `LearningJourneyApiIntegrationTests` (5, HTTP); runtime A–B; browser | W1.1 | Explanation of a REVIEW step names the first reviewed skill on it (TD-09) | — |
 | Next activity / continuity | VC | First PENDING/IN_PROGRESS item; pinned versions stay playable after republish | 3R journeys A, C | 3R | — | — |
 | Concurrent insertion | VC | Row lock on the path for every insertion | 5A tests | 5A | — | — |
 | Auto-enrollment | PV | Only when exactly one curriculum matches | Code only | 2B | No automated test | Test |
@@ -216,7 +234,7 @@ describe the product as complete because the backend integrity battles are.
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
 | Challenges | PV | Staff create class challenges on a PUBLISHED version; child progress for class-assigned children | `ChallengeService`, controllers | — | OD-09; no tests; no child UI | PD on counting |
-| Learning Buddy | FP | Marketing sections only (`LearningBuddy.tsx`, `ChildrensWorld.tsx`) | Frontend source | — | Authored character system (`CLAUDE.md` §19) | Child product phase |
+| Learning Buddy | PV | See Q (child space) | Browser (W1.1) | W1.1 | PD-13 | — |
 
 ## N. CORS / configuration
 
@@ -235,14 +253,15 @@ describe the product as complete because the backend integrity battles are.
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Parent web app | PV | `ParentHome`, `AddChildForm`, `ChooseCurriculumPanel`, `ChildOverviewPage`; insights via API | Signed-in `/parent` browser-verified (4D, N5); full parent workflow **not** browser-verified | — | Coverage/history display (PD-06), goals, consent workflow, calm evidence-grounded dashboard | Parent product phase |
+| Parent web app | PV | Family home (per-child current path + next step); child overview: learning now with "why this next", full path with reasons, skills & evidence (standing + evidence level, never "weak" for "not assessed"), recent activity with the decision taken, current insights with their evidence basis, rename, add a subject | **BROWSER VERIFIED (W1.1)** desktop + mobile | W1.1 | Account/settings, password change/reset, goals, insight history (PD-06 partly: coverage and evidence strength are now shown), consent, Khmer UI (PD-14) | Wave 1 next slices; Wave 4 identity |
 | Consent | PD / FP | `ConsentRecord`/`ConsentService` exist, **not wired** | `ChildService` javadoc | — | Real consent workflow | Product/legal decision |
 
 ## Q. Child product
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Play session | PV | `PlaySession.tsx`: next → start → content → answer → complete, then reads next-activity; no follow-up decision calls (5D). Runs inside the parent's session (no child account) | **Browser play-through (5D)**: one activity answered in the UI, completion 200, only reads afterwards, reload resumes the next item | 3R, 5D | Child-grade UX, Learning Buddy, motion, audio, accessibility pass (`CLAUDE.md` §18–19) | Child product phase |
+| Child space | PV | `/learn/:childId`: journey home (greeting, Learning Buddy, progress, one Play action, journey map of completed/current/upcoming steps with Review/Challenge/Practice tags, subject switcher); play session: activity intro with the reason, MC/TF/numeric/short answer with number-key shortcuts, explanatory feedback (correct answer after a miss), buddy reactions, synthesized sound with mute, completion with correct count and the server's next step + reason; grown-up press-and-hold gate. Resume, idempotency and conflict recovery from 5D kept | **BROWSER VERIFIED (W1.1)**: desktop + 375 px, keyboard-only play, wrong-answer feedback, reload mid-activity resumes at the next unanswered question | 3R, 5D, W1.1 | Audio/media content, richer interactions (L9, drag/drop, tracing), buddy name/design sign-off (PD-13), Khmer UI (PD-14), automated UI tests | Content (PD-15), interaction phase |
+| Learning Buddy | PV | Authored SVG character (mint sprout with a book), moods idle/happy/cheer/encourage/thinking; speaks only product-written lines chosen from real state; reduced-motion respected | Browser (W1.1) | W1.1 | Name and character sign-off (PD-13); more authored guidance moments | PD-13 |
 
 ## R. Admin / content platform
 
@@ -265,7 +284,8 @@ describe the product as complete because the backend integrity battles are.
 | Build / lint | PV | `tsc -b` + `vite build` pass; lint 0 errors (1 pre-existing warning) | Re-run in 5D after the `PlaySession` change | 4D, 5D | No automated frontend tests | Testing phase |
 | Auth / session | VC | See B | Browser (4D) | 4D | — | — |
 | Automated tests | TD | **None** — no test script or framework | `package.json` | — | Unit/component tests; E2E for critical flows | Testing phase |
-| README accuracy | TD | Still says authenticated shells are placeholders; parent/learning/teacher pages now exist | `frontend/README.md` §Current status | — | Update | Next frontend battle |
+| README accuracy | VC | Rewritten to current status in W1.1 | `frontend/README.md` | W1.1 | — | — |
+| Accessibility | PV | AA contrast on controls and child palette; labelled form fields with linked errors; focus moves to the next action after feedback/completion; keyboard-only play; aria-live status for feedback; reduced motion | Browser (W1.1); computed contrast ratios | W1.1 | No automated a11y checks; screen-reader pass not performed | Testing phase |
 
 ## U. Testing / verification
 
@@ -299,7 +319,7 @@ and CI. None of these is complete; see sections B, L, M, O–U.
 | PD-02 | Accept ≤ 15 min access-token validity after logout/disable, or pay for immediate revocation | 4D |
 | PD-03 | Strict single-use refresh (current) vs a grace window for legitimate concurrent refreshes | 4D |
 | PD-04 | Withdrawal / unsafe-content state distinct from "superseded" | 3R |
-| PD-05 | Whether teacher-authored content may enter family (non-school) curricula at all (N7) | Battle 5 recon; observed again in 3R |
+| PD-05 | Whether teacher-authored content may enter family (non-school) curricula at all (N7) — **answered by the product directive §14.1: it must not**; implemented in W1.1 | Battle 5 recon; observed again in 3R |
 | PD-06 | Parent UI display of coverage, evidence strength and insight history | 5C |
 | PD-07 | PRINCIPAL self-registration: pending approval (code) vs rejected (stale test) | Earlier battle reports (stale test) |
 | PD-08 | Versioned vs identity-level skill mappings | 3R |
@@ -307,6 +327,11 @@ and CI. None of these is complete; see sections B, L, M, O–U.
 | PD-10 | Unstarted path items on a superseded version: keep pinned (current) vs an explicit refresh rule | 3R |
 | PD-11 | Multi-skill activities: one adaptive decision governed by the weakest exercised skill (provisional, current) vs one decision per skill vs a designated primary skill | 5D |
 | PD-12 | Whether free-practice completions (no path item) should evaluate Smart Review; today they record evidence only, as before 5D | 5D |
+| PD-13 | Learning Buddy name and character design sign-off — the W1.1 character is an authored proposal, unnamed in the product | W1.1 |
+| PD-14 | Khmer UI localization: needs native-speaker-authored copy (machine-produced Khmer for children is not acceptable); the UI is English-only today | W1.1 |
+| PD-15 | Canonical curriculum content (Khmer, English, more Maths) must come from educators — directive §10 forbids generative AI determining canonical curriculum. The catalog is one Maths curriculum of 6 numeric activities | W1.1 |
+| PD-16 | After a wrong answer the child is shown the correct answer (directive §12.4 "explanatory"). Alternative: one retry before revealing | W1.1 |
+| PD-17 | Grown-up gate style (press-and-hold 1.5 s) for leaving the child space | W1.1 |
 
 ---
 
@@ -314,12 +339,13 @@ and CI. None of these is complete; see sections B, L, M, O–U.
 
 - **Backend foundation integrity baseline: established.** Accepted and evidenced: 2A, 2B
   (inspected only), 2C, 2D, 3, 4A, 4B (partial), 4.1, 5A, 5B, 5C, 4D, N5, N6, 3R
-  (L4/L5 core), and **5D (server-authoritative learning loop)**.
+  (L4/L5 core), **5D (server-authoritative learning loop)**, and **W1.1 (child & parent
+  learning experience; N7 tenancy)**.
 - **Highest evidence:** the session/auth flow, CORS and learning-loop completion are
   BROWSER VERIFIED; configuration and content lifecycle are RUNTIME VERIFIED; the
   learning-state battles (5A–5C) were RUNTIME VERIFIED at battle time and are TESTED now,
   including through the green golden journey.
-- **Test suite:** 177 run, 176 pass; the 1 failure is the known stale PRINCIPAL test (TD-04, PD-07).
+- **Test suite:** 190 run, 189 pass; the 1 failure is the known stale PRINCIPAL test (TD-04, PD-07).
 - **Version control:** git, one commit per battle.
 - **FULL BOOKEYOND KID PRODUCT: NOT COMPLETE.**
 
@@ -328,7 +354,7 @@ and CI. None of these is complete; see sections B, L, M, O–U.
 1. Learning-loop policy left open by 5D: multi-skill decisions (**PD-11**), free-practice
    review (PD-12), version-completion (OD-10), thresholds (TD-06); TD-08, TD-09.
 2. PRINCIPAL test red (TD-04, needs PD-07).
-3. Tenancy: teacher content in family paths (**N7**).
+3. Tenancy follow-ups on the school side (TD-11, TD-12, TD-13 — Wave 2).
 4. Version consumers beyond activities/questions (**3R.1**: OD-08, OD-09, localization/media).
 5. Security hardening: **rate limiting (OD-01)**, `replaced_by_session_id` index (TD-05),
    token storage, identity verification, password reset, 4B negative test.
@@ -358,18 +384,18 @@ the open product decisions PD-01 to PD-10.
 6. **Release readiness:** git, CI, frontend and E2E tests, deployment topology, observability.
 7. **Subscription/entitlements** after PD-09.
 
-# IMMEDIATE NEXT BATTLE
+# IMMEDIATE NEXT WORK
 
-**Battle N7 — Content tenancy boundary (needs PD-05 first).**
-Teacher-authored content tagged to a system skill still flows into every family child's
-learning path. It was observed again in 5D's runtime journeys: a teacher activity landed
-on a family learner's path, and the completion-time adaptive decision pointed at it. That
-is a child-safety and privacy boundary (`CLAUDE.md` §10, §21), and it matters more now
-that the server acts on those placements automatically.
+**Wave 1 continues** (child + parent), in this order:
 
-1. Product decision PD-05: may teacher content ever enter family (non-school) curricula?
-2. Then enforce it wherever content is selected for a path (enrollment seeding, adaptive,
-   review) and verify with real HTTP.
+1. **Parent account & settings** — profile, sign-out everywhere, password change (needs the
+   identity work of Wave 4 for reset/verification; change-password with the current password
+   can land now), privacy page, child management (archive with data kept).
+2. **Parent goals** (directive §13.5) — needs a product decision on what a goal is (e.g.
+   minutes per week vs skills to secure) before any code; do not invent it.
+3. **Automated frontend tests** for the child play session and parent overview (none exist).
+4. Content: nothing further can be built without educator-authored content (PD-15) and
+   Khmer copy (PD-14); Content Studio (Wave 3) is the tool that unblocks both.
 
-**If PD-05 can't be decided yet:** Battle S1 — abuse protection (rate limiting, OD-01;
-`replaced_by_session_id` index, TD-05), which needs no product decision.
+Security hardening that needs no product decision (rate limiting OD-01, TD-05 index) remains
+the fallback whenever Wave 1 is blocked on a decision.

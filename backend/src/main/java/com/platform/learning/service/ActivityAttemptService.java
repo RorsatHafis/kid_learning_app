@@ -62,6 +62,7 @@ public class ActivityAttemptService {
     private final LearningPathRepository learningPathRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final PostCompletionService postCompletionService;
+    private final PathContentScope pathContentScope;
 
     @Autowired(required = false)
     private LearnerStreakService learnerStreakService;
@@ -72,7 +73,7 @@ public class ActivityAttemptService {
                                    IdempotencyService idempotencyService, AnswerSubmissionWriter answerSubmissionWriter,
                                    LearningPathItemRepository learningPathItemRepository,
                                    LearningPathRepository learningPathRepository, EnrollmentRepository enrollmentRepository,
-                                   PostCompletionService postCompletionService) {
+                                   PostCompletionService postCompletionService, PathContentScope pathContentScope) {
         this.attemptRepository = attemptRepository;
         this.answerRecordRepository = answerRecordRepository;
         this.activityItemRepository = activityItemRepository;
@@ -84,6 +85,7 @@ public class ActivityAttemptService {
         this.learningPathRepository = learningPathRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.postCompletionService = postCompletionService;
+        this.pathContentScope = pathContentScope;
     }
 
     /**
@@ -115,6 +117,11 @@ public class ActivityAttemptService {
         // own path item that pins it - verified just above. A start with no path
         // context is new work, and new work uses the current PUBLISHED version.
         if (version.getStatus() != PublicationStatus.PUBLISHED && learningPathItemId == null) {
+            throw new ResourceNotFoundException("Published ActivityVersion", activityVersionId);
+        }
+        // N7: free practice is limited to content the child's own scopes admit, so a
+        // family child can't be started on another tenant's (a teacher's) activity by id.
+        if (learningPathItemId == null && !pathContentScope.admitsActivityForChild(childId, version.getActivityId())) {
             throw new ResourceNotFoundException("Published ActivityVersion", activityVersionId);
         }
 

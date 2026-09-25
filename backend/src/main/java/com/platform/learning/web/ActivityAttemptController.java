@@ -4,6 +4,7 @@ import com.platform.family.service.FamilyAccessGuard;
 import com.platform.learning.entity.ActivityAttempt;
 import com.platform.learning.entity.AnswerRecord;
 import com.platform.learning.service.ActivityAttemptService;
+import com.platform.learning.service.AnswerFeedbackService;
 import com.platform.learning.service.PostCompletionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -45,12 +46,19 @@ public class ActivityAttemptController {
     private final ActivityAttemptService activityAttemptService;
     private final PostCompletionService postCompletionService;
     private final FamilyAccessGuard familyAccessGuard;
+    private final AnswerFeedbackService answerFeedbackService;
 
     public ActivityAttemptController(ActivityAttemptService activityAttemptService,
-                                      PostCompletionService postCompletionService, FamilyAccessGuard familyAccessGuard) {
+                                      PostCompletionService postCompletionService, FamilyAccessGuard familyAccessGuard,
+                                      AnswerFeedbackService answerFeedbackService) {
         this.activityAttemptService = activityAttemptService;
         this.postCompletionService = postCompletionService;
         this.familyAccessGuard = familyAccessGuard;
+        this.answerFeedbackService = answerFeedbackService;
+    }
+
+    private AnswerRecordResponse toResponse(AnswerRecord record) {
+        return AnswerRecordResponse.from(record, answerFeedbackService.correctAnswerFor(record));
     }
 
     @PostMapping("/api/v1/children/{childId}/activity-attempts")
@@ -81,7 +89,7 @@ public class ActivityAttemptController {
         familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
 
         List<AnswerRecordResponse> answers = activityAttemptService.listAnswers(attemptId).stream()
-                .map(AnswerRecordResponse::from)
+                .map(this::toResponse)
                 .toList();
 
         return ResponseEntity.ok(answers);
@@ -97,7 +105,7 @@ public class ActivityAttemptController {
         AnswerRecord record = activityAttemptService.submitAnswer(attemptId, request.questionVersionId(),
                 request.submittedAnswer(), request.timeSpentSeconds(), request.idempotencyKey());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(AnswerRecordResponse.from(record));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(record));
     }
 
     /**

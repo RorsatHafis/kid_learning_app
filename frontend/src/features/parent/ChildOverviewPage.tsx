@@ -1,198 +1,162 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Flame, Sparkles, TrendingUp, TrendingDown, Lightbulb } from "lucide-react";
+import { ArrowLeft, Pencil, Play } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
-import { childrenApi, progressApi, parentInsightApi } from "@/lib/api/endpoints";
-import { enrollmentPointerStore } from "@/lib/api/enrollmentPointerStore";
-import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
+import { childrenApi, learningApi } from "@/lib/api/endpoints";
+import { ApiError } from "@/lib/api/ApiError";
+import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
-import { Pill } from "@/components/ui/Pill";
 import { ageFromDateOfBirth } from "@/lib/utils/date";
-import { ChooseCurriculumPanel } from "./ChooseCurriculumPanel";
-import type { ParentInsight, ParentInsightType } from "@/lib/api/types";
-
-const insightIcon: Record<ParentInsightType, typeof TrendingUp> = {
-  PROGRESS: TrendingUp,
-  STRENGTH: Sparkles,
-  WEAKNESS: TrendingDown,
-  RECOMMENDATION: Lightbulb,
-};
-
-const insightTone: Record<ParentInsightType, "green" | "blue" | "amber" | "purple"> = {
-  PROGRESS: "blue",
-  STRENGTH: "green",
-  WEAKNESS: "amber",
-  RECOMMENDATION: "purple",
-};
-
-const insightIconClasses: Record<ParentInsightType, string> = {
-  PROGRESS: "bg-brand-blueTint text-brand-blue",
-  STRENGTH: "bg-brand-greenTint text-brand-green",
-  WEAKNESS: "bg-brand-amberTint text-brand-amber",
-  RECOMMENDATION: "bg-brand-purpleTint text-brand-purple",
-};
+import type { Child } from "@/lib/api/types";
+import { LearningNowSection } from "./LearningNowSection";
+import { SkillsSection } from "./SkillsSection";
+import { RecentActivitySection } from "./RecentActivitySection";
+import { InsightsSection } from "./InsightsSection";
 
 export function ChildOverviewPage() {
-  // key={childId} below forces a full remount when the parent switches to a
-  // different child (e.g. via a <Link> from ParentHome), rather than React
-  // Router reusing this component instance in place. Without it, every
-  // useState here (enrollmentId in particular) would keep the *previous*
-  // child's value after a client-side navigation, since a useState
-  // initializer only runs on first mount — confirmed as a real bug during
-  // the Slice 1 hardening pass, not a hypothetical.
-  const { childId } = useParams<{ childId: string }>();
-  return <ChildOverviewPageInner key={childId ?? "none"} childId={childId ?? ""} />;
+  // key={childId} forces a full remount when switching children, so no state from
+  // the previous child survives a client-side navigation.
+  const { childId = "" } = useParams<{ childId: string }>();
+  return <ChildOverview key={childId} childId={childId} />;
 }
 
-function ChildOverviewPageInner({ childId }: { childId: string }) {
+/**
+ * The parent's view of one child (directive §13.2–13.4): what they are learning
+ * now and why the next step is next, what the evidence says per skill, what they
+ * have done recently and what the platform decided after it, and the current
+ * insights. Every claim is rendered from a server read model; nothing is
+ * computed or invented here.
+ */
+function ChildOverview({ childId }: { childId: string }) {
+  const child = useAsync(() => childrenApi.get(childId), [childId]);
+  const enrollments = useAsync(() => learningApi.enrollments(childId), [childId]);
 
-  // No GET /children/{id} exists on the backend (only list) — see
-  // child/web/ChildController.java. Reusing the list call is the honest
-  // option; it's a small, cached-by-nobody call, acceptable for now.
-  const { data: children, error: childrenError, isLoading: childrenLoading } = useAsync(() => childrenApi.list(), []);
-  const child = children?.find((c) => c.id === childId);
-
-  const { data: progress, error: progressError, isLoading: progressLoading, refetch: refetchProgress } = useAsync(
-    () => progressApi.get(childId),
-    [childId],
-  );
-
-  const [enrollmentId, setEnrollmentId] = useState(() => enrollmentPointerStore.get(childId));
-
-  if (!childId) return null;
-
-  if (childrenLoading) return <LoadingState label="Loading child…" />;
-  if (childrenError) return <ErrorState error={childrenError} />;
-  if (!child) return <EmptyState title="Child not found" description="This child may have been removed." />;
+  if (child.isLoading) return <LoadingState label="Loading…" />;
+  if (child.error) {
+    return (
+      <div className="flex flex-col gap-6">
+        <BackLink />
+        <ErrorState
+          error={child.error}
+          message={child.error instanceof ApiError && child.error.status === 403 ? "You don't have access to this child." : undefined}
+          onRetry={child.refetch}
+        />
+      </div>
+    );
+  }
+  if (!child.data) return null;
 
   return (
-    <div className="flex flex-col gap-8">
-      <Link to="/parent" className="flex w-fit items-center gap-2 text-sm font-semibold text-muted hover:text-ink">
-        <ArrowLeft size={16} /> All children
-      </Link>
-
-      <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-blueTint text-2xl font-bold text-brand-blue">
-          {child.displayName.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <h1 className="text-2xl font-extrabold text-ink">{child.displayName}</h1>
-          <p className="text-sm text-muted">Age {ageFromDateOfBirth(child.dateOfBirth)}</p>
-        </div>
-      </div>
-
-      {enrollmentId ? (
-        <div className="flex items-center justify-between gap-4 rounded-3xl border-[1.5px] border-brand-blue bg-brand-blueTint/40 p-6">
-          <div>
-            <p className="font-bold text-ink">Ready to keep learning</p>
-            <p className="text-sm text-muted">Jump into {child.displayName}'s next activity.</p>
-          </div>
-          <Link to={`/parent/children/${childId}/learn`}>
-            <Button size="lg">Continue Learning</Button>
-          </Link>
-        </div>
-      ) : (
-        <ChooseCurriculumPanel childId={childId} onEnrolled={setEnrollmentId} />
-      )}
-
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-bold text-ink">Progress</h2>
-        {progressLoading && <LoadingState label="Loading progress…" />}
-        {progressError && <ErrorState error={progressError} onRetry={refetchProgress} />}
-        {progress && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Activities completed" value={progress.completedActivities} />
-            <StatCard label="Minutes learning" value={progress.learningMinutes} />
-            <StatCard
-              label="Current streak"
-              value={progress.currentStreak}
-              icon={<Flame size={18} className="text-brand-amber" />}
-            />
-            <StatCard
-              label="Learning path"
-              value={progress.totalPathItems > 0 ? `${progress.completedPathItems}/${progress.totalPathItems}` : "—"}
-            />
-          </div>
-        )}
-      </section>
-
-      <ParentInsightsSection childId={childId} />
+    <div className="flex flex-col gap-10">
+      <BackLink />
+      <Header child={child.data} onRenamed={child.refetch} />
+      <LearningNowSection childId={childId} childName={child.data.displayName} enrollments={enrollments} />
+      <SkillsSection childId={childId} />
+      <RecentActivitySection childId={childId} />
+      <InsightsSection childId={childId} />
     </div>
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string | number; icon?: React.ReactNode }) {
+function BackLink() {
   return (
-    <div className="rounded-3xl border-[1.5px] border-hairline bg-white p-5 shadow-soft">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
-        {icon}
-        {label}
-      </div>
-      <p className="mt-2 text-2xl font-extrabold text-ink">{value}</p>
-    </div>
+    <Link to="/parent" className="flex w-fit items-center gap-2 text-sm font-semibold text-muted hover:text-ink">
+      <ArrowLeft size={16} aria-hidden /> Your family
+    </Link>
   );
 }
 
-function ParentInsightsSection({ childId }: { childId: string }) {
-  const { data: insights, error, isLoading, refetch } = useAsync(() => parentInsightApi.list(childId), [childId]);
-  const [isGenerating, setIsGenerating] = useState(false);
+function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(child.displayName);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  async function onGenerate() {
-    setIsGenerating(true);
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
     try {
-      await parentInsightApi.generate(childId);
-      refetch();
+      await childrenApi.rename(child.id, name);
+      setEditing(false);
+      onRenamed();
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.validationErrors?.displayName
+          ? "Please enter a name (up to 80 characters)."
+          : "Couldn't save the name. Please try again.",
+      );
     } finally {
-      setIsGenerating(false);
+      setSaving(false);
     }
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-ink">Parent Insights</h2>
-        <Button variant="outline" size="md" onClick={onGenerate} disabled={isGenerating}>
-          {isGenerating ? "Generating…" : "Generate fresh insights"}
-        </Button>
+    <header className="flex flex-col gap-6 rounded-3xl bg-white p-6 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-8">
+      <div className="flex items-center gap-5">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-kid-mint text-2xl font-extrabold text-kid-mintDeep">
+          {child.displayName.charAt(0).toUpperCase()}
+        </span>
+        {editing ? (
+          <form onSubmit={save} className="flex flex-col gap-2">
+            <label htmlFor="child-name" className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Child's name
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <input
+                id="child-name"
+                value={name}
+                maxLength={80}
+                onChange={(e) => setName(e.target.value)}
+                className="rounded-2xl border-[1.5px] border-hairline px-4 py-2 font-semibold text-ink outline-none focus:border-brand-blueStrong"
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? "child-name-error" : undefined}
+              />
+              <Button type="submit" size="md" disabled={saving || !name.trim()}>
+                {saving ? "Saving…" : "Save"}
+              </Button>
+              <Button
+                type="button"
+                size="md"
+                variant="ghost"
+                onClick={() => {
+                  setEditing(false);
+                  setName(child.displayName);
+                  setError(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+            {error && (
+              <p id="child-name-error" role="alert" className="text-sm font-medium text-brand-red">
+                {error}
+              </p>
+            )}
+          </form>
+        ) : (
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">{child.displayName}</h1>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                aria-label={`Rename ${child.displayName}`}
+                className="rounded-full p-2 text-muted hover:bg-surface-sand hover:text-ink"
+              >
+                <Pencil size={16} aria-hidden />
+              </button>
+            </div>
+            <p className="text-sm text-muted">Age {ageFromDateOfBirth(child.dateOfBirth)}</p>
+          </div>
+        )}
       </div>
-
-      {isLoading && <LoadingState label="Loading insights…" />}
-      {error && <ErrorState error={error} onRetry={refetch} />}
-      {insights && insights.length === 0 && (
-        <EmptyState
-          title="No insights yet"
-          description="Once your child completes a few activities, generate insights to see what they're learning."
-        />
-      )}
-      {insights && insights.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {/* Current insights are derived live (no id): one per objective or
-              review flag, so type + headline is unique within the list. */}
-          {insights.map((insight) => (
-            <InsightCard key={`${insight.insightType}:${insight.headline}`} insight={insight} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function InsightCard({ insight }: { insight: ParentInsight }) {
-  const Icon = insightIcon[insight.insightType];
-  return (
-    <div className="flex gap-4 rounded-3xl border-[1.5px] border-hairline bg-white p-5 shadow-soft">
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${insightIconClasses[insight.insightType]}`}>
-        <Icon size={18} />
-      </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <p className="font-bold text-ink">{insight.headline}</p>
-          <Pill tone={insightTone[insight.insightType]} className="px-2 py-0.5 text-[11px]">
-            {insight.insightType}
-          </Pill>
-        </div>
-        {insight.detail && <p className="mt-1 text-sm leading-relaxed text-muted">{insight.detail}</p>}
-      </div>
-    </div>
+      <Link
+        to={`/learn/${child.id}`}
+        className="inline-flex items-center justify-center gap-2 rounded-pill bg-brand-blueStrong px-6 py-3.5 text-base font-semibold text-white shadow-soft hover:bg-blue-700"
+      >
+        <Play size={18} aria-hidden /> Start {child.displayName}'s session
+      </Link>
+    </header>
   );
 }

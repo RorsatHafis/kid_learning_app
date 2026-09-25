@@ -6,8 +6,12 @@ import type {
   AuthResponse,
   Child,
   ClassRosterChild,
+  CompletedActivity,
+  CurriculumProgress,
   CurriculumSummary,
   Enrollment,
+  EnrollmentOverview,
+  Journey,
   LearningPathItem,
   ParentInsight,
   ProgressSummary,
@@ -34,7 +38,20 @@ export const authApi = {
 // child/web/ChildController.java
 export const childrenApi = {
   list: () => apiClient.get<Child[]>("/children"),
+  get: (childId: string) => apiClient.get<Child>(`/children/${childId}`),
   create: (input: { displayName: string; dateOfBirth: string }) => apiClient.post<Child>("/children", input),
+  rename: (childId: string, displayName: string) => apiClient.patch<Child>(`/children/${childId}`, { displayName }),
+};
+
+// learning/web/LearningJourneyController.java — server-side views of a child's
+// learning. These replace the old client-side enrollment pointer: the server is
+// the only source of which enrollments a child has.
+export const learningApi = {
+  enrollments: (childId: string) => apiClient.get<EnrollmentOverview[]>(`/children/${childId}/enrollments`),
+  journey: (enrollmentId: string) => apiClient.get<Journey>(`/enrollments/${enrollmentId}/journey`),
+  skills: (childId: string) => apiClient.get<CurriculumProgress[]>(`/children/${childId}/skills`),
+  history: (childId: string, limit = 20) =>
+    apiClient.get<CompletedActivity[]>(`/children/${childId}/activity-history?limit=${limit}`),
 };
 
 // curriculum/web/CurriculumController.java

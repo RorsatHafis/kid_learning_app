@@ -119,7 +119,19 @@ public class TeacherAuthoringController {
     }
 
     private List<com.platform.content.entity.Lesson> lessonsOwned(UUID id) {
-        return lessonRepository.findByOwnerAccountId(id);
+        UUID owner = ownerFor(id);
+        return owner == null ? lessonRepository.findByOwnerAccountIdIsNull() : lessonRepository.findByOwnerAccountId(owner);
+    }
+
+    /**
+     * N7: the owner recorded on newly authored content. ADMIN authors platform content,
+     * which is ownerless - the same "null owner = system content, ADMIN-writable only"
+     * rule {@code ContentAccessGuard} already enforces - and only platform content is
+     * placed on family learning paths ({@code PathContentScope}). Everyone else owns
+     * what they author.
+     */
+    private UUID ownerFor(UUID accountId) {
+        return accounts.findById(accountId).orElseThrow().getPlatformRole() == PlatformRole.ADMIN ? null : accountId;
     }
 
     @PostMapping("/activities/{activityId}/skills/{skillId}")
@@ -132,7 +144,7 @@ public class TeacherAuthoringController {
     @PostMapping("/lessons")
     public LessonResponse lesson(@Valid @RequestBody LessonRequest r, @AuthenticationPrincipal UUID id) {
         contentGuard.requireAuthor(id);
-        return LessonResponse.of(lessons.createOwnedLesson(r.subjectId(), r.title(), id));
+        return LessonResponse.of(lessons.createOwnedLesson(r.subjectId(), r.title(), ownerFor(id)));
     }
 
     @PostMapping("/lessons/{lessonId}/versions")
@@ -199,7 +211,7 @@ public class TeacherAuthoringController {
     @PostMapping("/questions")
     public QuestionResponse question(@Valid @RequestBody QuestionRequest r, @AuthenticationPrincipal UUID id) {
         contentGuard.requireAuthor(id);
-        return QuestionResponse.of(questions.createOwnedQuestion(r.subjectId(), r.questionType(), id));
+        return QuestionResponse.of(questions.createOwnedQuestion(r.subjectId(), r.questionType(), ownerFor(id)));
     }
 
     @PostMapping("/questions/{questionId}/versions")
@@ -233,7 +245,10 @@ public class TeacherAuthoringController {
     public CurriculumResponse curriculum(@Valid @RequestBody CurriculumRequest r,
                                           @AuthenticationPrincipal UUID id) {
         contentGuard.requireAuthor(id);
-        return CurriculumResponse.of(curricula.createOwnedCurriculum(r.subjectId(), r.ageHubId(), r.name(), id));
+        UUID owner = ownerFor(id);
+        return CurriculumResponse.of(owner == null
+                ? curricula.createCurriculum(r.subjectId(), r.ageHubId(), r.name())
+                : curricula.createOwnedCurriculum(r.subjectId(), r.ageHubId(), r.name(), owner));
     }
 
     @PostMapping("/curricula/{curriculumId}/versions")

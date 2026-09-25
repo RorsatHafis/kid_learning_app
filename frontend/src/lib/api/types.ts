@@ -111,12 +111,162 @@ export interface ActivityAttempt {
   score: number | null;
 }
 
+/** Feedback on an answer already given (learning/service/AnswerFeedbackService):
+ * the correct answer, so a mistake can be explained. Only ever present on a
+ * recorded answer — the content endpoint never carries an answer key. */
+export interface CorrectAnswer {
+  /** MULTIPLE_CHOICE: the correct option id(s); empty for other types. */
+  optionIds: string[];
+  /** The correct answer as the child would read it. */
+  text: string | null;
+}
+
 export interface AnswerRecord {
   id: string;
   questionVersionId: string;
   correct: boolean;
   timeSpentSeconds: number | null;
   occurredAt: string;
+  correctAnswer: CorrectAnswer | null;
+}
+
+// ---- learning/service/LearningJourneyService.java (records served as-is by LearningJourneyController) ----
+
+export interface SkillRef {
+  id: string;
+  name: string;
+}
+
+export interface CurriculumRef {
+  id: string;
+  name: string;
+  subjectCode: string | null;
+  subjectName: string | null;
+  ageHubName: string | null;
+}
+
+/** Why a step is on the path — each value maps to a recorded cause. */
+export type PlacementReason =
+  | "CURRICULUM"
+  | "REINFORCE_PREREQUISITE"
+  | "REINFORCE_SKILL"
+  | "CHALLENGE"
+  | "REVIEW"
+  | "TEACHER_ASSIGNED"
+  | "UNEXPLAINED";
+
+export interface Explanation {
+  reason: PlacementReason;
+  /** The governing skill (adaptive) or reviewed skill (review). */
+  skill: SkillRef | null;
+  /** REINFORCE_PREREQUISITE only: the prerequisite practised. */
+  targetSkill: SkillRef | null;
+  afterActivityTitle: string | null;
+  afterScore: number | null;
+  decidedAt: string | null;
+}
+
+export interface JourneyStep {
+  learningPathItemId: string;
+  activityVersionId: string;
+  title: string;
+  activityType: string;
+  difficultyLevel: number | null;
+  estimatedDurationSeconds: number | null;
+  questionCount: number;
+  sequenceOrder: number;
+  status: LearningPathItemStatus;
+  source: LearningPathItemSource;
+  skills: SkillRef[];
+  score: number | null;
+  completedAt: string | null;
+  explanation: Explanation;
+}
+
+export interface Journey {
+  enrollmentId: string;
+  childId: string;
+  curriculum: CurriculumRef;
+  status: EnrollmentStatus;
+  enrolledAt: string;
+  completedSteps: number;
+  totalSteps: number;
+  /** Same rule as next-activity: the first PENDING or IN_PROGRESS step. */
+  nextStepId: string | null;
+  steps: JourneyStep[];
+}
+
+export interface EnrollmentOverview {
+  enrollmentId: string;
+  curriculum: CurriculumRef;
+  status: EnrollmentStatus;
+  enrolledAt: string;
+  completedSteps: number;
+  totalSteps: number;
+  nextStep: JourneyStep | null;
+}
+
+export type AdaptationDecisionType = "CONTINUE" | "INCREASE_DIFFICULTY" | "REMEDIATE" | "SCHEDULE_REVIEW";
+
+export interface DecisionSummary {
+  type: AdaptationDecisionType;
+  governingSkill: SkillRef | null;
+  targetSkill: SkillRef | null;
+  placedActivityTitle: string | null;
+}
+
+export interface CompletedActivity {
+  attemptId: string;
+  activityVersionId: string;
+  title: string;
+  subjectName: string | null;
+  /** null for free practice (no path item). */
+  source: LearningPathItemSource | null;
+  score: number | null;
+  correctAnswers: number;
+  totalAnswers: number;
+  startedAt: string;
+  completedAt: string;
+  skills: SkillRef[];
+  decision: DecisionSummary | null;
+}
+
+// ---- learner/service/EvidenceStandard.java, learning/service/SkillProgressService.java ----
+
+/** Evidence strength, separate from performance: NONE is "not assessed", never "weak". */
+export type EvidenceLevel = "NONE" | "PARTIAL" | "SUFFICIENT" | "STRONG";
+export type SkillStanding = "NOT_STARTED" | "TOO_EARLY_TO_TELL" | "NEEDS_PRACTICE" | "PROGRESSING" | "SECURE";
+export type ObjectiveStanding = "NOT_STARTED" | "IN_PROGRESS" | "SECURE";
+
+/** Deliberately no mastery number — the server reports what the evidence supports. */
+export interface SkillProgress {
+  skillId: string;
+  name: string;
+  description: string | null;
+  evidenceLevel: EvidenceLevel;
+  standing: SkillStanding;
+  scoredAnswers: number;
+  correctAnswers: number;
+  lastPracticedAt: string | null;
+  inReview: boolean;
+  reviewDueAt: string | null;
+}
+
+export interface ObjectiveProgress {
+  objectiveId: string;
+  title: string;
+  description: string | null;
+  standing: ObjectiveStanding;
+  skillsMapped: number;
+  skillsPractised: number;
+  skillsWithSufficientEvidence: number;
+  skills: SkillProgress[];
+}
+
+export interface CurriculumProgress {
+  enrollmentId: string;
+  curriculum: CurriculumRef;
+  objectives: ObjectiveProgress[];
 }
 
 // ---- learning/web/LearnerProgressController.java (inline Response record) ----

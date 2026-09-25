@@ -61,6 +61,15 @@ public class ChildService {
                 .toList();
     }
 
+    /** Renames a child. The caller has already verified family access. */
+    @Transactional
+    public Child rename(UUID childId, String displayName) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new ResourceNotFoundException("Child", childId));
+        child.rename(displayName.trim());
+        return child;
+    }
+
     /**
      * Adds a child to the calling account's family. Public registration
      * (PARENT-only - see {@code AuthController}) always creates exactly one ACTIVE

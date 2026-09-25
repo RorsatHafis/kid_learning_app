@@ -77,7 +77,8 @@ class ActivityAttemptServiceTests {
     void setUp() {
         service = new ActivityAttemptService(attemptRepository, answerRecordRepository, activityItemRepository,
                 activityVersionRepository, childRepository, idempotencyService, answerSubmissionWriter,
-                learningPathItemRepository, learningPathRepository, enrollmentRepository, postCompletionService);
+                learningPathItemRepository, learningPathRepository, enrollmentRepository, postCompletionService,
+                ContentScopes.admittingEverything());
         lenient().when(activityVersionRepository.findById(ACTIVITY_VERSION_ID))
                 .thenReturn(Optional.of(publishedActivityVersion(ACTIVITY_VERSION_ID)));
     }
