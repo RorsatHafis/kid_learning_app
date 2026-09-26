@@ -12,6 +12,7 @@ import com.platform.content.entity.ActivitySkill;
 import com.platform.content.entity.ActivityVersion;
 import com.platform.content.entity.Lesson;
 import com.platform.content.entity.Question;
+import com.platform.content.entity.MatchSide;
 import com.platform.content.entity.QuestionOption;
 import com.platform.content.entity.QuestionSkill;
 import com.platform.content.entity.QuestionType;
@@ -464,7 +465,9 @@ public class StudioService {
                 .map(version -> new QuestionVersionDetail(version.getId(), version.getVersionNumber(), version.getStatus(),
                         version.getPublishedAt(), version.getPrompt(), version.getCorrectAnswer(), version.getDifficultyLevel(),
                         questionService.listOptions(version.getId()).stream()
-                                .map(option -> new OptionDetail(option.getId(), option.getLabel(), option.isCorrect())).toList()))
+                                .filter(option -> option.getMatchSide() == null)
+                                .map(option -> new OptionDetail(option.getId(), option.getLabel(), option.isCorrect())).toList(),
+                        matchPairs(questionService.listOptions(version.getId()))))
                 .toList());
     }
 
@@ -481,6 +484,9 @@ public class StudioService {
                 answerFor(request.questionType(), request.correctAnswer()), request.difficultyLevel());
         if (request.questionType() == QuestionType.MULTIPLE_CHOICE && request.options() != null) {
             questionService.replaceOptions(draft.getId(), optionDrafts(request.options()));
+        }
+        if (request.questionType() == QuestionType.MATCHING && request.pairs() != null) {
+            questionService.replaceMatchPairs(draft.getId(), pairDrafts(request.pairs()));
         }
         return question(accountId, question.getId());
     }
@@ -500,6 +506,9 @@ public class StudioService {
                 answerFor(question.getQuestionType(), request.correctAnswer()), request.difficultyLevel());
         if (question.getQuestionType() == QuestionType.MULTIPLE_CHOICE && request.options() != null) {
             questionService.replaceOptions(questionVersionId, optionDrafts(request.options()));
+        }
+        if (question.getQuestionType() == QuestionType.MATCHING && request.pairs() != null) {
+            questionService.replaceMatchPairs(questionVersionId, pairDrafts(request.pairs()));
         }
         return question(accountId, question.getId());
     }
@@ -555,8 +564,8 @@ public class StudioService {
 
     private ActivityItemResponse learnerItem(UUID itemId, int sequenceOrder, QuestionVersion version) {
         Question question = questionService.getQuestion(version.getQuestionId());
-        List<QuestionOptionResponse> options = questionService.listOptions(version.getId()).stream()
-                .map(QuestionOptionResponse::from).toList();
+        List<QuestionOptionResponse> options = QuestionOptionResponse.forLearner(version.getId(),
+                questionService.listOptions(version.getId()));
         return new ActivityItemResponse(itemId, sequenceOrder, version.getId(), question.getQuestionType(),
                 version.getPrompt(), options);
     }
@@ -594,8 +603,24 @@ public class StudioService {
     }
 
     /** Multiple choice is answered by option id; its correct answer lives on the options, not the text field. */
+    private static List<QuestionService.MatchPairDraft> pairDrafts(List<MatchPairRequest> pairs) {
+        return pairs.stream().map(pair -> new QuestionService.MatchPairDraft(pair.left(), pair.right())).toList();
+    }
+
+    /** The author's view of a MATCHING version: its pairs in order (empty for other types). */
+    private static List<MatchPairDetail> matchPairs(List<QuestionOption> options) {
+        List<QuestionOption> lefts = options.stream().filter(o -> o.getMatchSide() == MatchSide.LEFT)
+                .sorted(java.util.Comparator.comparing(QuestionOption::getMatchPair)).toList();
+        return lefts.stream().map(left -> options.stream()
+                        .filter(o -> o.getMatchSide() == MatchSide.RIGHT && o.getMatchPair().equals(left.getMatchPair()))
+                        .findFirst()
+                        .map(right -> new MatchPairDetail(left.getId(), left.getLabel(), right.getId(), right.getLabel()))
+                        .orElse(new MatchPairDetail(left.getId(), left.getLabel(), null, null)))
+                .toList();
+    }
+
     private static String answerFor(QuestionType type, String correctAnswer) {
-        if (type == QuestionType.MULTIPLE_CHOICE) {
+        if (type == QuestionType.MULTIPLE_CHOICE || type == QuestionType.MATCHING) {
             return null;
         }
         return blankToNull(correctAnswer == null ? null : correctAnswer.strip());

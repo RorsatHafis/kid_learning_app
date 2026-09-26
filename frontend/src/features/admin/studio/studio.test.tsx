@@ -136,7 +136,7 @@ function draftQuestion(skillIds: string[]): QuestionDetail {
     questionType: "NUMERIC",
     skillIds,
     versions: [
-      { id: "qv1", versionNumber: 1, status: "DRAFT", publishedAt: null, prompt: "2 + 2 = ?", correctAnswer: "4", difficultyLevel: 1, options: [] },
+      { id: "qv1", versionNumber: 1, status: "DRAFT", publishedAt: null, prompt: "2 + 2 = ?", correctAnswer: "4", difficultyLevel: 1, options: [], pairs: [] },
     ],
   };
 }

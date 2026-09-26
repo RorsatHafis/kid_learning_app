@@ -86,6 +86,8 @@ export interface QuestionOption {
   id: string;
   label: string;
   displayOrder: number;
+  /** MATCHING only: which column the item is in. Which items pair up is never sent. */
+  matchSide?: "LEFT" | "RIGHT" | null;
 }
 
 export interface ActivityItem {
@@ -133,6 +135,8 @@ export interface CorrectAnswer {
   optionIds: string[];
   /** The correct answer as the child would read it. */
   text: string | null;
+  /** MATCHING: each left item's id with its match's id; empty for other types. */
+  matches?: { leftOptionId: string; rightOptionId: string }[];
 }
 
 export interface AnswerRecord {

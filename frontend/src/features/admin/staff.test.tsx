@@ -18,7 +18,7 @@ describe("StaffPage", () => {
     const posts: unknown[] = [];
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string, init?: RequestInit) => {
+      vi.fn(async (_url: string, init?: RequestInit) => {
         if (init?.method === "POST") {
           posts.push(JSON.parse(init.body as string));
           return respond(201, { id: "a1", email: "teacher@example.com", platformRole: "TEACHER", status: "ACTIVE", emailVerifiedAt: null });

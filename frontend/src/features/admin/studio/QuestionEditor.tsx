@@ -108,6 +108,7 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
                   correctAnswer: latest.correctAnswer,
                   difficultyLevel: latest.difficultyLevel,
                   options: latest.options.map((o) => ({ label: o.label, correct: o.correct })),
+                  pairs: latest.pairs.map((p) => ({ left: p.left, right: p.right ?? "" })),
                 }}
                 submitLabel="Save draft"
                 busy={busy}
@@ -221,11 +222,21 @@ function PublishedSummary({ detail }: { detail: QuestionDetail }) {
         <dd className="text-ink">{latest.prompt}</dd>
       </div>
       <div>
-        <dt className="font-semibold text-muted">Correct answer</dt>
+        <dt className="font-semibold text-muted">{detail.questionType === "MATCHING" ? "Pairs" : "Correct answer"}</dt>
         <dd className="text-ink">
-          {detail.questionType === "MULTIPLE_CHOICE"
-            ? latest.options.find((o) => o.correct)?.label ?? "—"
-            : latest.correctAnswer ?? "—"}
+          {detail.questionType === "MATCHING" ? (
+            <ul className="flex flex-col gap-0.5">
+              {latest.pairs.map((p) => (
+                <li key={p.leftId}>
+                  {p.left} ↔ {p.right ?? "—"}
+                </li>
+              ))}
+            </ul>
+          ) : detail.questionType === "MULTIPLE_CHOICE" ? (
+            latest.options.find((o) => o.correct)?.label ?? "—"
+          ) : (
+            latest.correctAnswer ?? "—"
+          )}
         </dd>
       </div>
       {detail.questionType === "MULTIPLE_CHOICE" && (

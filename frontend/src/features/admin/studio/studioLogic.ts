@@ -62,5 +62,4 @@ export const QUESTION_TYPE_LABEL: Record<QuestionType, string> = {
   MATCHING: "Matching",
 };
 
-/** MATCHING can't be scored yet (the server refuses to publish it), so it isn't offered. */
-export const AUTHORABLE_TYPES: QuestionType[] = ["MULTIPLE_CHOICE", "TRUE_FALSE", "NUMERIC", "SHORT_ANSWER"];
+export const AUTHORABLE_TYPES: QuestionType[] = ["MULTIPLE_CHOICE", "TRUE_FALSE", "NUMERIC", "SHORT_ANSWER", "MATCHING"];

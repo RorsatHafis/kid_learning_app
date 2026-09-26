@@ -2,6 +2,7 @@ package com.platform.learning.service;
 
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.content.entity.Question;
+import com.platform.content.entity.MatchSide;
 import com.platform.content.entity.QuestionOption;
 import com.platform.content.entity.QuestionVersion;
 import com.platform.content.repository.QuestionOptionRepository;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,9 +47,16 @@ public class AnswerFeedbackService {
     /**
      * @param optionIds for MULTIPLE_CHOICE, the correct option(s); empty otherwise
      * @param text      the correct answer as the child would read it (option label,
-     *                  "true"/"false", the number, or the expected text)
+     *                  "true"/"false", the number, the expected text, or the pairs)
+     * @param matches   for MATCHING, each left item's id with its match's id; empty otherwise
      */
-    public record CorrectAnswer(List<UUID> optionIds, String text) {
+    public record CorrectAnswer(List<UUID> optionIds, String text, List<MatchPair> matches) {
+        CorrectAnswer(List<UUID> optionIds, String text) {
+            this(optionIds, text, List.of());
+        }
+    }
+
+    public record MatchPair(UUID leftOptionId, UUID rightOptionId) {
     }
 
     @Transactional(readOnly = true)
@@ -71,8 +81,21 @@ public class AnswerFeedbackService {
                     .map(BigDecimal::stripTrailingZeros).map(BigDecimal::toPlainString).orElse(null));
             case SHORT_ANSWER -> new CorrectAnswer(List.of(),
                     version.getCorrectAnswer() == null ? null : version.getCorrectAnswer().trim());
-            // Never published (QuestionService refuses it), so never answered.
-            case MATCHING -> new CorrectAnswer(List.of(), null);
+            case MATCHING -> {
+                List<QuestionOption> items = questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId());
+                List<QuestionOption> lefts = items.stream().filter(o -> o.getMatchSide() == MatchSide.LEFT)
+                        .sorted(Comparator.comparing(QuestionOption::getMatchPair)).toList();
+                List<MatchPair> matches = new ArrayList<>();
+                List<String> words = new ArrayList<>();
+                for (QuestionOption left : lefts) {
+                    items.stream().filter(o -> o.getMatchSide() == MatchSide.RIGHT && o.getMatchPair().equals(left.getMatchPair()))
+                            .findFirst().ifPresent(right -> {
+                                matches.add(new MatchPair(left.getId(), right.getId()));
+                                words.add(left.getLabel() + " → " + right.getLabel());
+                            });
+                }
+                yield new CorrectAnswer(List.of(), String.join(", ", words), matches);
+            }
         };
     }
 

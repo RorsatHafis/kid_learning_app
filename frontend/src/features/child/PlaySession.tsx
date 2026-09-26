@@ -411,7 +411,9 @@ function Question({
             <p className="text-base font-semibold text-ink">
               {result.correct
                 ? "That's right."
-                : result.correctAnswer?.text
+                : result.correctAnswer?.matches?.length
+                  ? "Some matches got mixed up — the cards show where each one goes. Let's keep going!"
+                  : result.correctAnswer?.text
                   ? `The answer is ${result.correctAnswer.text}. Let's keep going!`
                   : "That wasn't quite it — let's keep going!"}
             </p>

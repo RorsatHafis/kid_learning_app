@@ -121,11 +121,20 @@ export interface OptionDetail {
   correct: boolean;
 }
 
+/** content/studio/StudioDtos.MatchPairDetail — one pair of a MATCHING question, author view. */
+export interface MatchPairDetail {
+  leftId: string;
+  left: string;
+  rightId: string | null;
+  right: string | null;
+}
+
 export interface QuestionVersionDetail extends VersionSummary {
   prompt: string;
   correctAnswer: string | null;
   difficultyLevel: number | null;
   options: OptionDetail[];
+  pairs: MatchPairDetail[];
 }
 
 export interface QuestionSummary {
@@ -173,11 +182,18 @@ export interface OptionInput {
   correct: boolean;
 }
 
+export interface MatchPairInput {
+  left: string;
+  right: string;
+}
+
 export interface QuestionDraftInput {
   prompt: string;
   correctAnswer: string | null;
   difficultyLevel: number | null;
   options?: OptionInput[];
+  /** MATCHING: each item with its match (2–6 pairs to publish). */
+  pairs?: MatchPairInput[];
 }
 
 const S = "/studio";

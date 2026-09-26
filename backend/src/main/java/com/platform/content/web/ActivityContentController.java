@@ -70,9 +70,8 @@ public class ActivityContentController {
         QuestionVersion questionVersion = questionService.getLearnerVisibleVersionById(item.getQuestionVersionId());
         Question question = questionService.getQuestion(questionVersion.getQuestionId());
 
-        List<QuestionOptionResponse> options = questionService.listOptions(questionVersion.getId()).stream()
-                .map(QuestionOptionResponse::from)
-                .toList();
+        List<QuestionOptionResponse> options = QuestionOptionResponse.forLearner(questionVersion.getId(),
+                questionService.listOptions(questionVersion.getId()));
 
         return new ActivityItemResponse(item.getId(), item.getSequenceOrder(), questionVersion.getId(),
                 question.getQuestionType(), questionVersion.getPrompt(), options);

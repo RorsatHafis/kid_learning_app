@@ -1,5 +1,6 @@
 package com.platform.learning.service;
 
+import com.platform.content.entity.MatchSide;
 import com.platform.content.entity.QuestionOption;
 import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
@@ -9,7 +10,15 @@ import com.platform.learning.exception.InvalidAnswerException;
 import com.platform.learning.exception.UnscorableAnswerException;
 import org.springframework.stereotype.Service;
 
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -26,7 +35,10 @@ import java.util.UUID;
  *       with the version's correct_answer read the same way.</li>
  *   <li>SHORT_ANSWER: free text, trimmed, case-insensitive exact match.</li>
  *   <li>NUMERIC: a decimal number, compared by numeric value.</li>
- *   <li>MATCHING: not scorable yet (publication is refused - see QuestionService).</li>
+ *   <li>MATCHING: a JSON object mapping every left item's option id to the id of
+ *       the right item the child matched it with, each right item used once. Correct
+ *       only when every pair is right: evidence is one answer, right or wrong, as for
+ *       every other type (partial credit would change the evidence model).</li>
  * </ul>
  * A submission that is not a valid response under this contract throws
  * {@link InvalidAnswerException} before anything is persisted, so it can never
@@ -35,6 +47,8 @@ import java.util.UUID;
  */
 @Service
 public class AnswerScoringService {
+
+    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     private final QuestionOptionRepository questionOptionRepository;
 
@@ -48,11 +62,7 @@ public class AnswerScoringService {
             case TRUE_FALSE -> scoreTrueFalse(version.getCorrectAnswer(), submittedAnswer);
             case SHORT_ANSWER -> scoreByExactText(version.getCorrectAnswer(), submittedAnswer);
             case NUMERIC -> scoreNumeric(version.getCorrectAnswer(), submittedAnswer);
-            // MATCHING needs a pairing structure this schema doesn't model yet (QuestionOption
-            // has no "pairs with" concept) - refusing to guess rather than risk marking a
-            // genuinely correct answer wrong (see UnscorableAnswerException's javadoc).
-            case MATCHING -> throw new UnscorableAnswerException(
-                    "Automated scoring for MATCHING questions is not implemented yet");
+            case MATCHING -> scoreMatching(version.getId(), submittedAnswer);
         };
     }
 
@@ -89,6 +99,37 @@ public class AnswerScoringService {
                 .orElseThrow(() -> new UnscorableAnswerException(
                         "This numeric question has no valid correct answer and cannot be scored"));
         return correct.compareTo(submitted) == 0;
+    }
+
+    private boolean scoreMatching(UUID questionVersionId, String submittedAnswer) {
+        Map<UUID, QuestionOption> items = new HashMap<>();
+        questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(questionVersionId)
+                .forEach(option -> items.put(option.getId(), option));
+        long leftCount = items.values().stream().filter(o -> o.getMatchSide() == MatchSide.LEFT).count();
+        if (leftCount == 0) {
+            throw new UnscorableAnswerException("This matching question has no pairs and cannot be scored");
+        }
+        JsonNode answer;
+        try {
+            answer = JSON.readTree(submittedAnswer == null ? "" : submittedAnswer);
+        } catch (JacksonException e) {
+            throw new InvalidAnswerException("A matching answer must pair each item with one match");
+        }
+        if (answer == null || !answer.isObject() || answer.size() != leftCount) {
+            throw new InvalidAnswerException("A matching answer must pair every item with one match");
+        }
+        Set<UUID> usedRights = new HashSet<>();
+        boolean allCorrect = true;
+        for (Map.Entry<String, JsonNode> pair : answer.properties()) {
+            QuestionOption left = items.get(parseOptionId(pair.getKey()));
+            QuestionOption right = pair.getValue().isString() ? items.get(parseOptionId(pair.getValue().asString())) : null;
+            if (left == null || left.getMatchSide() != MatchSide.LEFT || right == null || right.getMatchSide() != MatchSide.RIGHT
+                    || !usedRights.add(right.getId())) {
+                throw new InvalidAnswerException("A matching answer must pair each item with a different match");
+            }
+            allCorrect &= left.getMatchPair().equals(right.getMatchPair());
+        }
+        return allCorrect;
     }
 
     private static UUID parseOptionId(String submittedAnswer) {

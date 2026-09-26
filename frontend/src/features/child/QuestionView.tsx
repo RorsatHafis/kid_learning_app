@@ -2,10 +2,12 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, CorrectAnswer } from "@/lib/api/types";
+import { MatchingQuestion } from "./MatchingQuestion";
 
 // Answer contract (backend AnswerScoringService): MULTIPLE_CHOICE submits the chosen
 // option's id — the label is display text only; TRUE_FALSE submits "true"/"false";
-// SHORT_ANSWER/NUMERIC submit the typed value. The server scores; this view only
+// SHORT_ANSWER/NUMERIC submit the typed value; MATCHING submits the pairing
+// (MatchingQuestion). The server scores; this view only
 // shows the result it returns.
 
 export interface AnswerResult {
@@ -57,9 +59,10 @@ export function QuestionView({
     case "SHORT_ANSWER":
     case "NUMERIC":
       return <FreeResponse item={item} onAnswer={onAnswer} disabled={disabled} result={result} />;
+    case "MATCHING":
+      return <MatchingQuestion item={item} onAnswer={onAnswer} disabled={disabled} result={result} />;
     default:
-      // MATCHING (and anything newer than this client) has no scoring contract yet —
-      // the backend refuses to publish it. Say so rather than fake an interaction.
+      // A question type newer than this client: say so rather than fake an interaction.
       return (
         <div role="status" className="rounded-3xl border-2 border-dashed border-hairline bg-kid-cream px-6 py-8 text-center">
           <p className="text-lg font-bold">This kind of question isn't ready yet.</p>

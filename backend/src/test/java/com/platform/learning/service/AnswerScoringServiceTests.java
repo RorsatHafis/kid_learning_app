@@ -1,5 +1,6 @@
 package com.platform.learning.service;
 
+import com.platform.content.entity.MatchSide;
 import com.platform.content.entity.QuestionOption;
 import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
@@ -102,10 +103,63 @@ class AnswerScoringServiceTests {
         assertThat(scoring.score(QuestionType.SHORT_ANSWER, version, "hi")).isFalse();
     }
 
+    // L9: MATCHING was refused until pairing was modelled (V40); it is now scored, and
+    // anything that is not a complete one-to-one pairing is refused, never scored wrong.
+
     @Test
-    void matchingIsNeverScored() {
-        assertThatThrownBy(() -> scoring.score(QuestionType.MATCHING, version("Match", null), "anything"))
+    void matchingIsCorrectOnlyWhenEveryPairIsRight() {
+        QuestionVersion version = version("Match the animal to its sound", null);
+        QuestionOption dog = match(version, "Dog", MatchSide.LEFT, 0);
+        QuestionOption woof = match(version, "Woof", MatchSide.RIGHT, 0);
+        QuestionOption cat = match(version, "Cat", MatchSide.LEFT, 1);
+        QuestionOption meow = match(version, "Meow", MatchSide.RIGHT, 1);
+        when(questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId()))
+                .thenReturn(List.of(dog, woof, cat, meow));
+
+        assertThat(scoring.score(QuestionType.MATCHING, version, pairs(dog, woof, cat, meow))).isTrue();
+        assertThat(scoring.score(QuestionType.MATCHING, version, pairs(dog, meow, cat, woof))).isFalse();
+    }
+
+    @Test
+    void anIncompleteOrMalformedPairingIsRefusedNotScoredWrong() {
+        QuestionVersion version = version("Match", null);
+        QuestionOption dog = match(version, "Dog", MatchSide.LEFT, 0);
+        QuestionOption woof = match(version, "Woof", MatchSide.RIGHT, 0);
+        QuestionOption cat = match(version, "Cat", MatchSide.LEFT, 1);
+        QuestionOption meow = match(version, "Meow", MatchSide.RIGHT, 1);
+        when(questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId()))
+                .thenReturn(List.of(dog, woof, cat, meow));
+
+        for (String answer : new String[] {
+                "not json",
+                "[]",
+                "{\"" + dog.getId() + "\":\"" + woof.getId() + "\"}",                        // a pair missing
+                pairs(dog, woof, cat, woof),                                                    // one match used twice
+                pairs(dog, woof, woof, meow),                                                   // a right item on the left
+                "{\"" + dog.getId() + "\":\"" + woof.getId() + "\",\"" + cat.getId() + "\":7}",  // not an id
+                pairs(dog, woof, cat, match(version, "Moo", MatchSide.RIGHT, 1))}) {             // not this question's
+            assertThatThrownBy(() -> scoring.score(QuestionType.MATCHING, version, answer)).as(answer)
+                    .isInstanceOf(InvalidAnswerException.class);
+        }
+    }
+
+    @Test
+    void aMatchingQuestionWithoutPairsIsUnscorable() {
+        QuestionVersion version = version("Match", null);
+        when(questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId())).thenReturn(List.of());
+
+        assertThatThrownBy(() -> scoring.score(QuestionType.MATCHING, version, "{}"))
                 .isInstanceOf(UnscorableAnswerException.class);
+    }
+
+    private static String pairs(QuestionOption left1, QuestionOption right1, QuestionOption left2, QuestionOption right2) {
+        return "{\"" + left1.getId() + "\":\"" + right1.getId() + "\",\"" + left2.getId() + "\":\"" + right2.getId() + "\"}";
+    }
+
+    private static QuestionOption match(QuestionVersion version, String label, MatchSide side, int pair) {
+        QuestionOption option = QuestionOption.matchItem(version.getId(), label, side, pair, pair);
+        ReflectionTestUtils.setField(option, "id", UUID.randomUUID());
+        return option;
     }
 
     private static QuestionVersion version(String prompt, String correctAnswer) {

@@ -134,9 +134,13 @@ public final class StudioDtos {
     public record OptionDetail(UUID id, String label, boolean correct) {
     }
 
+    /** One pair of a MATCHING question, as the author sees it. */
+    public record MatchPairDetail(UUID leftId, String left, UUID rightId, String right) {
+    }
+
     public record QuestionVersionDetail(UUID id, int versionNumber, PublicationStatus status, Instant publishedAt,
                                         String prompt, String correctAnswer, Integer difficultyLevel,
-                                        List<OptionDetail> options) {
+                                        List<OptionDetail> options, List<MatchPairDetail> pairs) {
     }
 
     public record QuestionSummary(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,
@@ -150,16 +154,22 @@ public final class StudioDtos {
     public record OptionRequest(@NotBlank @Size(max = 300) String label, boolean correct) {
     }
 
+    /** MATCHING: an item and its match. */
+    public record MatchPairRequest(@NotBlank @Size(max = 300) String left, @NotBlank @Size(max = 300) String right) {
+    }
+
     public record CreateQuestionRequest(@NotNull UUID subjectId, @NotNull QuestionType questionType,
                                         @NotBlank @Size(max = 2000) String prompt, @Size(max = 300) String correctAnswer,
                                         @Min(1) @Max(10) Integer difficultyLevel,
                                         @Size(max = 10) List<@Valid @NotNull OptionRequest> options,
+                                        @Size(max = 6) List<@Valid @NotNull MatchPairRequest> pairs,
                                         @NotNull @Size(max = 20) List<@NotNull UUID> skillIds) {
     }
 
     public record ReviseQuestionDraftRequest(@NotBlank @Size(max = 2000) String prompt, @Size(max = 300) String correctAnswer,
                                              @Min(1) @Max(10) Integer difficultyLevel,
-                                             @Size(max = 10) List<@Valid @NotNull OptionRequest> options) {
+                                             @Size(max = 10) List<@Valid @NotNull OptionRequest> options,
+                                             @Size(max = 6) List<@Valid @NotNull MatchPairRequest> pairs) {
     }
 
 }

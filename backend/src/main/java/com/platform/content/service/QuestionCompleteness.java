@@ -1,12 +1,16 @@
 package com.platform.content.service;
 
+import com.platform.content.entity.MatchSide;
 import com.platform.content.entity.QuestionOption;
 import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
 import com.platform.content.validation.ValidationReport.Issue;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Whether a question version is complete enough to score: the answer contract
@@ -17,6 +21,9 @@ public final class QuestionCompleteness {
 
     private QuestionCompleteness() {
     }
+
+    public static final int MIN_PAIRS = 2;
+    public static final int MAX_PAIRS = 6;
 
     /** Why the version can't be scored, or empty when it can. */
     public static Optional<Issue> problem(QuestionType questionType, QuestionVersion version, List<QuestionOption> options) {
@@ -32,12 +39,7 @@ public final class QuestionCompleteness {
                                 .formatted(correctCount))
                         : null;
             }
-            // Battle 5A: MATCHING has no scoring implementation (AnswerScoringService throws
-            // UnscorableAnswerException), so a published MATCHING question could never be
-            // answered and would leave any activity containing it uncompletable. Refused
-            // until pairing is modelled and scored, rather than published broken.
-            case MATCHING -> new Issue("MATCHING_UNSUPPORTED",
-                    "Matching questions can't be scored yet, so they can't be published.");
+            case MATCHING -> matchingProblem(options);
             // TRUE_FALSE and NUMERIC must use the same canonical formats AnswerScoringService
             // scores against (CanonicalAnswers), so published content is always scorable.
             case TRUE_FALSE -> CanonicalAnswers.parseTrueFalse(version.getCorrectAnswer()).isEmpty()
@@ -50,6 +52,38 @@ public final class QuestionCompleteness {
                     ? new Issue("ANSWER_MISSING", "The question needs a correct answer.")
                     : null;
         });
+    }
+
+    /**
+     * A MATCHING version scores only if every option is a matching item, pairs 0..n-1 each
+     * have exactly one left and one right, and no two items on the same side read the same:
+     * with two identical right items a child could choose the "wrong" one of two equal
+     * answers and be marked wrong for it.
+     */
+    private static Issue matchingProblem(List<QuestionOption> options) {
+        if (options.stream().anyMatch(o -> o.getMatchSide() == null)) {
+            return new Issue("MATCHING_NOT_PAIRED", "Every item of a matching question must belong to a pair.");
+        }
+        List<QuestionOption> lefts = options.stream().filter(o -> o.getMatchSide() == MatchSide.LEFT).toList();
+        List<QuestionOption> rights = options.stream().filter(o -> o.getMatchSide() == MatchSide.RIGHT).toList();
+        if (lefts.size() < MIN_PAIRS || lefts.size() > MAX_PAIRS) {
+            return new Issue("MATCHING_PAIR_COUNT", "A matching question needs %d to %d pairs (it has %d)."
+                    .formatted(MIN_PAIRS, MAX_PAIRS, lefts.size()));
+        }
+        Set<Integer> leftPairs = lefts.stream().map(QuestionOption::getMatchPair).collect(Collectors.toSet());
+        Set<Integer> rightPairs = rights.stream().map(QuestionOption::getMatchPair).collect(Collectors.toSet());
+        if (rights.size() != lefts.size() || !leftPairs.equals(rightPairs)) {
+            return new Issue("MATCHING_PAIR_INCOMPLETE", "Every pair needs one item on each side.");
+        }
+        if (hasDuplicateLabels(lefts) || hasDuplicateLabels(rights)) {
+            return new Issue("MATCHING_DUPLICATE_ITEM",
+                    "Two items on the same side read the same, so a child couldn't tell which one is meant.");
+        }
+        return null;
+    }
+
+    private static boolean hasDuplicateLabels(List<QuestionOption> items) {
+        return items.stream().map(o -> o.getLabel().strip().toLowerCase(Locale.ROOT)).distinct().count() != items.size();
     }
 
 }

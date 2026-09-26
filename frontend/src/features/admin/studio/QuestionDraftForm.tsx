@@ -1,21 +1,22 @@
 import { useState, type FormEvent } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import type { QuestionType } from "@/lib/api/types";
-import type { OptionInput, QuestionDraftInput } from "@/lib/api/studio";
+import type { MatchPairInput, OptionInput, QuestionDraftInput } from "@/lib/api/studio";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { SelectField, TextAreaField } from "./shared";
 import { DIFFICULTIES } from "./studioLogic";
 
-
-
 const MAX_OPTIONS = 10;
+const MAX_PAIRS = 6; // content/service/QuestionCompleteness.MAX_PAIRS
+const MIN_PAIRS = 2;
 
 /**
  * The editable part of a question version. The answer contract follows the scorer
  * (AnswerScoringService): multiple choice is answered by choosing an option, so its
  * key lives on the options; true/false is "true" or "false"; number answers must be
- * numbers; short answers are compared to the text given.
+ * numbers; short answers are compared to the text given; a matching question is its
+ * pairs — the child sees the two columns, never which items belong together.
  */
 export function QuestionDraftForm({
   questionType,
@@ -44,17 +45,30 @@ export function QuestionDraftForm({
         ],
   );
 
+  const [pairs, setPairs] = useState<MatchPairInput[]>(
+    initial.pairs && initial.pairs.length > 0
+      ? initial.pairs
+      : [
+          { left: "", right: "" },
+          { left: "", right: "" },
+        ],
+  );
+  const matching = questionType === "MATCHING";
+
   function submit(e: FormEvent) {
     e.preventDefault();
     onSubmit({
       prompt: prompt.trim(),
-      correctAnswer: questionType === "MULTIPLE_CHOICE" ? null : answer.trim() || null,
+      correctAnswer: questionType === "MULTIPLE_CHOICE" || matching ? null : answer.trim() || null,
       difficultyLevel: difficulty ? Number(difficulty) : null,
       options: questionType === "MULTIPLE_CHOICE" ? options.map((o) => ({ label: o.label.trim(), correct: o.correct })) : undefined,
+      pairs: matching ? pairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() })) : undefined,
     });
   }
 
-  const optionsComplete = questionType !== "MULTIPLE_CHOICE" || options.every((o) => o.label.trim());
+  const optionsComplete =
+    (questionType !== "MULTIPLE_CHOICE" || options.every((o) => o.label.trim())) &&
+    (!matching || pairs.every((p) => p.left.trim() && p.right.trim()));
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
@@ -104,6 +118,58 @@ export function QuestionDraftForm({
               className="flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-brand-blueStrong hover:bg-brand-blueTint"
             >
               <Plus size={14} aria-hidden /> Add a choice
+            </button>
+          )}
+        </fieldset>
+      )}
+
+      {matching && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm font-semibold text-ink">
+            Pairs — each item on the left with its match. Children see the right column in a mixed-up order.
+          </legend>
+          {pairs.map((pair, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <span aria-hidden className="w-5 shrink-0 text-right text-xs font-bold text-muted">
+                {index + 1}
+              </span>
+              <input
+                value={pair.left}
+                maxLength={300}
+                onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, left: e.target.value } : p)))}
+                aria-label={`Pair ${index + 1}: item`}
+                placeholder="Item"
+                className="min-w-0 flex-1 rounded-2xl border-[1.5px] border-hairline px-4 py-2.5 text-sm outline-none focus:border-brand-blueStrong"
+              />
+              <span aria-hidden className="text-muted">
+                ↔
+              </span>
+              <input
+                value={pair.right}
+                maxLength={300}
+                onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, right: e.target.value } : p)))}
+                aria-label={`Pair ${index + 1}: its match`}
+                placeholder="Its match"
+                className="min-w-0 flex-1 rounded-2xl border-[1.5px] border-hairline px-4 py-2.5 text-sm outline-none focus:border-brand-blueStrong"
+              />
+              <button
+                type="button"
+                onClick={() => setPairs(pairs.filter((_, i) => i !== index))}
+                disabled={pairs.length <= MIN_PAIRS}
+                aria-label={`Remove pair ${index + 1}`}
+                className="rounded-full p-2 text-muted hover:bg-surface-sand hover:text-ink disabled:opacity-40"
+              >
+                <Trash2 size={16} aria-hidden />
+              </button>
+            </div>
+          ))}
+          {pairs.length < MAX_PAIRS && (
+            <button
+              type="button"
+              onClick={() => setPairs([...pairs, { left: "", right: "" }])}
+              className="flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-brand-blueStrong hover:bg-brand-blueTint"
+            >
+              <Plus size={14} aria-hidden /> Add a pair
             </button>
           )}
         </fieldset>

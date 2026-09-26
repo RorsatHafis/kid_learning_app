@@ -3,6 +3,7 @@ package com.platform.content.service;
 import com.platform.common.entity.PublicationStatus;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.content.entity.Question;
+import com.platform.content.entity.MatchSide;
 import com.platform.content.entity.QuestionOption;
 import com.platform.content.entity.QuestionSkill;
 import com.platform.content.entity.QuestionType;
@@ -131,8 +132,8 @@ public class QuestionService {
      * enough to show a learner - this is the "prevent incomplete content from
      * becoming learner-visible" check called for in Section 13 of the master
      * prompt, enforced here rather than left as an aspiration. MULTIPLE_CHOICE
-     * needs at least 2 options with exactly one marked correct; MATCHING is refused
-     * outright (not scorable yet); TRUE_FALSE and NUMERIC need a correct_answer in
+     * needs at least 2 options with exactly one marked correct; MATCHING needs 2-6
+     * complete pairs with distinct labels on each side; TRUE_FALSE and NUMERIC need a correct_answer in
      * the canonical format scoring uses ({@link CanonicalAnswers}); SHORT_ANSWER
      * needs a non-blank correct_answer.
      */
@@ -197,6 +198,25 @@ public class QuestionService {
     public record OptionDraft(String label, boolean correct) {
     }
 
+    public record MatchPairDraft(String left, String right) {
+    }
+
+    /**
+     * Replaces a MATCHING draft's pairs: pair i is the left item {@code left} and its match
+     * {@code right}. Replaces every option of the draft.
+     */
+    @Transactional
+    public List<QuestionOption> replaceMatchPairs(UUID questionVersionId, List<MatchPairDraft> pairs) {
+        requireDraft(getVersion(questionVersionId));
+        questionOptionRepository.deleteByQuestionVersionId(questionVersionId);
+        questionOptionRepository.flush();
+        for (int i = 0; i < pairs.size(); i++) {
+            questionOptionRepository.save(QuestionOption.matchItem(questionVersionId, pairs.get(i).left().strip(), MatchSide.LEFT, i, i));
+            questionOptionRepository.save(QuestionOption.matchItem(questionVersionId, pairs.get(i).right().strip(), MatchSide.RIGHT, i, i));
+        }
+        return listOptions(questionVersionId);
+    }
+
     /** Replaces a draft's answer choices, in the given order. */
     @Transactional
     public List<QuestionOption> replaceOptions(UUID questionVersionId, List<OptionDraft> options) {
@@ -225,8 +245,7 @@ public class QuestionService {
         QuestionVersion draft = createDraftVersion(questionId, latest.getPrompt(), latest.getCorrectAnswer(),
                 latest.getDifficultyLevel());
         for (QuestionOption option : listOptions(latest.getId())) {
-            questionOptionRepository.save(QuestionOption.create(draft.getId(), option.getLabel(), option.isCorrect(),
-                    option.getDisplayOrder()));
+            questionOptionRepository.save(option.copyFor(draft.getId()));
         }
         return draft;
     }

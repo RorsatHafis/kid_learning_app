@@ -145,6 +145,89 @@ class ContentStudioIntegrationTests {
         assertThat(skill.get("correctAnswers").asInt()).isEqualTo(1);
     }
 
+    /** L9: a matching question from authoring to a scored answer, and the pairing never reaches the child. */
+    @Test
+    void aMatchingQuestionIsAuthoredPlayedAndScoredWithoutRevealingThePairs() throws Exception {
+        String admin = staff(PlatformRole.ADMIN);
+        Catalog catalog = catalog(admin);
+
+        JsonNode question = json(post("/api/v1/studio/questions", "{\"subjectId\":\"" + catalog.subjectId()
+                + "\",\"questionType\":\"MATCHING\",\"prompt\":\"Match each number to its dots\",\"difficultyLevel\":1,"
+                + "\"pairs\":[{\"left\":\"1\",\"right\":\"•\"}],\"skillIds\":[\"" + catalog.skillId() + "\"]}", admin), 201);
+        String questionId = question.get("id").asString();
+        String versionId = firstVersion(question);
+        assertThat(codes(json(get("/api/v1/studio/question-versions/" + versionId + "/validation", admin), 200).get("errors")))
+                .containsExactly("MATCHING_PAIR_COUNT");
+        json(put("/api/v1/studio/question-versions/" + versionId, "{\"prompt\":\"Match each number to its dots\","
+                + "\"pairs\":[{\"left\":\"1\",\"right\":\"•\"},{\"left\":\"2\",\"right\":\"•\"}]}", admin), 200);
+        assertThat(codes(json(get("/api/v1/studio/question-versions/" + versionId + "/validation", admin), 200).get("errors")))
+                .containsExactly("MATCHING_DUPLICATE_ITEM");
+        JsonNode draft = json(put("/api/v1/studio/question-versions/" + versionId, "{\"prompt\":\"Match each number to its dots\","
+                + "\"pairs\":[{\"left\":\"1\",\"right\":\"•\"},{\"left\":\"2\",\"right\":\"••\"},{\"left\":\"3\",\"right\":\"•••\"}]}", admin), 200);
+        JsonNode pairs = draft.get("versions").get(0).get("pairs");
+        assertThat(pairs).hasSize(3);
+        assertThat(json(get("/api/v1/studio/question-versions/" + versionId + "/validation", admin), 200).get("errors")).isEmpty();
+        JsonNode preview = json(get("/api/v1/studio/question-versions/" + versionId + "/preview", admin), 200);
+        assertThat(preview.get("options")).hasSize(6);
+        assertThat(preview.toString()).doesNotContain("matchPair").doesNotContain("correct");
+        json(post("/api/v1/studio/question-versions/" + versionId + "/publish", "", admin), 200);
+
+        String lessonId = json(post("/api/v1/studio/lessons", "{\"subjectId\":\"" + catalog.subjectId()
+                + "\",\"title\":\"Dots\"}", admin), 201).get("id").asString();
+        JsonNode activity = json(post("/api/v1/studio/lessons/" + lessonId + "/activities",
+                "{\"title\":\"Match the dots\",\"skillIds\":[\"" + catalog.skillId() + "\"]}", admin), 201);
+        String activityVersionId = firstVersion(activity);
+        json(put("/api/v1/studio/activity-versions/" + activityVersionId + "/items",
+                "{\"items\":[{\"questionVersionId\":\"" + versionId + "\"}]}", admin), 200);
+        json(post("/api/v1/studio/activity-versions/" + activityVersionId + "/publish", "", admin), 200);
+        JsonNode curriculum = json(post("/api/v1/studio/curricula", "{\"subjectId\":\"" + catalog.subjectId()
+                + "\",\"ageHubId\":\"" + catalog.ageHubId() + "\",\"name\":\"Dots " + catalog.suffix() + "\"}", admin), 201);
+        json(put("/api/v1/studio/curriculum-versions/" + firstVersion(curriculum) + "/objectives",
+                "{\"objectiveIds\":[\"" + catalog.objectiveId() + "\"]}", admin), 200);
+        json(post("/api/v1/studio/curriculum-versions/" + firstVersion(curriculum) + "/publish", "", admin), 200);
+
+        // What a child's device receives: two columns, no pairing, the right column not in pair order.
+        String parent = registerParent();
+        String childId = json(post("/api/v1/children", "{\"displayName\":\"Matcher\",\"dateOfBirth\":\""
+                + LocalDate.now().minusYears(6) + "\"}", parent), 201).get("id").asString();
+        String enrollmentId = json(post("/api/v1/children/" + childId + "/enrollments",
+                "{\"curriculumId\":\"" + curriculum.get("id").asString() + "\"}", parent), 201).get("id").asString();
+        JsonNode step = json(get("/api/v1/enrollments/" + enrollmentId + "/journey", parent), 200).get("steps").get(0);
+        JsonNode item = json(get("/api/v1/activity-versions/" + activityVersionId, parent), 200).get("items").get(0);
+        assertThat(item.get("questionType").asString()).isEqualTo("MATCHING");
+        assertThat(item.toString()).doesNotContain("matchPair").doesNotContain("correct");
+        List<String> sides = new ArrayList<>();
+        item.get("options").forEach(option -> sides.add(option.get("matchSide").asString()));
+        assertThat(sides).containsExactly("LEFT", "LEFT", "LEFT", "RIGHT", "RIGHT", "RIGHT");
+
+        String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts", "{\"activityVersionId\":\""
+                + activityVersionId + "\",\"learningPathItemId\":\"" + step.get("learningPathItemId").asString() + "\"}", parent), 201)
+                .get("id").asString();
+        // An incomplete pairing is refused and is not evidence.
+        String partial = "{\\\"" + pairs.get(0).get("leftId").asString() + "\\\":\\\"" + pairs.get(0).get("rightId").asString() + "\\\"}";
+        assertThat(post("/api/v1/activity-attempts/" + attemptId + "/answers", "{\"questionVersionId\":\"" + versionId
+                + "\",\"submittedAnswer\":\"" + partial + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", parent).statusCode())
+                .isEqualTo(422);
+        StringBuilder all = new StringBuilder("{");
+        for (JsonNode pair : pairs) {
+            all.append(all.length() > 1 ? "," : "").append("\\\"").append(pair.get("leftId").asString()).append("\\\":\\\"")
+                    .append(pair.get("rightId").asString()).append("\\\"");
+        }
+        all.append("}");
+        JsonNode answer = json(post("/api/v1/activity-attempts/" + attemptId + "/answers", "{\"questionVersionId\":\""
+                + versionId + "\",\"submittedAnswer\":\"" + all + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", parent), 201);
+        assertThat(answer.get("correct").asBoolean()).isTrue();
+        assertThat(answer.get("correctAnswer").get("matches")).hasSize(3);
+        assertThat(answer.get("correctAnswer").get("text").asString()).isEqualTo("1 → •, 2 → ••, 3 → •••");
+        json(post("/api/v1/activity-attempts/" + attemptId + "/complete", "", parent), 200);
+        assertThat(jdbc.queryForObject("select count(*) from answer_records where activity_attempt_id = ?::uuid", Integer.class,
+                UUID.fromString(attemptId))).as("the refused pairing left no evidence").isEqualTo(1);
+
+        // Changing the pairs means a new version; the published one keeps its pairing.
+        JsonNode opened = json(post("/api/v1/studio/questions/" + questionId + "/draft", "", admin), 200);
+        assertThat(opened.get("versions").get(1).get("pairs")).hasSize(3);
+    }
+
     @Test
     void publishingRefusesContentThatWouldTeachThePlatformNothing() throws Exception {
         String admin = staff(PlatformRole.ADMIN);
