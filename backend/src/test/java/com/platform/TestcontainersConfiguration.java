@@ -2,6 +2,7 @@ package com.platform;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetupTest;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
@@ -12,8 +13,18 @@ import org.testcontainers.utility.DockerImageName;
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
+	/**
+	 * A fresh PostgreSQL in Docker per application context - the default. Where Docker is
+	 * unavailable (or in CI with a database service), run with
+	 * {@code -Dbk.test.external-db=true -Dbk.test.db.url=... -Dbk.test.db.username=...
+	 * -Dbk.test.db.password=...} to use that PostgreSQL instead: an empty database of the
+	 * same major version, which every test context then migrates and shares. Dedicated
+	 * names, not DB_URL: a DB_URL system property would also override the configuration
+	 * contract tests' controlled environment.
+	 */
 	@Bean
 	@ServiceConnection
+	@ConditionalOnProperty(name = "bk.test.external-db", havingValue = "false", matchIfMissing = true)
 	PostgreSQLContainer postgresContainer() {
 
 		return new PostgreSQLContainer(DockerImageName.parse("postgres:18-alpine"));
@@ -31,6 +42,18 @@ public class TestcontainersConfiguration {
 		GreenMail greenMail = new GreenMail(ServerSetupTest.SMTP.dynamicPort());
 		greenMail.start();
 		return greenMail;
+
+	}
+
+	@Bean
+	@ConditionalOnProperty(name = "bk.test.external-db", havingValue = "true")
+	DynamicPropertyRegistrar externalDatabaseProperties() {
+
+		return registry -> {
+			registry.add("spring.datasource.url", () -> System.getProperty("bk.test.db.url"));
+			registry.add("spring.datasource.username", () -> System.getProperty("bk.test.db.username"));
+			registry.add("spring.datasource.password", () -> System.getProperty("bk.test.db.password"));
+		};
 
 	}
 

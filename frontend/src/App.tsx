@@ -6,9 +6,11 @@ import { LandingPage } from "@/features/marketing/LandingPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RegisterPage } from "@/features/auth/RegisterPage";
 import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
-import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage";
+import { ResetPasswordPage, SetUpAccountPage } from "@/features/auth/ResetPasswordPage";
+import { PrincipalLayout } from "@/features/principal/PrincipalLayout";
+import { PrincipalHome } from "@/features/principal/PrincipalHome";
+import { PrincipalClassPage } from "@/features/principal/PrincipalClassPage";
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
-import { ComingSoon } from "@/features/app/AppShell";
 import { ParentLayout } from "@/features/parent/ParentLayout";
 import { ParentHome } from "@/features/parent/ParentHome";
 import { ChildOverviewPage } from "@/features/parent/ChildOverviewPage";
@@ -41,6 +43,7 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/set-up-account" element={<SetUpAccountPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           <Route
@@ -100,15 +103,19 @@ export default function App() {
             <Route path="account" element={<AccountPage />} />
           </Route>
           <Route
-            path="/principal/*"
+            path="/principal"
             element={
               <RequireAuth>
                 <RequireRole roles={["PRINCIPAL"]}>
-                  <ComingSoon title="Principal Dashboard" stage="Stage 5" />
+                  <PrincipalLayout />
                 </RequireRole>
               </RequireAuth>
             }
-          />
+          >
+            <Route index element={<PrincipalHome />} />
+            <Route path="classes/:classId" element={<PrincipalClassPage />} />
+            <Route path="account" element={<AccountPage />} />
+          </Route>
           <Route
             path="/admin"
             element={

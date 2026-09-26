@@ -350,6 +350,39 @@ export interface SchoolClassSummary {
   name: string;
 }
 
+// school/web/SchoolController.java SchoolResponse
+export interface SchoolSummary {
+  id: string;
+  name: string;
+  principalAccountId: string;
+}
+
+// school/web/SchoolStaffController.java
+export interface SchoolClassWithTeachers {
+  id: string;
+  schoolId: string;
+  name: string;
+  teachers: { accountId: string; email: string }[];
+}
+
+export type SchoolStaffStatus = "INVITED" | "ACTIVE" | "DECLINED" | "REMOVED";
+
+export interface SchoolStaffMember {
+  id: string;
+  accountId: string;
+  email: string;
+  status: SchoolStaffStatus;
+  invitedAt: string;
+  respondedAt: string | null;
+}
+
+export interface SchoolInvitation {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  invitedAt: string;
+}
+
 export interface ClassRosterChild {
   id: string;
   displayName: string;

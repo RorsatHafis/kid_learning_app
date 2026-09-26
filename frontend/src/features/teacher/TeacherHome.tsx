@@ -3,12 +3,14 @@ import { ChevronRight, Users } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
+import { SchoolInvitations } from "./SchoolInvitations";
 
 export function TeacherHome() {
   const { data: classes, error, isLoading, refetch } = useAsync(() => schoolApi.myClasses(), []);
 
   return (
     <div className="flex flex-col gap-6">
+      <SchoolInvitations onAccepted={refetch} />
       <div>
         <h1 className="text-xl font-extrabold text-ink">Your classes</h1>
         <p className="text-sm text-muted">Classes you're currently assigned to teach.</p>
@@ -20,7 +22,7 @@ export function TeacherHome() {
       {classes && classes.length === 0 && (
         <EmptyState
           title="No classes assigned yet"
-          description="Once a principal assigns you to a class, it will show up here."
+          description="Once your school's principal assigns you to a class, it will show up here."
         />
       )}
 

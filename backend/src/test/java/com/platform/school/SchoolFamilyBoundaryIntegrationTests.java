@@ -22,7 +22,10 @@ import com.platform.knowledge.service.LearningObjectiveSkillService;
 import com.platform.knowledge.service.SkillService;
 import com.platform.school.entity.School;
 import com.platform.school.entity.SchoolClass;
+import com.platform.school.entity.SchoolStaff;
+import com.platform.school.repository.SchoolStaffRepository;
 import com.platform.school.service.SchoolService;
+import com.platform.school.service.SchoolStaffService;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +71,8 @@ class SchoolFamilyBoundaryIntegrationTests {
     @Autowired private AccountRepository accountRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private SchoolService schoolService;
+    @Autowired private SchoolStaffService schoolStaffService;
+    @Autowired private SchoolStaffRepository schoolStaffRepository;
     @Autowired private SubjectRepository subjectRepository;
     @Autowired private AgeHubRepository ageHubRepository;
     @Autowired private CurriculumService curriculumService;
@@ -167,7 +172,11 @@ class SchoolFamilyBoundaryIntegrationTests {
     private SchoolClass classTaughtBy(Staff principal, Staff teacher) {
         School school = schoolService.createSchool("Boundary School", principal.id());
         SchoolClass schoolClass = schoolService.createClass(school.getId(), "Grade 1");
-        schoolService.assignTeacher(schoolClass.getId(), teacher.id());
+        // Only a school's own staff can be assigned to its classes (V39).
+        SchoolStaff membership = SchoolStaff.invite(school.getId(), teacher.id(), principal.id(), java.time.Instant.now());
+        membership.accept(java.time.Instant.now());
+        schoolStaffRepository.save(membership);
+        schoolStaffService.assign(schoolClass.getId(), teacher.id(), principal.id());
         return schoolClass;
     }
 

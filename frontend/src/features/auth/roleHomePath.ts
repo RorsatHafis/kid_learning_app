@@ -13,7 +13,7 @@ export function roleHomePath(role: PlatformRole): string {
   }
 }
 
-/** Where the signed-in account manages its own sign-in details (null: that area has no account page yet). */
+/** Where the signed-in account manages its own sign-in details. */
 export function accountPath(role: PlatformRole): string | null {
   switch (role) {
     case "PARENT":
@@ -23,6 +23,6 @@ export function accountPath(role: PlatformRole): string | null {
     case "ADMIN":
       return "/admin/account";
     case "PRINCIPAL":
-      return null;
+      return "/principal/account";
   }
 }

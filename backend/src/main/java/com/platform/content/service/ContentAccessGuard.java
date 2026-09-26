@@ -12,6 +12,7 @@ import com.platform.curriculum.repository.CurriculumRepository;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.repository.AccountRepository;
+import com.platform.school.repository.SchoolStaffRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,9 @@ import java.util.UUID;
  * Central server-side authorization for teacher-managed content.
  *
  * Null owner means system/YulMe-owned content and is intentionally not writable
- * by ordinary teachers. ADMIN and PRINCIPAL may manage another teacher's content.
+ * by ordinary teachers. ADMIN may manage any teacher's content; a PRINCIPAL only the
+ * content of teachers who are ACTIVE staff at a school they run (TD-17) - never another
+ * school's teachers.
  *
  * Battle 4: system-owned (null-owner) content is writable by ADMIN only - the same
  * rule {@code TeacherAuthoringController#curriculumOwner} already applies to
@@ -35,15 +38,17 @@ public class ContentAccessGuard {
     private final QuestionRepository questions;
     private final ActivityRepository activities;
     private final CurriculumRepository curricula;
+    private final SchoolStaffRepository schoolStaff;
 
     public ContentAccessGuard(AccountRepository accounts, LessonRepository lessons,
                               QuestionRepository questions, ActivityRepository activities,
-                              CurriculumRepository curricula) {
+                              CurriculumRepository curricula, SchoolStaffRepository schoolStaff) {
         this.accounts = accounts;
         this.lessons = lessons;
         this.questions = questions;
         this.activities = activities;
         this.curricula = curricula;
+        this.schoolStaff = schoolStaff;
     }
 
     public Account requireAuthor(UUID accountId) {
@@ -118,10 +123,12 @@ public class ContentAccessGuard {
             }
             return;
         }
-        if (!ownerAccountId.equals(account.getId())
-                && role != PlatformRole.ADMIN
-                && role != PlatformRole.PRINCIPAL) {
-            throw new AccessDeniedException("Content belongs to another teacher");
+        if (ownerAccountId.equals(account.getId()) || role == PlatformRole.ADMIN) {
+            return;
         }
+        if (role == PlatformRole.PRINCIPAL && schoolStaff.isActiveStaffOfPrincipal(ownerAccountId, account.getId())) {
+            return;
+        }
+        throw new AccessDeniedException("Content belongs to another teacher");
     }
 }

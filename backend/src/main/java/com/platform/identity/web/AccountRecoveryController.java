@@ -54,6 +54,13 @@ public class AccountRecoveryController {
         return ResponseEntity.noContent().build();
     }
 
+    /** First password for an account created by a school invitation. Signs nobody in. */
+    @PostMapping("/auth/account-setup/confirm")
+    public ResponseEntity<Void> completeAccountSetup(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        recovery.completeAccountSetup(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
+    }
+
     /** Unauthenticated: the link may be opened on a device that isn't signed in. */
     @PostMapping("/auth/email-verification/confirm")
     public ResponseEntity<Void> confirmEmail(@Valid @RequestBody EmailVerificationConfirmRequest request) {

@@ -17,6 +17,10 @@ import type {
   ParentInsight,
   ProgressSummary,
   SchoolClassSummary,
+  SchoolClassWithTeachers,
+  SchoolInvitation,
+  SchoolStaffMember,
+  SchoolSummary,
   StreakSummary,
 } from "./types";
 
@@ -39,6 +43,8 @@ export const authApi = {
   resetPassword: (input: { token: string; newPassword: string }) =>
     apiClient.post<void>("/auth/password-reset/confirm", input, { skipAuth: true }),
   confirmEmail: (token: string) => apiClient.post<void>("/auth/email-verification/confirm", { token }, { skipAuth: true }),
+  completeAccountSetup: (input: { token: string; newPassword: string }) =>
+    apiClient.post<void>("/auth/account-setup/confirm", input, { skipAuth: true }),
 };
 
 // identity/web/AccountController.java — always the signed-in account; no id in any path.
@@ -131,4 +137,21 @@ export const parentInsightApi = {
 export const schoolApi = {
   myClasses: () => apiClient.get<SchoolClassSummary[]>("/schools/classes/mine"),
   classRoster: (classId: string) => apiClient.get<ClassRosterChild[]>(`/schools/classes/${classId}/children`),
+  // school/web/SchoolController.java
+  mySchools: () => apiClient.get<SchoolSummary[]>("/schools/mine"),
+  createSchool: (name: string) => apiClient.post<SchoolSummary>("/schools", { name }),
+  createClass: (schoolId: string, name: string) => apiClient.post<SchoolClassSummary>(`/schools/${schoolId}/classes`, { name }),
+  assignTeacher: (classId: string, teacherAccountId: string) =>
+    apiClient.post<unknown>(`/schools/classes/${classId}/teachers`, { teacherAccountId }),
+  // school/web/SchoolStaffController.java
+  schoolClasses: (schoolId: string) => apiClient.get<SchoolClassWithTeachers[]>(`/schools/${schoolId}/classes`),
+  schoolClass: (classId: string) => apiClient.get<SchoolClassWithTeachers>(`/schools/classes/${classId}`),
+  unassignTeacher: (classId: string, teacherAccountId: string) =>
+    apiClient.delete<void>(`/schools/classes/${classId}/teachers/${teacherAccountId}`),
+  staff: (schoolId: string) => apiClient.get<SchoolStaffMember[]>(`/schools/${schoolId}/staff`),
+  inviteTeacher: (schoolId: string, email: string) => apiClient.post<SchoolStaffMember>(`/schools/${schoolId}/staff`, { email }),
+  removeStaff: (schoolId: string, membershipId: string) => apiClient.delete<void>(`/schools/${schoolId}/staff/${membershipId}`),
+  myInvitations: () => apiClient.get<SchoolInvitation[]>("/schools/invitations/mine"),
+  acceptInvitation: (id: string) => apiClient.post<void>(`/schools/invitations/${id}/accept`),
+  declineInvitation: (id: string) => apiClient.post<void>(`/schools/invitations/${id}/decline`),
 };

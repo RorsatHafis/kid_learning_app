@@ -13,5 +13,8 @@ public class TeacherAssignment extends AuditableEntity {
     protected TeacherAssignment() {}
     private TeacherAssignment(UUID classId, UUID teacherId) { schoolClassId=classId; teacherAccountId=teacherId; status=TeacherAssignmentStatus.ACTIVE; }
     public static TeacherAssignment assign(UUID classId, UUID teacherId) { Assert.notNull(classId,"schoolClassId must not be null"); Assert.notNull(teacherId,"teacherAccountId must not be null"); return new TeacherAssignment(classId,teacherId); }
+    /** Ends this teacher's access to the class; the row is kept so the assignment's history remains. */
+    public void remove() { status = TeacherAssignmentStatus.REMOVED; }
+    public void reactivate() { status = TeacherAssignmentStatus.ACTIVE; }
     public UUID getSchoolClassId(){return schoolClassId;} public UUID getTeacherAccountId(){return teacherAccountId;} public TeacherAssignmentStatus getStatus(){return status;}
 }

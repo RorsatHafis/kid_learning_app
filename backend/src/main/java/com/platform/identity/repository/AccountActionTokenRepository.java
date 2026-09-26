@@ -23,6 +23,10 @@ public interface AccountActionTokenRepository extends JpaRepository<AccountActio
     List<AccountActionToken> findByAccountIdAndPurposeAndConsumedAtIsNullAndInvalidatedAtIsNull(UUID accountId,
                                                                                                  AccountActionPurpose purpose);
 
+    boolean existsByAccountIdAndPurpose(UUID accountId, AccountActionPurpose purpose);
+
+    boolean existsByAccountIdAndPurposeAndConsumedAtIsNotNull(UUID accountId, AccountActionPurpose purpose);
+
     long countByAccountIdAndPurposeAndIssuedAtAfter(UUID accountId, AccountActionPurpose purpose, Instant after);
 
     Optional<AccountActionToken> findFirstByAccountIdAndPurposeAndIssuedAtAfterOrderByIssuedAtAsc(UUID accountId,

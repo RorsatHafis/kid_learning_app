@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { VerifyEmailPage } from "./VerifyEmailPage";
-import { ResetPasswordPage } from "./ResetPasswordPage";
+import { ResetPasswordPage, SetUpAccountPage } from "./ResetPasswordPage";
 import { ForgotPasswordPage } from "./ForgotPasswordPage";
 
 function respond(status: number, body?: unknown) {
@@ -113,6 +113,24 @@ describe("ResetPasswordPage", () => {
 
     expect(await screen.findByText("This link can't be used")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Send me a new link" })).toHaveAttribute("href", "/forgot-password");
+  });
+});
+
+describe("SetUpAccountPage", () => {
+  it("chooses the first password of an invited account with its own endpoint and copy", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(respond(204));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    openLink("/set-up-account", "#token=setup-1", <SetUpAccountPage />);
+
+    expect(screen.getByRole("heading", { name: "Set up your account" })).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/New password/), "Teacher-First-Pass-2026");
+    await user.type(screen.getByLabelText("Confirm new password"), "Teacher-First-Pass-2026");
+    await user.click(screen.getByRole("button", { name: "Create password" }));
+
+    expect(await screen.findByText(/Your account is ready/)).toBeInTheDocument();
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/auth/account-setup/confirm");
+    expect(bodyOf(fetchMock.mock.calls[0])).toEqual({ token: "setup-1", newPassword: "Teacher-First-Pass-2026" });
   });
 });
 

@@ -1,0 +1,144 @@
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, UserPlus, X } from "lucide-react";
+import { useAsync } from "@/lib/hooks/useAsync";
+import { schoolApi } from "@/lib/api/endpoints";
+import { LoadingState, ErrorState } from "@/components/ui/States";
+import { Button } from "@/components/ui/Button";
+import { problemMessage } from "@/lib/api/problemMessage";
+import { ChildrenNotYetAvailable } from "./PrincipalHome";
+
+/**
+ * One class: who teaches it (assign from the school's own active teachers, or unassign)
+ * and its children — none yet, and the page says why.
+ */
+export function PrincipalClassPage() {
+  const { classId = "" } = useParams<{ classId: string }>();
+  const schoolClass = useAsync(() => schoolApi.schoolClass(classId), [classId]);
+  const schoolId = schoolClass.data?.schoolId;
+  const staff = useAsync(() => (schoolId ? schoolApi.staff(schoolId) : Promise.resolve([])), [schoolId]);
+  const roster = useAsync(() => schoolApi.classRoster(classId), [classId]);
+  const [selected, setSelected] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const assigned = new Set(schoolClass.data?.teachers.map((t) => t.accountId));
+  const assignable = (staff.data ?? []).filter((m) => m.status === "ACTIVE" && !assigned.has(m.accountId));
+
+  async function run(action: () => Promise<unknown>, fallback: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+      setSelected("");
+      schoolClass.refetch();
+    } catch (err) {
+      setError(problemMessage(err, fallback));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      <Link to="/principal" className="flex w-fit items-center gap-2 text-sm font-semibold text-muted hover:text-ink">
+        <ArrowLeft size={16} aria-hidden /> School
+      </Link>
+
+      {schoolClass.isLoading && <LoadingState label="Loading class…" />}
+      {schoolClass.error && <ErrorState error={schoolClass.error} onRetry={schoolClass.refetch} />}
+
+      {schoolClass.data && (
+        <>
+          <h1 className="text-xl font-extrabold text-ink sm:text-2xl">{schoolClass.data.name}</h1>
+
+          <section aria-labelledby="class-teachers" className="flex flex-col gap-3">
+            <h2 id="class-teachers" className="text-base font-extrabold text-ink">
+              Teachers
+            </h2>
+            {schoolClass.data.teachers.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-hairline px-5 py-4 text-sm text-muted">
+                No teacher assigned to this class yet.
+              </p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-hairline rounded-2xl border border-hairline">
+                {schoolClass.data.teachers.map((t) => (
+                  <li key={t.accountId} className="flex items-center justify-between gap-3 px-5 py-3">
+                    <span className="break-all font-semibold text-ink">{t.email}</span>
+                    <Button
+                      size="md"
+                      variant="ghost"
+                      disabled={busy}
+                      aria-label={`Unassign ${t.email}`}
+                      onClick={() => run(() => schoolApi.unassignTeacher(classId, t.accountId), "We couldn't unassign them.")}
+                    >
+                      <X size={16} aria-hidden /> Unassign
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {staff.data && assignable.length > 0 && (
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="flex min-w-[14rem] flex-1 flex-col gap-1.5 text-sm font-semibold text-ink">
+                  Assign a teacher
+                  <select
+                    value={selected}
+                    onChange={(e) => setSelected(e.target.value)}
+                    className="rounded-2xl border-[1.5px] border-hairline px-4 py-3 text-sm font-normal text-ink focus:border-brand-blueStrong"
+                  >
+                    <option value="">Choose one of your teachers…</option>
+                    {assignable.map((m) => (
+                      <option key={m.accountId} value={m.accountId}>
+                        {m.email}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Button
+                  variant="outline"
+                  disabled={busy || !selected}
+                  onClick={() => run(() => schoolApi.assignTeacher(classId, selected), "We couldn't assign them.")}
+                >
+                  <UserPlus size={16} aria-hidden /> Assign
+                </Button>
+              </div>
+            )}
+            {staff.data && assignable.length === 0 && (
+              <p className="text-sm text-muted">
+                Only teachers who have accepted your invitation can be assigned.{" "}
+                <Link to="/principal" className="font-semibold text-brand-blueStrong">
+                  Invite teachers
+                </Link>
+              </p>
+            )}
+            {error && (
+              <p role="alert" className="text-sm font-medium text-brand-redStrong">
+                {error}
+              </p>
+            )}
+          </section>
+
+          <section aria-labelledby="class-children" className="flex flex-col gap-3">
+            <h2 id="class-children" className="text-base font-extrabold text-ink">
+              Children
+            </h2>
+            {roster.isLoading && <LoadingState label="Loading children…" />}
+            {roster.error && <ErrorState error={roster.error} onRetry={roster.refetch} />}
+            {roster.data && roster.data.length === 0 && <ChildrenNotYetAvailable />}
+            {roster.data && roster.data.length > 0 && (
+              <ul className="flex flex-col divide-y divide-hairline rounded-2xl border border-hairline">
+                {roster.data.map((child) => (
+                  <li key={child.id} className="px-5 py-3 font-medium text-ink">
+                    {child.displayName}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}

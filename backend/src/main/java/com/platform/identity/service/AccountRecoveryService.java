@@ -58,6 +58,7 @@ public class AccountRecoveryService {
 
     static final Duration VERIFICATION_LINK_TTL = Duration.ofHours(24);
     static final Duration RESET_LINK_TTL = Duration.ofMinutes(30);
+    static final Duration SETUP_LINK_TTL = Duration.ofDays(7);
     static final Duration MIN_GAP_BETWEEN_EMAILS = Duration.ofSeconds(60);
     static final int MAX_EMAILS_PER_HOUR = 5;
 
@@ -194,22 +195,8 @@ public class AccountRecoveryService {
      */
     @Transactional
     public void resetPassword(String rawToken, String newPassword) {
-        Instant now = Instant.now();
-        AccountActionToken token = usableToken(rawToken, AccountActionPurpose.PASSWORD_RESET, now);
-        Account account = accounts.findForUpdate(token.getAccountId()).orElseThrow(InvalidActionLinkException::new);
-        if (account.getStatus() == AccountStatus.DISABLED) {
-            throw new InvalidActionLinkException();
-        }
-        passwordPolicy.validate(newPassword);
-
-        token.consume(now);
-        tokens.findByAccountIdAndPurposeAndConsumedAtIsNullAndInvalidatedAtIsNull(account.getId(),
-                AccountActionPurpose.PASSWORD_RESET).forEach(open -> open.invalidate(now));
-        account.changePasswordHash(passwordEncoder.encode(newPassword));
-        account.resetFailedLogins();
-        account.markEmailVerified(now);
-        int ended = sessions.revokeAllSessions(account.getId());
-        audit(account, "ACCOUNT_PASSWORD_RESET", Map.of("sessionsEnded", ended));
+        Account account = setPasswordWithLink(rawToken, AccountActionPurpose.PASSWORD_RESET, newPassword,
+                "ACCOUNT_PASSWORD_RESET");
 
         events.publishEvent(new EmailMessage(account.getEmail(), "Your Bookeyond Kid password was changed", """
                 Hello,
@@ -222,6 +209,78 @@ public class AccountRecoveryService {
                 If it wasn't, reset your password straight away at %s/forgot-password - and \
                 check who can read this mailbox.
                 """.formatted(mail.publicUrl())));
+    }
+
+    // ------------------------------------------------------------------ account setup (invitations)
+
+    /**
+     * Emails the link with which a person invited to a school chooses their first password.
+     * {@code account} was created by the invitation, with a random password nobody knows.
+     * Within the transaction that invited them; subject to the same per-account limits.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void sendAccountSetup(Account account, String schoolName, String requestedIp) {
+        Instant now = Instant.now();
+        waitBeforeNextEmail(account.getId(), AccountActionPurpose.ACCOUNT_SETUP, now).ifPresent(wait -> {
+            throw new TooManyEmailsException(wait);
+        });
+        String raw = issue(account.getId(), AccountActionPurpose.ACCOUNT_SETUP, SETUP_LINK_TTL, requestedIp, now);
+        events.publishEvent(new EmailMessage(account.getEmail(), "You're invited to teach at " + schoolName + " on Bookeyond Kid", """
+                Hello,
+
+                %s has invited you to join its teachers on Bookeyond Kid. To accept, choose                 a password for your account:
+
+                %s
+
+                This link works once and expires in 7 days. After signing in you'll see the                 invitation and can accept it.
+
+                If you weren't expecting this, you can ignore this email.
+                """.formatted(schoolName, mail.link("/set-up-account", raw))));
+    }
+
+    /**
+     * True for an account created by an invitation whose owner has not chosen a password
+     * yet - no setup link and no reset link has ever been used. Such a person is sent a
+     * new setup link rather than told to sign in.
+     */
+    @Transactional(readOnly = true)
+    public boolean awaitingAccountSetup(UUID accountId) {
+        return tokens.existsByAccountIdAndPurpose(accountId, AccountActionPurpose.ACCOUNT_SETUP)
+                && !tokens.existsByAccountIdAndPurposeAndConsumedAtIsNotNull(accountId, AccountActionPurpose.ACCOUNT_SETUP)
+                && !tokens.existsByAccountIdAndPurposeAndConsumedAtIsNotNull(accountId, AccountActionPurpose.PASSWORD_RESET);
+    }
+
+    /** Chooses the first password with an invitation link. Like a reset, it signs nobody in. */
+    @Transactional
+    public void completeAccountSetup(String rawToken, String newPassword) {
+        setPasswordWithLink(rawToken, AccountActionPurpose.ACCOUNT_SETUP, newPassword, "ACCOUNT_SETUP_COMPLETED");
+    }
+
+    /**
+     * Sets a password with an emailed link. The new password must meet the policy before the
+     * link is used, so a rejected password leaves the link usable. On success: the lockout is
+     * cleared, the address counts as confirmed, other open links of this purpose are
+     * withdrawn, and every session on every device ends.
+     */
+    private Account setPasswordWithLink(String rawToken, AccountActionPurpose purpose, String newPassword,
+                                        String auditAction) {
+        Instant now = Instant.now();
+        AccountActionToken token = usableToken(rawToken, purpose, now);
+        Account account = accounts.findForUpdate(token.getAccountId()).orElseThrow(InvalidActionLinkException::new);
+        if (account.getStatus() == AccountStatus.DISABLED) {
+            throw new InvalidActionLinkException();
+        }
+        passwordPolicy.validate(newPassword);
+
+        token.consume(now);
+        tokens.findByAccountIdAndPurposeAndConsumedAtIsNullAndInvalidatedAtIsNull(account.getId(), purpose)
+                .forEach(open -> open.invalidate(now));
+        account.changePasswordHash(passwordEncoder.encode(newPassword));
+        account.resetFailedLogins();
+        account.markEmailVerified(now);
+        int ended = sessions.revokeAllSessions(account.getId());
+        audit(account, auditAction, Map.of("sessionsEnded", ended));
+        return account;
     }
 
     // ------------------------------------------------------------------ tokens

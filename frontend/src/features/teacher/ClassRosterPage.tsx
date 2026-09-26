@@ -7,10 +7,10 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 export function ClassRosterPage() {
   const { classId = "" } = useParams<{ classId: string }>();
 
-  // No GET /schools/classes/{id} exists (only /classes/mine) — same
-  // reuse-the-list pattern as ChildOverviewPage, for the same reason.
-  const { data: classes, error: classesError, isLoading: classesLoading } = useAsync(() => schoolApi.myClasses(), []);
-  const schoolClass = classes?.find((c) => c.id === classId);
+  const { data: schoolClass, error: classError, isLoading: classLoading } = useAsync(
+    () => schoolApi.schoolClass(classId),
+    [classId],
+  );
 
   const { data: roster, error: rosterError, isLoading: rosterLoading, refetch } = useAsync(
     () => schoolApi.classRoster(classId),
@@ -25,9 +25,10 @@ export function ClassRosterPage() {
         <ArrowLeft size={16} /> All classes
       </Link>
 
-      {classesLoading && <LoadingState label="Loading class…" />}
-      {classesError && <ErrorState error={classesError} />}
-      {classes && !schoolClass && <EmptyState title="Class not found" description="You may not be assigned to this class." />}
+      {classLoading && <LoadingState label="Loading class…" />}
+      {classError && (
+        <ErrorState error={classError} message="This class isn't available to you — you may no longer be assigned to it." />
+      )}
 
       {schoolClass && (
         <div>
@@ -40,7 +41,10 @@ export function ClassRosterPage() {
       {rosterError && <ErrorState error={rosterError} onRetry={refetch} />}
 
       {roster && roster.length === 0 && (
-        <EmptyState title="No students enrolled yet" description="Students will appear here once enrolled in this class." />
+        <EmptyState
+          title="No children in this class yet"
+          description="Children join a class when their family gives the school access to their learning. Families can't do that in Bookeyond Kid yet."
+        />
       )}
 
       {roster && roster.length > 0 && (
