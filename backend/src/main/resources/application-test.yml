@@ -17,6 +17,12 @@ platform:
     lockout:
       max-attempts: 5
       duration: 15m
+    # Every integration test signs in from 127.0.0.1; budgets are exercised in
+    # AuthRateLimitIntegrationTests with their own small values.
+    rate-limit:
+      login-per-minute: 100000
+      register-per-hour: 100000
+      refresh-per-minute: 100000
     cors:
       allowed-origins: http://localhost:5173
   mastery:

@@ -5,7 +5,7 @@ import { FormField } from "./FormField";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { ApiError } from "@/lib/api/ApiError";
+import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
 import { roleHomePath } from "./roleHomePath";
 
 export function RegisterPage() {
@@ -36,6 +36,8 @@ export function RegisterPage() {
     } catch (err) {
       if (err instanceof ApiError && err.validationErrors) {
         setFieldErrors(err.validationErrors);
+      } else if (err instanceof ApiError && err.isRateLimited) {
+        setFormError(rateLimitedMessage(err));
       } else if (err instanceof ApiError) {
         setFormError(err.problem?.detail ?? "Couldn't create that account.");
       } else {
@@ -51,8 +53,8 @@ export function RegisterPage() {
       <AuthLayout title="Application received" subtitle="Your principal account is awaiting approval.">
         <p className="text-center text-sm leading-relaxed text-muted">
           We've received your school administrator application. An existing Bookeyond Kid admin needs to approve it
-          before you can log in — we'll notify you at <span className="font-semibold text-ink">{email}</span> once
-          that happens.
+          before you can log in. Once it's approved, log in with{" "}
+          <span className="font-semibold text-ink">{email}</span>.
         </p>
         <Link to="/" className="mt-6 block text-center text-sm font-semibold text-brand-blue">
           Back to home

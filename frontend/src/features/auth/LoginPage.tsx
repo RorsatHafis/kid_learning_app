@@ -4,7 +4,7 @@ import { AuthLayout } from "./AuthLayout";
 import { FormField } from "./FormField";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { ApiError } from "@/lib/api/ApiError";
+import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
 import { roleHomePath } from "./roleHomePath";
 
 export function LoginPage() {
@@ -33,6 +33,8 @@ export function LoginPage() {
       if (err instanceof ApiError) {
         if (err.validationErrors) {
           setFieldErrors(err.validationErrors);
+        } else if (err.isRateLimited) {
+          setFormError(rateLimitedMessage(err));
         } else if (err.status === 423) {
           const until = err.problem?.lockedUntil ? new Date(err.problem.lockedUntil).toLocaleTimeString() : null;
           setFormError(`Too many attempts. Try again ${until ? `after ${until}` : "after a short wait"}.`);

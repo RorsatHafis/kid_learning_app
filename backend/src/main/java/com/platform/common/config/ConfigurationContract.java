@@ -45,6 +45,9 @@ public class ConfigurationContract {
         variables.put("JWT_REFRESH_TOKEN_TTL", "platform.security.jwt.refresh-token-ttl");
         variables.put("LOGIN_MAX_ATTEMPTS", "platform.security.lockout.max-attempts");
         variables.put("LOGIN_LOCKOUT_DURATION", "platform.security.lockout.duration");
+        variables.put("RATE_LIMIT_LOGIN_PER_MINUTE", "platform.security.rate-limit.login-per-minute");
+        variables.put("RATE_LIMIT_REGISTER_PER_HOUR", "platform.security.rate-limit.register-per-hour");
+        variables.put("RATE_LIMIT_REFRESH_PER_MINUTE", "platform.security.rate-limit.refresh-per-minute");
         variables.put("CORS_ALLOWED_ORIGINS", "platform.security.cors.allowed-origins");
         variables.put("MASTERY_LEARNING_RATE", "platform.mastery.learning-rate");
         variables.put("MASTERY_CONFIDENCE_SATURATION_COUNT", "platform.mastery.confidence-saturation-count");

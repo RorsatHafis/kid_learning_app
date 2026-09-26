@@ -20,8 +20,8 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 
 /** refreshed: new tokens stored. rejected: the server refused the refresh
  * token (the session is over — sign in again). unavailable: the refresh
- * could not be completed (network failure, server error); the stored refresh
- * token may still be valid, so it is kept. */
+ * could not be completed (network failure, server error, rate limited); the
+ * stored refresh token may still be valid, so it is kept. */
 export type RefreshOutcome =
   | { kind: "refreshed"; auth: AuthResponse }
   | { kind: "rejected" }
@@ -72,7 +72,9 @@ async function performRefresh(): Promise<RefreshOutcome> {
   } catch {
     return { kind: "unavailable" };
   }
-  if (res.status >= 500) return { kind: "unavailable" };
+  // 429: the per-network refresh budget ran out. The server refused before looking
+  // at the token, so it was not rotated and stays valid — keep it and retry later.
+  if (res.status >= 500 || res.status === 429) return { kind: "unavailable" };
   if (!res.ok) return { kind: "rejected" };
 
   const data: AuthResponse = await res.json();

@@ -332,6 +332,8 @@ export interface ApiProblem {
   instance?: string;
   errors?: Record<string, string>;
   lockedUntil?: string;
+  /** 429 only (security/ratelimit/AuthRateLimitFilter.java), mirrors Retry-After. */
+  retryAfterSeconds?: number;
   correlationId?: string;
   timestamp?: string;
 }

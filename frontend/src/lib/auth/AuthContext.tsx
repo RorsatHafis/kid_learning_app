@@ -16,6 +16,10 @@ interface AuthContextValue {
    * route-guard-sensitive until this settles, or a logged-in user briefly
    * flashes a logged-out screen on reload. */
   isLoading: boolean;
+  /** The saved sign-in could not be checked (offline, server error, or the network's
+   * refresh budget is spent) — it is kept, not discarded; `retrySession` tries again. */
+  sessionUnavailable: boolean;
+  retrySession: () => void;
   login: (email: string, password: string) => Promise<Session>;
   register: (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL" }) => Promise<Session | "PENDING_APPROVAL">;
   logout: () => Promise<void>;
@@ -42,6 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
   }, []);
 
+  const [sessionUnavailable, setSessionUnavailable] = useState(false);
+  const [bootAttempt, setBootAttempt] = useState(0);
+
   useEffect(() => {
     // On boot we only have a persisted refresh token, never an access token
     // (that's memory-only, see tokenStore.ts), so re-establish the session
@@ -64,14 +71,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (outcome.kind === "rejected") {
         tokenStore.clear();
       }
-      // "unavailable" (offline / server error): keep the refresh token so a
-      // later reload can still restore the session; show signed-out for now.
+      // "unavailable" (offline / server error / rate limited): keep the refresh
+      // token and say so, rather than presenting a valid sign-in as signed out.
+      setSessionUnavailable(outcome.kind === "unavailable");
       setIsLoading(false);
     }
     void bootstrap();
     return () => {
       cancelled = true;
     };
+  }, [bootAttempt]);
+
+  const retrySession = useCallback(() => {
+    setIsLoading(true);
+    setBootAttempt((n) => n + 1);
   }, []);
 
   const adopt = useCallback((data: AuthResponse) => {
@@ -83,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const nextSession = toSession(data);
     setSession(nextSession);
+    setSessionUnavailable(false);
     return nextSession;
   }, []);
 
@@ -135,7 +149,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, login, register, logout, changePassword, signOutEverywhere }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider
+      value={{ session, isLoading, sessionUnavailable, retrySession, login, register, logout, changePassword, signOutEverywhere }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
 }
 

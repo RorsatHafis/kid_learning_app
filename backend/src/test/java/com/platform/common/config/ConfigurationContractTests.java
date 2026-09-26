@@ -3,6 +3,7 @@ package com.platform.common.config;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.learner.MasteryProperties;
 import com.platform.security.SecurityProperties;
+import com.platform.security.ratelimit.RateLimitProperties;
 import com.platform.security.jwt.JwtService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -50,6 +51,9 @@ class ConfigurationContractTests {
         env.put("JWT_REFRESH_TOKEN_TTL", "3d");
         env.put("LOGIN_MAX_ATTEMPTS", "3");
         env.put("LOGIN_LOCKOUT_DURATION", "2m");
+        env.put("RATE_LIMIT_LOGIN_PER_MINUTE", "7");
+        env.put("RATE_LIMIT_REGISTER_PER_HOUR", "8");
+        env.put("RATE_LIMIT_REFRESH_PER_MINUTE", "9");
         env.put("MASTERY_LEARNING_RATE", "0.5");
         env.put("MASTERY_CONFIDENCE_SATURATION_COUNT", "4");
         env.put("MASTERY_OBJECTIVE_THRESHOLD", "0.7");
@@ -75,6 +79,10 @@ class ConfigurationContractTests {
             assertThat(security.jwt().refreshTokenTtl()).isEqualTo(Duration.ofDays(3));
             assertThat(security.lockout().maxAttempts()).isEqualTo(3);
             assertThat(security.lockout().duration()).isEqualTo(Duration.ofMinutes(2));
+            RateLimitProperties rateLimit = ctx.getBean(RateLimitProperties.class);
+            assertThat(rateLimit.loginPerMinute()).isEqualTo(7);
+            assertThat(rateLimit.registerPerHour()).isEqualTo(8);
+            assertThat(rateLimit.refreshPerMinute()).isEqualTo(9);
             assertThat(mastery.learningRate()).isEqualByComparingTo("0.5");
             assertThat(mastery.confidenceSaturationCount()).isEqualTo(4);
             assertThat(mastery.objectiveMasteryThreshold()).isEqualByComparingTo("0.7");
@@ -114,6 +122,10 @@ class ConfigurationContractTests {
             assertThat(security.jwt().refreshTokenTtl()).isEqualTo(Duration.ofDays(30));
             assertThat(security.lockout().maxAttempts()).isEqualTo(5);
             assertThat(security.lockout().duration()).isEqualTo(Duration.ofMinutes(15));
+            RateLimitProperties rateLimit = ctx.getBean(RateLimitProperties.class);
+            assertThat(rateLimit.loginPerMinute()).isEqualTo(20);
+            assertThat(rateLimit.registerPerHour()).isEqualTo(20);
+            assertThat(rateLimit.refreshPerMinute()).isEqualTo(60);
             assertThat(mastery.learningRate()).isEqualByComparingTo("0.2");
             assertThat(mastery.confidenceSaturationCount()).isEqualTo(10);
             assertThat(mastery.objectiveMasteryThreshold()).isEqualByComparingTo("0.8");
@@ -157,6 +169,9 @@ class ConfigurationContractTests {
             "JWT_REFRESH_TOKEN_TTL|0d|JWT_REFRESH_TOKEN_TTL",
             "LOGIN_MAX_ATTEMPTS|0|LOGIN_MAX_ATTEMPTS",
             "LOGIN_MAX_ATTEMPTS|-1|LOGIN_MAX_ATTEMPTS",
+            "RATE_LIMIT_LOGIN_PER_MINUTE|0|RATE_LIMIT_LOGIN_PER_MINUTE",
+            "RATE_LIMIT_REGISTER_PER_HOUR|0|RATE_LIMIT_REGISTER_PER_HOUR",
+            "RATE_LIMIT_REFRESH_PER_MINUTE|0|RATE_LIMIT_REFRESH_PER_MINUTE",
             "LOGIN_LOCKOUT_DURATION|0s|LOGIN_LOCKOUT_DURATION",
             "LOGIN_LOCKOUT_DURATION|-15m|LOGIN_LOCKOUT_DURATION",
             "MASTERY_LEARNING_RATE|0|MASTERY_LEARNING_RATE",
@@ -180,6 +195,7 @@ class ConfigurationContractTests {
             "PLATFORM_SECURITY_JWT_ACCESS_TOKEN_TTL,JWT_ACCESS_TOKEN_TTL",
             "PLATFORM_SECURITY_JWT_ACCESSTOKENTTL,JWT_ACCESS_TOKEN_TTL",
             "PLATFORM_SECURITY_LOCKOUT_MAX_ATTEMPTS,LOGIN_MAX_ATTEMPTS",
+            "PLATFORM_SECURITY_RATELIMIT_LOGINPERMINUTE,RATE_LIMIT_LOGIN_PER_MINUTE",
             "PLATFORM_SECURITY_CORS_ALLOWED_ORIGINS,CORS_ALLOWED_ORIGINS",
             "PLATFORM_MASTERY_LEARNING_RATE,MASTERY_LEARNING_RATE",
             "SPRING_DATASOURCE_URL,DB_URL",
@@ -264,7 +280,7 @@ class ConfigurationContractTests {
     // ------------------------------------------------------------------ harness
 
     @Configuration(proxyBeanMethods = false)
-    @EnableConfigurationProperties({SecurityProperties.class, MasteryProperties.class})
+    @EnableConfigurationProperties({SecurityProperties.class, MasteryProperties.class, RateLimitProperties.class})
     @Import({ConfigurationContract.class, JwtService.class})
     static class ConfigurationOnly {
     }

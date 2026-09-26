@@ -22,9 +22,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import com.platform.security.jwt.JwtAuthenticationFilter;
 import com.platform.security.jwt.JwtService;
+import com.platform.security.ratelimit.AuthRateLimitFilter;
+import com.platform.security.ratelimit.RateLimitProperties;
 
 
 @Configuration
@@ -118,7 +121,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter,
-                                                     CorsConfigurationSource corsConfigurationSource)
+                                                     CorsConfigurationSource corsConfigurationSource,
+                                                     RateLimitProperties rateLimitProperties)
             throws Exception {
  
         http
@@ -144,6 +148,10 @@ public class SecurityConfig {
                 .authenticationEntryPoint(new ProblemDetailAuthenticationEntryPoint()))
             .httpBasic(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
+            // OD-01: budgets for the unauthenticated identity endpoints. Built here rather
+            // than as a bean so Boot does not also register it as a plain servlet filter,
+            // which would run it before CORS and hide the 429 from browsers.
+            .addFilterAfter(new AuthRateLimitFilter(rateLimitProperties), CorsFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
  
         return http.build();

@@ -30,4 +30,17 @@ export class ApiError extends Error {
   get validationErrors(): Record<string, string> | null {
     return this.problem?.errors ?? null;
   }
+
+  /** 429: the server's per-network budget for sign-in, registration or refresh ran out. */
+  get isRateLimited() {
+    return this.status === 429;
+  }
+}
+
+/** "Too many attempts from this network" copy with the server's wait, rounded up for people. */
+export function rateLimitedMessage(err: ApiError): string {
+  const seconds = err.problem?.retryAfterSeconds;
+  if (!seconds) return "Too many attempts from this network. Please wait a moment and try again.";
+  const wait = seconds < 60 ? `${seconds} second${seconds === 1 ? "" : "s"}` : `${Math.ceil(seconds / 60)} minute${seconds <= 60 ? "" : "s"}`;
+  return `Too many attempts from this network. Please try again in ${wait}.`;
 }
