@@ -76,7 +76,7 @@ public class EnrollmentService {
     /**
      * N7: a family enrolls a child only in a platform curriculum. A teacher-owned
      * curriculum reaches children through its owner's class assignment
-     * ({@code SchoolController#assignCurriculum}), never by a parent naming its id -
+     * ({@code SchoolService#assignCurriculum}), never by a parent naming its id -
      * answered as "not found" so a family can't probe for another tenant's curricula.
      */
     @Transactional
