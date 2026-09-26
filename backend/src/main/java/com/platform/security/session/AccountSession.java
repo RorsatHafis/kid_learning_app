@@ -49,6 +49,10 @@ public class AccountSession extends AuditableEntity {
     @Column(name = "account_id", nullable = false, updatable = false)
     private UUID accountId;
 
+    /** The login or registration this session descends from; reuse detection revokes the whole family (V37). */
+    @Column(name = "family_id", nullable = false, updatable = false)
+    private UUID familyId;
+
     // V9 declares this CHAR(64) (a SHA-256 hex digest is always exactly 64 chars).
     // Without an explicit CHAR mapping Hibernate expects VARCHAR(64), and
     // ddl-auto=validate refuses to start the application - the same mismatch V33
@@ -87,10 +91,11 @@ public class AccountSession extends AuditableEntity {
         // JPA
     }
 
-    private AccountSession(UUID accountId, String refreshTokenHash, Instant issuedAt, Instant expiresAt,
+    private AccountSession(UUID accountId, UUID familyId, String refreshTokenHash, Instant issuedAt, Instant expiresAt,
                             String userAgent, String ipAddress) {
 
         this.accountId = accountId;
+        this.familyId = familyId;
         this.refreshTokenHash = refreshTokenHash;
         this.status = AccountSessionStatus.ACTIVE;
         this.issuedAt = issuedAt;
@@ -101,21 +106,29 @@ public class AccountSession extends AuditableEntity {
     }
 
     /**
-     * Starts a brand-new ACTIVE session - used both for a genuine login/registration
-     * and for the winning side of a refresh rotation. {@code refreshTokenHash} must
-     * already be the SHA-256 hex digest of the raw token; this method never sees or
-     * stores the raw value.
+     * Starts a brand-new ACTIVE session in a new family - a genuine login or
+     * registration. {@code refreshTokenHash} must already be the SHA-256 hex digest
+     * of the raw token; this method never sees or stores the raw value.
      */
     public static AccountSession issue(UUID accountId, String refreshTokenHash, Instant issuedAt, Instant expiresAt,
                                         String userAgent, String ipAddress) {
 
+        return successor(accountId, UUID.randomUUID(), refreshTokenHash, issuedAt, expiresAt, userAgent, ipAddress);
+
+    }
+
+    /** The next ACTIVE session of an existing family - the new side of a refresh rotation. */
+    public static AccountSession successor(UUID accountId, UUID familyId, String refreshTokenHash, Instant issuedAt,
+                                            Instant expiresAt, String userAgent, String ipAddress) {
+
+        Assert.notNull(familyId, "familyId must not be null");
         Assert.notNull(accountId, "accountId must not be null");
         Assert.hasText(refreshTokenHash, "refreshTokenHash must not be blank");
         Assert.notNull(issuedAt, "issuedAt must not be null");
         Assert.notNull(expiresAt, "expiresAt must not be null");
         Assert.isTrue(expiresAt.isAfter(issuedAt), "expiresAt must be after issuedAt");
 
-        return new AccountSession(accountId, refreshTokenHash, issuedAt, expiresAt, userAgent, ipAddress);
+        return new AccountSession(accountId, familyId, refreshTokenHash, issuedAt, expiresAt, userAgent, ipAddress);
 
     }
 
@@ -143,6 +156,15 @@ public class AccountSession extends AuditableEntity {
 
     public UUID getAccountId() {
         return accountId;
+    }
+
+    public UUID getFamilyId() {
+        return familyId;
+    }
+
+    /** Whether a request's user agent matches this session's, as stored (truncated to the column). */
+    public boolean sameUserAgent(String requestUserAgent) {
+        return java.util.Objects.equals(userAgent, truncate(requestUserAgent, 500));
     }
 
     public String getRefreshTokenHash() {

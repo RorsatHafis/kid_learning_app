@@ -58,6 +58,7 @@ class ObjectiveInsightTruthfulnessTests {
 
     private static final UUID CHILD = UUID.randomUUID();
     private static final UUID OBJECTIVE = UUID.randomUUID();
+    private static final String OBJECTIVE_TITLE = "Addition Within 10";
     private static final List<UUID> SKILLS = List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
 
     @Mock private LearnerSkillStateRepository skillStateRepository;
@@ -99,7 +100,7 @@ class ObjectiveInsightTruthfulnessTests {
             when(learningObjectiveSkillRepository.findBySkillId(mapping.getSkillId())).thenReturn(List.of(mapping));
         }
 
-        LearningObjective objective = LearningObjective.create(UUID.randomUUID(), "OBJ", "Addition Within 10", null);
+        LearningObjective objective = LearningObjective.create(UUID.randomUUID(), "OBJ", OBJECTIVE_TITLE, null);
         ReflectionTestUtils.setField(objective, "id", OBJECTIVE);
         when(learningObjectiveService.getById(OBJECTIVE)).thenReturn(objective);
         when(smartReviewService.listActive(CHILD)).thenReturn(List.of());
@@ -189,15 +190,41 @@ class ObjectiveInsightTruthfulnessTests {
     }
 
     @Test
-    void strongButThinEvidenceAcrossEverySkillKeepsTheBattle2cHedge() {
+    void strongButThinEvidenceAcrossEverySkillClaimsNothingYet() {
         for (int skill = 0; skill < 4; skill++) {
             answer(skill, true, true);
         }
 
+        // The numeric rollup reaches the threshold, but no skill has the evidence a claim
+        // needs - exactly like two answers on a single skill (PD-21; this used to read
+        // "showing early strength").
+        assertThat(objectiveState.get().getStatus()).isEqualTo(LearnerObjectiveStatus.MASTERED);
+        assertThat(insights.currentInsights(CHILD)).isEmpty();
+    }
+
+    @Test
+    void aSingleCorrectAnswerOnAOneSkillObjectiveClaimsNothing() {
+        singleSkillObjective();
+        answer(0, true);
+
+        assertThat(objectiveState.get().getStatus()).isEqualTo(LearnerObjectiveStatus.MASTERED);
+        assertThat(insights.currentInsights(CHILD)).isEmpty();
+    }
+
+    @Test
+    void thinEvidenceOnSomeSkillsLimitsTheClaimToTheSkillsWithEnough() {
+        answer(0, true, true, true);
+        for (int skill = 1; skill < 4; skill++) {
+            answer(skill, true);
+        }
+
+        // Every skill observed and the average at the threshold, so the rollup says MASTERED;
+        // only one skill has enough evidence, so the claim is progress on the parts practised.
         assertThat(objectiveState.get().getStatus()).isEqualTo(LearnerObjectiveStatus.MASTERED);
         ParentInsight insight = single(insights.currentInsights(CHILD));
         assertThat(insight.getInsightType()).isEqualTo(ParentInsightType.PROGRESS);
-        assertThat(insight.getHeadline()).contains("still gathering evidence before calling it mastered");
+        assertThat(insight.getHeadline()).isEqualTo("Your child is making good progress in the parts of "
+                + OBJECTIVE_TITLE + " practised so far.");
     }
 
     @Test
@@ -243,6 +270,12 @@ class ObjectiveInsightTruthfulnessTests {
     private static ParentInsight single(List<ParentInsight> list) {
         assertThat(list).hasSize(1);
         return list.get(0);
+    }
+
+    /** The objective maps only the first skill - the shape of the one-skill curriculum found in browser verification. */
+    private void singleSkillObjective() {
+        when(learningObjectiveSkillRepository.findByLearningObjectiveId(OBJECTIVE))
+                .thenReturn(List.of(LearningObjectiveSkill.create(OBJECTIVE, SKILLS.get(0))));
     }
 
 }

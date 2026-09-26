@@ -71,6 +71,8 @@ public class ParentInsightService {
      * this battle is explicitly not a redesign of that class.
      */
     private static final int MIN_EVIDENCE_FOR_MASTERY_CLAIM = 3;
+    // W5: one rule for every direction - a claim needs this much evidence on each skill it is
+    // judged on, and "mastered" needs it on every skill of the objective.
 
     /**
      * Battle 5C: the evidence a skill needs before it can support a parent-facing
@@ -154,31 +156,31 @@ public class ParentInsightService {
                 masteryEngine.objectiveEvidence(childId, objective.getId(), MIN_EVIDENCE_FOR_PERFORMANCE_CLAIM);
         Map<String, Object> supportingData = evidenceMap(objective.getId(), state.getMasteryProbability(), evidence);
 
-        if (state.getStatus() == LearnerObjectiveStatus.MASTERED) {
-            if (evidence.minEvidenceCount() < MIN_EVIDENCE_FOR_MASTERY_CLAIM) {
-                // Numerically MASTERED, but at least one skill behind that average has
-                // too little evidence to say so with confidence - see class javadoc.
-                // PROGRESS, not STRENGTH: "mastered" is a claim this specific evidence
-                // does not yet support, but the average is genuinely trending well.
-                return Optional.of(ParentInsight.generate(childId, ParentInsightType.PROGRESS,
-                        "Your child is showing early strength in " + objective.getTitle()
-                                + ", and we're still gathering evidence before calling it mastered.",
-                        null, supportingData));
-            }
+        // A mastery claim is about the whole objective, so every skill needs sufficient evidence.
+        if (state.getStatus() == LearnerObjectiveStatus.MASTERED
+                && evidence.minEvidenceCount() >= MIN_EVIDENCE_FOR_MASTERY_CLAIM) {
             return Optional.of(ParentInsight.generate(childId, ParentInsightType.STRENGTH,
                     "Your child has mastered " + objective.getTitle() + ".", null, supportingData));
         }
 
-        // IN_PROGRESS: judged only on skills with sufficient evidence (see class javadoc).
-        // No such skill yet means no performance claim yet - not "still developing".
+        // Otherwise - IN_PROGRESS, or a MASTERED average resting on thin evidence - any claim is
+        // judged only on the skills with sufficient evidence (see class javadoc), and there is
+        // no claim at all until one skill has that much. A numerically MASTERED objective built
+        // on one or two answers per skill used to read "showing early strength" (PD-21): more
+        // than the evidence supports, and inconsistent with the same answers on one skill,
+        // which rightly claim nothing.
         if (evidence.sufficientlyEvidencedMastery().isEmpty()) {
             return Optional.empty();
         }
         boolean goodProgress = evidence.sufficientlyEvidencedMastery().get().compareTo(GOOD_PROGRESS_THRESHOLD) >= 0;
         ParentInsightType type = goodProgress ? ParentInsightType.PROGRESS : ParentInsightType.WEAKNESS;
+        // The claim covers the skills it was judged on; when that is only part of the
+        // objective, the sentence says so rather than speaking for the whole objective.
+        boolean wholeObjective = evidence.skillsSufficientlyEvidenced() == evidence.skillsMapped();
+        String scope = wholeObjective ? objective.getTitle() : "the parts of " + objective.getTitle() + " practised so far";
         String headline = goodProgress
-                ? "Your child is making good progress in " + objective.getTitle() + "."
-                : "Your child is still developing confidence with " + objective.getTitle() + ".";
+                ? "Your child is making good progress in " + scope + "."
+                : "Your child is still developing confidence with " + scope + ".";
 
         return Optional.of(ParentInsight.generate(childId, type, headline, null, supportingData));
     }

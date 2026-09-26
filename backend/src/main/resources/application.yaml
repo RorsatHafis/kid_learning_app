@@ -48,6 +48,10 @@ platform:
       issuer: ${JWT_ISSUER}
       access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
       refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:30d}
+      # A rotated refresh token may be retried once by the same browser for this long when
+      # the response carrying its replacement was lost (the replacement still unused).
+      # 0s = strict single use. At most 2m.
+      refresh-reuse-grace: ${REFRESH_TOKEN_REUSE_GRACE:30s}
     lockout:
       max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
       duration: ${LOGIN_LOCKOUT_DURATION:15m}

@@ -6,18 +6,17 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.HexFormat;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.platform.audit.dto.RecordAuditEvent;
+import com.platform.audit.entity.AuditActorType;
+import com.platform.audit.service.AuditService;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.AccountStatus;
 import com.platform.identity.entity.PlatformRole;
@@ -48,9 +47,20 @@ import com.platform.security.jwt.JwtService;
  * - Presenting an already-ROTATED or already-REVOKED token is treated as
  *   evidence the token leaked - a legitimate client only ever holds the
  *   *latest* token in the chain. {@link #refresh} responds by revoking every
- *   session in that token's family, not just the one presented, per OAuth 2.0
- *   refresh-token-rotation best practice (draft-ietf-oauth-security-topics,
- *   "Refresh Token Automatic Reuse Detection").
+ *   session in that token's family ({@code family_id}, V37), not just the one
+ *   presented, per OAuth 2.0 refresh-token-rotation best practice (RFC 9700,
+ *   "refresh token rotation" with reuse detection).
+ * - One exception, the lost response (PD-03, N19): a refresh can succeed on the
+ *   server while its response never reaches the client (a reload or navigation
+ *   mid-request, a dropped connection), leaving the client holding the token it
+ *   just rotated away. A retry of that token is honoured only when <em>all</em>
+ *   of these hold: it arrives within the short reuse grace window of the first
+ *   rotation; the replacement issued then has never been used; and it comes from
+ *   the same user agent the replacement was issued to. The unused replacement is
+ *   revoked and a new one issued in its place, so the family never has more than
+ *   one live token and any later use of a superseded token still trips reuse
+ *   detection. Anything else - a used replacement, another client, a late retry -
+ *   is replay, exactly as before. Recoveries and detections are audited.
  * - Rotation and revocation are conditional, single-statement bulk updates
  *   ({@link AccountSessionRepository#rotateIfActive}, {@link
  *   AccountSessionRepository#revokeIfRevocable}), each guarded by a {@code
@@ -73,15 +83,20 @@ public class AccountSessionService {
     private final AccountRepository accounts;
     private final JwtService jwtService;
     private final Duration refreshTokenTtl;
+    private final Duration refreshReuseGrace;
+    private final AuditService auditService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public AccountSessionService(AccountSessionRepository sessions, AccountRepository accounts,
-                                  JwtService jwtService, SecurityProperties securityProperties) {
+                                  JwtService jwtService, SecurityProperties securityProperties,
+                                  AuditService auditService) {
 
         this.sessions = sessions;
         this.accounts = accounts;
         this.jwtService = jwtService;
         this.refreshTokenTtl = securityProperties.jwt().refreshTokenTtl();
+        this.refreshReuseGrace = securityProperties.jwt().refreshReuseGrace();
+        this.auditService = auditService;
 
     }
 
@@ -133,8 +148,18 @@ public class AccountSessionService {
         String presentedHash = hash(rawRefreshToken);
         Instant now = Instant.now();
 
-        AccountSession presented = sessions.findByRefreshTokenHash(presentedHash)
+        // Row-locked: every refresh presenting this token is serialized behind this one.
+        AccountSession presented = sessions.findForRefreshByRefreshTokenHash(presentedHash)
                 .orElseThrow(InvalidSessionException::new);
+
+        if (presented.getStatus() == AccountSessionStatus.ROTATED) {
+
+            Optional<RefreshResult> recovered = recoverLostResponse(presented, userAgent, ipAddress, now);
+            if (recovered.isPresent()) {
+                return recovered.get();
+            }
+
+        }
 
         if (presented.getStatus() == AccountSessionStatus.ROTATED
                 || presented.getStatus() == AccountSessionStatus.REVOKED) {
@@ -142,7 +167,7 @@ public class AccountSessionService {
             // A token that was already consumed (or already revoked) being presented
             // again is exactly the reuse signal this method exists to catch - a
             // legitimate client only ever holds the newest token in the chain.
-            revokeFamily(presented.getId());
+            revokeFamily(presented, "REFRESH_REPLAYED");
             throw new InvalidSessionException();
 
         }
@@ -155,9 +180,9 @@ public class AccountSessionService {
 
         }
 
-        Account account = accounts.findById(presented.getAccountId()).orElse(null);
+        Account account = activeAccount(presented);
 
-        if (account == null || account.getStatus() != AccountStatus.ACTIVE) {
+        if (account == null) {
 
             // The account was disabled (or is otherwise no longer eligible) since this
             // session was issued - refresh must not resurrect access for it. This is
@@ -169,29 +194,90 @@ public class AccountSessionService {
         }
 
         String newRawToken = generateRawToken();
-        AccountSession next = AccountSession.issue(
-                account.getId(), hash(newRawToken), now, now.plus(refreshTokenTtl), userAgent, ipAddress);
-        sessions.save(next);
+        AccountSession next = successorOf(presented, newRawToken, userAgent, ipAddress, now);
 
         int rotated = sessions.rotateIfActive(presented.getId(), next.getId(), now);
 
         if (rotated == 0) {
 
-            // Lost a race against another request that rotated/revoked this exact
-            // session between our lookup and this update - either genuine concurrent
-            // reuse or two legitimate calls racing on one single-use token. Either
-            // way the session we just minted must not survive as a valid credential,
-            // and the whole family must be treated as compromised.
+            // Cannot happen while the presented row is locked; kept fail-closed: the
+            // session just minted must not survive, and the family is treated as compromised.
             sessions.revokeIfRevocable(next.getId(), now);
-            revokeFamily(presented.getId());
+            revokeFamily(presented, "REFRESH_ROTATION_RACE");
             throw new InvalidSessionException();
 
         }
 
-        JwtService.IssuedToken accessToken = jwtService.issueAccessToken(account.getId(), account.getPlatformRole());
+        return result(account, newRawToken, next);
 
+    }
+
+    /**
+     * The lost-response retry described in the class javadoc: honoured only within the
+     * grace window of the first rotation, only while the replacement issued then has
+     * never been used, and only for the user agent it was issued to. Empty means "not a
+     * recoverable retry" - the caller then treats the token as replayed.
+     */
+    private Optional<RefreshResult> recoverLostResponse(AccountSession presented, String userAgent, String ipAddress,
+                                                        Instant now) {
+
+        if (refreshReuseGrace.isZero()
+                || presented.getRotatedAt() == null
+                || !now.isBefore(presented.getRotatedAt().plus(refreshReuseGrace))
+                || presented.getReplacedBySessionId() == null) {
+            return Optional.empty();
+        }
+
+        AccountSession replacement = sessions.findById(presented.getReplacedBySessionId()).orElse(null);
+        if (replacement == null
+                || !replacement.isUsable(now)
+                || !replacement.sameUserAgent(userAgent)) {
+            return Optional.empty();
+        }
+
+        Account account = activeAccount(presented);
+        if (account == null || sessions.revokeIfActive(replacement.getId(), now) != 1) {
+            return Optional.empty();
+        }
+
+        String newRawToken = generateRawToken();
+        AccountSession next = successorOf(presented, newRawToken, userAgent, ipAddress, now);
+        if (sessions.repointRotated(presented.getId(), next.getId()) != 1) {
+            // Fail closed: the presented session is no longer ROTATED.
+            sessions.revokeIfRevocable(next.getId(), now);
+            return Optional.empty();
+        }
+
+        audit(account, "SESSION_REFRESH_RETRY_RECOVERED", presented.getFamilyId(),
+                java.util.Map.of("sessionId", presented.getId()));
+        return Optional.of(result(account, newRawToken, next));
+
+    }
+
+    private AccountSession successorOf(AccountSession presented, String rawToken, String userAgent, String ipAddress,
+                                       Instant now) {
+
+        AccountSession next = AccountSession.successor(presented.getAccountId(), presented.getFamilyId(), hash(rawToken),
+                now, now.plus(refreshTokenTtl), userAgent, ipAddress);
+        sessions.save(next);
+        sessions.flush();
+        return next;
+
+    }
+
+    private Account activeAccount(AccountSession session) {
+
+        return accounts.findById(session.getAccountId())
+                .filter(account -> account.getStatus() == AccountStatus.ACTIVE)
+                .orElse(null);
+
+    }
+
+    private RefreshResult result(Account account, String rawToken, AccountSession session) {
+
+        JwtService.IssuedToken accessToken = jwtService.issueAccessToken(account.getId(), account.getPlatformRole());
         return new RefreshResult(account.getId(), account.getEmail(), account.getPlatformRole(),
-                accessToken.token(), accessToken.expiresAt(), newRawToken, next.getExpiresAt());
+                accessToken.token(), accessToken.expiresAt(), rawToken, session.getExpiresAt());
 
     }
 
@@ -228,7 +314,7 @@ public class AccountSessionService {
                 // holds the newer tokens (e.g. a thief who refreshed first and then "logged
                 // out" the stolen token) would then survive a later reuse detection, which
                 // walks the chain. revokeFamily reads the whole chain before revoking any of it.
-                revokeFamily(session.getId());
+                revokeFamily(session, "LOGOUT_WITH_ROTATED_TOKEN");
                 return;
 
             }
@@ -256,84 +342,21 @@ public class AccountSessionService {
     }
 
     /**
-     * Revokes every session descended from the same login/registration as the
-     * session identified by {@code memberId}: finds the root of the {@code
-     * replacedBySessionId} chain, reads the *entire* chain from root to its
-     * current tip, and only then revokes every node in it. Safe to call with any
-     * member of the family, in any state.
-     *
-     * <p>The read pass and the write pass are deliberately separate. {@link
-     * AccountSessionRepository#revokeIfRevocable} clears {@code
-     * replacedBySessionId} on the row it revokes (required to satisfy the V9
-     * migration's rotated-consistency CHECK constraint once a row is no longer
-     * ROTATED) - interleaving reads and writes while walking forward would mean
-     * each revoke erases the very pointer needed to find the next node, silently
-     * truncating the walk after the first hop.
+     * Reuse detected: revokes every usable session of the presented session's family
+     * (one statement over {@code family_id}) and records it for security monitoring.
      */
-    private void revokeFamily(UUID memberId) {
+    private void revokeFamily(AccountSession member, String reason) {
 
-        Instant now = Instant.now();
-        UUID rootId = findRootId(memberId);
-
-        for (UUID id : collectChainIdsForward(rootId)) {
-            sessions.revokeIfRevocable(id, now);
-        }
+        int revoked = sessions.revokeFamily(member.getFamilyId(), Instant.now());
+        accounts.findById(member.getAccountId()).ifPresent(account -> audit(account, "SESSION_REUSE_DETECTED",
+                member.getFamilyId(), java.util.Map.of("reason", reason, "sessionsRevoked", revoked)));
 
     }
 
-    /**
-     * Read-only: {@code rootId} followed by every descendant, in chain order, ending at the current tip.
-     *
-     * <p>Battle 4D: no length limit. Every refresh adds a link and extends the session's
-     * expiry, so a regularly used session's chain grows without bound; the previous
-     * 200-hop cap threw IllegalStateException on long chains, rolling back reuse
-     * detection - replay protection failed open. A corrupted (cyclic) chain, which the
-     * schema's rotation rules cannot produce, is detected exactly via {@code visited} and
-     * ends the walk: everything collected is still revoked (fail closed).
-     */
-    private List<UUID> collectChainIdsForward(UUID rootId) {
+    private void audit(Account account, String action, UUID familyId, java.util.Map<String, Object> metadata) {
 
-        List<UUID> ids = new ArrayList<>();
-        Set<UUID> visited = new HashSet<>();
-        UUID currentId = rootId;
-
-        while (currentId != null && visited.add(currentId)) {
-
-            ids.add(currentId);
-
-            currentId = sessions.findById(currentId)
-                    .map(AccountSession::getReplacedBySessionId)
-                    .orElse(null);
-
-        }
-
-        return ids;
-
-    }
-
-    /** The first session of {@code memberId}'s chain. Unbounded, cycle-safe - see {@link #collectChainIdsForward}. */
-    private UUID findRootId(UUID memberId) {
-
-        UUID currentId = memberId;
-        Set<UUID> visited = new HashSet<>();
-
-        while (true) {
-
-            if (!visited.add(currentId)) {
-                // Corrupted cyclic chain: any member is a valid starting point; the forward walk
-                // from it collects the whole cycle, so the family is still revoked in full.
-                return currentId;
-            }
-
-            Optional<AccountSession> parent = sessions.findByReplacedBySessionId(currentId);
-
-            if (parent.isEmpty()) {
-                return currentId;
-            }
-
-            currentId = parent.get().getId();
-
-        }
+        auditService.record(new RecordAuditEvent(null, account.getId(),
+                AuditActorType.valueOf(account.getPlatformRole().name()), action, "SESSION_FAMILY", familyId, metadata));
 
     }
 

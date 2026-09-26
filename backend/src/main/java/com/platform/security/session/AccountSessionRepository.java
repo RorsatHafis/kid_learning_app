@@ -4,7 +4,10 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,8 +18,15 @@ public interface AccountSessionRepository extends JpaRepository<AccountSession, 
 
     long countByAccountIdAndStatus(UUID accountId, AccountSessionStatus status);
 
-    /** The session, if any, that {@code childSessionId} replaced - i.e. its parent in the rotation chain. */
-    Optional<AccountSession> findByReplacedBySessionId(UUID childSessionId);
+    /**
+     * The presented session, row-locked for the rest of the refresh transaction, so
+     * that every refresh presenting one token is serialized: the first rotates it and
+     * each later one sees the result (and is judged as a retry or a replay), rather
+     * than racing it.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from AccountSession s where s.refreshTokenHash = :hash")
+    Optional<AccountSession> findForRefreshByRefreshTokenHash(@Param("hash") String refreshTokenHash);
 
     /**
      * Atomically rotates one session: ACTIVE -&gt; ROTATED, pointing at
@@ -99,5 +109,51 @@ public interface AccountSessionRepository extends JpaRepository<AccountSession, 
                                  com.platform.security.session.AccountSessionStatus.ROTATED)
             """)
     int revokeAllForAccount(@Param("accountId") UUID accountId, @Param("now") Instant now);
+
+
+    /**
+     * Revokes every usable session of one family (reuse detection). Same REVOKED
+     * transition and {@code replacedBySessionId} clearing as {@link #revokeIfRevocable}.
+     *
+     * @return the number of sessions revoked
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update AccountSession s
+               set s.status = com.platform.security.session.AccountSessionStatus.REVOKED,
+                   s.revokedAt = :now,
+                   s.replacedBySessionId = null,
+                   s.version = s.version + 1
+             where s.familyId = :familyId
+               and s.status in (com.platform.security.session.AccountSessionStatus.ACTIVE,
+                                 com.platform.security.session.AccountSessionStatus.ROTATED)
+            """)
+    int revokeFamily(@Param("familyId") UUID familyId, @Param("now") Instant now);
+
+    /** Revokes one session only if it is still ACTIVE (never used). @return 1 if revoked, 0 otherwise */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update AccountSession s
+               set s.status = com.platform.security.session.AccountSessionStatus.REVOKED,
+                   s.revokedAt = :now,
+                   s.version = s.version + 1
+             where s.id = :id
+               and s.status = com.platform.security.session.AccountSessionStatus.ACTIVE
+            """)
+    int revokeIfActive(@Param("id") UUID id, @Param("now") Instant now);
+
+    /**
+     * Points a ROTATED session at a new successor, keeping its original rotation time
+     * (the reuse grace window is measured from the first rotation, never extended).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update AccountSession s
+               set s.replacedBySessionId = :successorId,
+                   s.version = s.version + 1
+             where s.id = :id
+               and s.status = com.platform.security.session.AccountSessionStatus.ROTATED
+            """)
+    int repointRotated(@Param("id") UUID id, @Param("successorId") UUID successorId);
 
 }

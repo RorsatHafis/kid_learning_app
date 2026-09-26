@@ -43,6 +43,7 @@ public class ConfigurationContract {
         variables.put("JWT_ISSUER", "platform.security.jwt.issuer");
         variables.put("JWT_ACCESS_TOKEN_TTL", "platform.security.jwt.access-token-ttl");
         variables.put("JWT_REFRESH_TOKEN_TTL", "platform.security.jwt.refresh-token-ttl");
+        variables.put("REFRESH_TOKEN_REUSE_GRACE", "platform.security.jwt.refresh-reuse-grace");
         variables.put("LOGIN_MAX_ATTEMPTS", "platform.security.lockout.max-attempts");
         variables.put("LOGIN_LOCKOUT_DURATION", "platform.security.lockout.duration");
         variables.put("RATE_LIMIT_LOGIN_PER_MINUTE", "platform.security.rate-limit.login-per-minute");

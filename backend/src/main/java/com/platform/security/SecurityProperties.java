@@ -16,12 +16,21 @@ import com.platform.common.config.ConfigurationContract;
 @ConfigurationProperties(prefix = "platform.security")
 public record SecurityProperties (Jwt jwt, Lockout lockout) {
 
+    public static final Duration MAX_REFRESH_REUSE_GRACE = Duration.ofMinutes(2);
+
     public SecurityProperties {
         ConfigurationContract.require(jwt != null, "platform.security.jwt is not configured");
         ConfigurationContract.require(lockout != null, "platform.security.lockout is not configured");
     }
 
-    public record Jwt(String secret, String issuer, Duration accessTokenTtl, Duration refreshTokenTtl) {
+    /**
+     * {@code refreshReuseGrace}: how long after a rotation the previous refresh token may
+     * still be presented once more by the same browser, when the response carrying its
+     * replacement was lost and that replacement has never been used (PD-03, N19). Zero
+     * disables it (strict single use). Capped: a long window would weaken reuse detection.
+     */
+    public record Jwt(String secret, String issuer, Duration accessTokenTtl, Duration refreshTokenTtl,
+                      Duration refreshReuseGrace) {
 
         public Jwt {
             ConfigurationContract.requireText(secret, "JWT_SECRET");
@@ -31,6 +40,10 @@ public record SecurityProperties (Jwt jwt, Lockout lockout) {
             ConfigurationContract.requireText(issuer, "JWT_ISSUER");
             ConfigurationContract.requirePositive(accessTokenTtl, "JWT_ACCESS_TOKEN_TTL");
             ConfigurationContract.requirePositive(refreshTokenTtl, "JWT_REFRESH_TOKEN_TTL");
+            ConfigurationContract.require(refreshReuseGrace != null && !refreshReuseGrace.isNegative()
+                            && refreshReuseGrace.compareTo(MAX_REFRESH_REUSE_GRACE) <= 0,
+                    "REFRESH_TOKEN_REUSE_GRACE must be between 0s and " + MAX_REFRESH_REUSE_GRACE.toSeconds()
+                            + "s, was " + refreshReuseGrace);
         }
 
     }

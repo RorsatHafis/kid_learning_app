@@ -183,13 +183,74 @@ class SessionReliabilityIntegrationTests {
         assertThat(refreshStatus(current.refreshToken())).isEqualTo(401);
     }
 
+    // ------------------------------------------------------------------ lost responses (PD-03, N19)
+
     @Test
-    void clientRetryAfterALostRefreshResponseIsIndistinguishableFromReplay() throws Exception {
+    void aRetryAfterALostRefreshResponseKeepsTheSessionAlive() throws Exception {
         Session t1 = registerParent();
-        refresh(t1.refreshToken()); // succeeded server-side; imagine the response never arrived
+        Session lost = refresh(t1.refreshToken()); // succeeded server-side; the response never arrived
+
+        Session recovered = refresh(t1.refreshToken());
+
+        assertThat(get("/api/v1/children", recovered.accessToken()).statusCode()).isEqualTo(200);
+        assertThat(familyStatuses(t1.accountId()).stream().filter("ACTIVE"::equals)).hasSize(1);
+        assertThat(sessionRow(recovered.refreshToken()).get("status")).isEqualTo("ACTIVE");
+        assertThat(sessionRow(lost.refreshToken()).get("status")).isEqualTo("REVOKED");
+        assertThat(sessionRow(t1.refreshToken()).get("replaced_by_session_id"))
+                .isEqualTo(sessionRow(recovered.refreshToken()).get("id"));
+        // The session carries on normally.
+        assertThat(refreshStatus(refresh(recovered.refreshToken()).refreshToken())).isEqualTo(200);
+        assertThat(auditCount(t1.accountId(), "SESSION_REFRESH_RETRY_RECOVERED")).isEqualTo(1);
+    }
+
+    @Test
+    void theReplacementThatWasNeverDeliveredCannotBeUsedLater() throws Exception {
+        Session t1 = registerParent();
+        Session intercepted = refresh(t1.refreshToken()); // a response someone else captured
+        Session recovered = refresh(t1.refreshToken());
+
+        assertThat(refreshStatus(intercepted.refreshToken())).isEqualTo(401);
+        assertThat(familyStatuses(t1.accountId())).containsOnly("REVOKED"); // reuse detected
+        assertThat(refreshStatus(recovered.refreshToken())).isEqualTo(401);
+    }
+
+    @Test
+    void aRetryFromAnotherBrowserIsReplay() throws Exception {
+        Session t1 = registerParent();
+        refresh(t1.refreshToken());
+
+        HttpResponse<String> retry = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/auth/refresh"))
+                .header("Content-Type", "application/json").header("User-Agent", "Another-Browser/1.0")
+                .POST(HttpRequest.BodyPublishers.ofString("{\"refreshToken\":\"" + t1.refreshToken() + "\"}")).build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        assertThat(retry.statusCode()).isEqualTo(401);
+        assertThat(familyStatuses(t1.accountId())).containsOnly("REVOKED");
+        assertThat(auditCount(t1.accountId(), "SESSION_REUSE_DETECTED")).isEqualTo(1);
+    }
+
+    @Test
+    void aRetryAfterTheGraceWindowIsReplay() throws Exception {
+        Session t1 = registerParent();
+        refresh(t1.refreshToken());
+        jdbc.update("update account_sessions set rotated_at = now() - interval '31 seconds' where refresh_token_hash = ?",
+                sha256(t1.refreshToken()));
 
         assertThat(refreshStatus(t1.refreshToken())).isEqualTo(401);
         assertThat(familyStatuses(t1.accountId())).containsOnly("REVOKED");
+    }
+
+    @Test
+    void aThiefWhoWinsTheGraceWindowIsCutOffAtTheVictimsNextRefresh() throws Exception {
+        Session stolen = registerParent();
+        Session victim = refresh(stolen.refreshToken());   // the victim refreshed and holds the new token
+        Session thief = refresh(stolen.refreshToken());    // a copy of the old token, retried at once
+
+        // The victim's token was revoked in the thief's favour; its next refresh is a replay,
+        // which ends the whole family - the thief's session included.
+        assertThat(refreshStatus(victim.refreshToken())).isEqualTo(401);
+        assertThat(familyStatuses(stolen.accountId())).containsOnly("REVOKED");
+        assertThat(refreshStatus(thief.refreshToken())).isEqualTo(401);
     }
 
     // ------------------------------------------------------------------ concurrency
@@ -209,14 +270,24 @@ class SessionReliabilityIntegrationTests {
         List<HttpResponse<String>> responses = concurrently(callers,
                 () -> post("/api/v1/auth/refresh", "{\"refreshToken\":\"" + t1.refreshToken() + "\"}", null));
 
-        long succeeded = responses.stream().filter(r -> r.statusCode() == 200).count();
-        assertThat(succeeded).isEqualTo(1);                                  // one rotation, never a fork
+        // The presented row is locked, so the calls are serialized: the first rotates, each
+        // later one is a same-browser retry within the grace window. The family never forks:
+        // exactly one live token remains, whichever call issued it.
         assertThat(responses).allMatch(r -> r.statusCode() == 200 || r.statusCode() == 401);
-        // the same single-use token presented twice is treated as possible theft: no session survives
-        assertThat(familyStatuses(t1.accountId())).containsOnly("REVOKED");
-        String winnerToken = extract(responses.stream().filter(r -> r.statusCode() == 200).findFirst().orElseThrow().body(),
-                "refreshToken");
-        assertThat(refreshStatus(winnerToken)).isEqualTo(401);
+        assertThat(familyStatuses(t1.accountId()).stream().filter("ACTIVE"::equals)).hasSize(1);
+        List<String> issued = responses.stream().filter(r -> r.statusCode() == 200)
+                .map(r -> extract(r.body(), "refreshToken")).toList();
+        List<String> live = issued.stream().filter(token -> "ACTIVE".equals(sessionRow(token).get("status"))).toList();
+        assertThat(live).hasSize(1);
+        // Every other token handed out is dead, and presenting one is still detected as reuse.
+        issued.stream().filter(token -> !token.equals(live.get(0))).findFirst().ifPresent(stale -> {
+            try {
+                assertThat(refreshStatus(stale)).isEqualTo(401);
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+            assertThat(familyStatuses(t1.accountId())).containsOnly("REVOKED");
+        });
     }
 
     @Test
@@ -305,6 +376,11 @@ class SessionReliabilityIntegrationTests {
     private Map<String, Object> sessionRow(String rawRefreshToken) {
         return jdbc.queryForMap("select id, status, replaced_by_session_id, refresh_token_hash "
                 + "from account_sessions where refresh_token_hash = ?", sha256(rawRefreshToken));
+    }
+
+    private int auditCount(String accountId, String action) {
+        return jdbc.queryForObject("select count(*) from audit_events where actor_id = ?::uuid and action = ?",
+                Integer.class, accountId, action);
     }
 
     private List<String> familyStatuses(String accountId) {

@@ -49,6 +49,7 @@ class ConfigurationContractTests {
         env.put("JWT_ISSUER", "bk-prod-issuer");
         env.put("JWT_ACCESS_TOKEN_TTL", "7m");
         env.put("JWT_REFRESH_TOKEN_TTL", "3d");
+        env.put("REFRESH_TOKEN_REUSE_GRACE", "45s");
         env.put("LOGIN_MAX_ATTEMPTS", "3");
         env.put("LOGIN_LOCKOUT_DURATION", "2m");
         env.put("RATE_LIMIT_LOGIN_PER_MINUTE", "7");
@@ -77,6 +78,7 @@ class ConfigurationContractTests {
             assertThat(security.jwt().issuer()).isEqualTo("bk-prod-issuer");
             assertThat(security.jwt().accessTokenTtl()).isEqualTo(Duration.ofMinutes(7));
             assertThat(security.jwt().refreshTokenTtl()).isEqualTo(Duration.ofDays(3));
+            assertThat(security.jwt().refreshReuseGrace()).isEqualTo(Duration.ofSeconds(45));
             assertThat(security.lockout().maxAttempts()).isEqualTo(3);
             assertThat(security.lockout().duration()).isEqualTo(Duration.ofMinutes(2));
             RateLimitProperties rateLimit = ctx.getBean(RateLimitProperties.class);
@@ -120,6 +122,7 @@ class ConfigurationContractTests {
 
             assertThat(security.jwt().accessTokenTtl()).isEqualTo(Duration.ofMinutes(15));
             assertThat(security.jwt().refreshTokenTtl()).isEqualTo(Duration.ofDays(30));
+            assertThat(security.jwt().refreshReuseGrace()).isEqualTo(Duration.ofSeconds(30));
             assertThat(security.lockout().maxAttempts()).isEqualTo(5);
             assertThat(security.lockout().duration()).isEqualTo(Duration.ofMinutes(15));
             RateLimitProperties rateLimit = ctx.getBean(RateLimitProperties.class);
@@ -167,6 +170,8 @@ class ConfigurationContractTests {
             "JWT_ACCESS_TOKEN_TTL|-5m|JWT_ACCESS_TOKEN_TTL",
             "JWT_ACCESS_TOKEN_TTL|fifteen|access-token-ttl",
             "JWT_REFRESH_TOKEN_TTL|0d|JWT_REFRESH_TOKEN_TTL",
+            "REFRESH_TOKEN_REUSE_GRACE|-1s|REFRESH_TOKEN_REUSE_GRACE",
+            "REFRESH_TOKEN_REUSE_GRACE|10m|REFRESH_TOKEN_REUSE_GRACE",
             "LOGIN_MAX_ATTEMPTS|0|LOGIN_MAX_ATTEMPTS",
             "LOGIN_MAX_ATTEMPTS|-1|LOGIN_MAX_ATTEMPTS",
             "RATE_LIMIT_LOGIN_PER_MINUTE|0|RATE_LIMIT_LOGIN_PER_MINUTE",
