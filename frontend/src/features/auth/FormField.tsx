@@ -24,7 +24,7 @@ export function FormField({
         {...props}
       />
       {error && (
-        <span id={errorId} className="text-xs font-medium text-brand-red">
+        <span id={errorId} className="text-xs font-medium text-brand-redStrong">
           {error}
         </span>
       )}

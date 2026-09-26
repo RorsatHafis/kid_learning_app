@@ -324,13 +324,14 @@ class LearningLoopCompletionIntegrationTests {
         Curriculum curriculum = curriculumService.createCurriculum(subjectId, ageHubId, "Loop " + suffix);
         var curriculumVersion = curriculumService.createDraftVersion(curriculum.getId());
         curriculumService.addObjective(curriculumVersion.getId(), objective.getId(), 0);
-        curriculumService.publish(curriculumVersion.getId());
 
         ActivityVersion easy = activity(subjectId, List.of(s1), 1, question(subjectId, s1, "1 + 1", "2"), question(subjectId, s1, "1 + 2", "3"));
         ActivityVersion medium = activity(subjectId, List.of(s1), 2, question(subjectId, s1, "2 + 2", "4"), question(subjectId, s1, "2 + 3", "5"));
         activity(subjectId, List.of(s1), 3, question(subjectId, s1, "3 + 3", "6"), question(subjectId, s1, "3 + 4", "7"));
         ActivityVersion s2Only = activity(subjectId, List.of(s2), 1, question(subjectId, s2, "5 - 1", "4"), question(subjectId, s2, "5 - 2", "3"));
         ActivityVersion mixed = activity(subjectId, List.of(s1, s2), 5, question(subjectId, s1, "4 + 4", "8"), question(subjectId, s2, "6 - 1", "5"));
+        // Published last: a curriculum needs a published activity first (ContentValidator).
+        curriculumService.publish(curriculumVersion.getId());
         return new Catalog(curriculum, s1, s2, easy, medium, s2Only, mixed);
     }
 

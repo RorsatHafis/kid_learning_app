@@ -1,0 +1,617 @@
+package com.platform.content.studio;
+
+import com.platform.audit.dto.RecordAuditEvent;
+import com.platform.audit.entity.AuditActorType;
+import com.platform.audit.service.AuditService;
+import com.platform.common.entity.CatalogStatus;
+import com.platform.common.entity.PublicationStatus;
+import com.platform.common.web.ResourceNotFoundException;
+import com.platform.content.entity.Activity;
+import com.platform.content.entity.ActivityItem;
+import com.platform.content.entity.ActivitySkill;
+import com.platform.content.entity.ActivityVersion;
+import com.platform.content.entity.Lesson;
+import com.platform.content.entity.Question;
+import com.platform.content.entity.QuestionOption;
+import com.platform.content.entity.QuestionSkill;
+import com.platform.content.entity.QuestionType;
+import com.platform.content.entity.QuestionVersion;
+import com.platform.content.repository.ActivityItemRepository;
+import com.platform.content.repository.ActivityRepository;
+import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.LessonRepository;
+import com.platform.content.repository.QuestionRepository;
+import com.platform.content.repository.QuestionSkillRepository;
+import com.platform.content.repository.QuestionVersionRepository;
+import com.platform.content.service.ActivityService;
+import com.platform.content.service.ContentAccessGuard;
+import com.platform.content.service.LessonService;
+import com.platform.content.service.QuestionService;
+import com.platform.content.studio.StudioDtos.*;
+import com.platform.content.validation.ContentValidator;
+import com.platform.content.validation.ValidationReport;
+import com.platform.content.web.ActivityContentDtos.ActivityItemResponse;
+import com.platform.content.web.ActivityContentDtos.ActivityVersionDetailResponse;
+import com.platform.content.web.ActivityContentDtos.QuestionOptionResponse;
+import com.platform.curriculum.entity.Curriculum;
+import com.platform.curriculum.entity.CurriculumObjective;
+import com.platform.curriculum.entity.CurriculumVersion;
+import com.platform.curriculum.entity.LearningObjective;
+import com.platform.curriculum.entity.Subject;
+import com.platform.curriculum.repository.AgeHubRepository;
+import com.platform.curriculum.repository.CurriculumRepository;
+import com.platform.curriculum.repository.LearningObjectiveRepository;
+import com.platform.curriculum.repository.SubjectRepository;
+import com.platform.curriculum.service.CurriculumService;
+import com.platform.curriculum.service.LearningObjectiveService;
+import com.platform.curriculum.service.SubjectService;
+import com.platform.identity.entity.Account;
+import com.platform.knowledge.entity.LearningObjectiveSkill;
+import com.platform.knowledge.entity.Skill;
+import com.platform.knowledge.entity.SkillPrerequisite;
+import com.platform.knowledge.repository.LearningObjectiveSkillRepository;
+import com.platform.knowledge.repository.SkillPrerequisiteRepository;
+import com.platform.knowledge.repository.SkillRepository;
+import com.platform.knowledge.service.LearningObjectiveSkillService;
+import com.platform.knowledge.service.SkillPrerequisiteService;
+import com.platform.knowledge.service.SkillService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+
+/**
+ * The Content Studio (directive §18): what an author reads and changes, always within
+ * what that author may edit - ADMIN works on platform content, anyone else on their
+ * own ({@link ContentAccessGuard}). Publishing itself stays in the domain services,
+ * which refuse anything {@link ContentValidator} reports as blocking.
+ */
+@Service
+public class StudioService {
+
+    private static final String PRACTICE = "PRACTICE";
+
+    private final ContentAccessGuard guard;
+    private final AuditService audit;
+    private final ContentValidator validator;
+    private final SubjectRepository subjects;
+    private final SubjectService subjectService;
+    private final AgeHubRepository ageHubs;
+    private final SkillRepository skills;
+    private final SkillService skillService;
+    private final SkillPrerequisiteRepository prerequisites;
+    private final SkillPrerequisiteService prerequisiteService;
+    private final LearningObjectiveRepository objectives;
+    private final LearningObjectiveService objectiveService;
+    private final LearningObjectiveSkillRepository objectiveSkills;
+    private final LearningObjectiveSkillService objectiveSkillService;
+    private final CurriculumRepository curricula;
+    private final CurriculumService curriculumService;
+    private final LessonRepository lessons;
+    private final LessonService lessonService;
+    private final ActivityRepository activities;
+    private final ActivityService activityService;
+    private final ActivitySkillRepository activitySkills;
+    private final ActivityItemRepository activityItems;
+    private final QuestionRepository questions;
+    private final QuestionService questionService;
+    private final QuestionSkillRepository questionSkills;
+    private final QuestionVersionRepository questionVersions;
+
+    public StudioService(ContentAccessGuard guard, AuditService audit, ContentValidator validator,
+                         SubjectRepository subjects, SubjectService subjectService, AgeHubRepository ageHubs,
+                         SkillRepository skills, SkillService skillService, SkillPrerequisiteRepository prerequisites,
+                         SkillPrerequisiteService prerequisiteService, LearningObjectiveRepository objectives,
+                         LearningObjectiveService objectiveService, LearningObjectiveSkillRepository objectiveSkills,
+                         LearningObjectiveSkillService objectiveSkillService, CurriculumRepository curricula,
+                         CurriculumService curriculumService, LessonRepository lessons, LessonService lessonService,
+                         ActivityRepository activities, ActivityService activityService,
+                         ActivitySkillRepository activitySkills, ActivityItemRepository activityItems,
+                         QuestionRepository questions, QuestionService questionService,
+                         QuestionSkillRepository questionSkills, QuestionVersionRepository questionVersions) {
+        this.guard = guard;
+        this.audit = audit;
+        this.validator = validator;
+        this.subjects = subjects;
+        this.subjectService = subjectService;
+        this.ageHubs = ageHubs;
+        this.skills = skills;
+        this.skillService = skillService;
+        this.prerequisites = prerequisites;
+        this.prerequisiteService = prerequisiteService;
+        this.objectives = objectives;
+        this.objectiveService = objectiveService;
+        this.objectiveSkills = objectiveSkills;
+        this.objectiveSkillService = objectiveSkillService;
+        this.curricula = curricula;
+        this.curriculumService = curriculumService;
+        this.lessons = lessons;
+        this.lessonService = lessonService;
+        this.activities = activities;
+        this.activityService = activityService;
+        this.activitySkills = activitySkills;
+        this.activityItems = activityItems;
+        this.questions = questions;
+        this.questionService = questionService;
+        this.questionSkills = questionSkills;
+        this.questionVersions = questionVersions;
+    }
+
+    // ================================================================== catalog
+
+    @Transactional(readOnly = true)
+    public List<SubjectDto> subjects(UUID accountId) {
+        guard.requireAuthor(accountId);
+        return subjects.findByStatus(CatalogStatus.ACTIVE).stream()
+                .sorted(Comparator.comparing(Subject::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(StudioService::subjectDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AgeHubDto> ageHubs(UUID accountId) {
+        guard.requireAuthor(accountId);
+        return ageHubs.findAllByOrderByDisplayOrderAsc().stream()
+                .map(hub -> new AgeHubDto(hub.getId(), hub.getCode(), hub.getName(), hub.getMinAge(), hub.getMaxAge()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CatalogDto catalog(UUID accountId, UUID subjectId) {
+        guard.requireAuthor(accountId);
+        Subject subject = subjectService.getById(subjectId);
+        List<SkillDto> skillDtos = skills.findBySubjectIdAndStatus(subjectId, CatalogStatus.ACTIVE).stream()
+                .sorted(Comparator.comparing(Skill::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(this::skillDto).toList();
+        List<ObjectiveDto> objectiveDtos = objectives.findBySubjectId(subjectId).stream()
+                .filter(objective -> objective.getStatus() == CatalogStatus.ACTIVE)
+                .sorted(Comparator.comparing(LearningObjective::getTitle, String.CASE_INSENSITIVE_ORDER))
+                .map(this::objectiveDto).toList();
+        return new CatalogDto(subjectDto(subject), skillDtos, objectiveDtos);
+    }
+
+    @Transactional
+    public SubjectDto createSubject(UUID accountId, CreateSubjectRequest request) {
+        Account admin = guard.requireCatalogAdmin(accountId);
+        Subject subject = subjectService.create(request.code(), request.name().strip(), blankToNull(request.description()));
+        record(admin, "CATALOG_SUBJECT_CREATED", "SUBJECT", subject.getId(), Map.of("code", subject.getCode()));
+        return subjectDto(subject);
+    }
+
+    @Transactional
+    public SkillDto createSkill(UUID accountId, UUID subjectId, CreateSkillRequest request) {
+        Account admin = guard.requireCatalogAdmin(accountId);
+        subjectService.getById(subjectId);
+        Skill skill = skillService.createSkill(subjectId, request.code(), request.name().strip(), blankToNull(request.description()));
+        record(admin, "CATALOG_SKILL_CREATED", "SKILL", skill.getId(), Map.of("code", skill.getCode()));
+        return skillDto(skill);
+    }
+
+    @Transactional
+    public ObjectiveDto createObjective(UUID accountId, UUID subjectId, CreateObjectiveRequest request) {
+        Account admin = guard.requireCatalogAdmin(accountId);
+        subjectService.getById(subjectId);
+        LearningObjective objective = objectiveService.create(subjectId, request.code(), request.title().strip(),
+                blankToNull(request.description()));
+        record(admin, "CATALOG_OBJECTIVE_CREATED", "LEARNING_OBJECTIVE", objective.getId(), Map.of("code", objective.getCode()));
+        return objectiveDto(objective);
+    }
+
+    /**
+     * Adds a skill to an objective. Links are not removable here: an objective's skills
+     * shape the paths of children already enrolled and their parents' objective
+     * standing, so removing one needs a deliberate decision (recorded in the progress
+     * document), not an editor button.
+     */
+    @Transactional
+    public ObjectiveDto linkObjectiveSkill(UUID accountId, UUID objectiveId, UUID skillId) {
+        Account admin = guard.requireCatalogAdmin(accountId);
+        LearningObjective objective = objectiveService.getById(objectiveId);
+        Skill skill = skillService.getSkill(skillId);
+        if (!Objects.equals(objective.getSubjectId(), skill.getSubjectId())) {
+            throw new IllegalArgumentException("An objective's skills must belong to the objective's subject");
+        }
+        boolean linked = objectiveSkills.findByLearningObjectiveId(objectiveId).stream()
+                .anyMatch(link -> link.getSkillId().equals(skillId));
+        if (!linked) {
+            objectiveSkillService.link(objectiveId, skillId);
+            record(admin, "CATALOG_OBJECTIVE_SKILL_LINKED", "LEARNING_OBJECTIVE", objectiveId, Map.of("skillId", skillId));
+        }
+        return objectiveDto(objective);
+    }
+
+    /** Cycle-checked by {@link SkillPrerequisiteService}; idempotent. */
+    @Transactional
+    public SkillDto addPrerequisite(UUID accountId, UUID skillId, UUID prerequisiteSkillId) {
+        Account admin = guard.requireCatalogAdmin(accountId);
+        Skill skill = skillService.getSkill(skillId);
+        Skill prerequisite = skillService.getSkill(prerequisiteSkillId);
+        if (!Objects.equals(skill.getSubjectId(), prerequisite.getSubjectId())) {
+            throw new IllegalArgumentException("A prerequisite must belong to the same subject");
+        }
+        boolean present = prerequisites.findBySkillId(skillId).stream()
+                .anyMatch(link -> link.getPrerequisiteSkillId().equals(prerequisiteSkillId));
+        if (!present) {
+            prerequisiteService.addPrerequisite(skillId, prerequisiteSkillId);
+            record(admin, "CATALOG_PREREQUISITE_ADDED", "SKILL", skillId, Map.of("prerequisiteSkillId", prerequisiteSkillId));
+        }
+        return skillDto(skill);
+    }
+
+    // ================================================================== curricula
+
+    @Transactional(readOnly = true)
+    public List<CurriculumSummary> curricula(UUID accountId) {
+        UUID owner = guard.authoringOwner(guard.requireAuthor(accountId));
+        List<Curriculum> owned = owner == null ? curricula.findByOwnerAccountIdIsNull() : curricula.findByOwnerAccountId(owner);
+        return owned.stream()
+                .sorted(Comparator.comparing(Curriculum::getName, String.CASE_INSENSITIVE_ORDER))
+                .map(curriculum -> new CurriculumSummary(curriculum.getId(), curriculum.getName(), curriculum.getSubjectId(),
+                        curriculum.getAgeHubId(), curriculumService.listVersions(curriculum.getId()).stream()
+                        .map(VersionSummary::of).toList()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CurriculumDetail curriculum(UUID accountId, UUID curriculumId) {
+        Curriculum curriculum = guard.requireCurriculumWrite(accountId, curriculumId);
+        List<CurriculumVersionDetail> versions = curriculumService.listVersions(curriculumId).stream()
+                .map(version -> new CurriculumVersionDetail(version.getId(), version.getVersionNumber(), version.getStatus(),
+                        version.getPublishedAt(), curriculumService.listObjectives(version.getId()).stream()
+                        .map(CurriculumObjective::getLearningObjectiveId).toList()))
+                .toList();
+        return new CurriculumDetail(curriculum.getId(), curriculum.getName(), curriculum.getSubjectId(),
+                curriculum.getAgeHubId(), versions);
+    }
+
+    @Transactional
+    public CurriculumDetail createCurriculum(UUID accountId, CreateCurriculumRequest request) {
+        Account author = guard.requireAuthor(accountId);
+        subjectService.getById(request.subjectId());
+        if (!ageHubs.existsById(request.ageHubId())) {
+            throw new ResourceNotFoundException("AgeHub", request.ageHubId());
+        }
+        UUID owner = guard.authoringOwner(author);
+        Curriculum curriculum = owner == null
+                ? curriculumService.createCurriculum(request.subjectId(), request.ageHubId(), request.name().strip())
+                : curriculumService.createOwnedCurriculum(request.subjectId(), request.ageHubId(), request.name().strip(), owner);
+        curriculumService.createDraftVersion(curriculum.getId());
+        return curriculum(accountId, curriculum.getId());
+    }
+
+    @Transactional
+    public CurriculumDetail openCurriculumDraft(UUID accountId, UUID curriculumId) {
+        guard.requireCurriculumWrite(accountId, curriculumId);
+        curriculumService.openDraft(curriculumId);
+        return curriculum(accountId, curriculumId);
+    }
+
+    @Transactional
+    public CurriculumDetail replaceCurriculumObjectives(UUID accountId, UUID curriculumVersionId, List<UUID> objectiveIds) {
+        CurriculumVersion version = curriculumService.getVersion(curriculumVersionId);
+        guard.requireCurriculumWrite(accountId, version.getCurriculumId());
+        curriculumService.replaceObjectives(curriculumVersionId, objectiveIds);
+        return curriculum(accountId, version.getCurriculumId());
+    }
+
+    @Transactional(readOnly = true)
+    public ValidationReport validateCurriculumVersion(UUID accountId, UUID curriculumVersionId) {
+        guard.requireCurriculumWrite(accountId, curriculumService.getVersion(curriculumVersionId).getCurriculumId());
+        return validator.curriculumVersion(curriculumVersionId);
+    }
+
+    @Transactional
+    public CurriculumDetail publishCurriculumVersion(UUID accountId, UUID curriculumVersionId) {
+        CurriculumVersion version = curriculumService.getVersion(curriculumVersionId);
+        guard.requireCurriculumWrite(accountId, version.getCurriculumId());
+        CurriculumVersion published = curriculumService.publish(curriculumVersionId);
+        record(guard.requireAuthor(accountId), "CONTENT_PUBLISHED", "CURRICULUM_VERSION", published.getId(),
+                Map.of("curriculumId", published.getCurriculumId(), "versionNumber", published.getVersionNumber()));
+        return curriculum(accountId, version.getCurriculumId());
+    }
+
+    // ================================================================== lessons & activities
+
+    @Transactional(readOnly = true)
+    public List<LessonSummary> lessons(UUID accountId) {
+        UUID owner = guard.authoringOwner(guard.requireAuthor(accountId));
+        List<Lesson> owned = owner == null ? lessons.findByOwnerAccountIdIsNull() : lessons.findByOwnerAccountId(owner);
+        return owned.stream()
+                .filter(lesson -> lesson.getStatus() == CatalogStatus.ACTIVE)
+                .sorted(Comparator.comparing(Lesson::getTitle, String.CASE_INSENSITIVE_ORDER))
+                .map(lesson -> new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(),
+                        activities.findByLessonId(lesson.getId()).stream()
+                                .sorted(Comparator.comparing(Activity::getTitle, String.CASE_INSENSITIVE_ORDER))
+                                .map(activity -> new ActivitySummary(activity.getId(), activity.getTitle(),
+                                        activity.getActivityType(), activitySkillIds(activity.getId()),
+                                        activityService.listVersions(activity.getId()).stream().map(VersionSummary::of).toList()))
+                                .toList()))
+                .toList();
+    }
+
+    @Transactional
+    public LessonSummary createLesson(UUID accountId, CreateLessonRequest request) {
+        Account author = guard.requireAuthor(accountId);
+        subjectService.getById(request.subjectId());
+        Lesson lesson = lessonService.createOwnedLesson(request.subjectId(), request.title().strip(), guard.authoringOwner(author));
+        return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), List.of());
+    }
+
+    /** An activity with its skills and a first draft, in one step. Activities are PRACTICE: no other type is defined yet. */
+    @Transactional
+    public ActivityDetail createActivity(UUID accountId, UUID lessonId, CreateActivityRequest request) {
+        Lesson lesson = guard.requireLessonWrite(accountId, lessonId);
+        requireSkillsOfSubject(request.skillIds(), lesson.getSubjectId());
+        Activity activity = activityService.createActivity(lesson.getSubjectId(), lessonId, PRACTICE, request.title().strip());
+        request.skillIds().forEach(skillId -> activityService.tagSkill(activity.getId(), skillId));
+        activityService.createDraftVersion(activity.getId(), null, null, null);
+        return activity(accountId, activity.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public ActivityDetail activity(UUID accountId, UUID activityId) {
+        Activity activity = guard.requireActivityWrite(accountId, activityId);
+        List<ActivityVersionDetail> versions = activityService.listVersions(activityId).stream()
+                .map(version -> new ActivityVersionDetail(version.getId(), version.getVersionNumber(), version.getStatus(),
+                        version.getPublishedAt(), version.getInstructions(), version.getDifficultyLevel(),
+                        version.getEstimatedDurationSeconds(),
+                        activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(version.getId()).stream()
+                                .map(this::itemDetail).toList()))
+                .toList();
+        return new ActivityDetail(activity.getId(), activity.getTitle(), activity.getActivityType(), activity.getLessonId(),
+                activity.getSubjectId(), activitySkillIds(activityId), versions);
+    }
+
+    @Transactional
+    public ActivityDetail openActivityDraft(UUID accountId, UUID activityId) {
+        guard.requireActivityWrite(accountId, activityId);
+        activityService.openDraft(activityId);
+        return activity(accountId, activityId);
+    }
+
+    @Transactional
+    public ActivityDetail tagActivitySkill(UUID accountId, UUID activityId, UUID skillId) {
+        Activity activity = guard.requireActivityWrite(accountId, activityId);
+        requireSkillsOfSubject(List.of(skillId), activity.getSubjectId());
+        activityService.tagSkill(activityId, skillId);
+        return activity(accountId, activityId);
+    }
+
+    @Transactional
+    public ActivityDetail untagActivitySkill(UUID accountId, UUID activityId, UUID skillId) {
+        guard.requireActivityWrite(accountId, activityId);
+        activityService.untagSkill(activityId, skillId);
+        return activity(accountId, activityId);
+    }
+
+    @Transactional
+    public ActivityDetail reviseActivityDraft(UUID accountId, UUID activityVersionId, ReviseActivityDraftRequest request) {
+        ActivityVersion version = activityService.getVersion(activityVersionId);
+        guard.requireActivityWrite(accountId, version.getActivityId());
+        activityService.reviseDraft(activityVersionId, blankToNull(request.instructions()), request.difficultyLevel(),
+                request.estimatedDurationSeconds());
+        return activity(accountId, version.getActivityId());
+    }
+
+    @Transactional
+    public ActivityDetail replaceActivityItems(UUID accountId, UUID activityVersionId, List<ItemRequest> items) {
+        ActivityVersion version = activityService.getVersion(activityVersionId);
+        guard.requireActivityWrite(accountId, version.getActivityId());
+        activityService.replaceItems(activityVersionId, items.stream()
+                .map(item -> new ActivityService.ItemDraft(item.questionVersionId(), item.points())).toList());
+        return activity(accountId, version.getActivityId());
+    }
+
+    @Transactional(readOnly = true)
+    public ValidationReport validateActivityVersion(UUID accountId, UUID activityVersionId) {
+        guard.requireActivityWrite(accountId, activityService.getVersion(activityVersionId).getActivityId());
+        return validator.activityVersion(activityVersionId);
+    }
+
+    @Transactional
+    public ActivityDetail publishActivityVersion(UUID accountId, UUID activityVersionId) {
+        ActivityVersion version = activityService.getVersion(activityVersionId);
+        guard.requireActivityWrite(accountId, version.getActivityId());
+        ActivityVersion published = activityService.publish(activityVersionId);
+        record(guard.requireAuthor(accountId), "CONTENT_PUBLISHED", "ACTIVITY_VERSION", published.getId(),
+                Map.of("activityId", published.getActivityId(), "versionNumber", published.getVersionNumber()));
+        return activity(accountId, version.getActivityId());
+    }
+
+    /** Exactly what a child is served for this version - the learner DTO - for the author to try before publishing. */
+    @Transactional(readOnly = true)
+    public ActivityVersionDetailResponse previewActivityVersion(UUID accountId, UUID activityVersionId) {
+        ActivityVersion version = activityService.getVersion(activityVersionId);
+        Activity activity = guard.requireActivityWrite(accountId, version.getActivityId());
+        List<ActivityItemResponse> items = activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId).stream()
+                .map(item -> learnerItem(item.getId(), item.getSequenceOrder(), questionService.getVersion(item.getQuestionVersionId())))
+                .toList();
+        return new ActivityVersionDetailResponse(version.getId(), activity.getId(), activity.getTitle(),
+                version.getInstructions(), version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items);
+    }
+
+    // ================================================================== questions
+
+    @Transactional(readOnly = true)
+    public List<QuestionSummary> questions(UUID accountId, UUID subjectId) {
+        UUID owner = guard.authoringOwner(guard.requireAuthor(accountId));
+        List<Question> owned = owner == null
+                ? questions.findBySubjectIdAndOwnerAccountIdIsNull(subjectId)
+                : questions.findBySubjectIdAndOwnerAccountId(subjectId, owner);
+        return owned.stream()
+                .filter(question -> question.getStatus() == CatalogStatus.ACTIVE)
+                .map(question -> {
+                    List<QuestionVersion> versions = questionService.listVersions(question.getId());
+                    QuestionVersion latest = versions.isEmpty() ? null : versions.get(versions.size() - 1);
+                    UUID publishedId = versions.stream().filter(v -> v.getStatus() == PublicationStatus.PUBLISHED)
+                            .map(QuestionVersion::getId).findFirst().orElse(null);
+                    return new QuestionSummary(question.getId(), question.getSubjectId(), question.getQuestionType(),
+                            questionSkillIds(question.getId()), latest == null ? null : latest.getPrompt(), publishedId,
+                            versions.stream().map(VersionSummary::of).toList());
+                })
+                .sorted(Comparator.comparing(QuestionSummary::latestPrompt, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public QuestionDetail question(UUID accountId, UUID questionId) {
+        Question question = guard.requireQuestionWrite(accountId, questionId);
+        return new QuestionDetail(question.getId(), question.getSubjectId(), question.getQuestionType(),
+                questionSkillIds(questionId), questionService.listVersions(questionId).stream()
+                .map(version -> new QuestionVersionDetail(version.getId(), version.getVersionNumber(), version.getStatus(),
+                        version.getPublishedAt(), version.getPrompt(), version.getCorrectAnswer(), version.getDifficultyLevel(),
+                        questionService.listOptions(version.getId()).stream()
+                                .map(option -> new OptionDetail(option.getId(), option.getLabel(), option.isCorrect())).toList()))
+                .toList());
+    }
+
+    /** A question with its skills, a first draft and (multiple choice) its answer choices, in one step. */
+    @Transactional
+    public QuestionDetail createQuestion(UUID accountId, CreateQuestionRequest request) {
+        Account author = guard.requireAuthor(accountId);
+        subjectService.getById(request.subjectId());
+        requireSkillsOfSubject(request.skillIds(), request.subjectId());
+        Question question = questionService.createOwnedQuestion(request.subjectId(), request.questionType(),
+                guard.authoringOwner(author));
+        request.skillIds().forEach(skillId -> questionService.tagSkill(question.getId(), skillId));
+        QuestionVersion draft = questionService.createDraftVersion(question.getId(), request.prompt().strip(),
+                answerFor(request.questionType(), request.correctAnswer()), request.difficultyLevel());
+        if (request.questionType() == QuestionType.MULTIPLE_CHOICE && request.options() != null) {
+            questionService.replaceOptions(draft.getId(), optionDrafts(request.options()));
+        }
+        return question(accountId, question.getId());
+    }
+
+    @Transactional
+    public QuestionDetail openQuestionDraft(UUID accountId, UUID questionId) {
+        guard.requireQuestionWrite(accountId, questionId);
+        questionService.openDraft(questionId);
+        return question(accountId, questionId);
+    }
+
+    @Transactional
+    public QuestionDetail reviseQuestionDraft(UUID accountId, UUID questionVersionId, ReviseQuestionDraftRequest request) {
+        QuestionVersion version = questionService.getVersion(questionVersionId);
+        Question question = guard.requireQuestionWrite(accountId, version.getQuestionId());
+        questionService.reviseDraft(questionVersionId, request.prompt().strip(),
+                answerFor(question.getQuestionType(), request.correctAnswer()), request.difficultyLevel());
+        if (question.getQuestionType() == QuestionType.MULTIPLE_CHOICE && request.options() != null) {
+            questionService.replaceOptions(questionVersionId, optionDrafts(request.options()));
+        }
+        return question(accountId, question.getId());
+    }
+
+    @Transactional
+    public QuestionDetail tagQuestionSkill(UUID accountId, UUID questionId, UUID skillId) {
+        Question question = guard.requireQuestionWrite(accountId, questionId);
+        requireSkillsOfSubject(List.of(skillId), question.getSubjectId());
+        questionService.tagSkill(questionId, skillId);
+        return question(accountId, questionId);
+    }
+
+    @Transactional
+    public QuestionDetail untagQuestionSkill(UUID accountId, UUID questionId, UUID skillId) {
+        guard.requireQuestionWrite(accountId, questionId);
+        questionService.untagSkill(questionId, skillId);
+        return question(accountId, questionId);
+    }
+
+    @Transactional(readOnly = true)
+    public ValidationReport validateQuestionVersion(UUID accountId, UUID questionVersionId) {
+        guard.requireQuestionWrite(accountId, questionService.getVersion(questionVersionId).getQuestionId());
+        return validator.questionVersion(questionVersionId);
+    }
+
+    @Transactional
+    public QuestionDetail publishQuestionVersion(UUID accountId, UUID questionVersionId) {
+        QuestionVersion version = questionService.getVersion(questionVersionId);
+        guard.requireQuestionWrite(accountId, version.getQuestionId());
+        QuestionVersion published = questionService.publish(questionVersionId);
+        record(guard.requireAuthor(accountId), "CONTENT_PUBLISHED", "QUESTION_VERSION", published.getId(),
+                Map.of("questionId", published.getQuestionId(), "versionNumber", published.getVersionNumber()));
+        return question(accountId, version.getQuestionId());
+    }
+
+    /** The question exactly as a child would be served it (no answer key). */
+    @Transactional(readOnly = true)
+    public ActivityItemResponse previewQuestionVersion(UUID accountId, UUID questionVersionId) {
+        QuestionVersion version = questionService.getVersion(questionVersionId);
+        guard.requireQuestionWrite(accountId, version.getQuestionId());
+        return learnerItem(version.getId(), 0, version);
+    }
+
+    // ================================================================== helpers
+
+    private ItemDetail itemDetail(ActivityItem item) {
+        QuestionVersion version = questionVersions.findById(item.getQuestionVersionId())
+                .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion", item.getQuestionVersionId()));
+        Question question = questionService.getQuestion(version.getQuestionId());
+        return new ItemDetail(version.getId(), question.getId(), question.getQuestionType(), version.getPrompt(),
+                version.getVersionNumber(), version.getStatus(), item.getPoints(), questionSkillIds(question.getId()));
+    }
+
+    private ActivityItemResponse learnerItem(UUID itemId, int sequenceOrder, QuestionVersion version) {
+        Question question = questionService.getQuestion(version.getQuestionId());
+        List<QuestionOptionResponse> options = questionService.listOptions(version.getId()).stream()
+                .map(QuestionOptionResponse::from).toList();
+        return new ActivityItemResponse(itemId, sequenceOrder, version.getId(), question.getQuestionType(),
+                version.getPrompt(), options);
+    }
+
+    private void requireSkillsOfSubject(List<UUID> skillIds, UUID subjectId) {
+        for (UUID skillId : skillIds) {
+            Skill skill = skillService.getSkill(skillId);
+            if (!Objects.equals(skill.getSubjectId(), subjectId) || skill.getStatus() != CatalogStatus.ACTIVE) {
+                throw new IllegalArgumentException("Skills must be active skills of the content's subject");
+            }
+        }
+    }
+
+    private List<UUID> activitySkillIds(UUID activityId) {
+        return activitySkills.findByActivityId(activityId).stream().map(ActivitySkill::getSkillId).toList();
+    }
+
+    private List<UUID> questionSkillIds(UUID questionId) {
+        return questionSkills.findByQuestionId(questionId).stream().map(QuestionSkill::getSkillId).toList();
+    }
+
+    private SkillDto skillDto(Skill skill) {
+        return new SkillDto(skill.getId(), skill.getCode(), skill.getName(), skill.getDescription(), skill.getStatus(),
+                prerequisites.findBySkillId(skill.getId()).stream().map(SkillPrerequisite::getPrerequisiteSkillId).toList());
+    }
+
+    private ObjectiveDto objectiveDto(LearningObjective objective) {
+        return new ObjectiveDto(objective.getId(), objective.getCode(), objective.getTitle(), objective.getDescription(),
+                objectiveSkills.findByLearningObjectiveId(objective.getId()).stream()
+                        .map(LearningObjectiveSkill::getSkillId).toList());
+    }
+
+    private static SubjectDto subjectDto(Subject subject) {
+        return new SubjectDto(subject.getId(), subject.getCode(), subject.getName(), subject.getDescription());
+    }
+
+    /** Multiple choice is answered by option id; its correct answer lives on the options, not the text field. */
+    private static String answerFor(QuestionType type, String correctAnswer) {
+        if (type == QuestionType.MULTIPLE_CHOICE) {
+            return null;
+        }
+        return blankToNull(correctAnswer == null ? null : correctAnswer.strip());
+    }
+
+    private static List<QuestionService.OptionDraft> optionDrafts(List<OptionRequest> options) {
+        return options.stream().map(option -> new QuestionService.OptionDraft(option.label(), option.correct())).toList();
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    private void record(Account actor, String action, String resourceType, UUID resourceId, Map<String, Object> metadata) {
+        audit.record(new RecordAuditEvent(null, actor.getId(), AuditActorType.valueOf(actor.getPlatformRole().name()),
+                action, resourceType, resourceId, metadata));
+    }
+
+}

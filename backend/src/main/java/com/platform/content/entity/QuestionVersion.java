@@ -48,6 +48,17 @@ public class QuestionVersion extends PublishableVersion {
         return new QuestionVersion(questionId, versionNumber, prompt, correctAnswer, difficultyLevel);
     }
 
+    /** A draft is the only editable state: once published, learners hold exact references to it. */
+    public void reviseDraft(String newPrompt, String newCorrectAnswer, Integer newDifficultyLevel) {
+        requireStatus(com.platform.common.entity.PublicationStatus.DRAFT, "edited");
+        Assert.hasText(newPrompt, "prompt must not be blank");
+        Assert.isTrue(newDifficultyLevel == null || (newDifficultyLevel >= 1 && newDifficultyLevel <= 10),
+                "difficultyLevel must be between 1 and 10");
+        this.prompt = newPrompt;
+        this.correctAnswer = newCorrectAnswer;
+        this.difficultyLevel = newDifficultyLevel;
+    }
+
     public UUID getQuestionId() {
         return questionId;
     }

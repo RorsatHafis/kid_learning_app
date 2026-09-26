@@ -10,4 +10,8 @@ public interface CurriculumObjectiveRepository extends JpaRepository<CurriculumO
 
     List<CurriculumObjective> findByCurriculumVersionIdOrderByDisplayOrderAsc(UUID curriculumVersionId);
 
+    List<CurriculumObjective> findByLearningObjectiveId(UUID learningObjectiveId);
+
+    void deleteByCurriculumVersionId(UUID curriculumVersionId);
+
 }

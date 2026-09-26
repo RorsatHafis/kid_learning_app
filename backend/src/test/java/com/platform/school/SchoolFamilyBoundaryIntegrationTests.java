@@ -1,6 +1,11 @@
 package com.platform.school;
 
 import com.platform.TestcontainersConfiguration;
+import com.platform.content.entity.Activity;
+import com.platform.content.entity.Question;
+import com.platform.content.entity.QuestionType;
+import com.platform.content.service.ActivityService;
+import com.platform.content.service.QuestionService;
 import com.platform.curriculum.entity.AgeHub;
 import com.platform.curriculum.entity.Curriculum;
 import com.platform.curriculum.entity.LearningObjective;
@@ -12,6 +17,9 @@ import com.platform.curriculum.service.LearningObjectiveService;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.repository.AccountRepository;
+import com.platform.knowledge.entity.Skill;
+import com.platform.knowledge.service.LearningObjectiveSkillService;
+import com.platform.knowledge.service.SkillService;
 import com.platform.school.entity.School;
 import com.platform.school.entity.SchoolClass;
 import com.platform.school.service.SchoolService;
@@ -64,6 +72,10 @@ class SchoolFamilyBoundaryIntegrationTests {
     @Autowired private AgeHubRepository ageHubRepository;
     @Autowired private CurriculumService curriculumService;
     @Autowired private LearningObjectiveService learningObjectiveService;
+    @Autowired private SkillService skillService;
+    @Autowired private LearningObjectiveSkillService learningObjectiveSkillService;
+    @Autowired private QuestionService questionService;
+    @Autowired private ActivityService activityService;
 
     private final HttpClient http = HttpClient.newHttpClient();
 
@@ -168,6 +180,17 @@ class SchoolFamilyBoundaryIntegrationTests {
         UUID subjectId = subjectRepository.save(Subject.create("SCHOOL_" + suffix, "School " + suffix, null)).getId();
         UUID ageHubId = ageHubRepository.save(AgeHub.create("SCHOOL_" + suffix, "School " + suffix, 90, 99, 99)).getId();
         LearningObjective objective = learningObjectiveService.create(subjectId, "SCHOOL_OBJ_" + suffix, "School " + suffix, null);
+        // A published curriculum needs a skill with a playable activity (ContentValidator).
+        Skill skill = skillService.createSkill(subjectId, "SCHOOL_" + suffix, "School " + suffix, null);
+        learningObjectiveSkillService.link(objective.getId(), skill.getId());
+        Question question = questionService.createQuestion(subjectId, QuestionType.NUMERIC);
+        questionService.tagSkill(question.getId(), skill.getId());
+        var questionVersion = questionService.publish(questionService.createDraftVersion(question.getId(), "1 + 1 = ?", "2", 1).getId());
+        Activity activity = activityService.createActivity(subjectId, null, "PRACTICE", "School " + suffix);
+        activityService.tagSkill(activity.getId(), skill.getId());
+        var activityVersion = activityService.createDraftVersion(activity.getId(), "Add", 1, 60);
+        activityService.addItem(activityVersion.getId(), questionVersion.getId(), 0, java.math.BigDecimal.ONE);
+        activityService.publish(activityVersion.getId());
         Curriculum curriculum = ownerAccountId == null
                 ? curriculumService.createCurriculum(subjectId, ageHubId, "School " + suffix)
                 : curriculumService.createOwnedCurriculum(subjectId, ageHubId, "School " + suffix, ownerAccountId);

@@ -3,6 +3,9 @@ package com.platform.curriculum.service;
 import com.platform.common.entity.CatalogStatus;
 import com.platform.common.entity.PublicationStatus;
 import com.platform.common.web.ResourceNotFoundException;
+import com.platform.content.validation.ContentValidationException;
+import com.platform.content.validation.ContentValidator;
+import com.platform.content.validation.ValidationReport;
 import com.platform.curriculum.entity.Curriculum;
 import com.platform.curriculum.entity.CurriculumObjective;
 import com.platform.curriculum.entity.CurriculumVersion;
@@ -30,11 +33,14 @@ public class CurriculumService {
     private final CurriculumVersionRepository curriculumVersionRepository;
     private final CurriculumObjectiveRepository curriculumObjectiveRepository;
     private final LearningObjectiveRepository learningObjectiveRepository;
+    private final ContentValidator contentValidator;
 
     public CurriculumService(CurriculumRepository curriculumRepository,
                               CurriculumVersionRepository curriculumVersionRepository,
                               CurriculumObjectiveRepository curriculumObjectiveRepository,
-                              LearningObjectiveRepository learningObjectiveRepository) {
+                              LearningObjectiveRepository learningObjectiveRepository,
+                              ContentValidator contentValidator) {
+        this.contentValidator = contentValidator;
         this.curriculumRepository = curriculumRepository;
         this.curriculumVersionRepository = curriculumVersionRepository;
         this.curriculumObjectiveRepository = curriculumObjectiveRepository;
@@ -115,6 +121,56 @@ public class CurriculumService {
                 CurriculumObjective.create(curriculumVersionId, learningObjectiveId, displayOrder));
     }
 
+    /** Replaces a draft's learning objectives, in the given order. */
+    @Transactional
+    public List<CurriculumObjective> replaceObjectives(UUID curriculumVersionId, List<UUID> learningObjectiveIds) {
+        CurriculumVersion version = getVersion(curriculumVersionId);
+        if (version.getStatus() != PublicationStatus.DRAFT) {
+            throw new IllegalStateException(
+                    "Objectives can only be changed on a DRAFT version, %s is %s".formatted(curriculumVersionId, version.getStatus()));
+        }
+        if (learningObjectiveIds.stream().distinct().count() != learningObjectiveIds.size()) {
+            throw new IllegalArgumentException("An objective can appear only once in a curriculum");
+        }
+        for (UUID objectiveId : learningObjectiveIds) {
+            if (!learningObjectiveRepository.existsById(objectiveId)) {
+                throw new ResourceNotFoundException("LearningObjective", objectiveId);
+            }
+        }
+        curriculumObjectiveRepository.deleteByCurriculumVersionId(curriculumVersionId);
+        curriculumObjectiveRepository.flush();
+        for (int i = 0; i < learningObjectiveIds.size(); i++) {
+            curriculumObjectiveRepository.save(CurriculumObjective.create(curriculumVersionId, learningObjectiveIds.get(i), i));
+        }
+        return listObjectives(curriculumVersionId);
+    }
+
+    /**
+     * The draft to edit next: the open draft if there is one, otherwise a new draft
+     * copying the latest version's objectives. Enrolled children keep the version they
+     * were enrolled in; publishing the new one only changes what new enrollments get.
+     */
+    @Transactional
+    public CurriculumVersion openDraft(UUID curriculumId) {
+        java.util.Optional<CurriculumVersion> latest = curriculumVersionRepository.findTopByCurriculumIdOrderByVersionNumberDesc(curriculumId);
+        if (latest.isPresent() && latest.get().getStatus() == PublicationStatus.DRAFT) {
+            return latest.get();
+        }
+        CurriculumVersion draft = createDraftVersion(curriculumId);
+        if (latest.isPresent()) {
+            for (CurriculumObjective objective : listObjectives(latest.get().getId())) {
+                curriculumObjectiveRepository.save(CurriculumObjective.create(draft.getId(),
+                        objective.getLearningObjectiveId(), objective.getDisplayOrder()));
+            }
+        }
+        return draft;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CurriculumVersion> listVersions(UUID curriculumId) {
+        return curriculumVersionRepository.findByCurriculumIdOrderByVersionNumberAsc(curriculumId);
+    }
+
     @Transactional(readOnly = true)
     public List<CurriculumObjective> listObjectives(UUID curriculumVersionId) {
         return curriculumObjectiveRepository.findByCurriculumVersionIdOrderByDisplayOrderAsc(curriculumVersionId);
@@ -130,8 +186,10 @@ public class CurriculumService {
     @Transactional
     public CurriculumVersion publish(UUID curriculumVersionId) {
         CurriculumVersion version = getVersion(curriculumVersionId);
-        if (curriculumObjectiveRepository.findByCurriculumVersionIdOrderByDisplayOrderAsc(curriculumVersionId).isEmpty()) {
-            throw new IllegalStateException("Curriculum version must contain at least one learning objective before publishing");
+        // Includes "at least one learning objective" (NO_OBJECTIVES) - see ContentValidator.
+        ValidationReport report = contentValidator.curriculumVersion(curriculumVersionId);
+        if (!report.publishable()) {
+            throw new ContentValidationException("Curriculum version " + curriculumVersionId, report);
         }
 
         curriculumVersionRepository

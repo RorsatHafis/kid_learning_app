@@ -2,6 +2,7 @@ package com.platform.common.web;
 
 import com.platform.common.idempotency.exception.IdempotencyConflictException;
 import com.platform.content.exception.IncompleteQuestionException;
+import com.platform.content.validation.ContentValidationException;
 import com.platform.learning.exception.InvalidAnswerException;
 import com.platform.learning.exception.UnscorableAnswerException;
 import com.platform.identity.exception.AccountLockedException;
@@ -152,6 +153,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problem.setTitle("Question Cannot Be Scored");
 
         return createResponseEntity(problem, new HttpHeaders(), HttpStatus.NOT_IMPLEMENTED, request);
+
+    }
+
+    @ExceptionHandler(ContentValidationException.class)
+    public ResponseEntity<Object> handleContentValidation(ContentValidationException ex, WebRequest request) {
+
+        // Directive §19: publishing refused because the draft would fail a learner. Same
+        // 409 as the completeness rules below, with the whole report so the Content
+        // Studio can show every blocking issue at once.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "This draft can't be published yet: fix the listed issues first.");
+        problem.setTitle("Not Ready To Publish");
+        problem.setProperty("validation", ex.getReport());
+
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
 
     }
 

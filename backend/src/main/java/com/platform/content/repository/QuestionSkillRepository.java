@@ -10,6 +10,8 @@ public interface QuestionSkillRepository extends JpaRepository<QuestionSkill, UU
 
     List<QuestionSkill> findByQuestionId(UUID questionId);
 
+    java.util.Optional<QuestionSkill> findByQuestionIdAndSkillId(UUID questionId, UUID skillId);
+
     List<QuestionSkill> findBySkillId(UUID skillId);
 
 }

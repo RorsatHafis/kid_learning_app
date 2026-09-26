@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils/cn";
 type Tone = "blue" | "green" | "purple" | "amber" | "red" | "neutral";
 
 const toneClasses: Record<Tone, string> = {
-  blue: "bg-brand-blueTint text-brand-blue",
-  green: "bg-brand-greenTint text-brand-green",
-  purple: "bg-brand-purpleTint text-brand-purple",
-  amber: "bg-brand-amberTint text-brand-amber",
-  red: "bg-brand-redTint text-brand-red",
+  blue: "bg-brand-blueTint text-brand-blueStrong",
+  green: "bg-brand-greenTint text-brand-greenStrong",
+  purple: "bg-brand-purpleTint text-brand-purpleStrong",
+  amber: "bg-brand-amberTint text-brand-amberStrong",
+  red: "bg-brand-redTint text-brand-redStrong",
   neutral: "bg-surface-sand text-muted",
 };
 

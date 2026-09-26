@@ -206,10 +206,8 @@ class ContentTenancyIntegrationTests {
         learningObjectiveSkillService.link(objective.getId(), skill.getId());
 
         Curriculum platform = curriculumService.createCurriculum(subjectId, ageHubId, "Platform " + suffix);
-        publishCurriculum(platform, objective);
         Account teacher = teacher();
         Curriculum teacherCurriculum = curriculumService.createOwnedCurriculum(subjectId, ageHubId, "Teacher " + suffix, teacher.getId());
-        publishCurriculum(teacherCurriculum, objective);
 
         Catalog partial = new Catalog(subjectId, ageHubId, skill, platform, teacherCurriculum, null, null, null, null);
         Lesson platformLesson = lessonService.createLesson(subjectId, "Platform lesson " + suffix);
@@ -218,6 +216,9 @@ class ContentTenancyIntegrationTests {
         ActivityVersion platformHard = activity(partial, platformLesson.getId(), "Platform hard", 5);
         ActivityVersion teacherEasiest = activity(partial, teacherLesson.getId(), "Teacher easiest", 1);
         ActivityVersion teacherHardest = activity(partial, teacherLesson.getId(), "Teacher hardest", 10);
+        // Published last: a curriculum needs a published activity first (ContentValidator).
+        publishCurriculum(platform, objective);
+        publishCurriculum(teacherCurriculum, objective);
 
         return new Catalog(subjectId, ageHubId, skill, platform, teacherCurriculum, platformEasy, platformHard,
                 teacherEasiest, teacherHardest);

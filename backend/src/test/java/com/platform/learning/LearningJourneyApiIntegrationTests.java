@@ -254,12 +254,13 @@ class LearningJourneyApiIntegrationTests {
         Curriculum curriculum = curriculumService.createCurriculum(subjectId, ageHubId, "Journey " + suffix);
         var version = curriculumService.createDraftVersion(curriculum.getId());
         curriculumService.addObjective(version.getId(), objective.getId(), 0);
-        curriculumService.publish(version.getId());
 
         String firstTitle = "Journey first " + suffix;
         activity(subjectId, skill, firstTitle, 2);
         activity(subjectId, skill, "Journey second " + suffix, 4);
         ActivityVersion prerequisiteActivity = activity(subjectId, prerequisite, "Journey prerequisite " + suffix, 1);
+        // Published last: a curriculum needs a published activity first (ContentValidator).
+        curriculumService.publish(version.getId());
         return new Catalog(curriculum, skill, prerequisite, firstTitle, prerequisiteActivity);
     }
 

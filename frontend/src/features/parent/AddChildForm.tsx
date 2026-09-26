@@ -46,7 +46,7 @@ export function AddChildForm({ onCreated, onCancel }: { onCreated: (child: Child
         error={fieldErrors.dateOfBirth}
         max={new Date().toISOString().slice(0, 10)}
       />
-      {formError && <p className="text-sm font-medium text-brand-red">{formError}</p>}
+      {formError && <p className="text-sm font-medium text-brand-redStrong">{formError}</p>}
       <div className="flex gap-3">
         <Button type="submit" size="md" disabled={isSubmitting}>
           {isSubmitting ? "Adding…" : "Add child"}

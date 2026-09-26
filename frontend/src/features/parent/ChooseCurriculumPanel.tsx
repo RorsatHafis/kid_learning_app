@@ -81,7 +81,7 @@ export function ChooseCurriculumPanel({
         </ul>
       )}
       {enrollError && (
-        <p role="alert" className="text-sm font-medium text-brand-red">
+        <p role="alert" className="text-sm font-medium text-brand-redStrong">
           {enrollError}
         </p>
       )}

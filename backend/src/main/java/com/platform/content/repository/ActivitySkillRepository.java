@@ -10,6 +10,8 @@ public interface ActivitySkillRepository extends JpaRepository<ActivitySkill, UU
 
     List<ActivitySkill> findByActivityId(UUID activityId);
 
+    java.util.Optional<ActivitySkill> findByActivityIdAndSkillId(UUID activityId, UUID skillId);
+
     List<ActivitySkill> findBySkillId(UUID skillId);
 
 }

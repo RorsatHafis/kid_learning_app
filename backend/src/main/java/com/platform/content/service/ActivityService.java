@@ -11,13 +11,20 @@ import com.platform.content.entity.ActivityVersion;
 import com.platform.content.repository.ActivityRepository;
 import com.platform.content.repository.ActivitySkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
+import com.platform.content.entity.Question;
+import com.platform.content.entity.QuestionVersion;
+import com.platform.content.repository.QuestionRepository;
 import com.platform.content.repository.QuestionVersionRepository;
+import com.platform.content.validation.ContentValidationException;
+import com.platform.content.validation.ContentValidator;
+import com.platform.content.validation.ValidationReport;
 import com.platform.knowledge.repository.SkillRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -29,9 +36,17 @@ public class ActivityService {
     private final SkillRepository skillRepository;
     private final ActivityItemRepository activityItemRepository;
     private final QuestionVersionRepository questionVersionRepository;
+    private final ContentValidator contentValidator;
+    private final QuestionRepository questionRepository;
+    private final ContentOwnership contentOwnership;
 
     public ActivityService(ActivityRepository activityRepository, ActivityVersionRepository activityVersionRepository,
-                            ActivitySkillRepository activitySkillRepository, SkillRepository skillRepository, ActivityItemRepository activityItemRepository, QuestionVersionRepository questionVersionRepository) {
+                            ActivitySkillRepository activitySkillRepository, SkillRepository skillRepository, ActivityItemRepository activityItemRepository, QuestionVersionRepository questionVersionRepository,
+                            ContentValidator contentValidator, QuestionRepository questionRepository,
+                            ContentOwnership contentOwnership) {
+        this.contentValidator = contentValidator;
+        this.questionRepository = questionRepository;
+        this.contentOwnership = contentOwnership;
         this.activityRepository = activityRepository;
         this.activityVersionRepository = activityVersionRepository;
         this.activitySkillRepository = activitySkillRepository;
@@ -126,26 +141,17 @@ public class ActivityService {
      * an ActivityVersion is allowed to become learner-visible, protects every
      * current and future reader of published activity content, not just this one
      * controller.
+     *
+     * <p>W3.1: that rule and every other pre-publication check now live in {@link
+     * ContentValidator#activityVersion}, the same report the Content Studio shows.
      */
     @Transactional
     public ActivityVersion publish(UUID activityVersionId) {
         ActivityVersion version = getVersion(activityVersionId);
-        List<ActivityItem> items = activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId);
-        if (items.isEmpty()) {
-            throw new IllegalStateException("Activity version must contain at least one question before publishing");
-        }
-
-        List<UUID> unpublishedQuestionVersionIds = items.stream()
-                .map(ActivityItem::getQuestionVersionId)
-                .filter(questionVersionId -> questionVersionRepository.findById(questionVersionId)
-                        .map(qv -> qv.getStatus() != PublicationStatus.PUBLISHED)
-                        .orElse(true))
-                .toList();
-        if (!unpublishedQuestionVersionIds.isEmpty()) {
-            throw new IllegalStateException(
-                    "Activity version %s cannot be published: question version(s) %s are not PUBLISHED "
-                            + "(a new activity version must use each question's current published version)"
-                            .formatted(activityVersionId, unpublishedQuestionVersionIds));
+        // Includes the Battle 3 rule above (QUESTION_NOT_PUBLISHED) and "at least one question" (NO_QUESTIONS).
+        ValidationReport report = contentValidator.activityVersion(activityVersionId);
+        if (!report.publishable()) {
+            throw new ContentValidationException("Activity version " + activityVersionId, report);
         }
 
         activityVersionRepository
@@ -161,12 +167,88 @@ public class ActivityService {
 
     @Transactional
     public ActivityItem addItem(UUID activityVersionId, UUID questionVersionId, int sequenceOrder, BigDecimal points) {
-        if (!activityVersionRepository.existsById(activityVersionId)) throw new ResourceNotFoundException("ActivityVersion", activityVersionId);
-        if (!questionVersionRepository.existsById(questionVersionId)) throw new ResourceNotFoundException("QuestionVersion", questionVersionId);
+        ActivityVersion version = activityVersionRepository.findById(activityVersionId)
+                .orElseThrow(() -> new ResourceNotFoundException("ActivityVersion", activityVersionId));
+        requireUsableQuestion(version.getActivityId(), questionVersionId);
         if (activityItemRepository.findByActivityVersionIdAndQuestionVersionId(activityVersionId, questionVersionId).isPresent()) throw new IllegalArgumentException("Question is already in this activity version");
         return activityItemRepository.save(ActivityItem.create(activityVersionId, questionVersionId, sequenceOrder, points));
     }
 
+    public record ItemDraft(UUID questionVersionId, BigDecimal points) {
+    }
+
+    /**
+     * Replaces a draft's questions, in the given order. Each must be a question's
+     * current PUBLISHED version from content this activity may use (N7: platform
+     * content, or the activity owner's own).
+     */
+    @Transactional
+    public List<ActivityItem> replaceItems(UUID activityVersionId, List<ItemDraft> items) {
+        ActivityVersion version = getVersion(activityVersionId);
+        requireDraft(version);
+        if (items.stream().map(ItemDraft::questionVersionId).distinct().count() != items.size()) {
+            throw new IllegalArgumentException("A question can appear only once in an activity");
+        }
+        for (ItemDraft item : items) {
+            QuestionVersion questionVersion = requireUsableQuestion(version.getActivityId(), item.questionVersionId());
+            if (questionVersion.getStatus() != PublicationStatus.PUBLISHED) {
+                throw new IllegalStateException("Only a question's current published version can be added (question version %s is %s)"
+                        .formatted(questionVersion.getId(), questionVersion.getStatus()));
+            }
+        }
+        activityItemRepository.deleteByActivityVersionId(activityVersionId);
+        activityItemRepository.flush();
+        for (int i = 0; i < items.size(); i++) {
+            BigDecimal points = items.get(i).points() == null ? BigDecimal.ONE : items.get(i).points();
+            activityItemRepository.save(ActivityItem.create(activityVersionId, items.get(i).questionVersionId(), i, points));
+        }
+        return activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId);
+    }
+
+    @Transactional
+    public ActivityVersion reviseDraft(UUID activityVersionId, String instructions, Integer difficultyLevel,
+                                       Integer estimatedDurationSeconds) {
+        ActivityVersion version = getVersion(activityVersionId);
+        version.reviseDraft(instructions, difficultyLevel, estimatedDurationSeconds);
+        return activityVersionRepository.saveAndFlush(version);
+    }
+
+    /**
+     * The draft to edit next: the open draft if there is one, otherwise a new draft
+     * copied from the latest version, each question re-pinned to that question's
+     * current published version (a new activity version must not pin superseded
+     * questions - see {@link #publish}).
+     */
+    @Transactional
+    public ActivityVersion openDraft(UUID activityId) {
+        Optional<ActivityVersion> latest = activityVersionRepository.findTopByActivityIdOrderByVersionNumberDesc(activityId);
+        if (latest.isPresent() && latest.get().getStatus() == PublicationStatus.DRAFT) {
+            return latest.get();
+        }
+        if (latest.isEmpty()) {
+            return createDraftVersion(activityId, null, null, null);
+        }
+        ActivityVersion source = latest.get();
+        ActivityVersion draft = createDraftVersion(activityId, source.getInstructions(), source.getDifficultyLevel(),
+                source.getEstimatedDurationSeconds());
+        int order = 0;
+        for (ActivityItem item : activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(source.getId())) {
+            UUID questionId = questionVersionRepository.findById(item.getQuestionVersionId()).orElseThrow().getQuestionId();
+            Optional<QuestionVersion> current = questionVersionRepository
+                    .findFirstByQuestionIdAndStatusOrderByVersionNumberDesc(questionId, PublicationStatus.PUBLISHED);
+            if (current.isPresent()) {
+                activityItemRepository.save(ActivityItem.create(draft.getId(), current.get().getId(), order++, item.getPoints()));
+            }
+        }
+        return draft;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActivityVersion> listVersions(UUID activityId) {
+        return activityVersionRepository.findByActivityIdOrderByVersionNumberAsc(activityId);
+    }
+
+    /** Idempotent: tagging a skill the activity already has returns the existing tag. */
     @Transactional
     public ActivitySkill tagSkill(UUID activityId, UUID skillId) {
         if (!activityRepository.existsById(activityId)) {
@@ -175,7 +257,33 @@ public class ActivityService {
         if (!skillRepository.existsById(skillId)) {
             throw new ResourceNotFoundException("Skill", skillId);
         }
-        return activitySkillRepository.save(ActivitySkill.create(activityId, skillId));
+        return activitySkillRepository.findByActivityIdAndSkillId(activityId, skillId)
+                .orElseGet(() -> activitySkillRepository.save(ActivitySkill.create(activityId, skillId)));
+    }
+
+    /** Skill tags belong to the activity, not a version (PD-08): this changes placement for its published version too. */
+    @Transactional
+    public void untagSkill(UUID activityId, UUID skillId) {
+        activitySkillRepository.findByActivityIdAndSkillId(activityId, skillId).ifPresent(activitySkillRepository::delete);
+    }
+
+    /** N7: an activity may contain platform questions or its own owner's, nothing else - answered as not found. */
+    private QuestionVersion requireUsableQuestion(UUID activityId, UUID questionVersionId) {
+        QuestionVersion questionVersion = questionVersionRepository.findById(questionVersionId)
+                .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion", questionVersionId));
+        Question question = questionRepository.findById(questionVersion.getQuestionId())
+                .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion", questionVersionId));
+        if (!ContentOwnership.usableBy(question.getOwnerAccountId(), contentOwnership.activityOwner(activityId).orElse(null))) {
+            throw new ResourceNotFoundException("QuestionVersion", questionVersionId);
+        }
+        return questionVersion;
+    }
+
+    private static void requireDraft(ActivityVersion version) {
+        if (version.getStatus() != PublicationStatus.DRAFT) {
+            throw new IllegalStateException("Only a DRAFT activity version can be edited, %s is %s"
+                    .formatted(version.getId(), version.getStatus()));
+        }
     }
 
     @Transactional(readOnly = true)

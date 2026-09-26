@@ -98,7 +98,7 @@ export function RegisterPage() {
           onChange={(e) => setPassword(e.target.value)}
           error={fieldErrors.password}
         />
-        {formError && <p className="text-sm font-medium text-brand-red">{formError}</p>}
+        {formError && <p className="text-sm font-medium text-brand-redStrong">{formError}</p>}
         {role === "PRINCIPAL" && (
           <p className="text-xs text-muted">Principal accounts are reviewed by a Bookeyond Kid admin before they can log in.</p>
         )}

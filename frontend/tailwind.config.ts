@@ -35,6 +35,12 @@ export default {
           amberTint: "#FEF9EC",
           red: "#EF4444",
           redTint: "#FEECEC",
+          // Text tones: the base hues above are for icons and fills. As small text on white
+          // or on their own tint they fall below WCAG AA (e.g. red 3.8:1, amber 2.1:1).
+          greenStrong: "#047857",
+          purpleStrong: "#6D28D9",
+          amberStrong: "#92400E",
+          redStrong: "#B91C1C",
         },
         // The child space's palette (product directive §8): warm cream, soft mint,
         // lavender, blue, peach, warm yellow, muted coral. Each hue has a soft fill

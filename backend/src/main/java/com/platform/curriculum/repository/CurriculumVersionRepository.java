@@ -4,6 +4,7 @@ import com.platform.common.entity.PublicationStatus;
 import com.platform.curriculum.entity.CurriculumVersion;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,5 +19,7 @@ public interface CurriculumVersionRepository extends JpaRepository<CurriculumVer
     // Used by createDraftVersion() to compute the next version number regardless of
     // status (draft or published) - distinct from the PUBLISHED-only lookup above.
     Optional<CurriculumVersion> findTopByCurriculumIdOrderByVersionNumberDesc(UUID curriculumId);
+
+    List<CurriculumVersion> findByCurriculumIdOrderByVersionNumberAsc(UUID curriculumId);
 
 }

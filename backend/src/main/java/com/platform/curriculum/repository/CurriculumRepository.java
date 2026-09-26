@@ -16,4 +16,8 @@ public interface CurriculumRepository extends JpaRepository<Curriculum, UUID> {
 
     List<Curriculum> findByStatus(CatalogStatus status);
 
+    List<Curriculum> findByOwnerAccountIdIsNull();
+
+    List<Curriculum> findByOwnerAccountId(UUID ownerAccountId);
+
 }

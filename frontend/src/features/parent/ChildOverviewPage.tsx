@@ -129,7 +129,7 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
               </Button>
             </div>
             {error && (
-              <p id="child-name-error" role="alert" className="text-sm font-medium text-brand-red">
+              <p id="child-name-error" role="alert" className="text-sm font-medium text-brand-redStrong">
                 {error}
               </p>
             )}

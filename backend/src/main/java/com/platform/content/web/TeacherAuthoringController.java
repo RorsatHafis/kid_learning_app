@@ -123,15 +123,9 @@ public class TeacherAuthoringController {
         return owner == null ? lessonRepository.findByOwnerAccountIdIsNull() : lessonRepository.findByOwnerAccountId(owner);
     }
 
-    /**
-     * N7: the owner recorded on newly authored content. ADMIN authors platform content,
-     * which is ownerless - the same "null owner = system content, ADMIN-writable only"
-     * rule {@code ContentAccessGuard} already enforces - and only platform content is
-     * placed on family learning paths ({@code PathContentScope}). Everyone else owns
-     * what they author.
-     */
+    /** N7: the owner recorded on newly authored content - see {@link ContentAccessGuard#authoringOwner}. */
     private UUID ownerFor(UUID accountId) {
-        return accounts.findById(accountId).orElseThrow().getPlatformRole() == PlatformRole.ADMIN ? null : accountId;
+        return contentGuard.authoringOwner(accounts.findById(accountId).orElseThrow());
     }
 
     @PostMapping("/activities/{activityId}/skills/{skillId}")

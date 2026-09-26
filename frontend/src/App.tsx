@@ -16,6 +16,17 @@ import { TeacherLayout } from "@/features/teacher/TeacherLayout";
 import { TeacherHome } from "@/features/teacher/TeacherHome";
 import { ClassRosterPage } from "@/features/teacher/ClassRosterPage";
 import { StudentDetailPage } from "@/features/teacher/StudentDetailPage";
+import { AdminLayout } from "@/features/admin/AdminLayout";
+import { StaffPage } from "@/features/admin/StaffPage";
+import { StudioIndex } from "@/features/admin/studio/StudioIndex";
+import { StudioLayout } from "@/features/admin/studio/StudioLayout";
+import { CatalogPage } from "@/features/admin/studio/CatalogPage";
+import { QuestionsPage } from "@/features/admin/studio/QuestionsPage";
+import { QuestionEditor } from "@/features/admin/studio/QuestionEditor";
+import { ActivitiesPage } from "@/features/admin/studio/ActivitiesPage";
+import { ActivityEditor } from "@/features/admin/studio/ActivityEditor";
+import { CurriculaPage } from "@/features/admin/studio/CurriculaPage";
+import { CurriculumEditor } from "@/features/admin/studio/CurriculumEditor";
 
 export default function App() {
   return (
@@ -92,15 +103,30 @@ export default function App() {
             }
           />
           <Route
-            path="/admin/*"
+            path="/admin"
             element={
               <RequireAuth>
                 <RequireRole roles={["ADMIN"]}>
-                  <ComingSoon title="Admin Console" stage="Stage 5" />
+                  <AdminLayout />
                 </RequireRole>
               </RequireAuth>
             }
-          />
+          >
+            <Route index element={<Navigate to="studio" replace />} />
+            <Route path="studio" element={<StudioIndex />} />
+            <Route path="studio/:subjectId" element={<StudioLayout />}>
+              <Route index element={<Navigate to="catalog" replace />} />
+              <Route path="catalog" element={<CatalogPage />} />
+              <Route path="questions" element={<QuestionsPage />} />
+              <Route path="questions/:questionId" element={<QuestionEditor />} />
+              <Route path="activities" element={<ActivitiesPage />} />
+              <Route path="activities/:activityId" element={<ActivityEditor />} />
+              <Route path="curricula" element={<CurriculaPage />} />
+              <Route path="curricula/:curriculumId" element={<CurriculumEditor />} />
+            </Route>
+            <Route path="staff" element={<StaffPage />} />
+            <Route path="account" element={<AccountPage />} />
+          </Route>
 
           <Route path="*" element={<LandingPage />} />
         </Routes>

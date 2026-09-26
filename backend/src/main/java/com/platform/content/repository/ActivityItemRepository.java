@@ -11,6 +11,8 @@ public interface ActivityItemRepository extends JpaRepository<ActivityItem, UUID
 
     List<ActivityItem> findByActivityVersionIdOrderBySequenceOrderAsc(UUID activityVersionId);
 
+    void deleteByActivityVersionId(UUID activityVersionId);
+
     // The exact check answer submission needs: does this question_version actually
     // belong to this activity_version.
     Optional<ActivityItem> findByActivityVersionIdAndQuestionVersionId(UUID activityVersionId, UUID questionVersionId);

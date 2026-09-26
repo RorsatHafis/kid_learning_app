@@ -12,6 +12,9 @@ import com.platform.content.repository.QuestionOptionRepository;
 import com.platform.content.repository.QuestionRepository;
 import com.platform.content.repository.QuestionSkillRepository;
 import com.platform.content.repository.QuestionVersionRepository;
+import com.platform.content.validation.ContentValidationException;
+import com.platform.content.validation.ContentValidator;
+import com.platform.content.validation.ValidationReport;
 import com.platform.knowledge.repository.SkillRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,15 +31,18 @@ public class QuestionService {
     private final QuestionOptionRepository questionOptionRepository;
     private final QuestionSkillRepository questionSkillRepository;
     private final SkillRepository skillRepository;
+    private final ContentValidator contentValidator;
 
     public QuestionService(QuestionRepository questionRepository, QuestionVersionRepository questionVersionRepository,
                             QuestionOptionRepository questionOptionRepository,
-                            QuestionSkillRepository questionSkillRepository, SkillRepository skillRepository) {
+                            QuestionSkillRepository questionSkillRepository, SkillRepository skillRepository,
+                            ContentValidator contentValidator) {
         this.questionRepository = questionRepository;
         this.questionVersionRepository = questionVersionRepository;
         this.questionOptionRepository = questionOptionRepository;
         this.questionSkillRepository = questionSkillRepository;
         this.skillRepository = skillRepository;
+        this.contentValidator = contentValidator;
     }
 
     @Transactional
@@ -136,6 +142,10 @@ public class QuestionService {
         Question question = getQuestion(version.getQuestionId());
 
         validateCompleteness(question.getQuestionType(), version);
+        ValidationReport report = contentValidator.questionVersion(questionVersionId);
+        if (!report.publishable()) {
+            throw new ContentValidationException("Question version " + questionVersionId, report);
+        }
 
         questionVersionRepository
                 .findFirstByQuestionIdAndStatusOrderByVersionNumberDesc(version.getQuestionId(), PublicationStatus.PUBLISHED)
@@ -149,52 +159,12 @@ public class QuestionService {
     }
 
     private void validateCompleteness(QuestionType questionType, QuestionVersion version) {
-        switch (questionType) {
-            case MULTIPLE_CHOICE -> {
-                List<QuestionOption> options = listOptions(version.getId());
-                if (options.size() < 2) {
-                    throw new IncompleteQuestionException(
-                            "MULTIPLE_CHOICE question version %s needs at least 2 options, has %d"
-                                    .formatted(version.getId(), options.size()));
-                }
-                long correctCount = options.stream().filter(QuestionOption::isCorrect).count();
-                if (correctCount != 1) {
-                    throw new IncompleteQuestionException(
-                            "MULTIPLE_CHOICE question version %s must have exactly one correct option, has %d"
-                                    .formatted(version.getId(), correctCount));
-                }
-            }
-            // Battle 5A: MATCHING has no scoring implementation (AnswerScoringService throws
-            // UnscorableAnswerException), so a published MATCHING question could never be
-            // answered and would leave any activity containing it uncompletable. Refused
-            // until pairing is modelled and scored, rather than published broken.
-            case MATCHING -> throw new IncompleteQuestionException(
-                    "MATCHING question version %s cannot be published: automated scoring for MATCHING "
-                            .formatted(version.getId()) + "is not implemented yet");
-            // TRUE_FALSE and NUMERIC must use the same canonical formats AnswerScoringService
-            // scores against (CanonicalAnswers), so published content is always scorable.
-            case TRUE_FALSE -> {
-                if (CanonicalAnswers.parseTrueFalse(version.getCorrectAnswer()).isEmpty()) {
-                    throw new IncompleteQuestionException(
-                            "TRUE_FALSE question version %s needs a correct_answer of \"true\" or \"false\""
-                                    .formatted(version.getId()));
-                }
-            }
-            case NUMERIC -> {
-                if (CanonicalAnswers.parseNumber(version.getCorrectAnswer()).isEmpty()) {
-                    throw new IncompleteQuestionException(
-                            "NUMERIC question version %s needs a numeric correct_answer".formatted(version.getId()));
-                }
-            }
-            case SHORT_ANSWER -> {
-                if (version.getCorrectAnswer() == null || version.getCorrectAnswer().isBlank()) {
-                    throw new IncompleteQuestionException(
-                            "%s question version %s needs a correct_answer".formatted(questionType, version.getId()));
-                }
-            }
-        }
+        QuestionCompleteness.problem(questionType, version, listOptions(version.getId())).ifPresent(issue -> {
+            throw new IncompleteQuestionException("Question version %s: %s".formatted(version.getId(), issue.message()));
+        });
     }
 
+    /** Idempotent: tagging a skill the question already has returns the existing tag. */
     @Transactional
     public QuestionSkill tagSkill(UUID questionId, UUID skillId) {
         if (!questionRepository.existsById(questionId)) {
@@ -203,7 +173,74 @@ public class QuestionService {
         if (!skillRepository.existsById(skillId)) {
             throw new ResourceNotFoundException("Skill", skillId);
         }
-        return questionSkillRepository.save(QuestionSkill.create(questionId, skillId));
+        return questionSkillRepository.findByQuestionIdAndSkillId(questionId, skillId)
+                .orElseGet(() -> questionSkillRepository.save(QuestionSkill.create(questionId, skillId)));
+    }
+
+    /**
+     * Skill tags belong to the question, not a version (PD-08): removing one also
+     * changes which skill answers to already-published versions count towards from
+     * now on. Evidence already recorded keeps its skill.
+     */
+    @Transactional
+    public void untagSkill(UUID questionId, UUID skillId) {
+        questionSkillRepository.findByQuestionIdAndSkillId(questionId, skillId).ifPresent(questionSkillRepository::delete);
+    }
+
+    @Transactional
+    public QuestionVersion reviseDraft(UUID questionVersionId, String prompt, String correctAnswer, Integer difficultyLevel) {
+        QuestionVersion version = getVersion(questionVersionId);
+        version.reviseDraft(prompt, correctAnswer, difficultyLevel);
+        return questionVersionRepository.saveAndFlush(version);
+    }
+
+    public record OptionDraft(String label, boolean correct) {
+    }
+
+    /** Replaces a draft's answer choices, in the given order. */
+    @Transactional
+    public List<QuestionOption> replaceOptions(UUID questionVersionId, List<OptionDraft> options) {
+        requireDraft(getVersion(questionVersionId));
+        questionOptionRepository.deleteByQuestionVersionId(questionVersionId);
+        questionOptionRepository.flush();
+        for (int i = 0; i < options.size(); i++) {
+            questionOptionRepository.save(QuestionOption.create(questionVersionId, options.get(i).label().strip(),
+                    options.get(i).correct(), i));
+        }
+        return listOptions(questionVersionId);
+    }
+
+    /**
+     * The draft to edit next: the open draft if there is one, otherwise a new draft
+     * copied from the latest version (prompt, answer, difficulty and choices), so
+     * changing published content never means retyping it.
+     */
+    @Transactional
+    public QuestionVersion openDraft(UUID questionId) {
+        QuestionVersion latest = questionVersionRepository.findTopByQuestionIdOrderByVersionNumberDesc(questionId)
+                .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion for question", questionId));
+        if (latest.getStatus() == PublicationStatus.DRAFT) {
+            return latest;
+        }
+        QuestionVersion draft = createDraftVersion(questionId, latest.getPrompt(), latest.getCorrectAnswer(),
+                latest.getDifficultyLevel());
+        for (QuestionOption option : listOptions(latest.getId())) {
+            questionOptionRepository.save(QuestionOption.create(draft.getId(), option.getLabel(), option.isCorrect(),
+                    option.getDisplayOrder()));
+        }
+        return draft;
+    }
+
+    @Transactional(readOnly = true)
+    public List<QuestionVersion> listVersions(UUID questionId) {
+        return questionVersionRepository.findByQuestionIdOrderByVersionNumberAsc(questionId);
+    }
+
+    private static void requireDraft(QuestionVersion version) {
+        if (version.getStatus() != PublicationStatus.DRAFT) {
+            throw new IllegalStateException("Only a DRAFT question version can be edited, %s is %s"
+                    .formatted(version.getId(), version.getStatus()));
+        }
     }
 
     @Transactional(readOnly = true)

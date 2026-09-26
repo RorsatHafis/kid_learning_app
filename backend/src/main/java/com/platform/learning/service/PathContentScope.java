@@ -1,10 +1,7 @@
 package com.platform.learning.service;
 
 import com.platform.common.web.ResourceNotFoundException;
-import com.platform.content.entity.Activity;
-import com.platform.content.entity.Lesson;
-import com.platform.content.repository.ActivityRepository;
-import com.platform.content.repository.LessonRepository;
+import com.platform.content.service.ContentOwnership;
 import com.platform.curriculum.entity.Curriculum;
 import com.platform.curriculum.service.CurriculumService;
 import com.platform.learning.entity.Enrollment;
@@ -41,17 +38,14 @@ public class PathContentScope {
     private final LearningPathRepository learningPathRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final CurriculumService curriculumService;
-    private final ActivityRepository activityRepository;
-    private final LessonRepository lessonRepository;
+    private final ContentOwnership contentOwnership;
 
     public PathContentScope(LearningPathRepository learningPathRepository, EnrollmentRepository enrollmentRepository,
-                            CurriculumService curriculumService, ActivityRepository activityRepository,
-                            LessonRepository lessonRepository) {
+                            CurriculumService curriculumService, ContentOwnership contentOwnership) {
         this.learningPathRepository = learningPathRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.curriculumService = curriculumService;
-        this.activityRepository = activityRepository;
-        this.lessonRepository = lessonRepository;
+        this.contentOwnership = contentOwnership;
     }
 
     /**
@@ -89,19 +83,9 @@ public class PathContentScope {
         return scope.admitsOwner(activityOwner(activityId).orElse(null));
     }
 
-    /**
-     * The account that owns an activity's content: its lesson's owner. A standalone
-     * activity (no lesson) is not teacher-manageable ({@code ContentAccessGuard}), so it
-     * is platform content.
-     */
-    @Transactional(readOnly = true)
+    /** The account that owns an activity's content; empty for platform content. See {@link ContentOwnership}. */
     public Optional<UUID> activityOwner(UUID activityId) {
-        Activity activity = activityRepository.findById(activityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Activity", activityId));
-        if (activity.getLessonId() == null) {
-            return Optional.empty();
-        }
-        return lessonRepository.findById(activity.getLessonId()).map(Lesson::getOwnerAccountId);
+        return contentOwnership.activityOwner(activityId);
     }
 
     /**

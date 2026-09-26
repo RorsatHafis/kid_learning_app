@@ -7,6 +7,8 @@ import com.platform.content.entity.Question;
 import com.platform.content.repository.ActivityRepository;
 import com.platform.content.repository.LessonRepository;
 import com.platform.content.repository.QuestionRepository;
+import com.platform.curriculum.entity.Curriculum;
+import com.platform.curriculum.repository.CurriculumRepository;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.repository.AccountRepository;
@@ -32,13 +34,16 @@ public class ContentAccessGuard {
     private final LessonRepository lessons;
     private final QuestionRepository questions;
     private final ActivityRepository activities;
+    private final CurriculumRepository curricula;
 
     public ContentAccessGuard(AccountRepository accounts, LessonRepository lessons,
-                              QuestionRepository questions, ActivityRepository activities) {
+                              QuestionRepository questions, ActivityRepository activities,
+                              CurriculumRepository curricula) {
         this.accounts = accounts;
         this.lessons = lessons;
         this.questions = questions;
         this.activities = activities;
+        this.curricula = curricula;
     }
 
     public Account requireAuthor(UUID accountId) {
@@ -48,6 +53,35 @@ public class ContentAccessGuard {
             throw new AccessDeniedException("Only staff may author content");
         }
         return account;
+    }
+
+    /**
+     * N7: the owner recorded on content this account authors. ADMIN authors platform
+     * content, which is ownerless (writable by ADMIN only, placed on family paths);
+     * everyone else owns what they author.
+     */
+    public UUID authoringOwner(Account account) {
+        return account.getPlatformRole() == PlatformRole.ADMIN ? null : account.getId();
+    }
+
+    /** Only ADMIN manages the platform catalog: teachers do not redefine official skill semantics (directive §14.1). */
+    public Account requireCatalogAdmin(UUID accountId) {
+        Account account = requireAuthor(accountId);
+        if (account.getPlatformRole() != PlatformRole.ADMIN) {
+            throw new AccessDeniedException("Only an administrator may change the skill and objective catalog");
+        }
+        return account;
+    }
+
+    /** A curriculum's owner, or ADMIN; platform (ownerless) curricula are ADMIN-only. */
+    public Curriculum requireCurriculumWrite(UUID accountId, UUID curriculumId) {
+        Account account = requireAuthor(accountId);
+        Curriculum curriculum = curricula.findById(curriculumId)
+                .orElseThrow(() -> new ResourceNotFoundException("Curriculum", curriculumId));
+        if (account.getPlatformRole() != PlatformRole.ADMIN && !account.getId().equals(curriculum.getOwnerAccountId())) {
+            throw new AccessDeniedException("You do not own this curriculum");
+        }
+        return curriculum;
     }
 
     public Lesson requireLessonWrite(UUID accountId, UUID lessonId) {

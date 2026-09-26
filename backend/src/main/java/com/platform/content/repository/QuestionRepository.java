@@ -11,6 +11,10 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
 
     List<Question> findByOwnerAccountId(UUID ownerAccountId);
 
+    List<Question> findBySubjectIdAndOwnerAccountIdIsNull(UUID subjectId);
+
+    List<Question> findBySubjectIdAndOwnerAccountId(UUID subjectId, UUID ownerAccountId);
+
     List<Question> findBySubjectIdAndStatus(UUID subjectId, CatalogStatus status);
 
 }

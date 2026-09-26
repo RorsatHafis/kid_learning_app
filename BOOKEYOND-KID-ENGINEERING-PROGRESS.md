@@ -6,9 +6,9 @@ project actually stands against it. Where the two disagree on a verification lev
 evidence recorded here is newer (see §26 note under Battle 4A) — `CLAUDE.md` is not edited
 from here.
 
-- **Last reconciled:** 2026-09-26, after W2.0 (school ↔ family boundary closed) and W4.1 (rate limiting, session resilience, frontend test harness).
+- **Last reconciled:** 2026-09-26, after W3.1 (Admin console + Content Studio with publish validation), preceded the same day by W2.0 (school ↔ family boundary) and W4.1 (rate limiting).
 - **Reconciled against:** current source, Flyway migrations V1–V36, the last full test run
-  (`./mvnw -Pintegration test`: **210 run, 209 pass, 1 known stale failure** — TD-04; frontend `npm test`: **13 pass**), and the
+  (`./mvnw -Pintegration test`: **214 run, 213 pass, 1 known stale failure** — TD-04; frontend `npm test`: **22 pass**), and the
   runtime/browser evidence gathered in each battle.
 - **Version control:** git repository at `D:\Bookeyond-Kid` (baseline commit `4db89ad`,
   then one commit per battle). TD-01 resolved.
@@ -54,10 +54,13 @@ remain in learning-loop policy (PD-11, PD-12, OD-10) and security hardening (rat
 **FULL BOOKEYOND KID PRODUCT: NOT COMPLETE.**
 W1.1 delivered the first real child and parent learning experience (journey, play, feedback,
 Learning Buddy, evidence-grounded parent overview) — BROWSER VERIFIED on desktop and mobile.
-Still unbuilt or partial: canonical content beyond one Maths curriculum (educator-authored,
-PD-15), Khmer UI (PD-14), parent account/settings, goals, school domain authorization,
-principal/admin consoles and Content Studio, identity verification, subscription and
-deployment. Do not describe the product as complete.
+W3.1 delivered the Admin console and Content Studio: an administrator can author a curriculum
+from nothing (subject → skills → objectives → questions → activities → curriculum) with
+server-side publish validation, and a family's child can learn from it — BROWSER VERIFIED end to
+end. Still unbuilt or partial: the canonical content itself (educator-authored, PD-15 — the tool
+now exists), Khmer UI (PD-14), goals, school domain authorization (PD-01), principal console,
+localization/media in the Studio, identity verification, subscription and deployment. Do not
+describe the product as complete.
 
 ---
 
@@ -85,6 +88,7 @@ deployment. Do not describe the product as complete.
 | **W1.2** | Wave 1 slice 2 — parent account & security settings | `GET /account` (own profile, never the hash); `POST /account/password` — current password required, a wrong one counts towards the login lockout (422 with a field error, then 423), policy-checked, must differ, then **every session is revoked** and a fresh one returned so this device stays signed in; `POST /account/sign-out-everywhere`; both audited (`sessionsEnded` = live devices, not chain rows). Frontend: Account page (details, change password, sign out everywhere with in-page confirmation), parent navigation that works on phones, login notice; login page lockout time made readable and link contrast fixed | TESTED (`AccountSettingsIntegrationTests` 5, HTTP); RUNTIME VERIFIED (password journey: wrong/weak/success, both old devices' refresh → 401, old password refused, audit row); **BROWSER VERIFIED** for the account page, sign-out-everywhere (other device's refresh → 401 afterwards) and mobile navigation. **Password form submission NOT browser-verified**: entering passwords in the browser is outside what the agent may do — verified over HTTP only | `AccountSettingsService`, `AccountController`, `AccountSessionRepository.revokeAllForAccount`; `AccountPage.tsx`, `ParentLayout.tsx`, `AuthContext` | PD-02 (≤ 15 min access-token tail, stated in the UI); PD-18; password reset/verification remain Wave 4 |
 | **W2.0** | School ↔ family boundary (N14, TD-12) | **N14:** any teacher, principal or admin could put any family's child into a class by id (`SchoolService.enrollChild` checked only that the child existed) and then assign any curriculum — including another teacher's — which enrolled the family child and routed teacher content into the family path around N7. No relationship yet records a family authorizing a school (PD-01), so staff enrollment is now **refused for every role, before any lookup** (no child-existence oracle). A class curriculum must be published platform content or the assigner's own (TD-12), assigned in one transaction | TESTED (`SchoolFamilyBoundaryIntegrationTests` 3, HTTP; all 3 failed on the old code first); RUNTIME VERIFIED (admin-provisioned teacher/principal, real school + class: teacher, principal and admin → 403; unknown child → same 403; roster empty) | `SchoolService.enrollChild`/`assignCurriculum`, `SchoolController` | **PD-01** — the school product cannot enroll children until the family-authorization model is decided; TD-14 (legacy class rows), TD-17 |
 | **W4.1** | Rate limiting (OD-01), session resilience, frontend test harness | Per-client-address token buckets on the unauthenticated identity endpoints: login 20/min, register 20/h, refresh + logout 60/min (env-configurable, N6 contract). 429 problem+json with `Retry-After`, inside the chain after CORS; refused **before** the controller so a refused refresh never rotates the token; decoded-path matching (an encoded `/auth/%6Cogin` counts). Frontend: a 429 refresh keeps the session (it previously would have signed the user out); a start-up refresh that cannot complete shows "We couldn't reach Bookeyond Kid — you're still signed in" with Try again instead of the log-in page; login/register show the wait. Vitest + Testing Library introduced. Register page no longer promises an approval email that nothing sends | TESTED (`TokenBucketLimiterTests` 4; `AuthRateLimitIntegrationTests` 4, HTTP; `ConfigurationContractTests` +3 variables; Vitest 13; mutation checks on path decoding and on the client's 429 handling); RUNTIME VERIFIED (login 401×3 → 429 `Retry-After: 20`; refused refresh then 200 with the same token after refill); **BROWSER VERIFIED** (spent refresh budget → still-signed-in screen, token kept; Try again after refill → family home, token rotated; 375 px layout) | `security/ratelimit/*`, `SecurityConfig`, `application.yaml`; `client.ts`, `AuthContext.tsx`, `RequireAuth.tsx`, `ApiError.ts`; `vitest.config.ts` | Per-instance budgets (OD-12); TD-15 (forwarded-address trust); the login/register 429 message is TESTED, not browser-verified (would require typing a password); TD-16 |
+| **W3.1** | Admin console + Content Studio | **Studio API** (`/api/v1/studio`, `StudioService`): subjects, skills, objectives, objective↔skill links, prerequisites (ADMIN-only, audited); curricula, lessons, activities, questions — read models, one-step creation, draft editing (fields, answer choices, question list, objective order), "start a new version" copying the latest (activity items re-pinned to each question's current published version), skill tagging on questions (**N15**) and activities, learner-exact previews, validation reports, publish (audited `CONTENT_PUBLISHED`). Everything scoped to what the author may edit (ADMIN: platform content). **Publish validation** (`ContentValidator`, directive §19) is now the single gate in `QuestionService`/`ActivityService`/`CurriculumService.publish` (**N16**): scorability, duplicate choices, question/activity skills (active, same subject), every placement skill evidenced, same-tenant questions only (**N17**, also enforced when adding items), curriculum objectives with skills and at least one playable activity; warnings for difficulty/duration, evidence outside placement skills, content not yet on any path. **Frontend**: `/admin` console replaces the ComingSoon placeholder — Studio (subjects, skills & objectives, questions, activities, curricula; child-view preview via the real `QuestionView`; checks panel with Check again; version history) and Staff (list, provision, approve principals), admin Account page; AA text tones (**N18**) | TESTED (`ContentStudioIntegrationTests` 4 over HTTP incl. admin-authored curriculum → family enrollment → child's answer → evidence; 2 mutation checks; 5 existing fixture classes reordered to publish curricula after activities — setup only; Vitest +9); RUNTIME VERIFIED (audit rows for every catalog change and publish); **BROWSER VERIFIED** (admin authors Early Numbers end to end through the UI — blocking issue shown and fixed, publish; a family finds and starts the new curriculum, the child plays it with the keyboard, the parent sees evidence and an insight for the authored skill; 375 px layouts after fixing a grid overflow) | `content/validation/*`, `content/studio/*`, `ContentOwnership`, `QuestionCompleteness`, services' draft/untag/openDraft methods; `features/admin/**`, `lib/api/studio.ts` | PD-04, PD-08, PD-19–PD-21, TD-18–TD-20; localization/media not in the Studio; staff provisioning form not browser-submitted (password field) |
 | **4C** | School ↔ child authorization | **NOT IMPLEMENTED** — design only | — | Battle 4C design report | PD-01 |
 
 ---
@@ -112,6 +116,14 @@ deployment. Do not describe the product as complete.
 | **TD-14** | `class_enrollments` rows created before W2.0 carry no family authorization, yet still feed the teacher roster, class curriculum assignment and challenge progress | TD (data) | V24 schema; no production data exists yet | Data audit before any production data; resolve with PD-01 |
 | **TD-15** | Rate limits key on `getRemoteAddr()`. The prod profile uses `forward-headers-strategy: framework`, which trusts X-Forwarded-For as sent — behind a proxy that appends rather than replaces it, a client can choose its own address and evade the limit | TD / OD-12 | `application-prod.yml`; `AuthRateLimitFilter` javadoc | Deployment topology: proxy must overwrite X-Forwarded-For, or switch to `native` with trusted proxies |
 | **TD-16** | Frontend dependency advisories: `vite` 5 (dev-server path traversal), `react-router-dom` 6 (open redirect via backslash in `<Link>`/`navigate`; fix only in v7), `vitest` 2 (UI-server advisory; the UI is not used) | TD | `npm audit` (2026-09-26) | Planned upgrade (Vite + React Router majors) |
+| **N15** | The HTTP authoring API had no way to tag a question with a skill, and evidence is recorded per question skill — so every API-authored question was scored but produced no evidence, mastery or adaptation | **RESOLVED (W3.1)** | Studio question skill endpoints; `QUESTION_NO_SKILL` blocks publishing | — |
+| **N16** | Publishing accepted content a child couldn't learn from: activities with no skill or placed for skills no question evidences, curricula whose objectives had no skills or no playable activity (families could choose an empty subject) | **RESOLVED (W3.1)** | `ContentValidator` at every publish; integration tests + mutation checks | — |
+| **N17** | `ActivityService.addItem` accepted any question version, so an activity could contain another author's private question (tenancy leak) | **RESOLVED (W3.1)** | `ActivityService.requireUsableQuestion` (404); integration test | — |
+| **N18** | Error messages and `Pill` tones used base hues as small text (red 3.8:1, amber 2.0:1, green/blue/purple < 4.5:1) — WCAG AA failures across forms | **RESOLVED (W3.1)** | `brand.*Strong` text tones, 4.6–6.7:1 computed | — |
+| **N19** | A refresh whose response never arrives (page reload or navigation mid-refresh, a dropped mobile connection) leaves the client holding the rotated-away token; the next start-up presents it, reuse detection revokes the whole session family, and the user is signed out | OD — **evidence for PD-03**, reproduced in the browser (W3.1 verification) | Session rows: rotated 16.055, same token presented 16.233 → family REVOKED | PD-03 (recommended: a short reuse grace window that returns the same successor) |
+| **TD-18** | `topics`, `lessons.topic_id`, `learning_units`, `activities.learning_unit_id` (V25) exist with no entity, service or consumer; the Studio does not use them | TD | V25; no mapping | Decide the Unit/Topic model (directive §17) before using them |
+| **TD-19** | The older `/api/v1/teacher/*` authoring endpoints remain; they now go through the same publish validation but their publishes are not audited (the Studio's are) | TD | `TeacherAuthoringController` | Retire in favour of the Studio API when the teacher Studio lands |
+| **TD-20** | Teachers and principals have no account page (no password change or sign-out-everywhere UI); admins have one since W3.1 | TD | `TeacherLayout`, principal placeholder | Wave 2 layouts |
 | **TD-17** | School staff scope is wider than the school: a principal may assign **any** TEACHER account on the platform to a class (teachers are not linked to schools), and `ContentAccessGuard` lets any PRINCIPAL write any teacher's content | TD / PD-01 | `SchoolService.assignTeacher`, `ContentAccessGuard.requireOwnerWrite` | School staff membership is part of the PD-01 model |
 | **TD-13** | `GET /activity-versions/{id}` stays unscoped: any authenticated user can read any learner-visible version, including teacher content (answer keys are never included) | PV by design / W2 | `ActivityContentController` | Revisit with school tenancy |
 | **TD-03** | Golden learning journey test was stale (answered 1 of 2 required questions; drove decisions by hand) | **RESOLVED (5D)** | Rewritten to play each path through next → start → answer all → complete and assert only persisted state; green | — |
@@ -278,9 +290,10 @@ deployment. Do not describe the product as complete.
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Authoring API | PV | Lessons, activities, questions, curricula, versions, publish (`/api/v1/teacher/*`) | Exercised at runtime in 3R | 3, 4B, 3R | No authoring tests beyond lifecycle; PD-04 | Content Studio |
-| Admin API | PV | Staff provisioning, principal approval | Runtime (3R) | — | Admin console UI is a "ComingSoon" placeholder | Admin phase |
-| Content Studio UI | FP | None | `App.tsx` | — | Entire UI | Content Studio phase |
+| Authoring API | PV | Studio API (`/api/v1/studio`) for reads, drafts, versions, validation, preview, publish; legacy `/api/v1/teacher/*` writes remain | 4 Studio HTTP tests; runtime; browser | 3, 4B, 3R, W3.1 | TD-19; teacher-facing Studio not exposed yet (teacher content reaches no child until PD-01) | Wave 2 |
+| Publish validation | VC | `ContentValidator` blocks unplayable, unscorable or evidence-less content at every publish; same report in the Studio | Integration tests + 2 mutation checks; browser | W3.1 | Review/approval step (PD-20); media/localization checks (no Studio support yet) | — |
+| Admin API | PV | Staff provisioning, principal approval | Runtime (3R); Staff page browser-rendered (W3.1) | — | Provisioning form not browser-submitted (password field); invitations need email delivery | Wave 4 identity |
+| Content Studio UI | PV | `/admin/studio`: subjects, skills & objectives, questions (MC/TF/numeric/short answer), activities in lessons, curricula; child-view preview; checks; version history; Staff; Account | **BROWSER VERIFIED** desktop + 375 px; Vitest | W3.1 | Localization/audio/media, rename/archive, review/approval (PD-20), catalog removals (PD-19), interaction types beyond the four | Content phase |
 
 ## S. School foundation
 
@@ -302,7 +315,7 @@ deployment. Do not describe the product as complete.
 
 | Item | Status | Current implementation | Evidence | Battle | Remaining gap | Next dependency |
 |---|---|---|---|---|---|---|
-| Backend suite | PV | 177 tests (unit + Testcontainers integration); 176 pass | Last run 2026-09-25 (5D) | all | TD-04 red (PD-07); 2B, 4B, challenges, school, progress untested | PD-07; test backfill |
+| Backend suite | PV | 214 tests (unit + Testcontainers integration); 213 pass | Last run 2026-09-26 (W3.1) | all | TD-04 red (PD-07); 2B, challenges, progress untested | PD-07; test backfill |
 | CI | TD | **None** (no `.github` or other pipeline) | Repository | — | Every verification is manual | TD-01 then CI |
 | E2E browser automation | FP | Browser verification is manual per battle | Battle reports | — | Automated critical-flow E2E | Testing phase |
 
@@ -344,6 +357,9 @@ and CI. None of these is complete; see sections B, L, M, O–U.
 | PD-15 | Canonical curriculum content (Khmer, English, more Maths) must come from educators — directive §10 forbids generative AI determining canonical curriculum. The catalog is one Maths curriculum of 6 numeric activities | W1.1 |
 | PD-16 | After a wrong answer the child is shown the correct answer (directive §12.4 "explanatory"). Alternative: one retry before revealing | W1.1 |
 | PD-17 | Grown-up gate style (press-and-hold 1.5 s) for leaving the child space | W1.1 |
+| PD-19 | Removing a skill from an objective, or archiving a skill, changes enrolled children's paths and their parents' objective standings — what should happen to existing learners? The Studio offers add-only | W3.1 |
+| PD-20 | Content review/approval before publication (directive §18): who reviews, and is a second person required? Today one administrator drafts, checks and publishes | W3.1 |
+| PD-21 | Parent insight wording after very little evidence: one correct answer produced "showing early strength … still gathering evidence". Grounded in 2C/5C rules, but arguably more confident than one answer supports | W3.1 |
 | PD-18 | Privacy notice and Terms of Service text — legal content, not engineering; no page is shown until it exists (a placeholder would be fake) | W1.2 |
 
 ---
@@ -358,7 +374,7 @@ and CI. None of these is complete; see sections B, L, M, O–U.
   BROWSER VERIFIED; configuration and content lifecycle are RUNTIME VERIFIED; the
   learning-state battles (5A–5C) were RUNTIME VERIFIED at battle time and are TESTED now,
   including through the green golden journey.
-- **Test suite:** backend 210 run, 209 pass (the 1 failure is the known stale PRINCIPAL test, TD-04 / PD-07); frontend (Vitest) 13 pass.
+- **Test suite:** backend 214 run, 213 pass (the 1 failure is the known stale PRINCIPAL test, TD-04 / PD-07); frontend (Vitest) 22 pass.
 - **Version control:** git, one commit per battle.
 - **FULL BOOKEYOND KID PRODUCT: NOT COMPLETE.**
 
@@ -399,16 +415,17 @@ the open product decisions PD-01 to PD-10.
 
 # IMMEDIATE NEXT WORK
 
-**Wave 1 continues** (child + parent), in this order:
+The content tool now exists, so the next steps are, in order:
 
-1. ~~Parent account & settings~~ — **done in W1.2** (profile, password change, sign out
-   everywhere). Still open: privacy/terms text (PD-18), child archive (needs a product
-   decision on what archiving does to learning and data — not invented).
-2. **Parent goals** (directive §13.5) — needs a product decision on what a goal is (e.g.
-   minutes per week vs skills to secure) before any code; do not invent it.
-3. **Automated frontend tests** for the child play session and parent overview (none exist).
-4. Content: nothing further can be built without educator-authored content (PD-15) and
-   Khmer copy (PD-14); Content Studio (Wave 3) is the tool that unblocks both.
+1. **Product decisions that now block real use** — PD-01 (school ↔ family authorization: the
+   school product cannot enroll any child until it exists), PD-03 (refresh reuse grace window;
+   N19 shows real users being signed out), PD-15 (who authors the canonical curriculum — the
+   Studio is ready for them), PD-20 (review before publish).
+2. **Wave 2 once PD-01 is decided**: family-granted school authorization, class enrollment on
+   top of it, teacher Studio access, class assignments and monitoring (TD-11, TD-13, TD-14, TD-17).
+3. **Content platform depth**: localization and audio/media in the Studio (with PD-14), content
+   rename/archive, withdrawal (PD-04).
+4. **Engineering**: E2E browser tests for the critical flows, CI, dependency upgrades (TD-16),
+   staff account pages (TD-20).
 
-Security hardening that needs no product decision (rate limiting OD-01, TD-05 index) remains
-the fallback whenever Wave 1 is blocked on a decision.
+Parent goals and child archiving remain blocked on their product decisions (not invented).

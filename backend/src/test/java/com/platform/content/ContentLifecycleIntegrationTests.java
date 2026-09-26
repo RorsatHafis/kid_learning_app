@@ -295,7 +295,6 @@ class ContentLifecycleIntegrationTests {
         Curriculum curriculum = curriculumService.createCurriculum(subjectId, ageHubId, "Lifecycle " + suffix);
         var curriculumVersion = curriculumService.createDraftVersion(curriculum.getId());
         curriculumService.addObjective(curriculumVersion.getId(), objective.getId(), 0);
-        curriculumService.publish(curriculumVersion.getId());
 
         Question q1 = numericQuestion(subjectId, skill);
         QuestionVersion q1v1 = republishQuestion(q1, "1 + 1 = ?", "2");
@@ -311,6 +310,8 @@ class ContentLifecycleIntegrationTests {
         activityService.tagSkill(second.getId(), skill.getId());
         ActivityVersion secondV1 = publishActivityVersion(second, 2, q2v1, q3v1);
 
+        // Published last: a curriculum needs a published activity first (ContentValidator).
+        curriculumService.publish(curriculumVersion.getId());
         return new Catalog(curriculum, skill, q1, q1v1, q2, q2v1, first, firstV1, secondV1);
     }
 

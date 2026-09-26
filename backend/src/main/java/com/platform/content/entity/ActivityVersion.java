@@ -48,6 +48,18 @@ public class ActivityVersion extends PublishableVersion {
         return new ActivityVersion(activityId, versionNumber, instructions, difficultyLevel, estimatedDurationSeconds);
     }
 
+    /** A draft is the only editable state: once published, learners hold exact references to it. */
+    public void reviseDraft(String newInstructions, Integer newDifficultyLevel, Integer newEstimatedDurationSeconds) {
+        requireStatus(com.platform.common.entity.PublicationStatus.DRAFT, "edited");
+        Assert.isTrue(newDifficultyLevel == null || (newDifficultyLevel >= 1 && newDifficultyLevel <= 10),
+                "difficultyLevel must be between 1 and 10");
+        Assert.isTrue(newEstimatedDurationSeconds == null || newEstimatedDurationSeconds > 0,
+                "estimatedDurationSeconds must be positive");
+        this.instructions = newInstructions;
+        this.difficultyLevel = newDifficultyLevel;
+        this.estimatedDurationSeconds = newEstimatedDurationSeconds;
+    }
+
     public UUID getActivityId() {
         return activityId;
     }

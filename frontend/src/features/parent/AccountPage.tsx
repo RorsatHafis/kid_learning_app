@@ -139,7 +139,7 @@ function ChangePassword() {
           error={errors.confirm}
         />
         {errors.form && (
-          <p role="alert" className="text-sm font-medium text-brand-red">
+          <p role="alert" className="text-sm font-medium text-brand-redStrong">
             {errors.form}
           </p>
         )}
@@ -186,7 +186,7 @@ function SignOutEverywhere() {
           back in.
         </p>
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-red">
+          <p role="alert" className="text-sm font-medium text-brand-redStrong">
             {error}
           </p>
         )}
