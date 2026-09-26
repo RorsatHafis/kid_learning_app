@@ -373,6 +373,40 @@ and CI. None of these is complete; see sections B, L, M, O–U.
 | PD-22 | Whether an unconfirmed email address should limit anything (e.g. adding a child, or school linking under PD-01). Today it limits nothing and the parent is reminded; **engineering recommendation**: keep it unrestricted for the family product, require it before any cross-party action such as granting a school access | W4.3 |
 | PD-18 | Privacy notice and Terms of Service text — legal content, not engineering; no page is shown until it exists (a placeholder would be fake) | W1.2 |
 
+### PD-01 proposal — family-granted school access (for the owner's decision)
+
+**Status:** proposal only. Nothing below is implemented; CLAUDE.md §15 forbids inventing it. Everything the school
+side needs *before* a child can join (schools, staff, invitations, classes, assignments — W2.0, W2.1) is built.
+
+**RESEARCH FINDING.** Products where the family owns the child's profile link it to a school through a
+parent-entered code rather than school-side enrolment: ClassDojo (a class code or invite the parent accepts),
+Seesaw (a "Home Learning Code" the teacher hands out). Google Classroom differs because the school owns the account —
+not our model, since Bookeyond children belong to families (PD-05, directive §14.1).
+
+**ENGINEERING RECOMMENDATION** — four relationships, each explicit (CLAUDE.md §15):
+
+1. **Class join code** (school side): a principal or the class's teacher generates a short-lived code (e.g. 8
+   characters, 14 days, revocable, rate-limited redemption). The code only *identifies* a class; it grants nothing.
+2. **School access grant** (family side, new table `school_child_access`): a parent of the child enters the code on the
+   child's page, sees the school, the class and **exactly what the school will see**, and grants. One row per
+   (child, school): `ACTIVE` → `REVOKED`, `granted_by`, timestamps, audited. Only a family OWNER/parent of that child can
+   grant or revoke — never school staff, never an admin on the family's behalf.
+3. **Class enrolment** follows from the grant (the existing `class_enrollments`, now always backed by an ACTIVE grant —
+   this also resolves TD-14).
+4. **Teacher access** stays assignment-scoped (W2.1): a teacher sees a child only while the child is enrolled in a
+   class they are assigned to *and* the grant is ACTIVE.
+
+**What the school sees** (recommended, least privilege, §10): the child's display name, and evidence/progress **only
+for curricula the school assigned**. Family-chosen curricula, parent insights and anything else the family did at home
+stay private. **Revocation** (any time, by the parent): access ends immediately; enrolments end; the child keeps every
+piece of their own learning history (evidence is never deleted because access changed).
+
+**Decisions needed from the owner (PRODUCT DECISION):**
+- (a) Join mechanism: parent-entered class code (recommended) / school emails an invitation to the parent / both.
+- (b) School visibility: only school-assigned learning (recommended) / everything the child does.
+- (c) Whether a confirmed email is required before granting (PD-22 — recommended: yes).
+- (d) Anything a school must *not* be able to do even with access (e.g. change the child's name — recommended: read-only).
+
 ---
 
 # CURRENT VERIFIED PROJECT STATE
