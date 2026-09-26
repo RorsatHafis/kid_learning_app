@@ -8,12 +8,14 @@ import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.entity.AccountStatus;
 import com.platform.identity.repository.AccountRepository;
-import com.platform.identity.service.PasswordPolicy;
+import com.platform.identity.service.AccountRecoveryService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,34 +23,45 @@ import java.util.UUID;
 public class AdminService {
     private final AccountRepository accounts;
     private final PasswordEncoder passwordEncoder;
-    private final PasswordPolicy passwordPolicy;
+    private final AccountRecoveryService recovery;
     private final AuditService auditService;
+    private final SecureRandom random = new SecureRandom();
 
     public AdminService(AccountRepository accounts, PasswordEncoder passwordEncoder,
-                        PasswordPolicy passwordPolicy, AuditService auditService) {
+                        AccountRecoveryService recovery, AuditService auditService) {
         this.accounts = accounts;
         this.passwordEncoder = passwordEncoder;
-        this.passwordPolicy = passwordPolicy;
+        this.recovery = recovery;
         this.auditService = auditService;
     }
 
+    /**
+     * Creates a TEACHER or PRINCIPAL account and emails its owner a single-use link to choose
+     * their own password (TD-22): the account starts with a random password nobody knows, so
+     * the administrator never learns or hands over anyone's password.
+     */
     @Transactional
-    public Account createStaffAccount(UUID adminId, String email, String password,
-                                      PlatformRole role) {
+    public Account createStaffAccount(UUID adminId, String email, PlatformRole role, String requestedIp) {
         requireAdmin(adminId);
         if (role != PlatformRole.TEACHER && role != PlatformRole.PRINCIPAL) {
             throw new IllegalArgumentException("Admin provisioning supports TEACHER or PRINCIPAL accounts only");
         }
-        passwordPolicy.validate(password);
         String normalized = Account.normalize(email);
         if (accounts.findByNormalizedEmail(normalized).isPresent()) {
-            throw new IllegalArgumentException("An account already exists for this email address");
+            throw new IllegalStateException("An account already exists for this email address");
         }
-        Account account = accounts.saveAndFlush(
-                Account.register(email, passwordEncoder.encode(password), role));
+        byte[] secret = new byte[32];
+        random.nextBytes(secret);
+        Account account = accounts.saveAndFlush(Account.register(email.strip(),
+                passwordEncoder.encode(Base64.getEncoder().encodeToString(secret)), role));
         auditService.record(new RecordAuditEvent(
                 null, adminId, AuditActorType.ADMIN, "ACCOUNT_PROVISIONED", "ACCOUNT",
                 account.getId(), java.util.Map.of("platformRole", role.name())));
+        String roleName = role == PlatformRole.PRINCIPAL ? "principal" : "teacher";
+        recovery.sendAccountSetup(account, new AccountRecoveryService.SetupInvitation(
+                "Your Bookeyond Kid account is ready to set up",
+                "A Bookeyond Kid administrator has created a " + roleName + " account for you.",
+                ""), requestedIp);
         return account;
     }
 

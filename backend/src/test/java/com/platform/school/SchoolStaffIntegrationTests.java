@@ -347,7 +347,9 @@ class SchoolStaffIntegrationTests {
     private List<String> setupToken(String email, int atLeast) throws Exception {
         List<String> tokens = new ArrayList<>();
         for (MimeMessage message : awaitMessages(email, atLeast)) {
-            Matcher matcher = SETUP_LINK.matcher((String) message.getContent());
+            String body = (String) message.getContent();
+            assertThat(body.lines()).as("no collapsed line continuations").noneMatch(line -> line.matches(".*\\S {2,}\\S.*"));
+            Matcher matcher = SETUP_LINK.matcher(body);
             if (matcher.find()) {
                 tokens.add(matcher.group(1));
             }

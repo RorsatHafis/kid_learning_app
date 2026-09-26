@@ -136,7 +136,10 @@ public class SchoolStaffService {
         }
 
         if (newAccount || recovery.awaitingAccountSetup(account.getId())) {
-            recovery.sendAccountSetup(account, school.getName(), requestedIp);
+            recovery.sendAccountSetup(account, new AccountRecoveryService.SetupInvitation(
+                    "You're invited to teach at " + school.getName() + " on Bookeyond Kid",
+                    school.getName() + " has invited you to join its teachers on Bookeyond Kid.",
+                    "After signing in you'll see the invitation and can accept it."), requestedIp);
         } else {
             events.publishEvent(new EmailMessage(account.getEmail(),
                     "You're invited to teach at " + school.getName() + " on Bookeyond Kid", """

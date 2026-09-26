@@ -262,7 +262,8 @@ export interface StaffAccount {
 export const adminApi = {
   staff: () => apiClient.get<StaffAccount[]>("/admin/staff"),
   pendingPrincipals: () => apiClient.get<StaffAccount[]>("/admin/principals/pending"),
-  createStaff: (body: { email: string; password: string; role: "TEACHER" | "PRINCIPAL" }) =>
+  // No password: the person chooses their own from an emailed setup link (admin/service/AdminService.java).
+  createStaff: (body: { email: string; role: "TEACHER" | "PRINCIPAL" }) =>
     apiClient.post<StaffAccount>("/admin/staff", body),
   approvePrincipal: (id: string) => apiClient.post<StaffAccount>(`/admin/principals/${id}/approve`),
 };

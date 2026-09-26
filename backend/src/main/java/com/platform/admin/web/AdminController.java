@@ -23,8 +23,9 @@ public class AdminController {
     @ResponseStatus(HttpStatus.CREATED)
     public AdminDtos.StaffAccountResponse createStaff(
             @AuthenticationPrincipal UUID adminId,
-            @Valid @RequestBody AdminDtos.CreateStaffRequest request) {
-        Account account = service.createStaffAccount(adminId, request.email(), request.password(), request.role());
+            @Valid @RequestBody AdminDtos.CreateStaffRequest request,
+            jakarta.servlet.http.HttpServletRequest http) {
+        Account account = service.createStaffAccount(adminId, request.email(), request.role(), http.getRemoteAddr());
         return AdminDtos.StaffAccountResponse.of(account);
     }
 

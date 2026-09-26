@@ -8,7 +8,7 @@ from here.
 
 - **Last reconciled:** 2026-09-26, after W2.1 (school workspace: staff invitations, principal console, TD-17), preceded the same day by W4.3 (email verification and password reset).
 - **Reconciled against:** current source, Flyway migrations V1–V36, the last full test run
-  (`./mvnw -Pintegration test`: **259 run, 258 pass, 1 known stale failure** — TD-04; frontend `npm test`: **34 pass**), and the
+  (`./mvnw -Pintegration test`: **261 run, 260 pass, 1 known stale failure** — TD-04; frontend `npm test`: **35 pass**), and the
   runtime/browser evidence gathered in each battle.
 - **Version control:** git repository at `D:\Bookeyond-Kid` (baseline commit `4db89ad`,
   then one commit per battle). TD-01 resolved.
@@ -130,7 +130,7 @@ describe the product as complete.
 | **TD-19** | The older `/api/v1/teacher/*` authoring endpoints remain; they now go through the same publish validation but their publishes are not audited (the Studio's are) | TD | `TeacherAuthoringController` | Retire in favour of the Studio API when the teacher Studio lands |
 | **TD-20** | Teachers and principals have no account page (no password change or sign-out-everywhere UI); admins have one since W3.1 | **RESOLVED** — `/teacher/account` (W4.3), `/principal/account` (W2.1) | Layout links; routes | — |
 | **TD-17** | School staff scope is wider than the school: a principal may assign **any** TEACHER account on the platform to a class (teachers are not linked to schools), and `ContentAccessGuard` lets any PRINCIPAL write any teacher's content | **RESOLVED (W2.1)** — school staff membership (V39); assignment and content edits are limited to the principal's own active staff | `SchoolStaffService.assign`, `ContentAccessGuard.requireOwnerWrite`; tests + mutation checks | — |
-| **TD-22** | Admin staff provisioning (`POST /admin/staff`) still takes a password chosen by the administrator, so the admin knows the staff member's password | TD | `AdminService.createStaffAccount` | Switch to the W2.1 invitation/setup-link flow |
+| **TD-22** | Admin staff provisioning (`POST /admin/staff`) still takes a password chosen by the administrator, so the admin knows the staff member's password | **RESOLVED** — the account starts with an unknowable password and its owner gets the 7-day setup link; a password in the request is ignored; an existing address → 409. Also fixed: the W2.1 invitation email had lost its line continuations (runs of spaces mid-sentence); both setup emails now share one template and tests assert no collapsed whitespace | `AdminProvisioningIntegrationTests` (2), whitespace guard in `SchoolStaffIntegrationTests`; runtime (real SMTP catcher); **browser** (staff form has no password field; submitted; email delivered) | — |
 | **TD-23** | `POST /schools` by an ADMIN records the admin as the school's principal | TD | `SchoolController.create` | Decide with the admin school tooling |
 | **TD-13** | `GET /activity-versions/{id}` stays unscoped: any authenticated user can read any learner-visible version, including teacher content (answer keys are never included) | PV by design / W2 | `ActivityContentController` | Revisit with school tenancy |
 | **TD-03** | Golden learning journey test was stale (answered 1 of 2 required questions; drove decisions by hand) | **RESOLVED (5D)** | Rewritten to play each path through next → start → answer all → complete and assert only persisted state; green | — |
@@ -300,7 +300,7 @@ describe the product as complete.
 |---|---|---|---|---|---|---|
 | Authoring API | PV | Studio API (`/api/v1/studio`) for reads, drafts, versions, validation, preview, publish; legacy `/api/v1/teacher/*` writes remain | 4 Studio HTTP tests; runtime; browser | 3, 4B, 3R, W3.1 | TD-19; teacher-facing Studio not exposed yet (teacher content reaches no child until PD-01) | Wave 2 |
 | Publish validation | VC | `ContentValidator` blocks unplayable, unscorable or evidence-less content at every publish; same report in the Studio | Integration tests + 2 mutation checks; browser | W3.1 | Review/approval step (PD-20); media/localization checks (no Studio support yet) | — |
-| Admin API | PV | Staff provisioning, principal approval | Runtime (3R); Staff page browser-rendered (W3.1) | — | Provisioning form not browser-submitted (password field); invitations need email delivery | Wave 4 identity |
+| Admin API | PV | Staff provisioning by emailed setup link (TD-22), principal approval | Integration tests; runtime; Staff page **browser-submitted** | W3.1, TD-22 | No resend of an admin setup link (the person uses "Forgot your password?") | — |
 | Content Studio UI | PV | `/admin/studio`: subjects, skills & objectives, questions (MC/TF/numeric/short answer), activities in lessons, curricula; child-view preview; checks; version history; Staff; Account | **BROWSER VERIFIED** desktop + 375 px; Vitest | W3.1 | Localization/audio/media, rename/archive, review/approval (PD-20), catalog removals (PD-19), interaction types beyond the four | Content phase |
 
 ## S. School foundation
@@ -385,7 +385,7 @@ and CI. None of these is complete; see sections B, L, M, O–U.
   BROWSER VERIFIED; configuration and content lifecycle are RUNTIME VERIFIED; the
   learning-state battles (5A–5C) were RUNTIME VERIFIED at battle time and are TESTED now,
   including through the green golden journey.
-- **Test suite:** backend 259 run, 258 pass (the 1 failure is the known stale PRINCIPAL test, TD-04 / PD-07); frontend (Vitest) 34 pass. While Docker is unavailable the suite runs against a native PostgreSQL 18 (`-Dbk.test.external-db=true -Dbk.test.db.url=… -Dbk.test.db.username=… -Dbk.test.db.password=…`); Testcontainers remains the default.
+- **Test suite:** backend 261 run, 260 pass (the 1 failure is the known stale PRINCIPAL test, TD-04 / PD-07); frontend (Vitest) 35 pass. While Docker is unavailable the suite runs against a native PostgreSQL 18 (`-Dbk.test.external-db=true -Dbk.test.db.url=… -Dbk.test.db.username=… -Dbk.test.db.password=…`); Testcontainers remains the default.
 - **Version control:** git, one commit per battle.
 - **FULL BOOKEYOND KID PRODUCT: NOT COMPLETE.**
 
@@ -436,7 +436,6 @@ The content tool now exists, so the next steps are, in order:
    top of it, teacher Studio access, class assignments and monitoring (TD-11, TD-13, TD-14, TD-17).
 3. **Content platform depth**: localization and audio/media in the Studio (with PD-14), content
    rename/archive, withdrawal (PD-04).
-4. **Engineering**: E2E browser tests for the critical flows, CI, dependency upgrades (TD-16),
-   admin staff provisioning by invitation (TD-22).
+4. **Engineering**: E2E browser tests for the critical flows, CI, dependency upgrades (TD-16).
 
 Parent goals and child archiving remain blocked on their product decisions (not invented).

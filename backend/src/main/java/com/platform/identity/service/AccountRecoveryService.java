@@ -214,28 +214,39 @@ public class AccountRecoveryService {
     // ------------------------------------------------------------------ account setup (invitations)
 
     /**
-     * Emails the link with which a person invited to a school chooses their first password.
-     * {@code account} was created by the invitation, with a random password nobody knows.
-     * Within the transaction that invited them; subject to the same per-account limits.
+     * Who created an account and why, for the email carrying its setup link:
+     * {@code subject}, the {@code reason} sentence that opens the email, and what to do
+     * after signing in ({@code afterSignIn}, may be empty).
+     */
+    public record SetupInvitation(String subject, String reason, String afterSignIn) {
+    }
+
+    /**
+     * Emails the link with which the owner of an account created for them - by a school's
+     * invitation or by an administrator - chooses their first password. The account was
+     * created with a random password nobody knows. Within the transaction that created or
+     * invited them; subject to the same per-account limits as every other link.
      */
     @Transactional(propagation = Propagation.MANDATORY)
-    public void sendAccountSetup(Account account, String schoolName, String requestedIp) {
+    public void sendAccountSetup(Account account, SetupInvitation invitation, String requestedIp) {
         Instant now = Instant.now();
         waitBeforeNextEmail(account.getId(), AccountActionPurpose.ACCOUNT_SETUP, now).ifPresent(wait -> {
             throw new TooManyEmailsException(wait);
         });
         String raw = issue(account.getId(), AccountActionPurpose.ACCOUNT_SETUP, SETUP_LINK_TTL, requestedIp, now);
-        events.publishEvent(new EmailMessage(account.getEmail(), "You're invited to teach at " + schoolName + " on Bookeyond Kid", """
+        events.publishEvent(new EmailMessage(account.getEmail(), invitation.subject(), """
                 Hello,
 
-                %s has invited you to join its teachers on Bookeyond Kid. To accept, choose                 a password for your account:
+                %s To get started, choose a password for your account:
 
                 %s
 
-                This link works once and expires in 7 days. After signing in you'll see the                 invitation and can accept it.
+                This link works once and expires in 7 days. If it has expired, use \
+                "Forgot your password?" on the log-in page to get a new one.%s
 
                 If you weren't expecting this, you can ignore this email.
-                """.formatted(schoolName, mail.link("/set-up-account", raw))));
+                """.formatted(invitation.reason(), mail.link("/set-up-account", raw),
+                invitation.afterSignIn().isBlank() ? "" : "\n\n" + invitation.afterSignIn())));
     }
 
     /**

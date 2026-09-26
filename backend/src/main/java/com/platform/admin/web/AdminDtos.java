@@ -12,9 +12,9 @@ import java.util.UUID;
 public final class AdminDtos {
     private AdminDtos() {}
 
+    /** No password: the new staff member chooses their own from an emailed setup link (TD-22). */
     public record CreateStaffRequest(
-            @Email @NotBlank String email,
-            @NotBlank String password,
+            @Email @NotBlank @jakarta.validation.constraints.Size(max = 320) String email,
             @NotNull PlatformRole role) {}
 
     public record StaffAccountResponse(

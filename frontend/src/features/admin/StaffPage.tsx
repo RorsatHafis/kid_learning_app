@@ -8,8 +8,6 @@ import { FormField } from "@/features/auth/FormField";
 import { Panel, SelectField } from "./studio/shared";
 import { errorText } from "./studio/studioLogic";
 
-const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
-
 const ROLE_LABEL: Record<string, string> = { TEACHER: "Teacher", PRINCIPAL: "Principal", ADMIN: "Administrator" };
 const STATUS_LABEL: Record<string, string> = { ACTIVE: "Active", PENDING_VERIFICATION: "Awaiting approval", DISABLED: "Disabled" };
 
@@ -118,7 +116,6 @@ function PendingRow({ account, onApproved }: { account: StaffAccount; onApproved
 function NewStaff({ onCreated }: { onCreated: () => void }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"TEACHER" | "PRINCIPAL">("TEACHER");
-  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<string | null>(null);
@@ -129,10 +126,9 @@ function NewStaff({ onCreated }: { onCreated: () => void }) {
     setError(null);
     setCreated(null);
     try {
-      const account = await adminApi.createStaff({ email: email.trim(), role, password });
+      const account = await adminApi.createStaff({ email: email.trim(), role });
       setCreated(account.email);
       setEmail("");
-      setPassword("");
       onCreated();
     } catch (err) {
       setError(errorText(err, "The account couldn't be created."));
@@ -149,16 +145,10 @@ function NewStaff({ onCreated }: { onCreated: () => void }) {
           <option value="TEACHER">Teacher</option>
           <option value="PRINCIPAL">Principal</option>
         </SelectField>
-        <FormField
-          label={`Initial password (at least ${MIN_PASSWORD} characters)`}
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          required
-          onChange={(e) => setPassword(e.target.value)}
-        />
         <p className="text-xs text-muted">
-          Give the password to the person directly, not by email. The platform doesn&apos;t send invitations yet.
+          We&apos;ll email them a link to choose their own password. It lasts 7 days; after that they can use
+          &ldquo;Forgot your password?&rdquo; on the log-in page. Teachers who work at a school are better invited by
+          its principal, which also adds them to the school.
         </p>
         {error && (
           <p role="alert" className="text-sm font-medium text-brand-redStrong">
@@ -167,10 +157,10 @@ function NewStaff({ onCreated }: { onCreated: () => void }) {
         )}
         {created && (
           <p role="status" className="rounded-2xl bg-brand-greenTint px-3 py-2 text-sm font-medium text-brand-greenStrong">
-            Account created for {created}.
+            Account created. We&apos;ve emailed {created} a link to set their password.
           </p>
         )}
-        <Button type="submit" disabled={busy || !email.trim() || password.length < MIN_PASSWORD} className="w-fit">
+        <Button type="submit" disabled={busy || !email.trim()} className="w-fit">
           <UserPlus size={16} aria-hidden /> {busy ? "Creating…" : "Create account"}
         </Button>
       </form>
