@@ -49,7 +49,16 @@ public class ConfigurationContract {
         variables.put("RATE_LIMIT_LOGIN_PER_MINUTE", "platform.security.rate-limit.login-per-minute");
         variables.put("RATE_LIMIT_REGISTER_PER_HOUR", "platform.security.rate-limit.register-per-hour");
         variables.put("RATE_LIMIT_REFRESH_PER_MINUTE", "platform.security.rate-limit.refresh-per-minute");
+        variables.put("RATE_LIMIT_RECOVERY_PER_HOUR", "platform.security.rate-limit.recovery-per-hour");
         variables.put("CORS_ALLOWED_ORIGINS", "platform.security.cors.allowed-origins");
+        variables.put("MAIL_HOST", "spring.mail.host");
+        variables.put("MAIL_PORT", "spring.mail.port");
+        variables.put("MAIL_USERNAME", "spring.mail.username");
+        variables.put("MAIL_PASSWORD", "spring.mail.password");
+        variables.put("MAIL_SMTP_AUTH", "spring.mail.properties[mail.smtp.auth]");
+        variables.put("MAIL_SMTP_STARTTLS", "spring.mail.properties[mail.smtp.starttls.enable]");
+        variables.put("MAIL_FROM", "platform.mail.from");
+        variables.put("APP_PUBLIC_URL", "platform.mail.public-url");
         variables.put("MASTERY_LEARNING_RATE", "platform.mastery.learning-rate");
         variables.put("MASTERY_CONFIDENCE_SATURATION_COUNT", "platform.mastery.confidence-saturation-count");
         variables.put("MASTERY_OBJECTIVE_THRESHOLD", "platform.mastery.objective-mastery-threshold");

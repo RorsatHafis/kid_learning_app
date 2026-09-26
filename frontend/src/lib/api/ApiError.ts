@@ -37,10 +37,14 @@ export class ApiError extends Error {
   }
 }
 
+/** A server wait (Retry-After seconds) in words, rounded up for people: "45 seconds", "3 minutes". */
+export function waitInWords(seconds: number): string {
+  return seconds < 60 ? `${seconds} second${seconds === 1 ? "" : "s"}` : `${Math.ceil(seconds / 60)} minute${seconds <= 60 ? "" : "s"}`;
+}
+
 /** "Too many attempts from this network" copy with the server's wait, rounded up for people. */
 export function rateLimitedMessage(err: ApiError): string {
   const seconds = err.problem?.retryAfterSeconds;
   if (!seconds) return "Too many attempts from this network. Please wait a moment and try again.";
-  const wait = seconds < 60 ? `${seconds} second${seconds === 1 ? "" : "s"}` : `${Math.ceil(seconds / 60)} minute${seconds <= 60 ? "" : "s"}`;
-  return `Too many attempts from this network. Please try again in ${wait}.`;
+  return `Too many attempts from this network. Please try again in ${waitInWords(seconds)}.`;
 }

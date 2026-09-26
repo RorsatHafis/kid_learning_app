@@ -9,6 +9,8 @@ import com.platform.identity.exception.AccountLockedException;
 import com.platform.identity.exception.CurrentPasswordMismatchException;
 import com.platform.identity.exception.EmailAlreadyRegisteredException;
 import com.platform.identity.exception.InvalidCredentialsException;
+import com.platform.identity.exception.InvalidActionLinkException;
+import com.platform.identity.exception.TooManyEmailsException;
 import com.platform.identity.exception.WeakPasswordException;
 import com.platform.security.session.InvalidSessionException;
 import jakarta.validation.ConstraintViolation;
@@ -205,6 +207,31 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problem.setTitle("Authentication Failed");
 
         return createResponseEntity(problem, new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
+
+    }
+
+    @ExceptionHandler(InvalidActionLinkException.class)
+    public ResponseEntity<Object> handleInvalidActionLink(InvalidActionLinkException ex, WebRequest request) {
+
+        // One shape for unknown, expired, used and replaced links: never reveal which.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Link Not Usable");
+
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+
+    }
+
+    @ExceptionHandler(TooManyEmailsException.class)
+    public ResponseEntity<Object> handleTooManyEmails(TooManyEmailsException ex, WebRequest request) {
+
+        long seconds = Math.max(1, ex.retryAfter().toSeconds());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        problem.setTitle("Too Many Requests");
+        problem.setProperty("retryAfterSeconds", seconds);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.RETRY_AFTER, Long.toString(seconds));
+
+        return createResponseEntity(problem, headers, HttpStatus.TOO_MANY_REQUESTS, request);
 
     }
 

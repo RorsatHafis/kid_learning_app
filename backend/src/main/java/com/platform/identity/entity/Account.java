@@ -114,16 +114,22 @@ public class Account extends AuditableEntity {
 
     }
  
+    /**
+     * Records that the owner proved access to the mailbox. It never changes the account's
+     * status: PENDING_VERIFICATION is the principal-awaiting-approval state, and a mailbox
+     * link must not stand in for an administrator's approval. The first proof is kept.
+     */
     public void markEmailVerified(Instant at) {
 
-        this.emailVerifiedAt = at;
-
-        if (status == AccountStatus.PENDING_VERIFICATION) {
-
-            this.status = AccountStatus.ACTIVE;
-
+        Assert.notNull(at, "at must not be null");
+        if (this.emailVerifiedAt == null) {
+            this.emailVerifiedAt = at;
         }
 
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
     }
  
     public void markPendingApproval() {

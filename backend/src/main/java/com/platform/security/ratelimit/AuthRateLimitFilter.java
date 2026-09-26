@@ -42,10 +42,16 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     }
 
     AuthRateLimitFilter(RateLimitProperties properties, LongSupplier nanoClock) {
+        TokenBucketLimiter login = new TokenBucketLimiter(properties.loginPerMinute(), Duration.ofMinutes(1), nanoClock);
         TokenBucketLimiter refresh = new TokenBucketLimiter(properties.refreshPerMinute(), Duration.ofMinutes(1), nanoClock);
         this.limiters = Map.of(
-                "/api/v1/auth/login", new TokenBucketLimiter(properties.loginPerMinute(), Duration.ofMinutes(1), nanoClock),
+                "/api/v1/auth/login", login,
+                // Using an emailed link is a sign-in-like step: it shares the login budget.
+                "/api/v1/auth/password-reset/confirm", login,
+                "/api/v1/auth/email-verification/confirm", login,
                 "/api/v1/auth/register", new TokenBucketLimiter(properties.registerPerHour(), Duration.ofHours(1), nanoClock),
+                "/api/v1/auth/password-reset",
+                new TokenBucketLimiter(properties.recoveryPerHour(), Duration.ofHours(1), nanoClock),
                 // Logout presents a refresh token too; it shares the refresh budget.
                 "/api/v1/auth/refresh", refresh,
                 "/api/v1/auth/logout", refresh);

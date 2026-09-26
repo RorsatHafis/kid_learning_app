@@ -2,6 +2,7 @@ package com.platform.common.config;
 
 import com.platform.identity.entity.PlatformRole;
 import com.platform.learner.MasteryProperties;
+import com.platform.notification.PlatformMailProperties;
 import com.platform.security.SecurityProperties;
 import com.platform.security.ratelimit.RateLimitProperties;
 import com.platform.security.jwt.JwtService;
@@ -62,6 +63,15 @@ class ConfigurationContractTests {
         env.put("DB_URL", "jdbc:postgresql://db.bk-test.invalid:5432/bk");
         env.put("DB_USERNAME", "bk_prod");
         env.put("DB_PASSWORD", "bk_prod_password");
+        env.put("RATE_LIMIT_RECOVERY_PER_HOUR", "6");
+        env.put("MAIL_HOST", "smtp.bk-test.invalid");
+        env.put("MAIL_PORT", "2525");
+        env.put("MAIL_USERNAME", "bk_mailer");
+        env.put("MAIL_PASSWORD", "bk_mail_password");
+        env.put("MAIL_SMTP_AUTH", "false");
+        env.put("MAIL_SMTP_STARTTLS", "false");
+        env.put("MAIL_FROM", "no-reply@bk-test.invalid");
+        env.put("APP_PUBLIC_URL", "https://app.bk-test.invalid");
         return env;
     }
 
@@ -85,6 +95,17 @@ class ConfigurationContractTests {
             assertThat(rateLimit.loginPerMinute()).isEqualTo(7);
             assertThat(rateLimit.registerPerHour()).isEqualTo(8);
             assertThat(rateLimit.refreshPerMinute()).isEqualTo(9);
+            assertThat(rateLimit.recoveryPerHour()).isEqualTo(6);
+            PlatformMailProperties mail = ctx.getBean(PlatformMailProperties.class);
+            assertThat(mail.from()).isEqualTo("no-reply@bk-test.invalid");
+            assertThat(mail.link("/verify-email", "abc")).isEqualTo("https://app.bk-test.invalid/verify-email#token=abc");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.host")).isEqualTo("smtp.bk-test.invalid");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.port")).isEqualTo("2525");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.username")).isEqualTo("bk_mailer");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.password")).isEqualTo("bk_mail_password");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.properties[mail.smtp.auth]")).isEqualTo("false");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.properties[mail.smtp.starttls.enable]")).isEqualTo("false");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.properties[mail.smtp.starttls.required]")).isEqualTo("false");
             assertThat(mastery.learningRate()).isEqualByComparingTo("0.5");
             assertThat(mastery.confidenceSaturationCount()).isEqualTo(4);
             assertThat(mastery.objectiveMasteryThreshold()).isEqualByComparingTo("0.7");
@@ -115,6 +136,9 @@ class ConfigurationContractTests {
         env.put("JWT_SECRET", PROD_SECRET);
         env.put("JWT_ISSUER", "bk-prod-issuer");
         env.put("CORS_ALLOWED_ORIGINS", "https://app.bk-test.invalid");
+        env.put("MAIL_HOST", "smtp.bk-test.invalid");
+        env.put("MAIL_FROM", "no-reply@bk-test.invalid");
+        env.put("APP_PUBLIC_URL", "https://app.bk-test.invalid");
 
         try (ConfigurableApplicationContext ctx = start("prod", env)) {
             SecurityProperties security = ctx.getBean(SecurityProperties.class);
@@ -129,6 +153,12 @@ class ConfigurationContractTests {
             assertThat(rateLimit.loginPerMinute()).isEqualTo(20);
             assertThat(rateLimit.registerPerHour()).isEqualTo(20);
             assertThat(rateLimit.refreshPerMinute()).isEqualTo(60);
+            assertThat(rateLimit.recoveryPerHour()).isEqualTo(10);
+            // Mail is authenticated and encrypted unless explicitly turned off.
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.port")).isEqualTo("587");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.properties[mail.smtp.auth]")).isEqualTo("true");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.properties[mail.smtp.starttls.enable]")).isEqualTo("true");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.properties[mail.smtp.starttls.required]")).isEqualTo("true");
             assertThat(mastery.learningRate()).isEqualByComparingTo("0.2");
             assertThat(mastery.confidenceSaturationCount()).isEqualTo(10);
             assertThat(mastery.objectiveMasteryThreshold()).isEqualByComparingTo("0.8");
@@ -138,7 +168,8 @@ class ConfigurationContractTests {
     // ------------------------------------------------------------------ required values fail loudly
 
     @ParameterizedTest
-    @CsvSource({"prod,JWT_SECRET", "prod,JWT_ISSUER", "staging,JWT_SECRET", "staging,JWT_ISSUER"})
+    @CsvSource({"prod,JWT_SECRET", "prod,JWT_ISSUER", "staging,JWT_SECRET", "staging,JWT_ISSUER",
+            "prod,MAIL_FROM", "prod,APP_PUBLIC_URL", "staging,MAIL_FROM", "staging,APP_PUBLIC_URL"})
     void missingRequiredSecurityValueFailsStartup(String profile, String variable) {
         Map<String, Object> env = documentedProdEnvironment();
         env.remove(variable);
@@ -151,11 +182,15 @@ class ConfigurationContractTests {
     void missingValuesNeverFallBackToDevelopmentSettings(String profile) {
         Map<String, Object> env = documentedProdEnvironment();
         env.remove("CORS_ALLOWED_ORIGINS");
+        env.remove("MAIL_HOST");
 
         try (ConfigurableApplicationContext ctx = start(profile, env)) {
             // Resolving it is what SecurityConfig does at startup; it must fail, not yield localhost.
             assertThatThrownBy(() -> ctx.getEnvironment().getProperty("platform.security.cors.allowed-origins"))
                     .hasMessageContaining("CORS_ALLOWED_ORIGINS");
+            // Likewise the mail autoconfiguration: no silent fallback to a local mail catcher.
+            assertThatThrownBy(() -> ctx.getEnvironment().getProperty("spring.mail.host"))
+                    .hasMessageContaining("MAIL_HOST");
         }
         env.remove("JWT_SECRET");
         env.remove("JWT_ISSUER");
@@ -177,6 +212,11 @@ class ConfigurationContractTests {
             "RATE_LIMIT_LOGIN_PER_MINUTE|0|RATE_LIMIT_LOGIN_PER_MINUTE",
             "RATE_LIMIT_REGISTER_PER_HOUR|0|RATE_LIMIT_REGISTER_PER_HOUR",
             "RATE_LIMIT_REFRESH_PER_MINUTE|0|RATE_LIMIT_REFRESH_PER_MINUTE",
+            "RATE_LIMIT_RECOVERY_PER_HOUR|0|RATE_LIMIT_RECOVERY_PER_HOUR",
+            "MAIL_FROM|no-reply|MAIL_FROM",
+            "APP_PUBLIC_URL|app.bk-test.invalid|APP_PUBLIC_URL",
+            "APP_PUBLIC_URL|https://app.bk-test.invalid/some/path|APP_PUBLIC_URL",
+            "APP_PUBLIC_URL|ftp://app.bk-test.invalid|APP_PUBLIC_URL",
             "LOGIN_LOCKOUT_DURATION|0s|LOGIN_LOCKOUT_DURATION",
             "LOGIN_LOCKOUT_DURATION|-15m|LOGIN_LOCKOUT_DURATION",
             "MASTERY_LEARNING_RATE|0|MASTERY_LEARNING_RATE",
@@ -204,6 +244,9 @@ class ConfigurationContractTests {
             "PLATFORM_SECURITY_CORS_ALLOWED_ORIGINS,CORS_ALLOWED_ORIGINS",
             "PLATFORM_MASTERY_LEARNING_RATE,MASTERY_LEARNING_RATE",
             "SPRING_DATASOURCE_URL,DB_URL",
+            "SPRING_MAIL_HOST,MAIL_HOST",
+            "SPRING_MAIL_PASSWORD,MAIL_PASSWORD",
+            "PLATFORM_MAIL_PUBLICURL,APP_PUBLIC_URL",
             "SPRING_DATASOURCE_PASSWORD,DB_PASSWORD"})
     void anUndocumentedVariableCannotSilentlyOverrideADocumentedOne(String bypass, String documented) {
         Map<String, Object> env = documentedProdEnvironment();
@@ -238,6 +281,11 @@ class ConfigurationContractTests {
             assertThat(security.lockout().maxAttempts()).isEqualTo(5);
             assertThat(ctx.getEnvironment().getProperty("platform.security.cors.allowed-origins")).isEqualTo("http://localhost:5173");
             assertThat(ctx.getEnvironment().getProperty("spring.datasource.username")).isEqualTo("learning_platform");
+            // Mailpit, without authentication or TLS.
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.host")).isEqualTo("localhost");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.port")).isEqualTo("1025");
+            assertThat(ctx.getEnvironment().getProperty("spring.mail.properties[mail.smtp.starttls.required]")).isEqualTo("false");
+            assertThat(ctx.getBean(PlatformMailProperties.class).publicUrl()).isEqualTo("http://localhost:5173");
         }
     }
 
@@ -285,7 +333,8 @@ class ConfigurationContractTests {
     // ------------------------------------------------------------------ harness
 
     @Configuration(proxyBeanMethods = false)
-    @EnableConfigurationProperties({SecurityProperties.class, MasteryProperties.class, RateLimitProperties.class})
+    @EnableConfigurationProperties({SecurityProperties.class, MasteryProperties.class, RateLimitProperties.class,
+            PlatformMailProperties.class})
     @Import({ConfigurationContract.class, JwtService.class})
     static class ConfigurationOnly {
     }

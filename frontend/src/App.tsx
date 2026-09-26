@@ -5,6 +5,9 @@ import { RequireRole } from "@/routes/RequireRole";
 import { LandingPage } from "@/features/marketing/LandingPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RegisterPage } from "@/features/auth/RegisterPage";
+import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage";
+import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
 import { ComingSoon } from "@/features/app/AppShell";
 import { ParentLayout } from "@/features/parent/ParentLayout";
 import { ParentHome } from "@/features/parent/ParentHome";
@@ -36,6 +39,9 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           <Route
             path="/parent"
@@ -91,6 +97,7 @@ export default function App() {
             <Route index element={<TeacherHome />} />
             <Route path="classes/:classId" element={<ClassRosterPage />} />
             <Route path="classes/:classId/students/:studentId" element={<StudentDetailPage />} />
+            <Route path="account" element={<AccountPage />} />
           </Route>
           <Route
             path="/principal/*"

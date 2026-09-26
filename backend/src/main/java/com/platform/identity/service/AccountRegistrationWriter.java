@@ -32,11 +32,12 @@ class AccountRegistrationWriter  {
     private final AuditService auditService;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
+    private final AccountRecoveryService recovery;
  
     AccountRegistrationWriter(AccountRepository accountRepository, FamilyRepository familyRepository,
                                MembershipRepository membershipRepository, IdempotencyService idempotencyService,
                                AuditService auditService, PasswordEncoder passwordEncoder,
-                               PasswordPolicy passwordPolicy) {
+                               PasswordPolicy passwordPolicy, AccountRecoveryService recovery) {
                                 
         this.accountRepository = accountRepository;
         this.familyRepository = familyRepository;
@@ -45,6 +46,7 @@ class AccountRegistrationWriter  {
         this.auditService = auditService;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
+        this.recovery = recovery;
 
     }
 
@@ -86,6 +88,9 @@ class AccountRegistrationWriter  {
                 null, account.getId(), actorTypeFor(role), "ACCOUNT_REGISTERED", "ACCOUNT",
                 account.getId(), auditDetails));
  
+
+        // Delivered only if this registration commits.
+        recovery.sendVerificationForNewAccount(account);
 
         idempotencyService.complete(guardId);
  

@@ -35,11 +35,17 @@ services:
       MASTERY_LEARNING_RATE: ${MASTERY_LEARNING_RATE:-0.2}
       MASTERY_CONFIDENCE_SATURATION_COUNT: ${MASTERY_CONFIDENCE_SATURATION_COUNT:-10}
       MASTERY_OBJECTIVE_THRESHOLD: ${MASTERY_OBJECTIVE_THRESHOLD:-0.8}
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@bookeyond-kid.localhost}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:5173}
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
   frontend:
     build:

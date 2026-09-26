@@ -29,6 +29,9 @@ export function TeacherLayout() {
         </Link>
         <div className="flex items-center gap-3">
           <span className="hidden text-sm text-muted sm:inline">{session?.email}</span>
+          <Link to="/teacher/account" className="text-sm font-semibold text-ink hover:text-brand-blueStrong">
+            Account
+          </Link>
           <Button variant="outline" size="md" onClick={onLogout}>
             Log out
           </Button>

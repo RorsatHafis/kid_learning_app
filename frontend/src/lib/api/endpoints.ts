@@ -34,6 +34,11 @@ export const authApi = {
   login: (input: { email: string; password: string }) =>
     apiClient.post<AuthResponse>("/auth/login", input, { skipAuth: true }),
   logout: (refreshToken: string) => apiClient.post<void>("/auth/logout", { refreshToken }, { skipAuth: true }),
+  // identity/web/AccountRecoveryController.java — always 202, whether or not the address has an account.
+  requestPasswordReset: (email: string) => apiClient.post<void>("/auth/password-reset", { email }, { skipAuth: true }),
+  resetPassword: (input: { token: string; newPassword: string }) =>
+    apiClient.post<void>("/auth/password-reset/confirm", input, { skipAuth: true }),
+  confirmEmail: (token: string) => apiClient.post<void>("/auth/email-verification/confirm", { token }, { skipAuth: true }),
 };
 
 // identity/web/AccountController.java — always the signed-in account; no id in any path.
@@ -42,6 +47,8 @@ export const accountApi = {
   changePassword: (input: { currentPassword: string; newPassword: string }) =>
     apiClient.post<AuthResponse>("/account/password", input),
   signOutEverywhere: () => apiClient.post<{ sessionsEnded: number }>("/account/sign-out-everywhere"),
+  // identity/web/AccountRecoveryController.java — 409 when already confirmed, 429 when sent too recently.
+  resendVerification: () => apiClient.post<void>("/account/email-verification"),
 };
 
 // child/web/ChildController.java

@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, LogOut, ShieldCheck } from "lucide-react";
+import { CheckCircle2, LogOut, MailCheck, ShieldCheck } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { accountApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/ApiError";
+import { ApiError, waitInWords } from "@/lib/api/ApiError";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
@@ -36,7 +36,9 @@ export function AccountPage() {
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Email</dt>
               <dd className="font-semibold text-ink">{profile.data.email}</dd>
-              <dd className="text-sm text-muted">{profile.data.emailVerifiedAt ? "Verified" : "Not verified"}</dd>
+              <dd className="mt-1">
+                <EmailConfirmation confirmed={profile.data.emailVerifiedAt !== null} onAlreadyConfirmed={profile.refetch} />
+              </dd>
             </div>
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Member since</dt>
@@ -50,6 +52,65 @@ export function AccountPage() {
 
       <ChangePassword />
       <SignOutEverywhere />
+    </div>
+  );
+}
+
+/**
+ * Whether the sign-in address has been proven by a link sent to it, and a way to send
+ * another link. Password-reset links go to this address, so a typo here is how a parent
+ * would lose access; confirming it catches that early.
+ */
+function EmailConfirmation({ confirmed, onAlreadyConfirmed }: { confirmed: boolean; onAlreadyConfirmed: () => void }) {
+  const [state, setState] = useState<{ kind: "idle" | "sending" | "sent" } | { kind: "error"; message: string }>({ kind: "idle" });
+
+  if (confirmed) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-greenStrong">
+        <CheckCircle2 size={16} aria-hidden /> Confirmed
+      </span>
+    );
+  }
+
+  async function send() {
+    setState({ kind: "sending" });
+    try {
+      await accountApi.resendVerification();
+      setState({ kind: "sent" });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        onAlreadyConfirmed();
+      } else if (err instanceof ApiError && err.isRateLimited) {
+        const seconds = err.problem?.retryAfterSeconds;
+        setState({
+          kind: "error",
+          message: `We sent one recently — check your inbox and spam folder.${seconds ? ` You can send another in ${waitInWords(seconds)}.` : ""}`,
+        });
+      } else {
+        setState({ kind: "error", message: "We couldn't send the email just now. Please try again." });
+      }
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <span className="text-sm font-semibold text-brand-amberStrong">Not confirmed yet</span>
+      <span className="text-sm text-muted">If you ever forget your password, the reset link comes to this address.</span>
+      {state.kind === "sent" ? (
+        <p role="status" className="flex items-start gap-2 text-sm font-semibold text-kid-mintDeep">
+          <MailCheck size={16} className="mt-0.5 shrink-0" aria-hidden /> Sent. Open the link in the email — it works for
+          24 hours.
+        </p>
+      ) : (
+        <Button size="md" variant="outline" onClick={send} disabled={state.kind === "sending"} className="w-fit">
+          <MailCheck size={16} aria-hidden /> {state.kind === "sending" ? "Sending…" : "Send confirmation email"}
+        </Button>
+      )}
+      {state.kind === "error" && (
+        <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          {state.message}
+        </p>
+      )}
     </div>
   );
 }

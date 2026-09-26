@@ -4,6 +4,7 @@ import logo from "@/assets/logo/Bookeyond_Kid_Primary.svg";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { UnconfirmedEmailNotice } from "./UnconfirmedEmailNotice";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -44,6 +45,7 @@ export function ParentLayout() {
           </div>
         </div>
       </header>
+      <UnconfirmedEmailNotice />
       <main className="mx-auto max-w-[1100px] px-4 py-8 sm:px-8 sm:py-10">
         <Outlet />
       </main>

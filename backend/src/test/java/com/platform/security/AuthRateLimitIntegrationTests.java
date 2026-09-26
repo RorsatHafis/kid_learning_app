@@ -37,7 +37,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "platform.security.rate-limit.login-per-minute=5",
         "platform.security.rate-limit.register-per-hour=3",
-        "platform.security.rate-limit.refresh-per-minute=60"})
+        "platform.security.rate-limit.refresh-per-minute=60",
+        "platform.security.rate-limit.recovery-per-hour=3"})
 @Tag("integration")
 class AuthRateLimitIntegrationTests {
 
@@ -81,6 +82,20 @@ class AuthRateLimitIntegrationTests {
 
         assertThat(refused.statusCode()).isEqualTo(429);
         assertThat(refused.body()).doesNotContain("accessToken");
+    }
+
+    @Test
+    void passwordResetRequestsBeyondTheBudgetAreRefusedWhateverTheAddress() throws Exception {
+        // Different addresses each time: the budget is the network's, not the account's.
+        for (int i = 0; i < 3; i++) {
+            assertThat(post("/api/v1/auth/password-reset",
+                    "{\"email\":\"reset-" + UUID.randomUUID() + "@example.com\"}").statusCode()).isEqualTo(202);
+        }
+        HttpResponse<String> refused = post("/api/v1/auth/password-reset",
+                "{\"email\":\"reset-" + UUID.randomUUID() + "@example.com\"}");
+
+        assertThat(refused.statusCode()).isEqualTo(429);
+        assertThat(Long.parseLong(refused.headers().firstValue("Retry-After").orElseThrow())).isGreaterThan(60);
     }
 
     @Test

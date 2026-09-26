@@ -7,6 +7,15 @@ spring:
   flyway:
     enabled: true
 
+  # The port is replaced by the in-process SMTP server's (TestcontainersConfiguration).
+  mail:
+    host: 127.0.0.1
+    port: 3025
+    properties:
+      "[mail.smtp.auth]": false
+      "[mail.smtp.starttls.enable]": false
+      "[mail.smtp.starttls.required]": false
+
 platform:
   security:
     jwt:
@@ -24,8 +33,12 @@ platform:
       login-per-minute: 100000
       register-per-hour: 100000
       refresh-per-minute: 100000
+      recovery-per-hour: 100000
     cors:
       allowed-origins: http://localhost:5173
+  mail:
+    from: no-reply@bk-test.localhost
+    public-url: http://localhost:5173
   mastery:
     learning-rate: 0.2
     confidence-saturation-count: 10

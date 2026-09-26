@@ -32,6 +32,23 @@ spring:
         jdbc:
           time_zone: UTC
 
+  # Outgoing email (address verification, password reset). MAIL_HOST is required: an
+  # environment that cannot send mail cannot let a parent recover their account, so it
+  # must not start as though it could. Credentials are optional (some relays
+  # authenticate by network); TLS is on unless explicitly turned off.
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      "[mail.smtp.auth]": ${MAIL_SMTP_AUTH:true}
+      "[mail.smtp.starttls.enable]": ${MAIL_SMTP_STARTTLS:true}
+      "[mail.smtp.starttls.required]": ${MAIL_SMTP_STARTTLS:true}
+      "[mail.smtp.connectiontimeout]": 10000
+      "[mail.smtp.timeout]": 10000
+      "[mail.smtp.writetimeout]": 10000
+
 # External configuration contract (the full list is ConfigurationContract.VARIABLES).
 # Operators set the environment variables named here; every profile honours them.
 # Setting the underlying property through its own environment variable
@@ -56,11 +73,13 @@ platform:
       max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
       duration: ${LOGIN_LOCKOUT_DURATION:15m}
     # Per client address on the unauthenticated identity endpoints (logout shares the
-    # refresh budget). Generous: families and schools share addresses behind NAT.
+    # refresh budget; using an emailed link shares the login budget). Generous: families and schools share addresses behind NAT.
     rate-limit:
       login-per-minute: ${RATE_LIMIT_LOGIN_PER_MINUTE:20}
       register-per-hour: ${RATE_LIMIT_REGISTER_PER_HOUR:20}
       refresh-per-minute: ${RATE_LIMIT_REFRESH_PER_MINUTE:60}
+      # Password-reset requests (each may send an email).
+      recovery-per-hour: ${RATE_LIMIT_RECOVERY_PER_HOUR:10}
     cors:
       # Exact browser origins (scheme://host[:port]) the frontend is served from,
       # comma-separated. No default on purpose, like the datasource: staging and
@@ -68,6 +87,11 @@ platform:
       # startup instead of silently trusting a development origin. An explicitly
       # empty value allows no cross-origin browser access at all.
       allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  mail:
+    # Required. The sender on every email, e.g. no-reply@bookeyond.example.
+    from: ${MAIL_FROM}
+    # Required. The origin families open the app at; links in emails point here.
+    public-url: ${APP_PUBLIC_URL}
   mastery:
     learning-rate: ${MASTERY_LEARNING_RATE:0.2}
     confidence-saturation-count: ${MASTERY_CONFIDENCE_SATURATION_COUNT:10}
@@ -86,6 +110,10 @@ management:
       probes:
         enabled: true
   health:
+    # A mail server outage must not take the API out of the load balancer: sign-in and
+    # learning keep working, and delivery failures are logged.
+    mail:
+      enabled: false
     readiness-state:
       enabled: true
     liveness-state:

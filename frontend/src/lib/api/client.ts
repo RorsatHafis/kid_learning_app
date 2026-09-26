@@ -130,8 +130,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     throw new ApiError(res.status, await parseProblem(res));
   }
 
-  if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+  // 204, and 202 from endpoints that only acknowledge (password reset, resend confirmation), have no body.
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const apiClient = {

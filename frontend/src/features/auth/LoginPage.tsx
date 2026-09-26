@@ -78,6 +78,9 @@ export function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           error={fieldErrors.password}
         />
+        <Link to="/forgot-password" className="-mt-1 w-fit text-sm font-semibold text-brand-blueStrong">
+          Forgot your password?
+        </Link>
         {formError && (
           <p role="alert" className="text-sm font-medium text-brand-redStrong">
             {formError}
