@@ -148,6 +148,14 @@ public class Account extends AuditableEntity {
         this.status = AccountStatus.DISABLED;
 
     }
+
+    /** Ends a suspension. Only from DISABLED, so it can never stand in for approving a pending account. */
+    public void reinstate() {
+        if (status != AccountStatus.DISABLED) {
+            throw new IllegalStateException("Only a suspended account can be reinstated");
+        }
+        this.status = AccountStatus.ACTIVE;
+    }
  
     public void changePasswordHash(String newPasswordHash) {
 

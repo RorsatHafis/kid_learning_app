@@ -283,3 +283,49 @@ export const adminApi = {
     apiClient.post<StaffAccount>("/admin/staff", body),
   approvePrincipal: (id: string) => apiClient.post<StaffAccount>(`/admin/principals/${id}/approve`),
 };
+
+// ---- admin/web/AdminOperationsController.java ----
+
+export interface AuditEntry {
+  id: string;
+  occurredAt: string;
+  actorId: string | null;
+  actorEmail: string | null;
+  actorType: string;
+  action: string;
+  resourceType: string;
+  resourceId: string | null;
+  metadata: Record<string, unknown>;
+  correlationId: string | null;
+}
+
+/** One page, newest first; pass nextBefore/nextBeforeId back to continue. Both are null on the last page. */
+export interface AuditPage {
+  entries: AuditEntry[];
+  nextBefore: string | null;
+  nextBeforeId: string | null;
+}
+
+export interface AuditQuery {
+  action?: string;
+  actorId?: string;
+  resourceId?: string;
+  before?: string;
+  beforeId?: string;
+  limit?: number;
+}
+
+export const operationsApi = {
+  auditEvents: (query: AuditQuery) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== "") params.set(key, String(value));
+    }
+    const qs = params.toString();
+    return apiClient.get<AuditPage>(`/admin/audit-events${qs ? `?${qs}` : ""}`);
+  },
+  auditActions: () => apiClient.get<string[]>("/admin/audit-events/actions"),
+  findAccount: (email: string) => apiClient.get<StaffAccount>(`/admin/accounts?email=${encodeURIComponent(email)}`),
+  suspend: (id: string, reason: string) => apiClient.post<StaffAccount>(`/admin/accounts/${id}/suspend`, { reason }),
+  reinstate: (id: string, reason: string) => apiClient.post<StaffAccount>(`/admin/accounts/${id}/reinstate`, { reason }),
+};

@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LibraryBig, LogOut, UserRound, Users } from "lucide-react";
+import { History, LibraryBig, LogOut, ShieldOff, UserRound, Users } from "lucide-react";
 import logo from "@/assets/logo/Bookeyond_Kid_Primary.svg";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
@@ -7,11 +7,11 @@ import { useAuth } from "@/lib/auth/AuthContext";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    "flex items-center gap-1.5 rounded-pill px-3 py-2 text-sm font-semibold transition-colors",
+    "flex items-center gap-1.5 rounded-pill px-2 py-2 text-sm font-semibold transition-colors sm:px-3",
     isActive ? "bg-surface-sand text-ink" : "text-muted hover:text-ink",
   );
 
-/** The platform administrator's console: content and staff. Every action is authorized and audited server-side. */
+/** The platform administrator's console: content, staff, accounts and the activity log. Every action is authorized and audited server-side. */
 export function AdminLayout() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
@@ -31,19 +31,25 @@ export function AdminLayout() {
               Admin
             </span>
           </Link>
-          <nav aria-label="Admin" className="flex items-center gap-1">
-            <NavLink to="/admin/studio" className={navClass} aria-label="Content Studio">
-              <LibraryBig size={16} aria-hidden /> <span className="hidden min-[420px]:inline">Content Studio</span>
+          <nav aria-label="Admin" className="flex items-center gap-0.5 sm:gap-1">
+            <NavLink to="/admin/studio" className={navClass} aria-label="Content Studio" title="Content Studio">
+              <LibraryBig size={16} aria-hidden /> <span className="hidden lg:inline">Content Studio</span>
             </NavLink>
-            <NavLink to="/admin/staff" className={navClass} aria-label="Staff">
-              <Users size={16} aria-hidden /> <span className="hidden min-[420px]:inline">Staff</span>
+            <NavLink to="/admin/staff" className={navClass} aria-label="Staff" title="Staff">
+              <Users size={16} aria-hidden /> <span className="hidden lg:inline">Staff</span>
             </NavLink>
-            <NavLink to="/admin/account" className={navClass} aria-label="Account">
-              <UserRound size={16} aria-hidden /> <span className="hidden min-[520px]:inline">Account</span>
+            <NavLink to="/admin/accounts" className={navClass} aria-label="Accounts" title="Accounts">
+              <ShieldOff size={16} aria-hidden /> <span className="hidden lg:inline">Accounts</span>
+            </NavLink>
+            <NavLink to="/admin/activity" className={navClass} aria-label="Activity log" title="Activity log">
+              <History size={16} aria-hidden /> <span className="hidden lg:inline">Activity log</span>
+            </NavLink>
+            <NavLink to="/admin/account" className={navClass} aria-label="My account" title="My account">
+              <UserRound size={16} aria-hidden /> <span className="hidden lg:inline">My account</span>
             </NavLink>
           </nav>
           <div className="flex items-center gap-3">
-            <span className="hidden max-w-[14rem] truncate text-sm text-muted md:inline">{session?.email}</span>
+            <span className="hidden max-w-[14rem] truncate text-sm text-muted xl:inline">{session?.email}</span>
             <Button variant="outline" size="md" onClick={onLogout} className="whitespace-nowrap px-4" aria-label="Log out">
               <LogOut size={16} aria-hidden /> <span className="hidden sm:inline">Log out</span>
             </Button>

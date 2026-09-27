@@ -23,6 +23,8 @@ import { ClassRosterPage } from "@/features/teacher/ClassRosterPage";
 import { StudentDetailPage } from "@/features/teacher/StudentDetailPage";
 import { AdminLayout } from "@/features/admin/AdminLayout";
 import { StaffPage } from "@/features/admin/StaffPage";
+import { AccountsPage } from "@/features/admin/operations/AccountsPage";
+import { ActivityPage } from "@/features/admin/operations/ActivityPage";
 import { StudioIndex } from "@/features/admin/studio/StudioIndex";
 import { StudioLayout } from "@/features/admin/studio/StudioLayout";
 import { CatalogPage } from "@/features/admin/studio/CatalogPage";
@@ -139,6 +141,8 @@ export default function App() {
               <Route path="curricula/:curriculumId" element={<CurriculumEditor />} />
             </Route>
             <Route path="staff" element={<StaffPage />} />
+            <Route path="accounts" element={<AccountsPage />} />
+            <Route path="activity" element={<ActivityPage />} />
             <Route path="account" element={<AccountPage />} />
           </Route>
 
