@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { BookOpen, MessageSquareQuote, CircleX } from "lucide-react";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Card } from "@/components/ui/Card";
@@ -7,22 +8,22 @@ const subjects = [
     icon: BookOpen,
     tint: "bg-brand-blueTint text-brand-blue",
     title: "Khmer Language",
-    copy: "Learn basic consonants, vowels, phonics, and trace symbols with fluid touch guidance.",
-    cta: "Explore Khmer",
+    copy: "Consonants, vowels and first words, with native-voice audio.",
+    available: false,
   },
   {
     icon: MessageSquareQuote,
     tint: "bg-brand-purpleTint text-brand-purple",
     title: "English Vocabulary",
-    copy: "Build confidence in everyday words, phrases, objects, and creative expressions with audio guidance.",
-    cta: "Explore English",
+    copy: "Everyday words and phrases, with audio.",
+    available: false,
   },
   {
     icon: CircleX,
     tint: "bg-brand-greenTint text-brand-green",
     title: "Early Mathematics",
-    copy: "Master counting, logic puzzles, basic addition, and shapes through pleasant interactive games.",
-    cta: "Explore Maths",
+    copy: "Recognising sums, adding within 5 and within 10, then building fluency.",
+    available: true,
   },
 ];
 
@@ -35,7 +36,7 @@ export function Subjects() {
           eyebrowTone="green"
           khmerTitle="កសាងគ្រឹះដ៏រឹងមាំ"
           title="Build strong foundations"
-          description="Explore highly interactive paths covering early literacy, languages, and mathematical thinking."
+          description="Bookeyond Kid starts with early maths. Khmer and English are being prepared - they appear here as soon as they are ready."
         />
 
         <div className="grid w-full gap-6 sm:grid-cols-3">
@@ -48,9 +49,16 @@ export function Subjects() {
                 <p className="mb-2 text-xl font-bold text-ink">{subject.title}</p>
                 <p className="text-sm leading-relaxed text-muted">{subject.copy}</p>
               </div>
-              <button className="mt-auto rounded-pill border-[1.5px] border-ink py-3 text-sm font-semibold text-ink transition-colors hover:bg-ink hover:text-white">
-                {subject.cta}
-              </button>
+              {subject.available ? (
+                <Link
+                  to="/register"
+                  className="mt-auto rounded-pill border-[1.5px] border-ink py-3 text-center text-sm font-semibold text-ink transition-colors hover:bg-ink hover:text-white"
+                >
+                  Start with Maths
+                </Link>
+              ) : (
+                <p className="mt-auto rounded-pill bg-surface-sand py-3 text-center text-sm font-semibold text-muted">In preparation</p>
+              )}
             </Card>
           ))}
         </div>

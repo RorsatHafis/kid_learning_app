@@ -1,10 +1,18 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo/Bookeyond_Kid_Primary.svg";
 
+// Only links that lead somewhere: there are no About, Contact, Terms or Privacy pages yet (PD-18).
 const columns = [
-  { title: "Product", links: ["How It Works", "For Children", "For Parents", "Subjects", "Pricing"] },
-  { title: "Company", links: ["About", "Schools", "Contact"] },
-  { title: "Legal", links: ["Terms", "Privacy"] },
+  {
+    title: "Product",
+    links: [
+      { label: "How It Works", href: "#how-it-works" },
+      { label: "For Children", href: "#for-children" },
+      { label: "For Parents", href: "#for-parents" },
+      { label: "Subjects", href: "#subjects" },
+      { label: "For Schools", href: "#schools" },
+    ],
+  },
 ];
 
 export function Footer() {
@@ -17,13 +25,13 @@ export function Footer() {
             <p className="max-w-xs text-sm text-muted">Learn Today, Build Tomorrow.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-10">
             {columns.map((col) => (
               <div key={col.title} className="flex flex-col gap-3">
                 <p className="text-sm font-bold text-ink">{col.title}</p>
                 {col.links.map((link) => (
-                  <a key={link} href="#" className="text-sm text-muted hover:text-ink">
-                    {link}
+                  <a key={link.href} href={link.href} className="text-sm text-muted hover:text-ink">
+                    {link.label}
                   </a>
                 ))}
               </div>

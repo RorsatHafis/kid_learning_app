@@ -7,7 +7,7 @@ type Size = "md" | "lg";
 const variantClasses: Record<Variant, string> = {
   solid: "bg-brand-blueStrong text-white shadow-soft hover:bg-blue-700",
   outline: "border-[1.5px] border-ink text-ink hover:bg-ink hover:text-white",
-  ghost: "text-ink hover:text-brand-blue",
+  ghost: "text-ink hover:text-brand-blueStrong",
 };
 
 const sizeClasses: Record<Size, string> = {

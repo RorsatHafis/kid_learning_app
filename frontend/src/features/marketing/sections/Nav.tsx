@@ -9,7 +9,6 @@ const links = [
   { label: "For Children", href: "#for-children" },
   { label: "For Parents", href: "#for-parents" },
   { label: "Subjects", href: "#subjects" },
-  { label: "Pricing", href: "#pricing" },
 ];
 
 export function Nav() {
@@ -31,7 +30,7 @@ export function Nav() {
         </nav>
 
         <div className="hidden items-center gap-4 lg:flex">
-          <Link to="/login" className="text-sm font-semibold text-ink hover:text-brand-blue">
+          <Link to="/login" className="text-sm font-semibold text-ink hover:text-brand-blueStrong">
             Log in
           </Link>
           <Link to="/register">
@@ -60,7 +59,7 @@ export function Nav() {
             <Link to="/login" className="flex-1 rounded-pill border-[1.5px] border-ink px-4 py-2 text-center text-sm font-semibold">
               Log in
             </Link>
-            <Link to="/register" className="flex-1 rounded-pill bg-brand-blue px-4 py-2 text-center text-sm font-semibold text-white">
+            <Link to="/register" className="flex-1 rounded-pill bg-brand-blueStrong px-4 py-2 text-center text-sm font-semibold text-white">
               Get Started
             </Link>
           </div>

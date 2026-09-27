@@ -11,7 +11,6 @@ import { Subjects } from "./sections/Subjects";
 import { Progression } from "./sections/Progression";
 import { SmartReview } from "./sections/SmartReview";
 import { LearningBuddy } from "./sections/LearningBuddy";
-import { Pricing } from "./sections/Pricing";
 import { Schools } from "./sections/Schools";
 import { TrustPrinciples } from "./sections/TrustPrinciples";
 import { EmotionalBrand, FinalCta } from "./sections/ClosingSections";
@@ -34,7 +33,6 @@ export function LandingPage() {
         <Progression />
         <SmartReview />
         <LearningBuddy />
-        <Pricing />
         <Schools />
         <TrustPrinciples />
         <EmotionalBrand />

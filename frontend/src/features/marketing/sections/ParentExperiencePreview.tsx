@@ -1,13 +1,12 @@
 import { Lightbulb } from "lucide-react";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Pill } from "@/components/ui/Pill";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
 const skills = [
-  { name: "Khmer Consonants Group 1", status: "Mastered", tone: "green" as const, bar: "bg-brand-green", fill: "w-full" },
-  { name: "Addition up to 10", status: "Developing", tone: "amber" as const, bar: "bg-brand-amber", fill: "w-3/4" },
-  { name: "Phonics & Sound Matching", status: "Introductory", tone: "blue" as const, bar: "bg-brand-blue", fill: "w-2/5" },
+  { name: "Addition within 5", status: "Secure", tone: "green" as const, bar: "bg-brand-green", fill: "w-full" },
+  { name: "Addition within 10", status: "Progressing", tone: "amber" as const, bar: "bg-brand-amber", fill: "w-3/5" },
+  { name: "Addition fluency", status: "Too early to tell", tone: "blue" as const, bar: "bg-brand-blue", fill: "w-1/5" },
 ];
 
 export function ParentExperiencePreview() {
@@ -27,7 +26,7 @@ export function ParentExperiencePreview() {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-sand text-xl font-bold text-ink">K</div>
               <div>
                 <p className="font-bold text-ink">Kosal's Learning Journey</p>
-                <p className="text-sm text-muted">Age 6 • Level 2 Explorer</p>
+                <p className="text-sm text-muted">Example · Age 6 · Maths</p>
               </div>
             </div>
             <Pill tone="green">Active</Pill>
@@ -54,27 +53,25 @@ export function ParentExperiencePreview() {
             <div className="rounded-2xl bg-surface-sand p-5">
               <div className="mb-4 flex items-center gap-2 text-ink">
                 <Lightbulb size={20} className="text-brand-amber" />
-                <p className="font-bold">Weekly Insight</p>
+                <p className="font-bold">Insight</p>
               </div>
               <p className="text-sm leading-relaxed text-muted">
-                This week, Kosal showed immense confidence with addition concepts, responding accurately within 2
-                seconds. However, minor pauses were noted when transitioning between symbols.
+                Kosal answered 9 of the last 10 addition-within-5 questions correctly - enough answers to call
+                this skill secure. Addition within 10 is progressing: 6 answers so far.
               </p>
               <p className="mt-4 text-xs font-bold uppercase tracking-wide text-muted">Try next step:</p>
-              <p className="mt-1 text-sm font-semibold text-ink">Mixed addition problems up to 20</p>
+              <p className="mt-1 text-sm font-semibold text-ink">More practice adding within 10</p>
             </div>
 
             <div className="flex flex-col justify-between rounded-2xl bg-surface-sand p-5">
               <div>
-                <p className="mb-2 font-bold text-ink">Next Activity</p>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">Recommended for parents</p>
+                <p className="mb-2 font-bold text-ink">Up next</p>
+                <p className="text-sm font-semibold text-ink">Addition Within 10 Practice</p>
                 <p className="mt-2 text-sm text-muted">
-                  Take 5 minutes to play "Apple Count Challenge" together to reinforce early addition.
+                  <span className="font-semibold text-ink">Why this next? </span>
+                  The answers so far are mixed, so Kosal keeps practising the same skill.
                 </p>
               </div>
-              <Button size="md" className="mt-4 w-fit">
-                Start Session
-              </Button>
             </div>
           </div>
         </Card>

@@ -56,7 +56,7 @@ export function RegisterPage() {
           before you can log in. Once it's approved, log in with{" "}
           <span className="font-semibold text-ink">{email}</span>.
         </p>
-        <Link to="/" className="mt-6 block text-center text-sm font-semibold text-brand-blue">
+        <Link to="/" className="mt-6 block text-center text-sm font-semibold text-brand-blueStrong">
           Back to home
         </Link>
       </AuthLayout>
@@ -65,18 +65,20 @@ export function RegisterPage() {
 
   return (
     <AuthLayout title="Create your account" subtitle="Start your family's learning journey with Bookeyond Kid.">
-      <div className="mb-6 flex rounded-pill border border-hairline p-1">
+      <div role="group" aria-label="Account type" className="mb-6 flex rounded-pill border border-hairline p-1">
         <button
           type="button"
+          aria-pressed={role === "PARENT"}
           onClick={() => setRole("PARENT")}
-          className={cn("flex-1 rounded-pill py-2 text-sm font-semibold transition-colors", role === "PARENT" ? "bg-brand-blue text-white" : "text-muted")}
+          className={cn("flex-1 rounded-pill py-2 text-sm font-semibold transition-colors", role === "PARENT" ? "bg-brand-blueStrong text-white" : "text-muted")}
         >
           I'm a parent
         </button>
         <button
           type="button"
+          aria-pressed={role === "PRINCIPAL"}
           onClick={() => setRole("PRINCIPAL")}
-          className={cn("flex-1 rounded-pill py-2 text-sm font-semibold transition-colors", role === "PRINCIPAL" ? "bg-brand-blue text-white" : "text-muted")}
+          className={cn("flex-1 rounded-pill py-2 text-sm font-semibold transition-colors", role === "PRINCIPAL" ? "bg-brand-blueStrong text-white" : "text-muted")}
         >
           I'm a principal
         </button>
@@ -108,7 +110,7 @@ export function RegisterPage() {
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         Already have an account?{" "}
-        <Link to="/login" className="font-semibold text-brand-blue">
+        <Link to="/login" className="font-semibold text-brand-blueStrong">
           Log in
         </Link>
       </p>

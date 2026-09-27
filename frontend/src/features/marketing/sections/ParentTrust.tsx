@@ -1,10 +1,10 @@
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 const steps = [
-  { label: "1. Activity", title: "What your child did", copy: "Successfully answered 8 consecutive addition questions within 2 minutes." },
-  { label: "2. Evidence", title: "What it showed", copy: "Addition fluency skill is developing firmly, showing confidence with logic." },
-  { label: "3. System Analysis", title: "What Bookeyond learned", copy: "No frustration threshold reached; pacing is ready for progression." },
-  { label: "4. The Next Path", title: "What comes next", copy: "Suggesting mixed visual patterns up to 20 to widen understanding." },
+  { label: "1. Activity", title: "What your child did", copy: "Answered 5 addition questions in 'Addition Within 10 Practice', 4 of them correctly." },
+  { label: "2. Evidence", title: "What it showed", copy: "Addition within 10 now has 12 answers behind it, and most recent ones are right." },
+  { label: "3. The Decision", title: "What Bookeyond decided", copy: "Strong, consistent answers: time for a harder activity on the same skill." },
+  { label: "4. The Next Path", title: "What comes next", copy: "Addition Fluency Challenge - and the parent sees why it was chosen." },
 ];
 
 export function ParentTrust() {

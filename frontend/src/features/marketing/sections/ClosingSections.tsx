@@ -19,9 +19,9 @@ export function FinalCta() {
     <section className="bg-hero px-4 py-24 text-center sm:px-8">
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-6">
         <h2 className="text-3xl font-extrabold text-ink sm:text-4xl">Ready to see what your child really understands?</h2>
-        <p className="text-lg text-muted">Start free today — no credit card required.</p>
+        <p className="text-lg text-muted">Create a family account with just an email address.</p>
         <Link to="/register">
-          <Button size="lg">Get Started for Free</Button>
+          <Button size="lg">Get started</Button>
         </Link>
       </div>
     </section>

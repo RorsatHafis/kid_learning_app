@@ -1,10 +1,11 @@
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
+// How Smart Review actually decides (review/service/SmartReviewService).
 const checkpoints = [
-  { when: "Today", title: "Learn", copy: "First introduction to a concept" },
-  { when: "Day 3", title: "Review Later", copy: "Gentle revisit during natural play" },
-  { when: "Day 7", title: "Strengthen Memory", copy: "Confirm quick recall fluency" },
-  { when: "Day 15", title: "Mastery Confirmed", copy: "Concept enters secure memory" },
+  { when: "Step 1", title: "Learn", copy: "Your child practises a skill in an activity" },
+  { when: "Step 2", title: "Evidence builds", copy: "Each answer updates how secure that skill looks" },
+  { when: "Step 3", title: "Review when shaky", copy: "If the answers show a skill slipping, a review comes next" },
+  { when: "Step 4", title: "Back on track", copy: "Review answers count as new evidence, like any other" },
 ];
 
 export function SmartReview() {
@@ -15,7 +16,7 @@ export function SmartReview() {
           eyebrow="Cognitive Science"
           khmerTitle="ជំនាញសំខាន់ៗគួរតែត្រូវបានរំលឹកឡើងវិញចំពេលសមស្រប"
           title="Important skills return at the right time"
-          description="Our smart engine tracks subtle pacing and hesitation, automatically bringing back key concepts to cement long-term memory."
+          description="When your child's answers show a skill is still shaky, Smart Review brings it back into their path - decided by clear rules from their own answers, never by guesswork."
         />
 
         <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-4">

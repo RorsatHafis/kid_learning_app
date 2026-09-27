@@ -10,7 +10,7 @@ export function Hero() {
         <div className="flex flex-col items-start gap-8">
           <div className="flex gap-2">
             <Pill tone="green">Khmer-First</Pill>
-            <Pill tone="purple">Ages 4-10</Pill>
+            <Pill tone="purple">Ages 4-9</Pill>
           </div>
 
           <div className="flex flex-col gap-4">
@@ -29,7 +29,7 @@ export function Hero() {
 
           <div className="flex flex-wrap items-center gap-4">
             <Link to="/register">
-              <Button size="lg">Get Started for Free</Button>
+              <Button size="lg">Get started</Button>
             </Link>
             <a href="#how-it-works">
               <Button variant="outline" size="lg">
@@ -55,7 +55,7 @@ export function Hero() {
           </div>
 
           <div className="absolute bottom-4 right-0 flex h-32 w-28 rotate-3 flex-col items-center justify-center gap-2 rounded-3xl border-2 border-brand-green bg-brand-greenTint p-4 text-center shadow-tight sm:h-[140px] sm:w-[120px]">
-            <span lang="km" className="text-3xl font-bold text-brand-green sm:text-4xl">
+            <span lang="km" className="text-3xl font-bold text-brand-greenStrong sm:text-4xl">
               ខ
             </span>
             <span className="text-xs font-medium text-muted">Khor (Egg)</span>
@@ -73,7 +73,7 @@ export function Hero() {
             </div>
             <div className="flex items-center gap-4">
               <div className="flex h-[110px] w-[110px] shrink-0 items-center justify-center rounded-2xl bg-brand-amberTint">
-                <span lang="km" className="text-6xl font-bold text-brand-amber">
+                <span lang="km" className="text-6xl font-bold text-brand-amberStrong">
                   ក
                 </span>
               </div>
@@ -82,7 +82,7 @@ export function Hero() {
                   តើនេះជាអក្សរអ្វី?
                 </p>
                 <p className="text-sm text-muted">Which letter is this?</p>
-                <div className="flex items-center gap-2 rounded-xl bg-brand-blueTint px-3 py-2 text-xs font-semibold text-brand-blue">
+                <div className="flex items-center gap-2 rounded-xl bg-brand-blueTint px-3 py-2 text-xs font-semibold text-brand-blueStrong">
                   <AudioLines size={16} />
                   Listen to Pronunciation
                 </div>

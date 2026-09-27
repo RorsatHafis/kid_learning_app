@@ -2,7 +2,7 @@ import { Apple, MegaphoneOff } from "lucide-react";
 import { Pill } from "@/components/ui/Pill";
 import { Card } from "@/components/ui/Card";
 
-const tags = ["Interactive Games", "Audio-supported", "Khmer-first", "Touch-friendly UI", "Progressive Levels"];
+const tags = ["Short activities", "Friendly feedback", "Touch-friendly", "Works with a keyboard", "Sound you can switch off"];
 
 export function ChildExperience() {
   return (
@@ -58,8 +58,8 @@ export function ChildExperience() {
             <h3 className="text-3xl font-extrabold text-ink sm:text-4xl">Learning should feel inviting</h3>
           </div>
           <p className="leading-relaxed text-muted">
-            Clear activities, friendly feedback, audio-supported experiences, and satisfying progression help
-            children stay focused without overwhelming them.
+            Clear activities, friendly feedback and a visible journey help children stay focused without
+            overwhelming them.
           </p>
           <div className="flex flex-wrap gap-3">
             {tags.map((tag) => (

@@ -2,10 +2,10 @@ import { Sparkles, Smile, CircleX, HandHelping } from "lucide-react";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 const traits = [
-  { icon: Sparkles, title: "Curious Mind", copy: "Points out cool details in Khmer script traces" },
+  { icon: Sparkles, title: "Curious Mind", copy: "Introduces each activity and why it comes next" },
   { icon: Smile, title: "Encouraging Cheer", copy: "Celebrates progress and effort rather than high scores" },
-  { icon: CircleX, title: "Celebrating Joy", copy: "Plays delightful sound cues when a full skill is completed" },
-  { icon: HandHelping, title: "Thoughtful Helper", copy: "Provides helpful audio tips if a child pauses or hesitates" },
+  { icon: CircleX, title: "Celebrating Joy", copy: "Cheers a right answer with a sound you can switch off" },
+  { icon: HandHelping, title: "Thoughtful Helper", copy: "After a miss, shows the right answer and keeps them going" },
 ];
 
 export function LearningBuddy() {
@@ -17,7 +17,7 @@ export function LearningBuddy() {
           eyebrowTone="amber"
           khmerTitle="មិត្តភក្ដិដ៏ល្អសម្រាប់ការធ្វើដំណើរស្វែងយល់"
           title="A companion for the learning journey"
-          description="Meet the Learning Buddy. It encourages children, celebrates effort, offers guidance, and grows alongside them."
+          description="Meet the Learning Buddy. It encourages children, celebrates effort and guides them through each activity. It is written by our team - not a chatbot."
         />
 
         <div className="grid w-full gap-8 sm:grid-cols-2 lg:grid-cols-4">

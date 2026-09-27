@@ -1,10 +1,10 @@
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 const stages = [
-  { number: 1, title: "Explore", copy: "First introduction to fresh sounds & letters" },
-  { number: 2, title: "Develop", copy: "Interactive recognition & simple logic response" },
-  { number: 3, title: "Strengthen", copy: "Cognitive recall with warm guided reviews" },
-  { number: 4, title: "Master", copy: "Confirmed fluency and advanced challenges" },
+  { number: 1, title: "Not started", copy: "The skill is on the path; no answers yet" },
+  { number: 2, title: "Too early to tell", copy: "A few answers - not enough to judge" },
+  { number: 3, title: "Progressing", copy: "Enough answers to see the skill growing" },
+  { number: 4, title: "Secure", copy: "Consistently right answers across enough questions" },
 ];
 
 export function Progression() {

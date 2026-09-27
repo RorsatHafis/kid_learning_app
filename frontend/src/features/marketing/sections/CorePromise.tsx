@@ -1,11 +1,11 @@
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 const steps = [
-  { number: "01", color: "text-brand-blue", dot: "bg-brand-blue", title: "Activity", copy: "Child plays natural educational games" },
-  { number: "02", color: "text-brand-purple", dot: "bg-brand-purple", title: "Evidence", copy: "System measures logic & response speed" },
-  { number: "03", color: "text-brand-amber", dot: "bg-brand-amber", title: "Skill", copy: "Evidence maps directly to foundational skills" },
-  { number: "04", color: "text-brand-green", dot: "bg-brand-green", title: "Insight", copy: "Parent receives concrete diagnostic reports" },
-  { number: "05", color: "text-brand-red", dot: "bg-brand-red", title: "Next Step", copy: "Platform targets personalized progression" },
+  { number: "01", color: "text-brand-blueStrong", dot: "bg-brand-blue", title: "Activity", copy: "Your child plays short, friendly activities" },
+  { number: "02", color: "text-brand-purpleStrong", dot: "bg-brand-purple", title: "Evidence", copy: "Every answer is recorded as evidence - right or wrong" },
+  { number: "03", color: "text-brand-amberStrong", dot: "bg-brand-amber", title: "Skill", copy: "Evidence maps directly to foundational skills" },
+  { number: "04", color: "text-brand-greenStrong", dot: "bg-brand-green", title: "Insight", copy: "You see what the evidence shows, and how strong it is" },
+  { number: "05", color: "text-brand-redStrong", dot: "bg-brand-red", title: "Next Step", copy: "The next activity follows from your child's answers" },
 ] as const;
 
 export function CorePromise() {

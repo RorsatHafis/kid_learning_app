@@ -52,12 +52,11 @@ export function ChildrensWorld() {
               <h3 className="text-2xl font-bold text-ink">A world of learning, not a dashboard</h3>
             </div>
             <p className="leading-relaxed text-muted">
-              For children, Bookeyond is an immersive playground. They travel with their Learning Buddy through
-              soft, inviting landscapes, discovering stories, resolving math quests, and tracing Khmer scripts in a
-              calm, focused environment.
+              For children, Bookeyond Kid is a calm, friendly space. They follow their journey with their Learning
+              Buddy, one short activity at a time, and see each step they have completed.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Pill tone="neutral">Audio Guidance</Pill>
+              <Pill tone="neutral">One step at a time</Pill>
               <Pill tone="neutral">Positive Play</Pill>
             </div>
           </div>
