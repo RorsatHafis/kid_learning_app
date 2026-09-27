@@ -136,6 +136,9 @@ public class SecurityConfig {
                 // would send the frontend into a pointless token refresh.
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+                // Whatever else a profile exposes (metrics in staging, flyway locally) describes
+                // the running system - operators only, never any signed-in account.
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .anyRequest().authenticated()

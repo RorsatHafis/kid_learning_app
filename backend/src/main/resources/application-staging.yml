@@ -9,6 +9,14 @@ spring:
     clean-disabled: true
 
 logging:
+  # One JSON object per line (Elastic Common Schema) for the log platform: every field,
+  # including the request's correlationId, is searchable. Accounts appear by id only.
+  structured:
+    format:
+      console: ecs
+    ecs:
+      service:
+        name: bookeyond-kid-api
   level:
     root: INFO
     com.platform: DEBUG

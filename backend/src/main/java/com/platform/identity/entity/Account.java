@@ -89,15 +89,19 @@ public class Account extends AuditableEntity {
 
     }
  
-    public void recordFailedLogin(int maxAttempts, Duration lockoutDuration, Instant now) {
+    /** Counts a failed sign-in; returns true when this failure locks the account. */
+    public boolean recordFailedLogin(int maxAttempts, Duration lockoutDuration, Instant now) {
 
         this.failedLoginAttempts++;
 
         if (failedLoginAttempts >= maxAttempts) {
 
             this.lockedUntil = now.plus(lockoutDuration);
+            return true;
 
         }
+
+        return false;
 
     }
  

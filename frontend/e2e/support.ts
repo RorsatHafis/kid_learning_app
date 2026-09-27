@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
 export const MAILPIT = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
@@ -49,4 +50,26 @@ export async function logIn(page: Page, email: string, password: string) {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: /log in/i }).click();
+}
+
+/**
+ * Automated WCAG 2.2 A/AA checks (axe) on the screens each kind of user lands on. Axe finds
+ * roughly a third of accessibility problems - names, labels, contrast, roles, landmarks - so
+ * this complements, never replaces, keyboard and screen-reader checks.
+ */
+export async function expectNoViolations(page: Page, screen: string) {
+  // Measure the settled screen, not a frame of an entrance animation (colours mid-fade read as
+  // low contrast). Endless animations, such as the buddy blinking, don't block.
+  await page.waitForFunction(() =>
+    document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity),
+  );
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+  const summary = results.violations.map(
+    (v) =>
+      `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes
+        .slice(0, 5)
+        .map((n) => `${n.target.join(" ")} - ${n.any[0]?.message ?? n.failureSummary ?? ""}`)
+        .join("\n  ")}`,
+  );
+  expect(summary, `${screen} accessibility violations`).toEqual([]);
 }
