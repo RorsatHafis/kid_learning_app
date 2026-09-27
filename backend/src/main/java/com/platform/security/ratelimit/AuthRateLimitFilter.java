@@ -23,10 +23,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * the controller - so a refused refresh never consumes (rotates) the refresh token
  * and the client can simply retry it later.
  *
- * <p>The client address is {@link HttpServletRequest#getRemoteAddr()}. Behind a
- * reverse proxy that is only the real client when the proxy <em>replaces</em>
- * X-Forwarded-For and the application honours it (see OD-12); otherwise every
- * client shares the proxy's address, or a client can choose its own.
+ * <p>The client address is {@link HttpServletRequest#getRemoteAddr()}. Behind the
+ * reverse proxy Tomcat derives it from X-Forwarded-For, believing only entries added
+ * by trusted proxies ({@code server.forward-headers-strategy: native}), so a client
+ * can neither share the proxy's budget with everyone nor choose its own address.
  *
  * <p>Registered inside the security filter chain after CORS (see SecurityConfig), so
  * a browser can read the 429.

@@ -99,6 +99,13 @@ platform:
 
 server:
   port: ${SERVER_PORT:8080}
+  # Behind the reverse proxy the client's address (which sign-in, registration and recovery
+  # budgets are keyed on) comes from X-Forwarded-For. "native" lets Tomcat believe only the
+  # entries appended by trusted proxies - by default private, loopback and link-local
+  # addresses; override with SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES (a regex) when the proxy
+  # has a public address. "framework" would believe the left-most entry, which the client
+  # writes itself (ForwardedClientAddressIntegrationTests).
+  forward-headers-strategy: native
 
 management:
   endpoints:

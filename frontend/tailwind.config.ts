@@ -64,8 +64,8 @@ export default {
       },
       fontFamily: {
         // Rubik carries English/Latin display + UI text; Noto Sans Khmer
-        // carries every Khmer text node. Both are loaded as Google Fonts
-        // in index.html.
+        // carries every Khmer text node. Both are self-hosted (@fontsource,
+        // imported in main.tsx).
         display: ["Rubik", "system-ui", "sans-serif"],
         khmer: ["Noto Sans Khmer", "system-ui", "sans-serif"],
       },

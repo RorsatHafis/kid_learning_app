@@ -1,0 +1,8 @@
+target
+*.log
+hs_err_pid*
+replay_pid*
+.env
+.env.*
+docker-compose.yml
+Dockerfile

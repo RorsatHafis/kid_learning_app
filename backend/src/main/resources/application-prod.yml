@@ -9,9 +9,6 @@ spring:
   flyway:
     clean-disabled: true
 
-server:
-  forward-headers-strategy: framework
-
 logging:
   level:
     root: WARN

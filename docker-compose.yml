@@ -1,0 +1,75 @@
+# Bookeyond Kid on one machine: database, mail catcher, backend and web app.
+#
+#   docker compose up -d --build --wait     (or double-click "Start Bookeyond Kid.bat")
+#   open http://localhost:5173              the app
+#   open http://localhost:8025              every email the app sends (nothing reaches real inboxes)
+#
+# Everything here is for local use: the database, backend and SMTP port are reachable only
+# inside Docker, and the two web ports are bound to this computer (127.0.0.1) only.
+# Values come from ./.env (created by the start script, never committed); see .env.example.
+name: bookeyond-kid
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: bookeyond-kid-db
+    environment:
+      POSTGRES_DB: bookeyond_kid
+      POSTGRES_USER: bookeyond_kid
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bookeyond-kid-local}
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookeyond_kid -d bookeyond_kid"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  mail:
+    image: axllent/mailpit:v1.27
+    container_name: bookeyond-kid-mail
+    ports:
+      - "127.0.0.1:8025:8025"
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: bookeyond-kid-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DB_URL: jdbc:postgresql://db:5432/bookeyond_kid
+      DB_USERNAME: bookeyond_kid
+      DB_PASSWORD: ${DB_PASSWORD:-bookeyond-kid-local}
+      JWT_SECRET: ${JWT_SECRET:-local-only-signing-key-the-start-script-replaces-0123456789}
+      MAIL_HOST: mail
+      MAIL_PORT: 1025
+      APP_PUBLIC_URL: http://localhost:5173
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      # The first administrator, created only when the database has none.
+      PLATFORM_BOOTSTRAPADMIN_ENABLED: ${ADMIN_BOOTSTRAP:-false}
+      PLATFORM_BOOTSTRAPADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      PLATFORM_BOOTSTRAPADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      # Quieter than the developer defaults of the local profile.
+      SPRING_JPA_SHOW_SQL: "false"
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: WARN
+      LOGGING_LEVEL_COM_PLATFORM: INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      mail:
+        condition: service_started
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    container_name: bookeyond-kid-web
+    ports:
+      - "127.0.0.1:5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db_data:
