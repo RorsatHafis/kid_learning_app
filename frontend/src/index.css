@@ -5,28 +5,103 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    color: theme("colors.ink.DEFAULT");
+    background: theme("colors.paper.DEFAULT");
   }
 
-  /* Khmer text nodes are marked with lang="km" in markup; this keeps them
-     on the Khmer-optimized face instead of Rubik's (unsupported) glyphs. */
+  body {
+    font-family: theme("fontFamily.sans");
+    font-feature-settings: "kern", "liga";
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: theme("fontFamily.display");
+    font-optical-sizing: auto;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Khmer runs use the Khmer-capable text face with a taller line for its stacked vowels. */
   [lang="km"] {
     font-family: theme("fontFamily.khmer");
+    line-height: 1.55;
+  }
+
+  ::selection {
+    background: theme("colors.tonle.200");
+    color: theme("colors.tonle.950");
   }
 
   :focus-visible {
-    outline: 2px solid theme("colors.brand.blue");
-    outline-offset: 2px;
+    outline: 2px solid theme("colors.tonle.600");
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  input,
+  textarea {
+    caret-color: theme("colors.tonle.600");
+  }
+
+  /* Browser chrome belongs to the design too. */
+  * {
+    scrollbar-color: theme("colors.tonle.300") transparent;
+    scrollbar-width: thin;
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
   }
 }
 
 @layer components {
-  /* The Learning Buddy blinks now and then — a sign of life while it waits. */
+  /* The firefly buddy blinks now and then — a sign of life while it waits. */
   .buddy-blink {
     animation: buddy-blink 5.5s infinite;
   }
   @keyframes buddy-blink {
     0%, 94%, 100% { transform: scaleY(1); }
     96% { transform: scaleY(0.1); }
+  }
+
+  /* The firefly's wings flutter while it waits. */
+  .buddy-wings {
+    animation: buddy-wings 1.8s ease-in-out infinite;
+  }
+  @keyframes buddy-wings {
+    0%, 100% { transform: scaleY(1) rotate(0deg); }
+    50% { transform: scaleY(0.86) rotate(-1deg); }
+  }
+
+  /* Fine paper grain for illustrated grounds (inline SVG noise, no network). */
+  .paper-grain {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.08 0 0 0 0 0.2 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A quiet rule used by staff tools and editorial sections. */
+  .rule {
+    border-color: theme("colors.line.DEFAULT");
+  }
+}
+
+@media (hover: none) {
+  /* Touch screens: no sticky hover colours after a tap. */
+  .hover-lift:hover {
+    transform: none;
   }
 }
 

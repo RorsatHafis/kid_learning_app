@@ -10,12 +10,12 @@ import type { AnswerResult } from "./QuestionView";
 
 /** Pair colours — always shown with the pair's number, never colour alone. */
 const PAIR_TONES = [
-  "bg-kid-skyDeep text-white",
-  "bg-kid-lavenderDeep text-white",
-  "bg-kid-peachDeep text-white",
-  "bg-kid-sunDeep text-white",
-  "bg-kid-mintDeep text-white",
-  "bg-kid-coralDeep text-white",
+  "bg-tonle-700 text-white",
+  "bg-dusk-deep text-white",
+  "bg-light-deep text-white",
+  "bg-palm-deep text-white",
+  "bg-lotus-deep text-white",
+  "bg-tonle-950 text-white",
 ];
 
 type Selection = { side: "LEFT" | "RIGHT"; id: string } | null;
@@ -82,7 +82,7 @@ export function MatchingQuestion({
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-center text-base font-bold text-muted">
+      <p className="text-center text-base font-bold text-ink-soft">
         {answered ? "Here are your matches." : "Tap one on the left, then its match on the right."}
       </p>
       <div className="grid grid-cols-2 gap-3 sm:gap-6">
@@ -105,7 +105,7 @@ export function MatchingQuestion({
                   }`}
                 />
                 {verdict === "wrong" && correctMatch.get(l.id) && (
-                  <p className="mt-1 px-2 text-sm font-bold text-kid-peachDeep">Goes with {label(correctMatch.get(l.id)!)}</p>
+                  <p className="mt-1 px-2 text-sm font-bold text-tonle-700">Goes with {label(correctMatch.get(l.id)!)}</p>
                 )}
               </li>
             );
@@ -139,7 +139,7 @@ export function MatchingQuestion({
           type="button"
           onClick={submit}
           disabled={locked || !allPaired}
-          className="mx-auto flex min-h-14 items-center gap-2 rounded-pill bg-kid-skyDeep px-9 py-3 text-lg font-extrabold text-white shadow-soft transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+          className="mx-auto flex min-h-14 items-center gap-2 rounded-pill bg-tonle-900 px-9 text-lg font-bold text-white transition-transform duration-150 ease-out hover:bg-tonle-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Check my matches
         </button>
@@ -173,12 +173,12 @@ function MatchCard({
       aria-disabled={locked}
       aria-label={ariaLabel}
       className={cn(
-        "flex min-h-[64px] w-full items-center gap-3 rounded-3xl border-[3px] px-4 py-3 text-left text-lg font-extrabold shadow-tight transition-all sm:text-xl",
-        !verdict && !selected && "border-hairline bg-white",
-        !verdict && !selected && !locked && "hover:-translate-y-0.5 hover:border-kid-skyDeep",
-        selected && "border-kid-skyDeep bg-kid-sky",
-        verdict === "right" && "animate-pop-in border-kid-mintDeep bg-kid-mint",
-        verdict === "wrong" && "animate-nudge border-kid-coralDeep bg-kid-coral",
+        "flex min-h-[64px] w-full items-center gap-3 rounded-3xl border-[3px] px-4 py-3 text-left text-lg font-bold shadow-tight transition-all sm:text-xl",
+        !verdict && !selected && "border-line-strong bg-white",
+        !verdict && !selected && !locked && "hover:-translate-y-0.5 hover:border-tonle-400",
+        selected && "border-tonle-600 bg-tonle-50",
+        verdict === "right" && "animate-pop-in border-light bg-light-soft shadow-glow",
+        verdict === "wrong" && "animate-nudge border-tonle-300 bg-tonle-50",
         locked && "cursor-default",
       )}
     >
@@ -187,9 +187,9 @@ function MatchCard({
         className={cn(
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm",
           verdict === "right"
-            ? "bg-kid-mintDeep text-white"
+            ? "bg-light text-tonle-950"
             : verdict === "wrong"
-              ? "bg-kid-coralDeep text-white"
+              ? "bg-tonle-600 text-white"
               : badge !== null
                 ? PAIR_TONES[badge % PAIR_TONES.length]
                 : "border-2 border-dashed border-hairline",

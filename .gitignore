@@ -24,3 +24,9 @@ replay_pid*.log
 
 # Checkpoint archives, superseded by git history
 *.zip
+
+# Impeccable working files (decision pages, reviews)
+.impeccable/questions/
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/decision-*.json

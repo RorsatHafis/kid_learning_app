@@ -64,9 +64,9 @@ export function QuestionView({
     default:
       // A question type newer than this client: say so rather than fake an interaction.
       return (
-        <div role="status" className="rounded-3xl border-2 border-dashed border-hairline bg-kid-cream px-6 py-8 text-center">
+        <div role="status" className="rounded-[20px] border-2 border-dashed border-line bg-tonle-50 px-6 py-8 text-center">
           <p className="text-lg font-bold">This kind of question isn't ready yet.</p>
-          <p className="mt-1 text-muted">Tap “My journey” to go back for now.</p>
+          <p className="mt-1 text-ink-soft">Tap “My path” to go back for now.</p>
         </div>
       );
   }
@@ -125,12 +125,12 @@ function Choices({
             aria-disabled={locked}
             onClick={() => choose(choice.value)}
             className={cn(
-              "group relative flex min-h-[72px] items-center gap-4 rounded-3xl border-[3px] px-5 py-4 text-left text-xl font-extrabold shadow-tight transition-all",
-              !answered && !isPicked && "border-hairline bg-white hover:-translate-y-0.5 hover:border-kid-skyDeep",
-              !answered && isPicked && "border-kid-skyDeep bg-kid-sky",
-              isCorrect && "border-kid-mintDeep bg-kid-mint animate-pop-in",
-              isWrongPick && "border-kid-coralDeep bg-kid-coral animate-nudge",
-              answered && !isCorrect && !isWrongPick && "border-hairline bg-white opacity-50",
+              "group relative flex min-h-[72px] items-center gap-4 rounded-3xl border-[3px] px-5 py-4 text-left text-xl font-bold shadow-tight transition-all",
+              !answered && !isPicked && "border-line-strong bg-white hover:-translate-y-0.5 hover:border-tonle-400",
+              !answered && isPicked && "border-tonle-600 bg-tonle-50",
+              isCorrect && "border-light bg-light-soft shadow-glow animate-pop-in",
+              isWrongPick && "border-tonle-300 bg-tonle-50 animate-nudge",
+              answered && !isCorrect && !isWrongPick && "border-line bg-white opacity-50",
               "disabled:cursor-default",
             )}
           >
@@ -138,7 +138,7 @@ function Choices({
               aria-hidden
               className={cn(
                 "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base",
-                isCorrect ? "bg-kid-mintDeep text-white" : isWrongPick ? "bg-kid-coralDeep text-white" : "bg-kid-cream text-muted",
+                isCorrect ? "bg-light text-tonle-950" : isWrongPick ? "bg-tonle-600 text-white" : "bg-tonle-50 text-tonle-700",
               )}
             >
               {isCorrect ? <Check size={20} strokeWidth={3} /> : isWrongPick ? <X size={20} strokeWidth={3} /> : index + 1}
@@ -199,17 +199,17 @@ function FreeResponse({
         onChange={(e) => setValue(numeric ? e.target.value.replace(/[^0-9.,-]/g, "") : e.target.value)}
         placeholder={numeric ? "Type a number" : "Type your answer"}
         className={cn(
-          "min-h-[72px] flex-1 rounded-3xl border-[3px] px-6 text-center text-3xl font-extrabold outline-none transition-colors",
-          !answered && "border-hairline bg-white focus:border-kid-skyDeep",
-          answered && result.correct && "border-kid-mintDeep bg-kid-mint",
-          answered && !result.correct && "border-kid-coralDeep bg-kid-coral animate-nudge",
+          "min-h-[72px] flex-1 rounded-3xl border-[3px] px-6 text-center text-3xl font-bold outline-none transition-colors",
+          !answered && "border-line-strong bg-white focus:border-tonle-600",
+          answered && result.correct && "border-light bg-light-soft shadow-glow",
+          answered && !result.correct && "border-tonle-300 bg-tonle-50 animate-nudge",
         )}
       />
       {!answered && (
         <button
           type="submit"
           disabled={disabled || !value.trim()}
-          className="min-h-[72px] rounded-3xl bg-kid-skyDeep px-10 text-xl font-extrabold text-white shadow-soft transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+          className="min-h-[72px] rounded-[20px] bg-tonle-900 px-10 text-xl font-bold text-white transition-transform duration-150 ease-out hover:bg-tonle-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
         >
           Check
         </button>

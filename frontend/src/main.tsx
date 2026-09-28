@@ -3,14 +3,8 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 // Fonts are served from this app, never a third party: loading them from Google would send
 // every visitor's address (children's included) to Google on each page view.
-import "@fontsource/rubik/400.css";
-import "@fontsource/rubik/500.css";
-import "@fontsource/rubik/600.css";
-import "@fontsource/rubik/700.css";
-import "@fontsource/rubik/800.css";
-import "@fontsource/noto-sans-khmer/400.css";
-import "@fontsource/noto-sans-khmer/600.css";
-import "@fontsource/noto-sans-khmer/700.css";
+import "@fontsource-variable/bricolage-grotesque/opsz.css";
+import "@fontsource-variable/kantumruy-pro/index.css";
 import "./index.css";
 
 // The client-side enrollment pointer this key held was replaced by the server's

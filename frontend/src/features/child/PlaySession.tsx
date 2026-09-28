@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowRight, Map as MapIcon } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -175,9 +175,9 @@ export function PlaySession() {
       return shell(<Trouble onRetry={loadNext} line={phase.message} />);
     case "caught-up":
       return shell(
-        <div className="flex flex-col items-center gap-6 pt-10 text-center">
-          <BuddySays mood="cheer" size={140} tone="sun">
-            You finished everything here for now! Come back soon for more.
+        <div className="flex flex-col items-center gap-8 px-6 pt-24 text-center">
+          <BuddySays mood="cheer" size={150} tone="night">
+            You lit every book here for now! Come back soon for more.
           </BuddySays>
           <JourneyLink href={journeyHref} solid />
         </div>,
@@ -223,12 +223,46 @@ function JourneyLink({ href, solid }: { href: string; solid?: boolean }) {
     <Link
       to={href}
       className={cn(
-        "flex min-h-12 items-center justify-center gap-2 rounded-pill px-7 py-3 text-base font-extrabold shadow-tight",
-        solid ? "bg-kid-skyDeep text-white" : "bg-white text-ink hover:bg-kid-cream",
+        "flex min-h-14 items-center justify-center gap-2 rounded-pill px-7 text-base font-semibold transition-colors duration-150 ease-out",
+        solid ? "bg-white text-tonle-900 hover:bg-tonle-50" : "text-tonle-700 ring-1 ring-tonle-200 hover:bg-tonle-50",
       )}
     >
-      <MapIcon size={20} aria-hidden /> My journey
+      <BookOpen size={19} aria-hidden /> My path
     </Link>
+  );
+}
+
+/** The page the child reads from: warm book paper floating over the dimmed world. */
+function Page({ children, className, labelledBy }: { children: React.ReactNode; className?: string; labelledBy: string }) {
+  return (
+    <section
+      aria-labelledby={labelledBy}
+      className={cn(
+        "relative mx-auto w-full max-w-3xl rounded-[30px] bg-[#FFFBF3] text-ink shadow-lift ring-1 ring-[#EADFCB]",
+        "before:pointer-events-none before:absolute before:inset-y-6 before:left-0 before:w-3 before:rounded-r-full before:bg-gradient-to-r before:from-[#E7D9BF] before:to-transparent",
+        className,
+      )}
+    >
+      {children}
+    </section>
+  );
+}
+
+/** The activity's questions as small books that light up as they are answered. */
+function Books({ total, lit, current, label }: { total: number; lit: number; current: number | null; label: string }) {
+  return (
+    <div className="flex items-center gap-2" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={lit} aria-label={label}>
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className={cn(
+            "h-3.5 w-7 rounded-[4px] transition-all duration-300 ease-out",
+            i < lit ? "bg-light shadow-[0_0_14px_rgba(255,210,122,0.75)]" : i === current ? "bg-white/70" : "bg-white/20",
+          )}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -245,32 +279,37 @@ function Intro({
 }) {
   const startRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => startRef.current?.focus(), []);
+  const n = activity.items.length;
   return (
-    <section
-      aria-labelledby="activity-title"
-      className="mx-auto flex max-w-2xl animate-rise-in flex-col items-center gap-6 rounded-[36px] bg-white p-8 text-center shadow-soft sm:p-12"
-    >
-      <LearningBuddy mood="happy" size={140} />
-      {reason && <p className="rounded-pill bg-kid-lavender px-4 py-1.5 text-sm font-bold text-kid-lavenderDeep">{reason}</p>}
-      <h1 id="activity-title" className="text-3xl font-extrabold sm:text-4xl">
-        {activity.title}
-      </h1>
-      {activity.instructions && <p className="text-lg font-semibold text-muted">{activity.instructions}</p>}
-      <p className="text-sm font-bold uppercase tracking-wide text-muted">
-        {activity.items.length} {activity.items.length === 1 ? "question" : "questions"}
-      </p>
-      <div className="flex flex-col-reverse items-center gap-3 sm:flex-row">
-        <JourneyLink href={journeyHref} />
-        <button
-          ref={startRef}
-          type="button"
-          onClick={onStart}
-          className="flex min-h-14 items-center gap-2 rounded-pill bg-kid-skyDeep px-10 py-4 text-xl font-extrabold text-white shadow-soft transition-transform hover:-translate-y-0.5"
-        >
-          Let's go <ArrowRight size={22} aria-hidden />
-        </button>
-      </div>
-    </section>
+    <div className="px-4 pb-16 pt-28 sm:pt-20">
+      <Page labelledBy="activity-title" className="animate-rise-in px-6 pb-10 pt-8 text-center sm:px-14 sm:pb-14 sm:pt-10">
+        <LearningBuddy mood="happy" size={132} className="mx-auto -mt-24 sm:-mt-28" />
+        {reason && <p className="mx-auto mt-2 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-700">{reason}</p>}
+        <h1 id="activity-title" className="mt-5 font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+          {activity.title}
+        </h1>
+        {activity.instructions && <p className="mx-auto mt-3 max-w-lg text-lg font-medium leading-relaxed text-ink-soft">{activity.instructions}</p>}
+        <p className="mt-6 flex items-center justify-center gap-2 text-sm font-semibold text-ink-soft">
+          <span className="flex gap-1" aria-hidden>
+            {Array.from({ length: n }, (_, i) => (
+              <span key={i} className="h-3 w-5 rounded-[3px] bg-tonle-200" />
+            ))}
+          </span>
+          {n} {n === 1 ? "question" : "questions"}
+        </p>
+        <div className="mt-8 flex flex-col-reverse items-center justify-center gap-3 sm:flex-row">
+          <JourneyLink href={journeyHref} />
+          <button
+            ref={startRef}
+            type="button"
+            onClick={onStart}
+            className="flex min-h-14 items-center gap-2 rounded-pill bg-light px-10 text-xl font-bold text-tonle-950 shadow-glow transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.97]"
+          >
+            Let&apos;s go <ArrowRight size={22} aria-hidden />
+          </button>
+        </div>
+      </Page>
+    </div>
   );
 }
 
@@ -349,90 +388,81 @@ function Question({
   }
 
   const total = activity.items.length;
+  const answeredHere = result ? 1 : 0;
   return (
-    <section aria-labelledby="question-prompt" className="mx-auto flex max-w-3xl flex-col gap-6">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col gap-5 px-4 pb-16 pt-6 sm:pt-10">
+      <div className="mx-auto flex w-full max-w-3xl items-center gap-4">
         <Link
           to={journeyHref}
           aria-label="Back to my journey (your progress is saved)"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-muted shadow-tight hover:text-ink"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-tonle-950/55 text-tonle-100 ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
         >
-          <MapIcon size={20} aria-hidden />
+          <BookOpen size={19} aria-hidden />
         </Link>
-        <div
-          className="flex flex-1 gap-1.5"
-          role="progressbar"
-          aria-valuemin={1}
-          aria-valuemax={total}
-          aria-valuenow={index + 1}
-          aria-label={`Question ${index + 1} of ${total}`}
-        >
-          {activity.items.map((q, i) => (
-            <span
-              key={q.questionVersionId}
-              className={cn(
-                "h-3 flex-1 rounded-pill transition-colors",
-                i < index || (i === index && result) ? "bg-kid-mintDeep" : i === index ? "bg-kid-skyDeep" : "bg-white",
-              )}
-            />
-          ))}
-        </div>
-        <span className="text-sm font-extrabold text-muted" aria-hidden>
-          {index + 1}/{total}
+        <Books total={total} lit={index + answeredHere} current={index} label={`Question ${index + 1} of ${total}`} />
+        <span className="ml-auto text-sm font-semibold text-tonle-100" aria-hidden>
+          {index + 1} / {total}
         </span>
       </div>
 
-      <div className="flex animate-rise-in flex-col gap-6 rounded-[36px] bg-white p-6 shadow-soft sm:p-10">
-        <p className="text-sm font-bold text-muted">{activity.title}</p>
-        <h1 id="question-prompt" className="text-3xl font-extrabold leading-snug sm:text-4xl">
-          {item.prompt}
-        </h1>
-        <QuestionView item={item} onAnswer={handleAnswer} disabled={isSubmitting} result={result} />
-        {submitError && (
-          <p role="alert" className="text-base font-bold text-kid-coralDeep">
-            {submitError}
-          </p>
-        )}
-      </div>
-
-      {result && (
-        <div
-          role="status"
-          className={cn(
-            "flex animate-rise-in flex-col items-center gap-4 rounded-[32px] p-5 sm:flex-row sm:p-6",
-            result.correct ? "bg-kid-mint" : "bg-kid-peach",
-          )}
-        >
-          <LearningBuddy mood={result.correct ? "cheer" : "encourage"} size={96} />
-          <div className="flex-1 text-center sm:text-left">
-            <p className={cn("text-2xl font-extrabold", result.correct ? "text-kid-mintDeep" : "text-kid-peachDeep")}>
-              {result.correct ? "You got it!" : "Good try!"}
-            </p>
-            <p className="text-base font-semibold text-ink">
-              {result.correct
-                ? "That's right."
-                : result.correctAnswer?.matches?.length
-                  ? "Some matches got mixed up — the cards show where each one goes. Let's keep going!"
-                  : result.correctAnswer?.text
-                  ? `The answer is ${result.correctAnswer.text}. Let's keep going!`
-                  : "That wasn't quite it — let's keep going!"}
-            </p>
-          </div>
-          <button
-            ref={continueRef}
-            type="button"
-            onClick={onContinue}
-            className="flex min-h-14 items-center gap-2 rounded-pill bg-kid-skyDeep px-9 py-3 text-lg font-extrabold text-white shadow-soft"
+      <Page labelledBy="question-prompt" className={cn("animate-rise-in overflow-hidden transition-shadow duration-500", result?.correct && "shadow-glow")}>
+        <div className="flex flex-col gap-7 px-6 pb-8 pt-7 sm:px-12 sm:pb-10 sm:pt-9">
+          <p className="text-sm font-semibold text-ink-faint">{activity.title}</p>
+          <h1
+            id="question-prompt"
+            className="font-display text-[clamp(2.25rem,1.6rem+3vw,3.75rem)] font-bold leading-[1.08] tracking-[-0.02em] text-tonle-950"
+            style={{ fontVariationSettings: '"opsz" 72' }}
           >
-            {index + 1 < total ? "Next" : "Finish"} <ArrowRight size={20} aria-hidden />
-          </button>
+            {item.prompt}
+          </h1>
+          <QuestionView item={item} onAnswer={handleAnswer} disabled={isSubmitting} result={result} />
+          {submitError && (
+            <p role="alert" className="text-base font-semibold text-brick-deep">
+              {submitError}
+            </p>
+          )}
         </div>
-      )}
-    </section>
+
+        {result && (
+          <div
+            role="status"
+            className={cn(
+              "flex animate-rise-in flex-col items-center gap-4 border-t px-6 py-5 sm:flex-row sm:px-12",
+              result.correct ? "border-light/40 bg-light-soft" : "border-tonle-100 bg-tonle-50",
+            )}
+          >
+            <LearningBuddy mood={result.correct ? "cheer" : "encourage"} size={92} className="-my-2" />
+            <div className="flex-1 text-center sm:text-left">
+              <p className={cn("font-display text-2xl font-bold", result.correct ? "text-light-deep" : "text-tonle-800")}>
+                {result.correct ? "You got it!" : "Good try!"}
+              </p>
+              <p className="text-base font-medium text-ink">
+                {result.correct
+                  ? "That's right."
+                  : result.correctAnswer?.matches?.length
+                    ? "Some matches got mixed up — the cards show where each one goes. Let's keep going!"
+                    : result.correctAnswer?.text
+                      ? `The answer is ${result.correctAnswer.text}. Let's keep going!`
+                      : "That wasn't quite it — let's keep going!"}
+              </p>
+            </div>
+            <button
+              ref={continueRef}
+              type="button"
+              onClick={onContinue}
+              className="flex min-h-14 items-center gap-2 rounded-pill bg-tonle-900 px-9 text-lg font-semibold text-white transition-transform duration-150 ease-out hover:bg-tonle-800 active:scale-[0.97]"
+            >
+              {index + 1 < total ? "Next" : "Finish"} <ArrowRight size={20} aria-hidden />
+            </button>
+          </div>
+        )}
+      </Page>
+    </div>
   );
 }
 
-const CONFETTI = ["#FFD166", "#9BE3C4", "#B9A6FF", "#FF8A80", "#8EC5FF", "#FFB38A"];
+// Motes of light rising from the lit book (the world's own celebration, not confetti).
+const MOTES = Array.from({ length: 14 }, (_, i) => ({ left: 18 + ((i * 53) % 64), delay: (i % 7) * 140, size: 6 + (i % 3) * 3 }));
 
 function Completed({
   phase,
@@ -449,49 +479,58 @@ function Completed({
   useEffect(() => keepGoingRef.current?.focus(), []);
 
   return (
-    <section
-      aria-labelledby="done-title"
-      className="relative mx-auto flex max-w-2xl animate-pop-in flex-col items-center gap-6 overflow-hidden rounded-[36px] bg-white p-8 text-center shadow-soft sm:p-12"
-    >
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-0">
-        {Array.from({ length: 18 }, (_, i) => (
-          <span
-            key={i}
-            className="absolute top-0 h-3 w-2 rounded-sm motion-safe:animate-confetti-fall motion-reduce:hidden"
-            style={{ left: `${(i * 97) % 100}%`, background: CONFETTI[i % CONFETTI.length], animationDelay: `${(i % 6) * 90}ms` }}
-          />
-        ))}
-      </div>
-      <LearningBuddy mood="cheer" size={150} />
-      <h1 id="done-title" className="text-3xl font-extrabold sm:text-4xl">
-        {allRight ? "Perfect!" : "Activity complete!"}
-      </h1>
-      <p className="text-lg font-semibold text-muted">{title}</p>
-      {total > 0 && (
-        <p className="rounded-pill bg-kid-mint px-5 py-2 text-lg font-extrabold text-kid-mintDeep">
-          You got {correct} of {total} right
-        </p>
-      )}
-      {next && (
-        <div className="w-full rounded-3xl bg-kid-lavender p-5 text-left">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-kid-lavenderDeep">Up next</p>
-          <p className="text-xl font-extrabold">{next.title}</p>
-          <p className="font-semibold text-ink">{childReason(next)}</p>
+    <div className="px-4 pb-16 pt-28 sm:pt-20">
+      <Page labelledBy="done-title" className="animate-pop-in px-6 pb-10 pt-8 text-center sm:px-14 sm:pb-12">
+        <div aria-hidden className="relative mx-auto -mt-24 h-44 w-60 sm:-mt-28">
+          <span className="absolute inset-x-6 bottom-6 h-24 rounded-full bg-light/60 blur-2xl motion-safe:animate-glow-breathe" />
+          {MOTES.map((m, i) => (
+            <span
+              key={i}
+              className="absolute bottom-10 rounded-full bg-light-glow shadow-[0_0_10px_rgba(255,210,122,0.9)] motion-safe:animate-drift-up motion-reduce:hidden"
+              style={{ left: `${m.left}%`, width: m.size, height: m.size, animationDelay: `${m.delay}ms` }}
+            />
+          ))}
+          <svg viewBox="0 0 240 150" className="absolute inset-x-0 bottom-0 animate-light-up">
+            <path d="M120 60 C96 40 48 34 14 44 L14 118 C48 108 96 114 120 138 C144 114 192 108 226 118 L226 44 C192 34 144 40 120 60 Z" fill="#FFD27A" />
+            <path d="M120 60 C98 46 56 42 26 50 L26 110 C56 102 98 108 120 128 Z" fill="#FFF3D6" />
+            <path d="M120 60 C142 46 184 42 214 50 L214 110 C184 102 142 108 120 128 Z" fill="#FFF6E2" />
+            <path d="M120 60 L120 130" stroke="#E0B070" strokeWidth="2" />
+          </svg>
+          <LearningBuddy mood="cheer" size={96} className="absolute -right-6 top-0" />
         </div>
-      )}
-      <div className="flex flex-col-reverse items-center gap-3 sm:flex-row">
-        <JourneyLink href={journeyHref} solid={next === null} />
-        {next !== null && (
-          <button
-            ref={keepGoingRef}
-            type="button"
-            onClick={onKeepGoing}
-            className="flex min-h-14 items-center gap-2 rounded-pill bg-kid-skyDeep px-10 py-4 text-xl font-extrabold text-white shadow-soft"
-          >
-            Keep going <ArrowRight size={22} aria-hidden />
-          </button>
+        <h1 id="done-title" className="mt-4 font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+          {allRight ? "Perfect!" : "Activity complete!"}
+        </h1>
+        <p className="mt-1 text-lg font-medium text-ink-soft">You lit “{title}”.</p>
+        {total > 0 && (
+          <p className="mx-auto mt-5 w-fit rounded-pill bg-light-soft px-5 py-2 text-lg font-bold text-light-deep">
+            You got {correct} of {total} right
+          </p>
         )}
-      </div>
-    </section>
+        {next && (
+          <div className="mt-7 flex items-center gap-4 rounded-[20px] bg-tonle-50 p-5 text-left ring-1 ring-tonle-100">
+            <span aria-hidden className="h-12 w-16 shrink-0 rounded-[6px] bg-tonle-700 shadow-[inset_8px_0_0_#182E66]" />
+            <div>
+              <p className="text-sm font-semibold text-tonle-600">Up next</p>
+              <p className="font-display text-xl font-bold text-tonle-950">{next.title}</p>
+              <p className="font-medium text-ink-soft">{childReason(next)}</p>
+            </div>
+          </div>
+        )}
+        <div className="mt-8 flex flex-col-reverse items-center justify-center gap-3 sm:flex-row">
+          <JourneyLink href={journeyHref} />
+          {next !== null && (
+            <button
+              ref={keepGoingRef}
+              type="button"
+              onClick={onKeepGoing}
+              className="flex min-h-14 items-center gap-2 rounded-pill bg-light px-10 text-xl font-bold text-tonle-950 shadow-glow transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.97]"
+            >
+              Keep going <ArrowRight size={22} aria-hidden />
+            </button>
+          )}
+        </div>
+      </Page>
+    </div>
   );
 }

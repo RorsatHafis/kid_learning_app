@@ -1,51 +1,65 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Volume2, VolumeX, Lock } from "lucide-react";
-import logo from "@/assets/logo/Bookeyond_Kid_Primary.svg";
+import { BrandMark } from "@/components/brand/Logo";
+import { BlueHour } from "@/features/world/BlueHour";
 import { isMuted, setMuted } from "@/features/buddy/sound";
+import { cn } from "@/lib/utils/cn";
 
 /**
- * The child's space: full-bleed and deliberately unlike the parent dashboard
- * (CLAUDE.md §19). There is no child account — a child plays inside a parent's
- * session (PlatformRole has no CHILD) — so leaving for the grown-up area goes
- * through a press-and-hold gate. The gate is friction against a child wandering
- * into parent settings, not a security boundary: every parent action is still
+ * The child's space: the child is inside the blue-hour world the whole time, with a few
+ * quiet controls floating over it (CLAUDE.md §19). There is no child account — a child
+ * plays inside a parent's session (PlatformRole has no CHILD) — so leaving for the
+ * grown-up area goes through a press-and-hold gate. The gate is friction against a child
+ * wandering into parent settings, not a security boundary: every parent action is still
  * authorized on the server.
+ *
+ * `backdrop` draws the world behind the content (activities); the home screen draws its own
+ * world, with the path of books in it, so it turns this off.
  */
 export function ChildSpaceLayout({
   childId,
   childName,
   children,
   home,
+  backdrop = true,
 }: {
   childId: string;
   childName?: string;
   children: ReactNode;
   /** Where the top-left "home" goes: the child's journey. */
   home?: string;
+  backdrop?: boolean;
 }) {
   return (
-    <div className="min-h-screen bg-world font-display text-ink">
-      <header className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 pt-4 sm:px-8 sm:pt-6">
-        <Link
-          to={home ?? `/learn/${childId}`}
-          className="flex items-center gap-3 rounded-pill bg-white/80 py-1.5 pl-1.5 pr-4 shadow-tight backdrop-blur"
-        >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-kid-mint text-base font-extrabold text-kid-mintDeep">
+    <div className="relative min-h-[100dvh] bg-tonle-950 text-white">
+      {backdrop && (
+        <div aria-hidden className="fixed inset-0">
+          <BlueHour crop="bottom" />
+          <div className="absolute inset-0 bg-gradient-to-b from-tonle-950/55 via-tonle-950/25 to-tonle-950/60" />
+        </div>
+      )}
+      <header className="relative z-20 mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
+        <Link to={home ?? `/learn/${childId}`} className={cn(chip, "gap-2.5 py-1.5 pl-1.5 pr-4")}>
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-light text-base font-bold text-light-deep">
             {childName?.charAt(0).toUpperCase() ?? "•"}
           </span>
-          <span className="max-w-[9rem] truncate text-sm font-bold">{childName ?? "…"}</span>
+          <span className="max-w-[9rem] truncate text-sm font-semibold">{childName ?? "…"}</span>
         </Link>
-        <img src={logo} alt="Bookeyond Kid" className="hidden h-7 w-auto sm:block" />
+        <BrandMark size={34} tone="paper" className="hidden opacity-90 sm:block" title="Bookeyond Kid" />
         <div className="flex items-center gap-2">
           <SoundToggle />
           <GrownUpGate to={`/parent/children/${childId}`} />
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-8">{children}</main>
+      <div className="relative z-10">{children}</div>
     </div>
   );
 }
+
+// Quiet controls over the world: night glass only where it keeps them legible on the scene.
+const chip =
+  "flex h-11 items-center rounded-pill bg-tonle-950/55 text-white ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75";
 
 function SoundToggle() {
   const [muted, setMutedState] = useState(isMuted);
@@ -58,9 +72,9 @@ function SoundToggle() {
       }}
       aria-pressed={!muted}
       aria-label={muted ? "Sound is off. Turn sound on" : "Sound is on. Turn sound off"}
-      className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-ink shadow-tight backdrop-blur hover:bg-white"
+      className={cn(chip, "w-11 justify-center active:scale-95")}
     >
-      {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+      {muted ? <VolumeX size={19} /> : <Volume2 size={19} />}
     </button>
   );
 }
@@ -113,18 +127,19 @@ function GrownUpGate({ to }: { to: string }) {
       onBlur={cancel}
       onContextMenu={(e) => e.preventDefault()}
       aria-label="Grown-ups: press and hold to leave"
-      className="relative flex h-11 select-none items-center gap-2 overflow-hidden rounded-pill bg-white/80 px-4 text-sm font-semibold text-muted shadow-tight backdrop-blur hover:text-ink"
+      className={cn(chip, "relative select-none gap-2 overflow-hidden px-4 text-sm font-medium text-tonle-100")}
     >
       <span
         aria-hidden
-        className="absolute inset-y-0 left-0 bg-kid-lavender ease-linear"
+        className="absolute inset-y-0 left-0 bg-tonle-500/70"
         style={{
           width: holding ? "100%" : "0%",
           transitionProperty: "width",
+          transitionTimingFunction: "linear",
           transitionDuration: holding ? `${HOLD_MS}ms` : "0ms",
         }}
       />
-      <Lock size={16} className="relative" aria-hidden />
+      <Lock size={15} className="relative" aria-hidden />
       <span className="relative">{holding ? "Keep holding…" : "Grown-ups"}</span>
     </button>
   );
