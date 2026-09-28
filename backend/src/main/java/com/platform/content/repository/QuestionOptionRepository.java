@@ -10,6 +10,8 @@ public interface QuestionOptionRepository extends JpaRepository<QuestionOption, 
 
     List<QuestionOption> findByQuestionVersionIdOrderByDisplayOrderAsc(UUID questionVersionId);
 
+    List<QuestionOption> findByQuestionVersionIdInOrderByDisplayOrderAsc(java.util.Collection<UUID> questionVersionIds);
+
     void deleteByQuestionVersionId(UUID questionVersionId);
 
 }

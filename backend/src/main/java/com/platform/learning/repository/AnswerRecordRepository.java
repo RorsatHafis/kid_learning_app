@@ -3,6 +3,7 @@ package com.platform.learning.repository;
 import com.platform.learning.entity.AnswerRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,6 +11,9 @@ import java.util.UUID;
 public interface AnswerRecordRepository extends JpaRepository<AnswerRecord, UUID> {
 
     List<AnswerRecord> findByActivityAttemptId(UUID activityAttemptId);
+
+    /** Every answer of several attempts in one query (history pages, exports). */
+    List<AnswerRecord> findByActivityAttemptIdIn(Collection<UUID> activityAttemptIds);
 
     Optional<AnswerRecord> findTopByActivityAttemptIdAndQuestionVersionIdOrderByOccurredAtDesc(
             UUID activityAttemptId, UUID questionVersionId);

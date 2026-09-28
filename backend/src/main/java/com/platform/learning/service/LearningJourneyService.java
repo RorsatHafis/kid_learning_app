@@ -196,11 +196,24 @@ public class LearningJourneyService {
     @Transactional(readOnly = true)
     public List<CompletedActivity> completedActivities(UUID childId, int limit) {
         Lookups lookups = new Lookups(childId);
-        return lookups.attempts().stream()
+        List<ActivityAttempt> page = lookups.attempts().stream()
                 .filter(attempt -> attempt.getStatus() == ActivityAttemptStatus.COMPLETED)
                 .sorted(Comparator.comparing(ActivityAttempt::getCompletedAt).reversed())
                 .limit(limit)
-                .map(attempt -> completedActivity(attempt, lookups))
+                .toList();
+        // One query each for the whole page, not one per attempt (ReadQueryScalingIntegrationTests).
+        Map<UUID, List<AnswerRecord>> answers = page.isEmpty() ? Map.of()
+                : answerRecordRepository.findByActivityAttemptIdIn(page.stream().map(ActivityAttempt::getId).toList()).stream()
+                        .collect(java.util.stream.Collectors.groupingBy(AnswerRecord::getActivityAttemptId));
+        List<UUID> itemIds = page.stream().map(ActivityAttempt::getLearningPathItemId).filter(java.util.Objects::nonNull).toList();
+        Map<UUID, LearningPathItemSource> sources = new HashMap<>();
+        if (!itemIds.isEmpty()) {
+            learningPathItemRepository.findAllById(itemIds).forEach(item -> sources.put(item.getId(), item.getSource()));
+        }
+        lookups.preload(page.stream().map(ActivityAttempt::getActivityVersionId).toList());
+        return page.stream()
+                .map(attempt -> completedActivity(attempt, lookups, answers.getOrDefault(attempt.getId(), List.of()),
+                        attempt.getLearningPathItemId() == null ? null : sources.get(attempt.getLearningPathItemId())))
                 .toList();
     }
 
@@ -281,16 +294,13 @@ public class LearningJourneyService {
                 afterTitle, trigger == null ? null : trigger.getScore(), decision.getOccurredAt());
     }
 
-    private CompletedActivity completedActivity(ActivityAttempt attempt, Lookups lookups) {
+    private CompletedActivity completedActivity(ActivityAttempt attempt, Lookups lookups, List<AnswerRecord> answers,
+                                                LearningPathItemSource source) {
         ActivityVersion version = lookups.version(attempt.getActivityVersionId());
         Activity activity = lookups.activity(version.getActivityId());
-        List<AnswerRecord> answers = answerRecordRepository.findByActivityAttemptId(attempt.getId());
         int correct = (int) answers.stream().filter(AnswerRecord::isCorrect).count();
-        LearningPathItemSource source = attempt.getLearningPathItemId() == null ? null
-                : learningPathItemRepository.findById(attempt.getLearningPathItemId())
-                        .map(LearningPathItem::getSource).orElse(null);
 
-        DecisionSummary decision = adaptationDecisionRepository.findByActivityAttemptId(attempt.getId())
+        DecisionSummary decision = lookups.decisionOf(attempt.getId())
                 .map(recorded -> new DecisionSummary(recorded.getDecisionType(),
                         lookups.skill(contextId(recorded, "governingSkillId")),
                         lookups.skill(contextId(recorded, "targetSkillId")),
@@ -299,7 +309,7 @@ public class LearningJourneyService {
                                         .getActivityId()).getTitle()))
                 .orElse(null);
 
-        String subjectName = subjectRepository.findById(activity.getSubjectId()).map(Subject::getName).orElse(null);
+        String subjectName = lookups.subjectName(activity.getSubjectId());
         return new CompletedActivity(attempt.getId(), version.getId(), activity.getTitle(), subjectName, source,
                 attempt.getScore(), correct, answers.size(), attempt.getStartedAt(), attempt.getCompletedAt(),
                 lookups.skillsOf(activity.getId()), decision);
@@ -351,11 +361,88 @@ public class LearningJourneyService {
             return attempts().stream().filter(attempt -> attempt.getId().equals(attemptId)).findFirst().orElse(null);
         }
 
+        /**
+         * Loads the versions, activities, their skills and the skills themselves for a whole
+         * page at once (plus the activities the page's recorded decisions selected), so a long
+         * history costs a fixed number of queries.
+         */
+        void preload(List<UUID> activityVersionIds) {
+            java.util.Set<UUID> versionIds = new java.util.HashSet<>(activityVersionIds);
+            for (AdaptationDecision decision : decisions()) {
+                if (decision.getSelectedActivityVersionId() != null) {
+                    versionIds.add(decision.getSelectedActivityVersionId());
+                }
+            }
+            versionIds.removeAll(versions.keySet());
+            if (!versionIds.isEmpty()) {
+                activityVersionRepository.findAllById(versionIds).forEach(v -> versions.put(v.getId(), v));
+            }
+            java.util.Set<UUID> activityIds = new java.util.HashSet<>();
+            versions.values().forEach(v -> activityIds.add(v.getActivityId()));
+            activityIds.removeAll(activities.keySet());
+            if (!activityIds.isEmpty()) {
+                activityRepository.findAllById(activityIds).forEach(a -> activities.put(a.getId(), a));
+                Map<UUID, List<UUID>> skillIdsByActivity = new HashMap<>();
+                for (ActivitySkill link : activitySkillRepository.findByActivityIdIn(activityIds)) {
+                    skillIdsByActivity.computeIfAbsent(link.getActivityId(), key -> new java.util.ArrayList<>()).add(link.getSkillId());
+                }
+                java.util.Set<UUID> skillIds = new java.util.HashSet<>();
+                skillIdsByActivity.values().forEach(skillIds::addAll);
+                for (AdaptationDecision decision : decisions()) {
+                    for (String key : List.of("governingSkillId", "targetSkillId")) {
+                        UUID id = contextId(decision, key);
+                        if (id != null) {
+                            skillIds.add(id);
+                        }
+                    }
+                }
+                skillIds.removeAll(skills.keySet());
+                if (!skillIds.isEmpty()) {
+                    skillRepository.findAllById(skillIds).forEach(skill -> skills.put(skill.getId(), new SkillRef(skill.getId(), skill.getName())));
+                }
+                for (UUID activityId : activityIds) {
+                    skillsByActivity.put(activityId, skillIdsByActivity.getOrDefault(activityId, List.of()).stream()
+                            .map(this::skill).filter(java.util.Objects::nonNull)
+                            .sorted(Comparator.comparing(SkillRef::name)).toList());
+                }
+            }
+        }
+
+        private Map<UUID, AdaptationDecision> decisionsByAttempt;
+        private final Map<UUID, String> subjectNames = new HashMap<>();
+
+        /** The decision recorded when this attempt was completed (at most one per attempt, V36). */
+        Optional<AdaptationDecision> decisionOf(UUID attemptId) {
+            if (decisionsByAttempt == null) {
+                decisionsByAttempt = new HashMap<>();
+                for (AdaptationDecision decision : decisions()) {
+                    if (decision.getActivityAttemptId() != null) {
+                        decisionsByAttempt.putIfAbsent(decision.getActivityAttemptId(), decision);
+                    }
+                }
+            }
+            return Optional.ofNullable(decisionsByAttempt.get(attemptId));
+        }
+
+        String subjectName(UUID subjectId) {
+            return subjectNames.computeIfAbsent(subjectId,
+                    key -> subjectRepository.findById(key).map(Subject::getName).orElse(null));
+        }
+
+        private List<AdaptationDecision> decisions;
+
+        private List<AdaptationDecision> decisions() {
+            if (decisions == null) {
+                decisions = adaptationDecisionRepository.findByChildIdOrderByOccurredAtAsc(childId);
+            }
+            return decisions;
+        }
+
         /** The earliest decision that placed this item (a later decision may reuse a waiting placement). */
         Optional<AdaptationDecision> decisionPlacing(UUID learningPathItemId) {
             if (decisionsByPlacedItem == null) {
                 decisionsByPlacedItem = new LinkedHashMap<>();
-                for (AdaptationDecision decision : adaptationDecisionRepository.findByChildIdOrderByOccurredAtAsc(childId)) {
+                for (AdaptationDecision decision : decisions()) {
                     if (decision.getLearningPathItemId() != null) {
                         decisionsByPlacedItem.putIfAbsent(decision.getLearningPathItemId(), decision);
                     }

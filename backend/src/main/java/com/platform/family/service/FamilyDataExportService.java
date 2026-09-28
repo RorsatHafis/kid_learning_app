@@ -140,11 +140,34 @@ public class FamilyDataExportService {
         Map<UUID, String> activityTitles = new HashMap<>();
         Map<UUID, QuestionVersion> questions = new HashMap<>();
         Map<UUID, List<QuestionOption>> options = new HashMap<>();
-        return attempts.findByChildIdOrderByStartedAtDesc(childId).stream()
+        List<ActivityAttempt> childAttempts = attempts.findByChildIdOrderByStartedAtDesc(childId);
+        // All answers of all attempts in one query, not one per attempt.
+        Map<UUID, List<AnswerRecord>> byAttempt = childAttempts.isEmpty() ? Map.of()
+                : answers.findByActivityAttemptIdIn(childAttempts.stream().map(ActivityAttempt::getId).toList()).stream()
+                        .collect(Collectors.groupingBy(AnswerRecord::getActivityAttemptId));
+        // The activities' titles, once for all attempts.
+        List<UUID> versionIds = childAttempts.stream().map(ActivityAttempt::getActivityVersionId).distinct().toList();
+        if (!versionIds.isEmpty()) {
+            Map<UUID, UUID> activityOfVersion = new HashMap<>();
+            activityVersions.findAllById(versionIds).forEach(v -> activityOfVersion.put(v.getId(), v.getActivityId()));
+            Map<UUID, String> titles = new HashMap<>();
+            activities.findAllById(activityOfVersion.values()).forEach(a -> titles.put(a.getId(), a.getTitle()));
+            versionIds.forEach(v -> activityTitles.put(v, titles.get(activityOfVersion.get(v))));
+        }
+        // Likewise the questions and their choices, once for all answers.
+        List<UUID> questionIds = byAttempt.values().stream().flatMap(List::stream).map(AnswerRecord::getQuestionVersionId)
+                .distinct().toList();
+        if (!questionIds.isEmpty()) {
+            questionVersions.findAllById(questionIds).forEach(q -> questions.put(q.getId(), q));
+            questionOptions.findByQuestionVersionIdInOrderByDisplayOrderAsc(questionIds)
+                    .forEach(o -> options.computeIfAbsent(o.getQuestionVersionId(), key -> new java.util.ArrayList<>()).add(o));
+            questionIds.forEach(id -> options.putIfAbsent(id, List.of()));
+        }
+        return childAttempts.stream()
                 .sorted(Comparator.comparing(ActivityAttempt::getStartedAt))
                 .flatMap(attempt -> {
                     String title = activityTitles.computeIfAbsent(attempt.getActivityVersionId(), this::activityTitle);
-                    return answers.findByActivityAttemptId(attempt.getId()).stream()
+                    return byAttempt.getOrDefault(attempt.getId(), List.of()).stream()
                             .sorted(Comparator.comparing(AnswerRecord::getOccurredAt))
                             .map(record -> {
                                 Optional<QuestionVersion> question = Optional.ofNullable(questions.computeIfAbsent(
