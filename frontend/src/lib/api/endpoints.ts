@@ -55,6 +55,8 @@ export const accountApi = {
   signOutEverywhere: () => apiClient.post<{ sessionsEnded: number }>("/account/sign-out-everywhere"),
   // identity/web/AccountRecoveryController.java — 409 when already confirmed, 429 when sent too recently.
   resendVerification: () => apiClient.post<void>("/account/email-verification"),
+  // family/web/FamilyDataExportController.java — everything held about this account and its family's children.
+  dataExport: () => apiClient.get<unknown>("/account/data-export"),
 };
 
 // child/web/ChildController.java

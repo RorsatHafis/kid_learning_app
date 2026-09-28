@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, LogOut, MailCheck, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Download, LogOut, MailCheck, ShieldCheck } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { accountApi } from "@/lib/api/endpoints";
 import { ApiError, waitInWords } from "@/lib/api/ApiError";
@@ -52,6 +52,7 @@ export function AccountPage() {
 
       <ChangePassword />
       <SignOutEverywhere />
+      {profile.data?.platformRole === "PARENT" && <YourData />}
     </div>
   );
 }
@@ -266,6 +267,64 @@ function SignOutEverywhere() {
             <LogOut size={16} aria-hidden /> Sign out everywhere
           </Button>
         )}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * A copy of everything Bookeyond Kid holds about this parent and their children, as a file to
+ * keep. The server builds it from the signed-in account alone and records that it was taken.
+ */
+function YourData() {
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  async function download() {
+    setWorking(true);
+    setError(null);
+    setDone(false);
+    try {
+      const data = await accountApi.dataExport();
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `bookeyond-kid-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setDone(true);
+    } catch {
+      setError("We couldn't prepare your file. Please try again.");
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  return (
+    <section aria-labelledby="your-data" className="flex flex-col gap-4">
+      <SectionTitle id="your-data" title="Your data" subtitle="Your family's learning belongs to your family." />
+      <div className="flex max-w-xl flex-col gap-4 rounded-3xl border-[1.5px] border-hairline bg-white p-6 shadow-soft">
+        <p className="text-sm text-muted">
+          Download a copy of everything Bookeyond Kid holds about you and your children: your account, each child&apos;s
+          profile, learning paths, skills and the evidence behind them, every activity and answer, and the insights
+          you&apos;ve been shown. It&apos;s a JSON file, a standard format that other services and data tools can read.
+        </p>
+        {error && (
+          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+            {error}
+          </p>
+        )}
+        {done && (
+          <p role="status" className="text-sm font-medium text-brand-greenStrong">
+            Your file has been downloaded.
+          </p>
+        )}
+        <Button size="md" variant="outline" onClick={download} disabled={working} className="w-fit">
+          <Download size={16} aria-hidden /> {working ? "Preparing…" : "Download my family's data"}
+        </Button>
       </div>
     </section>
   );
