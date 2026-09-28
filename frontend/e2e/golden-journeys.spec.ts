@@ -41,7 +41,7 @@ test.describe("golden journeys", () => {
     await page.getByRole("link", { name: /Sokha/ }).first().click();
     // A child of this age is enrolled in the published path for their age group automatically;
     // otherwise the parent chooses one.
-    const choose = page.getByRole("button", { name: "Start this path" }).first();
+    const choose = page.getByRole("listitem").filter({ hasText: "Maths - Junior" }).getByRole("button", { name: "Start this path" });
     const upNext = page.getByText("Up next").first();
     await expect(choose.or(upNext)).toBeVisible();
     if (await choose.isVisible()) await choose.click();

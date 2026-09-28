@@ -36,6 +36,12 @@ test.describe("accessibility @phone", () => {
     await expect(page.getByRole("heading", { name: "Learning now" })).toBeVisible();
     await page.waitForLoadState("networkidle");
     await expectNoViolations(page, "child overview");
+    // With several paths for this age the parent chooses one (otherwise the child was enrolled already).
+    const choose = page.getByRole("listitem").filter({ hasText: "Maths - Junior" }).getByRole("button", { name: "Start this path" });
+    if (await choose.isVisible()) {
+      await choose.click();
+      await expect(page.getByText("Up next").first()).toBeVisible();
+    }
 
     await page.getByRole("link", { name: "Start Dara's session" }).click();
     await expect(page.getByText(/Hi, Dara/)).toBeVisible();

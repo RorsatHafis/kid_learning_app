@@ -10,7 +10,9 @@ import { defineConfig, devices } from "@playwright/test";
  *   E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD   the bootstrapped administrator
  *
  * Every test creates its own accounts with unique addresses, so runs don't interfere and
- * can be repeated against the same database.
+ * can be repeated against the same database. The Studio journey publishes a small test
+ * curriculum, so run the suite against a throwaway stack (CI starts a fresh one), never
+ * against data you want to keep.
  */
 export default defineConfig({
   testDir: "./e2e",
