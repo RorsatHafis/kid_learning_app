@@ -35,7 +35,7 @@ export function StudentDetailPage() {
               this data genuinely cannot be fetched today. FamilyAccessGuard
               (backend) only authorizes a child's PARENT family membership on
               /children/{id}/progress, /parent-insights, /streak, and every
-              activity-attempt endpoint — a TEACHER account gets a 403 from
+              activity-attempt endpoint — a TEACHER account is refused (404) by
               all of them even for a student correctly in their own class,
               confirmed against the source, not assumed. See the Teacher
               capability map for the proposed backend fix. */}

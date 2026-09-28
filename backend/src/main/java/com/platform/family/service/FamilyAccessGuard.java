@@ -5,7 +5,6 @@ import com.platform.child.repository.ChildRepository;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.family.entity.MembershipStatus;
 import com.platform.family.repository.MembershipRepository;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,10 +33,9 @@ public class FamilyAccessGuard {
 
     /**
      * Loads the child and verifies {@code accountId} has ACTIVE family access to
-     * it. Throws {@link ResourceNotFoundException} for an unknown child (404) and
-     * {@link AccessDeniedException} for a known child the account cannot access
-     * (403) - kept distinct so a caller never learns whether an unrelated child id
-     * exists from the HTTP status alone.
+     * it. A child the account can't access is answered exactly like one that doesn't
+     * exist (404, same body): a distinct 403 would tell an outsider that the id belongs
+     * to a real child (CrossFamilyAccessSweepIntegrationTests).
      */
     @Transactional(readOnly = true)
     public Child requireChildAccess(UUID accountId, UUID childId) {
@@ -49,8 +47,7 @@ public class FamilyAccessGuard {
                 .isPresent();
 
         if (!hasAccess) {
-            throw new AccessDeniedException(
-                    "Account %s does not have access to child %s".formatted(accountId, childId));
+            throw new ResourceNotFoundException("Child", childId);
         }
 
         return child;

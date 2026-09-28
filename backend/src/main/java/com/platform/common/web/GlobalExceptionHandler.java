@@ -48,6 +48,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    static final String NOT_FOUND_DETAIL = "We couldn't find that. It may have been removed, or it isn't available to you.";
+
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
@@ -267,7 +269,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         // across the codebase (ActivityAttemptService, EnrollmentService,
         // CurriculumService, etc.) was affected, not just the endpoints added this
         // session.
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        // One answer for every "not found", whatever was asked for and whether it doesn't
+        // exist or belongs to someone else: the specific message could name a resource the
+        // caller never supplied (e.g. the child behind another family's enrollment) or tell
+        // a foreign id from a missing one (CrossFamilyAccessSweepIntegrationTests). The
+        // detail stays in the server log, under the request's correlation id.
+        log.debug("Not found: {}", ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, NOT_FOUND_DETAIL);
         problem.setTitle("Not Found");
 
         return createResponseEntity(problem, new HttpHeaders(), HttpStatus.NOT_FOUND, request);

@@ -38,7 +38,11 @@ function ChildOverview({ childId }: { childId: string }) {
         <BackLink />
         <ErrorState
           error={child.error}
-          message={child.error instanceof ApiError && child.error.status === 403 ? "You don't have access to this child." : undefined}
+          message={
+            child.error instanceof ApiError && child.error.status === 404
+              ? "We couldn't find this child in your family. They may have been removed, or the link is from another account."
+              : undefined
+          }
           onRetry={child.refetch}
         />
       </div>

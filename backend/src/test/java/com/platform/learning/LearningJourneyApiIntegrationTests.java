@@ -182,11 +182,12 @@ class LearningJourneyApiIntegrationTests {
         for (String path : List.of("/api/v1/children/" + childId, "/api/v1/children/" + childId + "/enrollments",
                 "/api/v1/enrollments/" + enrollmentId + "/journey", "/api/v1/children/" + childId + "/skills",
                 "/api/v1/children/" + childId + "/activity-history")) {
-            assertThat(get(path, stranger).statusCode()).as(path).isEqualTo(403);
+            // Another family's child is answered like one that doesn't exist (no existence oracle).
+            assertThat(get(path, stranger).statusCode()).as(path).isEqualTo(404);
             assertThat(get(path, null).statusCode()).as(path).isEqualTo(401);
             assertThat(get(path, owner).statusCode()).as(path).isEqualTo(200);
         }
-        assertThat(patch("/api/v1/children/" + childId, "{\"displayName\":\"Taken\"}", stranger).statusCode()).isEqualTo(403);
+        assertThat(patch("/api/v1/children/" + childId, "{\"displayName\":\"Taken\"}", stranger).statusCode()).isEqualTo(404);
     }
 
     @Test

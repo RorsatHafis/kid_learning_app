@@ -78,6 +78,19 @@ test.describe("golden journeys", () => {
     await expect(page.getByRole("heading", { name: /recent activity/i })).toBeVisible();
     await expect(page.getByText("Addition Recognition Practice").first()).toBeVisible();
     await expect(page.getByText(new RegExp(`${answered - 1} of ${answered}|${answered - 1}/${answered}`)).first()).toBeVisible();
+
+    // The family can take a copy of everything held about them.
+    await page.goto("/parent/account");
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Download my family's data" }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/^bookeyond-kid-data-\d{4}-\d{2}-\d{2}\.json$/);
+    const exported = JSON.parse(await (await download.createReadStream()).toArray().then((c) => Buffer.concat(c).toString("utf-8")));
+    expect(exported.account.email).toBe(email);
+    expect(exported.children.map((c: { displayName: string }) => c.displayName)).toEqual(["Sokha"]);
+    expect(exported.children[0].answers).toHaveLength(answered);
+    await expect(page.getByRole("status")).toContainText("downloaded");
   });
 
   test("recovery: forgot password, emailed link, new password, old session ended, sign in again", async ({ page, browser, request }) => {
@@ -148,7 +161,23 @@ test.describe("golden journeys", () => {
     await parentContext.close();
   });
 
-  test("boundaries: signed-out visitors go to log in; a parent can't open the admin console", async ({ page }) => {
+  test("boundaries: signed-out visitors go to log in; a parent can't open the admin console or another family's child", async ({
+    page,
+    browser,
+  }) => {
+    // Another family's child, created by that family.
+    const otherFamily = await browser.newContext();
+    const other = await otherFamily.newPage();
+    await registerParent(other, uniqueEmail("other-family"));
+    await other.getByRole("button", { name: /add your first child/i }).click();
+    await other.getByLabel("Name").fill("Private Child");
+    await other.getByLabel("Date of birth").fill("2019-02-02");
+    await other.getByRole("button", { name: "Add child" }).click();
+    await other.getByRole("link", { name: /Private Child/ }).first().click();
+    await expect(other.getByRole("heading", { name: "Learning now" })).toBeVisible();
+    const foreignChildUrl = new URL(other.url()).pathname;
+    await otherFamily.close();
+
     await page.goto("/parent");
     await expect(page).toHaveURL(/\/login/);
     await page.goto("/admin/accounts");
@@ -159,5 +188,12 @@ test.describe("golden journeys", () => {
     await expect(page.getByRole("heading", { name: "Accounts" })).toHaveCount(0);
     const status = await page.request.get("/api/v1/admin/audit-events");
     expect(status.status()).toBe(401); // no bearer token on a plain request
+
+    // Another family's child reads exactly like one that doesn't exist - nothing of theirs shows.
+    await page.goto(foreignChildUrl);
+    await expect(page.getByText(/couldn't find this child in your family/i)).toBeVisible();
+    await expect(page.getByText("Private Child")).toHaveCount(0);
+    await page.goto("/parent/children/00000000-0000-4000-8000-000000000000");
+    await expect(page.getByText(/couldn't find this child in your family/i)).toBeVisible();
   });
 });

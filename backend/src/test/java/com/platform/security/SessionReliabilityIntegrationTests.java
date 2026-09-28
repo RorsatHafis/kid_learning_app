@@ -107,11 +107,10 @@ class SessionReliabilityIntegrationTests {
 
     @Test
     void authenticatedButForbiddenStays403AndIsNotAnAuthenticationChallenge() throws Exception {
-        Session owner = registerParent();
-        String childId = createChild(owner);
-        Session stranger = registerParent();
+        // A parent asking for an administrators-only resource: authenticated, not permitted.
+        Session parent = registerParent();
 
-        HttpResponse<String> res = get("/api/v1/children/" + childId + "/progress", stranger.accessToken());
+        HttpResponse<String> res = get("/api/v1/admin/audit-events", parent.accessToken());
 
         assertThat(res.statusCode()).isEqualTo(403);
         assertThat(res.headers().firstValue("WWW-Authenticate")).isEmpty();
@@ -350,13 +349,6 @@ class SessionReliabilityIntegrationTests {
                         + UUID.randomUUID() + "\"}", null);
         assertThat(res.statusCode()).isEqualTo(201);
         return session(res.body());
-    }
-
-    private String createChild(Session parent) throws Exception {
-        HttpResponse<String> res = post("/api/v1/children",
-                "{\"displayName\":\"Test Child\",\"dateOfBirth\":\"2019-01-01\"}", parent.accessToken());
-        assertThat(res.statusCode()).isEqualTo(201);
-        return extract(res.body(), "id");
     }
 
     private Session refresh(String refreshToken) throws Exception {

@@ -152,14 +152,10 @@ class CorsPolicyIntegrationTests {
 
     @Test
     void forbiddenFromAnAllowedOriginStaysAnAuthorization403() throws Exception {
-        String ownerToken = registerParent(null);
-        HttpResponse<String> child = send("POST", "/api/v1/children", null, ownerToken,
-                "{\"displayName\":\"Owned Child\",\"dateOfBirth\":\"2019-01-01\"}");
-        assertThat(child.statusCode()).isEqualTo(201);
-        String strangerToken = registerParent(null);
+        // A parent asking for an administrators-only resource: authenticated, not permitted.
+        String parentToken = registerParent(null);
 
-        HttpResponse<String> res = send("GET", "/api/v1/children/" + extract(child.body(), "id") + "/progress",
-                PROD_ORIGIN, strangerToken, null);
+        HttpResponse<String> res = send("GET", "/api/v1/admin/audit-events", PROD_ORIGIN, parentToken, null);
 
         assertThat(res.statusCode()).isEqualTo(403);
         assertThat(res.headers().firstValue("WWW-Authenticate")).isEmpty();
