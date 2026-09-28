@@ -6,9 +6,9 @@ project actually stands against it. Where the two disagree on a verification lev
 evidence recorded here is newer (see §26 note under Battle 4A) — `CLAUDE.md` is not edited
 from here.
 
-- **Last reconciled:** 2026-09-28, after E2E-STUDIO (content golden journey in the browser), PERF1 (read queries flat as history grows), S1 (IDOR/BOLA sweep; uniform not-found), P1 (family data export), R3 (operations: sign-in security events, JSON logs, admin-only actuator, staff areas loaded on demand, school E2E journey), R2 (automated golden journeys, accessibility scans and CI; an honest landing page) and R1 (the whole product runnable from one command; forwarded-address fix; self-hosted fonts; dependency advisories cleared), ADM1 (admin operations) and the TD-04 resolution; preceded on 2026-09-26 by L9, TD-22, W2.1 and W4.3.
+- **Last reconciled:** 2026-09-28, after the RELEASE VERIFICATION and owner handoff (OWNER-GUIDE.md, DEPLOYMENT.md), E2E-STUDIO (content golden journey in the browser), PERF1 (read queries flat as history grows), S1 (IDOR/BOLA sweep; uniform not-found), P1 (family data export), R3 (operations: sign-in security events, JSON logs, admin-only actuator, staff areas loaded on demand, school E2E journey), R2 (automated golden journeys, accessibility scans and CI; an honest landing page) and R1 (the whole product runnable from one command; forwarded-address fix; self-hosted fonts; dependency advisories cleared), ADM1 (admin operations) and the TD-04 resolution; preceded on 2026-09-26 by L9, TD-22, W2.1 and W4.3.
 - **Reconciled against:** current source, Flyway migrations V1–V36, the last full test run
-  (`./mvnw -Pintegration test`: **279 run, 279 pass**; frontend `npm test`: **43 pass**; Playwright E2E + accessibility: **14 pass** against the Docker stack), and the
+  (`./mvnw -Pintegration test`: **279 run, 279 pass**; frontend `npm test`: **43 pass**; Playwright E2E + accessibility: **13 pass** against the Docker stack), and the
   runtime/browser evidence gathered in each battle.
 - **Version control:** git repository at `D:\Bookeyond-Kid` (baseline commit `4db89ad`,
   then one commit per battle). TD-01 resolved.
@@ -101,7 +101,7 @@ describe the product as complete.
 | **P1** | Family data export (privacy: data belongs to the family) | `GET /api/v1/account/data-export` returns, as a `no-store` JSON attachment, everything held about the signed-in account and the children of its families: the account (email, role, created, email confirmed), each child's profile, learning paths, skill standings with their evidence, every completed activity, **every recorded answer** — the question asked, the answer as the child gave it (choice ids turned into the words shown; matching answers into "1 → •" pairs), right or wrong — and the insight history shown to the parent. Scoped by the caller's own family memberships, with the family guard re-checked per child; never another family, the answer key, passwords, or session/link secrets. Each export is audited (`ACCOUNT_DATA_EXPORTED`). Parent Account page: a "Your data" section with "Download my family's data" (file named by date, status message, error message) | TESTED (`FamilyDataExportIntegrationTests` 2 over HTTP — two families, one plays; the export holds only the caller's two children, the played child's 2 answers in order with the wrong one first, no stranger data, no `correctAnswer` field, no password or refresh token, audited once; anonymous 401; `FamilyDataExportReadableAnswerTests` 2); **BROWSER VERIFIED by automation** (the E2E family journey now downloads the file in a real browser on desktop and phone and checks its name and contents; the account page with the new section passes the axe scan) | `family/service/FamilyDataExportService`, `family/web/FamilyDataExportController`; `AccountPage.tsx` (YourData), `endpoints.ts` | Deleting an account or a child is not built: it needs retention decisions (PD-24) |
 | **S1** | IDOR/BOLA sweep of every child-, enrollment- and attempt-scoped endpoint | `CrossFamilyAccessSweepIntegrationTests`: a family with a child mid-activity; for **23 endpoints** (15 reads, 8 writes: rename, enroll, start attempt, generate insights, answer, complete, abandon, adaptive-next, smart-review-check) a parent of another family, an unlinked teacher and an unlinked principal are each refused, **nothing changes** (child name, enrollments, attempts, attempt status, answers, insights compared before/after), the owning parent's call to the same URL succeeds, a refusal body names nothing of the child's, and a foreign id is answered exactly like a nonexistent one. **Two real leaks found and fixed**: (1) an existence oracle — a foreign child answered 403 where a nonexistent one answered 404 (the guard's own comment claimed the opposite); `FamilyAccessGuard` now answers 404 for both. (2) The 404 body named resources the caller never supplied — asking for another family's enrollment returned `Child <id> not found`, revealing the child's id, and its wording differed from a missing enrollment's. Every not-found now has one fixed, id-free message; the specific reason is logged (DEBUG) under the correlation id. Tests that encoded the old 403 were changed on purpose: the learning-view scoping test now expects 404; the two "authenticated but forbidden stays 403, not 401" tests keep their intent on a role-forbidden endpoint (a parent calling the admin audit log). Parent child page: a 404 now reads "We couldn't find this child in your family…" | TESTED (sweep red before the fix — 403 vs 404, then the child-id leak — green after; full backend suite **278/278**); **BROWSER VERIFIED by automation** (E2E boundaries journey: another family's child URL and a made-up child URL show the same not-found message and nothing of the other family; 12/12 against the rebuilt Docker stack) | `FamilyAccessGuard`, `GlobalExceptionHandler`; `CrossFamilyAccessSweepIntegrationTests`, `LearningJourneyApiIntegrationTests`, `CorsPolicyIntegrationTests`, `SessionReliabilityIntegrationTests`; `ChildOverviewPage.tsx`; `e2e/golden-journeys.spec.ts` | School/teacher/Studio/admin boundaries are covered by their own suites (`SchoolFamilyBoundary`, `SchoolStaff`, `ContentStudio`, `AdminOperations`, `ActuatorAccess`); the 403-vs-404 oracle was only on the family guard |
 | **PERF1** | Read performance as a child's history grows (N+1) | Measured, per request, the SQL statements of the parent/child read endpoints after 1 completed activity and after 6 (`ReadQueryScalingIntegrationTests`, Hibernate statistics). **Found**: activity history issued ~6–7 extra statements per completed activity (answers, path item, adaptive decision and subject looked up one attempt at a time, then version/activity/skills per distinct activity) — 11 → 44 — and the family export 59 → 99. **Fixed** by loading a whole page at once: answers by attempt ids, path items by ids, decisions from the child's already-loaded decision list, versions/activities/activity-skills/skills in one pass, subjects memoized; the export batches answers, activity titles, questions and choices the same way. Now **every measured endpoint is flat**: enrollments 38, journey 39, skills 17, history 11, insights 10, export 63 — the same after 1 and after 6 activities. The test now fails if any of them grows | TESTED (the scaling test red before, green after; journey/export suites unchanged; full backend suite **279/279**) | `LearningJourneyService` (completedActivities, Lookups.preload/decisionOf/subjectName), `FamilyDataExportService`, `AnswerRecordRepository`, `ActivitySkillRepository`, `QuestionOptionRepository`; `ReadQueryScalingIntegrationTests` | The constant costs of enrollments/journey (~40 statements) are per path step, not per attempt; fine for curricula of this size, worth a look if paths reach hundreds of steps |
-| **E2E-STUDIO** | Content golden journey, automated in a real browser | `e2e/studio-journey.spec.ts`: an administrator, through the Studio UI only, adds a subject, a skill and an objective linked to it, a number question (published after its checks), a lesson and an activity (Publish stays disabled until it has a question; question added, details saved, published), and a Junior curriculum with the objective (published). A new family then **chooses** that path — with two paths for the child's age there is no auto-enrolment, by design — and the child plays exactly the authored question and is scored by its answer key. The catalog and question editor are axe-scanned. Also made the other journeys pick "Maths - Junior" explicitly so they stay deterministic when more paths exist | TESTED / **BROWSER VERIFIED by automation** (Playwright **14/14** incl. this journey, against the Docker stack); **DATABASE VERIFIED** (the child's answer `3` is recorded as correct against version 1 of the question, status PUBLISHED) | `frontend/e2e/*`, `playwright.config.ts` | Review/approval before publishing is PD-20; the journey publishes test content, so the E2E suite runs on throwaway stacks only |
+| **E2E-STUDIO** | Content golden journey, automated in a real browser | `e2e/studio-journey.spec.ts`: an administrator, through the Studio UI only, adds a subject, a skill and an objective linked to it, a number question (published after its checks), a lesson and an activity (Publish stays disabled until it has a question; question added, details saved, published), and a Junior curriculum with the objective (published). A new family then **chooses** that path — with two paths for the child's age there is no auto-enrolment, by design — and the child plays exactly the authored question and is scored by its answer key. The catalog and question editor are axe-scanned. Also made the other journeys pick "Maths - Junior" explicitly so they stay deterministic when more paths exist | TESTED / **BROWSER VERIFIED by automation** (Playwright **13/13** incl. this journey, against the Docker stack); **DATABASE VERIFIED** (the child's answer `3` is recorded as correct against version 1 of the question, status PUBLISHED) | `frontend/e2e/*`, `playwright.config.ts` | Review/approval before publishing is PD-20; the journey publishes test content, so the E2E suite runs on throwaway stacks only |
 | **4C** | School ↔ child authorization | **NOT IMPLEMENTED** — design only | — | Battle 4C design report | PD-01 |
 
 ---
@@ -420,6 +420,43 @@ piece of their own learning history (evidence is never deleted because access ch
 
 ---
 
+# RELEASE VERIFICATION (2026-09-28)
+
+Run from a clean slate: the local stack's volume erased, every image rebuilt, a new database
+migrated V1–V41 with only the seeded Maths path and the bootstrapped administrator.
+
+| Area | Result | Level |
+|---|---|---|
+| Child | Journey home, activity intro, MC/TF/number/short answer/matching, feedback, Learning Buddy, sound with mute, completion with next step, reload resume, grown-up gate; keyboard play | BROWSER VERIFIED (E2E desktop + phone; earlier manual battles) |
+| Parent / family | Register, email confirmation (real SMTP → Mailpit), add child (auto-enrolment by age, or parent's choice when several paths fit), why-this-next, skills with evidence strength, history with decisions, insights gated on evidence, account security, data export | BROWSER VERIFIED (E2E) |
+| Teacher | Invitation email → set password → accept → assigned to class | BROWSER VERIFIED (E2E). Class learning views: **blocked by PD-01** |
+| Principal / school | Apply → admin approval → school, class, invite, assign | BROWSER VERIFIED (E2E). Children in classes: **PD-01** |
+| Admin | Staff provisioning, principal approval, account suspension/reinstatement, activity log | BROWSER VERIFIED (E2E + ADM1) |
+| Content Studio / lifecycle | Author → checks → publish → a child plays exactly that version, answer pinned to the published version | BROWSER + DATABASE VERIFIED (E2E-STUDIO). Review step PD-20; withdrawal PD-04 |
+| Learning / evidence / mastery / adaptive / review | Scoring per answer contract, evidence per answer, EWMA mastery, adaptive decision and Smart Review inside completion, idempotent | TESTED (golden journey, completion and concurrency suites) + BROWSER (E2E answers → evidence) |
+| Authentication / account lifecycle | Login, lockout (logged + audited), refresh rotation and reuse detection, grace retry, logout, sign-out everywhere, password change/reset ending sessions, email verification, suspension | TESTED + BROWSER (E2E recovery, suspension) |
+| IDOR / BOLA / privilege | 23-endpoint cross-family sweep, uniform 404, school/Studio/admin/actuator boundaries | TESTED (S1 and suites); BROWSER (E2E boundaries) |
+| Privacy / child safety | No third-party requests (self-hosted fonts), strict CSP, no ads/trackers/social, family export, no PII in logs, honest landing page | TESTED + BROWSER. Legal text PD-18, deletion PD-24 |
+| Accessibility | axe WCAG 2.2 A/AA on public, family, child, account, admin, Studio, principal and teacher screens, desktop + phone; contrast defects fixed | TESTED by automation. Screen-reader passes not done |
+| Responsive / mobile | Phone viewport journeys and scans; 375 px checks in earlier battles | BROWSER VERIFIED |
+| Frontend | Lint, types, 43 unit tests, build (family JS 100 kB gzip; staff areas lazy) | TESTED |
+| Backend / database / migrations | 279 tests on PostgreSQL 18; fresh migration V1–V41 in Docker; upgrade to V41 on an existing database (ADM1) | TESTED + RUNTIME + DATABASE |
+| Concurrency / reliability | Refresh races, concurrent completions, link single-use under 4-way concurrency, idempotent answers | TESTED |
+| Performance | Read endpoints flat as history grows (PERF1) | TESTED |
+| Subscriptions / entitlements | Not built: business model undecided | **PD-09** |
+| Localization | English UI; Khmer typography built in; content localization tables exist but are not authorable in the Studio | **PD-14 / PD-15** — not Khmer-ready |
+| Observability | ECS JSON logs with correlation ids (staging profile run), security events, audit log, health probes | RUNTIME VERIFIED (staging profile) |
+| Local runtime | Start/Stop/Reset launchers, fresh build → healthy stack | RUNTIME VERIFIED (first-run prompt not driven interactively) |
+| Staging / production | Profiles, config contract, forwarded-address handling, images, deployment and rollback guide | Staging profile RUNTIME VERIFIED locally; **no real server, domain, TLS, mail provider or backups exist** — external dependencies |
+| CI/CD | Workflow with backend, frontend and Docker E2E jobs | Commands verified locally; **the workflow has never run** (no remote) |
+| Golden journeys | Family, recovery, admin, boundaries, school, content | BROWSER VERIFIED by automation (13/13). Commercial journey: PD-09 |
+
+**Known and accepted for this handoff:** access tokens stay valid up to 15 minutes after
+suspension/reset (PD-02); refresh token in `localStorage`, mitigated by the strict CSP;
+legacy teacher authoring endpoints publish without audit (TD-19); `backend/.env.example`
+stale (TD-02, file blocked — DEPLOYMENT.md is the reference); the dev compose in `backend/`
+reuses the container name of another local project.
+
 # CURRENT VERIFIED PROJECT STATE
 
 - **Backend foundation integrity baseline: established.** Accepted and evidenced: 2A, 2B
@@ -430,9 +467,9 @@ piece of their own learning history (evidence is never deleted because access ch
   BROWSER VERIFIED; configuration and content lifecycle are RUNTIME VERIFIED; the
   learning-state battles (5A–5C) were RUNTIME VERIFIED at battle time and are TESTED now,
   including through the green golden journey.
-- **Test suite:** backend 273 run, 273 pass on Testcontainers/Docker (2026-09-27); frontend (Vitest 4) 43 pass; Playwright E2E + accessibility 12 pass against the Docker stack. The whole product also runs from `docker compose up` / `Start Bookeyond Kid.bat`. While Docker is unavailable the suite runs against a native PostgreSQL 18 (`-Dbk.test.external-db=true -Dbk.test.db.url=… -Dbk.test.db.username=… -Dbk.test.db.password=…`); Testcontainers remains the default.
+- **Test suite (release verification, 2026-09-28, from an empty database):** backend 279 run, 279 pass on Testcontainers/Docker; frontend lint 0 errors, types OK, Vitest 43 pass, production build, `npm audit` 0; Playwright E2E + accessibility 13 pass against a freshly built Docker stack. The whole product also runs from `docker compose up` / `Start Bookeyond Kid.bat`. While Docker is unavailable the suite runs against a native PostgreSQL 18 (`-Dbk.test.external-db=true -Dbk.test.db.url=… -Dbk.test.db.username=… -Dbk.test.db.password=…`); Testcontainers remains the default.
 - **Version control:** git, one commit per battle.
-- **FULL BOOKEYOND KID PRODUCT: NOT COMPLETE.**
+- **Status:** ready for the owner's manual testing (OWNER-GUIDE.md). **Not production-launched and not user-validated**: that needs the external dependencies and product decisions listed under RELEASE VERIFICATION.
 
 # REMAINING ENGINEERING GAPS
 
@@ -471,16 +508,11 @@ the open product decisions PD-01 to PD-10.
 
 # IMMEDIATE NEXT WORK
 
-The content tool now exists, so the next steps are, in order:
-
-1. **Product decisions that now block real use** — PD-01 (school ↔ family authorization: the
-   school product cannot enroll any child until it exists), PD-03 (refresh reuse grace window;
-   N19 shows real users being signed out), PD-15 (who authors the canonical curriculum — the
-   Studio is ready for them), PD-20 (review before publish).
-2. **Wave 2 once PD-01 is decided**: family-granted school authorization, class enrollment on
-   top of it, teacher Studio access, class assignments and monitoring (TD-11, TD-13, TD-14, TD-17).
-3. **Content platform depth**: localization and audio/media in the Studio (with PD-14), content
-   rename/archive, withdrawal (PD-04).
-4. **Engineering**: E2E browser tests for the critical flows, CI, dependency upgrades (TD-16).
-
-Parent goals and child archiving remain blocked on their product decisions (not invented).
+1. **Owner testing** with OWNER-GUIDE.md.
+2. **Owner decisions**, in order of what they unblock: PD-01 (children in schools — proposal
+   above), PD-09 (plans), PD-14/PD-15 (Khmer UI copy and curriculum authors), PD-18 and PD-24
+   (legal text, deletion/retention), PD-20 (content review), PD-02, PD-13, PD-16, PD-23.
+3. **Production dependencies**: a repository remote (activates CI), a host, domain and TLS, a
+   transactional mail provider with SPF/DKIM/DMARC, database backups — see DEPLOYMENT.md.
+4. **Then**: Wave 2 on PD-01 (family-granted school access, class enrolment, teacher views);
+   subscriptions on PD-09; Studio localization and media on PD-14.
