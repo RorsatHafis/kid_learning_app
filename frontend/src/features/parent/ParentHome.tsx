@@ -1,132 +1,139 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, ChevronRight, Play } from "lucide-react";
+import { ArrowRight, Plus, Play } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
-import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
-import { Button } from "@/components/ui/Button";
+import { LoadingState, ErrorState } from "@/components/ui/States";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { ageFromDateOfBirth } from "@/lib/utils/date";
+import { parentReason } from "@/features/learning/explain";
 import { AddChildForm } from "./AddChildForm";
+import { BookStrip, ChildSeal, SceneBand } from "./ui";
 import type { Child } from "@/lib/api/types";
 
+/** The family: each child as a chapter — who they are, where they are on their path, what's next. */
 export function ParentHome() {
   const { data: children, error, isLoading, refetch } = useAsync(() => childrenApi.list(), []);
   const [isAdding, setIsAdding] = useState(false);
+  const count = children?.length ?? 0;
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">Your family</h1>
-          <p className="text-sm text-muted">What each child is learning, and what comes next.</p>
+    <div className="flex flex-col gap-10">
+      <SceneBand>
+        <div className="flex min-h-[220px] flex-col justify-end gap-3 px-6 pb-8 pt-12 sm:min-h-[260px] sm:px-10">
+          <h1 className="font-display text-headline font-semibold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+            Your family
+          </h1>
+          <p className="max-w-md text-[1.0625rem] leading-relaxed text-ink-soft">
+            {count === 0
+              ? "Add your first child to start their Bookeyond Kid learning journey."
+              : "What each child is learning, and what comes next."}
+          </p>
         </div>
-        {children && children.length > 0 && !isAdding && (
-          <Button size="md" onClick={() => setIsAdding(true)}>
-            <Plus size={18} aria-hidden /> Add child
-          </Button>
-        )}
-      </div>
-
-      {isAdding && (
-        <AddChildForm
-          onCreated={() => {
-            setIsAdding(false);
-            refetch();
-          }}
-          onCancel={() => setIsAdding(false)}
-        />
-      )}
+      </SceneBand>
 
       {isLoading && <LoadingState label="Loading your family…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
 
-      {children && children.length === 0 && !isAdding && (
-        <EmptyState
-          title="No children yet"
-          description="Add your first child to start their Bookeyond Kid learning journey."
-          action={
-            <Button size="md" onClick={() => setIsAdding(true)} className="mt-2">
-              <Plus size={18} aria-hidden /> Add your first child
-            </Button>
-          }
-        />
-      )}
-
-      {children && children.length > 0 && (
-        <ul className="grid gap-4 md:grid-cols-2">
-          {children.map((child) => (
-            <li key={child.id}>
-              <ChildCard child={child} />
-            </li>
-          ))}
-        </ul>
+      {children && (
+        <section aria-label="Children" className="overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+          {children.length > 0 && (
+            <ul className="divide-y divide-line">
+              {children.map((child) => (
+                <li key={child.id}>
+                  <ChildChapter child={child} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className={children.length > 0 ? "border-t border-line" : undefined}>
+            {isAdding ? (
+              <div className="p-6 sm:p-8">
+                <AddChildForm
+                  onCreated={() => {
+                    setIsAdding(false);
+                    refetch();
+                  }}
+                  onCancel={() => setIsAdding(false)}
+                />
+              </div>
+            ) : children.length === 0 ? (
+              <div className="flex flex-col items-center gap-4 px-6 py-14 text-center">
+                <p className="font-display text-xl font-semibold text-tonle-950">No children yet</p>
+                <p className="max-w-sm text-sm text-ink-soft">Each child gets their own path, their own firefly, and a page here for you.</p>
+                <Button onClick={() => setIsAdding(true)}>
+                  <Plus size={17} aria-hidden /> Add your first child
+                </Button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAdding(true)}
+                className="flex w-full items-center gap-3 px-6 py-5 text-left text-[0.9375rem] font-semibold text-tonle-700 transition-colors duration-150 hover:bg-paper sm:px-8"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-dashed border-tonle-300">
+                  <Plus size={17} aria-hidden />
+                </span>
+                Add child
+              </button>
+            )}
+          </div>
+        </section>
       )}
     </div>
   );
 }
 
-function ChildCard({ child }: { child: Child }) {
+function ChildChapter({ child }: { child: Child }) {
   const { data: enrollments, error, isLoading } = useAsync(() => learningApi.enrollments(child.id), [child.id]);
   const current = enrollments?.find((e) => e.nextStep !== null) ?? enrollments?.[0];
 
   return (
-    <article className="flex h-full flex-col gap-5 rounded-3xl border-[1.5px] border-hairline bg-white p-6 shadow-soft">
-      <Link to={`/parent/children/${child.id}`} className="group flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-kid-mint text-xl font-extrabold text-kid-mintDeep">
-            {child.displayName.charAt(0).toUpperCase()}
-          </span>
-          <div>
-            <h2 className="text-lg font-bold text-ink group-hover:underline">{child.displayName}</h2>
-            <p className="text-sm text-muted">Age {ageFromDateOfBirth(child.dateOfBirth)}</p>
-          </div>
+    <article className="grid gap-6 px-6 py-7 sm:px-8 lg:grid-cols-[240px_minmax(0,1fr)_auto] lg:items-center lg:gap-10">
+      <Link to={`/parent/children/${child.id}`} className="group flex items-center gap-4">
+        <ChildSeal id={child.id} name={child.displayName} />
+        <div>
+          <h2 className="font-display text-2xl font-semibold text-tonle-950 group-hover:underline group-hover:decoration-tonle-300 group-hover:underline-offset-4">
+            {child.displayName}
+          </h2>
+          <p className="text-sm text-ink-faint">Age {ageFromDateOfBirth(child.dateOfBirth)}</p>
         </div>
-        <ChevronRight className="text-muted" aria-hidden />
       </Link>
 
-      <div className="flex-1 rounded-2xl bg-surface-cream p-4">
-        {isLoading && <p className="text-sm text-muted">Loading learning…</p>}
-        {error && <p className="text-sm text-muted">Couldn't load learning right now.</p>}
-        {enrollments && !current && <p className="text-sm text-muted">No learning path chosen yet.</p>}
+      <div className="min-w-0">
+        {isLoading && <p className="text-sm text-ink-faint">Loading learning…</p>}
+        {error && <p className="text-sm text-ink-soft">Couldn&apos;t load learning right now.</p>}
+        {enrollments && !current && <p className="text-sm text-ink-soft">No learning path chosen yet.</p>}
         {current && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-2 text-sm">
-              <span className="font-semibold text-ink">{current.curriculum.name}</span>
-              <span className="text-muted">
-                {current.completedSteps} of {current.totalSteps} steps
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-pill bg-hairline" aria-hidden>
-              <div
-                className="h-full rounded-pill bg-kid-mintDeep"
-                style={{ width: `${current.totalSteps ? (current.completedSteps / current.totalSteps) * 100 : 0}%` }}
-              />
-            </div>
-            <p className="text-sm text-muted">
-              {current.nextStep ? (
-                <>
-                  Next: <span className="font-semibold text-ink">{current.nextStep.title}</span>
-                </>
-              ) : (
-                "All caught up on this path."
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+            <BookStrip done={current.completedSteps} total={current.totalSteps} label={`${current.curriculum.name}: steps finished`} next={current.nextStep !== null} />
+            <div className="min-w-0">
+              <p className="text-sm text-ink-faint">
+                {current.curriculum.name} · {current.completedSteps} of {current.totalSteps} steps
+              </p>
+              <p className="truncate text-[0.9375rem] text-ink">
+                {current.nextStep ? (
+                  <>
+                    Next: <span className="font-semibold">{current.nextStep.title}</span>
+                  </>
+                ) : (
+                  "All caught up on this path."
+                )}
+              </p>
+              {current.nextStep && (
+                <p className="hidden truncate text-sm text-ink-soft xl:block">{parentReason(current.nextStep, current.curriculum.name)}</p>
               )}
-            </p>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Link
-          to={`/learn/${child.id}`}
-          className="inline-flex items-center gap-2 rounded-pill bg-brand-blueStrong px-5 py-3 text-sm font-semibold text-white shadow-soft hover:bg-blue-700"
-        >
-          <Play size={16} aria-hidden /> Start {child.displayName}'s session
+      <div className="flex flex-wrap items-center gap-2">
+        <Link to={`/learn/${child.id}`} className={buttonClasses("solid", "md")}>
+          <Play size={16} aria-hidden /> Start {child.displayName}&apos;s session
         </Link>
-        <Link
-          to={`/parent/children/${child.id}`}
-          className="inline-flex items-center rounded-pill border-[1.5px] border-ink px-5 py-3 text-sm font-semibold text-ink hover:bg-ink hover:text-white"
-        >
-          See progress
+        <Link to={`/parent/children/${child.id}`} className={buttonClasses("ghost", "md")}>
+          See progress <ArrowRight size={16} aria-hidden />
         </Link>
       </div>
     </article>

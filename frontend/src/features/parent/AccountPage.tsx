@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle2, Download, LogOut, MailCheck, ShieldCheck } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -8,7 +8,6 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
-import { SectionTitle } from "./SectionTitle";
 
 const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
 
@@ -21,39 +20,56 @@ export function AccountPage() {
   const profile = useAsync(() => accountApi.me(), []);
 
   return (
-    <div className="flex flex-col gap-10">
-      <div>
-        <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">Account</h1>
-        <p className="text-sm text-muted">Your sign-in details and security.</p>
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-col gap-1">
+        <h1 className="font-display text-headline font-semibold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+          Account
+        </h1>
+        <p className="text-[1.0625rem] text-ink-soft">Your sign-in details, security and data.</p>
+      </header>
+
+      <div className="divide-y divide-line overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+        <SettingsRow id="profile" title="Your details" subtitle="The address you sign in with.">
+          {profile.isLoading && <LoadingState label="Loading your account…" />}
+          {profile.error && <ErrorState error={profile.error} onRetry={profile.refetch} />}
+          {profile.data && (
+            <dl className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <dt className="text-sm text-ink-faint">Email</dt>
+                <dd className="break-all font-semibold text-ink">{profile.data.email}</dd>
+                <dd className="mt-2">
+                  <EmailConfirmation confirmed={profile.data.emailVerifiedAt !== null} onAlreadyConfirmed={profile.refetch} />
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm text-ink-faint">Member since</dt>
+                <dd className="font-semibold text-ink">
+                  {new Date(profile.data.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}
+                </dd>
+              </div>
+            </dl>
+          )}
+        </SettingsRow>
+        <ChangePassword />
+        <SignOutEverywhere />
+        {profile.data?.platformRole === "PARENT" && <YourData />}
       </div>
-
-      <section aria-labelledby="profile" className="flex flex-col gap-4">
-        <SectionTitle id="profile" title="Your details" />
-        {profile.isLoading && <LoadingState label="Loading your account…" />}
-        {profile.error && <ErrorState error={profile.error} onRetry={profile.refetch} />}
-        {profile.data && (
-          <dl className="grid gap-4 rounded-3xl border-[1.5px] border-hairline bg-white p-6 shadow-soft sm:grid-cols-2">
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Email</dt>
-              <dd className="font-semibold text-ink">{profile.data.email}</dd>
-              <dd className="mt-1">
-                <EmailConfirmation confirmed={profile.data.emailVerifiedAt !== null} onAlreadyConfirmed={profile.refetch} />
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Member since</dt>
-              <dd className="font-semibold text-ink">
-                {new Date(profile.data.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}
-              </dd>
-            </div>
-          </dl>
-        )}
-      </section>
-
-      <ChangePassword />
-      <SignOutEverywhere />
-      {profile.data?.platformRole === "PARENT" && <YourData />}
     </div>
+  );
+}
+
+/** One settings topic: what it is on the left, the controls on the right. */
+function SettingsRow({ id, title, subtitle, children }: { id: string; title: string; subtitle?: string; children: ReactNode }) {
+  return (
+    <section aria-labelledby={id} className="grid gap-5 px-6 py-8 sm:px-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-12">
+      <div>
+        <h2 id={id} className="font-display text-lg font-semibold text-tonle-950">
+          {title}
+        </h2>
+        {subtitle && <p className="mt-1 text-sm leading-relaxed text-ink-soft">{subtitle}</p>}
+      </div>
+      <div className="flex max-w-xl flex-col gap-4">{children}</div>
+    </section>
   );
 }
 
@@ -67,7 +83,7 @@ function EmailConfirmation({ confirmed, onAlreadyConfirmed }: { confirmed: boole
 
   if (confirmed) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-greenStrong">
+      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-palm-deep">
         <CheckCircle2 size={16} aria-hidden /> Confirmed
       </span>
     );
@@ -95,10 +111,10 @@ function EmailConfirmation({ confirmed, onAlreadyConfirmed }: { confirmed: boole
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <span className="text-sm font-semibold text-brand-amberStrong">Not confirmed yet</span>
-      <span className="text-sm text-muted">If you ever forget your password, the reset link comes to this address.</span>
+      <span className="text-sm font-semibold text-light-deep">Not confirmed yet</span>
+      <span className="text-sm text-ink-soft">If you ever forget your password, the reset link comes to this address.</span>
       {state.kind === "sent" ? (
-        <p role="status" className="flex items-start gap-2 text-sm font-semibold text-kid-mintDeep">
+        <p role="status" className="flex items-start gap-2 text-sm font-semibold text-palm-deep">
           <MailCheck size={16} className="mt-0.5 shrink-0" aria-hidden /> Sent. Open the link in the email — it works for
           24 hours.
         </p>
@@ -108,7 +124,7 @@ function EmailConfirmation({ confirmed, onAlreadyConfirmed }: { confirmed: boole
         </Button>
       )}
       {state.kind === "error" && (
-        <p role="alert" className="text-sm font-medium text-brand-redStrong">
+        <p role="alert" className="text-sm font-medium text-brick-deep">
           {state.message}
         </p>
       )}
@@ -162,17 +178,8 @@ function ChangePassword() {
   }
 
   return (
-    <section aria-labelledby="password" className="flex flex-col gap-4">
-      <SectionTitle
-        id="password"
-        title="Change password"
-        subtitle="You'll stay signed in here; every other device is signed out."
-      />
-      <form
-        onSubmit={onSubmit}
-        noValidate
-        className="flex max-w-xl flex-col gap-4 rounded-3xl border-[1.5px] border-hairline bg-white p-6 shadow-soft"
-      >
+    <SettingsRow id="password" title="Change password" subtitle="You'll stay signed in here; every other device is signed out.">
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <FormField
           label="Current password"
           type="password"
@@ -201,12 +208,12 @@ function ChangePassword() {
           error={errors.confirm}
         />
         {errors.form && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {errors.form}
           </p>
         )}
         {done && (
-          <p role="status" className="flex items-start gap-2 rounded-2xl bg-kid-mint p-3 text-sm font-semibold text-kid-mintDeep">
+          <p role="status" className="flex items-start gap-2 rounded-[12px] bg-palm-soft p-3 text-sm font-semibold text-palm-deep">
             <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden />
             Password changed. Your other devices have been signed out — a screen already open elsewhere can keep
             working for up to 15 minutes.
@@ -216,7 +223,7 @@ function ChangePassword() {
           <ShieldCheck size={16} aria-hidden /> {saving ? "Changing…" : "Change password"}
         </Button>
       </form>
-    </section>
+    </SettingsRow>
   );
 }
 
@@ -240,15 +247,14 @@ function SignOutEverywhere() {
   }
 
   return (
-    <section aria-labelledby="devices" className="flex flex-col gap-4">
-      <SectionTitle id="devices" title="Devices" subtitle="Lost a phone or signed in on a shared computer?" />
-      <div className="flex max-w-xl flex-col gap-4 rounded-3xl border-[1.5px] border-hairline bg-white p-6 shadow-soft">
-        <p className="text-sm text-muted">
+    <SettingsRow id="devices" title="Devices" subtitle="Lost a phone or signed in on a shared computer?">
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-ink-soft">
           Signing out everywhere ends every session on every device, including this one. You'll need your password to sign
           back in.
         </p>
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
@@ -268,7 +274,7 @@ function SignOutEverywhere() {
           </Button>
         )}
       </div>
-    </section>
+    </SettingsRow>
   );
 }
 
@@ -304,21 +310,20 @@ function YourData() {
   }
 
   return (
-    <section aria-labelledby="your-data" className="flex flex-col gap-4">
-      <SectionTitle id="your-data" title="Your data" subtitle="Your family's learning belongs to your family." />
-      <div className="flex max-w-xl flex-col gap-4 rounded-3xl border-[1.5px] border-hairline bg-white p-6 shadow-soft">
-        <p className="text-sm text-muted">
+    <SettingsRow id="your-data" title="Your data" subtitle="Your family's learning belongs to your family.">
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-ink-soft">
           Download a copy of everything Bookeyond Kid holds about you and your children: your account, each child&apos;s
           profile, learning paths, skills and the evidence behind them, every activity and answer, and the insights
           you&apos;ve been shown. It&apos;s a JSON file, a standard format that other services and data tools can read.
         </p>
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
         {done && (
-          <p role="status" className="text-sm font-medium text-brand-greenStrong">
+          <p role="status" className="text-sm font-medium text-palm-deep">
             Your file has been downloaded.
           </p>
         )}
@@ -326,6 +331,6 @@ function YourData() {
           <Download size={16} aria-hidden /> {working ? "Preparing…" : "Download my family's data"}
         </Button>
       </div>
-    </section>
+    </SettingsRow>
   );
 }

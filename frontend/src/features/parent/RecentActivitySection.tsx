@@ -10,15 +10,14 @@ import { SectionTitle } from "./SectionTitle";
 export function RecentActivitySection({ childId }: { childId: string }) {
   const { data, error, isLoading, refetch } = useAsync(() => learningApi.history(childId, 10), [childId]);
   return (
-    <section aria-labelledby="recent" className="flex flex-col gap-4">
+    <section aria-labelledby="recent" className="flex flex-col gap-5">
       <SectionTitle id="recent" title="Recent activity" subtitle="Each finished activity, and how the path adapted afterwards." />
       {isLoading && <LoadingState label="Loading activity…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
-      {data && data.length === 0 && (
-        <EmptyState title="Nothing finished yet" description="Finished activities appear here with what they showed." />
-      )}
+      {data && data.length === 0 && <EmptyState title="Nothing finished yet" description="Finished activities appear here with what they showed." />}
       {data && data.length > 0 && (
-        <ol className="flex flex-col divide-y divide-hairline rounded-3xl border-[1.5px] border-hairline bg-white shadow-soft">
+        <ol className="relative flex flex-col">
+          <span aria-hidden className="absolute bottom-3 left-[6rem] top-3 hidden w-px bg-line sm:block" />
           {data.map((activity) => (
             <ActivityRow key={activity.attemptId} activity={activity} />
           ))}
@@ -32,20 +31,31 @@ function ActivityRow({ activity }: { activity: CompletedActivity }) {
   const decision = parentDecision(activity);
   const minutes = Math.max(1, Math.round((new Date(activity.completedAt).getTime() - new Date(activity.startedAt).getTime()) / 60_000));
   return (
-    <li className="flex flex-col gap-1 p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="font-semibold text-ink">{activity.title}</p>
-        <p className="text-sm text-muted">
-          {formatDay(activity.completedAt)} · about {minutes} min
+    <li className="relative grid gap-1 py-4 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-8">
+      <p className="tabular text-sm text-ink-faint sm:pt-0.5 sm:text-right">{formatDay(activity.completedAt)}</p>
+      <span aria-hidden className="absolute left-[calc(6rem-4.5px)] top-[1.5rem] hidden h-2.5 w-2.5 rounded-full bg-white ring-2 ring-tonle-400 sm:block" />
+      <div className="flex flex-col gap-1.5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <p className="font-semibold text-ink">{activity.title}</p>
+          <p className="text-sm text-ink-faint">about {minutes} min</p>
+        </div>
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink">
+          <span className="inline-flex items-center gap-2">
+            <span className="flex gap-[3px]" aria-hidden>
+              {Array.from({ length: activity.totalAnswers }, (_, i) => (
+                <span key={i} className={i < activity.correctAnswers ? "h-2.5 w-2.5 rounded-[2px] bg-light" : "h-2.5 w-2.5 rounded-[2px] bg-tonle-100"} />
+              ))}
+            </span>
+            <span className="tabular">
+              {activity.correctAnswers} of {activity.totalAnswers} answers correct
+            </span>
+          </span>
+          {activity.skills.length > 0 && <span className="text-ink-soft">{activity.skills.map((s) => s.name).join(", ")}</span>}
+          {activity.source === "REVIEW" && <span className="font-semibold text-light-deep">Smart Review</span>}
+          {activity.source === null && <span className="text-ink-soft">free practice</span>}
         </p>
+        {decision && <p className="text-sm leading-relaxed text-ink-soft">{decision}</p>}
       </div>
-      <p className="text-sm text-ink">
-        {activity.correctAnswers} of {activity.totalAnswers} answers correct
-        {activity.skills.length > 0 && <span className="text-muted"> · {activity.skills.map((s) => s.name).join(", ")}</span>}
-        {activity.source === "REVIEW" && <span className="text-muted"> · Smart Review</span>}
-        {activity.source === null && <span className="text-muted"> · free practice</span>}
-      </p>
-      {decision && <p className="text-sm text-muted">{decision}</p>}
     </li>
   );
 }

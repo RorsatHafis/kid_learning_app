@@ -3,7 +3,6 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { curriculaApi, enrollmentApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
-import { Pill } from "@/components/ui/Pill";
 import { ApiError } from "@/lib/api/ApiError";
 
 /** Enrolls the child in a platform curriculum. The server lists only curricula a
@@ -41,11 +40,11 @@ export function ChooseCurriculumPanel({
   if (error) return <ErrorState error={error} onRetry={refetch} />;
 
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border-[1.5px] border-hairline bg-white p-6 shadow-soft">
+    <div className="flex flex-col gap-5 rounded-paper bg-white p-6 shadow-paper ring-1 ring-line/70 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-bold text-ink">Choose a learning path</p>
-          <p className="text-sm text-muted">Each path follows a curriculum; the platform adapts it to your child as they learn.</p>
+          <p className="font-display text-lg font-semibold text-tonle-950">Choose a learning path</p>
+          <p className="mt-0.5 max-w-lg text-sm text-ink-soft">Each path follows a curriculum; the platform adapts it to your child as they learn.</p>
         </div>
         {onCancel && (
           <Button variant="ghost" size="md" onClick={onCancel}>
@@ -59,19 +58,12 @@ export function ChooseCurriculumPanel({
           description="New subjects appear here as soon as they are published."
         />
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col divide-y divide-line border-y border-line">
           {curricula?.map((curriculum) => (
-            <li key={curriculum.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-hairline p-4">
+            <li key={curriculum.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
               <div>
                 <p className="font-semibold text-ink">{curriculum.name}</p>
-                <div className="mt-1 flex gap-2">
-                  <Pill tone="blue" className="px-2.5 py-1 text-xs">
-                    {curriculum.subjectName}
-                  </Pill>
-                  <Pill tone="neutral" className="px-2.5 py-1 text-xs">
-                    {curriculum.ageHubName}
-                  </Pill>
-                </div>
+                <p className="mt-0.5 text-sm text-ink-faint">{[curriculum.subjectName, curriculum.ageHubName].filter(Boolean).join(" · ")}</p>
               </div>
               <Button size="md" onClick={() => onChoose(curriculum.id)} disabled={enrollingId !== null}>
                 {enrollingId === curriculum.id ? "Starting…" : "Start this path"}
@@ -81,7 +73,7 @@ export function ChooseCurriculumPanel({
         </ul>
       )}
       {enrollError && (
-        <p role="alert" className="text-sm font-medium text-brand-redStrong">
+        <p role="alert" className="text-sm font-medium text-brick-deep">
           {enrollError}
         </p>
       )}

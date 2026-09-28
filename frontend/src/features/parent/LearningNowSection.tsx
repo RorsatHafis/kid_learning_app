@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { CheckCircle2, ChevronDown, Circle, PlayCircle, Plus } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { learningApi } from "@/lib/api/endpoints";
 import type { EnrollmentOverview, JourneyStep } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
-import { Pill } from "@/components/ui/Pill";
 import { parentReason, stepTag } from "@/features/learning/explain";
 import { cn } from "@/lib/utils/cn";
 import { ChooseCurriculumPanel } from "./ChooseCurriculumPanel";
 import { SectionTitle } from "./SectionTitle";
+import { BookStrip } from "./ui";
 
 type AsyncList = {
   data: EnrollmentOverview[] | null;
@@ -66,69 +66,69 @@ export function LearningNowSection({
 function EnrollmentCard({ enrollment }: { enrollment: EnrollmentOverview }) {
   const [open, setOpen] = useState(false);
   const { curriculum, completedSteps, totalSteps, nextStep } = enrollment;
-  const ratio = totalSteps > 0 ? completedSteps / totalSteps : 0;
 
   return (
-    <article className="flex flex-col gap-5 rounded-3xl border-[1.5px] border-hairline bg-white p-6 shadow-soft">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-bold text-ink">{curriculum.name}</h3>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {curriculum.subjectName && (
-              <Pill tone="blue" className="px-2.5 py-1 text-xs">
-                {curriculum.subjectName}
-              </Pill>
-            )}
-            {curriculum.ageHubName && (
-              <Pill tone="neutral" className="px-2.5 py-1 text-xs">
-                {curriculum.ageHubName}
-              </Pill>
-            )}
+    <article className="rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+      <div className="flex flex-col gap-6 p-6 sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h3 className="font-display text-xl font-semibold text-tonle-950">{curriculum.name}</h3>
+            <p className="mt-0.5 text-sm text-ink-faint">{[curriculum.subjectName, curriculum.ageHubName].filter(Boolean).join(" · ")}</p>
+          </div>
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <BookStrip done={completedSteps} total={totalSteps} label={`${curriculum.name}: steps completed`} next={nextStep !== null} />
+            <p className="tabular text-sm font-semibold text-ink">
+              {completedSteps} of {totalSteps} steps completed
+            </p>
           </div>
         </div>
-        <p className="text-sm font-semibold text-muted">
-          {completedSteps} of {totalSteps} steps completed
-        </p>
-      </div>
 
-      <div
-        className="h-2.5 overflow-hidden rounded-pill bg-hairline"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={totalSteps}
-        aria-valuenow={completedSteps}
-        aria-label={`${curriculum.name}: steps completed`}
-      >
-        <div className="h-full rounded-pill bg-kid-mintDeep" style={{ width: `${ratio * 100}%` }} />
-      </div>
-      <p className="-mt-2 text-xs text-muted">Steps completed show activity, not mastery — see Skills below for what the evidence says.</p>
-
-      {nextStep ? (
-        <div className="rounded-2xl bg-kid-lavender/60 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-kid-lavenderDeep">Up next</p>
-          <p className="font-bold text-ink">{nextStep.title}</p>
-          <p className="mt-1 text-sm text-ink">
-            <span className="font-semibold">Why this next? </span>
-            {parentReason(nextStep, curriculum.name)}
+        {nextStep ? (
+          <div className="grid gap-4 border-t border-line pt-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-8">
+            <div>
+              <p className="text-sm font-semibold text-tonle-600">Up next</p>
+              <p className="mt-1 font-display text-lg font-semibold text-tonle-950">{nextStep.title}</p>
+            </div>
+            <p className="flex gap-3 text-[0.9375rem] leading-relaxed text-ink">
+              <Sparkle />
+              <span>
+                <span className="font-semibold">Why this next? </span>
+                {parentReason(nextStep, curriculum.name)}
+              </span>
+            </p>
+          </div>
+        ) : (
+          <p className="border-t border-line pt-6 text-[0.9375rem] text-ink-soft">
+            All steps on this path are done for now. New steps appear here when the platform schedules practice or review.
           </p>
-        </div>
-      ) : (
-        <p className="rounded-2xl bg-kid-mint/60 p-4 text-sm font-semibold text-kid-mintDeep">
-          All steps on this path are done for now. New steps appear here when the platform schedules practice or review.
-        </p>
-      )}
+        )}
+        <p className="text-[0.8125rem] text-ink-faint">Steps completed show activity, not mastery — Skills & evidence says what the answers show.</p>
+      </div>
 
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex w-fit items-center gap-1 text-sm font-semibold text-brand-blueStrong hover:underline"
+        className="flex w-full items-center justify-between gap-2 border-t border-line px-6 py-4 text-sm font-semibold text-tonle-700 transition-colors hover:bg-paper sm:px-8"
       >
         {open ? "Hide the full path" : "Show the full path"}
-        <ChevronDown size={16} className={cn("transition-transform", open && "rotate-180")} aria-hidden />
+        <ChevronDown size={16} className={cn("transition-transform duration-200 ease-out", open && "rotate-180")} aria-hidden />
       </button>
-      {open && <FullPath enrollmentId={enrollment.enrollmentId} curriculumName={curriculum.name} />}
+      {open && (
+        <div className="border-t border-line px-6 pb-6 sm:px-8">
+          <FullPath enrollmentId={enrollment.enrollmentId} curriculumName={curriculum.name} />
+        </div>
+      )}
     </article>
+  );
+}
+
+/** A small spark of light: marks the platform's own reasoning. */
+function Sparkle() {
+  return (
+    <svg viewBox="0 0 16 16" className="mt-1 h-4 w-4 shrink-0 text-light" aria-hidden>
+      <path d="M8 0.8 C8.4 4.6 9.6 5.8 13.4 6.2 C9.6 6.6 8.4 7.8 8 11.6 C7.6 7.8 6.4 6.6 2.6 6.2 C6.4 5.8 7.6 4.6 8 0.8 Z" fill="currentColor" />
+    </svg>
   );
 }
 
@@ -138,38 +138,35 @@ function FullPath({ enrollmentId, curriculumName }: { enrollmentId: string; curr
   if (error) return <ErrorState error={error} onRetry={refetch} />;
   if (!data) return null;
   return (
-    <ol className="flex flex-col divide-y divide-hairline rounded-2xl border border-hairline">
-      {data.steps.map((step) => (
-        <PathRow key={step.learningPathItemId} step={step} isNext={step.learningPathItemId === data.nextStepId} curriculumName={curriculumName} />
+    <ol className="flex flex-col">
+      {data.steps.map((step, i) => (
+        <PathRow key={step.learningPathItemId} step={step} index={i} isNext={step.learningPathItemId === data.nextStepId} curriculumName={curriculumName} />
       ))}
     </ol>
   );
 }
 
-function PathRow({ step, isNext, curriculumName }: { step: JourneyStep; isNext: boolean; curriculumName: string }) {
+function PathRow({ step, index, isNext, curriculumName }: { step: JourneyStep; index: number; isNext: boolean; curriculumName: string }) {
   const tag = stepTag(step);
   const done = step.status === "COMPLETED";
-  const Icon = done ? CheckCircle2 : isNext ? PlayCircle : Circle;
   return (
-    <li className="flex gap-3 p-4">
-      <Icon
-        size={20}
-        className={cn("mt-0.5 shrink-0", done ? "text-kid-mintDeep" : isNext ? "text-brand-blueStrong" : "text-hairline")}
-        aria-label={done ? "Completed" : isNext ? "Up next" : "Not started"}
-      />
-      <div className="flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-ink">{step.title}</span>
-          {tag && (
-            <Pill tone={tag.tone === "sun" ? "amber" : tag.tone === "lavender" ? "purple" : "red"} className="px-2 py-0.5 text-[11px]">
-              {tag.label}
-            </Pill>
-          )}
-          {done && step.score !== null && <span className="text-sm text-muted">Score {Math.round(step.score)}%</span>}
-        </div>
-        {step.explanation.reason !== "CURRICULUM" && (
-          <p className="mt-0.5 text-sm text-muted">{parentReason(step, curriculumName)}</p>
+    <li className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b border-line py-4 last:border-b-0">
+      <span
+        className={cn(
+          "mt-0.5 flex h-7 w-7 items-center justify-center rounded-[7px] text-xs font-bold tabular",
+          done ? "bg-light text-tonle-950" : isNext ? "bg-white text-tonle-800 ring-2 ring-light" : "bg-tonle-50 text-ink-faint",
         )}
+        aria-label={done ? "Completed" : isNext ? "Up next" : "Not started"}
+      >
+        {index + 1}
+      </span>
+      <div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className={cn("font-semibold", done || isNext ? "text-ink" : "text-ink-soft")}>{step.title}</span>
+          {tag && <span className="text-[0.8125rem] font-semibold text-dusk-deep">{tag.label}</span>}
+          {done && step.score !== null && <span className="tabular text-sm text-ink-faint">Score {Math.round(step.score)}%</span>}
+        </div>
+        {step.explanation.reason !== "CURRICULUM" && <p className="mt-0.5 text-sm text-ink-soft">{parentReason(step, curriculumName)}</p>}
       </div>
     </li>
   );

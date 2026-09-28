@@ -14,13 +14,24 @@ import { formatDay } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
 import { SectionTitle } from "./SectionTitle";
 
-const standingTone: Record<SkillStanding, string> = {
-  NOT_STARTED: "bg-surface-sand text-muted",
-  TOO_EARLY_TO_TELL: "bg-kid-sky text-kid-skyDeep",
-  NEEDS_PRACTICE: "bg-kid-peach text-kid-peachDeep",
-  PROGRESSING: "bg-kid-lavender text-kid-lavenderDeep",
-  SECURE: "bg-kid-mint text-kid-mintDeep",
+/** A quiet marker per standing — always next to its words, never colour alone. */
+const standingMark: Record<SkillStanding, { mark: string; text: string }> = {
+  NOT_STARTED: { mark: "border border-line-strong bg-white", text: "text-ink-faint" },
+  TOO_EARLY_TO_TELL: { mark: "border-2 border-tonle-300 bg-white", text: "text-tonle-700" },
+  NEEDS_PRACTICE: { mark: "bg-light", text: "text-light-deep" },
+  PROGRESSING: { mark: "bg-tonle-600", text: "text-tonle-700" },
+  SECURE: { mark: "bg-palm", text: "text-palm-deep" },
 };
+
+function Standing({ standing }: { standing: SkillStanding }) {
+  const m = standingMark[standing];
+  return (
+    <span className={cn("inline-flex items-center gap-2 text-sm font-semibold", m.text)} title={standingHelp[standing]}>
+      <span aria-hidden className={cn("h-3 w-3 rounded-[3px]", m.mark)} />
+      {standingLabel[standing]}
+    </span>
+  );
+}
 
 /**
  * What the evidence says, skill by skill (directive §13.3). Evidence strength and
@@ -32,116 +43,138 @@ export function SkillsSection({ childId }: { childId: string }) {
   const { data, error, isLoading, refetch } = useAsync(() => learningApi.skills(childId), [childId]);
 
   return (
-    <section aria-labelledby="skills" className="flex flex-col gap-4">
+    <section aria-labelledby="skills" className="flex flex-col gap-5">
       <SectionTitle id="skills" title="Skills & evidence" subtitle="What your child's answers show so far, skill by skill." />
-      <details className="rounded-2xl bg-white/70 p-4 text-sm text-muted">
-        <summary className="cursor-pointer font-semibold text-ink">How we describe progress</summary>
-        <div className="mt-3 flex flex-col gap-2">
-          <p>
-            Every answer is evidence. We only describe how a skill is going once there are at least three scored answers on it —
-            before that it is <strong>too early to tell</strong>, not weak.
-          </p>
-          <ul className="grid gap-1 sm:grid-cols-2">
+
+      {isLoading && <LoadingState label="Loading skills…" />}
+      {error && <ErrorState error={error} onRetry={refetch} />}
+      {data && data.length === 0 && <EmptyState title="No skills yet" description="Choose a learning path to see the skills it builds." />}
+      {data?.map((curriculum) => (
+        <div key={curriculum.enrollmentId} className="flex flex-col gap-4">
+          {data.length > 1 && <h3 className="font-display text-lg font-semibold text-tonle-950">{curriculum.curriculum.name}</h3>}
+          {curriculum.objectives.map((objective) => (
+            <ObjectiveTable key={objective.objectiveId} objective={objective} />
+          ))}
+        </div>
+      ))}
+
+      <details className="group rounded-paper bg-white px-6 py-4 ring-1 ring-line/70 open:pb-6">
+        <summary className="cursor-pointer list-none text-sm font-semibold text-tonle-700 marker:hidden">
+          <span className="inline-flex items-center gap-2">
+            How we describe progress
+            <span aria-hidden className="text-ink-faint transition-transform duration-200 group-open:rotate-90">›</span>
+          </span>
+        </summary>
+        <div className="mt-4 grid gap-6 text-sm text-ink-soft sm:grid-cols-2">
+          <div className="flex flex-col gap-3">
+            <p>
+              Every answer is evidence. We only describe how a skill is going once there are at least three scored answers on it —
+              before that it is <strong className="text-ink">too early to tell</strong>, not weak.
+            </p>
+            <ul className="flex flex-col gap-2">
+              {(Object.keys(evidenceDots) as EvidenceLevel[]).map((level) => (
+                <li key={level} className="flex items-center gap-3">
+                  <EvidenceLine level={level} />
+                  <span>{evidenceLabel[level]}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <ul className="flex flex-col gap-2.5">
             {(Object.keys(standingLabel) as SkillStanding[]).map((standing) => (
-              <li key={standing}>
-                <span className={cn("mr-2 rounded-pill px-2 py-0.5 text-xs font-bold", standingTone[standing])}>
-                  {standingLabel[standing]}
-                </span>
-                {standingHelp[standing]}
+              <li key={standing} className="flex flex-col">
+                <Standing standing={standing} />
+                <span className="pl-5">{standingHelp[standing]}</span>
               </li>
             ))}
           </ul>
         </div>
       </details>
-
-      {isLoading && <LoadingState label="Loading skills…" />}
-      {error && <ErrorState error={error} onRetry={refetch} />}
-      {data && data.length === 0 && (
-        <EmptyState title="No skills yet" description="Choose a learning path to see the skills it builds." />
-      )}
-      {data?.map((curriculum) => (
-        <div key={curriculum.enrollmentId} className="flex flex-col gap-3">
-          {data.length > 1 && <h3 className="text-base font-bold text-ink">{curriculum.curriculum.name}</h3>}
-          {curriculum.objectives.map((objective) => (
-            <ObjectiveCard key={objective.objectiveId} objective={objective} />
-          ))}
-        </div>
-      ))}
     </section>
   );
 }
 
-function ObjectiveCard({ objective }: { objective: ObjectiveProgress }) {
+function ObjectiveTable({ objective }: { objective: ObjectiveProgress }) {
   return (
-    <article className="rounded-3xl border-[1.5px] border-hairline bg-white p-6 shadow-soft">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h4 className="text-lg font-bold text-ink">{objective.title}</h4>
-          {objective.description && <p className="text-sm text-muted">{objective.description}</p>}
+    <article className="overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+      <header className="flex flex-wrap items-start justify-between gap-4 px-6 pb-5 pt-6 sm:px-8">
+        <div className="max-w-xl">
+          <h4 className="font-display text-lg font-semibold text-tonle-950">{objective.title}</h4>
+          {objective.description && <p className="mt-1 text-sm text-ink-soft">{objective.description}</p>}
+          <p className="mt-2 tabular text-sm text-ink-faint">
+            {objective.skillsPractised} of {objective.skillsMapped} skills practised · {objective.skillsWithSufficientEvidence} with enough
+            evidence to judge
+          </p>
         </div>
         <span
           className={cn(
-            "rounded-pill px-3 py-1 text-xs font-bold",
+            "rounded-[8px] px-2.5 py-1 text-[0.8125rem] font-semibold ring-1 ring-inset",
             objective.standing === "SECURE"
-              ? "bg-kid-mint text-kid-mintDeep"
+              ? "bg-palm-soft text-palm-deep ring-palm/30"
               : objective.standing === "IN_PROGRESS"
-                ? "bg-kid-lavender text-kid-lavenderDeep"
-                : "bg-surface-sand text-muted",
+                ? "bg-tonle-50 text-tonle-700 ring-tonle-200"
+                : "bg-paper text-ink-soft ring-line",
           )}
         >
           {objectiveStandingLabel[objective.standing]}
         </span>
+      </header>
+      <div role="table" aria-label={`Skills in ${objective.title}`}>
+        <div role="row" className="hidden grid-cols-[minmax(0,1fr)_150px_150px] gap-4 border-y border-line bg-paper px-8 py-2.5 text-[0.8125rem] font-semibold text-ink-faint sm:grid">
+          <span role="columnheader">Skill</span>
+          <span role="columnheader">Evidence</span>
+          <span role="columnheader">What it shows</span>
+        </div>
+        <div role="rowgroup" className="divide-y divide-line border-t border-line sm:border-t-0">
+          {objective.skills.map((skill) => (
+            <SkillRow key={skill.skillId} skill={skill} />
+          ))}
+        </div>
       </div>
-      <p className="mt-2 text-sm text-muted">
-        {objective.skillsPractised} of {objective.skillsMapped} skills practised · {objective.skillsWithSufficientEvidence} with
-        enough evidence to judge
-      </p>
-      <ul className="mt-4 flex flex-col divide-y divide-hairline">
-        {objective.skills.map((skill) => (
-          <SkillRow key={skill.skillId} skill={skill} />
-        ))}
-      </ul>
     </article>
   );
 }
 
 function SkillRow({ skill }: { skill: SkillProgress }) {
   return (
-    <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
+    <div role="row" className="grid gap-3 px-6 py-4 sm:grid-cols-[minmax(0,1fr)_150px_150px] sm:items-center sm:gap-4 sm:px-8">
+      <div role="cell">
         <p className="font-semibold text-ink">{skill.name}</p>
-        <p className="text-sm text-muted">
+        <p className="tabular text-sm text-ink-soft">
           {skill.scoredAnswers > 0
-            ? `${skill.correctAnswers} of ${skill.scoredAnswers} answers correct${
-                skill.lastPracticedAt ? ` · last practised ${formatDay(skill.lastPracticedAt)}` : ""
-              }`
+            ? `${skill.correctAnswers} of ${skill.scoredAnswers} answers correct${skill.lastPracticedAt ? ` · last practised ${formatDay(skill.lastPracticedAt)}` : ""}`
             : "No answers yet"}
         </p>
         {skill.inReview && (
-          <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-kid-sunDeep">
+          <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-light-deep">
             <RotateCcw size={14} aria-hidden /> In Smart Review
             {skill.reviewDueAt ? ` · due ${formatDay(skill.reviewDueAt)}` : ""}
           </p>
         )}
       </div>
-      <div className="flex items-center gap-3">
-        <EvidenceMeter level={skill.evidenceLevel} />
-        <span className={cn("rounded-pill px-3 py-1 text-xs font-bold", standingTone[skill.standing])} title={standingHelp[skill.standing]}>
-          {standingLabel[skill.standing]}
-        </span>
+      <div role="cell" className="flex items-center gap-3">
+        <EvidenceLine level={skill.evidenceLevel} />
+        <span className="text-[0.8125rem] text-ink-soft sm:sr-only">{evidenceLabel[skill.evidenceLevel]}</span>
       </div>
-    </li>
+      <div role="cell">
+        <Standing standing={skill.standing} />
+      </div>
+    </div>
   );
 }
 
-function EvidenceMeter({ level }: { level: EvidenceLevel }) {
-  const filled = evidenceDots[level];
+/** Evidence strength drawn as line weight: dotted when there is little, a firm rule when there is plenty. */
+function EvidenceLine({ level }: { level: EvidenceLevel }) {
+  const n = evidenceDots[level];
+  const stroke = ["#C3CCDD", "#6E8FD0", "#2E4F9E", "#182E66"][n];
+  const width = [1.5, 2, 3.5, 5.5][n];
+  const dash = n === 0 ? "1.5 5" : n === 1 ? "6 5" : undefined;
   return (
-    <span className="flex items-center gap-1.5" title={evidenceLabel[level]}>
+    <span className="inline-flex" title={evidenceLabel[level]}>
       <span className="sr-only">{evidenceLabel[level]}</span>
-      {[1, 2, 3].map((dot) => (
-        <span key={dot} aria-hidden className={cn("h-2.5 w-2.5 rounded-full", dot <= filled ? "bg-ink" : "bg-hairline")} />
-      ))}
+      <svg width="84" height="10" viewBox="0 0 84 10" aria-hidden>
+        <line x1="2" y1="5" x2="82" y2="5" stroke={stroke} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" />
+      </svg>
     </span>
   );
 }

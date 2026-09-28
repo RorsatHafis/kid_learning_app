@@ -1,29 +1,21 @@
-import { Lightbulb, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { parentInsightApi } from "@/lib/api/endpoints";
 import type { ParentInsight, ParentInsightType } from "@/lib/api/types";
-import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
+import { LoadingState, ErrorState } from "@/components/ui/States";
 import { SectionTitle } from "./SectionTitle";
-
-const icon: Record<ParentInsightType, typeof TrendingUp> = {
-  PROGRESS: TrendingUp,
-  STRENGTH: Sparkles,
-  WEAKNESS: TrendingDown,
-  RECOMMENDATION: Lightbulb,
-};
-
-const iconClasses: Record<ParentInsightType, string> = {
-  PROGRESS: "bg-kid-sky text-kid-skyDeep",
-  STRENGTH: "bg-kid-mint text-kid-mintDeep",
-  WEAKNESS: "bg-kid-peach text-kid-peachDeep",
-  RECOMMENDATION: "bg-kid-lavender text-kid-lavenderDeep",
-};
 
 const kindLabel: Record<ParentInsightType, string> = {
   PROGRESS: "Progress",
   STRENGTH: "Strength",
   WEAKNESS: "Needs support",
   RECOMMENDATION: "Suggestion",
+};
+
+const kindTone: Record<ParentInsightType, string> = {
+  PROGRESS: "text-tonle-600",
+  STRENGTH: "text-palm-deep",
+  WEAKNESS: "text-light-deep",
+  RECOMMENDATION: "text-dusk-deep",
 };
 
 /**
@@ -34,22 +26,22 @@ const kindLabel: Record<ParentInsightType, string> = {
 export function InsightsSection({ childId }: { childId: string }) {
   const { data, error, isLoading, refetch } = useAsync(() => parentInsightApi.list(childId), [childId]);
   return (
-    <section aria-labelledby="insights" className="flex flex-col gap-4">
+    <section aria-labelledby="insights" className="flex flex-col gap-5">
       <SectionTitle id="insights" title="Insights" subtitle="What we can say with confidence right now." />
       {isLoading && <LoadingState label="Loading insights…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
       {data && data.length === 0 && (
-        <EmptyState
-          title="Not enough evidence yet"
-          description="Insights appear once there are enough answers to say something truthful — we never guess."
-        />
+        <div className="rounded-paper bg-tonle-50 px-6 py-6 ring-1 ring-tonle-100">
+          <p className="font-display text-lg font-semibold text-tonle-950">Not enough evidence yet</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">Insights appear once there are enough answers to say something truthful — we never guess.</p>
+        </div>
       )}
       {data && data.length > 0 && (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
           {/* Current insights are derived live (no id): one per objective or review
               flag, so type + headline is unique within the list. */}
           {data.map((insight) => (
-            <InsightCard key={`${insight.insightType}:${insight.headline}`} insight={insight} />
+            <InsightStatement key={`${insight.insightType}:${insight.headline}`} insight={insight} />
           ))}
         </ul>
       )}
@@ -57,20 +49,16 @@ export function InsightsSection({ childId }: { childId: string }) {
   );
 }
 
-function InsightCard({ insight }: { insight: ParentInsight }) {
-  const Icon = icon[insight.insightType];
+function InsightStatement({ insight }: { insight: ParentInsight }) {
   const basis = evidenceBasis(insight.supportingData);
   return (
-    <li className="flex gap-4 rounded-3xl border-[1.5px] border-hairline bg-white p-5 shadow-soft">
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconClasses[insight.insightType]}`}>
-        <Icon size={18} aria-hidden />
-      </span>
-      <div>
-        <p className="text-xs font-bold uppercase tracking-wide text-muted">{kindLabel[insight.insightType]}</p>
-        <p className="font-bold text-ink">{insight.headline}</p>
-        {insight.detail && <p className="mt-1 text-sm leading-relaxed text-muted">{insight.detail}</p>}
-        {basis && <p className="mt-1 text-sm text-muted">Based on: {basis}</p>}
-      </div>
+    <li className="flex flex-col gap-2 px-6 py-6">
+      <p className="font-display text-[1.1875rem] font-semibold leading-snug text-tonle-950">{insight.headline}</p>
+      {insight.detail && <p className="text-sm leading-relaxed text-ink-soft">{insight.detail}</p>}
+      <p className="mt-1 flex flex-wrap gap-x-2 border-t border-dashed border-line pt-2 text-[0.8125rem] text-ink-faint">
+        <span className={`font-semibold ${kindTone[insight.insightType]}`}>{kindLabel[insight.insightType]}</span>
+        {basis && <span>Based on: {basis}</span>}
+      </p>
     </li>
   );
 }
