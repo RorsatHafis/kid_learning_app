@@ -98,6 +98,17 @@ set later without restructuring:
   state). **No provider is implemented or faked.** The parent UI shows "not available yet" for
   paid upgrades instead of a pretend checkout.
 
+**Built (X2).** V42 creates `subscription_plans`, `plan_entitlements` and `family_subscriptions`, and
+seeds "Early access" as the default plan with no limits. Entitlements are `CHILDREN_MAX` and
+`JOURNEYS_PER_CHILD_MAX`. Limits apply when a family adds a child or starts a journey, under a row lock,
+as a 409 "Plan Limit Reached". A child is still created when a plan refuses its automatic enrolment.
+Plans are DRAFT, then ACTIVE (frozen), then RETIRED, and at most one is the default. Administrators grant a
+plan to a family (found by a parent's exact email), open-ended or dated, and end it; every change is
+audited. Parents see their plan and its use under Account. There is no `subscription_events` table: the
+audit log is the history, so there is no second record. A `BillingProvider` port was deliberately not added
+before a provider is chosen (it would be an abstraction with no implementation). The integration point is
+`FamilySubscription`'s transitions and the `PROVIDER` source.
+
 Owner decisions this leaves open: plan names, prices, currency (USD/KHR), trial length, the
 limits of a free plan (if any), the provider (e.g. Stripe, ABA PayWay, local wallets), refunds
 and taxes.

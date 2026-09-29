@@ -361,6 +361,9 @@ export interface ApiProblem {
   lockedUntil?: string;
   /** 429 only (security/ratelimit/AuthRateLimitFilter.java), mirrors Retry-After. */
   retryAfterSeconds?: number;
+  /** 409 "Plan Limit Reached" only: which entitlement and its limit (PlanLimitException). */
+  entitlement?: string;
+  limit?: number;
   correlationId?: string;
   timestamp?: string;
 }

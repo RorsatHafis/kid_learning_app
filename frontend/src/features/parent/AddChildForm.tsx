@@ -4,17 +4,20 @@ import { Button } from "@/components/ui/Button";
 import { ApiError } from "@/lib/api/ApiError";
 import { childrenApi } from "@/lib/api/endpoints";
 import type { Child } from "@/lib/api/types";
+import { PlanLimitNote } from "./PlanLimitNote";
 
 export function AddChildForm({ onCreated, onCancel }: { onCreated: (child: Child) => void; onCancel: () => void }) {
   const [displayName, setDisplayName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [planLimited, setPlanLimited] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setFormError(null);
+    setPlanLimited(false);
     setFieldErrors({});
     setIsSubmitting(true);
     try {
@@ -25,6 +28,7 @@ export function AddChildForm({ onCreated, onCancel }: { onCreated: (child: Child
         setFieldErrors(err.validationErrors);
       } else if (err instanceof ApiError) {
         setFormError(err.problem?.detail ?? "Couldn't add your child.");
+        setPlanLimited(err.isPlanLimit);
       } else {
         setFormError("Something went wrong. Please try again.");
       }
@@ -58,6 +62,7 @@ export function AddChildForm({ onCreated, onCancel }: { onCreated: (child: Child
           {formError}
         </p>
       )}
+        {planLimited && <PlanLimitNote />}
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Adding…" : "Add child"}

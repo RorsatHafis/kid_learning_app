@@ -1,0 +1,91 @@
+package com.platform.subscription.web;
+
+import com.platform.subscription.service.SubscriptionService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * A family's plan (its own view) and the administrator's plan and grant operations. Every
+ * admin operation re-checks the ADMIN role in {@link SubscriptionService}.
+ */
+@RestController
+public class SubscriptionController {
+
+    private final SubscriptionService service;
+
+    public SubscriptionController(SubscriptionService service) {
+        this.service = service;
+    }
+
+    @GetMapping("/api/v1/family/plan")
+    public SubscriptionDtos.FamilyPlanResponse familyPlan(@AuthenticationPrincipal UUID accountId) {
+        SubscriptionService.FamilyPlanView view = service.familyPlan(accountId);
+        return SubscriptionDtos.FamilyPlanResponse.of(view.effective(), view.usage());
+    }
+
+    @GetMapping("/api/v1/admin/plans")
+    public List<SubscriptionDtos.PlanResponse> plans(@AuthenticationPrincipal UUID adminId) {
+        return service.listPlans(adminId).stream().map(SubscriptionDtos.PlanResponse::of).toList();
+    }
+
+    @PostMapping("/api/v1/admin/plans")
+    public ResponseEntity<SubscriptionDtos.PlanResponse> createPlan(@AuthenticationPrincipal UUID adminId,
+                                                                    @Valid @RequestBody SubscriptionDtos.CreatePlanRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(SubscriptionDtos.PlanResponse.of(service.createPlan(adminId, request.code(), request.name(), request.description())));
+    }
+
+    @PutMapping("/api/v1/admin/plans/{planId}")
+    public SubscriptionDtos.PlanResponse revisePlan(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId,
+                                                    @Valid @RequestBody SubscriptionDtos.RevisePlanRequest request) {
+        return SubscriptionDtos.PlanResponse.of(service.revisePlan(adminId, planId, request.name(), request.description(),
+                request.selfService(), request.priceAmountMinor(), request.priceCurrency(), request.billingInterval(), request.limits()));
+    }
+
+    @PostMapping("/api/v1/admin/plans/{planId}/activate")
+    public SubscriptionDtos.PlanResponse activate(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId) {
+        return SubscriptionDtos.PlanResponse.of(service.activatePlan(adminId, planId));
+    }
+
+    @PostMapping("/api/v1/admin/plans/{planId}/retire")
+    public SubscriptionDtos.PlanResponse retire(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId) {
+        return SubscriptionDtos.PlanResponse.of(service.retirePlan(adminId, planId));
+    }
+
+    @PostMapping("/api/v1/admin/plans/{planId}/make-default")
+    public SubscriptionDtos.PlanResponse makeDefault(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId) {
+        return SubscriptionDtos.PlanResponse.of(service.makeDefault(adminId, planId));
+    }
+
+    /** Exact parent address only; 404 when no family is found (no directory browsing). */
+    @GetMapping("/api/v1/admin/families")
+    public SubscriptionDtos.FamilyResponse findFamily(@AuthenticationPrincipal UUID adminId, @RequestParam String parentEmail) {
+        return service.findFamilyByParentEmail(adminId, parentEmail)
+                .map(SubscriptionDtos.FamilyResponse::of)
+                .orElseThrow(() -> new com.platform.common.web.ResourceNotFoundException("Family for", parentEmail));
+    }
+
+    @PostMapping("/api/v1/admin/families/{familyId}/subscription")
+    public SubscriptionDtos.FamilyResponse grant(@AuthenticationPrincipal UUID adminId, @PathVariable UUID familyId,
+                                                 @Valid @RequestBody SubscriptionDtos.GrantRequest request) {
+        return SubscriptionDtos.FamilyResponse.of(service.grant(adminId, familyId, request.planId(), request.periodEnd(), request.note()));
+    }
+
+    @PostMapping("/api/v1/admin/families/{familyId}/subscription/end")
+    public SubscriptionDtos.FamilyResponse end(@AuthenticationPrincipal UUID adminId, @PathVariable UUID familyId,
+                                               @Valid @RequestBody SubscriptionDtos.EndRequest request) {
+        return SubscriptionDtos.FamilyResponse.of(service.end(adminId, familyId, request.reason()));
+    }
+}

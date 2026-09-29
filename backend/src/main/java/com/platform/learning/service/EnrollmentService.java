@@ -54,13 +54,15 @@ public class EnrollmentService {
     private final ChildRepository childRepository;
     private final AgeHubRepository ageHubRepository;
     private final PathContentScope pathContentScope;
+    private final com.platform.subscription.service.EntitlementService entitlementService;
 
     public EnrollmentService(EnrollmentRepository enrollmentRepository, LearningPathRepository learningPathRepository,
                               LearningPathService learningPathService, CurriculumService curriculumService,
                               LearningObjectiveSkillService learningObjectiveSkillService,
                               ActivitySkillRepository activitySkillRepository,
                               ActivityVersionRepository activityVersionRepository, ChildRepository childRepository,
-                              AgeHubRepository ageHubRepository, PathContentScope pathContentScope) {
+                              AgeHubRepository ageHubRepository, PathContentScope pathContentScope,
+                              com.platform.subscription.service.EntitlementService entitlementService) {
         this.enrollmentRepository = enrollmentRepository;
         this.learningPathRepository = learningPathRepository;
         this.learningPathService = learningPathService;
@@ -71,6 +73,7 @@ public class EnrollmentService {
         this.childRepository = childRepository;
         this.ageHubRepository = ageHubRepository;
         this.pathContentScope = pathContentScope;
+        this.entitlementService = entitlementService;
     }
 
     /**
@@ -83,6 +86,12 @@ public class EnrollmentService {
     public Enrollment enrollInPlatformCurriculum(UUID childId, UUID curriculumId) {
         if (!pathContentScope.isPlatformCurriculum(curriculumId)) {
             throw new ResourceNotFoundException("Curriculum", curriculumId);
+        }
+        // A family starting another journey is a plan-limited action (§3); re-asking for one the
+        // child already follows is not, so it stays idempotent at any limit.
+        CurriculumVersion published = curriculumService.getPublishedVersion(curriculumId);
+        if (enrollmentRepository.findByChildIdAndCurriculumVersionId(childId, published.getId()).isEmpty()) {
+            entitlementService.requireRoomForJourney(childId);
         }
         return enroll(childId, curriculumId);
     }

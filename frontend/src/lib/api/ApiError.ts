@@ -31,6 +31,11 @@ export class ApiError extends Error {
     return this.problem?.errors ?? null;
   }
 
+  /** 409 from a family's plan: adding this is beyond what the plan includes. */
+  get isPlanLimit() {
+    return this.status === 409 && typeof this.problem?.entitlement === "string";
+  }
+
   /** 429: the server's per-network budget for sign-in, registration or refresh ran out. */
   get isRateLimited() {
     return this.status === 429;

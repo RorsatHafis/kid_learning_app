@@ -175,6 +175,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(com.platform.subscription.service.PlanLimitException.class)
+    public ResponseEntity<Object> handlePlanLimit(com.platform.subscription.service.PlanLimitException ex, WebRequest request) {
+
+        // PLATFORM-EXPANSION.md §3: a family tried to add something its plan doesn't include.
+        // 409 with the entitlement and its limit, so the parent is told plainly what their plan
+        // allows instead of a generic failure.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Plan Limit Reached");
+        problem.setProperty("entitlement", ex.getEntitlement().name());
+        problem.setProperty("limit", ex.getLimit());
+
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
+
+    }
+
     @ExceptionHandler(IncompleteQuestionException.class)
     public ResponseEntity<Object> handleIncompleteQuestion(IncompleteQuestionException ex, WebRequest request) {
 

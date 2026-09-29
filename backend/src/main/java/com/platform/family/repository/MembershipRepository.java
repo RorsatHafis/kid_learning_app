@@ -13,5 +13,7 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
     Optional<Membership> findByFamilyIdAndAccountId(UUID familyId, UUID accountId);
 
     List<Membership> findByAccountId(UUID accountId);
+
+    List<Membership> findByFamilyId(UUID familyId);
     
 }

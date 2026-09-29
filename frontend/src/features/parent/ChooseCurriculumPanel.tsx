@@ -4,6 +4,7 @@ import { curriculaApi, enrollmentApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { ApiError } from "@/lib/api/ApiError";
+import { PlanLimitNote } from "./PlanLimitNote";
 
 /** Enrolls the child in a platform curriculum. The server lists only curricula a
  * family may enroll in (platform-owned, with a published version — N7). */
@@ -21,16 +22,19 @@ export function ChooseCurriculumPanel({
   const { data, error, isLoading, refetch } = useAsync(() => curriculaApi.list(), []);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [enrollError, setEnrollError] = useState<string | null>(null);
+  const [planLimited, setPlanLimited] = useState(false);
   const curricula = data?.filter((curriculum) => !excludeCurriculumIds.includes(curriculum.id));
 
   async function onChoose(curriculumId: string) {
     setEnrollError(null);
+    setPlanLimited(false);
     setEnrollingId(curriculumId);
     try {
       const enrollment = await enrollmentApi.enroll(childId, curriculumId);
       onEnrolled(enrollment.id);
     } catch (err) {
       setEnrollError(err instanceof ApiError ? (err.problem?.detail ?? "Couldn't start that curriculum.") : "Something went wrong.");
+      setPlanLimited(err instanceof ApiError && err.isPlanLimit);
     } finally {
       setEnrollingId(null);
     }
@@ -77,6 +81,7 @@ export function ChooseCurriculumPanel({
           {enrollError}
         </p>
       )}
+      {planLimited && <PlanLimitNote />}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { AdminLayout } from "./AdminLayout";
 import { StaffPage } from "./StaffPage";
 import { AccountsPage } from "./operations/AccountsPage";
 import { ActivityPage } from "./operations/ActivityPage";
+import { PlansPage } from "./operations/PlansPage";
 import { StudioIndex } from "./studio/StudioIndex";
 import { StudioLayout } from "./studio/StudioLayout";
 import { CatalogPage } from "./studio/CatalogPage";
@@ -34,6 +35,7 @@ export default function AdminArea() {
         <Route path="staff" element={<StaffPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="activity" element={<ActivityPage />} />
+        <Route path="plans" element={<PlansPage />} />
         <Route path="account" element={<AccountPage />} />
       </Route>
     </Routes>

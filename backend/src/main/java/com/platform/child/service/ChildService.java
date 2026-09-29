@@ -45,12 +45,15 @@ public class ChildService {
     private final ChildRepository childRepository;
     private final MembershipRepository membershipRepository;
     private final EnrollmentService enrollmentService;
+    private final com.platform.subscription.service.EntitlementService entitlementService;
 
     public ChildService(ChildRepository childRepository, MembershipRepository membershipRepository,
-                         EnrollmentService enrollmentService) {
+                         EnrollmentService enrollmentService,
+                         com.platform.subscription.service.EntitlementService entitlementService) {
         this.childRepository = childRepository;
         this.membershipRepository = membershipRepository;
         this.enrollmentService = enrollmentService;
+        this.entitlementService = entitlementService;
     }
 
     /** Every child in every family this account currently has ACTIVE membership in. */
@@ -82,6 +85,7 @@ public class ChildService {
     public Child createForAccount(UUID accountId, String displayName, LocalDate dateOfBirth) {
         UUID familyId = activeFamilyIds(accountId).stream().findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Family for account", accountId));
+        entitlementService.requireRoomForChild(familyId);
 
         return childRepository.save(Child.enroll(familyId, displayName, dateOfBirth));
     }

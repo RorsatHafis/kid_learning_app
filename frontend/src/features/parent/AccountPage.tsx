@@ -1,5 +1,5 @@
-import { useState, type FormEvent, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, Download, LogOut, MailCheck, ShieldCheck } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { accountApi } from "@/lib/api/endpoints";
@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
+import { ENTITLEMENT_LABEL, familyPlanApi, type Entitlement, type FamilyPlan } from "@/lib/api/subscriptions";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
@@ -19,6 +20,12 @@ const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
  */
 export function AccountPage() {
   const profile = useAsync(() => accountApi.me(), []);
+  const { hash } = useLocation();
+  // A link like /parent/account#plan lands on that section once the page has drawn it.
+  useEffect(() => {
+    if (!hash || !profile.data) return;
+    document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" });
+  }, [hash, profile.data]);
   useDocumentTitle("Account");
 
   return (
@@ -54,6 +61,7 @@ export function AccountPage() {
         </SettingsRow>
         <ChangePassword />
         <SignOutEverywhere />
+        {profile.data?.platformRole === "PARENT" && <YourPlan />}
         {profile.data?.platformRole === "PARENT" && <YourData />}
       </div>
     </div>
@@ -335,4 +343,58 @@ function YourData() {
       </div>
     </SettingsRow>
   );
+}
+
+const dateOnly = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+
+/**
+ * What the family's plan includes and how much of it is in use. Read-only: plans are given by
+ * Bookeyond Kid, and nothing here pretends a checkout exists (PLATFORM-EXPANSION.md §3).
+ */
+function YourPlan() {
+  const plan = useAsync(() => familyPlanApi.get(), []);
+  return (
+    <SettingsRow id="plan" title="Your plan" subtitle="What your family's plan includes.">
+      {plan.isLoading && !plan.data && <LoadingState label="Loading your plan…" />}
+      {plan.error && <ErrorState error={plan.error} onRetry={plan.refetch} />}
+      {plan.data && <PlanDetails plan={plan.data} />}
+    </SettingsRow>
+  );
+}
+
+function PlanDetails({ plan }: { plan: FamilyPlan }) {
+  const sub = plan.subscription;
+  let when: string | null = null;
+  if (sub && sub.grantsAccess) {
+    when = sub.currentPeriodEnd ? `Until ${dateOnly(sub.currentPeriodEnd)}` : "Ongoing";
+  } else if (sub && !sub.grantsAccess && sub.currentPeriodEnd) {
+    when = `An earlier plan ended on ${dateOnly(sub.currentPeriodEnd)}.`;
+  }
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="font-display text-lg font-semibold text-tonle-950">{plan.plan.name}</span>
+          {when && <span className="text-sm text-ink-soft">{when}</span>}
+        </p>
+        {plan.plan.description && <p className="mt-1 text-sm leading-relaxed text-ink-soft">{plan.plan.description}</p>}
+      </div>
+      <dl className="grid gap-3 sm:grid-cols-2">
+        {plan.entitlements.map((entitlement) => (
+          <div key={entitlement.key} className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
+            <dt className="text-sm text-ink-faint">{ENTITLEMENT_LABEL[entitlement.key]}</dt>
+            <dd className="tabular font-semibold text-ink">{usageText(entitlement)}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function usageText(e: Entitlement) {
+  if (e.key === "CHILDREN_MAX") {
+    const used = e.used ?? 0;
+    return e.limit === null ? `${used} added · no limit` : `${used} of ${e.limit}`;
+  }
+  return e.limit === null ? "No limit" : `Up to ${e.limit}`;
 }
