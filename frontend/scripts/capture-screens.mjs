@@ -119,8 +119,13 @@ for (const [size, viewport] of Object.entries(sizes)) {
     await shot(page, "10-parent-home", size);
     await page.getByRole("link", { name: /Sokha/ }).first().click();
     await shot(page, "11-parent-child", size);
+    await page.getByRole("button", { name: "Add a subject" }).click().catch(() => undefined);
+    await shot(page, "14-parent-add-subject", size);
     await nav(page, "Account");
     await shot(page, "12-parent-account", size);
+    await nav(page, "Family");
+    await page.getByRole("button", { name: "Add child" }).click().catch(() => undefined);
+    await shot(page, "13-parent-add-child", size);
     if (wants("2")) {
       await nav(page, "Family");
       const kid = await playableChild();
