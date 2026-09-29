@@ -1,70 +1,89 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import logo from "@/assets/logo/Bookeyond_Kid_Primary.svg";
+import { Menu, X } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
+import { cn } from "@/lib/utils/cn";
 
-const links = [
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "For Children", href: "#for-children" },
-  { label: "For Parents", href: "#for-parents" },
+export const sectionLinks = [
+  { label: "How it works", href: "#how-it-works" },
+  { label: "For parents", href: "#for-parents" },
+  { label: "For children", href: "#for-children" },
   { label: "Subjects", href: "#subjects" },
+  { label: "Schools", href: "#schools" },
 ];
 
+/** A dusk-coloured bar that belongs to the scene beneath it. */
 export function Nav() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [open]);
 
   return (
-    <header className="sticky top-4 z-50 px-4 sm:px-8">
-      <div className="mx-auto flex max-w-[1280px] items-center justify-between rounded-pill border border-hairline bg-white/90 px-4 py-3 shadow-nav backdrop-blur sm:px-8">
-        <Link to="/" className="flex items-center gap-3">
-          <img src={logo} alt="Bookeyond Kid" className="h-9 w-auto" />
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-tonle-950 text-white">
+      <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-8 px-4 sm:h-[4.5rem] sm:px-8">
+        <Link to="/" className="shrink-0 rounded-[10px]" aria-label="Bookeyond Kid — home">
+          <Logo tone="paper" size="sm" />
         </Link>
-
-        <nav className="hidden items-center gap-8 text-sm font-semibold text-muted lg:flex">
-          {links.map((link) => (
-            <a key={link.href} href={link.href} className="hover:text-ink">
+        <nav aria-label="Sections" className="hidden items-center gap-7 text-[0.9375rem] font-medium text-tonle-100 lg:flex">
+          {sectionLinks.map((link) => (
+            <a key={link.href} href={link.href} className="rounded-[6px] transition-colors duration-150 hover:text-white">
               {link.label}
             </a>
           ))}
         </nav>
-
-        <div className="hidden items-center gap-4 lg:flex">
-          <Link to="/login" className="text-sm font-semibold text-ink hover:text-brand-blueStrong">
+        <div className="ml-auto hidden items-center gap-2 lg:flex">
+          <Link to="/login" className="flex h-10 items-center rounded-[10px] px-4 text-[0.9375rem] font-semibold text-white transition-colors hover:bg-white/10">
             Log in
           </Link>
-          <Link to="/register">
-            <Button size="md">Get Started</Button>
+          <Link
+            to="/register"
+            className="flex h-10 items-center rounded-[10px] bg-light px-4 text-[0.9375rem] font-semibold text-tonle-950 transition-colors duration-150 hover:bg-light-glow"
+          >
+            Get started
           </Link>
         </div>
-
         <button
-          className="rounded-full p-2 text-ink lg:hidden"
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-label="Toggle menu"
-          aria-expanded={mobileOpen}
+          type="button"
+          className="ml-auto flex h-11 w-11 items-center justify-center rounded-[10px] text-white hover:bg-white/10 lg:hidden"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          aria-controls="site-menu"
         >
-          <Menu size={24} />
+          {open ? <X size={22} aria-hidden /> : <Menu size={22} aria-hidden />}
         </button>
       </div>
-
-      {mobileOpen && (
-        <div className="mx-auto mt-2 flex max-w-[1280px] flex-col gap-1 rounded-3xl border border-hairline bg-white p-4 shadow-nav lg:hidden">
-          {links.map((link) => (
-            <a key={link.href} href={link.href} className="rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-sand">
+      <div
+        id="site-menu"
+        hidden={!open}
+        className={cn("border-t border-white/10 px-4 pb-5 pt-2 lg:hidden", open && "animate-rise-in")}
+      >
+        <nav aria-label="Sections (menu)" className="flex flex-col">
+          {sectionLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className="border-b border-white/10 py-3.5 text-base font-medium text-tonle-100 hover:text-white"
+            >
               {link.label}
             </a>
           ))}
-          <div className="mt-2 flex gap-2 border-t border-hairline pt-3">
-            <Link to="/login" className="flex-1 rounded-pill border-[1.5px] border-ink px-4 py-2 text-center text-sm font-semibold">
-              Log in
-            </Link>
-            <Link to="/register" className="flex-1 rounded-pill bg-brand-blueStrong px-4 py-2 text-center text-sm font-semibold text-white">
-              Get Started
-            </Link>
-          </div>
+        </nav>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Link to="/login" className="flex h-12 items-center justify-center rounded-[12px] font-semibold text-white ring-1 ring-inset ring-white/25">
+            Log in
+          </Link>
+          <Link to="/register" className="flex h-12 items-center justify-center rounded-[12px] bg-light font-semibold text-tonle-950">
+            Get started
+          </Link>
         </div>
-      )}
+      </div>
     </header>
   );
 }

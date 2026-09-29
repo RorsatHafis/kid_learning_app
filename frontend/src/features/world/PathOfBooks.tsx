@@ -1,4 +1,7 @@
 import type { JourneyStep } from "@/lib/api/types";
+
+/** All the path drawing needs from a step: which one it is and whether it is done. */
+export type PathStep = Pick<JourneyStep, "learningPathItemId" | "status">;
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 
 /**
@@ -30,7 +33,7 @@ export const khmerNumber = (n: number) => String(n).replace(/\d/g, (d) => KHMER_
 export type BookState = "done" | "current" | "later";
 
 /** Which steps the scene shows: a couple behind the child, the current one, and what's ahead. */
-export function visibleWindow(steps: JourneyStep[], currentIndex: number, size = 8) {
+export function visibleWindow<T extends PathStep>(steps: T[], currentIndex: number, size = 8) {
   const anchor = currentIndex < 0 ? steps.length : currentIndex;
   const start = Math.max(0, Math.min(anchor - 2, steps.length - size));
   return steps.slice(start, start + size).map((step, i) => ({ step, index: start + i }));
@@ -77,7 +80,7 @@ export function PathOfBooks({
   currentId,
   showBuddy = true,
 }: {
-  steps: JourneyStep[];
+  steps: PathStep[];
   currentId: string | null;
   showBuddy?: boolean;
 }) {

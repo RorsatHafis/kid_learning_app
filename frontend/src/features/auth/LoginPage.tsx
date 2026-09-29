@@ -55,7 +55,7 @@ export function LoginPage() {
   return (
     <AuthLayout title="Welcome back" subtitle="Log in to continue your child's learning journey.">
       {notice && (
-        <p role="status" className="mb-4 rounded-2xl bg-kid-mint p-3 text-sm font-semibold text-kid-mintDeep">
+        <p role="status" className="mb-4 rounded-[12px] bg-palm-soft p-3 text-sm font-semibold text-palm-deep">
           {notice}
         </p>
       )}
@@ -78,11 +78,11 @@ export function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           error={fieldErrors.password}
         />
-        <Link to="/forgot-password" className="-mt-1 w-fit text-sm font-semibold text-brand-blueStrong">
+        <Link to="/forgot-password" className="-mt-1 w-fit text-sm font-semibold text-tonle-700">
           Forgot your password?
         </Link>
         {formError && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {formError}
           </p>
         )}
@@ -90,9 +90,9 @@ export function LoginPage() {
           {isSubmitting ? "Logging in…" : "Log in"}
         </Button>
       </form>
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="mt-6 text-center text-sm text-ink-soft">
         New to Bookeyond Kid?{" "}
-        <Link to="/register" className="font-semibold text-brand-blueStrong">
+        <Link to="/register" className="font-semibold text-tonle-700">
           Create an account
         </Link>
       </p>

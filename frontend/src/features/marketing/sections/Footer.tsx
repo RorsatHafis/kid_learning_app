@@ -1,55 +1,29 @@
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo/Bookeyond_Kid_Primary.svg";
+import { Logo } from "@/components/brand/Logo";
+import { sectionLinks } from "./Nav";
 
 // Only links that lead somewhere: there are no About, Contact, Terms or Privacy pages yet (PD-18).
-const columns = [
-  {
-    title: "Product",
-    links: [
-      { label: "How It Works", href: "#how-it-works" },
-      { label: "For Children", href: "#for-children" },
-      { label: "For Parents", href: "#for-parents" },
-      { label: "Subjects", href: "#subjects" },
-      { label: "For Schools", href: "#schools" },
-    ],
-  },
-];
-
 export function Footer() {
   return (
-    <footer className="border-t border-hairline bg-surface-cream px-4 py-16 sm:px-8">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-12">
+    <footer className="bg-tonle-950 px-4 pb-10 pt-14 text-tonle-100 sm:px-8">
+      <div className="mx-auto flex max-w-[1240px] flex-col gap-12">
         <div className="flex flex-col justify-between gap-10 sm:flex-row">
-          <div className="flex flex-col gap-3">
-            <img src={logo} alt="Bookeyond Kid" className="h-9 w-auto" />
-            <p className="max-w-xs text-sm text-muted">Learn Today, Build Tomorrow.</p>
+          <div className="flex flex-col gap-4">
+            <Logo tone="paper" size="md" />
+            <p className="font-display text-lg text-tonle-200">Learn Today, Build Tomorrow.</p>
           </div>
-
-          <div className="grid grid-cols-2 gap-10">
-            {columns.map((col) => (
-              <div key={col.title} className="flex flex-col gap-3">
-                <p className="text-sm font-bold text-ink">{col.title}</p>
-                {col.links.map((link) => (
-                  <a key={link.href} href={link.href} className="text-sm text-muted hover:text-ink">
-                    {link.label}
-                  </a>
-                ))}
-              </div>
+          <nav aria-label="Footer" className="grid grid-cols-2 gap-x-12 gap-y-3 text-[0.9375rem]">
+            {sectionLinks.map((link) => (
+              <a key={link.href} href={link.href} className="w-fit hover:text-white hover:underline hover:underline-offset-4">
+                {link.label}
+              </a>
             ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-hairline pt-8 text-sm text-muted sm:flex-row">
-          <p>© {new Date().getFullYear()} Bookeyond Kid. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link to="/login" className="hover:text-ink">
+            <Link to="/login" className="w-fit hover:text-white hover:underline hover:underline-offset-4">
               Log in
             </Link>
-            <Link to="/register" className="hover:text-ink">
-              Get Started
-            </Link>
-          </div>
+          </nav>
         </div>
+        <p className="border-t border-white/10 pt-6 text-sm text-tonle-300">© {new Date().getFullYear()} Bookeyond Kid. All rights reserved.</p>
       </div>
     </footer>
   );

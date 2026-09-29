@@ -43,14 +43,14 @@ export function ForgotPasswordPage() {
     return (
       <AuthLayout title="Check your email" subtitle="If there's an account for that address, a link is on its way.">
         <div role="status" className="flex flex-col gap-4 text-sm text-ink">
-          <p className="flex items-start gap-3 rounded-2xl bg-surface-sand p-4">
-            <MailCheck size={20} className="mt-0.5 shrink-0 text-brand-greenStrong" aria-hidden />
+          <p className="flex items-start gap-3 rounded-[14px] bg-tonle-50 p-4 ring-1 ring-tonle-100">
+            <MailCheck size={20} className="mt-0.5 shrink-0 text-palm-deep" aria-hidden />
             <span>
               We sent a reset link to <strong className="break-all">{sentTo}</strong> if it belongs to a Bookeyond Kid
               account. The link works once, for 30 minutes.
             </span>
           </p>
-          <p className="text-muted">
+          <p className="text-ink-soft">
             Nothing arrived after a few minutes? Check your spam folder, or make sure you used the address you signed up
             with.
           </p>
@@ -58,8 +58,8 @@ export function ForgotPasswordPage() {
             Use a different address
           </Button>
         </div>
-        <p className="mt-6 text-center text-sm text-muted">
-          <Link to="/login" className="font-semibold text-brand-blueStrong">
+        <p className="mt-6 text-center text-sm text-ink-soft">
+          <Link to="/login" className="font-semibold text-tonle-700">
             Back to log in
           </Link>
         </p>
@@ -80,7 +80,7 @@ export function ForgotPasswordPage() {
           error={fieldError}
         />
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
@@ -88,9 +88,9 @@ export function ForgotPasswordPage() {
           {isSubmitting ? "Sending…" : "Send reset link"}
         </Button>
       </form>
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="mt-6 text-center text-sm text-ink-soft">
         Remembered it?{" "}
-        <Link to="/login" className="font-semibold text-brand-blueStrong">
+        <Link to="/login" className="font-semibold text-tonle-700">
           Log in
         </Link>
       </p>

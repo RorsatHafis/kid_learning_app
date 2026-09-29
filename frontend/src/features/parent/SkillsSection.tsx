@@ -10,6 +10,7 @@ import {
   standingHelp,
   standingLabel,
 } from "@/features/learning/explain";
+import { EvidenceLine } from "@/features/learning/EvidenceLine";
 import { formatDay } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
 import { SectionTitle } from "./SectionTitle";
@@ -160,21 +161,5 @@ function SkillRow({ skill }: { skill: SkillProgress }) {
         <Standing standing={skill.standing} />
       </div>
     </div>
-  );
-}
-
-/** Evidence strength drawn as line weight: dotted when there is little, a firm rule when there is plenty. */
-function EvidenceLine({ level }: { level: EvidenceLevel }) {
-  const n = evidenceDots[level];
-  const stroke = ["#C3CCDD", "#6E8FD0", "#2E4F9E", "#182E66"][n];
-  const width = [1.5, 2, 3.5, 5.5][n];
-  const dash = n === 0 ? "1.5 5" : n === 1 ? "6 5" : undefined;
-  return (
-    <span className="inline-flex" title={evidenceLabel[level]}>
-      <span className="sr-only">{evidenceLabel[level]}</span>
-      <svg width="84" height="10" viewBox="0 0 84 10" aria-hidden>
-        <line x1="2" y1="5" x2="82" y2="5" stroke={stroke} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" />
-      </svg>
-    </span>
   );
 }

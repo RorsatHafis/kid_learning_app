@@ -51,12 +51,12 @@ export function RegisterPage() {
   if (pendingApproval) {
     return (
       <AuthLayout title="Application received" subtitle="Your principal account is awaiting approval.">
-        <p className="text-center text-sm leading-relaxed text-muted">
+        <p className="text-center text-sm leading-relaxed text-ink-soft">
           We've received your school administrator application. An existing Bookeyond Kid admin needs to approve it
           before you can log in. Once it's approved, log in with{" "}
           <span className="font-semibold text-ink">{email}</span>.
         </p>
-        <Link to="/" className="mt-6 block text-center text-sm font-semibold text-brand-blueStrong">
+        <Link to="/" className="mt-6 block text-center text-sm font-semibold text-tonle-700">
           Back to home
         </Link>
       </AuthLayout>
@@ -65,12 +65,12 @@ export function RegisterPage() {
 
   return (
     <AuthLayout title="Create your account" subtitle="Start your family's learning journey with Bookeyond Kid.">
-      <div role="group" aria-label="Account type" className="mb-6 flex rounded-pill border border-hairline p-1">
+      <div role="group" aria-label="Account type" className="mb-7 grid grid-cols-2 gap-1 rounded-[14px] bg-tonle-50 p-1 ring-1 ring-inset ring-line">
         <button
           type="button"
           aria-pressed={role === "PARENT"}
           onClick={() => setRole("PARENT")}
-          className={cn("flex-1 rounded-pill py-2 text-sm font-semibold transition-colors", role === "PARENT" ? "bg-brand-blueStrong text-white" : "text-muted")}
+          className={cn("h-10 rounded-[10px] text-sm font-semibold transition-[background-color,color,box-shadow] duration-150", role === "PARENT" ? "bg-white text-tonle-900 shadow-tight ring-1 ring-line" : "text-ink-soft hover:text-tonle-900")}
         >
           I'm a parent
         </button>
@@ -78,7 +78,7 @@ export function RegisterPage() {
           type="button"
           aria-pressed={role === "PRINCIPAL"}
           onClick={() => setRole("PRINCIPAL")}
-          className={cn("flex-1 rounded-pill py-2 text-sm font-semibold transition-colors", role === "PRINCIPAL" ? "bg-brand-blueStrong text-white" : "text-muted")}
+          className={cn("h-10 rounded-[10px] text-sm font-semibold transition-[background-color,color,box-shadow] duration-150", role === "PRINCIPAL" ? "bg-white text-tonle-900 shadow-tight ring-1 ring-line" : "text-ink-soft hover:text-tonle-900")}
         >
           I'm a principal
         </button>
@@ -100,17 +100,17 @@ export function RegisterPage() {
           onChange={(e) => setPassword(e.target.value)}
           error={fieldErrors.password}
         />
-        {formError && <p className="text-sm font-medium text-brand-redStrong">{formError}</p>}
+        {formError && <p className="text-sm font-medium text-brick-deep">{formError}</p>}
         {role === "PRINCIPAL" && (
-          <p className="text-xs text-muted">Principal accounts are reviewed by a Bookeyond Kid admin before they can log in.</p>
+          <p className="text-xs text-ink-soft">Principal accounts are reviewed by a Bookeyond Kid admin before they can log in.</p>
         )}
         <Button type="submit" size="lg" disabled={isSubmitting} className="mt-2 w-full">
           {isSubmitting ? "Creating account…" : "Create account"}
         </Button>
       </form>
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="mt-6 text-center text-sm text-ink-soft">
         Already have an account?{" "}
-        <Link to="/login" className="font-semibold text-brand-blueStrong">
+        <Link to="/login" className="font-semibold text-tonle-700">
           Log in
         </Link>
       </p>

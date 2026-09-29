@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { AuthLayout } from "./AuthLayout";
+import { buttonClasses } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/States";
 import { authApi } from "@/lib/api/endpoints";
 import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
@@ -57,14 +58,14 @@ export function VerifyEmailPage() {
   const continueLink = isLoading ? null : session ? (
     <Link
       to={roleHomePath(session.platformRole)}
-      className="inline-flex items-center justify-center rounded-pill bg-brand-blueStrong px-8 py-[18px] text-base font-semibold text-white shadow-soft hover:bg-blue-700"
+      className={buttonClasses("solid", "lg", "w-full")}
     >
       Continue
     </Link>
   ) : (
     <Link
       to="/login"
-      className="inline-flex items-center justify-center rounded-pill bg-brand-blueStrong px-8 py-[18px] text-base font-semibold text-white shadow-soft hover:bg-blue-700"
+      className={buttonClasses("solid", "lg", "w-full")}
     >
       Log in
     </Link>
@@ -82,7 +83,7 @@ export function VerifyEmailPage() {
     return (
       <AuthLayout title="Email confirmed" subtitle="If you ever forget your password, we'll send the reset link here.">
         <div className="flex flex-col gap-4">
-          <p role="status" className="flex items-start gap-2 rounded-2xl bg-kid-mint p-3 text-sm font-semibold text-kid-mintDeep">
+          <p role="status" className="flex items-start gap-2 rounded-[12px] bg-palm-soft p-3 text-sm font-semibold text-palm-deep">
             <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden />
             Thank you — your email address is confirmed.
           </p>
@@ -99,7 +100,7 @@ export function VerifyEmailPage() {
           <button
             type="button"
             onClick={() => setAttempt((n) => n + 1)}
-            className="inline-flex items-center justify-center rounded-pill bg-brand-blueStrong px-8 py-[18px] text-base font-semibold text-white shadow-soft hover:bg-blue-700"
+            className={buttonClasses("solid", "lg", "w-full")}
           >
             Try again
           </button>
@@ -117,7 +118,7 @@ export function VerifyEmailPage() {
           : "The link is incomplete. Open it straight from the email."
       }
     >
-      <div className="flex flex-col gap-3 text-sm text-muted">
+      <div className="flex flex-col gap-3 text-sm text-ink-soft">
         <p>
           {session
             ? "You can send a fresh confirmation email from your account page."
@@ -126,7 +127,7 @@ export function VerifyEmailPage() {
         {session ? (
           <Link
             to={accountPath(session.platformRole) ?? roleHomePath(session.platformRole)}
-            className="inline-flex items-center justify-center rounded-pill bg-brand-blueStrong px-8 py-[18px] text-base font-semibold text-white shadow-soft hover:bg-blue-700"
+            className={buttonClasses("solid", "lg", "w-full")}
           >
             Go to my account
           </Link>

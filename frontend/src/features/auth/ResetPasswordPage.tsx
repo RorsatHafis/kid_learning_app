@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "./AuthLayout";
 import { FormField } from "./FormField";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { authApi } from "@/lib/api/endpoints";
 import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -107,11 +107,11 @@ function PasswordLinkPage({ mode }: { mode: keyof typeof MODES }) {
         <div className="flex flex-col gap-3">
           <Link
             to={copy.recovery.to}
-            className="inline-flex items-center justify-center rounded-pill bg-brand-blueStrong px-8 py-[18px] text-base font-semibold text-white shadow-soft hover:bg-blue-700"
+            className={buttonClasses("solid", "lg", "w-full")}
           >
             {copy.recovery.label}
           </Link>
-          <Link to="/login" className="text-center text-sm font-semibold text-brand-blueStrong">
+          <Link to="/login" className="text-center text-sm font-semibold text-tonle-700">
             Back to log in
           </Link>
         </div>
@@ -141,7 +141,7 @@ function PasswordLinkPage({ mode }: { mode: keyof typeof MODES }) {
           error={errors.confirm}
         />
         {errors.form && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {errors.form}
           </p>
         )}
