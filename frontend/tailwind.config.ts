@@ -24,6 +24,8 @@ const tonle = {
 
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  // Touch screens: a tap must not leave a button looking hovered.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {
@@ -159,6 +161,32 @@ export default {
           "0%": { transform: "translateY(-20px) rotate(0)", opacity: "1" },
           "100%": { transform: "translateY(260px) rotate(540deg)", opacity: "0" },
         },
+        // A lantern on its string, moving in the evening air.
+        sway: {
+          "0%, 100%": { transform: "rotate(-4deg)" },
+          "50%": { transform: "rotate(4deg)" },
+        },
+        // Turning to the next page of the activity.
+        "page-in": {
+          "0%": { transform: "translateX(28px) rotate(0.6deg)", opacity: "0" },
+          "100%": { transform: "translateX(0) rotate(0)", opacity: "1" },
+        },
+        // Sparks thrown out from a right answer; direction comes from --bx/--by.
+        burst: {
+          "0%": { transform: "translate(0, 0) scale(0.4)", opacity: "0" },
+          "20%": { opacity: "1" },
+          "100%": { transform: "translate(var(--bx), var(--by)) scale(1)", opacity: "0" },
+        },
+        // Finished lanterns released into the sky.
+        "rise-away": {
+          "0%": { transform: "translateY(0) rotate(0)", opacity: "1" },
+          "100%": { transform: "translateY(-150px) rotate(var(--tilt, 4deg))", opacity: "0.15" },
+        },
+        "lantern-lit": {
+          "0%": { transform: "scale(0.9)", filter: "brightness(0.7)" },
+          "55%": { transform: "scale(1.14)", filter: "brightness(1.3)" },
+          "100%": { transform: "scale(1)", filter: "brightness(1)" },
+        },
       },
       animation: {
         "pop-in": "pop-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both",
@@ -172,6 +200,11 @@ export default {
         "drift-up": "drift-up 2.6s cubic-bezier(0.23, 1, 0.32, 1) forwards",
         "fill-bar": "fill-bar 700ms cubic-bezier(0.23, 1, 0.32, 1) both",
         "confetti-fall": "confetti-fall 1.6s ease-in forwards",
+        sway: "sway 3.6s ease-in-out infinite",
+        "page-in": "page-in 420ms cubic-bezier(0.23, 1, 0.32, 1) both",
+        burst: "burst 700ms cubic-bezier(0.23, 1, 0.32, 1) forwards",
+        "rise-away": "rise-away 3.4s cubic-bezier(0.45, 0, 0.55, 1) forwards",
+        "lantern-lit": "lantern-lit 620ms cubic-bezier(0.23, 1, 0.32, 1) both",
       },
     },
   },

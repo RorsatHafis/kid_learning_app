@@ -139,7 +139,7 @@ export function MatchingQuestion({
           type="button"
           onClick={submit}
           disabled={locked || !allPaired}
-          className="mx-auto flex min-h-14 items-center gap-2 rounded-pill bg-tonle-900 px-9 text-lg font-bold text-white transition-transform duration-150 ease-out hover:bg-tonle-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+          className="mx-auto flex min-h-16 items-center gap-2 rounded-[22px] bg-tonle-900 px-10 text-xl font-bold text-white shadow-[0_5px_0_#0A1533] transition-[transform,box-shadow,opacity] duration-150 ease-out hover:bg-tonle-800 active:translate-y-1 active:shadow-[0_1px_0_#0A1533] disabled:cursor-not-allowed disabled:opacity-40"
         >
           Check my matches
         </button>
@@ -173,12 +173,13 @@ function MatchCard({
       aria-disabled={locked}
       aria-label={ariaLabel}
       className={cn(
-        "flex min-h-[64px] w-full items-center gap-3 rounded-3xl border-[3px] px-4 py-3 text-left text-lg font-bold shadow-tight transition-all sm:text-xl",
-        !verdict && !selected && "border-line-strong bg-white",
-        !verdict && !selected && !locked && "hover:-translate-y-0.5 hover:border-tonle-400",
-        selected && "border-tonle-600 bg-tonle-50",
-        verdict === "right" && "animate-pop-in border-light bg-light-soft shadow-glow",
-        verdict === "wrong" && "animate-nudge border-tonle-300 bg-tonle-50",
+        "flex min-h-[72px] w-full items-center gap-3 rounded-[22px] border-[3px] px-4 py-3 text-left text-lg font-bold sm:text-xl",
+        "shadow-[0_4px_0_var(--tw-shadow-color)] transition-[transform,box-shadow,background-color,border-color] duration-150 ease-out",
+        !verdict && !selected && "border-tonle-200 bg-white text-tonle-950 shadow-tonle-200",
+        !verdict && !selected && !locked && "hover:-translate-y-0.5 hover:border-tonle-400 hover:shadow-tonle-300",
+        selected && "translate-y-[3px] border-tonle-600 bg-tonle-50 text-tonle-950 shadow-[0_1px_0_var(--tw-shadow-color)] shadow-tonle-600",
+        verdict === "right" && "border-light bg-light-soft text-tonle-950 shadow-[#E0A050] motion-safe:animate-pop-in",
+        verdict === "wrong" && "border-tonle-300 bg-tonle-50 text-tonle-800 shadow-tonle-200 motion-safe:animate-nudge",
         locked && "cursor-default",
       )}
     >
@@ -192,7 +193,7 @@ function MatchCard({
               ? "bg-tonle-600 text-white"
               : badge !== null
                 ? PAIR_TONES[badge % PAIR_TONES.length]
-                : "border-2 border-dashed border-hairline",
+                : "border-2 border-dashed border-tonle-200",
         )}
       >
         {verdict === "right" ? <Check size={18} strokeWidth={3} /> : verdict === "wrong" ? <X size={18} strokeWidth={3} /> : badge !== null ? badge + 1 : ""}

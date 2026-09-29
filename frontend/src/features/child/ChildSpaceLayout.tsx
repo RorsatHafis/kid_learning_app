@@ -44,7 +44,7 @@ export function ChildSpaceLayout({
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-light text-base font-bold text-light-deep">
             {childName?.charAt(0).toUpperCase() ?? "•"}
           </span>
-          <span className="max-w-[9rem] truncate text-sm font-semibold">{childName ?? "…"}</span>
+          <span className="max-w-[6.5rem] truncate text-sm font-semibold sm:max-w-[9rem]">{childName ?? "…"}</span>
         </Link>
         <BrandMark size={34} tone="paper" className="hidden opacity-90 sm:block" title="Bookeyond Kid" />
         <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ function GrownUpGate({ to }: { to: string }) {
       onBlur={cancel}
       onContextMenu={(e) => e.preventDefault()}
       aria-label="Grown-ups: press and hold to leave"
-      className={cn(chip, "relative select-none gap-2 overflow-hidden px-4 text-sm font-medium text-tonle-100")}
+      className={cn(chip, "relative select-none gap-2 overflow-hidden whitespace-nowrap px-3.5 text-sm font-medium text-tonle-100 sm:px-4")}
     >
       <span
         aria-hidden

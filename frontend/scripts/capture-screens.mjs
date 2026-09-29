@@ -15,6 +15,32 @@ const accounts = {
   teacher: ["teacher@bk-design.test", "Design-Teacher-2026"],
 };
 
+// A child with an unfinished path to play through (the capture itself advances it):
+// reuses "Kanha" while her path has steps left, otherwise adds a fresh one.
+async function playableChild() {
+  const api = base.replace(/:\d+$/, ":8092") + "/api/v1";
+  const call = async (path, token, init = {}) => {
+    const res = await fetch(api + path, {
+      ...init,
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    if (!res.ok) throw new Error(`${init.method ?? "GET"} ${path}: ${res.status}`);
+    return res.status === 204 ? null : res.json();
+  };
+  const [email, password] = accounts.parent;
+  const { accessToken } = await call("/auth/login", null, { method: "POST", body: JSON.stringify({ email, password }) });
+  for (const child of await call("/children", accessToken)) {
+    if (!child.displayName.startsWith("Kanha")) continue;
+    const overviews = await call(`/children/${child.id}/enrollments`, accessToken).catch(() => []);
+    if (overviews.some((o) => o.nextStep)) return child.displayName;
+  }
+  const name = `Kanha ${new Date().toISOString().slice(5, 16).replace(/[-T:]/g, "")}`;
+  const child = await call("/children", accessToken, { method: "POST", body: JSON.stringify({ displayName: name, dateOfBirth: "2019-06-01" }) });
+  const [curriculum] = await call("/curricula", accessToken);
+  await call(`/children/${child.id}/enrollments`, accessToken, { method: "POST", body: JSON.stringify({ curriculumId: curriculum.id }) }).catch(() => undefined);
+  return name;
+}
+
 const sizes = {
   desktop: { width: 1440, height: 900 },
   mobile: { width: 390, height: 844 },
@@ -90,8 +116,10 @@ for (const [size, viewport] of Object.entries(sizes)) {
     await shot(page, "12-parent-account", size);
     if (wants("2")) {
       await nav(page, "Family");
-      await page.getByRole("link", { name: /Vanna/ }).first().click();
-      await page.getByRole("link", { name: /Start Vanna's session/ }).click();
+      const kid = await playableChild();
+      await page.reload();
+      await page.getByRole("link", { name: kid }).first().click();
+      await page.getByRole("link", { name: `Start ${kid}'s session` }).click();
       await shot(page, "20-child-home", size);
       await page.getByRole("link", { name: "Play", exact: true }).click();
       await shot(page, "21-child-intro", size);

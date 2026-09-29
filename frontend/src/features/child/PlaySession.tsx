@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowRight, BookOpen } from "lucide-react";
+import { Lantern, LanternString } from "@/features/world/Lantern";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -232,37 +233,24 @@ function JourneyLink({ href, solid }: { href: string; solid?: boolean }) {
   );
 }
 
+/** The big warm button that moves the child forward: pressed like a real key. */
+const goButton =
+  "flex min-h-16 items-center justify-center gap-2 rounded-pill bg-light px-10 text-xl font-bold text-tonle-950 shadow-[0_5px_0_#B86A1C,0_12px_40px_rgba(243,168,59,0.45)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:bg-light-glow active:translate-y-1 active:shadow-[0_1px_0_#B86A1C,0_6px_20px_rgba(243,168,59,0.35)]";
+
 /** The page the child reads from: warm book paper floating over the dimmed world. */
 function Page({ children, className, labelledBy }: { children: React.ReactNode; className?: string; labelledBy: string }) {
   return (
     <section
       aria-labelledby={labelledBy}
       className={cn(
-        "relative mx-auto w-full max-w-3xl rounded-[30px] bg-[#FFFBF3] text-ink shadow-lift ring-1 ring-[#EADFCB]",
-        "before:pointer-events-none before:absolute before:inset-y-6 before:left-0 before:w-3 before:rounded-r-full before:bg-gradient-to-r before:from-[#E7D9BF] before:to-transparent",
+        "relative mx-auto w-full max-w-3xl rounded-[32px] bg-[#FFFBF3] text-ink shadow-lift ring-1 ring-[#EADFCB]",
+        // the page's gutter, where it is sewn into the book
+        "before:pointer-events-none before:absolute before:inset-y-8 before:left-0 before:w-3 before:rounded-r-full before:bg-gradient-to-r before:from-[#E7D9BF] before:to-transparent",
         className,
       )}
     >
       {children}
     </section>
-  );
-}
-
-/** The activity's questions as small books that light up as they are answered. */
-function Books({ total, lit, current, label }: { total: number; lit: number; current: number | null; label: string }) {
-  return (
-    <div className="flex items-center gap-2" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={lit} aria-label={label}>
-      {Array.from({ length: total }, (_, i) => (
-        <span
-          key={i}
-          aria-hidden
-          className={cn(
-            "h-3.5 w-7 rounded-[4px] transition-all duration-300 ease-out",
-            i < lit ? "bg-light shadow-[0_0_14px_rgba(255,210,122,0.75)]" : i === current ? "bg-white/70" : "bg-white/20",
-          )}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -281,30 +269,29 @@ function Intro({
   useEffect(() => startRef.current?.focus(), []);
   const n = activity.items.length;
   return (
-    <div className="px-4 pb-16 pt-28 sm:pt-20">
-      <Page labelledBy="activity-title" className="animate-rise-in px-6 pb-10 pt-8 text-center sm:px-14 sm:pb-14 sm:pt-10">
-        <LearningBuddy mood="happy" size={132} className="mx-auto -mt-24 sm:-mt-28" />
-        {reason && <p className="mx-auto mt-2 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-700">{reason}</p>}
-        <h1 id="activity-title" className="mt-5 font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+    <div className="px-4 pb-16 pt-28 sm:pt-24">
+      <Page labelledBy="activity-title" className="px-6 pb-10 pt-10 text-center motion-safe:animate-page-in sm:px-14 sm:pb-12">
+        <LearningBuddy mood="happy" size={128} className="mx-auto -mt-28 sm:-mt-32" />
+        {reason && <p className="mx-auto mt-3 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-700">{reason}</p>}
+        <h1 id="activity-title" className="mt-4 font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
           {activity.title}
         </h1>
         {activity.instructions && <p className="mx-auto mt-3 max-w-lg text-lg font-medium leading-relaxed text-ink-soft">{activity.instructions}</p>}
-        <p className="mt-6 flex items-center justify-center gap-2 text-sm font-semibold text-ink-soft">
-          <span className="flex gap-1" aria-hidden>
+
+        <div className="mx-auto mt-8 flex w-fit flex-col items-center gap-3 rounded-[24px] bg-tonle-950 px-8 pb-5 pt-6 shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)]">
+          <div className="flex items-start gap-3" aria-hidden>
             {Array.from({ length: n }, (_, i) => (
-              <span key={i} className="h-3 w-5 rounded-[3px] bg-tonle-200" />
+              <Lantern key={i} state={i === 0 ? "current" : "unlit"} size={n > 8 ? 22 : n > 5 ? 30 : 40} />
             ))}
-          </span>
-          {n} {n === 1 ? "question" : "questions"}
-        </p>
-        <div className="mt-8 flex flex-col-reverse items-center justify-center gap-3 sm:flex-row">
+          </div>
+          <p className="text-base font-semibold text-tonle-100">
+            {n} {n === 1 ? "question" : "questions"} · light {n === 1 ? "the lantern" : `all ${n} lanterns`}
+          </p>
+        </div>
+
+        <div className="mt-9 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
           <JourneyLink href={journeyHref} />
-          <button
-            ref={startRef}
-            type="button"
-            onClick={onStart}
-            className="flex min-h-14 items-center gap-2 rounded-pill bg-light px-10 text-xl font-bold text-tonle-950 shadow-glow transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.97]"
-          >
+          <button ref={startRef} type="button" onClick={onStart} className={goButton}>
             Let&apos;s go <ArrowRight size={22} aria-hidden />
           </button>
         </div>
@@ -312,6 +299,9 @@ function Intro({
     </div>
   );
 }
+
+// Varied, authored words for a right answer (every one still says so plainly).
+const RIGHT_HEADLINES = ["You got it!", "That's right!", "Great thinking!"];
 
 function Question({
   phase,
@@ -389,35 +379,44 @@ function Question({
 
   const total = activity.items.length;
   const answeredHere = result ? 1 : 0;
+  const mood = result ? (result.correct ? "cheer" : "encourage") : isSubmitting ? "thinking" : "happy";
   return (
-    <div className="flex flex-col gap-5 px-4 pb-16 pt-6 sm:pt-10">
-      <div className="mx-auto flex w-full max-w-3xl items-center gap-4">
+    <div className="flex flex-col gap-4 px-4 pb-16 pt-4 sm:gap-6 sm:pt-6">
+      <div className="mx-auto grid w-full max-w-3xl grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-start gap-3">
         <Link
           to={journeyHref}
           aria-label="Back to my journey (your progress is saved)"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-tonle-950/55 text-tonle-100 ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-950/55 text-tonle-100 ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
         >
           <BookOpen size={19} aria-hidden />
         </Link>
-        <Books total={total} lit={index + answeredHere} current={index} label={`Question ${index + 1} of ${total}`} />
-        <span className="ml-auto text-sm font-semibold text-tonle-100" aria-hidden>
-          {index + 1} / {total}
+        <LanternString total={total} lit={index + answeredHere} current={result ? null : index} label={`Question ${index + 1} of ${total}`} />
+        <span
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-950/55 text-sm font-bold tabular-nums text-tonle-100 ring-1 ring-white/15 backdrop-blur-md"
+          aria-hidden
+        >
+          {index + 1}/{total}
         </span>
       </div>
 
-      <Page labelledBy="question-prompt" className={cn("animate-rise-in overflow-hidden transition-shadow duration-500", result?.correct && "shadow-glow")}>
-        <div className="flex flex-col gap-7 px-6 pb-8 pt-7 sm:px-12 sm:pb-10 sm:pt-9">
-          <p className="text-sm font-semibold text-ink-faint">{activity.title}</p>
-          <h1
-            id="question-prompt"
-            className="font-display text-[clamp(2.25rem,1.6rem+3vw,3.75rem)] font-bold leading-[1.08] tracking-[-0.02em] text-tonle-950"
-            style={{ fontVariationSettings: '"opsz" 72' }}
-          >
-            {item.prompt}
-          </h1>
+      <Page
+        labelledBy="question-prompt"
+        className={cn(
+          "mt-10 transition-shadow duration-500 motion-safe:animate-page-in sm:mt-12",
+          result?.correct && "shadow-[0_0_0_1px_#F3A83B,0_30px_80px_-10px_rgba(243,168,59,0.45)]",
+        )}
+      >
+        {/* The firefly keeps the child company on the page and reacts to their answer. */}
+        <div aria-hidden className="absolute -top-[4.5rem] right-4 sm:-top-20 sm:right-10">
+          <LearningBuddy mood={mood} size={96} className="sm:hidden" />
+          <LearningBuddy mood={mood} size={118} className="hidden sm:block" />
+        </div>
+
+        <div className="flex flex-col gap-8 px-5 pb-9 pt-9 sm:px-12 sm:pb-11 sm:pt-11">
+          <p className="pr-20 text-sm font-semibold text-ink-faint sm:pr-28">{activity.title}</p>
           <QuestionView item={item} onAnswer={handleAnswer} disabled={isSubmitting} result={result} />
           {submitError && (
-            <p role="alert" className="text-base font-semibold text-brick-deep">
+            <p role="alert" className="text-center text-base font-semibold text-brick-deep">
               {submitError}
             </p>
           )}
@@ -427,32 +426,26 @@ function Question({
           <div
             role="status"
             className={cn(
-              "flex animate-rise-in flex-col items-center gap-4 border-t px-6 py-5 sm:flex-row sm:px-12",
-              result.correct ? "border-light/40 bg-light-soft" : "border-tonle-100 bg-tonle-50",
+              "flex flex-col items-center gap-5 rounded-b-[32px] border-t-2 border-dashed px-6 pb-7 pt-6 motion-safe:animate-rise-in sm:flex-row sm:px-12",
+              result.correct ? "border-light/50 bg-light-soft/70" : "border-tonle-200 bg-tonle-50",
             )}
           >
-            <LearningBuddy mood={result.correct ? "cheer" : "encourage"} size={92} className="-my-2" />
             <div className="flex-1 text-center sm:text-left">
-              <p className={cn("font-display text-2xl font-bold", result.correct ? "text-light-deep" : "text-tonle-800")}>
-                {result.correct ? "You got it!" : "Good try!"}
+              <p className={cn("font-display text-[1.75rem] font-bold leading-tight", result.correct ? "text-light-deep" : "text-tonle-800")}>
+                {result.correct ? RIGHT_HEADLINES[index % RIGHT_HEADLINES.length] : "Not quite — good try!"}
               </p>
-              <p className="text-base font-medium text-ink">
+              <p className="mt-1 text-lg font-medium text-ink">
                 {result.correct
-                  ? "That's right."
+                  ? "Your lantern is lit."
                   : result.correctAnswer?.matches?.length
                     ? "Some matches got mixed up — the cards show where each one goes. Let's keep going!"
                     : result.correctAnswer?.text
                       ? `The answer is ${result.correctAnswer.text}. Let's keep going!`
-                      : "That wasn't quite it — let's keep going!"}
+                      : "Let's keep going!"}
               </p>
             </div>
-            <button
-              ref={continueRef}
-              type="button"
-              onClick={onContinue}
-              className="flex min-h-14 items-center gap-2 rounded-pill bg-tonle-900 px-9 text-lg font-semibold text-white transition-transform duration-150 ease-out hover:bg-tonle-800 active:scale-[0.97]"
-            >
-              {index + 1 < total ? "Next" : "Finish"} <ArrowRight size={20} aria-hidden />
+            <button ref={continueRef} type="button" onClick={onContinue} className={goButton}>
+              {index + 1 < total ? "Next" : "Finish"} <ArrowRight size={22} aria-hidden />
             </button>
           </div>
         )}
@@ -460,9 +453,6 @@ function Question({
     </div>
   );
 }
-
-// Motes of light rising from the lit book (the world's own celebration, not confetti).
-const MOTES = Array.from({ length: 14 }, (_, i) => ({ left: 18 + ((i * 53) % 64), delay: (i % 7) * 140, size: 6 + (i % 3) * 3 }));
 
 function Completed({
   phase,
@@ -477,55 +467,55 @@ function Completed({
   const allRight = total > 0 && correct === total;
   const keepGoingRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => keepGoingRef.current?.focus(), []);
+  const lanterns = Math.min(Math.max(total, 1), 10);
 
   return (
-    <div className="px-4 pb-16 pt-28 sm:pt-20">
-      <Page labelledBy="done-title" className="animate-pop-in px-6 pb-10 pt-8 text-center sm:px-14 sm:pb-12">
-        <div aria-hidden className="relative mx-auto -mt-24 h-44 w-60 sm:-mt-28">
-          <span className="absolute inset-x-6 bottom-6 h-24 rounded-full bg-light/60 blur-2xl motion-safe:animate-glow-breathe" />
-          {MOTES.map((m, i) => (
-            <span
-              key={i}
-              className="absolute bottom-10 rounded-full bg-light-glow shadow-[0_0_10px_rgba(255,210,122,0.9)] motion-safe:animate-drift-up motion-reduce:hidden"
-              style={{ left: `${m.left}%`, width: m.size, height: m.size, animationDelay: `${m.delay}ms` }}
-            />
-          ))}
-          <svg viewBox="0 0 240 150" className="absolute inset-x-0 bottom-0 animate-light-up">
-            <path d="M120 60 C96 40 48 34 14 44 L14 118 C48 108 96 114 120 138 C144 114 192 108 226 118 L226 44 C192 34 144 40 120 60 Z" fill="#FFD27A" />
-            <path d="M120 60 C98 46 56 42 26 50 L26 110 C56 102 98 108 120 128 Z" fill="#FFF3D6" />
-            <path d="M120 60 C142 46 184 42 214 50 L214 110 C184 102 142 108 120 128 Z" fill="#FFF6E2" />
-            <path d="M120 60 L120 130" stroke="#E0B070" strokeWidth="2" />
-          </svg>
-          <LearningBuddy mood="cheer" size={96} className="absolute -right-6 top-0" />
+    <div className="px-4 pb-16 pt-6 sm:pt-8">
+      {/* Every lantern of the activity, lit and released into the evening sky. */}
+      <div aria-hidden className="relative mx-auto flex h-40 max-w-xl items-end justify-center gap-5 sm:h-48 sm:gap-8">
+        {Array.from({ length: lanterns }, (_, i) => (
+          <span
+            key={i}
+            className="motion-safe:animate-rise-away"
+            style={{
+              animationDelay: `${300 + i * 180}ms`,
+              ["--tilt" as string]: `${i % 2 ? -5 : 5}deg`,
+              marginBottom: `${(i * 37) % 28}px`,
+            }}
+          >
+            <Lantern state="lit" size={lanterns > 6 ? 32 : 48} />
+          </span>
+        ))}
+      </div>
+
+      <Page labelledBy="done-title" className="mt-2 px-6 pb-10 pt-12 text-center motion-safe:animate-pop-in sm:px-14 sm:pb-12">
+        <div aria-hidden className="absolute -top-[4.5rem] right-4 sm:-top-20 sm:right-10">
+          <LearningBuddy mood="cheer" size={96} className="sm:hidden" />
+          <LearningBuddy mood="cheer" size={118} className="hidden sm:block" />
         </div>
-        <h1 id="done-title" className="mt-4 font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+        <h1 id="done-title" className="font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
           {allRight ? "Perfect!" : "Activity complete!"}
         </h1>
-        <p className="mt-1 text-lg font-medium text-ink-soft">You lit “{title}”.</p>
+        <p className="mt-1 text-lg font-medium text-ink-soft">You lit every lantern in “{title}”.</p>
         {total > 0 && (
-          <p className="mx-auto mt-5 w-fit rounded-pill bg-light-soft px-5 py-2 text-lg font-bold text-light-deep">
+          <p className="mx-auto mt-5 w-fit rounded-pill bg-light-soft px-5 py-2 text-lg font-bold text-light-deep ring-1 ring-light/40">
             You got {correct} of {total} right
           </p>
         )}
         {next && (
-          <div className="mt-7 flex items-center gap-4 rounded-[20px] bg-tonle-50 p-5 text-left ring-1 ring-tonle-100">
-            <span aria-hidden className="h-12 w-16 shrink-0 rounded-[6px] bg-tonle-700 shadow-[inset_8px_0_0_#182E66]" />
+          <div className="mt-8 flex items-center gap-4 rounded-[22px] bg-tonle-950 p-5 text-left text-white shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)]">
+            <Lantern state="current" size={30} className="shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-tonle-600">Up next</p>
-              <p className="font-display text-xl font-bold text-tonle-950">{next.title}</p>
-              <p className="font-medium text-ink-soft">{childReason(next)}</p>
+              <p className="text-sm font-semibold text-light-glow">Up next</p>
+              <p className="font-display text-xl font-bold">{next.title}</p>
+              <p className="font-medium text-tonle-100">{childReason(next)}</p>
             </div>
           </div>
         )}
-        <div className="mt-8 flex flex-col-reverse items-center justify-center gap-3 sm:flex-row">
+        <div className="mt-8 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
           <JourneyLink href={journeyHref} />
           {next !== null && (
-            <button
-              ref={keepGoingRef}
-              type="button"
-              onClick={onKeepGoing}
-              className="flex min-h-14 items-center gap-2 rounded-pill bg-light px-10 text-xl font-bold text-tonle-950 shadow-glow transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.97]"
-            >
+            <button ref={keepGoingRef} type="button" onClick={onKeepGoing} className={goButton}>
               Keep going <ArrowRight size={22} aria-hidden />
             </button>
           )}

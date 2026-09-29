@@ -21,8 +21,7 @@ export function ChildPreview({ item, index, total }: { item: ActivityItem; index
           </span>
         )}
       </figcaption>
-      <p className="text-xl font-bold text-ink">{item.prompt}</p>
-      <QuestionView key={item.questionVersionId} item={item} onAnswer={() => setTried(true)} disabled={false} result={null} />
+      <QuestionView key={item.questionVersionId} item={item} onAnswer={() => setTried(true)} disabled={false} result={null} headingLevel={3} />
       {tried && (
         <p role="status" className="text-sm text-muted">
           Preview only — in the app the server checks the answer and records it as evidence.
