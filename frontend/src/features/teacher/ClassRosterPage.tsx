@@ -4,6 +4,7 @@ import { Breadcrumb } from "@/components/workspace/WorkspaceShell";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 export function ClassRosterPage() {
   const { classId = "" } = useParams<{ classId: string }>();
@@ -17,6 +18,7 @@ export function ClassRosterPage() {
     () => schoolApi.classRoster(classId),
     [classId],
   );
+  useDocumentTitle(schoolClass?.name);
 
   if (!classId) return null;
 

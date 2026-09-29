@@ -4,6 +4,8 @@ import { LogOut, Menu, X, type LucideIcon } from "lucide-react";
 import { BrandMark, Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { cn } from "@/lib/utils/cn";
+import { SkipLink } from "@/components/ui/SkipLink";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 export interface WorkspaceNavItem {
   to: string;
@@ -74,8 +76,9 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
 
   return (
     <div className="min-h-screen bg-paper">
+      <SkipLink />
       {/* Desktop rail */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col bg-tonle-950 px-3 pb-4 pt-5 lg:flex">
+      <aside className="on-night fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col bg-tonle-950 px-3 pb-4 pt-5 lg:flex">
         <Link to={home} className="mb-1 w-fit rounded-[10px] px-3 py-1" aria-label="Bookeyond Kid — workspace home">
           <Logo tone="paper" size="sm" />
         </Link>
@@ -87,7 +90,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
       </aside>
 
       {/* Phone and tablet bar */}
-      <header className="sticky top-0 z-30 bg-tonle-950 text-white lg:hidden">
+      <header className="on-night sticky top-0 z-30 bg-tonle-950 text-white lg:hidden">
         <div className="flex h-14 items-center gap-3 px-4">
           <Link to={home} className="flex items-center gap-2.5 rounded-[10px]" aria-label="Bookeyond Kid — workspace home">
             <BrandMark size={30} tone="paper" />
@@ -110,7 +113,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
         </div>
       </header>
 
-      <main className="lg:pl-[248px]">
+      <main id="main" tabIndex={-1} className="lg:pl-[248px]">
         <div className="mx-auto max-w-[1180px] px-4 pb-20 pt-6 sm:px-8 sm:pt-9">
           <Outlet />
         </div>
@@ -131,6 +134,7 @@ export function PageHeader({
   breadcrumb?: { label: string; to?: string }[];
   actions?: ReactNode;
 }) {
+  useDocumentTitle(typeof title === "string" ? title : null);
   return (
     <header className="flex flex-col gap-3 pb-7">
       {breadcrumb && breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} />}

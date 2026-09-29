@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { BlueHour } from "@/features/world/BlueHour";
@@ -9,6 +9,7 @@ import { buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import type { EvidenceLevel } from "@/lib/api/types";
 import { Nav } from "./sections/Nav";
+import { SkipLink } from "@/components/ui/SkipLink";
 import { Footer } from "./sections/Footer";
 
 /**
@@ -17,10 +18,15 @@ import { Footer } from "./sections/Footer";
  * app itself uses, so nothing here promises more than a family will find inside.
  */
 export function LandingPage() {
+  // The front door keeps the full name and promise (other pages set "Page · Bookeyond Kid").
+  useEffect(() => {
+    document.title = "Bookeyond Kid — Learn Today, Build Tomorrow";
+  }, []);
   return (
     <div className="overflow-x-clip bg-paper">
+      <SkipLink />
       <Nav />
-      <main>
+      <main id="main" tabIndex={-1}>
         <Hero />
         <HowItWorks />
         <ForParents />
@@ -47,7 +53,7 @@ const nightGhostButton =
 
 function Hero() {
   return (
-    <section className="relative bg-tonle-950 text-white">
+    <section className="on-night relative bg-tonle-950 text-white">
       <div className="relative h-[56svh] min-h-[340px] lg:absolute lg:inset-0 lg:h-auto">
         <BlueHour time="dusk" crop="bottom" frame={false} className="absolute inset-0">
           <PathOfBooks steps={ILLUSTRATIVE_PATH} currentId="illustration-3" />
@@ -251,7 +257,7 @@ function ForParents() {
 
 function ForChildren() {
   return (
-    <section id="for-children" className="relative scroll-mt-16 overflow-hidden bg-tonle-950 text-white">
+    <section id="for-children" className="on-night relative scroll-mt-16 overflow-hidden bg-tonle-950 text-white">
       <div aria-hidden className="absolute inset-0">
         <BlueHour time="dusk" crop="center" frame={false} className="absolute inset-0 opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-tonle-950 via-tonle-950/80 to-tonle-950/10" />
@@ -378,7 +384,7 @@ function Closing() {
           </dl>
         </div>
       </Section>
-      <section className="relative overflow-hidden bg-tonle-950 text-white">
+      <section className="on-night relative overflow-hidden bg-tonle-950 text-white">
         <div aria-hidden className="absolute inset-0">
           <BlueHour time="dusk" crop="top" frame={false} className="absolute inset-0" />
           <div className="absolute inset-0 bg-tonle-950/55" />

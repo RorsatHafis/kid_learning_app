@@ -46,6 +46,17 @@
     outline-offset: 3px;
     border-radius: 6px;
   }
+  /* On night surfaces the blue ring would disappear: use the warm light instead (>= 3:1),
+     and switch back on paper that sits inside them (the child's page). */
+  .on-night :focus-visible {
+    outline-color: theme("colors.light.glow");
+  }
+  .on-night .on-paper :focus-visible {
+    outline-color: theme("colors.tonle.600");
+  }
+  main:focus {
+    outline: none;
+  }
 
   input,
   textarea {

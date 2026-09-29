@@ -4,6 +4,7 @@ import { BrandMark, Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils/cn";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { UnconfirmedEmailNotice } from "./UnconfirmedEmailNotice";
+import { SkipLink } from "@/components/ui/SkipLink";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -24,6 +25,7 @@ export function ParentLayout() {
 
   return (
     <div className="min-h-screen bg-paper">
+      <SkipLink />
       <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
         <div className="mx-auto flex h-16 max-w-[1180px] items-center gap-6 px-4 sm:px-8">
           <Link to="/parent" className="flex shrink-0 items-center" aria-label="Bookeyond Kid — home">
@@ -56,7 +58,7 @@ export function ParentLayout() {
         </div>
       </header>
       <UnconfirmedEmailNotice />
-      <main className="mx-auto max-w-[1180px] px-4 pb-20 pt-8 sm:px-8 sm:pt-10">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-[1180px] px-4 pb-20 pt-8 sm:px-8 sm:pt-10">
         <Outlet />
       </main>
     </div>

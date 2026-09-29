@@ -89,7 +89,7 @@ function Editor({ detail, onChange }: { detail: CurriculumDetail; onChange: (d: 
           <ArrowLeft size={16} aria-hidden /> All curricula
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-xl font-semibold text-tonle-950">{detail.name}</h2>
+          <h2 className="font-display text-[1.625rem] font-semibold leading-tight text-tonle-950">{detail.name}</h2>
           <StatusBadge status={latest.status} />
         </div>
         <p className="text-sm text-ink-soft">Version {latest.versionNumber}</p>

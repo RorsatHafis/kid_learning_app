@@ -33,6 +33,7 @@ export function QuestionView({
   disabled,
   result,
   headingLevel = 1,
+  autoFocus = true,
 }: {
   item: ActivityItem;
   onAnswer: (submittedAnswer: string) => void;
@@ -41,6 +42,8 @@ export function QuestionView({
   result: AnswerResult | null;
   /** 1 in the child's app (the prompt is the page's heading); 3 inside the Studio preview. */
   headingLevel?: 1 | 3;
+  /** Focus the answer field on arrival (the child's app). Off in the Studio preview. */
+  autoFocus?: boolean;
 }) {
   const Heading = headingLevel === 1 ? "h1" : "h3";
   const promptId = headingLevel === 1 ? "question-prompt" : undefined;
@@ -61,6 +64,7 @@ export function QuestionView({
             onAnswer={onAnswer}
             disabled={disabled}
             result={result}
+            shortcuts={autoFocus}
           />
         </div>
       );
@@ -74,12 +78,13 @@ export function QuestionView({
             onAnswer={onAnswer}
             disabled={disabled}
             result={result}
+            shortcuts={autoFocus}
           />
         </div>
       );
     case "SHORT_ANSWER":
     case "NUMERIC":
-      return <FreeResponse item={item} Heading={Heading} promptId={promptId} onAnswer={onAnswer} disabled={disabled} result={result} />;
+      return <FreeResponse item={item} Heading={Heading} promptId={promptId} onAnswer={onAnswer} disabled={disabled} result={result} autoFocus={autoFocus} />;
     case "MATCHING":
       return (
         <div className="flex flex-col gap-6">
@@ -126,12 +131,15 @@ function Choices({
   onAnswer,
   disabled,
   result,
+  shortcuts,
 }: {
   choices: Choice[];
   correctValues: string[];
   onAnswer: (value: string) => void;
   disabled: boolean;
   result: AnswerResult | null;
+  /** Number keys pick a choice (the child's app); off where several previews share a page. */
+  shortcuts: boolean;
 }) {
   const [picked, setPicked] = useState<string | null>(null);
   const answered = result !== null;
@@ -148,6 +156,7 @@ function Choices({
   const chooseRef = useRef(choose);
   chooseRef.current = choose;
   useEffect(() => {
+    if (!shortcuts) return;
     function onKey(e: KeyboardEvent) {
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       const target = e.target as HTMLElement | null;
@@ -157,7 +166,7 @@ function Choices({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [choices]);
+  }, [choices, shortcuts]);
 
   const columns = choices.length === 2 ? "grid-cols-2" : choices.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
   return (
@@ -225,10 +234,12 @@ function FreeResponse({
   onAnswer,
   disabled,
   result,
+  autoFocus,
 }: {
   item: ActivityItem;
   Heading: "h1" | "h3";
   promptId: string | undefined;
+  autoFocus: boolean;
   onAnswer: (value: string) => void;
   disabled: boolean;
   result: AnswerResult | null;
@@ -247,8 +258,8 @@ function FreeResponse({
 
   useEffect(() => {
     // On a phone or tablet the pad is the keyboard: focusing would open the system one.
-    if (!answered && !coarsePointer()) inputRef.current?.focus();
-  }, [answered]);
+    if (autoFocus && !answered && !coarsePointer()) inputRef.current?.focus();
+  }, [answered, autoFocus]);
 
   function submit(e?: FormEvent) {
     e?.preventDefault();

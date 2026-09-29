@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
 
@@ -18,6 +19,7 @@ const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
  */
 export function AccountPage() {
   const profile = useAsync(() => accountApi.me(), []);
+  useDocumentTitle("Account");
 
   return (
     <div className="flex flex-col gap-8">

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { Trouble, Waiting } from "./ChildHome";
 import { QuestionView, type AnswerResult } from "./QuestionView";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 const LOAD_FAILED = "We couldn't get your activity ready. Let's try again!";
 const SAVE_FAILED = "We couldn't save your activity just now. Let's try again!";
@@ -65,6 +66,7 @@ export function PlaySession() {
   const { childId = "", enrollmentId = "" } = useParams<{ childId: string; enrollmentId: string }>();
   const child = useAsync(() => childrenApi.get(childId), [childId]);
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
+  useDocumentTitle(phase.kind === "intro" || phase.kind === "playing" ? phase.activity.title : phase.kind === "completed" ? phase.title : "Play");
   // React 18 StrictMode runs effects twice in development; without this guard the
   // start call could fire twice in a row for the same path item.
   const loadInFlight = useRef(false);
@@ -243,7 +245,7 @@ function Page({ children, className, labelledBy }: { children: React.ReactNode; 
     <section
       aria-labelledby={labelledBy}
       className={cn(
-        "relative mx-auto w-full max-w-3xl rounded-[32px] bg-[#FFFBF3] text-ink shadow-lift ring-1 ring-[#EADFCB]",
+        "on-paper relative mx-auto w-full max-w-3xl rounded-[32px] bg-[#FFFBF3] text-ink shadow-lift ring-1 ring-[#EADFCB]",
         // the page's gutter, where it is sewn into the book
         "before:pointer-events-none before:absolute before:inset-y-8 before:left-0 before:w-3 before:rounded-r-full before:bg-gradient-to-r before:from-[#E7D9BF] before:to-transparent",
         className,
@@ -285,7 +287,7 @@ function Intro({
             ))}
           </div>
           <p className="text-base font-semibold text-tonle-100">
-            {n} {n === 1 ? "question" : "questions"} · light {n === 1 ? "the lantern" : `all ${n} lanterns`}
+            {n} {n === 1 ? "question" : "questions"} · light {n === 1 ? "the lantern" : n === 2 ? "both lanterns" : `all ${n} lanterns`}
           </p>
         </div>
 

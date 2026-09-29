@@ -4,9 +4,11 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { Panel, SelectField } from "../studio/shared";
 import { AuditLog } from "./AuditLog";
 import { actionLabel } from "./auditText";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 /** The platform's audit log: who did what, when. Read-only - the log itself can't be edited or deleted. */
 export function ActivityPage() {
+  useDocumentTitle("Activity log");
   const actions = useAsync(() => operationsApi.auditActions(), []);
   const [action, setAction] = useState("");
 

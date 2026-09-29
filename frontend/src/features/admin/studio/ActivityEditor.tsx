@@ -90,7 +90,7 @@ function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: Ac
           <ArrowLeft size={16} aria-hidden /> All activities
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-xl font-semibold text-tonle-950">{detail.title}</h2>
+          <h2 className="font-display text-[1.625rem] font-semibold leading-tight text-tonle-950">{detail.title}</h2>
           <StatusBadge status={latest.status} />
         </div>
         <p className="text-sm text-ink-soft">Practice activity · version {latest.versionNumber}</p>

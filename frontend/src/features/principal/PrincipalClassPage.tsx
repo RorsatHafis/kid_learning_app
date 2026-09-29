@@ -8,6 +8,7 @@ import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { ChildrenNotYetAvailable } from "./PrincipalHome";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 /**
  * One class: who teaches it (assign from the school's own active teachers, or unassign)
@@ -16,6 +17,7 @@ import { ChildrenNotYetAvailable } from "./PrincipalHome";
 export function PrincipalClassPage() {
   const { classId = "" } = useParams<{ classId: string }>();
   const schoolClass = useAsync(() => schoolApi.schoolClass(classId), [classId]);
+  useDocumentTitle(schoolClass.data?.name);
   const schoolId = schoolClass.data?.schoolId;
   const staff = useAsync(() => (schoolId ? schoolApi.staff(schoolId) : Promise.resolve([])), [schoolId]);
   const roster = useAsync(() => schoolApi.classRoster(classId), [classId]);

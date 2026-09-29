@@ -5,7 +5,7 @@ import { sectionLinks } from "./Nav";
 // Only links that lead somewhere: there are no About, Contact, Terms or Privacy pages yet (PD-18).
 export function Footer() {
   return (
-    <footer className="bg-tonle-950 px-4 pb-10 pt-14 text-tonle-100 sm:px-8">
+    <footer className="on-night bg-tonle-950 px-4 pb-10 pt-14 text-tonle-100 sm:px-8">
       <div className="mx-auto flex max-w-[1240px] flex-col gap-12">
         <div className="flex flex-col justify-between gap-10 sm:flex-row">
           <div className="flex flex-col gap-4">

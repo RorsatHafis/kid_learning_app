@@ -32,7 +32,7 @@ export function ChildSpaceLayout({
   backdrop?: boolean;
 }) {
   return (
-    <div className="relative min-h-[100dvh] bg-tonle-950 text-white">
+    <div className="on-night relative min-h-[100dvh] bg-tonle-950 text-white">
       {backdrop && (
         <div aria-hidden className="fixed inset-0">
           <BlueHour crop="bottom" />

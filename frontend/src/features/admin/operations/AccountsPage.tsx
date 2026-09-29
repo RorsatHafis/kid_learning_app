@@ -8,6 +8,7 @@ import { FormField } from "@/features/auth/FormField";
 import { Panel, TextAreaField } from "../studio/shared";
 import { errorText } from "../studio/studioLogic";
 import { AuditLog } from "./AuditLog";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 const ROLE_LABEL: Record<string, string> = {
   PARENT: "Parent",
@@ -23,6 +24,7 @@ const REASON_MAX = 500;
  * browsing people. The server enforces every rule shown here; the page only explains them.
  */
 export function AccountsPage() {
+  useDocumentTitle("Accounts");
   const [email, setEmail] = useState("");
   const [searching, setSearching] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);

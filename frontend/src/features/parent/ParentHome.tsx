@@ -10,11 +10,13 @@ import { parentReason } from "@/features/learning/explain";
 import { AddChildForm } from "./AddChildForm";
 import { BookStrip, ChildSeal, SceneBand } from "./ui";
 import type { Child } from "@/lib/api/types";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 /** The family: each child as a chapter — who they are, where they are on their path, what's next. */
 export function ParentHome() {
   const { data: children, error, isLoading, refetch } = useAsync(() => childrenApi.list(), []);
   const [isAdding, setIsAdding] = useState(false);
+  useDocumentTitle("Your family");
   const count = children?.length ?? 0;
 
   return (

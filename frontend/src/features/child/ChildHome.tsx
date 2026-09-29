@@ -10,6 +10,7 @@ import { BlueHour } from "@/features/world/BlueHour";
 import { PathOfBooks, khmerNumber } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 /**
  * The child's home: the blue-hour world with their journey laid across the river as books.
@@ -30,6 +31,7 @@ export function ChildHome() {
   }, [enrollments.data, params]);
 
   const name = child.data?.displayName;
+  useDocumentTitle(name ? `${name}'s path` : null);
 
   if (child.isLoading || enrollments.isLoading) {
     return (

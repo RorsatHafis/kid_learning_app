@@ -21,7 +21,10 @@ export function ChildPreview({ item, index, total }: { item: ActivityItem; index
           </span>
         )}
       </figcaption>
-      <QuestionView key={item.questionVersionId} item={item} onAnswer={() => setTried(true)} disabled={false} result={null} headingLevel={3} />
+      {/* The child's exact layout at 70%: an editor needs to see it, not to scroll past it. */}
+      <div className="[zoom:0.7]">
+        <QuestionView key={item.questionVersionId} item={item} onAnswer={() => setTried(true)} disabled={false} result={null} headingLevel={3} autoFocus={false} />
+      </div>
       {tried && (
         <p role="status" className="text-sm text-ink-soft">
           Preview only — in the app the server checks the answer and records it as evidence.

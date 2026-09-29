@@ -175,6 +175,11 @@ for (const [size, viewport] of Object.entries(sizes)) {
       .click()
       .catch(() => undefined);
     await shot(page, "34-studio-questions", size);
+    await page.getByRole("link", { name: /1 \+ 1/ }).first().click().catch(() => undefined);
+    await shot(page, "35-studio-question-editor", size);
+    await page.getByRole("link", { name: "Activities", exact: true }).click().catch(() => undefined);
+    await page.getByRole("link", { name: /Addition Recognition Practice/ }).first().click().catch(() => undefined);
+    await shot(page, "36-studio-activity-editor", size);
     await page.evaluate(() => localStorage.clear());
   }
 

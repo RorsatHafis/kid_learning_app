@@ -14,6 +14,7 @@ import { LearningNowSection } from "./LearningNowSection";
 import { SkillsSection } from "./SkillsSection";
 import { RecentActivitySection } from "./RecentActivitySection";
 import { InsightsSection } from "./InsightsSection";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 export function ChildOverviewPage() {
   // key={childId} forces a full remount when switching children, so no state from
@@ -32,6 +33,7 @@ export function ChildOverviewPage() {
 function ChildOverview({ childId }: { childId: string }) {
   const child = useAsync(() => childrenApi.get(childId), [childId]);
   const enrollments = useAsync(() => learningApi.enrollments(childId), [childId]);
+  useDocumentTitle(child.data?.displayName);
 
   if (child.isLoading) return <LoadingState label="Loading…" />;
   if (child.error) {

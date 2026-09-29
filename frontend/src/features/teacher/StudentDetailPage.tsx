@@ -4,12 +4,14 @@ import { Breadcrumb } from "@/components/workspace/WorkspaceShell";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 export function StudentDetailPage() {
   const { classId = "", studentId = "" } = useParams<{ classId: string; studentId: string }>();
 
   const { data: roster, error, isLoading } = useAsync(() => schoolApi.classRoster(classId), [classId]);
   const student = roster?.find((s) => s.id === studentId);
+  useDocumentTitle(student?.displayName);
 
   if (!classId || !studentId) return null;
 

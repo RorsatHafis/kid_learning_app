@@ -8,10 +8,12 @@ import type { SchoolStaffMember, SchoolSummary } from "@/lib/api/types";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 export function PrincipalHome() {
   const schools = useAsync(() => schoolApi.mySchools(), []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  useDocumentTitle((schools.data?.find((s) => s.id === selectedId) ?? schools.data?.[0])?.name ?? (schools.data ? "Set up your school" : null));
 
   if (schools.isLoading) return <LoadingState label="Loading your school…" />;
   if (schools.error) return <ErrorState error={schools.error} onRetry={schools.refetch} />;

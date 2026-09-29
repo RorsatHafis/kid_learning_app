@@ -24,7 +24,7 @@ export function Nav() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-tonle-950 text-white">
+    <header className="on-night sticky top-0 z-50 border-b border-white/10 bg-tonle-950 text-white">
       <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-8 px-4 sm:h-[4.5rem] sm:px-8">
         <Link to="/" className="shrink-0 rounded-[10px]" aria-label="Bookeyond Kid — home">
           <Logo tone="paper" size="sm" />

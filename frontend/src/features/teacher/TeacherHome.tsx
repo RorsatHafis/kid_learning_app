@@ -4,9 +4,11 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { SchoolInvitations } from "./SchoolInvitations";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 export function TeacherHome() {
   const { data: classes, error, isLoading, refetch } = useAsync(() => schoolApi.myClasses(), []);
+  useDocumentTitle("Your classes");
 
   return (
     <div className="flex flex-col gap-6">

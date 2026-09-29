@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Logo } from "@/components/brand/Logo";
 import { BlueHour } from "@/features/world/BlueHour";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
+import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 /**
  * Signing in happens at the edge of the child's world: the river at dusk on one side,
@@ -10,6 +11,7 @@ import { LearningBuddy } from "@/features/buddy/LearningBuddy";
  * short band above the form.
  */
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+  useDocumentTitle(title);
   return (
     <div className="min-h-screen bg-paper lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(480px,1fr)]">
       <aside aria-hidden className="relative h-44 overflow-hidden bg-tonle-950 sm:h-56 lg:sticky lg:top-0 lg:h-screen">
