@@ -213,11 +213,17 @@ Adult radii step from 6px (tags) through 10px (controls) and 12px (fields and bu
 
 ### Cards / Containers
 - **Family sheet:** white, 22px, paper shadow, line/70 ring. Rows divide with 1px lines instead of nesting cards.
-- **Workspace panel:** white, 16px, 1px line ring, a header row with a hairline under it.
+- **Workspace panel:** white, 16px, 1px line ring, a header row with a hairline under it. Tables run edge to edge (`flush`) and become stacked lists on phones.
+- **Composer:** creation forms (new subject, skill, question, lesson, curriculum, staff account) open from a "New …" action in their list's header as a titled, closable panel (Escape too). The first field takes focus. The composer starts open only while its list is empty and closes once the item exists.
+
+### States
+- **Loading:** three small books breathing, fading in only after a noticeable wait. Shown only before the first data arrives; a refresh keeps the current content on screen.
+- **Empty:** dashed outline with the book glyph, a title and one sentence on what to do next.
+- **Error:** "That didn't load", the reason, and "Try again". Child space uses the firefly (encourage) and a pressable retry.
 
 ### Navigation
 - **Family:** white sticky bar, text links with a 2px underline indicator.
-- **Staff:** night rail with Logo (paper tone), workspace name, nav items (10px radius, active white/9% with a light-coloured icon), account and log out at the foot.
+- **Staff:** night rail with Logo (paper tone), workspace name, nav items (10px radius, active white/9% with a light-coloured icon), account and log out at the foot. Sub-pages carry a slash breadcrumb ("School / Grade 1 A").
 - **Landing:** solid night bar, light "Get started".
 
 ### Signature Components
@@ -225,7 +231,8 @@ Adult radii step from 6px (tags) through 10px (controls) and 12px (fields and bu
 - **Lantern String:** an activity's questions as paper lanterns on a string: unlit, swaying (current), lit (answered).
 - **Evidence Line:** evidence strength as line weight: dotted hairline (none), dashed (partial), 3.5px (sufficient), 5.5px (strong). Always has a text label.
 - **Firefly Buddy:** an authored character (never a chatbot) with moods happy, thinking, cheer, encourage. It sits on the page corner and reacts.
-- **Answer Slot + Number Pad:** a sum's answer sits where its "?" was. The 3×4 pad (digits, delete, Check) is the keyboard on touch screens.
+- **Answer Slot + Number Pad:** a sum written "… = ?" takes its answer where the "?" was; questions in words keep their wording with the field below. The 3×4 pad (digits, delete, Check) is the keyboard on touch screens.
+- **Brand mark sizes:** from 36px the full mark (page edges, side petals, inner petal); below 36px a compact drawing (solid book, bold three-petal lotus, clear spark). The favicon uses the compact drawing, home-screen icons the full one.
 
 ## Do's and Don'ts
 
