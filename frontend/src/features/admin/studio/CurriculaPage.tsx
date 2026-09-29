@@ -3,11 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, Plus } from "lucide-react";
 import { studioApi } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { cn } from "@/lib/utils/cn";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
-import { Panel, SelectField, StatusBadge } from "./shared";
-import { currentStatus, errorText, useStudio } from "./studioLogic";
+import { ComposerPanel, NewButton, Panel, SelectField, StatusBadge } from "./shared";
+import { currentStatus, errorText, useStudio, useComposer } from "./studioLogic";
 
 /**
  * A curriculum is the sequence of objectives a child's learning path is built from.
@@ -19,10 +20,11 @@ export function CurriculaPage() {
   const ageHubs = useAsync(() => studioApi.ageHubs(), []);
   const mine = (curricula.data ?? []).filter((c) => c.subjectId === catalog.subject.id);
   const hubName = (id: string) => ageHubs.data?.find((h) => h.id === id)?.name ?? "";
+  const composer = useComposer(!!curricula.data && mine.length === 0);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <Panel title="Curricula">
+    <div className={cn("grid grid-cols-1 gap-6", composer.open && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
+      <Panel title="Curricula" action={!composer.open && <NewButton label="New curriculum" onClick={composer.show} />}>
         {curricula.isLoading && !curricula.data && <LoadingState label="Loading curricula…" />}
         {curricula.error && <ErrorState error={curricula.error} onRetry={curricula.refetch} />}
         {curricula.data && mine.length === 0 && (
@@ -53,12 +55,29 @@ export function CurriculaPage() {
           })}
         </ul>
       </Panel>
-      <NewCurriculum ageHubs={ageHubs.data ?? []} />
+      {composer.open && (
+        <div className="order-first lg:order-none">
+          <NewCurriculum ageHubs={ageHubs.data ?? []} onClose={composer.hide} focusOnOpen={composer.requested} />
+        </div>
+      )}
     </div>
   );
 }
 
-function NewCurriculum({ ageHubs }: { ageHubs: { id: string; name: string; minAge: number; maxAge: number | null }[] }) {
+function NewCurriculum({
+  ageHubs,
+  onClose,
+  focusOnOpen,
+}: {
+  ageHubs: {
+    id: string;
+    name: string;
+    minAge: number;
+    maxAge: number | null;
+  }[];
+  onClose: () => void;
+  focusOnOpen: boolean;
+}) {
   const { catalog } = useStudio();
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -71,7 +90,11 @@ function NewCurriculum({ ageHubs }: { ageHubs: { id: string; name: string; minAg
     setBusy(true);
     setError(null);
     try {
-      const created = await studioApi.createCurriculum({ subjectId: catalog.subject.id, ageHubId, name: name.trim() });
+      const created = await studioApi.createCurriculum({
+        subjectId: catalog.subject.id,
+        ageHubId,
+        name: name.trim(),
+      });
       navigate(created.id);
     } catch (err) {
       setError(errorText(err));
@@ -80,9 +103,15 @@ function NewCurriculum({ ageHubs }: { ageHubs: { id: string; name: string; minAg
   }
 
   return (
-    <Panel title="New curriculum" className="self-start">
+    <ComposerPanel title="New curriculum" onClose={onClose} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField label="Name families will see" value={name} maxLength={160} required onChange={(e) => setName(e.target.value)} />
+        <FormField
+          label="Name families will see"
+          value={name}
+          maxLength={160}
+          required
+          onChange={(e) => setName(e.target.value)}
+        />
         <SelectField label="Age group" value={ageHubId} required onChange={(e) => setAgeHubId(e.target.value)}>
           <option value="">Choose…</option>
           {ageHubs.map((hub) => (
@@ -101,6 +130,6 @@ function NewCurriculum({ ageHubs }: { ageHubs: { id: string; name: string; minAg
           <Plus size={16} aria-hidden /> {busy ? "Creating…" : "Create draft"}
         </Button>
       </form>
-    </Panel>
+    </ComposerPanel>
   );
 }

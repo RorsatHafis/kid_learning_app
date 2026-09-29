@@ -70,10 +70,11 @@ async function nav(page, name) {
   const link = page.getByRole("link", { name, exact: true }).locator("visible=true").first();
   // On a phone the workspace navigation lives behind the menu button.
   if (!(await link.isVisible().catch(() => false))) {
+    await page.evaluate(() => window.scrollTo(0, 0));
     const menu = page.getByRole("button", { name: "Open menu" });
     if (await menu.isVisible().catch(() => false)) await menu.click();
   }
-  await link.click();
+  await link.click({ timeout: 10000 }).catch(() => link.click({ force: true }));
 }
 
 const only = process.env.ONLY ? process.env.ONLY.split(",") : null;
@@ -157,7 +158,7 @@ for (const [size, viewport] of Object.entries(sizes)) {
     await shot(page, "31-admin-staff", size);
     await nav(page, "Activity log");
     await shot(page, "32-admin-activity", size);
-    await nav(page, "Content Studio");
+    await page.goto(base + "/admin/studio");
     await page
       .getByRole("link", { name: /^Maths/ })
       .first()

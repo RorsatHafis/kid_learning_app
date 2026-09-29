@@ -6,13 +6,14 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
-import { Panel, TextAreaField } from "./shared";
+import { ComposerPanel, NewButton, TextAreaField } from "./shared";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
-import { codeFrom, errorText } from "./studioLogic";
+import { codeFrom, errorText, useComposer } from "./studioLogic";
 
 /** Where authoring starts: pick the subject to work in, or add a new one. */
 export function StudioIndex() {
   const subjects = useAsync(() => studioApi.subjects(), []);
+  const composer = useComposer(subjects.data?.length === 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -20,12 +21,23 @@ export function StudioIndex() {
         breadcrumb={[{ label: "Content Studio" }]}
         title="Subjects"
         description="Content is built subject by subject: skills and objectives first, then questions and activities, then the curriculum that places them on children's learning paths. Nothing reaches a child until it is published, and publishing checks that a child can actually play it."
+        actions={!composer.open && <NewButton label="New subject" onClick={composer.show} />}
       />
+      {composer.open && (
+        <NewSubject
+          focusOnOpen={composer.requested}
+          onClose={composer.hide}
+          onCreated={() => {
+            composer.hide();
+            subjects.refetch();
+          }}
+        />
+      )}
 
       {subjects.isLoading && <LoadingState label="Loading subjects…" />}
       {subjects.error && <ErrorState error={subjects.error} onRetry={subjects.refetch} />}
       {subjects.data && subjects.data.length === 0 && (
-        <EmptyState title="No subjects yet" description="Add the first subject below to start building content." />
+        <EmptyState title="No subjects yet" description="Add the first subject to start building content." />
       )}
       {subjects.data && subjects.data.length > 0 && (
         <ul className="divide-y divide-line overflow-hidden rounded-[16px] bg-white ring-1 ring-line">
@@ -36,7 +48,9 @@ export function StudioIndex() {
                 className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 transition-colors hover:bg-paper sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_auto]"
               >
                 <span className="min-w-0">
-                  <span className="block font-semibold text-tonle-950 group-hover:underline group-hover:underline-offset-4">{subject.name}</span>
+                  <span className="block font-semibold text-tonle-950 group-hover:underline group-hover:underline-offset-4">
+                    {subject.name}
+                  </span>
                   <span className="block font-mono text-xs text-ink-faint">{subject.code}</span>
                 </span>
                 <span className="hidden truncate text-sm text-ink-soft sm:block">{subject.description ?? "—"}</span>
@@ -46,13 +60,11 @@ export function StudioIndex() {
           ))}
         </ul>
       )}
-
-      <NewSubject onCreated={subjects.refetch} />
     </div>
   );
 }
 
-function NewSubject({ onCreated }: { onCreated: () => void }) {
+function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void; onClose: () => void; focusOnOpen: boolean }) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -66,7 +78,11 @@ function NewSubject({ onCreated }: { onCreated: () => void }) {
     setSaving(true);
     setError(null);
     try {
-      const subject = await studioApi.createSubject({ name: name.trim(), code, description: description.trim() || undefined });
+      const subject = await studioApi.createSubject({
+        name: name.trim(),
+        code,
+        description: description.trim() || undefined,
+      });
       onCreated();
       navigate(`/admin/studio/${subject.id}/catalog`);
     } catch (err) {
@@ -77,7 +93,7 @@ function NewSubject({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <Panel title="Add a subject" className="max-w-2xl">
+    <ComposerPanel title="New subject" onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-2xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField
           label="Name"
@@ -100,7 +116,12 @@ function NewSubject({ onCreated }: { onCreated: () => void }) {
             setCode(e.target.value.toUpperCase());
           }}
         />
-        <TextAreaField label="Description (optional)" value={description} maxLength={2000} onChange={(e) => setDescription(e.target.value)} />
+        <TextAreaField
+          label="Description (optional)"
+          value={description}
+          maxLength={2000}
+          onChange={(e) => setDescription(e.target.value)}
+        />
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
@@ -110,6 +131,6 @@ function NewSubject({ onCreated }: { onCreated: () => void }) {
           <Plus size={16} aria-hidden /> {saving ? "Adding…" : "Add subject"}
         </Button>
       </form>
-    </Panel>
+    </ComposerPanel>
   );
 }

@@ -4,41 +4,31 @@ import { ChevronRight, Search } from "lucide-react";
 import type { QuestionType } from "@/lib/api/types";
 import { studioApi } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { cn } from "@/lib/utils/cn";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { QuestionDraftForm } from "./QuestionDraftForm";
-import {
-  AUTHORABLE_TYPES,
-  currentStatus,
-  errorText,
-  QUESTION_TYPE_LABEL,
-  useStudio,
-} from "./studioLogic";
-import { Panel, SelectField, StatusBadge } from "./shared";
+import { AUTHORABLE_TYPES, currentStatus, errorText, QUESTION_TYPE_LABEL, useStudio, useComposer } from "./studioLogic";
+import { ComposerPanel, NewButton, Panel, SelectField, StatusBadge } from "./shared";
 
 export function QuestionsPage() {
   const { catalog } = useStudio();
-  const questions = useAsync(
-    () => studioApi.questions(catalog.subject.id),
-    [catalog.subject.id],
-  );
+  const questions = useAsync(() => studioApi.questions(catalog.subject.id), [catalog.subject.id]);
   const [query, setQuery] = useState("");
+  const composer = useComposer(questions.data?.length === 0);
 
   const shown = useMemo(
     () =>
       (questions.data ?? []).filter(
-        (q) =>
-          !query.trim() ||
-          (q.latestPrompt ?? "")
-            .toLowerCase()
-            .includes(query.trim().toLowerCase()),
+        (q) => !query.trim() || (q.latestPrompt ?? "").toLowerCase().includes(query.trim().toLowerCase()),
       ),
     [questions.data, query],
   );
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+    <div className={cn("grid grid-cols-1 gap-6", composer.open && "lg:grid-cols-[minmax(0,1fr)_400px]")}>
       <Panel
         title={`Questions${questions.data ? ` (${questions.data.length})` : ""}`}
+        action={!composer.open && <NewButton label="New question" onClick={composer.show} />}
       >
         <label className="mb-4 flex h-10 items-center gap-2 rounded-[10px] border border-line-strong bg-white px-3 focus-within:border-tonle-600 focus-within:ring-2 focus-within:ring-tonle-600/15">
           <Search size={16} className="text-ink-soft" aria-hidden />
@@ -50,22 +40,13 @@ export function QuestionsPage() {
             className="w-full bg-transparent text-sm outline-none"
           />
         </label>
-        {questions.isLoading && !questions.data && (
-          <LoadingState label="Loading questions…" />
-        )}
-        {questions.error && (
-          <ErrorState error={questions.error} onRetry={questions.refetch} />
-        )}
+        {questions.isLoading && !questions.data && <LoadingState label="Loading questions…" />}
+        {questions.error && <ErrorState error={questions.error} onRetry={questions.refetch} />}
         {questions.data && questions.data.length === 0 && (
-          <EmptyState
-            title="No questions yet"
-            description="Write the first one with the form alongside."
-          />
+          <EmptyState title="No questions yet" description="Write the first one in the New question form." />
         )}
         {questions.data && questions.data.length > 0 && shown.length === 0 && (
-          <p className="text-sm text-ink-soft">
-            No question matches “{query}”.
-          </p>
+          <p className="text-sm text-ink-soft">No question matches “{query}”.</p>
         )}
         {shown.length > 0 && (
           <div className="-mx-5 -mb-5 sm:-mx-6 sm:-mb-6">
@@ -78,10 +59,7 @@ export function QuestionsPage() {
               <span>Status</span>
               <span />
             </div>
-            <ul
-              aria-label="Questions"
-              className="divide-y divide-line border-t border-line sm:border-t-0"
-            >
+            <ul aria-label="Questions" className="divide-y divide-line border-t border-line sm:border-t-0">
               {shown.map((q) => {
                 const status = currentStatus(q.versions);
                 return (
@@ -96,28 +74,13 @@ export function QuestionsPage() {
                         </span>
                         <span className="block text-xs text-ink-faint">
                           {status.label}
-                          {q.skillIds.length === 0 && (
-                            <span className="text-light-deep">
-                              {" "}
-                              · no skill tagged
-                            </span>
-                          )}
+                          {q.skillIds.length === 0 && <span className="text-light-deep"> · no skill tagged</span>}
                         </span>
                       </span>
-                      <span className="hidden text-sm text-ink-soft sm:block">
-                        {QUESTION_TYPE_LABEL[q.questionType]}
-                      </span>
-                      <span>
-                        {status.status && (
-                          <StatusBadge status={status.status} />
-                        )}
-                      </span>
+                      <span className="hidden text-sm text-ink-soft sm:block">{QUESTION_TYPE_LABEL[q.questionType]}</span>
+                      <span>{status.status && <StatusBadge status={status.status} />}</span>
                       <span className="hidden sm:block">
-                        <ChevronRight
-                          size={16}
-                          className="text-ink-faint"
-                          aria-hidden
-                        />
+                        <ChevronRight size={16} className="text-ink-faint" aria-hidden />
                       </span>
                     </Link>
                   </li>
@@ -127,12 +90,16 @@ export function QuestionsPage() {
           </div>
         )}
       </Panel>
-      <NewQuestion />
+      {composer.open && (
+        <div className="order-first lg:order-none lg:sticky lg:top-6 lg:self-start">
+          <NewQuestion onClose={composer.hide} focusOnOpen={composer.requested} />
+        </div>
+      )}
     </div>
   );
 }
 
-function NewQuestion() {
+function NewQuestion({ onClose, focusOnOpen }: { onClose: () => void; focusOnOpen: boolean }) {
   const { catalog } = useStudio();
   const navigate = useNavigate();
   const [type, setType] = useState<QuestionType>("MULTIPLE_CHOICE");
@@ -141,19 +108,14 @@ function NewQuestion() {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <Panel title="New question" className="self-start">
+    <ComposerPanel title="New question" onClose={onClose} focusOnOpen={focusOnOpen}>
       {catalog.skills.length === 0 ? (
         <p className="text-sm text-ink-soft">
-          Add a skill first (Skills &amp; objectives): every question records
-          evidence for at least one skill.
+          Add a skill first (Skills &amp; objectives): every question records evidence for at least one skill.
         </p>
       ) : (
         <div className="flex flex-col gap-4">
-          <SelectField
-            label="Type"
-            value={type}
-            onChange={(e) => setType(e.target.value as QuestionType)}
-          >
+          <SelectField label="Type" value={type} onChange={(e) => setType(e.target.value as QuestionType)}>
             {AUTHORABLE_TYPES.map((t) => (
               <option key={t} value={t}>
                 {QUESTION_TYPE_LABEL[t]}
@@ -184,24 +146,15 @@ function NewQuestion() {
             }}
           >
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-sm font-semibold text-ink">
-                Skills this question gives evidence for
-              </legend>
+              <legend className="mb-1 text-sm font-semibold text-ink">Skills this question gives evidence for</legend>
               {catalog.skills.map((skill) => (
-                <label
-                  key={skill.id}
-                  className="flex items-center gap-2 text-sm text-ink"
-                >
+                <label key={skill.id} className="flex items-center gap-2 text-sm text-ink">
                   <input
                     type="checkbox"
                     className="h-4 w-4 accent-tonle-700"
                     checked={skillIds.includes(skill.id)}
                     onChange={(e) =>
-                      setSkillIds(
-                        e.target.checked
-                          ? [...skillIds, skill.id]
-                          : skillIds.filter((id) => id !== skill.id),
-                      )
+                      setSkillIds(e.target.checked ? [...skillIds, skill.id] : skillIds.filter((id) => id !== skill.id))
                     }
                   />
                   {skill.name}
@@ -216,6 +169,6 @@ function NewQuestion() {
           </QuestionDraftForm>
         </div>
       )}
-    </Panel>
+    </ComposerPanel>
   );
 }

@@ -3,8 +3,8 @@ import { Plus } from "lucide-react";
 import { studioApi, type CatalogObjective, type CatalogSkill } from "@/lib/api/studio";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
-import { Panel, SkillChips, TextAreaField } from "./shared";
-import { codeFrom, errorText, useStudio } from "./studioLogic";
+import { ComposerPanel, NewButton, Panel, SkillChips, TextAreaField } from "./shared";
+import { codeFrom, errorText, useStudio, useComposer } from "./studioLogic";
 
 /**
  * The educational anchor: skills (what evidence is recorded against) and learning
@@ -13,11 +13,17 @@ import { codeFrom, errorText, useStudio } from "./studioLogic";
  */
 export function CatalogPage() {
   const { catalog } = useStudio();
+  const skills = useComposer(catalog.skills.length === 0);
+  const objectives = useComposer(catalog.objectives.length === 0);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <div className="flex flex-col gap-6">
-        <Panel title={`Skills (${catalog.skills.length})`}>
+      <div className="flex flex-col gap-4">
+        {skills.open && <NewSkill onDone={skills.hide} focusOnOpen={skills.requested} />}
+        <Panel
+          title={`Skills (${catalog.skills.length})`}
+          action={!skills.open && <NewButton label="New skill" onClick={skills.show} />}
+        >
           {catalog.skills.length === 0 ? (
             <p className="text-sm text-ink-soft">No skills yet. Skills are what children&apos;s answers count as evidence for.</p>
           ) : (
@@ -28,10 +34,13 @@ export function CatalogPage() {
             </ul>
           )}
         </Panel>
-        <NewSkill />
       </div>
-      <div className="flex flex-col gap-6">
-        <Panel title={`Learning objectives (${catalog.objectives.length})`}>
+      <div className="flex flex-col gap-4">
+        {objectives.open && <NewObjective onDone={objectives.hide} focusOnOpen={objectives.requested} />}
+        <Panel
+          title={`Learning objectives (${catalog.objectives.length})`}
+          action={!objectives.open && <NewButton label="New objective" onClick={objectives.show} />}
+        >
           {catalog.objectives.length === 0 ? (
             <p className="text-sm text-ink-soft">No objectives yet. A curriculum is a sequence of objectives.</p>
           ) : (
@@ -42,7 +51,6 @@ export function CatalogPage() {
             </ul>
           )}
         </Panel>
-        <NewObjective />
       </div>
     </div>
   );
@@ -51,6 +59,7 @@ export function CatalogPage() {
 function SkillRow({ skill }: { skill: CatalogSkill }) {
   const { catalog, refreshCatalog } = useStudio();
   const [prerequisite, setPrerequisite] = useState("");
+  const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const candidates = catalog.skills.filter((s) => s.id !== skill.id && !skill.prerequisiteSkillIds.includes(s.id));
@@ -61,6 +70,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
     try {
       await studioApi.addPrerequisite(skill.id, prerequisite);
       setPrerequisite("");
+      setPicking(false);
       refreshCatalog();
     } catch (err) {
       setError(errorText(err, "That prerequisite would create a loop."));
@@ -73,7 +83,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
     <li className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
       <div>
         <p className="font-semibold text-ink">{skill.name}</p>
-        <p className="text-xs font-semibold tracking-wide text-ink-soft">{skill.code}</p>
+        <p className="font-mono text-xs text-ink-faint">{skill.code}</p>
         {skill.description && <p className="mt-1 text-sm text-ink-soft">{skill.description}</p>}
       </div>
       {skill.prerequisiteSkillIds.length > 0 && (
@@ -81,12 +91,22 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
           Builds on <SkillChips skillIds={skill.prerequisiteSkillIds} catalog={catalog} />
         </div>
       )}
-      {candidates.length > 0 && (
+      {candidates.length > 0 && !picking && (
+        <button
+          type="button"
+          onClick={() => setPicking(true)}
+          className="flex w-fit items-center gap-1.5 rounded-[8px] px-1.5 py-1 text-sm font-medium text-tonle-700 transition-colors hover:bg-tonle-50"
+        >
+          <Plus size={14} aria-hidden /> Prerequisite
+        </button>
+      )}
+      {candidates.length > 0 && picking && (
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor={`pre-${skill.id}`}>
             Add a prerequisite for {skill.name}
           </label>
           <select
+            autoFocus
             id={`pre-${skill.id}`}
             value={prerequisite}
             onChange={(e) => setPrerequisite(e.target.value)}
@@ -101,6 +121,9 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
           </select>
           <Button variant="outline" size="md" className="px-4 py-2" disabled={!prerequisite || busy} onClick={add}>
             Add
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setPicking(false)} disabled={busy}>
+            Cancel
           </Button>
         </div>
       )}
@@ -138,7 +161,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
     <li className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
       <div>
         <p className="font-semibold text-ink">{objective.title}</p>
-        <p className="text-xs font-semibold tracking-wide text-ink-soft">{objective.code}</p>
+        <p className="font-mono text-xs text-ink-faint">{objective.code}</p>
         {objective.description && <p className="mt-1 text-sm text-ink-soft">{objective.description}</p>}
       </div>
       <SkillChips skillIds={objective.skillIds} catalog={catalog} />
@@ -201,7 +224,7 @@ function useNamedCodeForm() {
   };
 }
 
-function NewSkill() {
+function NewSkill({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen: boolean }) {
   const { catalog, refreshCatalog } = useStudio();
   const form = useNamedCodeForm();
   const [error, setError] = useState<string | null>(null);
@@ -219,6 +242,7 @@ function NewSkill() {
       });
       form.reset();
       refreshCatalog();
+      onDone();
     } catch (err) {
       setError(errorText(err, "The skill couldn't be added. Its code may already be in use."));
     } finally {
@@ -227,7 +251,7 @@ function NewSkill() {
   }
 
   return (
-    <Panel title="Add a skill">
+    <ComposerPanel title="New skill" onClose={onDone} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField label="Skill name" value={form.name} maxLength={160} required onChange={(e) => form.onName(e.target.value)} />
         <FormField
@@ -253,11 +277,11 @@ function NewSkill() {
           <Plus size={16} aria-hidden /> {saving ? "Adding…" : "Add skill"}
         </Button>
       </form>
-    </Panel>
+    </ComposerPanel>
   );
 }
 
-function NewObjective() {
+function NewObjective({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen: boolean }) {
   const { catalog, refreshCatalog } = useStudio();
   const form = useNamedCodeForm();
   const [error, setError] = useState<string | null>(null);
@@ -275,6 +299,7 @@ function NewObjective() {
       });
       form.reset();
       refreshCatalog();
+      onDone();
     } catch (err) {
       setError(errorText(err, "The objective couldn't be added. Its code may already be in use."));
     } finally {
@@ -283,9 +308,15 @@ function NewObjective() {
   }
 
   return (
-    <Panel title="Add a learning objective">
+    <ComposerPanel title="New learning objective" onClose={onDone} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField label="Objective title" value={form.name} maxLength={200} required onChange={(e) => form.onName(e.target.value)} />
+        <FormField
+          label="Objective title"
+          value={form.name}
+          maxLength={200}
+          required
+          onChange={(e) => form.onName(e.target.value)}
+        />
         <FormField
           label="Code (unique on the platform)"
           value={form.code}
@@ -309,6 +340,6 @@ function NewObjective() {
           <Plus size={16} aria-hidden /> {saving ? "Adding…" : "Add objective"}
         </Button>
       </form>
-    </Panel>
+    </ComposerPanel>
   );
 }

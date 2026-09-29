@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { ApiError } from "@/lib/api/ApiError";
 import type { Catalog, PublicationStatus, ValidationReport, VersionSummary } from "@/lib/api/studio";
@@ -14,11 +15,18 @@ export function useStudio() {
 }
 
 /** The most useful single status for a piece of content: its open draft, else what is live. */
-export function currentStatus(versions: VersionSummary[]): { label: string; status: PublicationStatus | null } {
+export function currentStatus(versions: VersionSummary[]): {
+  label: string;
+  status: PublicationStatus | null;
+} {
   if (versions.length === 0) return { label: "No versions", status: null };
   const latest = versions[versions.length - 1];
   const live = versions.find((v) => v.status === "PUBLISHED");
-  if (latest.status === "DRAFT" && live) return { label: `v${live.versionNumber} live · v${latest.versionNumber} draft`, status: "DRAFT" };
+  if (latest.status === "DRAFT" && live)
+    return {
+      label: `v${live.versionNumber} live · v${latest.versionNumber} draft`,
+      status: "DRAFT",
+    };
   return { label: `v${latest.versionNumber}`, status: latest.status };
 }
 
@@ -63,3 +71,18 @@ export const QUESTION_TYPE_LABEL: Record<QuestionType, string> = {
 };
 
 export const AUTHORABLE_TYPES: QuestionType[] = ["MULTIPLE_CHOICE", "TRUE_FALSE", "NUMERIC", "SHORT_ANSWER", "MATCHING"];
+
+/**
+ * Whether a "New …" composer is open. It starts open while the list it adds to is empty
+ * (the first thing to do there), and otherwise opens only when asked.
+ */
+export function useComposer(listIsEmpty: boolean) {
+  const [explicit, setExplicit] = useState<boolean | null>(null);
+  return {
+    open: explicit ?? listIsEmpty,
+    /** True only when the author opened it: then its first field takes focus. */
+    requested: explicit === true,
+    show: () => setExplicit(true),
+    hide: () => setExplicit(false),
+  };
+}

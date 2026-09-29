@@ -19,6 +19,8 @@ test("studio: author, check, publish; a child plays exactly what was published",
 
   await logIn(page, ADMIN_EMAIL, ADMIN_PASSWORD);
   await page.getByRole("link", { name: "Content Studio" }).click();
+  // Creation forms open on demand (they start open only while a list is empty).
+  await page.getByRole("button", { name: "New subject" }).click();
   await page.getByLabel("Name", { exact: true }).fill(subject);
   await page.getByRole("button", { name: "Add subject" }).click();
   await expect(page.getByRole("heading", { name: subject })).toBeVisible();

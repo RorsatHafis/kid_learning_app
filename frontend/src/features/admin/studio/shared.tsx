@@ -1,8 +1,8 @@
-import { useId, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
-import { AlertTriangle, CheckCircle2, CircleAlert, X } from "lucide-react";
+import { useEffect, useId, useRef, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { AlertTriangle, CheckCircle2, CircleAlert, Plus, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import type { Catalog, PublicationStatus, ValidationReport, VersionSummary } from "@/lib/api/studio";
 import { cn } from "@/lib/utils/cn";
-
 
 const statusStyle: Record<PublicationStatus, string> = {
   DRAFT: "bg-light-soft text-light-deep ring-light/40",
@@ -24,13 +24,17 @@ const statusLabel: Record<PublicationStatus, string> = {
 
 export function StatusBadge({ status }: { status: PublicationStatus }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-[6px] px-2 py-0.5 text-xs font-semibold ring-1 ring-inset", statusStyle[status])}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-[6px] px-2 py-0.5 text-xs font-semibold ring-1 ring-inset",
+        statusStyle[status],
+      )}
+    >
       <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", statusDot[status])} />
       {statusLabel[status]}
     </span>
   );
 }
-
 
 export function VersionHistory({ versions }: { versions: VersionSummary[] }) {
   return (
@@ -91,13 +95,31 @@ export function ValidationPanel({ report, loading }: { report: ValidationReport 
   );
 }
 
-
-
-export function Panel({ title, children, action, className }: { title: string; children: ReactNode; action?: ReactNode; className?: string }) {
+export function Panel({
+  title,
+  children,
+  action,
+  className,
+  flush,
+}: {
+  title: string;
+  children: ReactNode;
+  action?: ReactNode;
+  className?: string;
+  /** The body runs edge to edge (tables); the header keeps its padding. */
+  flush?: boolean;
+}) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className={cn("rounded-[16px] bg-white p-5 shadow-[0_1px_2px_rgba(14,27,58,0.04)] ring-1 ring-line sm:p-6", className)}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+    <section
+      aria-labelledby={id}
+      className={cn(
+        "overflow-hidden rounded-[16px] bg-white shadow-[0_1px_2px_rgba(14,27,58,0.04)] ring-1 ring-line",
+        flush ? "pt-5 sm:pt-6" : "p-5 sm:p-6",
+        className,
+      )}
+    >
+      <div className={cn("mb-4 flex flex-wrap items-center justify-between gap-2", flush && "px-5 sm:px-6")}>
         <h2 id={id} className="text-base font-semibold text-tonle-950">
           {title}
         </h2>
@@ -124,7 +146,10 @@ export function SkillChips({
   return (
     <ul className="flex flex-wrap gap-2">
       {skillIds.map((id) => (
-        <li key={id} className="inline-flex items-center gap-1 rounded-[8px] bg-tonle-50 py-1 pl-2.5 pr-1 text-sm font-medium text-tonle-800 ring-1 ring-inset ring-tonle-100">
+        <li
+          key={id}
+          className="inline-flex items-center gap-1 rounded-[8px] bg-tonle-50 py-1 pl-2.5 pr-1 text-sm font-medium text-tonle-800 ring-1 ring-inset ring-tonle-100"
+        >
           {name(id)}
           {onRemove ? (
             <button
@@ -149,7 +174,10 @@ export function SelectField({
   label,
   children,
   ...props
-}: SelectHTMLAttributes<HTMLSelectElement> & { label: string; children: ReactNode }) {
+}: SelectHTMLAttributes<HTMLSelectElement> & {
+  label: string;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
@@ -167,7 +195,14 @@ export function SelectField({
   );
 }
 
-export function TextAreaField({ label, hint, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string }) {
+export function TextAreaField({
+  label,
+  hint,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  label: string;
+  hint?: string;
+}) {
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
@@ -189,9 +224,17 @@ export function TextAreaField({ label, hint, ...props }: TextareaHTMLAttributes<
   );
 }
 
-
-
-export function IconButton({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+export function IconButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
   return (
     <button
       type="button"
@@ -202,5 +245,74 @@ export function IconButton({ label, disabled, onClick, children }: { label: stri
     >
       {children}
     </button>
+  );
+}
+
+/** The header action that opens a composer. */
+export function NewButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <Button size="sm" onClick={onClick} disabled={disabled}>
+      <Plus size={15} aria-hidden /> {label}
+    </Button>
+  );
+}
+
+/**
+ * A creation form that opens on demand: titled, closable (button or Escape), and focused on
+ * its first field when the author opened it.
+ */
+export function ComposerPanel({
+  title,
+  onClose,
+  focusOnOpen,
+  children,
+  className,
+}: {
+  title: string;
+  onClose?: () => void;
+  focusOnOpen?: boolean;
+  children: ReactNode;
+  className?: string;
+}) {
+  const id = useId();
+  const ref = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (focusOnOpen)
+      ref.current
+        ?.querySelector<HTMLElement>("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select")
+        ?.focus();
+  }, [focusOnOpen]);
+  return (
+    <section
+      ref={ref}
+      aria-labelledby={id}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && onClose) {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+      className={cn(
+        "self-start overflow-hidden rounded-[16px] bg-white shadow-[0_12px_32px_-18px_rgba(10,21,51,0.35)] ring-1 ring-tonle-200 motion-safe:animate-rise-in",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-line bg-tonle-50/60 px-5 py-3 sm:px-6">
+        <h2 id={id} className="text-base font-semibold text-tonle-950">
+          {title}
+        </h2>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={`Close: ${title}`}
+            className="rounded-[8px] p-1.5 text-ink-soft transition-colors hover:bg-white hover:text-tonle-900"
+          >
+            <X size={16} aria-hidden />
+          </button>
+        )}
+      </div>
+      <div className="p-5 sm:p-6">{children}</div>
+    </section>
   );
 }

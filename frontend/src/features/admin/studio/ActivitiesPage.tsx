@@ -6,28 +6,42 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
-import { Panel, SkillChips, StatusBadge } from "./shared";
-import { currentStatus, errorText, useStudio } from "./studioLogic";
+import { ComposerPanel, NewButton, Panel, SkillChips, StatusBadge } from "./shared";
+import { currentStatus, errorText, useStudio, useComposer } from "./studioLogic";
 
 /** Lessons group activities; an activity is what a learning path places and a child plays. */
 export function ActivitiesPage() {
   const { catalog } = useStudio();
   const lessons = useAsync(() => studioApi.lessons(), []);
   const subjectLessons = (lessons.data ?? []).filter((l) => l.subjectId === catalog.subject.id);
+  const composer = useComposer(!!lessons.data && subjectLessons.length === 0);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex flex-col gap-6">
-        {lessons.isLoading && !lessons.data && <LoadingState label="Loading activities…" />}
-        {lessons.error && <ErrorState error={lessons.error} onRetry={lessons.refetch} />}
-        {lessons.data && subjectLessons.length === 0 && (
-          <EmptyState title="No lessons yet" description="Add a lesson, then build activities inside it." />
-        )}
-        {subjectLessons.map((lesson) => (
-          <LessonPanel key={lesson.id} lesson={lesson} />
-        ))}
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-ink-soft">
+          Lessons group activities. An activity is what a learning path places and a child plays.
+        </p>
+        {!composer.open && <NewButton label="New lesson" onClick={composer.show} />}
       </div>
-      <NewLesson onCreated={lessons.refetch} />
+      {composer.open && (
+        <NewLesson
+          focusOnOpen={composer.requested}
+          onClose={composer.hide}
+          onCreated={() => {
+            composer.hide();
+            lessons.refetch();
+          }}
+        />
+      )}
+      {lessons.isLoading && !lessons.data && <LoadingState label="Loading activities…" />}
+      {lessons.error && <ErrorState error={lessons.error} onRetry={lessons.refetch} />}
+      {lessons.data && subjectLessons.length === 0 && !composer.open && (
+        <EmptyState title="No lessons yet" description="Add a lesson, then build activities inside it." />
+      )}
+      {subjectLessons.map((lesson) => (
+        <LessonPanel key={lesson.id} lesson={lesson} />
+      ))}
     </div>
   );
 }
@@ -40,8 +54,8 @@ function LessonPanel({ lesson }: { lesson: LessonSummary }) {
       title={lesson.title}
       action={
         !adding && (
-          <Button variant="outline" className="px-4 py-2" onClick={() => setAdding(true)} disabled={catalog.skills.length === 0}>
-            <Plus size={16} aria-hidden /> Activity
+          <Button variant="outline" size="sm" onClick={() => setAdding(true)} disabled={catalog.skills.length === 0}>
+            <Plus size={15} aria-hidden /> Activity
           </Button>
         )
       }
@@ -88,7 +102,10 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
     setBusy(true);
     setError(null);
     try {
-      const activity = await studioApi.createActivity(lessonId, { title: title.trim(), skillIds });
+      const activity = await studioApi.createActivity(lessonId, {
+        title: title.trim(),
+        skillIds,
+      });
       navigate(activity.id);
     } catch (err) {
       setError(errorText(err));
@@ -97,7 +114,7 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
   }
 
   return (
-    <form onSubmit={onSubmit} className="mb-4 flex flex-col gap-4 rounded-[10px] bg-paper p-4">
+    <form onSubmit={onSubmit} className="mb-4 flex flex-col gap-4 rounded-[12px] bg-tonle-50/60 p-4 ring-1 ring-tonle-100">
       <FormField label="Activity title" value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-semibold text-ink">Skills learning paths should choose it for</legend>
@@ -130,7 +147,7 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
   );
 }
 
-function NewLesson({ onCreated }: { onCreated: () => void }) {
+function NewLesson({ onCreated, onClose, focusOnOpen }: { onCreated: () => void; onClose: () => void; focusOnOpen: boolean }) {
   const { catalog } = useStudio();
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
@@ -141,7 +158,10 @@ function NewLesson({ onCreated }: { onCreated: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      await studioApi.createLesson({ subjectId: catalog.subject.id, title: title.trim() });
+      await studioApi.createLesson({
+        subjectId: catalog.subject.id,
+        title: title.trim(),
+      });
       setTitle("");
       onCreated();
     } catch (err) {
@@ -152,7 +172,7 @@ function NewLesson({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <Panel title="Add a lesson" className="self-start">
+    <ComposerPanel title="New lesson" onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField label="Lesson title" value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
         {error && (
@@ -164,6 +184,6 @@ function NewLesson({ onCreated }: { onCreated: () => void }) {
           <Plus size={16} aria-hidden /> {busy ? "Adding…" : "Add lesson"}
         </Button>
       </form>
-    </Panel>
+    </ComposerPanel>
   );
 }
