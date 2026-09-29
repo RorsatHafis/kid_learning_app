@@ -10,8 +10,8 @@ import { QuestionView } from "@/features/child/QuestionView";
 export function ChildPreview({ item, index, total }: { item: ActivityItem; index?: number; total?: number }) {
   const [tried, setTried] = useState(false);
   return (
-    <figure className="flex flex-col gap-3 rounded-[16px] bg-paper-sunk p-4 sm:p-6">
-      <figcaption className="flex items-center justify-between gap-2 text-[0.8125rem] font-medium text-ink-faint">
+    <figure className="flex flex-col gap-4 rounded-[20px] bg-[#FFFBF3] p-4 ring-1 ring-[#EADFCB] sm:p-6">
+      <figcaption className="flex items-center justify-between gap-2 text-[0.8125rem] font-medium text-ink-soft">
         <span className="flex items-center gap-1.5">
           <Eye size={14} aria-hidden /> Child&apos;s view
         </span>
