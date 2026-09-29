@@ -10,11 +10,11 @@ export function TeacherHome() {
 
   return (
     <div className="flex flex-col gap-6">
-      <SchoolInvitations onAccepted={refetch} />
       <div>
-        <h1 className="text-xl font-extrabold text-ink">Your classes</h1>
-        <p className="text-sm text-muted">Classes you're currently assigned to teach.</p>
+        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">Your classes</h1>
+        <p className="mt-1.5 text-[0.9375rem] text-ink-soft">Classes you&apos;re currently assigned to teach.</p>
       </div>
+      <SchoolInvitations onAccepted={refetch} />
 
       {isLoading && <LoadingState label="Loading your classes…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
@@ -27,20 +27,20 @@ export function TeacherHome() {
       )}
 
       {classes && classes.length > 0 && (
-        <div className="flex flex-col divide-y divide-hairline rounded-2xl border border-hairline">
+        <div className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
           {classes.map((schoolClass) => (
             <Link
               key={schoolClass.id}
               to={`/teacher/classes/${schoolClass.id}`}
-              className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-surface-sand/60"
+              className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-tonle-50/60"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-blueTint text-brand-blue">
-                  <Users size={16} />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-tonle-50 text-tonle-600">
+                  <Users size={16} aria-hidden />
                 </div>
                 <p className="font-semibold text-ink">{schoolClass.name}</p>
               </div>
-              <ChevronRight size={18} className="text-muted" />
+              <ChevronRight size={18} className="text-ink-faint" aria-hidden />
             </Link>
           ))}
         </div>

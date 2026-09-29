@@ -298,7 +298,8 @@ function FreeResponse({
         <div className={cn(promptClass, "flex flex-wrap items-baseline justify-center gap-x-[0.3em] gap-y-2 text-center text-[clamp(2.5rem,1.6rem+3.6vw,4.25rem)]")} style={promptStyle}>
           <Heading id={promptId} className="inline">
             {lead}
-            <span className="sr-only"> ?</span>
+            {/* the rest of the prompt ("?"), so the heading still reads as the whole question */}
+            <span className="sr-only">{trimmedPrompt.slice(lead.length)}</span>
           </Heading>
           {slot}
         </div>

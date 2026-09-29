@@ -28,24 +28,24 @@ export function CurriculaPage() {
         {curricula.data && mine.length === 0 && (
           <EmptyState title="No curricula yet" description="Create one once you have objectives and activities to put in it." />
         )}
-        <ul className="flex flex-col divide-y divide-hairline">
+        <ul className="flex flex-col divide-y divide-line">
           {mine.map((curriculum) => {
             const status = currentStatus(curriculum.versions);
             return (
               <li key={curriculum.id}>
                 <Link
                   to={curriculum.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl px-2 py-3 hover:bg-surface-cream focus-visible:bg-surface-cream"
+                  className="flex items-center justify-between gap-3 rounded-[10px] px-2 py-3 hover:bg-paper focus-visible:bg-paper"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-semibold text-ink">{curriculum.name}</span>
-                    <span className="text-xs text-muted">
+                    <span className="text-xs text-ink-soft">
                       {hubName(curriculum.ageHubId)} · {status.label}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
                     {status.status && <StatusBadge status={status.status} />}
-                    <ChevronRight size={18} className="text-muted" aria-hidden />
+                    <ChevronRight size={18} className="text-ink-soft" aria-hidden />
                   </span>
                 </Link>
               </li>
@@ -93,7 +93,7 @@ function NewCurriculum({ ageHubs }: { ageHubs: { id: string; name: string; minAg
           ))}
         </SelectField>
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}

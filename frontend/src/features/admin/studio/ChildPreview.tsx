@@ -10,8 +10,8 @@ import { QuestionView } from "@/features/child/QuestionView";
 export function ChildPreview({ item, index, total }: { item: ActivityItem; index?: number; total?: number }) {
   const [tried, setTried] = useState(false);
   return (
-    <figure className="flex flex-col gap-3 rounded-3xl bg-kid-cream p-4 sm:p-6">
-      <figcaption className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+    <figure className="flex flex-col gap-3 rounded-[16px] bg-paper-sunk p-4 sm:p-6">
+      <figcaption className="flex items-center justify-between gap-2 text-[0.8125rem] font-medium text-ink-faint">
         <span className="flex items-center gap-1.5">
           <Eye size={14} aria-hidden /> Child&apos;s view
         </span>
@@ -23,7 +23,7 @@ export function ChildPreview({ item, index, total }: { item: ActivityItem; index
       </figcaption>
       <QuestionView key={item.questionVersionId} item={item} onAnswer={() => setTried(true)} disabled={false} result={null} headingLevel={3} />
       {tried && (
-        <p role="status" className="text-sm text-muted">
+        <p role="status" className="text-sm text-ink-soft">
           Preview only — in the app the server checks the answer and records it as evidence.
         </p>
       )}

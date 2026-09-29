@@ -41,7 +41,7 @@ export function PrincipalClassPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <Link to="/principal" className="flex w-fit items-center gap-2 text-sm font-semibold text-muted hover:text-ink">
+      <Link to="/principal" className="flex w-fit items-center gap-2 text-sm font-semibold text-ink-soft hover:text-ink">
         <ArrowLeft size={16} aria-hidden /> School
       </Link>
 
@@ -50,18 +50,18 @@ export function PrincipalClassPage() {
 
       {schoolClass.data && (
         <>
-          <h1 className="text-xl font-extrabold text-ink sm:text-2xl">{schoolClass.data.name}</h1>
+          <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{schoolClass.data.name}</h1>
 
           <section aria-labelledby="class-teachers" className="flex flex-col gap-3">
-            <h2 id="class-teachers" className="text-base font-extrabold text-ink">
+            <h2 id="class-teachers" className="text-base font-semibold text-tonle-950">
               Teachers
             </h2>
             {schoolClass.data.teachers.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-hairline px-5 py-4 text-sm text-muted">
+              <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">
                 No teacher assigned to this class yet.
               </p>
             ) : (
-              <ul className="flex flex-col divide-y divide-hairline rounded-2xl border border-hairline">
+              <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
                 {schoolClass.data.teachers.map((t) => (
                   <li key={t.accountId} className="flex items-center justify-between gap-3 px-5 py-3">
                     <span className="break-all font-semibold text-ink">{t.email}</span>
@@ -86,7 +86,7 @@ export function PrincipalClassPage() {
                   <select
                     value={selected}
                     onChange={(e) => setSelected(e.target.value)}
-                    className="rounded-2xl border-[1.5px] border-hairline px-4 py-3 text-sm font-normal text-ink focus:border-brand-blueStrong"
+                    className="rounded-[10px] border border-line-strong px-4 py-3 text-sm font-normal text-ink focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
                   >
                     <option value="">Choose one of your teachers…</option>
                     {assignable.map((m) => (
@@ -106,29 +106,29 @@ export function PrincipalClassPage() {
               </div>
             )}
             {staff.data && assignable.length === 0 && (
-              <p className="text-sm text-muted">
+              <p className="text-sm text-ink-soft">
                 Only teachers who have accepted your invitation can be assigned.{" "}
-                <Link to="/principal" className="font-semibold text-brand-blueStrong">
+                <Link to="/principal" className="font-semibold text-tonle-700">
                   Invite teachers
                 </Link>
               </p>
             )}
             {error && (
-              <p role="alert" className="text-sm font-medium text-brand-redStrong">
+              <p role="alert" className="text-sm font-medium text-brick-deep">
                 {error}
               </p>
             )}
           </section>
 
           <section aria-labelledby="class-children" className="flex flex-col gap-3">
-            <h2 id="class-children" className="text-base font-extrabold text-ink">
+            <h2 id="class-children" className="text-base font-semibold text-tonle-950">
               Children
             </h2>
             {roster.isLoading && <LoadingState label="Loading children…" />}
             {roster.error && <ErrorState error={roster.error} onRetry={roster.refetch} />}
             {roster.data && roster.data.length === 0 && <ChildrenNotYetAvailable />}
             {roster.data && roster.data.length > 0 && (
-              <ul className="flex flex-col divide-y divide-hairline rounded-2xl border border-hairline">
+              <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
                 {roster.data.map((child) => (
                   <li key={child.id} className="px-5 py-3 font-medium text-ink">
                     {child.displayName}

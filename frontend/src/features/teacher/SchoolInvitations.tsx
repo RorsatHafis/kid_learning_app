@@ -16,7 +16,7 @@ export function SchoolInvitations({ onAccepted }: { onAccepted: () => void }) {
 
   if (joined && (!invitations.data || invitations.data.length === 0)) {
     return (
-      <p role="status" className="flex items-start gap-2 rounded-2xl bg-brand-greenTint px-5 py-4 text-sm font-semibold text-brand-greenStrong">
+      <p role="status" className="flex items-start gap-2 rounded-[10px] bg-palm-soft px-5 py-4 text-sm font-semibold text-palm-deep">
         <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden />
         You've joined {joined}. Your classes will appear here once the principal assigns you to them.
       </p>
@@ -26,7 +26,7 @@ export function SchoolInvitations({ onAccepted }: { onAccepted: () => void }) {
 
   return (
     <section aria-labelledby="invitations-heading" className="flex flex-col gap-3">
-      <h2 id="invitations-heading" className="text-base font-extrabold text-ink">
+      <h2 id="invitations-heading" className="text-base font-semibold text-tonle-950">
         Invitations
       </h2>
       <ul className="flex flex-col gap-3">
@@ -65,9 +65,9 @@ function Invitation({ invitation, onAnswered }: { invitation: SchoolInvitation; 
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-2xl border border-brand-blue/40 bg-brand-blueTint/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <li className="flex flex-col gap-3 rounded-[10px] border border-tonle-400/40 bg-tonle-50/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
-        <School size={18} className="mt-0.5 shrink-0 text-brand-blueStrong" aria-hidden />
+        <School size={18} className="mt-0.5 shrink-0 text-tonle-700" aria-hidden />
         <p className="text-sm text-ink">
           <strong>{invitation.schoolName}</strong> invited you to join its teachers.
         </p>
@@ -81,7 +81,7 @@ function Invitation({ invitation, onAnswered }: { invitation: SchoolInvitation; 
         </Button>
       </div>
       {error && (
-        <p role="alert" className="text-sm font-medium text-brand-redStrong sm:basis-full">
+        <p role="alert" className="text-sm font-medium text-brick-deep sm:basis-full">
           {error}
         </p>
       )}

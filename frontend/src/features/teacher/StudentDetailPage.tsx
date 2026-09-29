@@ -14,7 +14,7 @@ export function StudentDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link to={`/teacher/classes/${classId}`} className="flex w-fit items-center gap-2 text-sm font-semibold text-muted hover:text-ink">
+      <Link to={`/teacher/classes/${classId}`} className="flex w-fit items-center gap-2 text-sm font-semibold text-ink-soft hover:text-ink">
         <ArrowLeft size={16} /> Back to roster
       </Link>
 
@@ -25,10 +25,10 @@ export function StudentDetailPage() {
       {student && (
         <>
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-sand text-lg font-bold text-ink">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-tonle-50 text-lg font-bold text-ink">
               {student.displayName.charAt(0).toUpperCase()}
             </div>
-            <h1 className="text-xl font-extrabold text-ink">{student.displayName}</h1>
+            <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{student.displayName}</h1>
           </div>
 
           {/* Honest, not a placeholder pretending to be "coming soon" content:
@@ -39,12 +39,12 @@ export function StudentDetailPage() {
               all of them even for a student correctly in their own class,
               confirmed against the source, not assumed. See the Teacher
               capability map for the proposed backend fix. */}
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-hairline bg-surface-sand/40 px-6 py-10 text-center">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-muted shadow-tight">
+          <div className="flex flex-col items-center gap-3 rounded-[14px] border border-dashed border-line-strong bg-tonle-50/40 px-6 py-10 text-center">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink-soft shadow-tight">
               <Lock size={18} />
             </div>
             <p className="font-semibold text-ink">Progress isn't available to teachers yet</p>
-            <p className="max-w-sm text-sm text-muted">
+            <p className="max-w-sm text-sm text-ink-soft">
               Student learning progress currently requires a parent account. Teacher-level access to this data
               needs a backend update before it can show up here — it isn't a missing frontend screen.
             </p>

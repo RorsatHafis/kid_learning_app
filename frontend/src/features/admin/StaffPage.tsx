@@ -24,13 +24,13 @@ export function StaffPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">Staff</h1>
-        <p className="text-sm text-muted">Teachers, principals and administrators on the platform.</p>
+        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">Staff</h1>
+        <p className="text-sm text-ink-soft">Teachers, principals and administrators on the platform.</p>
       </div>
 
       {pending.data && pending.data.length > 0 && (
         <Panel title={`Principal applications (${pending.data.length})`}>
-          <ul className="flex flex-col divide-y divide-hairline">
+          <ul className="flex flex-col divide-y divide-line">
             {pending.data.map((account) => (
               <PendingRow key={account.id} account={account} onApproved={refresh} />
             ))}
@@ -47,7 +47,7 @@ export function StaffPage() {
             <div className="-mx-2 overflow-x-auto">
               <table className="w-full min-w-[480px] text-left text-sm">
                 <thead>
-                  <tr className="text-xs uppercase tracking-wide text-muted">
+                  <tr className="text-[0.8125rem] text-ink-faint">
                     <th scope="col" className="px-2 py-2 font-semibold">
                       Email
                     </th>
@@ -59,12 +59,12 @@ export function StaffPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-hairline">
+                <tbody className="divide-y divide-line">
                   {staff.data.map((account) => (
                     <tr key={account.id}>
                       <td className="max-w-[16rem] truncate px-2 py-3 font-medium text-ink">{account.email}</td>
                       <td className="px-2 py-3 text-ink">{ROLE_LABEL[account.platformRole] ?? account.platformRole}</td>
-                      <td className="px-2 py-3 text-muted">{STATUS_LABEL[account.status] ?? account.status}</td>
+                      <td className="px-2 py-3 text-ink-soft">{STATUS_LABEL[account.status] ?? account.status}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -86,7 +86,7 @@ function PendingRow({ account, onApproved }: { account: StaffAccount; onApproved
       <span className="font-medium text-ink">{account.email}</span>
       <span className="flex items-center gap-3">
         {error && (
-          <span role="alert" className="text-sm font-medium text-brand-redStrong">
+          <span role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </span>
         )}
@@ -145,18 +145,18 @@ function NewStaff({ onCreated }: { onCreated: () => void }) {
           <option value="TEACHER">Teacher</option>
           <option value="PRINCIPAL">Principal</option>
         </SelectField>
-        <p className="text-xs text-muted">
+        <p className="text-xs text-ink-soft">
           We&apos;ll email them a link to choose their own password. It lasts 7 days; after that they can use
           &ldquo;Forgot your password?&rdquo; on the log-in page. Teachers who work at a school are better invited by
           its principal, which also adds them to the school.
         </p>
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
         {created && (
-          <p role="status" className="rounded-2xl bg-brand-greenTint px-3 py-2 text-sm font-medium text-brand-greenStrong">
+          <p role="status" className="rounded-[10px] bg-palm-soft px-3 py-2 text-sm font-medium text-palm-deep">
             Account created. We&apos;ve emailed {created} a link to set their password.
           </p>
         )}

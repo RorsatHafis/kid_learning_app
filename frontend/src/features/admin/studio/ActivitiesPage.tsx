@@ -47,24 +47,24 @@ function LessonPanel({ lesson }: { lesson: LessonSummary }) {
       }
     >
       {adding && <NewActivity lessonId={lesson.id} onCancel={() => setAdding(false)} />}
-      {lesson.activities.length === 0 && !adding && <p className="text-sm text-muted">No activities in this lesson yet.</p>}
-      <ul className="flex flex-col divide-y divide-hairline">
+      {lesson.activities.length === 0 && !adding && <p className="text-sm text-ink-soft">No activities in this lesson yet.</p>}
+      <ul className="flex flex-col divide-y divide-line">
         {lesson.activities.map((activity) => {
           const status = currentStatus(activity.versions);
           return (
             <li key={activity.id}>
               <Link
                 to={activity.id}
-                className="flex items-center justify-between gap-3 rounded-2xl px-2 py-3 hover:bg-surface-cream focus-visible:bg-surface-cream"
+                className="flex items-center justify-between gap-3 rounded-[10px] px-2 py-3 hover:bg-paper focus-visible:bg-paper"
               >
                 <span className="flex min-w-0 flex-col gap-1.5">
                   <span className="truncate font-semibold text-ink">{activity.title}</span>
                   <SkillChips skillIds={activity.skillIds} catalog={catalog} />
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
-                  <span className="hidden text-xs text-muted sm:inline">{status.label}</span>
+                  <span className="hidden text-xs text-ink-soft sm:inline">{status.label}</span>
                   {status.status && <StatusBadge status={status.status} />}
-                  <ChevronRight size={18} className="text-muted" aria-hidden />
+                  <ChevronRight size={18} className="text-ink-soft" aria-hidden />
                 </span>
               </Link>
             </li>
@@ -97,7 +97,7 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
   }
 
   return (
-    <form onSubmit={onSubmit} className="mb-4 flex flex-col gap-4 rounded-2xl bg-surface-cream p-4">
+    <form onSubmit={onSubmit} className="mb-4 flex flex-col gap-4 rounded-[10px] bg-paper p-4">
       <FormField label="Activity title" value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-semibold text-ink">Skills learning paths should choose it for</legend>
@@ -105,7 +105,7 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
           <label key={skill.id} className="flex items-center gap-2 text-sm text-ink">
             <input
               type="checkbox"
-              className="h-4 w-4 accent-brand-blueStrong"
+              className="h-4 w-4 accent-tonle-700"
               checked={skillIds.includes(skill.id)}
               onChange={(e) => setSkillIds(e.target.checked ? [...skillIds, skill.id] : skillIds.filter((id) => id !== skill.id))}
             />
@@ -114,7 +114,7 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
         ))}
       </fieldset>
       {error && (
-        <p role="alert" className="text-sm font-medium text-brand-redStrong">
+        <p role="alert" className="text-sm font-medium text-brick-deep">
           {error}
         </p>
       )}
@@ -156,7 +156,7 @@ function NewLesson({ onCreated }: { onCreated: () => void }) {
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField label="Lesson title" value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}

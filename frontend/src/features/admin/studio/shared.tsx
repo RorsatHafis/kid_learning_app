@@ -5,9 +5,15 @@ import { cn } from "@/lib/utils/cn";
 
 
 const statusStyle: Record<PublicationStatus, string> = {
-  DRAFT: "bg-brand-amberTint text-brand-amberStrong",
-  PUBLISHED: "bg-brand-greenTint text-brand-greenStrong",
-  RETIRED: "bg-surface-sand text-muted",
+  DRAFT: "bg-light-soft text-light-deep ring-light/40",
+  PUBLISHED: "bg-palm-soft text-palm-deep ring-palm/25",
+  RETIRED: "bg-paper text-ink-soft ring-line",
+};
+
+const statusDot: Record<PublicationStatus, string> = {
+  DRAFT: "bg-light",
+  PUBLISHED: "bg-palm",
+  RETIRED: "bg-ink-faint",
 };
 
 const statusLabel: Record<PublicationStatus, string> = {
@@ -18,7 +24,8 @@ const statusLabel: Record<PublicationStatus, string> = {
 
 export function StatusBadge({ status }: { status: PublicationStatus }) {
   return (
-    <span className={cn("inline-flex items-center rounded-pill px-2.5 py-1 text-xs font-semibold", statusStyle[status])}>
+    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-[6px] px-2 py-0.5 text-xs font-semibold ring-1 ring-inset", statusStyle[status])}>
+      <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", statusDot[status])} />
       {statusLabel[status]}
     </span>
   );
@@ -31,7 +38,7 @@ export function VersionHistory({ versions }: { versions: VersionSummary[] }) {
       {[...versions].reverse().map((v) => (
         <li key={v.id} className="flex items-center justify-between gap-3 text-sm">
           <span className="font-semibold text-ink">Version {v.versionNumber}</span>
-          <span className="flex items-center gap-2 text-muted">
+          <span className="flex items-center gap-2 text-ink-soft">
             {v.publishedAt && <span>{new Date(v.publishedAt).toLocaleDateString()}</span>}
             <StatusBadge status={v.status} />
           </span>
@@ -46,17 +53,17 @@ export function VersionHistory({ versions }: { versions: VersionSummary[] }) {
  * Errors block publishing; warnings are the author's call.
  */
 export function ValidationPanel({ report, loading }: { report: ValidationReport | null; loading?: boolean }) {
-  if (loading && !report) return <p className="text-sm text-muted">Checking…</p>;
+  if (loading && !report) return <p className="text-sm text-ink-soft">Checking…</p>;
   if (!report) return null;
   const ready = report.errors.length === 0;
   return (
     <div className="flex flex-col gap-3" role="status" aria-live="polite">
       {ready ? (
-        <p className="flex items-center gap-2 text-sm font-semibold text-brand-greenStrong">
+        <p className="flex items-center gap-2 text-sm font-semibold text-palm-deep">
           <CheckCircle2 size={18} aria-hidden /> Ready to publish
         </p>
       ) : (
-        <p className="flex items-center gap-2 text-sm font-semibold text-brand-redStrong">
+        <p className="flex items-center gap-2 text-sm font-semibold text-brick-deep">
           <CircleAlert size={18} aria-hidden /> {report.errors.length} {report.errors.length === 1 ? "issue" : "issues"} to fix
           before publishing
         </p>
@@ -64,7 +71,7 @@ export function ValidationPanel({ report, loading }: { report: ValidationReport 
       {report.errors.length > 0 && (
         <ul className="flex flex-col gap-2">
           {report.errors.map((issue, i) => (
-            <li key={`e${i}`} className="rounded-2xl bg-brand-redTint px-3 py-2 text-sm text-brand-redStrong">
+            <li key={`e${i}`} className="rounded-[10px] bg-brick-soft px-3 py-2 text-sm text-brick-deep">
               {issue.message}
             </li>
           ))}
@@ -73,7 +80,7 @@ export function ValidationPanel({ report, loading }: { report: ValidationReport 
       {report.warnings.length > 0 && (
         <ul className="flex flex-col gap-2" aria-label="Warnings">
           {report.warnings.map((issue, i) => (
-            <li key={`w${i}`} className="flex gap-2 rounded-2xl bg-brand-amberTint px-3 py-2 text-sm text-brand-amberStrong">
+            <li key={`w${i}`} className="flex gap-2 rounded-[10px] bg-light-soft px-3 py-2 text-sm text-light-deep">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden />
               {issue.message}
             </li>
@@ -89,9 +96,9 @@ export function ValidationPanel({ report, loading }: { report: ValidationReport 
 export function Panel({ title, children, action, className }: { title: string; children: ReactNode; action?: ReactNode; className?: string }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className={cn("rounded-3xl border-[1.5px] border-hairline bg-white p-5 shadow-tight sm:p-6", className)}>
+    <section aria-labelledby={id} className={cn("rounded-[16px] bg-white p-5 shadow-[0_1px_2px_rgba(14,27,58,0.04)] ring-1 ring-line sm:p-6", className)}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 id={id} className="text-base font-bold text-ink">
+        <h2 id={id} className="text-base font-semibold text-tonle-950">
           {title}
         </h2>
         {action}
@@ -112,12 +119,12 @@ export function SkillChips({
   onRemove?: (skillId: string) => void;
   disabled?: boolean;
 }) {
-  if (skillIds.length === 0) return <p className="text-sm text-muted">No skills yet.</p>;
+  if (skillIds.length === 0) return <p className="text-sm text-ink-soft">No skills yet.</p>;
   const name = (id: string) => catalog.skills.find((s) => s.id === id)?.name ?? "Skill from another subject";
   return (
     <ul className="flex flex-wrap gap-2">
       {skillIds.map((id) => (
-        <li key={id} className="inline-flex items-center gap-1 rounded-pill bg-brand-blueTint py-1 pl-3 pr-1 text-sm font-semibold text-brand-blueStrong">
+        <li key={id} className="inline-flex items-center gap-1 rounded-[8px] bg-tonle-50 py-1 pl-2.5 pr-1 text-sm font-medium text-tonle-800 ring-1 ring-inset ring-tonle-100">
           {name(id)}
           {onRemove ? (
             <button
@@ -125,7 +132,7 @@ export function SkillChips({
               onClick={() => onRemove(id)}
               disabled={disabled}
               aria-label={`Remove ${name(id)}`}
-              className="rounded-full p-1.5 hover:bg-white/70 disabled:opacity-50"
+              className="rounded-[6px] p-1 text-tonle-600 hover:bg-white disabled:opacity-50"
             >
               <X size={14} aria-hidden />
             </button>
@@ -151,7 +158,7 @@ export function SelectField({
       </label>
       <select
         id={id}
-        className="rounded-2xl border-[1.5px] border-hairline bg-white px-4 py-3 text-sm text-ink outline-none focus:border-brand-blueStrong"
+        className="rounded-[10px] border border-line-strong bg-white h-11 px-3.5 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
         {...props}
       >
         {children}
@@ -170,11 +177,11 @@ export function TextAreaField({ label, hint, ...props }: TextareaHTMLAttributes<
       <textarea
         id={id}
         aria-describedby={hint ? `${id}-hint` : undefined}
-        className="min-h-[88px] rounded-2xl border-[1.5px] border-hairline px-4 py-3 text-sm text-ink outline-none focus:border-brand-blueStrong"
+        className="min-h-[88px] rounded-[10px] border border-line-strong px-4 py-3 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
         {...props}
       />
       {hint && (
-        <span id={`${id}-hint`} className="text-xs text-muted">
+        <span id={`${id}-hint`} className="text-xs text-ink-soft">
           {hint}
         </span>
       )}
@@ -191,7 +198,7 @@ export function IconButton({ label, disabled, onClick, children }: { label: stri
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="rounded-full p-2 text-muted hover:bg-surface-sand hover:text-ink disabled:opacity-30"
+      className="rounded-[8px] p-2 text-ink-soft transition-colors hover:bg-tonle-50 hover:text-tonle-900 disabled:opacity-30"
     >
       {children}
     </button>

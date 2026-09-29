@@ -13,8 +13,8 @@ export function ActivityPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">Activity log</h1>
-        <p className="max-w-2xl text-sm text-muted">
+        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">Activity log</h1>
+        <p className="max-w-2xl text-sm text-ink-soft">
           Every sign-in security event, account change and staff action, newest first. Entries are permanent: nobody,
           including administrators, can change or remove them.
         </p>

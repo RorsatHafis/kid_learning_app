@@ -71,14 +71,14 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Link to=".." relative="path" className="flex w-fit items-center gap-1 text-sm font-semibold text-muted hover:text-ink">
+        <Link to=".." relative="path" className="flex w-fit items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
           <ArrowLeft size={16} aria-hidden /> All questions
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-xl font-extrabold text-ink">{latest.prompt}</h2>
+          <h2 className="text-xl font-semibold text-tonle-950">{latest.prompt}</h2>
           <StatusBadge status={latest.status} />
         </div>
-        <p className="text-sm text-muted">
+        <p className="text-sm text-ink-soft">
           {QUESTION_TYPE_LABEL[detail.questionType]} · version {latest.versionNumber}
         </p>
       </div>
@@ -88,8 +88,8 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
           role={message.tone === "error" ? "alert" : "status"}
           className={
             message.tone === "error"
-              ? "rounded-2xl bg-brand-redTint px-4 py-3 text-sm font-medium text-brand-redStrong"
-              : "rounded-2xl bg-brand-greenTint px-4 py-3 text-sm font-medium text-brand-greenStrong"
+              ? "rounded-[10px] bg-brick-soft px-4 py-3 text-sm font-medium text-brick-deep"
+              : "rounded-[10px] bg-palm-soft px-4 py-3 text-sm font-medium text-palm-deep"
           }
         >
           {message.text}
@@ -117,7 +117,7 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
             ) : (
               <div className="flex flex-col gap-4">
                 <PublishedSummary detail={detail} />
-                <p className="text-sm text-muted">
+                <p className="text-sm text-ink-soft">
                   Published versions never change: children&apos;s answers point at exactly this wording. To change it, start a new
                   version — activities pick it up when their next version is published.
                 </p>
@@ -135,7 +135,7 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
 
           <Panel title="Skills">
             <div className="flex flex-col gap-3">
-              <p className="text-sm text-muted">A child&apos;s answer is recorded as evidence for each of these skills.</p>
+              <p className="text-sm text-ink-soft">A child&apos;s answer is recorded as evidence for each of these skills.</p>
               <SkillChips
                 skillIds={detail.skillIds}
                 catalog={catalog}
@@ -143,7 +143,7 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
                 onRemove={(skillId) => run(() => studioApi.untagQuestionSkill(detail.id, skillId))}
               />
               {everPublished && (
-                <p className="text-xs text-brand-amberStrong">
+                <p className="text-xs text-light-deep">
                   Skills belong to the question, not one version: a change also applies to answers to its published version from now
                   on. Evidence already recorded is kept.
                 </p>
@@ -157,7 +157,7 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
                     id="add-question-skill"
                     value={skillToAdd}
                     onChange={(e) => setSkillToAdd(e.target.value)}
-                    className="rounded-2xl border-[1.5px] border-hairline bg-white px-3 py-2 text-sm"
+                    className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
                   >
                     <option value="">Add a skill…</option>
                     {available.map((s) => (
@@ -202,7 +202,7 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
             </Panel>
           )}
           <Panel title="Preview">
-            {preview ? <ChildPreview item={preview} /> : <p className="text-sm text-muted">Loading preview…</p>}
+            {preview ? <ChildPreview item={preview} /> : <p className="text-sm text-ink-soft">Loading preview…</p>}
           </Panel>
           <Panel title="Versions">
             <VersionHistory versions={detail.versions} />
@@ -218,11 +218,11 @@ function PublishedSummary({ detail }: { detail: QuestionDetail }) {
   return (
     <dl className="grid gap-3 text-sm">
       <div>
-        <dt className="font-semibold text-muted">Question</dt>
+        <dt className="font-semibold text-ink-soft">Question</dt>
         <dd className="text-ink">{latest.prompt}</dd>
       </div>
       <div>
-        <dt className="font-semibold text-muted">{detail.questionType === "MATCHING" ? "Pairs" : "Correct answer"}</dt>
+        <dt className="font-semibold text-ink-soft">{detail.questionType === "MATCHING" ? "Pairs" : "Correct answer"}</dt>
         <dd className="text-ink">
           {detail.questionType === "MATCHING" ? (
             <ul className="flex flex-col gap-0.5">
@@ -241,12 +241,12 @@ function PublishedSummary({ detail }: { detail: QuestionDetail }) {
       </div>
       {detail.questionType === "MULTIPLE_CHOICE" && (
         <div>
-          <dt className="font-semibold text-muted">Choices</dt>
+          <dt className="font-semibold text-ink-soft">Choices</dt>
           <dd className="text-ink">{latest.options.map((o) => o.label).join(" · ")}</dd>
         </div>
       )}
       <div>
-        <dt className="font-semibold text-muted">Difficulty</dt>
+        <dt className="font-semibold text-ink-soft">Difficulty</dt>
         <dd className="text-ink">{latest.difficultyLevel ?? "Not set"}</dd>
       </div>
     </dl>

@@ -67,7 +67,13 @@ async function login(page, [email, password]) {
 
 // In-app navigation (a full reload would re-run the sign-in refresh each time).
 async function nav(page, name) {
-  await page.getByRole("link", { name, exact: true }).first().click();
+  const link = page.getByRole("link", { name, exact: true }).locator("visible=true").first();
+  // On a phone the workspace navigation lives behind the menu button.
+  if (!(await link.isVisible().catch(() => false))) {
+    const menu = page.getByRole("button", { name: "Open menu" });
+    if (await menu.isVisible().catch(() => false)) await menu.click();
+  }
+  await link.click();
 }
 
 const only = process.env.ONLY ? process.env.ONLY.split(",") : null;

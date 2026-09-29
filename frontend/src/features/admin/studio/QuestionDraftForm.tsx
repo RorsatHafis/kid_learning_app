@@ -91,21 +91,21 @@ export function QuestionDraftForm({
                 checked={option.correct}
                 onChange={() => setOptions(options.map((o, i) => ({ ...o, correct: i === index })))}
                 aria-label={`Choice ${index + 1} is the correct answer`}
-                className="h-5 w-5 accent-brand-blueStrong"
+                className="h-5 w-5 accent-tonle-700"
               />
               <input
                 value={option.label}
                 maxLength={300}
                 onChange={(e) => setOptions(options.map((o, i) => (i === index ? { ...o, label: e.target.value } : o)))}
                 aria-label={`Choice ${index + 1}`}
-                className="min-w-0 flex-1 rounded-2xl border-[1.5px] border-hairline px-4 py-2.5 text-sm outline-none focus:border-brand-blueStrong"
+                className="min-w-0 flex-1 rounded-[10px] border border-line-strong px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
               />
               <button
                 type="button"
                 onClick={() => setOptions(options.filter((_, i) => i !== index))}
                 disabled={options.length <= 2}
                 aria-label={`Remove choice ${index + 1}`}
-                className="rounded-full p-2 text-muted hover:bg-surface-sand hover:text-ink disabled:opacity-40"
+                className="rounded-full p-2 text-ink-soft hover:bg-tonle-50 hover:text-ink disabled:opacity-40"
               >
                 <Trash2 size={16} aria-hidden />
               </button>
@@ -115,7 +115,7 @@ export function QuestionDraftForm({
             <button
               type="button"
               onClick={() => setOptions([...options, { label: "", correct: false }])}
-              className="flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-brand-blueStrong hover:bg-brand-blueTint"
+              className="flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-tonle-700 hover:bg-tonle-50"
             >
               <Plus size={14} aria-hidden /> Add a choice
             </button>
@@ -130,7 +130,7 @@ export function QuestionDraftForm({
           </legend>
           {pairs.map((pair, index) => (
             <div key={index} className="flex items-center gap-2">
-              <span aria-hidden className="w-5 shrink-0 text-right text-xs font-bold text-muted">
+              <span aria-hidden className="w-5 shrink-0 text-right text-xs font-bold text-ink-soft">
                 {index + 1}
               </span>
               <input
@@ -139,9 +139,9 @@ export function QuestionDraftForm({
                 onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, left: e.target.value } : p)))}
                 aria-label={`Pair ${index + 1}: item`}
                 placeholder="Item"
-                className="min-w-0 flex-1 rounded-2xl border-[1.5px] border-hairline px-4 py-2.5 text-sm outline-none focus:border-brand-blueStrong"
+                className="min-w-0 flex-1 rounded-[10px] border border-line-strong px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
               />
-              <span aria-hidden className="text-muted">
+              <span aria-hidden className="text-ink-soft">
                 ↔
               </span>
               <input
@@ -150,14 +150,14 @@ export function QuestionDraftForm({
                 onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, right: e.target.value } : p)))}
                 aria-label={`Pair ${index + 1}: its match`}
                 placeholder="Its match"
-                className="min-w-0 flex-1 rounded-2xl border-[1.5px] border-hairline px-4 py-2.5 text-sm outline-none focus:border-brand-blueStrong"
+                className="min-w-0 flex-1 rounded-[10px] border border-line-strong px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
               />
               <button
                 type="button"
                 onClick={() => setPairs(pairs.filter((_, i) => i !== index))}
                 disabled={pairs.length <= MIN_PAIRS}
                 aria-label={`Remove pair ${index + 1}`}
-                className="rounded-full p-2 text-muted hover:bg-surface-sand hover:text-ink disabled:opacity-40"
+                className="rounded-full p-2 text-ink-soft hover:bg-tonle-50 hover:text-ink disabled:opacity-40"
               >
                 <Trash2 size={16} aria-hidden />
               </button>
@@ -167,7 +167,7 @@ export function QuestionDraftForm({
             <button
               type="button"
               onClick={() => setPairs([...pairs, { left: "", right: "" }])}
-              className="flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-brand-blueStrong hover:bg-brand-blueTint"
+              className="flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-tonle-700 hover:bg-tonle-50"
             >
               <Plus size={14} aria-hidden /> Add a pair
             </button>

@@ -21,7 +21,7 @@ export function ClassRosterPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link to="/teacher" className="flex w-fit items-center gap-2 text-sm font-semibold text-muted hover:text-ink">
+      <Link to="/teacher" className="flex w-fit items-center gap-2 text-sm font-semibold text-ink-soft hover:text-ink">
         <ArrowLeft size={16} /> All classes
       </Link>
 
@@ -32,8 +32,8 @@ export function ClassRosterPage() {
 
       {schoolClass && (
         <div>
-          <h1 className="text-xl font-extrabold text-ink">{schoolClass.name}</h1>
-          <p className="text-sm text-muted">Students currently enrolled in this class.</p>
+          <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{schoolClass.name}</h1>
+          <p className="text-sm text-ink-soft">Students currently enrolled in this class.</p>
         </div>
       )}
 
@@ -48,20 +48,20 @@ export function ClassRosterPage() {
       )}
 
       {roster && roster.length > 0 && (
-        <div className="flex flex-col divide-y divide-hairline rounded-2xl border border-hairline">
+        <div className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
           {roster.map((student) => (
             <Link
               key={student.id}
               to={`/teacher/classes/${classId}/students/${student.id}`}
-              className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-surface-sand/60"
+              className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-tonle-50/60"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-sand text-sm font-bold text-ink">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tonle-50 text-sm font-bold text-ink">
                   {student.displayName.charAt(0).toUpperCase()}
                 </div>
                 <p className="font-medium text-ink">{student.displayName}</p>
               </div>
-              <ChevronRight size={18} className="text-muted" />
+              <ChevronRight size={18} className="text-ink-soft" />
             </Link>
           ))}
         </div>

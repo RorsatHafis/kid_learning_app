@@ -22,16 +22,16 @@ export function PrincipalHome() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-muted">Your school</p>
-          <h1 className="text-xl font-extrabold text-ink sm:text-2xl">{school.name}</h1>
+          <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{school.name}</h1>
+          <p className="mt-1.5 text-[0.9375rem] text-ink-soft">Your school&apos;s classes and teachers.</p>
         </div>
         {schools.data.length > 1 && (
-          <label className="flex items-center gap-2 text-sm text-muted">
+          <label className="flex items-center gap-2 text-sm text-ink-soft">
             School
             <select
               value={school.id}
               onChange={(e) => setSelectedId(e.target.value)}
-              className="rounded-lg border-[1.5px] border-hairline px-3 py-2 text-sm font-semibold text-ink"
+              className="h-10 rounded-[10px] border border-line-strong bg-white px-3 text-sm font-medium text-ink"
             >
               {schools.data.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -42,8 +42,10 @@ export function PrincipalHome() {
           </label>
         )}
       </div>
-      <Classes school={school} />
-      <Teachers school={school} />
+      <div className="grid gap-10 xl:grid-cols-2 xl:items-start xl:gap-8">
+        <Classes school={school} />
+        <Teachers school={school} />
+      </div>
     </div>
   );
 }
@@ -68,19 +70,19 @@ function SetUpSchool({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 py-6">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-blueTint text-brand-blueStrong">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-tonle-50 text-tonle-700">
         <SchoolIcon size={22} aria-hidden />
       </div>
       <div>
-        <h1 className="text-xl font-extrabold text-ink sm:text-2xl">Set up your school</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">Set up your school</h1>
+        <p className="mt-1 text-sm text-ink-soft">
           Name your school. You can then add classes and invite your teachers by email.
         </p>
       </div>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField label="School name" required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} />
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
@@ -115,31 +117,41 @@ function Classes({ school }: { school: SchoolSummary }) {
 
   return (
     <section aria-labelledby="classes-heading" className="flex flex-col gap-3">
-      <h2 id="classes-heading" className="text-base font-extrabold text-ink">
-        Classes
-      </h2>
+      <div>
+        <h2 id="classes-heading" className="text-lg font-semibold text-tonle-950">
+          Classes
+        </h2>
+        {classes.data && classes.data.some((c) => c.teachers.length === 0) && (
+          <p className="text-sm font-medium text-light-deep">
+            {(() => {
+              const n = classes.data.filter((c) => c.teachers.length === 0).length;
+              return `${n} ${n === 1 ? "class still needs" : "classes still need"} a teacher — open a class to assign one.`;
+            })()}
+          </p>
+        )}
+      </div>
       {classes.isLoading && <LoadingState label="Loading classes…" />}
       {classes.error && <ErrorState error={classes.error} onRetry={classes.refetch} />}
       {classes.data && classes.data.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-hairline px-5 py-4 text-sm text-muted">
+        <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">
           No classes yet. Add your first class below.
         </p>
       )}
       {classes.data && classes.data.length > 0 && (
-        <ul className="flex flex-col divide-y divide-hairline rounded-2xl border border-hairline">
+        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
           {classes.data.map((c) => (
             <li key={c.id}>
               <Link
                 to={`/principal/classes/${c.id}`}
-                className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-surface-sand/60"
+                className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-tonle-50/60"
               >
                 <div className="min-w-0">
                   <p className="font-semibold text-ink">{c.name}</p>
-                  <p className="truncate text-sm text-muted">
+                  <p className="truncate text-sm text-ink-soft">
                     {c.teachers.length === 0 ? "No teacher assigned yet" : c.teachers.map((t) => t.email).join(", ")}
                   </p>
                 </div>
-                <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden />
+                <ChevronRight size={18} className="shrink-0 text-ink-soft" aria-hidden />
               </Link>
             </li>
           ))}
@@ -154,7 +166,7 @@ function Classes({ school }: { school: SchoolSummary }) {
         </Button>
       </form>
       {error && (
-        <p role="alert" className="text-sm font-medium text-brand-redStrong">
+        <p role="alert" className="text-sm font-medium text-brick-deep">
           {error}
         </p>
       )}
@@ -163,13 +175,13 @@ function Classes({ school }: { school: SchoolSummary }) {
 }
 
 const STATUS: Record<SchoolStaffMember["status"], { label: (m: SchoolStaffMember) => string; className: string }> = {
-  ACTIVE: { label: () => "Teaching here", className: "text-brand-greenStrong" },
+  ACTIVE: { label: () => "Teaching here", className: "text-palm-deep" },
   INVITED: {
     label: (m) => `Invited ${new Date(m.invitedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })} · waiting for them to accept`,
-    className: "text-brand-amberStrong",
+    className: "text-light-deep",
   },
-  DECLINED: { label: () => "Declined the invitation", className: "text-muted" },
-  REMOVED: { label: () => "Removed", className: "text-muted" },
+  DECLINED: { label: () => "Declined the invitation", className: "text-ink-soft" },
+  REMOVED: { label: () => "Removed", className: "text-ink-soft" },
 };
 
 function Teachers({ school }: { school: SchoolSummary }) {
@@ -210,10 +222,10 @@ function Teachers({ school }: { school: SchoolSummary }) {
   return (
     <section aria-labelledby="teachers-heading" className="flex flex-col gap-3">
       <div>
-        <h2 id="teachers-heading" className="text-base font-extrabold text-ink">
+        <h2 id="teachers-heading" className="text-lg font-semibold text-tonle-950">
           Teachers
         </h2>
-        <p className="text-sm text-muted">
+        <p className="text-sm text-ink-soft">
           Invite teachers by email. New teachers choose their own password from the email; once they accept, you can assign
           them to classes.
         </p>
@@ -221,10 +233,10 @@ function Teachers({ school }: { school: SchoolSummary }) {
       {staff.isLoading && <LoadingState label="Loading teachers…" />}
       {staff.error && <ErrorState error={staff.error} onRetry={staff.refetch} />}
       {staff.data && visible.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-hairline px-5 py-4 text-sm text-muted">No teachers yet.</p>
+        <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">No teachers yet.</p>
       )}
       {visible.length > 0 && (
-        <ul className="flex flex-col divide-y divide-hairline rounded-2xl border border-hairline">
+        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
           {visible.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
               <div className="min-w-0">
@@ -278,7 +290,7 @@ function Teachers({ school }: { school: SchoolSummary }) {
       {notice && (
         <p
           role={notice.kind === "ok" ? "status" : "alert"}
-          className={`text-sm font-medium ${notice.kind === "ok" ? "text-brand-greenStrong" : "text-brand-redStrong"}`}
+          className={`text-sm font-medium ${notice.kind === "ok" ? "text-palm-deep" : "text-brick-deep"}`}
         >
           {notice.text}
         </p>

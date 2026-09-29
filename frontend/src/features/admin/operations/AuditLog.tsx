@@ -79,13 +79,13 @@ export function AuditLog({ filter, emptyTitle = "Nothing recorded yet" }: { filt
 
   return (
     <div className="flex flex-col gap-4">
-      <ol className="flex flex-col divide-y divide-hairline" aria-label="Recorded events, newest first">
+      <ol className="flex flex-col divide-y divide-line" aria-label="Recorded events, newest first">
         {entries.map((entry) => (
           <AuditRow key={entry.id} entry={entry} />
         ))}
       </ol>
       {moreError && (
-        <p role="alert" className="text-sm font-medium text-brand-redStrong">
+        <p role="alert" className="text-sm font-medium text-brick-deep">
           {moreError}
         </p>
       )}
@@ -94,7 +94,7 @@ export function AuditLog({ filter, emptyTitle = "Nothing recorded yet" }: { filt
           {loading ? "Loading…" : "Show older"}
         </Button>
       ) : (
-        <p className="text-xs text-muted">That&apos;s everything recorded.</p>
+        <p className="text-xs text-ink-soft">That&apos;s everything recorded.</p>
       )}
     </div>
   );
@@ -105,16 +105,16 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
   const actor = entry.actorType === "SYSTEM" ? "the platform" : (entry.actorEmail ?? "an account no longer on the platform");
   return (
     <li className="grid gap-1 py-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
-      <time dateTime={entry.occurredAt} className="text-xs tabular-nums text-muted sm:pt-0.5">
+      <time dateTime={entry.occurredAt} className="text-xs tabular-nums text-ink-soft sm:pt-0.5">
         {when.format(new Date(entry.occurredAt))}
       </time>
       <div className="flex min-w-0 flex-col gap-1">
         <p className="text-sm text-ink">
           <span className="font-semibold">{actionLabel(entry.action)}</span>
-          <span className="text-muted"> by </span>
+          <span className="text-ink-soft"> by </span>
           <span className="break-all">{actor}</span>
         </p>
-        <p className="text-xs text-muted">
+        <p className="text-xs text-ink-soft">
           {actionLabel(entry.resourceType)}
           {entry.resourceId && <span className="font-mono"> {entry.resourceId}</span>}
         </p>
@@ -122,7 +122,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
           <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs">
             {details.map(([k, v]) => (
               <div key={k} className="flex min-w-0 gap-1">
-                <dt className="text-muted">{keyLabel(k)}:</dt>
+                <dt className="text-ink-soft">{keyLabel(k)}:</dt>
                 <dd className="break-words text-ink">{valueText(v)}</dd>
               </div>
             ))}

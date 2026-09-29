@@ -85,14 +85,14 @@ function Editor({ detail, onChange }: { detail: CurriculumDetail; onChange: (d: 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Link to=".." relative="path" className="flex w-fit items-center gap-1 text-sm font-semibold text-muted hover:text-ink">
+        <Link to=".." relative="path" className="flex w-fit items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
           <ArrowLeft size={16} aria-hidden /> All curricula
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-xl font-extrabold text-ink">{detail.name}</h2>
+          <h2 className="text-xl font-semibold text-tonle-950">{detail.name}</h2>
           <StatusBadge status={latest.status} />
         </div>
-        <p className="text-sm text-muted">Version {latest.versionNumber}</p>
+        <p className="text-sm text-ink-soft">Version {latest.versionNumber}</p>
       </div>
 
       {message && (
@@ -100,8 +100,8 @@ function Editor({ detail, onChange }: { detail: CurriculumDetail; onChange: (d: 
           role={message.tone === "error" ? "alert" : "status"}
           className={
             message.tone === "error"
-              ? "rounded-2xl bg-brand-redTint px-4 py-3 text-sm font-medium text-brand-redStrong"
-              : "rounded-2xl bg-brand-greenTint px-4 py-3 text-sm font-medium text-brand-greenStrong"
+              ? "rounded-[10px] bg-brick-soft px-4 py-3 text-sm font-medium text-brick-deep"
+              : "rounded-[10px] bg-palm-soft px-4 py-3 text-sm font-medium text-palm-deep"
           }
         >
           {message.text}
@@ -123,14 +123,14 @@ function Editor({ detail, onChange }: { detail: CurriculumDetail; onChange: (d: 
           }
         >
           <div className="flex flex-col gap-4">
-            {dirty && <p className="text-xs font-semibold text-brand-amberStrong">Unsaved changes to the objectives.</p>}
-            {objectiveIds.length === 0 && <p className="text-sm text-muted">No objectives yet.</p>}
+            {dirty && <p className="text-xs font-semibold text-light-deep">Unsaved changes to the objectives.</p>}
+            {objectiveIds.length === 0 && <p className="text-sm text-ink-soft">No objectives yet.</p>}
             <ol className="flex flex-col gap-2">
               {objectiveIds.map((id, index) => {
                 const o = objective(id);
                 return (
-                  <li key={id} className="flex items-start gap-2 rounded-2xl border-[1.5px] border-hairline p-3">
-                    <span className="mt-0.5 w-6 shrink-0 text-sm font-bold text-muted">{index + 1}.</span>
+                  <li key={id} className="flex items-start gap-2 rounded-[10px] border border-line-strong p-3">
+                    <span className="mt-0.5 w-6 shrink-0 text-sm font-bold text-ink-soft">{index + 1}.</span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-semibold text-ink">{o?.title ?? "Objective from another subject"}</span>
                       {o && (
@@ -169,7 +169,7 @@ function Editor({ detail, onChange }: { detail: CurriculumDetail; onChange: (d: 
                   id="add-objective"
                   value={toAdd}
                   onChange={(e) => setToAdd(e.target.value)}
-                  className="rounded-2xl border-[1.5px] border-hairline bg-white px-3 py-2 text-sm"
+                  className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
                 >
                   <option value="">Add an objective…</option>
                   {available.map((o) => (
@@ -193,7 +193,7 @@ function Editor({ detail, onChange }: { detail: CurriculumDetail; onChange: (d: 
             )}
             {!isDraft && (
               <div className="flex flex-col gap-3">
-                <p className="text-sm text-muted">
+                <p className="text-sm text-ink-soft">
                   Children already enrolled keep the version they started with. A new version applies to new enrollments.
                 </p>
                 <Button variant="outline" className="w-fit" disabled={busy} onClick={() => run(() => studioApi.openCurriculumDraft(detail.id))}>
@@ -224,7 +224,7 @@ function Editor({ detail, onChange }: { detail: CurriculumDetail; onChange: (d: 
                 </div>
               }
             >
-              {dirty && <p className="mb-3 text-sm text-muted">Save the objectives to check this version.</p>}
+              {dirty && <p className="mb-3 text-sm text-ink-soft">Save the objectives to check this version.</p>}
               <ValidationPanel report={report} loading />
             </Panel>
           )}

@@ -52,8 +52,8 @@ export function AccountsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">Accounts</h1>
-        <p className="max-w-2xl text-sm text-muted">
+        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">Accounts</h1>
+        <p className="max-w-2xl text-sm text-ink-soft">
           Suspend an account that has been compromised or belongs to someone who has left, and reinstate it once it&apos;s
           safe. Nothing is deleted - a suspended family keeps every child&apos;s learning history.
         </p>
@@ -147,16 +147,16 @@ function AccountCard({ account, onChanged }: { account: StaffAccount; onChanged:
     <Panel title="Account" className="self-start">
       <dl className="flex flex-col gap-3 text-sm">
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Email</dt>
+          <dt className="text-[0.8125rem] font-medium text-ink-faint">Email</dt>
           <dd className="break-all font-medium text-ink">{account.email}</dd>
         </div>
         <div className="flex flex-wrap gap-6">
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Role</dt>
+            <dt className="text-[0.8125rem] font-medium text-ink-faint">Role</dt>
             <dd className="text-ink">{ROLE_LABEL[account.platformRole] ?? account.platformRole}</dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Email confirmed</dt>
+            <dt className="text-[0.8125rem] font-medium text-ink-faint">Email confirmed</dt>
             <dd className="text-ink">{account.emailVerifiedAt ? "Yes" : "Not yet"}</dd>
           </div>
         </div>
@@ -168,17 +168,17 @@ function AccountCard({ account, onChanged }: { account: StaffAccount; onChanged:
         </div>
       </dl>
 
-      <div className="mt-5 border-t border-hairline pt-5">
+      <div className="mt-5 border-t border-line pt-5">
         {done && (
-          <p role="status" className="mb-4 rounded-2xl bg-brand-greenTint px-3 py-2 text-sm font-medium text-brand-greenStrong">
+          <p role="status" className="mb-4 rounded-[10px] bg-palm-soft px-3 py-2 text-sm font-medium text-palm-deep">
             {done}
           </p>
         )}
         {account.platformRole === "ADMIN" && (
-          <p className="text-sm text-muted">Administrator accounts can&apos;t be suspended here.</p>
+          <p className="text-sm text-ink-soft">Administrator accounts can&apos;t be suspended here.</p>
         )}
         {account.platformRole !== "ADMIN" && account.status === "PENDING_VERIFICATION" && (
-          <p className="text-sm text-muted">
+          <p className="text-sm text-ink-soft">
             This principal is waiting for approval. Approve them on the Staff page, or leave the application unapproved.
           </p>
         )}
@@ -214,7 +214,7 @@ function AccountCard({ account, onChanged }: { account: StaffAccount; onChanged:
               onChange={(e) => setReason(e.target.value)}
             />
             {error && (
-              <p role="alert" className="text-sm font-medium text-brand-redStrong">
+              <p role="alert" className="text-sm font-medium text-brick-deep">
                 {error}
               </p>
             )}
@@ -222,7 +222,7 @@ function AccountCard({ account, onChanged }: { account: StaffAccount; onChanged:
               <Button
                 type="submit"
                 disabled={busy || !reason.trim()}
-                className={suspending ? "bg-brand-redStrong px-4 py-2 hover:bg-red-800" : "px-4 py-2"}
+                className={suspending ? "bg-brick-deep px-4 py-2 hover:bg-red-800" : "px-4 py-2"}
               >
                 {busy ? "Saving…" : suspending ? "Suspend and sign out" : "Reinstate"}
               </Button>

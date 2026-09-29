@@ -86,14 +86,14 @@ function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: Ac
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Link to=".." relative="path" className="flex w-fit items-center gap-1 text-sm font-semibold text-muted hover:text-ink">
+        <Link to=".." relative="path" className="flex w-fit items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
           <ArrowLeft size={16} aria-hidden /> All activities
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-xl font-extrabold text-ink">{detail.title}</h2>
+          <h2 className="text-xl font-semibold text-tonle-950">{detail.title}</h2>
           <StatusBadge status={latest.status} />
         </div>
-        <p className="text-sm text-muted">Practice activity · version {latest.versionNumber}</p>
+        <p className="text-sm text-ink-soft">Practice activity · version {latest.versionNumber}</p>
       </div>
 
       {message && (
@@ -101,8 +101,8 @@ function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: Ac
           role={message.tone === "error" ? "alert" : "status"}
           className={
             message.tone === "error"
-              ? "rounded-2xl bg-brand-redTint px-4 py-3 text-sm font-medium text-brand-redStrong"
-              : "rounded-2xl bg-brand-greenTint px-4 py-3 text-sm font-medium text-brand-greenStrong"
+              ? "rounded-[10px] bg-brick-soft px-4 py-3 text-sm font-medium text-brick-deep"
+              : "rounded-[10px] bg-palm-soft px-4 py-3 text-sm font-medium text-palm-deep"
           }
         >
           {message.text}
@@ -113,7 +113,7 @@ function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: Ac
         <div className="flex flex-col gap-6">
           <Panel title="Skills">
             <div className="flex flex-col gap-3">
-              <p className="text-sm text-muted">
+              <p className="text-sm text-ink-soft">
                 Learning paths choose this activity to practise these skills. Each one needs a question that records evidence for it.
               </p>
               <SkillChips
@@ -123,7 +123,7 @@ function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: Ac
                 onRemove={(skillId) => run(() => studioApi.untagActivitySkill(detail.id, skillId))}
               />
               {everPublished && (
-                <p className="text-xs text-brand-amberStrong">
+                <p className="text-xs text-light-deep">
                   Skills belong to the activity, not one version: a change also affects where its published version is placed.
                 </p>
               )}
@@ -136,7 +136,7 @@ function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: Ac
                     id="add-activity-skill"
                     value={skillToAdd}
                     onChange={(e) => setSkillToAdd(e.target.value)}
-                    className="rounded-2xl border-[1.5px] border-hairline bg-white px-3 py-2 text-sm"
+                    className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
                   >
                     <option value="">Add a skill…</option>
                     {available.map((s) => (
@@ -176,7 +176,7 @@ function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: Ac
                     <li key={item.questionVersionId}>{item.prompt}</li>
                   ))}
                 </ol>
-                <p className="text-sm text-muted">
+                <p className="text-sm text-ink-soft">
                   Published versions never change: children&apos;s paths and attempts point at exactly this version. Start a new version
                   to change it — it copies this one, using each question&apos;s latest published version.
                 </p>
@@ -215,8 +215,8 @@ function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: Ac
             </Panel>
           )}
           <Panel title="Preview">
-            {!preview && <p className="text-sm text-muted">Loading preview…</p>}
-            {preview && preview.items.length === 0 && <p className="text-sm text-muted">Add questions to see the child&apos;s view.</p>}
+            {!preview && <p className="text-sm text-ink-soft">Loading preview…</p>}
+            {preview && preview.items.length === 0 && <p className="text-sm text-ink-soft">Add questions to see the child&apos;s view.</p>}
             {preview && preview.items.length > 0 && (
               <div className="flex flex-col gap-4">
                 {preview.instructions && <p className="text-sm font-semibold text-ink">“{preview.instructions}”</p>}
@@ -344,15 +344,15 @@ function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail
       }
     >
       <div className="flex flex-col gap-4">
-        {dirty && <p className="text-xs font-semibold text-brand-amberStrong">Unsaved changes to the question list.</p>}
-        {items.length === 0 && <p className="text-sm text-muted">No questions yet. Add published questions below.</p>}
+        {dirty && <p className="text-xs font-semibold text-light-deep">Unsaved changes to the question list.</p>}
+        {items.length === 0 && <p className="text-sm text-ink-soft">No questions yet. Add published questions below.</p>}
         <ol className="flex flex-col gap-2">
           {items.map((item, index) => (
-            <li key={item.questionVersionId} className="flex items-start gap-2 rounded-2xl border-[1.5px] border-hairline p-3">
-              <span className="mt-0.5 w-6 shrink-0 text-sm font-bold text-muted">{index + 1}.</span>
+            <li key={item.questionVersionId} className="flex items-start gap-2 rounded-[10px] border border-line-strong p-3">
+              <span className="mt-0.5 w-6 shrink-0 text-sm font-bold text-ink-soft">{index + 1}.</span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-ink">{item.prompt}</span>
-                <span className="text-xs text-muted">{item.label}</span>
+                <span className="text-xs text-ink-soft">{item.label}</span>
                 <span className="mt-1 block">
                   <SkillChips skillIds={item.skillIds} catalog={catalog} />
                 </span>
@@ -372,7 +372,7 @@ function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail
           ))}
         </ol>
 
-        <div className="flex flex-col gap-2 rounded-2xl bg-surface-cream p-3">
+        <div className="flex flex-col gap-2 rounded-[10px] bg-paper p-3">
           <label htmlFor="question-search" className="text-sm font-semibold text-ink">
             Add a published question
           </label>
@@ -381,11 +381,11 @@ function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search questions"
-            className="rounded-2xl border-[1.5px] border-hairline bg-white px-3 py-2 text-sm outline-none focus:border-brand-blueStrong"
+            className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
           />
-          {questions.isLoading && !questions.data && <p className="text-sm text-muted">Loading questions…</p>}
+          {questions.isLoading && !questions.data && <p className="text-sm text-ink-soft">Loading questions…</p>}
           {questions.data && choosable.length === 0 && (
-            <p className="text-sm text-muted">No other published questions{query ? " match" : ""}. Publish one in Questions first.</p>
+            <p className="text-sm text-ink-soft">No other published questions{query ? " match" : ""}. Publish one in Questions first.</p>
           )}
           <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto">
             {choosable.map((q) => (
@@ -401,9 +401,9 @@ function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail
                   }
                   className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-sm hover:bg-white focus-visible:bg-white"
                 >
-                  <Plus size={14} className="shrink-0 text-brand-blueStrong" aria-hidden />
+                  <Plus size={14} className="shrink-0 text-tonle-700" aria-hidden />
                   <span className="min-w-0 flex-1 truncate text-ink">{q.latestPrompt}</span>
-                  <span className="shrink-0 text-xs text-muted">{QUESTION_TYPE_LABEL[q.questionType]}</span>
+                  <span className="shrink-0 text-xs text-ink-soft">{QUESTION_TYPE_LABEL[q.questionType]}</span>
                 </button>
               </li>
             ))}

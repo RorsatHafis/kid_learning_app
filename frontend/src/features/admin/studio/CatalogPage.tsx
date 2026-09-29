@@ -19,9 +19,9 @@ export function CatalogPage() {
       <div className="flex flex-col gap-6">
         <Panel title={`Skills (${catalog.skills.length})`}>
           {catalog.skills.length === 0 ? (
-            <p className="text-sm text-muted">No skills yet. Skills are what children&apos;s answers count as evidence for.</p>
+            <p className="text-sm text-ink-soft">No skills yet. Skills are what children&apos;s answers count as evidence for.</p>
           ) : (
-            <ul className="flex flex-col divide-y divide-hairline">
+            <ul className="flex flex-col divide-y divide-line">
               {catalog.skills.map((skill) => (
                 <SkillRow key={skill.id} skill={skill} />
               ))}
@@ -33,9 +33,9 @@ export function CatalogPage() {
       <div className="flex flex-col gap-6">
         <Panel title={`Learning objectives (${catalog.objectives.length})`}>
           {catalog.objectives.length === 0 ? (
-            <p className="text-sm text-muted">No objectives yet. A curriculum is a sequence of objectives.</p>
+            <p className="text-sm text-ink-soft">No objectives yet. A curriculum is a sequence of objectives.</p>
           ) : (
-            <ul className="flex flex-col divide-y divide-hairline">
+            <ul className="flex flex-col divide-y divide-line">
               {catalog.objectives.map((objective) => (
                 <ObjectiveRow key={objective.id} objective={objective} />
               ))}
@@ -73,11 +73,11 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
     <li className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
       <div>
         <p className="font-semibold text-ink">{skill.name}</p>
-        <p className="text-xs font-semibold tracking-wide text-muted">{skill.code}</p>
-        {skill.description && <p className="mt-1 text-sm text-muted">{skill.description}</p>}
+        <p className="text-xs font-semibold tracking-wide text-ink-soft">{skill.code}</p>
+        {skill.description && <p className="mt-1 text-sm text-ink-soft">{skill.description}</p>}
       </div>
       {skill.prerequisiteSkillIds.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
           Builds on <SkillChips skillIds={skill.prerequisiteSkillIds} catalog={catalog} />
         </div>
       )}
@@ -90,7 +90,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
             id={`pre-${skill.id}`}
             value={prerequisite}
             onChange={(e) => setPrerequisite(e.target.value)}
-            className="rounded-2xl border-[1.5px] border-hairline bg-white px-3 py-2 text-sm"
+            className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
           >
             <option value="">Add a prerequisite…</option>
             {candidates.map((s) => (
@@ -105,7 +105,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
         </div>
       )}
       {error && (
-        <p role="alert" className="text-sm font-medium text-brand-redStrong">
+        <p role="alert" className="text-sm font-medium text-brick-deep">
           {error}
         </p>
       )}
@@ -138,8 +138,8 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
     <li className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
       <div>
         <p className="font-semibold text-ink">{objective.title}</p>
-        <p className="text-xs font-semibold tracking-wide text-muted">{objective.code}</p>
-        {objective.description && <p className="mt-1 text-sm text-muted">{objective.description}</p>}
+        <p className="text-xs font-semibold tracking-wide text-ink-soft">{objective.code}</p>
+        {objective.description && <p className="mt-1 text-sm text-ink-soft">{objective.description}</p>}
       </div>
       <SkillChips skillIds={objective.skillIds} catalog={catalog} />
       {candidates.length > 0 && (
@@ -151,7 +151,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
             id={`obj-${objective.id}`}
             value={skill}
             onChange={(e) => setSkill(e.target.value)}
-            className="rounded-2xl border-[1.5px] border-hairline bg-white px-3 py-2 text-sm"
+            className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
           >
             <option value="">Add a skill…</option>
             {candidates.map((s) => (
@@ -166,7 +166,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
         </div>
       )}
       {error && (
-        <p role="alert" className="text-sm font-medium text-brand-redStrong">
+        <p role="alert" className="text-sm font-medium text-brick-deep">
           {error}
         </p>
       )}
@@ -245,7 +245,7 @@ function NewSkill() {
           onChange={(e) => form.setDescription(e.target.value)}
         />
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
@@ -301,7 +301,7 @@ function NewObjective() {
           onChange={(e) => form.setDescription(e.target.value)}
         />
         {error && (
-          <p role="alert" className="text-sm font-medium text-brand-redStrong">
+          <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
