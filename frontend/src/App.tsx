@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { LoadingState } from "@/components/ui/States";
 import { BrandSheet } from "@/features/brand/BrandSheet";
+import { PlayGallery } from "@/features/brand/PlayGallery";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
 import { LandingPage } from "@/features/marketing/LandingPage";
@@ -120,6 +121,7 @@ export default function App() {
           />
 
           {import.meta.env.DEV && <Route path="/__brand" element={<BrandSheet />} />}
+          {import.meta.env.DEV && <Route path="/__play" element={<PlayGallery />} />}
           <Route path="*" element={<LandingPage />} />
         </Routes>
       </AuthProvider>

@@ -214,8 +214,8 @@ function coarsePointer() {
 }
 
 /**
- * A typed answer. When the prompt ends in "?" the answer sits where the "?" was, so the
- * child completes the sentence or sum instead of filling in a form. Numbers get a big
+ * A typed answer. When the prompt is a sum ending "= ?" the answer sits where the "?" was, so
+ * the child completes the sum instead of filling in a form. Numbers get a big
  * number pad — the way small hands answer on a tablet — while a keyboard still works.
  */
 function FreeResponse({
@@ -240,7 +240,9 @@ function FreeResponse({
   const shown = answered ? result.submitted : value;
 
   const trimmedPrompt = item.prompt.trim();
-  const inline = trimmedPrompt.endsWith("?") && trimmedPrompt.length > 1;
+  // A sum written as "6 + 4 = ?" takes its answer where the "?" is. A question in words
+  // ("How many legs…?") keeps its wording, with the answer below it.
+  const inline = /=\s*\?$/.test(trimmedPrompt);
   const lead = inline ? trimmedPrompt.slice(0, -1).trimEnd() : trimmedPrompt;
 
   useEffect(() => {
@@ -282,7 +284,7 @@ function FreeResponse({
         className={cn(
           "h-[1.3em] min-w-[2.2ch] rounded-[0.28em] border-[3px] px-[0.2em] text-center font-display font-bold text-tonle-950 caret-tonle-600 outline-none transition-[border-color,background-color,box-shadow] duration-200",
           "placeholder:text-tonle-300",
-          !(numeric || inline) && "w-full max-w-md text-[2rem]",
+          !(numeric || inline) && "!h-16 w-full max-w-md !rounded-[20px] !px-5 text-[1.75rem] placeholder:text-xl placeholder:font-semibold",
           !answered && "border-dashed border-tonle-300 bg-white focus:border-solid focus:border-tonle-600 focus:shadow-[0_0_0_5px_rgba(68,104,184,0.15)]",
           answered && result.correct && "border-solid border-light bg-light-soft shadow-glow",
           answered && !result.correct && "border-solid border-tonle-300 bg-tonle-50 text-tonle-700 motion-safe:animate-nudge",
