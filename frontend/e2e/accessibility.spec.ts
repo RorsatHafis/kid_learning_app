@@ -61,6 +61,39 @@ test.describe("accessibility @phone", () => {
     await expectNoViolations(page, "parent account");
   });
 
+  test("keyboard: skip link, page titles, visible focus on night surfaces", async ({ page }) => {
+    test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
+    await page.goto("/login");
+    await expect(page).toHaveTitle("Welcome back · Bookeyond Kid");
+    await logIn(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+    await page.waitForURL(/\/admin/);
+    await page.goto("/admin/staff");
+    await expect(page.getByRole("heading", { name: "Staff", level: 1 })).toBeVisible();
+    await expect(page).toHaveTitle("Staff · Bookeyond Kid");
+
+    // The first Tab offers a way past the navigation, and it lands on the page's content.
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#main")).toBeFocused();
+
+    // The next stop is on the night-blue rail (or phone bar): its focus ring must be the warm
+    // light, which contrasts with navy, not the blue ring used on paper.
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Staff", level: 1 })).toBeVisible();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    // Polled: styles settle a frame after focus moves.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const el = document.activeElement as HTMLElement;
+          return { color: getComputedStyle(el).outlineColor, style: getComputedStyle(el).outlineStyle, onNight: !!el.closest(".on-night") };
+        }),
+      )
+      .toEqual({ color: "rgb(255, 210, 122)", style: "solid", onNight: true });
+  });
+
   test("admin console", async ({ page }) => {
     test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
     await logIn(page, ADMIN_EMAIL, ADMIN_PASSWORD);
