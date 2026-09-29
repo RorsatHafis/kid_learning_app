@@ -30,7 +30,7 @@ export function AccountPage() {
 
       <div className="divide-y divide-line overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
         <SettingsRow id="profile" title="Your details" subtitle="The address you sign in with.">
-          {profile.isLoading && <LoadingState label="Loading your account…" />}
+          {profile.isLoading && !profile.data && <LoadingState label="Loading your account…" />}
           {profile.error && <ErrorState error={profile.error} onRetry={profile.refetch} />}
           {profile.data && (
             <dl className="grid gap-5 sm:grid-cols-2">

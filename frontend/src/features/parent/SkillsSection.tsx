@@ -47,7 +47,7 @@ export function SkillsSection({ childId }: { childId: string }) {
     <section aria-labelledby="skills" className="flex flex-col gap-5">
       <SectionTitle id="skills" title="Skills & evidence" subtitle="What your child's answers show so far, skill by skill." />
 
-      {isLoading && <LoadingState label="Loading skills…" />}
+      {isLoading && !data && <LoadingState label="Loading skills…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
       {data && data.length === 0 && <EmptyState title="No skills yet" description="Choose a learning path to see the skills it builds." />}
       {data?.map((curriculum) => (

@@ -26,7 +26,16 @@ const when = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle
  * with the server's keyset cursor, so entries written meanwhile never shift or repeat a page.
  * A change of filter starts again from the newest entry.
  */
-export function AuditLog({ filter, emptyTitle = "Nothing recorded yet" }: { filter: Omit<AuditQuery, "before" | "beforeId" | "limit">; emptyTitle?: string }) {
+export function AuditLog({
+  filter,
+  emptyTitle = "Nothing recorded yet",
+  refreshKey = 0,
+}: {
+  filter: Omit<AuditQuery, "before" | "beforeId" | "limit">;
+  emptyTitle?: string;
+  /** Changing it reloads the newest entries while the current ones stay on screen. */
+  refreshKey?: number;
+}) {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [cursor, setCursor] = useState<{ before: string; beforeId: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,13 +44,15 @@ export function AuditLog({ filter, emptyTitle = "Nothing recorded yet" }: { filt
   const request = useRef(0);
   const key = JSON.stringify(filter);
 
-  const loadFirst = useCallback(() => {
+  const loadFirst = useCallback((clear = true) => {
     const id = ++request.current;
     setLoading(true);
     setFirstError(null);
     setMoreError(null);
-    setEntries([]);
-    setCursor(null);
+    if (clear) {
+      setEntries([]);
+      setCursor(null);
+    }
     operationsApi
       .auditEvents({ ...filter, limit: PAGE_SIZE })
       .then((page) => {
@@ -55,6 +66,14 @@ export function AuditLog({ filter, emptyTitle = "Nothing recorded yet" }: { filt
   }, [key]);
 
   useEffect(() => loadFirst(), [loadFirst]);
+
+  // A refresh after an action keeps what's shown until the newer page arrives.
+  const refreshed = useRef(refreshKey);
+  useEffect(() => {
+    if (refreshed.current === refreshKey) return;
+    refreshed.current = refreshKey;
+    loadFirst(false);
+  }, [refreshKey, loadFirst]);
 
   async function loadMore() {
     if (!cursor) return;
@@ -73,7 +92,7 @@ export function AuditLog({ filter, emptyTitle = "Nothing recorded yet" }: { filt
     }
   }
 
-  if (firstError) return <ErrorState error={firstError} onRetry={loadFirst} />;
+  if (firstError) return <ErrorState error={firstError} onRetry={() => loadFirst()} />;
   if (loading && entries.length === 0) return <LoadingState label="Loading activity…" />;
   if (entries.length === 0) return <EmptyState title={emptyTitle} />;
 

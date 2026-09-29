@@ -34,7 +34,7 @@ export function StudioIndex() {
         />
       )}
 
-      {subjects.isLoading && <LoadingState label="Loading subjects…" />}
+      {subjects.isLoading && !subjects.data && <LoadingState label="Loading subjects…" />}
       {subjects.error && <ErrorState error={subjects.error} onRetry={subjects.refetch} />}
       {subjects.data && subjects.data.length === 0 && (
         <EmptyState title="No subjects yet" description="Add the first subject to start building content." />

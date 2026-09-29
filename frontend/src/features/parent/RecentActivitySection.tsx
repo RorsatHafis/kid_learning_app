@@ -12,7 +12,7 @@ export function RecentActivitySection({ childId }: { childId: string }) {
   return (
     <section aria-labelledby="recent" className="flex flex-col gap-5">
       <SectionTitle id="recent" title="Recent activity" subtitle="Each finished activity, and how the path adapted afterwards." />
-      {isLoading && <LoadingState label="Loading activity…" />}
+      {isLoading && !data && <LoadingState label="Loading activity…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
       {data && data.length === 0 && <EmptyState title="Nothing finished yet" description="Finished activities appear here with what they showed." />}
       {data && data.length > 0 && (

@@ -32,7 +32,7 @@ export function ParentHome() {
         </div>
       </SceneBand>
 
-      {isLoading && <LoadingState label="Loading your family…" />}
+      {isLoading && !children && <LoadingState label="Loading your family…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
 
       {children && (

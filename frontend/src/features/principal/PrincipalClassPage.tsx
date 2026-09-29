@@ -44,7 +44,7 @@ export function PrincipalClassPage() {
     <div className="flex flex-col gap-8">
       <Breadcrumb items={[{ label: "School", to: "/principal" }, { label: schoolClass.data?.name ?? "Class" }]} />
 
-      {schoolClass.isLoading && <LoadingState label="Loading class…" />}
+      {schoolClass.isLoading && !schoolClass.data && <LoadingState label="Loading class…" />}
       {schoolClass.error && <ErrorState error={schoolClass.error} onRetry={schoolClass.refetch} />}
 
       {schoolClass.data && (
@@ -123,7 +123,7 @@ export function PrincipalClassPage() {
             <h2 id="class-children" className="text-base font-semibold text-tonle-950">
               Children
             </h2>
-            {roster.isLoading && <LoadingState label="Loading children…" />}
+            {roster.isLoading && !roster.data && <LoadingState label="Loading children…" />}
             {roster.error && <ErrorState error={roster.error} onRetry={roster.refetch} />}
             {roster.data && roster.data.length === 0 && <ChildrenNotYetAvailable />}
             {roster.data && roster.data.length > 0 && (

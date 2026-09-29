@@ -130,7 +130,7 @@ function Classes({ school }: { school: SchoolSummary }) {
           </p>
         )}
       </div>
-      {classes.isLoading && <LoadingState label="Loading classes…" />}
+      {classes.isLoading && !classes.data && <LoadingState label="Loading classes…" />}
       {classes.error && <ErrorState error={classes.error} onRetry={classes.refetch} />}
       {classes.data && classes.data.length === 0 && (
         <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">
@@ -230,7 +230,7 @@ function Teachers({ school }: { school: SchoolSummary }) {
           them to classes.
         </p>
       </div>
-      {staff.isLoading && <LoadingState label="Loading teachers…" />}
+      {staff.isLoading && !staff.data && <LoadingState label="Loading teachers…" />}
       {staff.error && <ErrorState error={staff.error} onRetry={staff.refetch} />}
       {staff.data && visible.length === 0 && (
         <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">No teachers yet.</p>

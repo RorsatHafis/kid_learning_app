@@ -16,7 +16,7 @@ export function TeacherHome() {
       </div>
       <SchoolInvitations onAccepted={refetch} />
 
-      {isLoading && <LoadingState label="Loading your classes…" />}
+      {isLoading && !classes && <LoadingState label="Loading your classes…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
 
       {classes && classes.length === 0 && (

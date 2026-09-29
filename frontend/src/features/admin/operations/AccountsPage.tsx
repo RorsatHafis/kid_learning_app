@@ -88,7 +88,7 @@ export function AccountsPage() {
             }}
           />
           <Panel title="History of this account">
-            <AuditLog key={historyVersion} filter={{ resourceId: account.id }} emptyTitle="No changes recorded for this account" />
+            <AuditLog refreshKey={historyVersion} filter={{ resourceId: account.id }} emptyTitle="No changes recorded for this account" />
           </Panel>
         </div>
       )}

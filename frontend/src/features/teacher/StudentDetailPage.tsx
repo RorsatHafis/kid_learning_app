@@ -23,7 +23,7 @@ export function StudentDetailPage() {
         ]}
       />
 
-      {isLoading && <LoadingState label="Loading student…" />}
+      {isLoading && !roster && <LoadingState label="Loading student…" />}
       {error && <ErrorState error={error} />}
       {roster && !student && <EmptyState title="Student not found" description="This student may no longer be enrolled in this class." />}
 

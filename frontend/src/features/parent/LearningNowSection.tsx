@@ -41,7 +41,7 @@ export function LearningNowSection({
         )}
       </SectionTitle>
 
-      {enrollments.isLoading && <LoadingState label="Loading learning paths…" />}
+      {enrollments.isLoading && !enrollments.data && <LoadingState label="Loading learning paths…" />}
       {enrollments.error && <ErrorState error={enrollments.error} onRetry={enrollments.refetch} />}
 
       {enrollments.data && (list.length === 0 || adding) && (

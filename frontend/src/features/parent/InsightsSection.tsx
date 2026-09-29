@@ -28,7 +28,7 @@ export function InsightsSection({ childId }: { childId: string }) {
   return (
     <section aria-labelledby="insights" className="flex flex-col gap-5">
       <SectionTitle id="insights" title="Insights" subtitle="What we can say with confidence right now." />
-      {isLoading && <LoadingState label="Loading insights…" />}
+      {isLoading && !data && <LoadingState label="Loading insights…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
       {data && data.length === 0 && (
         <div className="rounded-paper bg-tonle-50 px-6 py-6 ring-1 ring-tonle-100">
