@@ -67,7 +67,7 @@ export function BrandMark({
 /**
  * Mark + wordmark. "Bookeyond" carries the weight; "Kid" follows in the lighter voice, so the
  * product name reads as one name with a clear lead. The wordmark is live type (Bricolage
- * Grotesque); outlined files for print live in src/assets/brand.
+ * Grotesque, self-hosted). An outlined wordmark for print has not been produced yet.
  */
 export function Logo({
   tone = "ink",

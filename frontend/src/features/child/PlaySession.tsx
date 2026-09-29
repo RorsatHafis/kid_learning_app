@@ -426,7 +426,7 @@ function Question({
           <div
             role="status"
             className={cn(
-              "flex flex-col items-center gap-5 rounded-b-[32px] border-t-2 border-dashed px-6 pb-7 pt-6 motion-safe:animate-rise-in sm:flex-row sm:px-12",
+              "flex flex-col items-center gap-5 rounded-b-[32px] border-t border-dashed px-6 pb-7 pt-6 motion-safe:animate-rise-in sm:flex-row sm:px-12",
               result.correct ? "border-light/50 bg-light-soft/70" : "border-tonle-200 bg-tonle-50",
             )}
           >

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-29T00:00:00Z",
+  "title": "Design System: Bookeyond Kid",
+  "extensions": {
+    "colorMeta": {
+      "tonle-950": { "role": "primary", "displayName": "Tonle Night", "canonical": "#0A1533", "tonalRamp": ["#F2F5FB", "#E3EAF7", "#C9D6EF", "#A2B8E3", "#6E8FD0", "#4468B8", "#2E4F9E", "#223D85", "#182E66", "#11214D", "#0A1533"] },
+      "tonle-800": { "role": "primary", "displayName": "Deep River", "canonical": "#182E66" },
+      "tonle-600": { "role": "primary", "displayName": "River Blue", "canonical": "#2E4F9E" },
+      "light": { "role": "secondary", "displayName": "Lantern Light", "canonical": "#F3A83B", "tonalRamp": ["#FCEBD0", "#FFD27A", "#F3A83B", "#E0782F", "#8A4A0B"] },
+      "palm": { "role": "tertiary", "displayName": "Sugar Palm", "canonical": "#2E7A5A" },
+      "lotus": { "role": "tertiary", "displayName": "Lotus", "canonical": "#E48BA0" },
+      "dusk": { "role": "tertiary", "displayName": "Dusk Violet", "canonical": "#6D5BA8" },
+      "brick": { "role": "tertiary", "displayName": "Brick", "canonical": "#C2412F" },
+      "paper": { "role": "neutral", "displayName": "Cool Paper", "canonical": "#F6F7FB" },
+      "child-page": { "role": "neutral", "displayName": "Book Paper", "canonical": "#FFFBF3" },
+      "ink": { "role": "neutral", "displayName": "Night Ink", "canonical": "#0E1B3A" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Landing hero and a child's question prompt." },
+      "headline": { "displayName": "Headline", "purpose": "Family page openings and landing section heads." },
+      "title": { "displayName": "Title", "purpose": "Staff workspace page headers." },
+      "body": { "displayName": "Body", "purpose": "All running text, English and Khmer." },
+      "label": { "displayName": "Label", "purpose": "Captions and table headers, sentence case." }
+    },
+    "shadows": [
+      { "name": "paper", "value": "0 1px 1px rgba(10,21,51,0.05), 0 12px 32px -18px rgba(10,21,51,0.35)", "purpose": "Family sheets." },
+      { "name": "lift", "value": "0 2px 4px rgba(10,21,51,0.08), 0 24px 48px -24px rgba(10,21,51,0.45)", "purpose": "The child's page over the scene." },
+      { "name": "glow", "value": "0 0 0 1px rgba(243,168,59,0.45), 0 0 32px 4px rgba(255,210,122,0.55)", "purpose": "Lit answers and lit things." },
+      { "name": "key", "value": "0 5px 0 #B86A1C", "purpose": "Pressable child controls; collapses to 1px on press." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Entrances and state changes." },
+      { "name": "page-in", "value": "420ms ease-out, translateX(28px) rotate(0.6deg) to rest", "purpose": "Turning to the next question." },
+      { "name": "sway", "value": "3.6s ease-in-out infinite, ±4deg", "purpose": "The lantern of the open question." },
+      { "name": "lantern-lit", "value": "620ms ease-out, scale 0.9 → 1.14 → 1 with brightness", "purpose": "A question answered." },
+      { "name": "rise-away", "value": "3.4s, translateY(-150px)", "purpose": "Finished lanterns released at the end of an activity." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Solid Button",
+      "kind": "button",
+      "refersTo": "button-solid",
+      "description": "The one primary action in an adult region.",
+      "html": "<button class=\"ds-btn-solid\">Start Sokha's session</button>",
+      "css": ".ds-btn-solid{background:#182E66;color:#fff;height:44px;padding:0 20px;border:0;border-radius:12px;font:600 15px/1 'Kantumruy Pro Variable',system-ui,sans-serif;box-shadow:0 1px 2px rgba(10,21,51,.08);transition:background .15s}.ds-btn-solid:hover{background:#11214D}.ds-btn-solid:focus-visible{outline:2px solid #2E4F9E;outline-offset:3px}"
+    },
+    {
+      "name": "Child Go Button",
+      "kind": "button",
+      "refersTo": "button-light",
+      "description": "Moves a child forward: Let's go, Next, Keep going.",
+      "html": "<button class=\"ds-btn-go\">Let's go →</button>",
+      "css": ".ds-btn-go{background:#F3A83B;color:#0A1533;height:64px;padding:0 40px;border:0;border-radius:999px;font:700 20px/1 'Kantumruy Pro Variable',system-ui,sans-serif;box-shadow:0 5px 0 #B86A1C,0 12px 40px rgba(243,168,59,.45);transition:transform .15s,box-shadow .15s}.ds-btn-go:hover{background:#FFD27A}.ds-btn-go:active{transform:translateY(4px);box-shadow:0 1px 0 #B86A1C}.ds-btn-go:focus-visible{outline:2px solid #2E4F9E;outline-offset:3px}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Adult text field.",
+      "html": "<input class=\"ds-field\" placeholder=\"Email\">",
+      "css": ".ds-field{background:#fff;color:#0E1B3A;height:48px;padding:0 16px;border:0;border-radius:12px;box-shadow:inset 0 0 0 1px #C3CCDD;font:400 15px 'Kantumruy Pro Variable',system-ui,sans-serif;outline:none}.ds-field:hover{box-shadow:inset 0 0 0 1px #A2B8E3}.ds-field:focus{box-shadow:inset 0 0 0 2px #2E4F9E}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "status-published",
+      "description": "Content lifecycle in the Studio, dot plus word.",
+      "html": "<span class=\"ds-status\"><i></i>Published</span>",
+      "css": ".ds-status{display:inline-flex;align-items:center;gap:6px;background:#E3F1EA;color:#1E5A41;border-radius:6px;padding:2px 8px;font:600 12px 'Kantumruy Pro Variable',system-ui,sans-serif;box-shadow:inset 0 0 0 1px rgba(46,122,90,.25)}.ds-status i{width:6px;height:6px;border-radius:50%;background:#2E7A5A}"
+    },
+    {
+      "name": "Evidence Line",
+      "kind": "custom",
+      "description": "Evidence strength as line weight, always with its words.",
+      "html": "<span class=\"ds-evidence\"><svg width=\"84\" height=\"10\"><line x1=\"2\" y1=\"5\" x2=\"82\" y2=\"5\" stroke=\"#2E4F9E\" stroke-width=\"3.5\" stroke-linecap=\"round\"/></svg>Enough answers to judge</span>",
+      "css": ".ds-evidence{display:inline-flex;align-items:center;gap:12px;color:#46526E;font:400 13px 'Kantumruy Pro Variable',system-ui,sans-serif}"
+    },
+    {
+      "name": "Workspace Nav Item",
+      "kind": "nav",
+      "refersTo": "workspace-rail",
+      "description": "Staff rail item, active state.",
+      "html": "<div class=\"ds-rail\"><a class=\"ds-rail-item is-active\">Content Studio</a><a class=\"ds-rail-item\">Staff</a></div>",
+      "css": ".ds-rail{background:#0A1533;padding:12px;width:248px}.ds-rail-item{display:flex;align-items:center;height:40px;padding:0 12px;border-radius:10px;color:#C9D6EF;font:500 15px 'Kantumruy Pro Variable',system-ui,sans-serif;text-decoration:none}.ds-rail-item:hover{background:rgba(255,255,255,.05);color:#fff}.ds-rail-item.is-active{background:rgba(255,255,255,.09);color:#fff}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Blue hour on the Mekong",
+    "overview": "Bookeyond Kid lives in the minutes after sunset on a Cambodian river. Blue is the world; the one warm colour is light, and light means something happened. Children are inside the scene, parents see it in morning daylight above evidence-first pages, and staff work beside it in a night-blue workspace.",
+    "keyCharacteristics": [
+      "Clearly Cambodian, original paper-cut art",
+      "Tonle blue scale for structure; saffron light only for meaning",
+      "Evidence drawn as line weight, always with words",
+      "Adult rounded rectangles; pressable pills only for children",
+      "Motion shows state: lanterns sway, light, rise"
+    ],
+    "rules": [
+      { "name": "The Light Means Something Rule", "body": "Saffron appears only where something is lit, achieved or next.", "section": "colors" },
+      { "name": "The Never Colour Alone Rule", "body": "Every status colour sits beside words or a number.", "section": "colors" },
+      { "name": "The No Kicker Rule", "body": "No uppercase eyebrow above a heading; use a breadcrumb or the sentence below.", "section": "typography" },
+      { "name": "The Paper Not Plastic Rule", "body": "Soft night-tinted shadows only; no hard offsets or decorative glass in adult space.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do open family pages with the morning band and child pages with the dusk scene.",
+      "Do state evidence in words beside its drawing.",
+      "Do keep Khmer beside English where it carries identity.",
+      "Do wrap every animation in motion-safe."
+    ],
+    "donts": [
+      "Don't add leaderboards, streak pressure, points, currencies or confetti.",
+      "Don't present completion as mastery.",
+      "Don't use ink-faint text on paper-sunk."
+    ]
+  }
+}
