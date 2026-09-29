@@ -51,7 +51,7 @@ export function StudioLayout() {
         }
       />
 
-      <nav aria-label="Studio sections" className="-mx-4 -mt-3 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0">
+      <nav aria-label="Studio sections" className="-mx-4 -mt-3 overflow-x-auto border-b border-line pl-4 pr-16 [mask-image:linear-gradient(to_right,black_82%,transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
         <div className="flex gap-7">
           <NavLink to={`/admin/studio/${subjectId}/catalog`} className={tabClass}>
             Skills &amp; objectives

@@ -159,9 +159,9 @@ for (const [size, viewport] of Object.entries(sizes)) {
   if (wants("3")) {
     await login(page, accounts.admin);
     await shot(page, "30-admin-studio", size);
-    await nav(page, "Staff");
+    await page.goto(base + "/admin/staff");
     await shot(page, "31-admin-staff", size);
-    await nav(page, "Activity log");
+    await page.goto(base + "/admin/activity");
     await shot(page, "32-admin-activity", size);
     await page.goto(base + "/admin/studio");
     await page
