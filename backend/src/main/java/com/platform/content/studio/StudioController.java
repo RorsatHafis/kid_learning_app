@@ -4,7 +4,11 @@ import com.platform.content.studio.StudioDtos.*;
 import com.platform.content.validation.ValidationReport;
 import com.platform.content.web.ActivityContentDtos.ActivityItemResponse;
 import com.platform.content.web.ActivityContentDtos.ActivityVersionDetailResponse;
+import com.platform.common.entity.PublicationStatus;
+import com.platform.common.web.PageResponse;
+import com.platform.content.entity.QuestionType;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -129,8 +133,12 @@ public class StudioController {
     // ------------------------------------------------------------------ lessons & activities
 
     @GetMapping("/lessons")
-    public List<LessonSummary> lessons(@AuthenticationPrincipal UUID accountId) {
-        return studio.lessons(accountId);
+    public PageResponse<LessonSummary> lessons(@AuthenticationPrincipal UUID accountId,
+                                               @RequestParam(required = false) UUID subjectId,
+                                               @RequestParam(required = false) @Size(max = 200) String q,
+                                               @RequestParam(defaultValue = "0") int page,
+                                               @RequestParam(defaultValue = "10") int size) {
+        return studio.lessons(accountId, subjectId, q, new PageResponse.Request(page, size));
     }
 
     @PostMapping("/lessons")
@@ -199,8 +207,16 @@ public class StudioController {
     // ------------------------------------------------------------------ questions
 
     @GetMapping("/questions")
-    public List<QuestionSummary> questions(@AuthenticationPrincipal UUID accountId, @RequestParam UUID subjectId) {
-        return studio.questions(accountId, subjectId);
+    public PageResponse<QuestionSummary> questions(@AuthenticationPrincipal UUID accountId, @RequestParam UUID subjectId,
+                                                   @RequestParam(required = false) @Size(max = 200) String q,
+                                                   @RequestParam(required = false) QuestionType type,
+                                                   @RequestParam(required = false) PublicationStatus status,
+                                                   @RequestParam(required = false) UUID skillId,
+                                                   @RequestParam(defaultValue = "false") boolean live,
+                                                   @RequestParam(defaultValue = "0") int page,
+                                                   @RequestParam(defaultValue = "25") int size) {
+        return studio.questions(accountId, subjectId, new QuestionFilter(q, type, status, skillId, live),
+                new PageResponse.Request(page, size));
     }
 
     @PostMapping("/questions")

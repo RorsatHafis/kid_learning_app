@@ -16,6 +16,8 @@ public interface ActivityVersionRepository extends JpaRepository<ActivityVersion
 
     List<ActivityVersion> findByActivityIdOrderByVersionNumberAsc(UUID activityId);
 
+    List<ActivityVersion> findByActivityIdInOrderByVersionNumberAsc(java.util.Collection<UUID> activityIds);
+
     Optional<ActivityVersion> findFirstByActivityIdAndStatusOrderByVersionNumberDesc(UUID activityId, PublicationStatus status);
 
 }

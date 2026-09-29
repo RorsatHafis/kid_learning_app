@@ -1,7 +1,10 @@
-import { useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { CheckCircle2, UserPlus } from "lucide-react";
-import { adminApi, type StaffAccount } from "@/lib/api/studio";
+import { adminApi, type StaffAccount, type StaffRole } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { usePageInRange, useUrlFilters } from "@/lib/hooks/useUrlFilters";
+import { ListCount, Pager } from "@/components/ui/Pager";
+import { SearchField } from "@/components/ui/SearchField";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
@@ -21,11 +24,27 @@ const STATUS_LABEL: Record<string, string> = {
   DISABLED: "Disabled",
 };
 
-/** Staff accounts: who can author content and run schools. Provisioning and approvals are audited server-side. */
+const PAGE_SIZE = 25;
+const STAFF_ROLES: StaffRole[] = ["TEACHER", "PRINCIPAL", "ADMIN"];
+
+/**
+ * Staff accounts: who can author content and run schools. Provisioning and approvals are audited
+ * server-side. The list is searched and paged by the server, with the search kept in the address.
+ */
 export function StaffPage() {
-  const staff = useAsync(() => adminApi.staff(), []);
+  const { params, page, update, setPage } = useUrlFilters();
+  const text = params.get("q") ?? "";
+  const roleParam = params.get("role") as StaffRole | null;
+  const role = roleParam && STAFF_ROLES.includes(roleParam) ? roleParam : undefined;
+  const search = useCallback((q: string) => update({ q: q || undefined }), [update]);
+
+  const staff = useAsync(() => adminApi.staff({ text, role, page, size: PAGE_SIZE }), [text, role, page]);
   const pending = useAsync(() => adminApi.pendingPrincipals(), []);
-  const composer = useComposer(staff.data?.length === 0);
+  const filtered = Boolean(text || role);
+  const data = staff.data;
+  const composer = useComposer(data?.total === 0 && !filtered);
+
+  usePageInRange(data, setPage);
 
   function refresh() {
     staff.refetch();
@@ -51,16 +70,47 @@ export function StaffPage() {
       )}
 
       <div className={cn("grid grid-cols-1 gap-6", composer.open && "lg:grid-cols-[minmax(0,1fr)_380px]")}>
-        <Panel title={`All staff${staff.data ? ` (${staff.data.length})` : ""}`} flush>
-          {(staff.isLoading || staff.error || staff.data?.length === 0) && (
-            <div className="px-5 pb-5 sm:px-6 sm:pb-6">
-              {staff.isLoading && !staff.data && <LoadingState label="Loading staff…" />}
-              {staff.error && <ErrorState error={staff.error} onRetry={staff.refetch} />}
-              {staff.data && staff.data.length === 0 && <EmptyState title="No staff accounts yet" />}
+        <Panel title="All staff" flush>
+          <div role="search" aria-label="Find staff" className="flex flex-col gap-3 px-5 pb-4 sm:flex-row sm:items-end sm:px-6">
+            <SearchField
+              label="Search staff by email"
+              value={text}
+              onSearch={search}
+              placeholder="Search by email"
+              maxLength={320}
+              className="sm:flex-1"
+            />
+            <div className="sm:w-48">
+              <SelectField label="Role" value={role ?? ""} onChange={(e) => update({ role: e.target.value || undefined })}>
+                <option value="">Any role</option>
+                {STAFF_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_LABEL[r]}
+                  </option>
+                ))}
+              </SelectField>
+            </div>
+          </div>
+          {data && (
+            <div className="px-5 pb-3 sm:px-6">
+              <ListCount
+                total={data.total}
+                noun={["staff account", "staff accounts"]}
+                filtered={filtered}
+                onClear={() => update({ q: undefined, role: undefined })}
+              />
             </div>
           )}
-          {staff.data && staff.data.length > 0 && (
-            <>
+          {((staff.isLoading && !data) || staff.error || data?.total === 0) && (
+            <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+              {staff.isLoading && !data && <LoadingState label="Loading staff…" />}
+              {staff.error && <ErrorState error={staff.error} onRetry={staff.refetch} />}
+              {data && data.total === 0 && !filtered && <EmptyState title="No staff accounts yet" />}
+              {data && data.total === 0 && filtered && <p className="text-sm text-ink-soft">No staff account matches.</p>}
+            </div>
+          )}
+          {data && data.items.length > 0 && (
+            <div className={cn("transition-opacity", staff.isLoading && "opacity-60")} aria-busy={staff.isLoading}>
               <table className="hidden w-full text-left text-sm sm:table">
                 <thead>
                   <tr className="border-b border-line bg-paper text-[0.8125rem] text-ink-faint">
@@ -76,7 +126,7 @@ export function StaffPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {staff.data.map((account) => (
+                  {data.items.map((account) => (
                     <tr key={account.id} className="transition-colors hover:bg-paper/70">
                       <td className="max-w-[20rem] truncate px-5 py-3 font-medium text-ink">{account.email}</td>
                       <td className="px-5 py-3 text-ink">{ROLE_LABEL[account.platformRole] ?? account.platformRole}</td>
@@ -87,8 +137,8 @@ export function StaffPage() {
                   ))}
                 </tbody>
               </table>
-              <ul className="divide-y divide-line sm:hidden" aria-label="All staff">
-                {staff.data.map((account) => (
+              <ul className="divide-y divide-line border-t border-line sm:hidden" aria-label="All staff">
+                {data.items.map((account) => (
                   <li key={account.id} className="flex flex-col gap-1 px-5 py-3">
                     <span className="break-all font-medium text-ink">{account.email}</span>
                     <span className="flex items-center gap-2 text-sm text-ink-soft">
@@ -99,7 +149,15 @@ export function StaffPage() {
                   </li>
                 ))}
               </ul>
-            </>
+              <Pager
+                label="Staff"
+                page={data.page}
+                size={data.size}
+                total={data.total}
+                onPage={setPage}
+                className="border-t border-line px-5 py-3 sm:px-6"
+              />
+            </div>
           )}
         </Panel>
         {composer.open && (

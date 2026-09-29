@@ -13,4 +13,6 @@ public interface ActivityRepository extends JpaRepository<Activity, UUID> {
 
     List<Activity> findByLessonId(UUID lessonId);
 
+    List<Activity> findByLessonIdIn(java.util.Collection<UUID> lessonIds);
+
 }

@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { Button } from "@/components/ui/Button";
 import { learningApi } from "@/lib/api/endpoints";
 import type { CompletedActivity } from "@/lib/api/types";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
@@ -6,9 +8,36 @@ import { parentDecision } from "@/features/learning/explain";
 import { formatDay } from "@/lib/utils/date";
 import { SectionTitle } from "./SectionTitle";
 
-/** What the child has done, and what the platform decided after each activity. */
+const PAGE = 10;
+
+/**
+ * What the child has done, and what the platform decided after each activity: the latest ten,
+ * then ten more at a time. Each request asks for one extra to know whether there are more.
+ */
 export function RecentActivitySection({ childId }: { childId: string }) {
-  const { data, error, isLoading, refetch } = useAsync(() => learningApi.history(childId, 10), [childId]);
+  const { data: firstPage, error, isLoading, refetch } = useAsync(() => learningApi.history(childId, PAGE + 1), [childId]);
+  const [earlier, setEarlier] = useState<{ childId: string; items: CompletedActivity[]; more: boolean } | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moreError, setMoreError] = useState<string | null>(null);
+
+  const ownEarlier = earlier?.childId === childId ? earlier : null;
+  const data = firstPage ? [...firstPage.slice(0, PAGE), ...(ownEarlier?.items ?? [])] : null;
+  const hasMore = ownEarlier ? ownEarlier.more : (firstPage?.length ?? 0) > PAGE;
+
+  async function showEarlier() {
+    if (!data || data.length === 0) return;
+    setLoadingMore(true);
+    setMoreError(null);
+    try {
+      const page = await learningApi.history(childId, PAGE + 1, data[data.length - 1]);
+      setEarlier({ childId, items: [...(ownEarlier?.items ?? []), ...page.slice(0, PAGE)], more: page.length > PAGE });
+    } catch {
+      setMoreError("Couldn't load earlier activity. Please try again.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   return (
     <section aria-labelledby="recent" className="flex flex-col gap-5">
       <SectionTitle id="recent" title="Recent activity" subtitle="Each finished activity, and how the path adapted afterwards." />
@@ -22,6 +51,25 @@ export function RecentActivitySection({ childId }: { childId: string }) {
             <ActivityRow key={activity.attemptId} activity={activity} />
           ))}
         </ol>
+      )}
+      {data && data.length > 0 && (hasMore || ownEarlier) && (
+        <div className="flex flex-col items-start gap-2 sm:pl-[7.5rem]">
+          {hasMore ? (
+            <Button variant="outline" size="sm" onClick={showEarlier} disabled={loadingMore}>
+              {loadingMore ? "Loading…" : "Show earlier"}
+            </Button>
+          ) : (
+            <p className="text-sm text-ink-faint">That&apos;s every activity finished so far.</p>
+          )}
+          {moreError && (
+            <p role="alert" className="text-sm font-medium text-brick-deep">
+              {moreError}
+            </p>
+          )}
+          <p className="sr-only" aria-live="polite">
+            {ownEarlier ? `${data.length} activities shown` : ""}
+          </p>
+        </div>
       )}
     </section>
   );

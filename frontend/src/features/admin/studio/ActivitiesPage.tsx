@@ -1,20 +1,38 @@
-import { useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, Plus } from "lucide-react";
 import { studioApi, type LessonSummary } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { usePageInRange, useUrlFilters } from "@/lib/hooks/useUrlFilters";
+import { ListCount, Pager } from "@/components/ui/Pager";
+import { SearchField } from "@/components/ui/SearchField";
+import { cn } from "@/lib/utils/cn";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, Panel, SkillChips, StatusBadge } from "./shared";
 import { currentStatus, errorText, useStudio, useComposer } from "./studioLogic";
 
-/** Lessons group activities; an activity is what a learning path places and a child plays. */
+const PAGE_SIZE = 10;
+
+/**
+ * Lessons group activities; an activity is what a learning path places and a child plays. A
+ * subject gathers hundreds of activities, so lessons come ten at a time and the server searches
+ * lesson and activity titles.
+ */
 export function ActivitiesPage() {
   const { catalog } = useStudio();
-  const lessons = useAsync(() => studioApi.lessons(), []);
-  const subjectLessons = (lessons.data ?? []).filter((l) => l.subjectId === catalog.subject.id);
-  const composer = useComposer(!!lessons.data && subjectLessons.length === 0);
+  const { params, page, update, setPage } = useUrlFilters();
+  const text = params.get("q") ?? "";
+  const search = useCallback((q: string) => update({ q: q || undefined }), [update]);
+  const lessons = useAsync(
+    () => studioApi.lessons(catalog.subject.id, { text, page, size: PAGE_SIZE }),
+    [catalog.subject.id, text, page],
+  );
+  const data = lessons.data;
+  const filtered = Boolean(text);
+  const composer = useComposer(data?.total === 0 && !filtered);
+  usePageInRange(data, setPage);
 
   return (
     <div className="flex flex-col gap-5">
@@ -34,14 +52,42 @@ export function ActivitiesPage() {
           }}
         />
       )}
-      {lessons.isLoading && !lessons.data && <LoadingState label="Loading activities…" />}
+      {(filtered || (data && data.total > 0)) && (
+        <div role="search" aria-label="Find activities" className="flex flex-col gap-2">
+          <SearchField
+            label="Search lessons and activities"
+            value={text}
+            onSearch={search}
+            placeholder="Search lessons and activities"
+            className="max-w-xl"
+          />
+          {data && (
+            <ListCount
+              total={data.total}
+              noun={["lesson", "lessons"]}
+              filtered={filtered}
+              onClear={() => update({ q: undefined })}
+            />
+          )}
+        </div>
+      )}
+      {lessons.isLoading && !data && <LoadingState label="Loading activities…" />}
       {lessons.error && <ErrorState error={lessons.error} onRetry={lessons.refetch} />}
-      {lessons.data && subjectLessons.length === 0 && !composer.open && (
+      {data && data.total === 0 && !filtered && !composer.open && (
         <EmptyState title="No lessons yet" description="Add a lesson, then build activities inside it." />
       )}
-      {subjectLessons.map((lesson) => (
-        <LessonPanel key={lesson.id} lesson={lesson} />
-      ))}
+      {data && data.total === 0 && filtered && <p className="text-sm text-ink-soft">No lesson or activity matches “{text}”.</p>}
+      {data && data.items.length > 0 && (
+        <div
+          className={cn("flex flex-col gap-5 transition-opacity", lessons.isLoading && "opacity-60")}
+          aria-busy={lessons.isLoading}
+        >
+          {data.items.map((lesson) => (
+            <LessonPanel key={lesson.id} lesson={lesson} />
+          ))}
+          <Pager label="Lessons" page={data.page} size={data.size} total={data.total} onPage={setPage} />
+        </div>
+      )}
     </div>
   );
 }
@@ -61,7 +107,12 @@ function LessonPanel({ lesson }: { lesson: LessonSummary }) {
       }
     >
       {adding && <NewActivity lessonId={lesson.id} onCancel={() => setAdding(false)} />}
-      {lesson.activities.length === 0 && !adding && <p className="text-sm text-ink-soft">No activities in this lesson yet.</p>}
+      {lesson.activityCount === 0 && !adding && <p className="text-sm text-ink-soft">No activities in this lesson yet.</p>}
+      {lesson.activities.length < lesson.activityCount && (
+        <p className="mb-1 text-xs text-ink-faint">
+          {lesson.activities.length} of {lesson.activityCount} activities in this lesson match.
+        </p>
+      )}
       <ul className="flex flex-col divide-y divide-line">
         {lesson.activities.map((activity) => {
           const status = currentStatus(activity.versions);

@@ -74,8 +74,15 @@ export const learningApi = {
   enrollments: (childId: string) => apiClient.get<EnrollmentOverview[]>(`/children/${childId}/enrollments`),
   journey: (enrollmentId: string) => apiClient.get<Journey>(`/enrollments/${enrollmentId}/journey`),
   skills: (childId: string) => apiClient.get<CurriculumProgress[]>(`/children/${childId}/skills`),
-  history: (childId: string, limit = 20) =>
-    apiClient.get<CompletedActivity[]>(`/children/${childId}/activity-history?limit=${limit}`),
+  /** Newest first; with `after` (the last one shown), the ones finished before it. */
+  history: (childId: string, limit = 20, after?: CompletedActivity) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (after) {
+      params.set("before", after.completedAt);
+      params.set("beforeId", after.attemptId);
+    }
+    return apiClient.get<CompletedActivity[]>(`/children/${childId}/activity-history?${params}`);
+  },
 };
 
 // curriculum/web/CurriculumController.java

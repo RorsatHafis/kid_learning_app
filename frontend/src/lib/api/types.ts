@@ -7,6 +7,14 @@
 
 /** No CHILD value — children are accessed through a parent's family
  * membership, never their own account. See PlatformRole's javadoc. */
+/** One page of a server-paged list (common/web/PageResponse.java). `page` is zero-based. */
+export interface Page<T> {
+  items: T[];
+  page: number;
+  size: number;
+  total: number;
+}
+
 export type PlatformRole = "PARENT" | "TEACHER" | "PRINCIPAL" | "ADMIN";
 
 export interface AuthResponse {

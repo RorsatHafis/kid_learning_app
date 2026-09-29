@@ -52,21 +52,25 @@ shown honestly as not yet available.
 |---|---|---|
 | Activity log (admin) | every event | keyset pages, filter by kind/account (done, ADM1) |
 | Account history (admin) | per account | keyset "Show older" (done) |
-| Accounts (admin) | families + staff | server search by email, page of 25 |
-| Staff (admin) | staff | server search + role filter, pages of 25 |
-| Studio questions | authoring | server search + type/status filter, pages of 25 |
-| Studio activities | authoring | grouped by lesson; lessons paged; activity search |
+| Accounts (admin) | families + staff | **exact email only** (done): families are never browsable, a support lookup needs the address |
+| Staff (admin) | staff | server search by part of an email + role filter, pages of 25 (done, X3) |
+| Studio questions | authoring | server search + type/latest-version/skill filters, pages of 25 (done, X3); the activity editor's picker searches published questions on the server |
+| Studio activities | authoring | lessons of a subject, 10 per page; search matches lesson and activity titles (done, X3) |
 | Studio subjects, curricula | tens | full list (small by nature) |
 | Parent: children | a family | full list (a family is small) |
-| Parent: recent activity | per child | "Show earlier" in pages of 10 |
+| Parent: recent activity | per child | "Show earlier" in pages of 10, keyset cursor (done, X3) |
 | Parent: skills | per curriculum | grouped by chapter (bounded by the curriculum) |
 | Child: journey | per path | chapters, with only the current chapter open |
 | School: classes, teachers | a school | search once more than 12; otherwise full list |
 | Class roster | a class (≈40) | full list with a name filter |
 
 Server-side paging uses one shape everywhere: `?page=&size=` (size ≤ 100) returning
-`{ items, page, size, total }`, except where rows are appended continuously (audit), which keeps
-keyset cursors.
+`{ items, page, size, total }` (`common/web/PageResponse`), except where rows are appended
+continuously (audit, a child's history), which keep keyset cursors. Free text is matched as a
+literal "contains" (`common/web/SearchText`: a typed `%` or `_` is only a character). In the UI,
+filters and the page live in the address (`useUrlFilters`), so going back returns to the same page
+of the same search; `SearchField` asks the server once typing pauses; `Pager` shows "26–50 of 312".
+The school rows wait for the school wave (§4), where those screens change anyway.
 
 ## 3. Subscriptions and entitlements
 

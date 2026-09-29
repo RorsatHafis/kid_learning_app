@@ -93,6 +93,36 @@ class AdminProvisioningIntegrationTests {
         }
     }
 
+    @Test
+    void staffAreSearchedByEmailAndRoleAPageAtATimeWithoutFamilies() throws Exception {
+        String admin = token(PlatformRole.ADMIN);
+        String tag = "staffsearch-" + UUID.randomUUID().toString().substring(0, 8);
+        accountRepository.saveAndFlush(Account.register(tag + "-a@example.com", passwordEncoder.encode(PASSWORD), PlatformRole.TEACHER));
+        accountRepository.saveAndFlush(Account.register(tag + "-b@example.com", passwordEncoder.encode(PASSWORD), PlatformRole.PRINCIPAL));
+        accountRepository.saveAndFlush(Account.register(tag + "-c@example.com", passwordEncoder.encode(PASSWORD), PlatformRole.PARENT));
+
+        // A search matches part of an email, whatever its case, and never lists a family's account.
+        JsonNode found = json(get("/api/v1/admin/staff?q=" + tag.toUpperCase(), admin), 200);
+        assertThat(found.get("total").asLong()).isEqualTo(2);
+        assertThat(found.get("items").get(0).get("email").asString()).isEqualTo(tag + "-a@example.com");
+        assertThat(found.get("items").get(1).get("email").asString()).isEqualTo(tag + "-b@example.com");
+
+        JsonNode principals = json(get("/api/v1/admin/staff?q=" + tag + "&role=PRINCIPAL", admin), 200);
+        assertThat(principals.get("total").asLong()).isEqualTo(1);
+        assertThat(principals.get("items").get(0).get("platformRole").asString()).isEqualTo("PRINCIPAL");
+
+        JsonNode second = json(get("/api/v1/admin/staff?q=" + tag + "&size=1&page=1", admin), 200);
+        assertThat(second.get("items")).hasSize(1);
+        assertThat(second.get("items").get(0).get("email").asString()).isEqualTo(tag + "-b@example.com");
+
+        // A wildcard typed into the search is only a character.
+        assertThat(json(get("/api/v1/admin/staff?q=" + tag.replace("-", "_"), admin), 200).get("total").asLong()).isZero();
+
+        assertThat(get("/api/v1/admin/staff?role=PARENT", admin).statusCode()).isEqualTo(400);
+        assertThat(get("/api/v1/admin/staff?size=500", admin).statusCode()).isEqualTo(400);
+        assertThat(get("/api/v1/admin/staff", token(PlatformRole.PRINCIPAL)).statusCode()).isEqualTo(403);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private String token(PlatformRole role) throws Exception {
@@ -122,6 +152,14 @@ class AdminProvisioningIntegrationTests {
     private static JsonNode json(HttpResponse<String> response, int expectedStatus) {
         assertThat(response.statusCode()).as(response.body()).isEqualTo(expectedStatus);
         return JSON.readTree(response.body());
+    }
+
+    private HttpResponse<String> get(String path, String bearer) throws Exception {
+        HttpRequest.Builder req = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).GET();
+        if (bearer != null) {
+            req.header("Authorization", "Bearer " + bearer);
+        }
+        return http.send(req.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> post(String path, String body, String bearer) throws Exception {

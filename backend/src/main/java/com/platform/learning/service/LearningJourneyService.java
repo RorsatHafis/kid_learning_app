@@ -244,12 +244,23 @@ public class LearningJourneyService {
 
     @Transactional(readOnly = true)
     public List<CompletedActivity> completedActivities(UUID childId, int limit) {
+        return completedActivities(childId, limit, null, null);
+    }
+
+    /**
+     * A child's completed activities, newest first. With a cursor (the completion time and id of
+     * the last one already shown), the ones completed before it; the page is read in the database,
+     * not cut from the whole history.
+     */
+    @Transactional(readOnly = true)
+    public List<CompletedActivity> completedActivities(UUID childId, int limit, Instant before, UUID beforeId) {
+        if ((before == null) != (beforeId == null)) {
+            throw new IllegalArgumentException("before and beforeId go together");
+        }
         Lookups lookups = new Lookups(childId);
-        List<ActivityAttempt> page = lookups.attempts().stream()
-                .filter(attempt -> attempt.getStatus() == ActivityAttemptStatus.COMPLETED)
-                .sorted(Comparator.comparing(ActivityAttempt::getCompletedAt).reversed())
-                .limit(limit)
-                .toList();
+        List<ActivityAttempt> page = before == null
+                ? activityAttemptRepository.findCompletedNewestFirst(childId, org.springframework.data.domain.Limit.of(limit))
+                : activityAttemptRepository.findCompletedBefore(childId, before, beforeId, org.springframework.data.domain.Limit.of(limit));
         // One query each for the whole page, not one per attempt (ReadQueryScalingIntegrationTests).
         Map<UUID, List<AnswerRecord>> answers = page.isEmpty() ? Map.of()
                 : answerRecordRepository.findByActivityAttemptIdIn(page.stream().map(ActivityAttempt::getId).toList()).stream()

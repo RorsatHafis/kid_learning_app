@@ -8,12 +8,14 @@ import com.platform.learning.service.LearningJourneyService.EnrollmentOverview;
 import com.platform.learning.service.LearningJourneyService.Journey;
 import com.platform.learning.service.SkillProgressService;
 import com.platform.learning.service.SkillProgressService.CurriculumProgress;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,12 +71,14 @@ public class LearningJourneyController {
     @GetMapping("/api/v1/children/{childId}/activity-history")
     public List<CompletedActivity> history(@PathVariable UUID childId,
                                            @RequestParam(defaultValue = "20") int limit,
+                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant before,
+                                           @RequestParam(required = false) UUID beforeId,
                                            @AuthenticationPrincipal UUID accountId) {
         familyAccessGuard.requireChildAccess(accountId, childId);
         if (limit < 1 || limit > MAX_HISTORY) {
             throw new IllegalArgumentException("limit must be between 1 and " + MAX_HISTORY);
         }
-        return learningJourneyService.completedActivities(childId, limit);
+        return learningJourneyService.completedActivities(childId, limit, before, beforeId);
     }
 
 }

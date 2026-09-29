@@ -5,7 +5,9 @@ import com.platform.audit.entity.AuditActorType;
 import com.platform.audit.service.AuditService;
 import com.platform.common.entity.CatalogStatus;
 import com.platform.common.entity.PublicationStatus;
+import com.platform.common.web.PageResponse;
 import com.platform.common.web.ResourceNotFoundException;
+import com.platform.common.web.SearchText;
 import com.platform.content.entity.Activity;
 import com.platform.content.entity.ActivityItem;
 import com.platform.content.entity.ActivitySkill;
@@ -20,6 +22,7 @@ import com.platform.content.entity.QuestionVersion;
 import com.platform.content.repository.ActivityItemRepository;
 import com.platform.content.repository.ActivityRepository;
 import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.content.repository.LessonRepository;
 import com.platform.content.repository.QuestionRepository;
 import com.platform.content.repository.QuestionSkillRepository;
@@ -102,6 +105,7 @@ public class StudioService {
     private final QuestionService questionService;
     private final QuestionSkillRepository questionSkills;
     private final QuestionVersionRepository questionVersions;
+    private final ActivityVersionRepository activityVersions;
 
     public StudioService(ContentAccessGuard guard, AuditService audit, ContentValidator validator,
                          SubjectRepository subjects, SubjectService subjectService, AgeHubRepository ageHubs,
@@ -113,7 +117,8 @@ public class StudioService {
                          ActivityRepository activities, ActivityService activityService,
                          ActivitySkillRepository activitySkills, ActivityItemRepository activityItems,
                          QuestionRepository questions, QuestionService questionService,
-                         QuestionSkillRepository questionSkills, QuestionVersionRepository questionVersions) {
+                         QuestionSkillRepository questionSkills, QuestionVersionRepository questionVersions,
+                         ActivityVersionRepository activityVersions) {
         this.guard = guard;
         this.audit = audit;
         this.validator = validator;
@@ -140,6 +145,7 @@ public class StudioService {
         this.questionService = questionService;
         this.questionSkills = questionSkills;
         this.questionVersions = questionVersions;
+        this.activityVersions = activityVersions;
     }
 
     // ================================================================== catalog
@@ -316,21 +322,44 @@ public class StudioService {
 
     // ================================================================== lessons & activities
 
+    /**
+     * One page of the caller's lessons, optionally in one subject, each with its activities. A search
+     * matches lesson and activity titles; a lesson found through its activities lists just those.
+     */
     @Transactional(readOnly = true)
-    public List<LessonSummary> lessons(UUID accountId) {
+    public PageResponse<LessonSummary> lessons(UUID accountId, UUID subjectId, String text, PageResponse.Request request) {
         UUID owner = guard.authoringOwner(guard.requireAuthor(accountId));
-        List<Lesson> owned = owner == null ? lessons.findByOwnerAccountIdIsNull() : lessons.findByOwnerAccountId(owner);
-        return owned.stream()
-                .filter(lesson -> lesson.getStatus() == CatalogStatus.ACTIVE)
-                .sorted(Comparator.comparing(Lesson::getTitle, String.CASE_INSENSITIVE_ORDER))
-                .map(lesson -> new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(),
-                        activities.findByLessonId(lesson.getId()).stream()
-                                .sorted(Comparator.comparing(Activity::getTitle, String.CASE_INSENSITIVE_ORDER))
-                                .map(activity -> new ActivitySummary(activity.getId(), activity.getTitle(),
-                                        activity.getActivityType(), activitySkillIds(activity.getId()),
-                                        activityService.listVersions(activity.getId()).stream().map(VersionSummary::of).toList()))
-                                .toList()))
-                .toList();
+        String pattern = SearchText.containsPattern(text);
+        long total = lessons.countStudio(owner, subjectId, pattern);
+        List<UUID> ids = total == 0 ? List.of() : lessons.searchStudio(owner, subjectId, pattern, request.size(), request.offset());
+        if (ids.isEmpty()) {
+            return new PageResponse<>(List.of(), request.page(), request.size(), total);
+        }
+        Map<UUID, Lesson> byId = lessons.findAllById(ids).stream()
+                .collect(java.util.stream.Collectors.toMap(Lesson::getId, lesson -> lesson));
+        List<Activity> all = activities.findByLessonIdIn(ids);
+        List<UUID> activityIds = all.stream().map(Activity::getId).toList();
+        Map<UUID, List<UUID>> skillsOf = activityIds.isEmpty() ? Map.of() : activitySkills.findByActivityIdIn(activityIds).stream()
+                .collect(java.util.stream.Collectors.groupingBy(ActivitySkill::getActivityId,
+                        java.util.stream.Collectors.mapping(ActivitySkill::getSkillId, java.util.stream.Collectors.toList())));
+        Map<UUID, List<VersionSummary>> versionsOf = activityIds.isEmpty() ? Map.of()
+                : activityVersions.findByActivityIdInOrderByVersionNumberAsc(activityIds).stream()
+                .collect(java.util.stream.Collectors.groupingBy(ActivityVersion::getActivityId,
+                        java.util.stream.Collectors.mapping(VersionSummary::of, java.util.stream.Collectors.toList())));
+        Map<UUID, List<Activity>> byLesson = all.stream().collect(java.util.stream.Collectors.groupingBy(Activity::getLessonId));
+        String needle = pattern == null ? null : text.strip().toLowerCase(java.util.Locale.ROOT);
+        List<LessonSummary> page = ids.stream().map(byId::get).filter(Objects::nonNull).map(lesson -> {
+            List<Activity> own = byLesson.getOrDefault(lesson.getId(), List.of());
+            boolean lessonMatches = needle == null || lesson.getTitle().toLowerCase(java.util.Locale.ROOT).contains(needle);
+            List<ActivitySummary> shown = own.stream()
+                    .filter(activity -> lessonMatches || activity.getTitle().toLowerCase(java.util.Locale.ROOT).contains(needle))
+                    .sorted(Comparator.comparing(Activity::getTitle, String.CASE_INSENSITIVE_ORDER))
+                    .map(activity -> new ActivitySummary(activity.getId(), activity.getTitle(), activity.getActivityType(),
+                            skillsOf.getOrDefault(activity.getId(), List.of()), versionsOf.getOrDefault(activity.getId(), List.of())))
+                    .toList();
+            return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), shown, own.size());
+        }).toList();
+        return new PageResponse<>(page, request.page(), request.size(), total);
     }
 
     @Transactional
@@ -338,7 +367,7 @@ public class StudioService {
         Account author = guard.requireAuthor(accountId);
         subjectService.getById(request.subjectId());
         Lesson lesson = lessonService.createOwnedLesson(request.subjectId(), request.title().strip(), guard.authoringOwner(author));
-        return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), List.of());
+        return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), List.of(), 0);
     }
 
     /** An activity with its skills and a first draft, in one step. Activities are PRACTICE: no other type is defined yet. */
@@ -436,25 +465,44 @@ public class StudioService {
 
     // ================================================================== questions
 
+    /**
+     * One page of the caller's question bank for a subject, searched and filtered in the database.
+     * A subject's bank grows with every activity written for it, so it is never loaded whole.
+     */
     @Transactional(readOnly = true)
-    public List<QuestionSummary> questions(UUID accountId, UUID subjectId) {
+    public PageResponse<QuestionSummary> questions(UUID accountId, UUID subjectId, QuestionFilter filter,
+                                                   PageResponse.Request request) {
         UUID owner = guard.authoringOwner(guard.requireAuthor(accountId));
-        List<Question> owned = owner == null
-                ? questions.findBySubjectIdAndOwnerAccountIdIsNull(subjectId)
-                : questions.findBySubjectIdAndOwnerAccountId(subjectId, owner);
-        return owned.stream()
-                .filter(question -> question.getStatus() == CatalogStatus.ACTIVE)
-                .map(question -> {
-                    List<QuestionVersion> versions = questionService.listVersions(question.getId());
-                    QuestionVersion latest = versions.isEmpty() ? null : versions.get(versions.size() - 1);
-                    UUID publishedId = versions.stream().filter(v -> v.getStatus() == PublicationStatus.PUBLISHED)
-                            .map(QuestionVersion::getId).findFirst().orElse(null);
-                    return new QuestionSummary(question.getId(), question.getSubjectId(), question.getQuestionType(),
-                            questionSkillIds(question.getId()), latest == null ? null : latest.getPrompt(), publishedId,
-                            versions.stream().map(VersionSummary::of).toList());
-                })
-                .sorted(Comparator.comparing(QuestionSummary::latestPrompt, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
-                .toList();
+        String type = filter.type() == null ? null : filter.type().name();
+        String status = filter.status() == null ? null : filter.status().name();
+        String pattern = SearchText.containsPattern(filter.text());
+        long total = questions.countBank(subjectId, owner, type, status, filter.skillId(), filter.live(), pattern);
+        List<UUID> ids = total == 0 ? List.of() : questions.searchBank(subjectId, owner, type, status, filter.skillId(),
+                filter.live(), pattern, request.size(), request.offset());
+        return new PageResponse<>(questionSummaries(ids), request.page(), request.size(), total);
+    }
+
+    /** Summaries for the given questions, in the given order, in three queries whatever the page size. */
+    private List<QuestionSummary> questionSummaries(List<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, Question> byId = questions.findAllById(ids).stream()
+                .collect(java.util.stream.Collectors.toMap(Question::getId, question -> question));
+        Map<UUID, List<QuestionVersion>> versionsOf = questionVersions.findByQuestionIdInOrderByVersionNumberAsc(ids).stream()
+                .collect(java.util.stream.Collectors.groupingBy(QuestionVersion::getQuestionId));
+        Map<UUID, List<UUID>> skillsOf = questionSkills.findByQuestionIdIn(ids).stream()
+                .collect(java.util.stream.Collectors.groupingBy(QuestionSkill::getQuestionId,
+                        java.util.stream.Collectors.mapping(QuestionSkill::getSkillId, java.util.stream.Collectors.toList())));
+        return ids.stream().map(byId::get).filter(Objects::nonNull).map(question -> {
+            List<QuestionVersion> versions = versionsOf.getOrDefault(question.getId(), List.of());
+            QuestionVersion latest = versions.isEmpty() ? null : versions.get(versions.size() - 1);
+            UUID publishedId = versions.stream().filter(v -> v.getStatus() == PublicationStatus.PUBLISHED)
+                    .map(QuestionVersion::getId).findFirst().orElse(null);
+            return new QuestionSummary(question.getId(), question.getSubjectId(), question.getQuestionType(),
+                    skillsOf.getOrDefault(question.getId(), List.of()), latest == null ? null : latest.getPrompt(), publishedId,
+                    versions.stream().map(VersionSummary::of).toList());
+        }).toList();
     }
 
     @Transactional(readOnly = true)

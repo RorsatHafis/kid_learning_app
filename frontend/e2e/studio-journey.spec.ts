@@ -38,7 +38,8 @@ test("studio: author, check, publish; a child plays exactly what was published",
 
   // A question: the checks refuse an incomplete draft until it is complete.
   await studioTab(page, "Questions");
-  await page.getByLabel("Type").selectOption({ label: "Number answer" });
+  // The bank's filters have a Type too: this is the new question's.
+  await page.getByRole("region", { name: "New question" }).getByLabel("Type").selectOption({ label: "Number answer" });
   await page.getByLabel("Question the child sees").fill(prompt);
   await page.getByLabel("Correct answer (a number)").fill("3");
   await page.getByRole("checkbox", { name: skill }).check();

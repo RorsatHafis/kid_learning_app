@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { ActivityItem, PlatformRole, QuestionType } from "./types";
+import type { ActivityItem, Page, PlatformRole, QuestionType } from "./types";
 
 // ---- content/studio/StudioDtos.java ----
 // Author-facing contract: carries answer keys, and every read is limited server-side
@@ -84,7 +84,10 @@ export interface LessonSummary {
   id: string;
   title: string;
   subjectId: string;
+  /** Only the activities a search found, when it found the lesson through them. */
   activities: ActivitySummary[];
+  /** Every activity in the lesson. */
+  activityCount: number;
 }
 
 export interface ItemDetail {
@@ -145,6 +148,17 @@ export interface QuestionSummary {
   latestPrompt: string | null;
   publishedVersionId: string | null;
   versions: VersionSummary[];
+}
+
+/** The question bank's filters; `live`: only questions with a published version. */
+export interface QuestionQuery {
+  text?: string;
+  type?: QuestionType;
+  status?: PublicationStatus;
+  skillId?: string;
+  live?: boolean;
+  page?: number;
+  size?: number;
 }
 
 export interface QuestionDetail {
@@ -225,7 +239,14 @@ export const studioApi = {
   publishCurriculumVersion: (versionId: string) =>
     apiClient.post<CurriculumDetail>(`${S}/curriculum-versions/${versionId}/publish`),
 
-  lessons: () => apiClient.get<LessonSummary[]>(`${S}/lessons`),
+  /** One page of the caller's lessons in a subject; `text` matches lesson and activity titles. */
+  lessons: (subjectId: string, query: { text?: string; page?: number; size?: number } = {}) => {
+    const params = new URLSearchParams({ subjectId });
+    if (query.text?.trim()) params.set("q", query.text.trim());
+    params.set("page", String(query.page ?? 0));
+    params.set("size", String(query.size ?? 10));
+    return apiClient.get<Page<LessonSummary>>(`${S}/lessons?${params}`);
+  },
   createLesson: (body: { subjectId: string; title: string }) => apiClient.post<LessonSummary>(`${S}/lessons`, body),
   createActivity: (lessonId: string, body: { title: string; skillIds: string[] }) =>
     apiClient.post<ActivityDetail>(`${S}/lessons/${lessonId}/activities`, body),
@@ -247,8 +268,18 @@ export const studioApi = {
   publishActivityVersion: (versionId: string) =>
     apiClient.post<ActivityDetail>(`${S}/activity-versions/${versionId}/publish`),
 
-  questions: (subjectId: string) =>
-    apiClient.get<QuestionSummary[]>(`${S}/questions?subjectId=${encodeURIComponent(subjectId)}`),
+  /** One page of the caller's question bank for a subject, searched and filtered by the server. */
+  questions: (subjectId: string, query: QuestionQuery = {}) => {
+    const params = new URLSearchParams({ subjectId });
+    if (query.text?.trim()) params.set("q", query.text.trim());
+    if (query.type) params.set("type", query.type);
+    if (query.status) params.set("status", query.status);
+    if (query.skillId) params.set("skillId", query.skillId);
+    if (query.live) params.set("live", "true");
+    params.set("page", String(query.page ?? 0));
+    params.set("size", String(query.size ?? 25));
+    return apiClient.get<Page<QuestionSummary>>(`${S}/questions?${params}`);
+  },
   question: (id: string) => apiClient.get<QuestionDetail>(`${S}/questions/${id}`),
   createQuestion: (body: QuestionDraftInput & { subjectId: string; questionType: QuestionType; skillIds: string[] }) =>
     apiClient.post<QuestionDetail>(`${S}/questions`, body),
@@ -267,6 +298,9 @@ export const studioApi = {
 
 // ---- admin/web/AdminController.java ----
 
+/** The platform roles that are staff; families are never listed with them. */
+export type StaffRole = "TEACHER" | "PRINCIPAL" | "ADMIN";
+
 export interface StaffAccount {
   id: string;
   email: string;
@@ -276,7 +310,15 @@ export interface StaffAccount {
 }
 
 export const adminApi = {
-  staff: () => apiClient.get<StaffAccount[]>("/admin/staff"),
+  /** One page of staff accounts (never families), by email; `text` matches part of an email. */
+  staff: (query: { text?: string; role?: StaffRole; page?: number; size?: number } = {}) => {
+    const params = new URLSearchParams();
+    if (query.text?.trim()) params.set("q", query.text.trim());
+    if (query.role) params.set("role", query.role);
+    params.set("page", String(query.page ?? 0));
+    params.set("size", String(query.size ?? 25));
+    return apiClient.get<Page<StaffAccount>>(`/admin/staff?${params}`);
+  },
   pendingPrincipals: () => apiClient.get<StaffAccount[]>("/admin/principals/pending"),
   // No password: the person chooses their own from an emailed setup link (admin/service/AdminService.java).
   createStaff: (body: { email: string; role: "TEACHER" | "PRINCIPAL" }) =>

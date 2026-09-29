@@ -16,6 +16,8 @@ public interface QuestionVersionRepository extends JpaRepository<QuestionVersion
 
     List<QuestionVersion> findByQuestionIdOrderByVersionNumberAsc(UUID questionId);
 
+    List<QuestionVersion> findByQuestionIdInOrderByVersionNumberAsc(java.util.Collection<UUID> questionIds);
+
     Optional<QuestionVersion> findFirstByQuestionIdAndStatusOrderByVersionNumberDesc(UUID questionId, PublicationStatus status);
 
 }

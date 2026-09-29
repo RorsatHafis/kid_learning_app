@@ -10,6 +10,7 @@ import {
   type ValidationReport,
 } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
@@ -292,9 +293,11 @@ function DetailsForm({
   );
 }
 
+/** How many published questions the picker lists at once; search finds the rest. */
+const PICK_SIZE = 20;
+
 function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail; busy: boolean; onSave: (ids: string[]) => Promise<boolean> }) {
   const { catalog } = useStudio();
-  const questions = useAsync(() => studioApi.questions(catalog.subject.id), [catalog.subject.id]);
   const [items, setItems] = useState<DraftItem[]>(() =>
     version.items.map((i) => ({
       questionVersionId: i.questionVersionId,
@@ -305,17 +308,21 @@ function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail
   );
   const [dirty, setDirty] = useState(false);
   const [query, setQuery] = useState("");
+  const settledQuery = useDebouncedValue(query);
+  // The bank can hold thousands of questions: the server finds the published ones that match.
+  const questions = useAsync(
+    () => studioApi.questions(catalog.subject.id, { text: settledQuery, live: true, size: PICK_SIZE }),
+    [catalog.subject.id, settledQuery],
+  );
 
   const choosable = useMemo(
     () =>
-      (questions.data ?? []).filter(
-        (q: QuestionSummary) =>
-          q.publishedVersionId &&
-          !items.some((i) => i.questionVersionId === q.publishedVersionId) &&
-          (!query.trim() || (q.latestPrompt ?? "").toLowerCase().includes(query.trim().toLowerCase())),
+      (questions.data?.items ?? []).filter(
+        (q: QuestionSummary) => q.publishedVersionId && !items.some((i) => i.questionVersionId === q.publishedVersionId),
       ),
-    [questions.data, items, query],
+    [questions.data, items],
   );
+  const moreThanShown = questions.data ? questions.data.total > questions.data.items.length : false;
 
   function update(next: DraftItem[]) {
     setItems(next);
@@ -384,8 +391,13 @@ function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail
             className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
           />
           {questions.isLoading && !questions.data && <p className="text-sm text-ink-soft">Loading questions…</p>}
-          {questions.data && choosable.length === 0 && (
-            <p className="text-sm text-ink-soft">No other published questions{query ? " match" : ""}. Publish one in Questions first.</p>
+          {questions.error && <ErrorState error={questions.error} onRetry={questions.refetch} />}
+          {questions.data && choosable.length === 0 && !moreThanShown && (
+            <p className="text-sm text-ink-soft">
+              {settledQuery.trim()
+                ? "No other published question matches."
+                : "No other published questions. Publish one in Questions first."}
+            </p>
           )}
           <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto">
             {choosable.map((q) => (
@@ -408,6 +420,12 @@ function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail
               </li>
             ))}
           </ul>
+          {moreThanShown && questions.data && (
+            <p className="text-xs text-ink-soft" aria-live="polite">
+              Showing the first {questions.data.items.length} of {questions.data.total} published questions
+              {settledQuery.trim() ? " that match" : ""}. Search to find others.
+            </p>
+          )}
         </div>
       </div>
     </Panel>

@@ -22,6 +22,27 @@ public interface ActivityAttemptRepository extends JpaRepository<ActivityAttempt
 
     List<ActivityAttempt> findByChildIdOrderByStartedAtDesc(UUID childId);
 
+    /** A child's completed attempts, newest first: the first page of their history. */
+    @org.springframework.data.jpa.repository.Query("""
+            select a from ActivityAttempt a
+            where a.childId = :childId and a.status = com.platform.learning.entity.ActivityAttemptStatus.COMPLETED
+            order by a.completedAt desc, a.id desc
+            """)
+    List<ActivityAttempt> findCompletedNewestFirst(@org.springframework.data.repository.query.Param("childId") UUID childId,
+                                                   org.springframework.data.domain.Limit limit);
+
+    /** The page of a child's history after (older than) a given attempt: a keyset cursor, stable while new attempts arrive. */
+    @org.springframework.data.jpa.repository.Query("""
+            select a from ActivityAttempt a
+            where a.childId = :childId and a.status = com.platform.learning.entity.ActivityAttemptStatus.COMPLETED
+              and (a.completedAt < :before or (a.completedAt = :before and a.id < :beforeId))
+            order by a.completedAt desc, a.id desc
+            """)
+    List<ActivityAttempt> findCompletedBefore(@org.springframework.data.repository.query.Param("childId") UUID childId,
+                                              @org.springframework.data.repository.query.Param("before") Instant before,
+                                              @org.springframework.data.repository.query.Param("beforeId") UUID beforeId,
+                                              org.springframework.data.domain.Limit limit);
+
     List<ActivityAttempt> findByChildIdAndActivityVersionId(UUID childId, UUID activityVersionId);
 
     List<ActivityAttempt> findByLearningPathItemId(UUID learningPathItemId);

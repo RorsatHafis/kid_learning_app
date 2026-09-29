@@ -1,55 +1,107 @@
-import { useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { QuestionType } from "@/lib/api/types";
-import { studioApi } from "@/lib/api/studio";
+import { studioApi, type PublicationStatus } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { usePageInRange, useUrlFilters } from "@/lib/hooks/useUrlFilters";
+import { ListCount, Pager } from "@/components/ui/Pager";
+import { SearchField } from "@/components/ui/SearchField";
 import { cn } from "@/lib/utils/cn";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { QuestionDraftForm } from "./QuestionDraftForm";
 import { AUTHORABLE_TYPES, currentStatus, errorText, QUESTION_TYPE_LABEL, useStudio, useComposer } from "./studioLogic";
 import { ComposerPanel, NewButton, Panel, SelectField, StatusBadge } from "./shared";
 
+const PAGE_SIZE = 25;
+const STATUS_FILTERS: { value: PublicationStatus; label: string }[] = [
+  { value: "DRAFT", label: "Draft" },
+  { value: "PUBLISHED", label: "Published" },
+  { value: "RETIRED", label: "Retired" },
+];
+
+/**
+ * The subject's question bank. It grows with every activity written, so the server searches,
+ * filters and pages it; the filters live in the address, so going back to the list from a
+ * question returns to the same page of the same search.
+ */
 export function QuestionsPage() {
   const { catalog } = useStudio();
-  const questions = useAsync(() => studioApi.questions(catalog.subject.id), [catalog.subject.id]);
-  const [query, setQuery] = useState("");
-  const composer = useComposer(questions.data?.length === 0);
+  const { params, page, update, setPage } = useUrlFilters();
+  const text = params.get("q") ?? "";
+  const type = (params.get("type") as QuestionType | null) ?? undefined;
+  const status = (params.get("status") as PublicationStatus | null) ?? undefined;
+  const skillParam = params.get("skill");
+  const skillId = skillParam && catalog.skills.some((s) => s.id === skillParam) ? skillParam : undefined;
+  const search = useCallback((q: string) => update({ q: q || undefined }), [update]);
 
-  const shown = useMemo(
-    () =>
-      (questions.data ?? []).filter(
-        (q) => !query.trim() || (q.latestPrompt ?? "").toLowerCase().includes(query.trim().toLowerCase()),
-      ),
-    [questions.data, query],
+  const questions = useAsync(
+    () => studioApi.questions(catalog.subject.id, { text, type, status, skillId, page, size: PAGE_SIZE }),
+    [catalog.subject.id, text, type, status, skillId, page],
   );
+  const filtered = Boolean(text || type || status || skillId);
+  const composer = useComposer(questions.data?.total === 0 && !filtered);
+  const data = questions.data;
+
+  usePageInRange(data, setPage);
 
   return (
     <div className={cn("grid grid-cols-1 gap-6", composer.open && "lg:grid-cols-[minmax(0,1fr)_400px]")}>
-      <Panel
-        title={`Questions${questions.data ? ` (${questions.data.length})` : ""}`}
-        action={!composer.open && <NewButton label="New question" onClick={composer.show} />}
-      >
-        <label className="mb-4 flex h-10 items-center gap-2 rounded-[10px] border border-line-strong bg-white px-3 focus-within:border-tonle-600 focus-within:ring-2 focus-within:ring-tonle-600/15">
-          <Search size={16} className="text-ink-soft" aria-hidden />
-          <span className="sr-only">Search questions</span>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by question text"
-            className="w-full bg-transparent text-sm outline-none"
-          />
-        </label>
-        {questions.isLoading && !questions.data && <LoadingState label="Loading questions…" />}
+      <Panel title="Questions" action={!composer.open && <NewButton label="New question" onClick={composer.show} />}>
+        <div role="search" aria-label="Find questions" className="mb-4 flex flex-col gap-3">
+          <SearchField label="Search questions" value={text} onSearch={search} placeholder="Search by question text" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <SelectField label="Type" value={type ?? ""} onChange={(e) => update({ type: e.target.value || undefined })}>
+              <option value="">Any type</option>
+              {AUTHORABLE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {QUESTION_TYPE_LABEL[t]}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              label="Latest version"
+              value={status ?? ""}
+              onChange={(e) => update({ status: e.target.value || undefined })}
+            >
+              <option value="">Any status</option>
+              {STATUS_FILTERS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </SelectField>
+            <div className="col-span-2 sm:col-span-1">
+              <SelectField label="Skill" value={skillId ?? ""} onChange={(e) => update({ skill: e.target.value || undefined })}>
+                <option value="">Any skill</option>
+                {catalog.skills.map((skill) => (
+                  <option key={skill.id} value={skill.id}>
+                    {skill.name}
+                  </option>
+                ))}
+              </SelectField>
+            </div>
+          </div>
+          {data && (
+            <ListCount
+              total={data.total}
+              noun={["question", "questions"]}
+              filtered={filtered}
+              onClear={() => update({ q: undefined, type: undefined, status: undefined, skill: undefined })}
+            />
+          )}
+        </div>
+        {questions.isLoading && !data && <LoadingState label="Loading questions…" />}
         {questions.error && <ErrorState error={questions.error} onRetry={questions.refetch} />}
-        {questions.data && questions.data.length === 0 && (
+        {data && data.total === 0 && !filtered && (
           <EmptyState title="No questions yet" description="Write the first one in the New question form." />
         )}
-        {questions.data && questions.data.length > 0 && shown.length === 0 && (
-          <p className="text-sm text-ink-soft">No question matches “{query}”.</p>
-        )}
-        {shown.length > 0 && (
-          <div className="-mx-5 -mb-5 sm:-mx-6 sm:-mb-6">
+        {data && data.total === 0 && filtered && <p className="text-sm text-ink-soft">No question matches these filters.</p>}
+        {data && data.items.length > 0 && (
+          <div
+            className={cn("-mx-5 -mb-5 transition-opacity sm:-mx-6 sm:-mb-6", questions.isLoading && "opacity-60")}
+            aria-busy={questions.isLoading}
+          >
             <div
               aria-hidden
               className="hidden grid-cols-[minmax(0,1fr)_9rem_7.5rem_1.25rem] gap-4 border-y border-line bg-paper px-6 py-2 text-[0.8125rem] text-ink-faint sm:grid"
@@ -60,8 +112,8 @@ export function QuestionsPage() {
               <span />
             </div>
             <ul aria-label="Questions" className="divide-y divide-line border-t border-line sm:border-t-0">
-              {shown.map((q) => {
-                const status = currentStatus(q.versions);
+              {data.items.map((q) => {
+                const current = currentStatus(q.versions);
                 return (
                   <li key={q.id}>
                     <Link
@@ -73,12 +125,12 @@ export function QuestionsPage() {
                           {q.latestPrompt}
                         </span>
                         <span className="block text-xs text-ink-faint">
-                          {status.label}
+                          {current.label}
                           {q.skillIds.length === 0 && <span className="text-light-deep"> · no skill tagged</span>}
                         </span>
                       </span>
                       <span className="hidden text-sm text-ink-soft sm:block">{QUESTION_TYPE_LABEL[q.questionType]}</span>
-                      <span>{status.status && <StatusBadge status={status.status} />}</span>
+                      <span>{current.status && <StatusBadge status={current.status} />}</span>
                       <span className="hidden sm:block">
                         <ChevronRight size={16} className="text-ink-faint" aria-hidden />
                       </span>
@@ -87,6 +139,14 @@ export function QuestionsPage() {
                 );
               })}
             </ul>
+            <Pager
+              label="Questions"
+              page={data.page}
+              size={data.size}
+              total={data.total}
+              onPage={setPage}
+              className="border-t border-line px-6 py-3"
+            />
           </div>
         )}
       </Panel>

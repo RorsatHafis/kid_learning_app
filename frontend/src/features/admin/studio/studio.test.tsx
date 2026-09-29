@@ -9,6 +9,7 @@ import { ValidationPanel } from "./shared";
 import { QuestionDraftForm } from "./QuestionDraftForm";
 
 const api = vi.hoisted(() => ({
+  questions: vi.fn(),
   question: vi.fn(),
   previewQuestionVersion: vi.fn(),
   validateQuestionVersion: vi.fn(),
@@ -22,6 +23,7 @@ vi.mock("@/lib/api/studio", () => ({ studioApi: api }));
 
 // Imported after the mock so the editor talks to it.
 const { QuestionEditor } = await import("./QuestionEditor");
+const { QuestionsPage } = await import("./QuestionsPage");
 
 describe("studio helpers", () => {
   it("suggests catalog codes from names", () => {
@@ -209,5 +211,63 @@ describe("QuestionEditor", () => {
 
     expect(await screen.findByRole("button", { name: /Start a new version/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Publish" })).not.toBeInTheDocument();
+  });
+});
+
+function bankPage(page: number, total: number) {
+  const from = page * 25;
+  const count = Math.max(0, Math.min(25, total - from));
+  return {
+    page,
+    size: 25,
+    total,
+    items: Array.from({ length: count }, (_, i) => ({
+      id: `q${from + i}`,
+      subjectId: "subject",
+      questionType: "NUMERIC",
+      skillIds: ["skill"],
+      latestPrompt: `Question ${from + i + 1}`,
+      publishedVersionId: null,
+      versions: [{ id: `v${from + i}`, versionNumber: 1, status: "DRAFT", publishedAt: null }],
+    })),
+  };
+}
+
+describe("QuestionsPage", () => {
+  beforeEach(() => {
+    api.questions.mockReset();
+    api.questions.mockImplementation((_subject: string, query: { page?: number; type?: string }) =>
+      Promise.resolve(bankPage(query.page ?? 0, query.type ? 3 : 30)),
+    );
+  });
+
+  it("asks the server for each page and filter instead of loading the whole bank", async () => {
+    render(
+      <MemoryRouter initialEntries={["/questions"]}>
+        <Routes>
+          <Route element={<Outlet context={{ catalog, refreshCatalog: () => undefined }} />}>
+            <Route path="/questions" element={<QuestionsPage />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const user = userEvent.setup();
+
+    expect(await screen.findByText("1–25 of 30")).toBeInTheDocument();
+    expect(screen.getByText("30 questions")).toBeInTheDocument();
+    expect(api.questions).toHaveBeenLastCalledWith("subject", expect.objectContaining({ page: 0, size: 25 }));
+
+    await user.click(screen.getByRole("button", { name: /Next/ }));
+    expect(await screen.findByText("26–30 of 30")).toBeInTheDocument();
+    expect(screen.getByText("Question 30")).toBeInTheDocument();
+
+    // A filter starts again from the first page; one page of results needs no pager.
+    await user.selectOptions(screen.getByLabelText("Type"), "MATCHING");
+    expect(await screen.findByText("3 questions match")).toBeInTheDocument();
+    expect(api.questions).toHaveBeenLastCalledWith("subject", expect.objectContaining({ type: "MATCHING", page: 0 }));
+    expect(screen.queryByRole("navigation", { name: "Questions, pages" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(await screen.findByText("30 questions")).toBeInTheDocument();
   });
 });

@@ -94,7 +94,11 @@ public final class StudioDtos {
                                   List<VersionSummary> versions) {
     }
 
-    public record LessonSummary(UUID id, String title, UUID subjectId, List<ActivitySummary> activities) {
+    /**
+     * A lesson and its activities. When a search found the lesson through some of its activities,
+     * {@code activities} holds only those, and {@code activityCount} still counts them all.
+     */
+    public record LessonSummary(UUID id, String title, UUID subjectId, List<ActivitySummary> activities, int activityCount) {
     }
 
     public record ItemDetail(UUID questionVersionId, UUID questionId, QuestionType questionType, String prompt,
@@ -145,6 +149,10 @@ public final class StudioDtos {
 
     public record QuestionSummary(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,
                                   String latestPrompt, UUID publishedVersionId, List<VersionSummary> versions) {
+    }
+
+    /** The question bank's filters; every one is optional. {@code live}: has a published version. */
+    public record QuestionFilter(String text, QuestionType type, PublicationStatus status, UUID skillId, boolean live) {
     }
 
     public record QuestionDetail(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,

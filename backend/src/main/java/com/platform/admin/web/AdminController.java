@@ -1,8 +1,11 @@
 package com.platform.admin.web;
 
 import com.platform.admin.service.AdminService;
+import com.platform.common.web.PageResponse;
 import com.platform.identity.entity.Account;
+import com.platform.identity.entity.PlatformRole;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -40,7 +43,11 @@ public class AdminController {
     }
 
     @GetMapping("/staff")
-    public List<AdminDtos.StaffAccountResponse> listStaff(@AuthenticationPrincipal UUID adminId) {
-        return service.listStaff(adminId).stream().map(AdminDtos.StaffAccountResponse::of).toList();
+    public PageResponse<AdminDtos.StaffAccountResponse> listStaff(@AuthenticationPrincipal UUID adminId,
+                                                                  @RequestParam(required = false) @Size(max = 320) String q,
+                                                                  @RequestParam(required = false) PlatformRole role,
+                                                                  @RequestParam(defaultValue = "0") int page,
+                                                                  @RequestParam(defaultValue = "25") int size) {
+        return service.listStaff(adminId, q, role, new PageResponse.Request(page, size)).map(AdminDtos.StaffAccountResponse::of);
     }
 }

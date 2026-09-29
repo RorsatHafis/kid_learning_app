@@ -291,6 +291,34 @@ class LearningJourneyApiIntegrationTests {
                 .isIn(ObjectiveStanding.IN_PROGRESS, ObjectiveStanding.SECURE);
     }
 
+    @Test
+    void historyIsReadAPageAtATimeFromWhereTheLastPageEnded() {
+        Catalog catalog = catalog();
+        Learner learner = enroll(catalog);
+        play(learner, learningPathService.getNextItem(learner.pathId()), false);
+        play(learner, learningPathService.getNextItem(learner.pathId()), true);
+        play(learner, learningPathService.getNextItem(learner.pathId()), true);
+
+        var all = learningJourneyService.completedActivities(learner.childId(), 10);
+        assertThat(all).hasSize(3);
+        assertThat(all).isSortedAccordingTo(java.util.Comparator.comparing(
+                LearningJourneyService.CompletedActivity::completedAt).reversed());
+
+        var first = learningJourneyService.completedActivities(learner.childId(), 2);
+        var last = first.get(first.size() - 1);
+        var earlier = learningJourneyService.completedActivities(learner.childId(), 2, last.completedAt(), last.attemptId());
+        // Newest first, no repeats and nothing skipped across the two pages.
+        assertThat(java.util.stream.Stream.concat(first.stream(), earlier.stream())
+                .map(LearningJourneyService.CompletedActivity::attemptId).toList())
+                .containsExactlyElementsOf(all.stream().map(LearningJourneyService.CompletedActivity::attemptId).toList());
+        assertThat(learningJourneyService.completedActivities(learner.childId(), 2,
+                earlier.get(0).completedAt(), earlier.get(0).attemptId())).isEmpty();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                learningJourneyService.completedActivities(learner.childId(), 2, last.completedAt(), null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     // ------------------------------------------------------------------ fixture
 
     /** Skill with a prerequisite; the curriculum's objective covers the skill; activities of three questions each. */

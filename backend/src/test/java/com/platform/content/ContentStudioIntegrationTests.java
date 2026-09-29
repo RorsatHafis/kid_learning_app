@@ -337,8 +337,9 @@ class ContentStudioIntegrationTests {
         json(post("/api/v1/studio/question-versions/" + firstVersion(teacherQuestion) + "/publish", "", teacher), 200);
 
         // Lists are scoped to the caller.
-        assertThat(get("/api/v1/studio/lessons", teacher).body()).contains("My lesson").doesNotContain("Platform lesson");
-        assertThat(get("/api/v1/studio/lessons", admin).body()).contains("Platform lesson").doesNotContain("My lesson");
+        String subjectLessons = "/api/v1/studio/lessons?subjectId=" + catalog.subjectId();
+        assertThat(get(subjectLessons, teacher).body()).contains("My lesson").doesNotContain("Platform lesson");
+        assertThat(get(subjectLessons, admin).body()).contains("Platform lesson").doesNotContain("My lesson");
         assertThat(get("/api/v1/studio/questions?subjectId=" + catalog.subjectId(), teacher).body())
                 .contains("6 + 1").doesNotContain("5 + 5");
 
@@ -363,6 +364,105 @@ class ContentStudioIntegrationTests {
         String parent = registerParent();
         assertThat(get("/api/v1/studio/lessons", parent).statusCode()).isEqualTo(403);
         assertThat(get("/api/v1/studio/lessons", null).statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void theQuestionBankIsSearchedFilteredAndPagedOnTheServer() throws Exception {
+        String admin = staff(PlatformRole.ADMIN);
+        Catalog catalog = catalog(admin);
+        for (int n = 1; n <= 5; n++) {
+            JsonNode question = json(post("/api/v1/studio/questions", numeric(catalog.subjectId(), "Add 1 + " + n + " = ?",
+                    String.valueOf(n + 1), List.of(catalog.skillId())), admin), 201);
+            if (n <= 2) {
+                json(post("/api/v1/studio/question-versions/" + firstVersion(question) + "/publish", "", admin), 200);
+            }
+        }
+        json(post("/api/v1/studio/questions", numeric(catalog.subjectId(), "50% of 10 = ?", "5", List.of()), admin), 201);
+        String bank = "/api/v1/studio/questions?subjectId=" + catalog.subjectId();
+
+        // Pages in the order the bank reads (by prompt), with the total of every match.
+        JsonNode first = json(get(bank + "&size=3", admin), 200);
+        assertThat(first.get("total").asLong()).isEqualTo(6);
+        assertThat(first.get("page").asInt()).isZero();
+        assertThat(prompts(first)).containsExactly("50% of 10 = ?", "Add 1 + 1 = ?", "Add 1 + 2 = ?");
+        assertThat(prompts(json(get(bank + "&size=3&page=1", admin), 200)))
+                .containsExactly("Add 1 + 3 = ?", "Add 1 + 4 = ?", "Add 1 + 5 = ?");
+        assertThat(prompts(json(get(bank + "&size=3&page=2", admin), 200))).isEmpty();
+
+        // Search is case-insensitive and takes the author's text literally, % included.
+        assertThat(prompts(json(get(bank + "&q=%25", admin), 200))).containsExactly("50% of 10 = ?");
+        assertThat(prompts(json(get(bank + "&q=aDD%201%20%2B%202", admin), 200))).containsExactly("Add 1 + 2 = ?");
+
+        // Filters: the latest version's status, "has a published version", a tagged skill, the type.
+        assertThat(json(get(bank + "&status=PUBLISHED", admin), 200).get("total").asLong()).isEqualTo(2);
+        assertThat(json(get(bank + "&status=DRAFT", admin), 200).get("total").asLong()).isEqualTo(4);
+        assertThat(prompts(json(get(bank + "&live=true", admin), 200))).containsExactly("Add 1 + 1 = ?", "Add 1 + 2 = ?");
+        assertThat(json(get(bank + "&skillId=" + catalog.skillId(), admin), 200).get("total").asLong()).isEqualTo(5);
+        assertThat(json(get(bank + "&type=MULTIPLE_CHOICE", admin), 200).get("total").asLong()).isZero();
+        assertThat(json(get(bank + "&q=add&live=true&size=1&page=1", admin), 200).get("items").get(0)
+                .get("latestPrompt").asString()).isEqualTo("Add 1 + 2 = ?");
+
+        // A teacher's bank is their own: the platform's questions aren't in it.
+        assertThat(json(get(bank, staff(PlatformRole.TEACHER)), 200).get("total").asLong()).isZero();
+
+        // Pages the server doesn't serve are refused, not quietly adjusted.
+        assertThat(get(bank + "&size=101", admin).statusCode()).isEqualTo(400);
+        assertThat(get(bank + "&page=-1", admin).statusCode()).isEqualTo(400);
+        assertThat(get(bank + "&status=LIVE", admin).statusCode()).isEqualTo(400);
+        assertThat(get(bank + "&q=" + "x".repeat(201), admin).statusCode()).isEqualTo(400);
+    }
+
+    @Test
+    void lessonsArePagedAndSearchedByLessonOrActivityTitle() throws Exception {
+        String admin = staff(PlatformRole.ADMIN);
+        Catalog catalog = catalog(admin);
+        String alpha = lesson(admin, catalog, "Alpha lesson");
+        activity(admin, catalog, alpha, "Counting apples");
+        activity(admin, catalog, alpha, "Counting pears");
+        activity(admin, catalog, lesson(admin, catalog, "Beta lesson"), "Shapes");
+        lesson(admin, catalog, "Gamma lesson");
+        String lessons = "/api/v1/studio/lessons?subjectId=" + catalog.subjectId();
+
+        JsonNode first = json(get(lessons + "&size=2", admin), 200);
+        assertThat(first.get("total").asLong()).isEqualTo(3);
+        assertThat(titles(first)).containsExactly("Alpha lesson", "Beta lesson");
+        assertThat(first.get("items").get(0).get("activities")).hasSize(2);
+        assertThat(titles(json(get(lessons + "&size=2&page=1", admin), 200))).containsExactly("Gamma lesson");
+
+        // Found through one activity: the lesson lists just that one, and still counts them all.
+        JsonNode pears = json(get(lessons + "&q=PEARS", admin), 200);
+        assertThat(titles(pears)).containsExactly("Alpha lesson");
+        assertThat(pears.get("items").get(0).get("activities")).hasSize(1);
+        assertThat(pears.get("items").get(0).get("activities").get(0).get("title").asString()).isEqualTo("Counting pears");
+        assertThat(pears.get("items").get(0).get("activityCount").asInt()).isEqualTo(2);
+
+        // Found by its own title: every activity in it.
+        JsonNode alphaFound = json(get(lessons + "&q=alpha", admin), 200);
+        assertThat(alphaFound.get("items").get(0).get("activities")).hasSize(2);
+
+        assertThat(get(lessons + "&size=0", admin).statusCode()).isEqualTo(400);
+    }
+
+    private String lesson(String admin, Catalog catalog, String title) throws Exception {
+        return json(post("/api/v1/studio/lessons", "{\"subjectId\":\"" + catalog.subjectId() + "\",\"title\":\"" + title + "\"}",
+                admin), 201).get("id").asString();
+    }
+
+    private void activity(String admin, Catalog catalog, String lessonId, String title) throws Exception {
+        json(post("/api/v1/studio/lessons/" + lessonId + "/activities",
+                "{\"title\":\"" + title + "\",\"skillIds\":[\"" + catalog.skillId() + "\"]}", admin), 201);
+    }
+
+    private static List<String> titles(JsonNode page) {
+        List<String> titles = new ArrayList<>();
+        page.get("items").forEach(item -> titles.add(item.get("title").asString()));
+        return titles;
+    }
+
+    private static List<String> prompts(JsonNode page) {
+        List<String> prompts = new ArrayList<>();
+        page.get("items").forEach(item -> prompts.add(item.get("latestPrompt").asString()));
+        return prompts;
     }
 
     // ------------------------------------------------------------------ fixture

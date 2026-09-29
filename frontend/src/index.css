@@ -5,6 +5,8 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* In-page jumps (a pager, #plan, the skip link) land below the sticky top bars. */
+    scroll-padding-top: 5rem;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
     color: theme("colors.ink.DEFAULT");
