@@ -205,7 +205,7 @@ Adult radii step from 6px (tags) through 10px (controls) and 12px (fields and bu
 - **Solid:** Deep River fill, white text, 44px tall. Hover: tonle-900.
 - **Outline / Ghost:** white with a line-strong ring / text-only tonle-700.
 - **Child "go":** Lantern Light pill, 64px, tonle-950 text, key-press shadow `0 5px 0 #B86A1C`.
-- **Focus:** 2px River Blue outline, offset 3px (global `:focus-visible`).
+- **Focus:** 2px River Blue outline, offset 3px (global `:focus-visible`). Inside `.on-night` surfaces (staff rail, landing night sections, child space) the ring is Lantern Glow `#FFD27A`; `.on-paper` panels inside them return to blue.
 
 ### Inputs / Fields
 - **Style:** white, 48px, 12px radius, 1px line-strong inset ring. Hover: tonle-300. Focus: 2px tonle-600.
@@ -215,6 +215,10 @@ Adult radii step from 6px (tags) through 10px (controls) and 12px (fields and bu
 - **Family sheet:** white, 22px, paper shadow, line/70 ring. Rows divide with 1px lines instead of nesting cards.
 - **Workspace panel:** white, 16px, 1px line ring, a header row with a hairline under it. Tables run edge to edge (`flush`) and become stacked lists on phones.
 - **Composer:** creation forms (new subject, skill, question, lesson, curriculum, staff account) open from a "New …" action in their list's header as a titled, closable panel (Escape too). The first field takes focus. The composer starts open only while its list is empty and closes once the item exists.
+
+### Page frame
+- Every page names the browser tab "Page · Bookeyond Kid" (`useDocumentTitle`; PageHeader and AuthLayout do it for their title). The landing keeps "Bookeyond Kid — Learn Today, Build Tomorrow".
+- Family, staff and landing pages start with a "Skip to content" link to `#main`.
 
 ### States
 - **Loading:** three small books breathing, fading in only after a noticeable wait. Shown only before the first data arrives; a refresh keeps the current content on screen.
@@ -232,6 +236,7 @@ Adult radii step from 6px (tags) through 10px (controls) and 12px (fields and bu
 - **Evidence Line:** evidence strength as line weight: dotted hairline (none), dashed (partial), 3.5px (sufficient), 5.5px (strong). Always has a text label.
 - **Firefly Buddy:** an authored character (never a chatbot) with moods happy, thinking, cheer, encourage. It sits on the page corner and reacts.
 - **Answer Slot + Number Pad:** a sum written "… = ?" takes its answer where the "?" was; questions in words keep their wording with the field below. The 3×4 pad (digits, delete, Check) is the keyboard on touch screens.
+- **Print artwork:** outlined logo and wordmark (SVG ink/paper, PDF ink) and both marks in `brand/print`, generated from the live type by `brand/tools`.
 - **Brand mark sizes:** from 36px the full mark (page edges, side petals, inner petal); below 36px a compact drawing (solid book, bold three-petal lotus, clear spark). The favicon uses the compact drawing, home-screen icons the full one.
 
 ## Do's and Don'ts
