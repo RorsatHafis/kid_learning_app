@@ -224,6 +224,57 @@ class LearningJourneyApiIntegrationTests {
     }
 
     @Test
+    void practicePlacedAfterAStruggleComesBeforeTheRestOfTheCurriculum() {
+        Catalog catalog = catalog();
+        Learner learner = enroll(catalog);
+
+        LearningPathItem first = learningPathService.getNextItem(learner.pathId());
+        play(learner, first, false);
+
+        // LI-1: the reinforcement is served now, not after every remaining curriculum step.
+        LearningPathItem next = learningPathService.getNextItem(learner.pathId());
+        assertThat(next.getSource()).isEqualTo(LearningPathItemSource.ADAPTIVE);
+        assertThat(next.getActivityVersionId()).isEqualTo(catalog.prerequisiteActivity().getId());
+
+        var journey = learningJourneyService.journeyFor(learner.enrollmentId());
+        assertThat(journey.nextStepId()).isEqualTo(next.getId());
+        // Smart Review also scheduled the struggling skill; both are served, in the order they were
+        // placed, before the curriculum's next step.
+        assertThat(journey.steps()).extracting(JourneyStep::source).containsExactly(
+                LearningPathItemSource.CURRICULUM, LearningPathItemSource.ADAPTIVE, LearningPathItemSource.REVIEW,
+                LearningPathItemSource.CURRICULUM);
+
+        play(learner, next, true);
+        assertThat(learningPathService.getNextItem(learner.pathId()).getSource()).isEqualTo(LearningPathItemSource.REVIEW);
+    }
+
+    @Test
+    void aJourneyIsToldInTheChaptersItsEducatorsOrdered() {
+        Catalog catalog = catalog();
+        Learner learner = enroll(catalog);
+
+        var before = learningJourneyService.journeyFor(learner.enrollmentId());
+        assertThat(before.chapters()).hasSize(1);
+        var chapter = before.chapters().get(0);
+        assertThat(chapter.position()).isEqualTo(1);
+        assertThat(chapter.totalSteps()).isEqualTo(2);
+        assertThat(chapter.completedSteps()).isZero();
+        assertThat(chapter.state()).isEqualTo(LearningJourneyService.ChapterState.CURRENT);
+        assertThat(before.steps()).allSatisfy(step -> assertThat(step.chapterId()).isEqualTo(chapter.id()));
+
+        play(learner, learningPathService.getNextItem(learner.pathId()), false);
+
+        // The prerequisite practised is covered by no chapter of this curriculum: it is told as
+        // extra practice (no chapter) and the chapter keeps its two steps.
+        var after = learningJourneyService.journeyFor(learner.enrollmentId());
+        JourneyStep extra = after.steps().stream().filter(step -> step.source() == LearningPathItemSource.ADAPTIVE)
+                .findFirst().orElseThrow();
+        assertThat(extra.chapterId()).isNull();
+        assertThat(after.chapters().get(0).completedSteps()).isEqualTo(1);
+        assertThat(after.chapters().get(0).state()).isEqualTo(LearningJourneyService.ChapterState.STARTED);
+    }
+
+    @Test
     void skillStandingsFollowTheEvidenceNotTheCompletionCount() {
         Catalog catalog = catalog();
         Learner learner = enroll(catalog);

@@ -6,9 +6,9 @@ import { childrenApi, learningApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ageFromDateOfBirth } from "@/lib/utils/date";
-import { parentReason } from "@/features/learning/explain";
+import { chapterOf } from "@/features/learning/chapters";
 import { AddChildForm } from "./AddChildForm";
-import { BookStrip, ChildSeal, SceneBand } from "./ui";
+import { ChildSeal, SceneBand } from "./ui";
 import type { Child } from "@/lib/api/types";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
@@ -88,10 +88,9 @@ export function ParentHome() {
 
 function ChildChapter({ child }: { child: Child }) {
   const { data: enrollments, error, isLoading } = useAsync(() => learningApi.enrollments(child.id), [child.id]);
-  const current = enrollments?.find((e) => e.nextStep !== null) ?? enrollments?.[0];
 
   return (
-    <article className="grid gap-6 px-6 py-7 sm:px-8 lg:grid-cols-[240px_minmax(0,1fr)_auto] lg:items-center lg:gap-10">
+    <article className="grid gap-6 px-6 py-7 sm:px-8 lg:grid-cols-[200px_minmax(0,1fr)_auto] lg:items-center lg:gap-10">
       <Link to={`/parent/children/${child.id}`} className="group flex items-center gap-4">
         <ChildSeal id={child.id} name={child.displayName} />
         <div>
@@ -103,30 +102,30 @@ function ChildChapter({ child }: { child: Child }) {
       </Link>
 
       <div className="min-w-0">
-        {isLoading && <p className="text-sm text-ink-faint">Loading learning…</p>}
+        {isLoading && !enrollments && <p className="text-sm text-ink-faint">Loading learning…</p>}
         {error && <p className="text-sm text-ink-soft">Couldn&apos;t load learning right now.</p>}
-        {enrollments && !current && <p className="text-sm text-ink-soft">No learning path chosen yet.</p>}
-        {current && (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-            <BookStrip done={current.completedSteps} total={current.totalSteps} label={`${current.curriculum.name}: steps finished`} next={current.nextStep !== null} />
-            <div className="min-w-0">
-              <p className="text-sm text-ink-faint">
-                {current.curriculum.name} · {current.completedSteps} of {current.totalSteps} steps
-              </p>
-              <p className="truncate text-[0.9375rem] text-ink">
-                {current.nextStep ? (
+        {enrollments && enrollments.length === 0 && <p className="text-sm text-ink-soft">No learning path chosen yet.</p>}
+        {enrollments && enrollments.length > 0 && (
+          <ul className="flex flex-col gap-1.5" aria-label={`${child.displayName}'s subjects`}>
+            {enrollments.map((enrollment) => (
+              <li key={enrollment.enrollmentId} className="text-[0.9375rem] leading-snug text-ink">
+                <span className="font-semibold text-tonle-950">{enrollment.curriculum.subjectName ?? enrollment.curriculum.name}</span>
+                <span className="text-ink-faint"> — </span>
+                {enrollment.nextStep === null ? (
+                  <span className="text-ink-soft">all caught up on this path</span>
+                ) : enrollment.currentChapter ? (
                   <>
-                    Next: <span className="font-semibold">{current.nextStep.title}</span>
+                    {chapterOf(enrollment.currentChapter, enrollment.chapterCount) && (
+                      <span className="tabular text-ink-soft">{chapterOf(enrollment.currentChapter, enrollment.chapterCount)} · </span>
+                    )}
+                    <span>{enrollment.currentChapter.title}</span>
                   </>
                 ) : (
-                  "All caught up on this path."
+                  <>next: {enrollment.nextStep.title}</>
                 )}
-              </p>
-              {current.nextStep && (
-                <p className="hidden truncate text-sm text-ink-soft xl:block">{parentReason(current.nextStep, current.curriculum.name)}</p>
-              )}
-            </div>
-          </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 

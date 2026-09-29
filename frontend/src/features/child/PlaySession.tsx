@@ -5,7 +5,7 @@ import { Lantern, LanternString } from "@/features/world/Lantern";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
-import type { ActivityVersionDetail, AnswerRecord, JourneyStep } from "@/lib/api/types";
+import type { ActivityVersionDetail, AnswerRecord, Chapter, JourneyStep } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { play as playCue } from "@/features/buddy/sound";
 import { childReason } from "@/features/learning/explain";
@@ -24,10 +24,11 @@ type Phase =
    * PENDING/IN_PROGRESS — the child is simply caught up. */
   | { kind: "caught-up" }
   | { kind: "error"; message: string }
-  | { kind: "intro"; attemptId: string; activity: ActivityVersionDetail; reason: string | null }
+  | { kind: "intro"; attemptId: string; itemId: string; activity: ActivityVersionDetail; reason: string | null }
   | {
       kind: "playing";
       attemptId: string;
+      itemId: string;
       activity: ActivityVersionDetail;
       index: number;
       result: AnswerResult | null;
@@ -42,6 +43,10 @@ type Phase =
       /** The path's next step as the server now has it; null when caught up;
        * undefined when it couldn't be read (then "Keep going" is still offered). */
       next: JourneyStep | null | undefined;
+      /** The chapter this activity finished, when it was the chapter's last step. */
+      finishedChapter: Chapter | null;
+      /** The chapter the next step is in. */
+      nextChapter: Chapter | null;
     };
 
 /** The server's recorded answer for this question in this attempt, if any. */
@@ -80,8 +85,30 @@ export function PlaySession() {
     }
   }, [childId, enrollmentId]);
 
+  /** The path after a completion, read from the journey: what comes next, and whether a chapter just closed. */
+  const journeyAfter = useCallback(
+    async (itemId: string) => {
+      try {
+        const journey = await learningApi.journey(enrollmentId);
+        const next = journey.steps.find((step) => step.learningPathItemId === journey.nextStepId) ?? null;
+        const chapterOf = (step: JourneyStep | null | undefined) =>
+          step?.chapterId ? (journey.chapters.find((chapter) => chapter.id === step.chapterId) ?? null) : null;
+        const done = chapterOf(journey.steps.find((step) => step.learningPathItemId === itemId));
+        const nextChapter = chapterOf(next);
+        return {
+          next,
+          finishedChapter: done && done.state === "COMPLETE" && done.id !== nextChapter?.id ? done : null,
+          nextChapter,
+        };
+      } catch {
+        return { next: undefined, finishedChapter: null, nextChapter: null };
+      }
+    },
+    [enrollmentId],
+  );
+
   const finishAttempt = useCallback(
-    async (attemptId: string, title: string) => {
+    async (attemptId: string, title: string, itemId: string) => {
       setPhase({ kind: "completing" });
       try {
         await activityAttemptApi.complete(attemptId);
@@ -92,19 +119,19 @@ export function PlaySession() {
         return;
       }
       playCue("complete");
-      const [answers, next] = await Promise.all([
+      const [answers, after] = await Promise.all([
         activityAttemptApi.listAnswers(attemptId).catch(() => [] as AnswerRecord[]),
-        nextStepOnPath(),
+        journeyAfter(itemId),
       ]);
       setPhase({
         kind: "completed",
         title,
         correct: answers.filter((answer) => answer.correct).length,
         total: answers.length,
-        next,
+        ...after,
       });
     },
-    [nextStepOnPath],
+    [journeyAfter],
   );
 
   const loadNext = useCallback(async () => {
@@ -141,15 +168,23 @@ export function PlaySession() {
         if (resumeIndex === -1) {
           // Every question already answered (the child left on the last feedback
           // screen) — the attempt only needs completing.
-          await finishAttempt(attempt.id, activity.title);
+          await finishAttempt(attempt.id, activity.title, item.id);
           return;
         }
         if (resumeIndex === 0) {
           const reason = next && next.learningPathItemId === item.id ? childReason(next) : null;
-          setPhase({ kind: "intro", attemptId: attempt.id, activity: ordered, reason });
+          setPhase({ kind: "intro", attemptId: attempt.id, itemId: item.id, activity: ordered, reason });
           return;
         }
-        setPhase({ kind: "playing", attemptId: attempt.id, activity: ordered, index: resumeIndex, result: null, startedAt: Date.now() });
+        setPhase({
+          kind: "playing",
+          attemptId: attempt.id,
+          itemId: item.id,
+          activity: ordered,
+          index: resumeIndex,
+          result: null,
+          startedAt: Date.now(),
+        });
       } catch {
         setPhase({ kind: "error", message: LOAD_FAILED });
       }
@@ -192,7 +227,15 @@ export function PlaySession() {
           reason={phase.reason}
           journeyHref={journeyHref}
           onStart={() =>
-            setPhase({ kind: "playing", attemptId: phase.attemptId, activity: phase.activity, index: 0, result: null, startedAt: Date.now() })
+            setPhase({
+              kind: "playing",
+              attemptId: phase.attemptId,
+              itemId: phase.itemId,
+              activity: phase.activity,
+              index: 0,
+              result: null,
+              startedAt: Date.now(),
+            })
           }
         />,
       );
@@ -214,7 +257,7 @@ export function PlaySession() {
               setPhase({ ...phase, index: nextIndex, result: null, startedAt: Date.now() });
               return;
             }
-            void finishAttempt(phase.attemptId, phase.activity.title);
+            void finishAttempt(phase.attemptId, phase.activity.title, phase.itemId);
           }}
         />,
       );
@@ -465,7 +508,7 @@ function Completed({
   journeyHref: string;
   onKeepGoing: () => void;
 }) {
-  const { title, correct, total, next } = phase;
+  const { title, correct, total, next, finishedChapter, nextChapter } = phase;
   const allRight = total > 0 && correct === total;
   const keepGoingRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => keepGoingRef.current?.focus(), []);
@@ -496,9 +539,11 @@ function Completed({
           <LearningBuddy mood="cheer" size={118} className="hidden sm:block" />
         </div>
         <h1 id="done-title" className="font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
-          {allRight ? "Perfect!" : "Activity complete!"}
+          {finishedChapter ? `Chapter ${finishedChapter.position} complete!` : allRight ? "Perfect!" : "Activity complete!"}
         </h1>
-        <p className="mt-1 text-lg font-medium text-ink-soft">You lit every lantern in “{title}”.</p>
+        <p className="mt-1 text-lg font-medium text-ink-soft">
+          {finishedChapter ? `You lit every book in “${finishedChapter.title}”.` : `You lit every lantern in “${title}”.`}
+        </p>
         {total > 0 && (
           <p className="mx-auto mt-5 w-fit rounded-pill bg-light-soft px-5 py-2 text-lg font-bold text-light-deep ring-1 ring-light/40">
             You got {correct} of {total} right
@@ -508,9 +553,13 @@ function Completed({
           <div className="mt-8 flex items-center gap-4 rounded-[22px] bg-tonle-950 p-5 text-left text-white shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)]">
             <Lantern state="current" size={30} className="shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-light-glow">Up next</p>
+              <p className="text-sm font-semibold text-light-glow">
+                {finishedChapter && nextChapter ? `Up next · Chapter ${nextChapter.position}: ${nextChapter.title}` : "Up next"}
+              </p>
               <p className="font-display text-xl font-bold">{next.title}</p>
-              <p className="font-medium text-tonle-100">{childReason(next)}</p>
+              <p className="font-medium text-tonle-100">
+                {finishedChapter && next.explanation.reason === "CURRICULUM" ? "A new chapter begins!" : childReason(next)}
+              </p>
             </div>
           </div>
         )}

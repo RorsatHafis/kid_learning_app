@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Chapter } from "@/lib/api/types";
 import { BlueHour } from "@/features/world/BlueHour";
 import { cn } from "@/lib/utils/cn";
 
@@ -34,34 +35,6 @@ export function ChildSeal({ id, name, size = "md" }: { id: string; name: string;
   );
 }
 
-/**
- * A path as a row of book spines: finished (lit), the next one (outlined in light), and the
- * rest. The parent's version of the path of books the child walks.
- */
-export function BookStrip({ done, total, label, next = true }: { done: number; total: number; label: string; next?: boolean }) {
-  return (
-    <div role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={label} className="flex items-end gap-[3px]">
-      {Array.from({ length: total }, (_, i) => {
-        const isDone = i < done;
-        const isNext = next && i === done;
-        return (
-          <span
-            key={i}
-            aria-hidden
-            className={cn(
-              "w-3 rounded-[3px] transition-colors",
-              i % 3 === 1 ? "h-7" : i % 3 === 2 ? "h-6" : "h-[1.625rem]",
-              isDone && "bg-light shadow-[inset_0_-3px_0_rgba(138,74,11,0.25)]",
-              isNext && "bg-white ring-2 ring-inset ring-light",
-              !isDone && !isNext && "bg-tonle-100",
-            )}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
 /** A page opening: the same place the child learns in, seen in calm daylight. */
 export function SceneBand({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -72,5 +45,67 @@ export function SceneBand({ children, className }: { children: ReactNode; classN
       </div>
       <div className="relative">{children}</div>
     </section>
+  );
+}
+
+const CHAPTER_WORD: Record<Chapter["state"], string> = {
+  COMPLETE: "steps done",
+  CURRENT: "in progress",
+  STARTED: "started",
+  UPCOMING: "not started",
+  NOT_READY: "no activity published yet",
+};
+
+/**
+ * A journey's chapters as a track: each chapter a segment, filled as its steps are done, the
+ * current one ringed in light. Reports activity, not mastery.
+ */
+export function ChapterTrack({ chapters, label }: { chapters: Chapter[]; label: string }) {
+  // A one-chapter journey has nothing to track between chapters; its steps say it all.
+  if (chapters.length < 2) return null;
+  const done = chapters.filter((c) => c.state === "COMPLETE").length;
+  const current = chapters.find((c) => c.state === "CURRENT");
+  return (
+    <div className="flex flex-col gap-2">
+      <ol aria-label={label} className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${chapters.length}, minmax(0, 1fr))` }}>
+        {chapters.map((chapter) => {
+          const share = chapter.totalSteps > 0 ? chapter.completedSteps / chapter.totalSteps : 0;
+          return (
+            <li key={chapter.id} title={`Chapter ${chapter.position}: ${chapter.title}`}>
+              <span className="sr-only">
+                Chapter {chapter.position}, {chapter.title}: {CHAPTER_WORD[chapter.state]}
+                {chapter.totalSteps > 0 ? ` (${chapter.completedSteps} of ${chapter.totalSteps} steps)` : ""}
+              </span>
+              <span
+                aria-hidden
+                className={cn(
+                  "relative block h-2.5 overflow-hidden rounded-full",
+                  chapter.state === "NOT_READY" ? "border border-dashed border-line-strong bg-white" : "bg-tonle-100",
+                  chapter.state === "CURRENT" && "ring-2 ring-light ring-offset-1 ring-offset-white",
+                )}
+              >
+                <span className="absolute inset-y-0 left-0 rounded-full bg-light" style={{ width: `${Math.round(share * 100)}%` }} />
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="text-sm text-ink-soft">
+        {current ? (
+          <>
+            <span className="font-semibold text-ink">
+              Chapter {current.position} of {chapters.length}
+            </span>{" "}
+            · {current.title}
+          </>
+        ) : done === chapters.length ? (
+          <>All {chapters.length} chapters&apos; steps done</>
+        ) : (
+          <>
+            {done} of {chapters.length} chapters&apos; steps done
+          </>
+        )}
+      </p>
+    </div>
   );
 }

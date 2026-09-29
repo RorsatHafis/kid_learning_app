@@ -10,11 +10,16 @@ import com.platform.content.repository.ActivitySkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.curriculum.entity.AgeHub;
 import com.platform.curriculum.entity.Curriculum;
+import com.platform.curriculum.entity.CurriculumObjective;
+import com.platform.curriculum.entity.LearningObjective;
 import com.platform.curriculum.entity.Subject;
 import com.platform.curriculum.repository.AgeHubRepository;
+import com.platform.curriculum.repository.LearningObjectiveRepository;
 import com.platform.curriculum.repository.SubjectRepository;
 import com.platform.curriculum.service.CurriculumService;
+import com.platform.knowledge.entity.LearningObjectiveSkill;
 import com.platform.knowledge.entity.Skill;
+import com.platform.knowledge.service.LearningObjectiveSkillService;
 import com.platform.knowledge.repository.SkillRepository;
 import com.platform.learner.entity.AdaptationDecision;
 import com.platform.learner.entity.AdaptationDecisionType;
@@ -77,6 +82,8 @@ public class LearningJourneyService {
     private final SubjectRepository subjectRepository;
     private final AgeHubRepository ageHubRepository;
     private final com.platform.review.repository.ReviewItemRepository reviewItemRepository;
+    private final LearningObjectiveRepository learningObjectiveRepository;
+    private final LearningObjectiveSkillService learningObjectiveSkillService;
 
     public LearningJourneyService(EnrollmentRepository enrollmentRepository, LearningPathRepository learningPathRepository,
                                   LearningPathItemRepository learningPathItemRepository,
@@ -88,7 +95,9 @@ public class LearningJourneyService {
                                   AdaptationDecisionRepository adaptationDecisionRepository,
                                   CurriculumService curriculumService, SubjectRepository subjectRepository,
                                   AgeHubRepository ageHubRepository,
-                                  com.platform.review.repository.ReviewItemRepository reviewItemRepository) {
+                                  com.platform.review.repository.ReviewItemRepository reviewItemRepository,
+                                  LearningObjectiveRepository learningObjectiveRepository,
+                                  LearningObjectiveSkillService learningObjectiveSkillService) {
         this.enrollmentRepository = enrollmentRepository;
         this.learningPathRepository = learningPathRepository;
         this.learningPathItemRepository = learningPathItemRepository;
@@ -104,6 +113,8 @@ public class LearningJourneyService {
         this.subjectRepository = subjectRepository;
         this.ageHubRepository = ageHubRepository;
         this.reviewItemRepository = reviewItemRepository;
+        this.learningObjectiveRepository = learningObjectiveRepository;
+        this.learningObjectiveSkillService = learningObjectiveSkillService;
     }
 
     // ------------------------------------------------------------------ view types
@@ -142,19 +153,54 @@ public class LearningJourneyService {
                               String afterActivityTitle, BigDecimal afterScore, Instant decidedAt) {
     }
 
+    /**
+     * @param chapterId the learning objective this step belongs to (see {@link Chapter}); null when
+     *                  none of the curriculum's objectives covers the activity's skills
+     */
     public record JourneyStep(UUID learningPathItemId, UUID activityVersionId, String title, String activityType,
                               Integer difficultyLevel, Integer estimatedDurationSeconds, int questionCount,
                               int sequenceOrder, LearningPathItemStatus status, LearningPathItemSource source,
-                              List<SkillRef> skills, BigDecimal score, Instant completedAt, Explanation explanation) {
+                              List<SkillRef> skills, BigDecimal score, Instant completedAt, Explanation explanation,
+                              UUID chapterId) {
     }
 
+    /** Where a child is in a chapter, from its steps. Says nothing about mastery. */
+    public enum ChapterState {
+        /** Every step in it is done. */
+        COMPLETE,
+        /** It holds the next step. */
+        CURRENT,
+        /** Some steps done, the next step is elsewhere. */
+        STARTED,
+        /** Not started yet. */
+        UPCOMING,
+        /** No published activity on the path for it yet. */
+        NOT_READY
+    }
+
+    /**
+     * A chapter of a journey: one learning objective of the enrolled curriculum version, in the
+     * order its educators set (PLATFORM-EXPANSION.md §1). Its steps are the path items whose
+     * activity practises one of the objective's skills, adaptive and review steps included.
+     */
+    public record Chapter(UUID id, int position, String title, String description, int totalSteps,
+                          int completedSteps, ChapterState state) {
+    }
+
+    /** Steps are in play order: done (as completed), then waiting in the order they will be served. */
     public record Journey(UUID enrollmentId, UUID childId, CurriculumRef curriculum, EnrollmentStatus status,
                           Instant enrolledAt, int completedSteps, int totalSteps, UUID nextStepId,
-                          List<JourneyStep> steps) {
+                          List<Chapter> chapters, List<JourneyStep> steps) {
     }
 
+    /**
+     * @param currentChapter the chapter holding the next step (null when nothing is waiting)
+     * @param chapterCount   how many chapters the journey has
+     * @param chapters       every chapter with its state, in curriculum order
+     */
     public record EnrollmentOverview(UUID enrollmentId, CurriculumRef curriculum, EnrollmentStatus status,
-                                     Instant enrolledAt, int completedSteps, int totalSteps, JourneyStep nextStep) {
+                                     Instant enrolledAt, int completedSteps, int totalSteps, JourneyStep nextStep,
+                                     Chapter currentChapter, int chapterCount, List<Chapter> chapters) {
     }
 
     /** What the platform decided after a completed activity, as recorded. */
@@ -180,8 +226,11 @@ public class LearningJourneyService {
                     JourneyStep next = journey.steps().stream()
                             .filter(step -> step.learningPathItemId().equals(journey.nextStepId()))
                             .findFirst().orElse(null);
+                    Chapter current = journey.chapters().stream()
+                            .filter(chapter -> chapter.state() == ChapterState.CURRENT).findFirst().orElse(null);
                     return new EnrollmentOverview(enrollment.getId(), journey.curriculum(), enrollment.getStatus(),
-                            enrollment.getEnrolledAt(), journey.completedSteps(), journey.totalSteps(), next);
+                            enrollment.getEnrolledAt(), journey.completedSteps(), journey.totalSteps(), next,
+                            current, journey.chapters().size(), journey.chapters());
                 })
                 .toList();
     }
@@ -224,25 +273,83 @@ public class LearningJourneyService {
         LearningPath path = learningPathRepository.findByEnrollmentId(enrollment.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("LearningPath for enrollment", enrollment.getId()));
 
-        List<JourneyStep> steps = learningPathItemRepository.findByLearningPathIdOrderBySequenceOrderAsc(path.getId())
-                .stream()
-                .filter(item -> item.getStatus() != LearningPathItemStatus.SKIPPED)
-                .map(item -> step(item, lookups))
+        List<LearningPathItem> items = learningPathItemRepository.findByLearningPathIdOrderBySequenceOrderAsc(path.getId());
+        List<ChapterSource> chapterSources = chapterSources(enrollment.getCurriculumVersionId());
+
+        List<JourneyStep> steps = LearningPathService.playOrder(items).stream()
+                .map(item -> step(item, lookups, chapterSources))
                 .toList();
 
         int completed = (int) steps.stream().filter(step -> step.status() == LearningPathItemStatus.COMPLETED).count();
-        // Same rule as LearningPathService#getNextItem: the first PENDING or IN_PROGRESS item.
-        UUID nextStepId = steps.stream()
-                .filter(step -> step.status() == LearningPathItemStatus.PENDING
-                        || step.status() == LearningPathItemStatus.IN_PROGRESS)
-                .map(JourneyStep::learningPathItemId)
-                .findFirst().orElse(null);
+        // The same rule that serves the next activity (LearningPathService#nextOf).
+        UUID nextStepId = LearningPathService.nextOf(items).map(LearningPathItem::getId).orElse(null);
 
         return new Journey(enrollment.getId(), enrollment.getChildId(), curriculum, enrollment.getStatus(),
-                enrollment.getEnrolledAt(), completed, steps.size(), nextStepId, steps);
+                enrollment.getEnrolledAt(), completed, steps.size(), nextStepId,
+                chapters(chapterSources, steps, nextStepId), steps);
     }
 
-    private JourneyStep step(LearningPathItem item, Lookups lookups) {
+    /** One objective of the curriculum version with the skills it covers, in curriculum order. */
+    private record ChapterSource(UUID id, int position, String title, String description, java.util.Set<UUID> skillIds) {
+    }
+
+    private List<ChapterSource> chapterSources(UUID curriculumVersionId) {
+        List<CurriculumObjective> objectives = curriculumService.listObjectives(curriculumVersionId).stream()
+                .sorted(Comparator.comparingInt(CurriculumObjective::getDisplayOrder))
+                .toList();
+        Map<UUID, LearningObjective> byId = new HashMap<>();
+        learningObjectiveRepository.findAllById(objectives.stream().map(CurriculumObjective::getLearningObjectiveId).toList())
+                .forEach(objective -> byId.put(objective.getId(), objective));
+        List<ChapterSource> sources = new java.util.ArrayList<>();
+        int position = 1;
+        for (CurriculumObjective link : objectives) {
+            LearningObjective objective = byId.get(link.getLearningObjectiveId());
+            if (objective == null) {
+                continue;
+            }
+            java.util.Set<UUID> skills = learningObjectiveSkillService.listSkillsForObjective(objective.getId()).stream()
+                    .map(LearningObjectiveSkill::getSkillId)
+                    .collect(java.util.stream.Collectors.toSet());
+            sources.add(new ChapterSource(objective.getId(), position++, objective.getTitle(), objective.getDescription(), skills));
+        }
+        return sources;
+    }
+
+    /** The first chapter, in curriculum order, that covers one of the step's skills. */
+    private static UUID chapterOf(List<SkillRef> skills, List<ChapterSource> chapters) {
+        for (ChapterSource chapter : chapters) {
+            for (SkillRef skill : skills) {
+                if (chapter.skillIds().contains(skill.id())) {
+                    return chapter.id();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static List<Chapter> chapters(List<ChapterSource> sources, List<JourneyStep> steps, UUID nextStepId) {
+        UUID currentChapter = steps.stream().filter(step -> step.learningPathItemId().equals(nextStepId))
+                .findFirst().map(JourneyStep::chapterId).orElse(null);
+        return sources.stream().map(source -> {
+            List<JourneyStep> own = steps.stream().filter(step -> source.id().equals(step.chapterId())).toList();
+            int done = (int) own.stream().filter(step -> step.status() == LearningPathItemStatus.COMPLETED).count();
+            ChapterState state;
+            if (own.isEmpty()) {
+                state = ChapterState.NOT_READY;
+            } else if (source.id().equals(currentChapter)) {
+                state = ChapterState.CURRENT;
+            } else if (done == own.size()) {
+                state = ChapterState.COMPLETE;
+            } else if (done > 0) {
+                state = ChapterState.STARTED;
+            } else {
+                state = ChapterState.UPCOMING;
+            }
+            return new Chapter(source.id(), source.position(), source.title(), source.description(), own.size(), done, state);
+        }).toList();
+    }
+
+    private JourneyStep step(LearningPathItem item, Lookups lookups, List<ChapterSource> chapters) {
         ActivityVersion version = lookups.version(item.getActivityVersionId());
         Activity activity = lookups.activity(version.getActivityId());
         Optional<ActivityAttempt> completedAttempt = lookups.attempts().stream()
@@ -250,11 +357,12 @@ public class LearningJourneyService {
                 .filter(attempt -> attempt.getStatus() == ActivityAttemptStatus.COMPLETED)
                 .max(Comparator.comparing(ActivityAttempt::getCompletedAt));
 
+        List<SkillRef> skills = lookups.skillsOf(activity.getId());
         return new JourneyStep(item.getId(), version.getId(), activity.getTitle(), activity.getActivityType(),
                 version.getDifficultyLevel(), version.getEstimatedDurationSeconds(),
                 lookups.questionCount(version.getId()), item.getSequenceOrder(), item.getStatus(), item.getSource(),
-                lookups.skillsOf(activity.getId()), completedAttempt.map(ActivityAttempt::getScore).orElse(null),
-                item.getCompletedAt(), explain(item, activity, lookups));
+                skills, completedAttempt.map(ActivityAttempt::getScore).orElse(null),
+                item.getCompletedAt(), explain(item, activity, lookups), chapterOf(skills, chapters));
     }
 
     private Explanation explain(LearningPathItem item, Activity activity, Lookups lookups) {

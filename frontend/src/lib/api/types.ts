@@ -199,6 +199,22 @@ export interface JourneyStep {
   score: number | null;
   completedAt: string | null;
   explanation: Explanation;
+  /** The chapter (learning objective) this step belongs to; null for practice outside every chapter. */
+  chapterId: string | null;
+}
+
+/** Where a child is in a chapter, from its steps. Not mastery (see Skills & evidence). */
+export type ChapterState = "COMPLETE" | "CURRENT" | "STARTED" | "UPCOMING" | "NOT_READY";
+
+/** One learning objective of the enrolled curriculum version, in the order its educators set. */
+export interface Chapter {
+  id: string;
+  position: number;
+  title: string;
+  description: string | null;
+  totalSteps: number;
+  completedSteps: number;
+  state: ChapterState;
 }
 
 export interface Journey {
@@ -209,8 +225,10 @@ export interface Journey {
   enrolledAt: string;
   completedSteps: number;
   totalSteps: number;
-  /** Same rule as next-activity: the first PENDING or IN_PROGRESS step. */
+  /** Same rule as next-activity: an activity underway, then placed practice, then the curriculum. */
   nextStepId: string | null;
+  chapters: Chapter[];
+  /** In play order: done (as completed), then waiting in the order they will be served. */
   steps: JourneyStep[];
 }
 
@@ -222,6 +240,11 @@ export interface EnrollmentOverview {
   completedSteps: number;
   totalSteps: number;
   nextStep: JourneyStep | null;
+  /** The chapter holding the next step; null when nothing is waiting. */
+  currentChapter: Chapter | null;
+  chapterCount: number;
+  /** Every chapter with its state, in curriculum order. */
+  chapters: Chapter[];
 }
 
 export type AdaptationDecisionType = "CONTINUE" | "INCREASE_DIFFICULTY" | "REMEDIATE" | "SCHEDULE_REVIEW";

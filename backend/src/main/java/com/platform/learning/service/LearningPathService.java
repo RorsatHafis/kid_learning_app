@@ -41,7 +41,11 @@ public class LearningPathService {
         lockOrThrow(learningPathId);
     }
 
-    /** Appends an item at the end of the path - used both for initial curriculum sequencing and later adaptive/review insertions. */
+    /**
+     * Appends an item at the end of the path - used both for initial curriculum sequencing and later
+     * adaptive/review insertions. Position records placement order; which item is served next is
+     * decided by {@link #nextOf}.
+     */
     @Transactional
     public LearningPathItem appendItem(UUID learningPathId, UUID activityVersionId, LearningPathItemSource source) {
         // Re-acquiring a lock this transaction already holds is a no-op in PostgreSQL.
@@ -58,13 +62,60 @@ public class LearningPathService {
         return learningPathItemRepository.findByLearningPathIdOrderBySequenceOrderAsc(learningPathId);
     }
 
-    /** The next item the child should work on - the first PENDING or IN_PROGRESS item in sequence order. */
+    /** The next item the child should work on - see {@link #nextOf}. */
     @Transactional(readOnly = true)
     public LearningPathItem getNextItem(UUID learningPathId) {
-        return learningPathItemRepository
-                .findFirstByLearningPathIdAndStatusInOrderBySequenceOrderAsc(
-                        learningPathId, List.of(LearningPathItemStatus.PENDING, LearningPathItemStatus.IN_PROGRESS))
+        return nextOf(learningPathItemRepository.findByLearningPathIdOrderBySequenceOrderAsc(learningPathId))
                 .orElseThrow(() -> new ResourceNotFoundException("Next pending LearningPathItem for path", learningPathId));
+    }
+
+    /**
+     * Which step comes next (LI-1). Items are appended in the order they were placed, and the
+     * curriculum is seeded in full at enrolment, so "first waiting item by position" would put
+     * practice the Adaptive Engine or Smart Review just decided a child needs behind every
+     * remaining curriculum step. The rule instead:
+     * <ol>
+     *   <li>an item already IN_PROGRESS resumes first (an attempt is open on it);</li>
+     *   <li>then placed practice waiting to be done - ADAPTIVE, REVIEW, TEACHER_ASSIGNED - in the
+     *       order it was placed;</li>
+     *   <li>then the curriculum, in its order.</li>
+     * </ol>
+     * Positions never change (sequence_order is immutable); only the choice of the next one does.
+     */
+    public static java.util.Optional<LearningPathItem> nextOf(List<LearningPathItem> items) {
+        return playOrder(items).stream()
+                .filter(item -> item.getStatus() == LearningPathItemStatus.PENDING
+                        || item.getStatus() == LearningPathItemStatus.IN_PROGRESS)
+                .findFirst();
+    }
+
+    /**
+     * The path in the order a child meets it: what is done (in the order it was completed),
+     * then what is waiting in the order {@link #nextOf} will serve it. SKIPPED items are left out.
+     */
+    public static List<LearningPathItem> playOrder(List<LearningPathItem> items) {
+        java.util.Comparator<LearningPathItem> bySequence = java.util.Comparator.comparingInt(LearningPathItem::getSequenceOrder);
+        List<LearningPathItem> done = items.stream()
+                .filter(item -> item.getStatus() == LearningPathItemStatus.COMPLETED)
+                .sorted(java.util.Comparator.comparing(LearningPathItem::getCompletedAt,
+                        java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())).thenComparing(bySequence))
+                .toList();
+        List<LearningPathItem> inProgress = items.stream()
+                .filter(item -> item.getStatus() == LearningPathItemStatus.IN_PROGRESS).sorted(bySequence).toList();
+        List<LearningPathItem> placedPractice = items.stream()
+                .filter(item -> item.getStatus() == LearningPathItemStatus.PENDING
+                        && item.getSource() != LearningPathItemSource.CURRICULUM)
+                .sorted(bySequence).toList();
+        List<LearningPathItem> curriculum = items.stream()
+                .filter(item -> item.getStatus() == LearningPathItemStatus.PENDING
+                        && item.getSource() == LearningPathItemSource.CURRICULUM)
+                .sorted(bySequence).toList();
+        List<LearningPathItem> ordered = new java.util.ArrayList<>(items.size());
+        ordered.addAll(done);
+        ordered.addAll(inProgress);
+        ordered.addAll(placedPractice);
+        ordered.addAll(curriculum);
+        return ordered;
     }
 
     @Transactional

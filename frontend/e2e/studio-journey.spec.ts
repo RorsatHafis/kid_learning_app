@@ -92,7 +92,8 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await expect(family.getByText(`Counting stars ${tag}`).first()).toBeVisible();
 
   await family.getByRole("link", { name: "Start Vanna's session" }).click();
-  await expect(family.getByText(`Star counting ${tag}`)).toBeVisible();
+  // The published activity is on the child's home (beside Play and as the current step of the path).
+  await expect(family.getByText(`Star counting ${tag}`).first()).toBeVisible();
   await family.getByRole("link", { name: "Play", exact: true }).click();
   await family.getByRole("button", { name: "Let's go" }).click();
   await expect(family.getByText(prompt)).toBeVisible();

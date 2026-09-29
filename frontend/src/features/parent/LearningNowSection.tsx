@@ -2,14 +2,15 @@ import { useState } from "react";
 import { ChevronDown, Plus } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { learningApi } from "@/lib/api/endpoints";
-import type { EnrollmentOverview, JourneyStep } from "@/lib/api/types";
+import type { EnrollmentOverview, JourneyStep, Chapter } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { parentReason, stepTag } from "@/features/learning/explain";
 import { cn } from "@/lib/utils/cn";
 import { ChooseCurriculumPanel } from "./ChooseCurriculumPanel";
 import { SectionTitle } from "./SectionTitle";
-import { BookStrip } from "./ui";
+import { ChapterTrack } from "./ui";
+import { chapterRuns } from "@/features/learning/chapters";
 
 type AsyncList = {
   data: EnrollmentOverview[] | null;
@@ -75,13 +76,12 @@ function EnrollmentCard({ enrollment }: { enrollment: EnrollmentOverview }) {
             <h3 className="font-display text-xl font-semibold text-tonle-950">{curriculum.name}</h3>
             <p className="mt-0.5 text-sm text-ink-faint">{[curriculum.subjectName, curriculum.ageHubName].filter(Boolean).join(" · ")}</p>
           </div>
-          <div className="flex flex-col items-start gap-2 sm:items-end">
-            <BookStrip done={completedSteps} total={totalSteps} label={`${curriculum.name}: steps completed`} next={nextStep !== null} />
-            <p className="tabular text-sm font-semibold text-ink">
-              {completedSteps} of {totalSteps} steps completed
-            </p>
-          </div>
+          <p className="tabular text-sm font-semibold text-ink">
+            {completedSteps} of {totalSteps} steps completed
+          </p>
         </div>
+
+        <ChapterTrack chapters={enrollment.chapters} label={`${curriculum.name}: chapters`} />
 
         {nextStep ? (
           <div className="grid gap-4 border-t border-line pt-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-8">
@@ -93,7 +93,7 @@ function EnrollmentCard({ enrollment }: { enrollment: EnrollmentOverview }) {
               <Sparkle />
               <span>
                 <span className="font-semibold">Why this next? </span>
-                {parentReason(nextStep, curriculum.name)}
+                {parentReason(nextStep, curriculum.name, enrollment.currentChapter)}
               </span>
             </p>
           </div>
@@ -138,15 +138,50 @@ function FullPath({ enrollmentId, curriculumName }: { enrollmentId: string; curr
   if (error) return <ErrorState error={error} onRetry={refetch} />;
   if (!data) return null;
   return (
-    <ol className="flex flex-col">
-      {data.steps.map((step, i) => (
-        <PathRow key={step.learningPathItemId} step={step} index={i} isNext={step.learningPathItemId === data.nextStepId} curriculumName={curriculumName} />
+    <div className="flex flex-col gap-2 pt-2">
+      {chapterRuns(data).map((run, r) => (
+        <section key={`${run.chapter?.id ?? "extra"}-${r}`} aria-label={run.chapter ? `Chapter ${run.chapter.position}: ${run.chapter.title}` : "Extra practice"}>
+          {run.chapter && (
+            <h4 className="flex flex-wrap items-baseline justify-between gap-x-3 pt-4 text-sm font-semibold text-tonle-950">
+              <span>
+                Chapter {run.chapter.position} · {run.chapter.title}
+              </span>
+              <span className="tabular text-[0.8125rem] font-medium text-ink-faint">
+                {run.chapter.completedSteps} of {run.chapter.totalSteps} steps done
+              </span>
+            </h4>
+          )}
+          <ol className="flex flex-col">
+            {run.steps.map(({ step, index }) => (
+              <PathRow
+                key={step.learningPathItemId}
+                step={step}
+                index={index}
+                isNext={step.learningPathItemId === data.nextStepId}
+                curriculumName={curriculumName}
+                chapter={run.chapter}
+              />
+            ))}
+          </ol>
+        </section>
       ))}
-    </ol>
+    </div>
   );
 }
 
-function PathRow({ step, index, isNext, curriculumName }: { step: JourneyStep; index: number; isNext: boolean; curriculumName: string }) {
+function PathRow({
+  step,
+  index,
+  isNext,
+  curriculumName,
+  chapter,
+}: {
+  step: JourneyStep;
+  index: number;
+  isNext: boolean;
+  curriculumName: string;
+  chapter: Chapter | null;
+}) {
   const tag = stepTag(step);
   const done = step.status === "COMPLETED";
   return (
@@ -166,7 +201,7 @@ function PathRow({ step, index, isNext, curriculumName }: { step: JourneyStep; i
           {tag && <span className="text-[0.8125rem] font-semibold text-dusk-deep">{tag.label}</span>}
           {done && step.score !== null && <span className="tabular text-sm text-ink-faint">Score {Math.round(step.score)}%</span>}
         </div>
-        {step.explanation.reason !== "CURRICULUM" && <p className="mt-0.5 text-sm text-ink-soft">{parentReason(step, curriculumName)}</p>}
+        {step.explanation.reason !== "CURRICULUM" && <p className="mt-0.5 text-sm text-ink-soft">{parentReason(step, curriculumName, chapter)}</p>}
       </div>
     </li>
   );

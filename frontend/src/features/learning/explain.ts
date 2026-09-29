@@ -5,6 +5,7 @@ import type {
   JourneyStep,
   ObjectiveStanding,
   SkillStanding,
+  Chapter,
 } from "@/lib/api/types";
 
 // Presentation of server-recorded reasons (LearningJourneyService.PlacementReason,
@@ -35,14 +36,16 @@ export function childReason(step: JourneyStep): string {
 const percent = (score: number | null) => (score === null ? null : `${Math.round(score)}%`);
 
 /** A calm, evidence-grounded sentence for the parent: why this step is on the path. */
-export function parentReason(step: JourneyStep, curriculumName: string): string {
+export function parentReason(step: JourneyStep, curriculumName: string, chapter?: Chapter | null): string {
   const e = step.explanation;
   const after = e.afterActivityTitle
     ? `Added after “${e.afterActivityTitle}”${percent(e.afterScore) ? ` (${percent(e.afterScore)})` : ""}: `
     : "";
   switch (e.reason) {
     case "CURRICULUM":
-      return `The next step in ${curriculumName}.`;
+      return chapter
+        ? `The next step of chapter ${chapter.position}, “${chapter.title}”, in ${curriculumName}.`
+        : `The next step in ${curriculumName}.`;
     case "REINFORCE_PREREQUISITE":
       return `${after}answers on ${skillName(e)} were mostly incorrect, so the path first practises the building block “${
         e.targetSkill?.name ?? "a prerequisite"

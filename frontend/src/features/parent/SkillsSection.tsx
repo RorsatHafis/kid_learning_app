@@ -3,13 +3,7 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { learningApi } from "@/lib/api/endpoints";
 import type { EvidenceLevel, ObjectiveProgress, SkillProgress, SkillStanding } from "@/lib/api/types";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
-import {
-  evidenceDots,
-  evidenceLabel,
-  objectiveStandingLabel,
-  standingHelp,
-  standingLabel,
-} from "@/features/learning/explain";
+import { evidenceDots, evidenceLabel, objectiveStandingLabel, standingHelp, standingLabel } from "@/features/learning/explain";
 import { EvidenceLine } from "@/features/learning/EvidenceLine";
 import { formatDay } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
@@ -49,12 +43,14 @@ export function SkillsSection({ childId }: { childId: string }) {
 
       {isLoading && !data && <LoadingState label="Loading skills…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
-      {data && data.length === 0 && <EmptyState title="No skills yet" description="Choose a learning path to see the skills it builds." />}
+      {data && data.length === 0 && (
+        <EmptyState title="No skills yet" description="Choose a learning path to see the skills it builds." />
+      )}
       {data?.map((curriculum) => (
         <div key={curriculum.enrollmentId} className="flex flex-col gap-4">
           {data.length > 1 && <h3 className="font-display text-lg font-semibold text-tonle-950">{curriculum.curriculum.name}</h3>}
-          {curriculum.objectives.map((objective) => (
-            <ObjectiveTable key={objective.objectiveId} objective={objective} />
+          {curriculum.objectives.map((objective, i) => (
+            <ObjectiveTable key={objective.objectiveId} objective={objective} position={i + 1} />
           ))}
         </div>
       ))}
@@ -63,7 +59,9 @@ export function SkillsSection({ childId }: { childId: string }) {
         <summary className="cursor-pointer list-none text-sm font-semibold text-tonle-700 marker:hidden">
           <span className="inline-flex items-center gap-2">
             How we describe progress
-            <span aria-hidden className="text-ink-faint transition-transform duration-200 group-open:rotate-90">›</span>
+            <span aria-hidden className="text-ink-faint transition-transform duration-200 group-open:rotate-90">
+              ›
+            </span>
           </span>
         </summary>
         <div className="mt-4 grid gap-6 text-sm text-ink-soft sm:grid-cols-2">
@@ -95,16 +93,24 @@ export function SkillsSection({ childId }: { childId: string }) {
   );
 }
 
-function ObjectiveTable({ objective }: { objective: ObjectiveProgress }) {
+/**
+ * One chapter's skills. A chapter with answers opens its table; one not started yet stays a
+ * single line until asked, so a long curriculum reads as its chapters, not as every skill.
+ */
+function ObjectiveTable({ objective, position }: { objective: ObjectiveProgress; position: number }) {
+  const started = objective.skillsPractised > 0;
   return (
     <article className="overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
       <header className="flex flex-wrap items-start justify-between gap-4 px-6 pb-5 pt-6 sm:px-8">
         <div className="max-w-xl">
-          <h4 className="font-display text-lg font-semibold text-tonle-950">{objective.title}</h4>
+          <h4 className="font-display text-lg font-semibold text-tonle-950">
+            <span className="tabular text-ink-faint">Chapter {position} · </span>
+            {objective.title}
+          </h4>
           {objective.description && <p className="mt-1 text-sm text-ink-soft">{objective.description}</p>}
           <p className="mt-2 tabular text-sm text-ink-faint">
-            {objective.skillsPractised} of {objective.skillsMapped} skills practised · {objective.skillsWithSufficientEvidence} with enough
-            evidence to judge
+            {objective.skillsPractised} of {objective.skillsMapped} skills practised · {objective.skillsWithSufficientEvidence}{" "}
+            with enough evidence to judge
           </p>
         </div>
         <span
@@ -120,19 +126,40 @@ function ObjectiveTable({ objective }: { objective: ObjectiveProgress }) {
           {objectiveStandingLabel[objective.standing]}
         </span>
       </header>
-      <div role="table" aria-label={`Skills in ${objective.title}`}>
-        <div role="row" className="hidden grid-cols-[minmax(0,1fr)_150px_150px] gap-4 border-y border-line bg-paper px-8 py-2.5 text-[0.8125rem] font-semibold text-ink-faint sm:grid">
-          <span role="columnheader">Skill</span>
-          <span role="columnheader">Evidence</span>
-          <span role="columnheader">What it shows</span>
-        </div>
-        <div role="rowgroup" className="divide-y divide-line border-t border-line sm:border-t-0">
-          {objective.skills.map((skill) => (
-            <SkillRow key={skill.skillId} skill={skill} />
-          ))}
-        </div>
-      </div>
+      {started ? (
+        <SkillTable objective={objective} />
+      ) : (
+        <details className="group border-t border-line">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-6 py-3.5 text-sm font-semibold text-tonle-700 marker:hidden hover:bg-paper sm:px-8">
+            <span aria-hidden className="text-ink-faint transition-transform duration-200 group-open:rotate-90">
+              ›
+            </span>
+            {objective.skills.length === 1 ? "Show its skill" : `Show its ${objective.skills.length} skills`}
+          </summary>
+          <SkillTable objective={objective} />
+        </details>
+      )}
     </article>
+  );
+}
+
+function SkillTable({ objective }: { objective: ObjectiveProgress }) {
+  return (
+    <div role="table" aria-label={`Skills in ${objective.title}`}>
+      <div
+        role="row"
+        className="hidden grid-cols-[minmax(0,1fr)_150px_150px] gap-4 border-y border-line bg-paper px-8 py-2.5 text-[0.8125rem] font-semibold text-ink-faint sm:grid"
+      >
+        <span role="columnheader">Skill</span>
+        <span role="columnheader">Evidence</span>
+        <span role="columnheader">What it shows</span>
+      </div>
+      <div role="rowgroup" className="divide-y divide-line border-t border-line sm:border-t-0">
+        {objective.skills.map((skill) => (
+          <SkillRow key={skill.skillId} skill={skill} />
+        ))}
+      </div>
+    </div>
   );
 }
 

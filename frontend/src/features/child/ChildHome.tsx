@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { Check, Play } from "lucide-react";
+import { BookOpen, Check, Play } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
-import type { EnrollmentOverview, Journey, JourneyStep } from "@/lib/api/types";
+import type { Chapter, EnrollmentOverview, Journey, JourneyStep } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { childReason, stepTag } from "@/features/learning/explain";
+import { chapterOf, focusChapter } from "@/features/learning/chapters";
 import { BlueHour } from "@/features/world/BlueHour";
 import { PathOfBooks, khmerNumber } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+
+/** Book-spine colours for the subject shelf, so each subject keeps its own. */
+const SHELF_SPINES = ["bg-light", "bg-lotus", "bg-palm", "bg-dusk", "bg-tonle-400"];
 
 /**
  * The child's home: the blue-hour world with their journey laid across the river as books.
@@ -76,9 +80,10 @@ export function ChildHome() {
         overview={selected}
         switcher={
           paths.length > 1 ? (
-            <nav aria-label="What to learn" className="flex flex-wrap gap-2">
-              {paths.map((enrollment) => {
+            <nav aria-label="My subjects" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              {paths.map((enrollment, i) => {
                 const active = enrollment.enrollmentId === selected.enrollmentId;
+                const where = chapterOf(enrollment.currentChapter, enrollment.chapterCount);
                 return (
                   <button
                     key={enrollment.enrollmentId}
@@ -86,11 +91,25 @@ export function ChildHome() {
                     aria-current={active ? "true" : undefined}
                     onClick={() => setParams({ path: enrollment.enrollmentId }, { replace: true })}
                     className={cn(
-                      "min-h-11 rounded-pill px-5 text-sm font-semibold ring-1 transition-colors duration-150 ease-out",
-                      active ? "bg-white text-tonle-900 ring-white" : "bg-tonle-950/50 text-tonle-100 ring-white/20 backdrop-blur-md hover:bg-tonle-950/70",
+                      "group flex min-h-14 shrink-0 items-center gap-3 rounded-[16px] py-2 pl-2 pr-4 text-left ring-1 transition-colors duration-150 ease-out",
+                      active ? "bg-white text-tonle-950 ring-white" : "bg-tonle-950/55 text-white ring-white/20 backdrop-blur-md hover:bg-tonle-950/75",
                     )}
                   >
-                    {enrollment.curriculum.subjectName ?? enrollment.curriculum.name}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "h-10 w-7 shrink-0 rounded-[5px] shadow-[inset_5px_0_0_rgba(0,0,0,0.18)]",
+                        SHELF_SPINES[i % SHELF_SPINES.length],
+                      )}
+                    />
+                    <span className="flex flex-col">
+                      <span className="text-[0.95rem] font-bold leading-tight">
+                        {enrollment.curriculum.subjectName ?? enrollment.curriculum.name}
+                      </span>
+                      <span className={cn("text-xs font-medium", active ? "text-ink-soft" : "text-tonle-200")}>
+                        {enrollment.nextStep === null ? "All lit" : (where ?? `${enrollment.completedSteps} of ${enrollment.totalSteps} lit`)}
+                      </span>
+                    </span>
                   </button>
                 );
               })}
@@ -114,6 +133,7 @@ function JourneyStage({
   switcher: React.ReactNode;
 }) {
   const journey = useAsync(() => learningApi.journey(overview.enrollmentId), [overview.enrollmentId]);
+  const focus = journey.data ? focusChapter(journey.data) : null;
   const playHref = `/learn/${childId}/play/${overview.enrollmentId}`;
   const next = overview.nextStep;
 
@@ -124,7 +144,7 @@ function JourneyStage({
             screen it fills the stage and the words sit on it. */}
         <div aria-hidden className="relative h-[64svh] min-h-[430px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
           <BlueHour crop="bottom">
-            {journey.data && <PathOfBooks steps={journey.data.steps} currentId={journey.data.nextStepId} />}
+            {focus && <PathOfBooks steps={focus.steps.map(({ step }) => step)} currentId={journey.data!.nextStepId} />}
           </BlueHour>
           {/* scrims behind the words only, so the lit path keeps its light */}
           <div className="absolute inset-0 hidden bg-[radial-gradient(90%_70%_at_0%_100%,rgba(10,21,51,0.92)_0%,rgba(10,21,51,0.55)_45%,rgba(10,21,51,0)_75%)] lg:block" />
@@ -138,6 +158,14 @@ function JourneyStage({
             <h1 id="greeting" className="font-display text-display font-bold tracking-[-0.02em] text-white" style={{ fontVariationSettings: '"opsz" 72' }}>
               Hi, {name}!
             </h1>
+            {overview.currentChapter && (
+              <p className="-mb-2 flex items-center gap-2 text-sm font-semibold text-light-glow">
+                <BookOpen size={16} aria-hidden />
+                <span>
+                  {[chapterOf(overview.currentChapter, overview.chapterCount), overview.currentChapter.title].filter(Boolean).join(" · ")}
+                </span>
+              </p>
+            )}
             <p className="max-w-md text-xl font-medium leading-snug text-tonle-100">
               {next ? childReason(next) : "You lit every book on this path. Amazing work!"}
             </p>
@@ -155,7 +183,16 @@ function JourneyStage({
                 <span className="text-sm font-medium text-tonle-200">{next.title}</span>
               </div>
             )}
-            <BooksLit done={overview.completedSteps} total={overview.totalSteps} />
+            {focus?.chapter ? (
+              <BooksLit
+                done={focus.steps.filter(({ step }) => step.status === "COMPLETED").length}
+                total={focus.steps.length}
+                label={`Books lit in chapter ${focus.chapter.position}`}
+                suffix="in this chapter"
+              />
+            ) : (
+              <BooksLit done={overview.completedSteps} total={overview.totalSteps} label="Books lit on this path" />
+            )}
           </div>
 
           <section aria-labelledby="journey-title" className="hidden rounded-[26px] bg-tonle-950/60 p-5 ring-1 ring-white/10 backdrop-blur-md lg:block">
@@ -172,9 +209,9 @@ function JourneyStage({
 }
 
 /** Progress as the books themselves: lit ones and the ones still waiting. */
-function BooksLit({ done, total }: { done: number; total: number }) {
+function BooksLit({ done, total, label, suffix }: { done: number; total: number; label: string; suffix?: string }) {
   return (
-    <div className="flex items-center gap-3" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label="Books lit on this path">
+    <div className="flex items-center gap-3" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={label}>
       <div className="flex flex-wrap gap-1.5" aria-hidden>
         {Array.from({ length: total }, (_, i) => (
           <span
@@ -184,7 +221,7 @@ function BooksLit({ done, total }: { done: number; total: number }) {
         ))}
       </div>
       <span className="text-sm font-semibold text-tonle-100">
-        {done} of {total} lit
+        {done} of {total} lit{suffix ? ` ${suffix}` : ""}
       </span>
     </div>
   );
@@ -218,17 +255,94 @@ function JourneyList({
       {journey.error && <Trouble onRetry={journey.refetch} compact />}
       {journey.data && journey.data.steps.length === 0 && <p className="py-4 text-tonle-200">Your path is being prepared.</p>}
       {journey.data && journey.data.steps.length > 0 && (
-        <ol className={cn("flex flex-col gap-1", !mobile && "max-h-[340px] overflow-y-auto pr-1")}>
-          {journey.data.steps.map((step, index) => {
-            const isCurrent = step.learningPathItemId === journey.data!.nextStepId;
-            return (
-              <li key={step.learningPathItemId} ref={isCurrent ? currentRef : undefined} aria-current={isCurrent ? "step" : undefined}>
-                <StepRow step={step} index={index} isCurrent={isCurrent} playHref={playHref} />
-              </li>
-            );
-          })}
-        </ol>
+        <MyPath journey={journey.data} playHref={playHref} currentRef={currentRef} scroll={!mobile} />
       )}
+    </div>
+  );
+}
+
+/**
+ * The journey as chapters: finished ones as a single lit row, the one the child is in opened
+ * with its books, the ones ahead as rows that say how many books wait there.
+ */
+function MyPath({
+  journey,
+  playHref,
+  currentRef,
+  scroll,
+}: {
+  journey: Journey;
+  playHref: string;
+  currentRef: React.MutableRefObject<HTMLLIElement | null>;
+  scroll: boolean;
+}) {
+  const focus = focusChapter(journey);
+  const steps = (
+    <ol className="flex flex-col gap-1">
+      {focus.steps.map(({ step }, i) => {
+        const isCurrent = step.learningPathItemId === journey.nextStepId;
+        return (
+          <li key={step.learningPathItemId} ref={isCurrent ? currentRef : undefined} aria-current={isCurrent ? "step" : undefined}>
+            <StepRow step={step} index={i} isCurrent={isCurrent} playHref={playHref} />
+          </li>
+        );
+      })}
+    </ol>
+  );
+  if (!focus.chapter) {
+    return <div className={cn(scroll && "max-h-[340px] overflow-y-auto pr-1")}>{steps}</div>;
+  }
+  return (
+    <ol className={cn("flex flex-col gap-1.5", scroll && "max-h-[380px] overflow-y-auto pr-1")} aria-label="Chapters">
+      {journey.chapters.map((chapter) =>
+        chapter.id === focus.chapter!.id ? (
+          <li key={chapter.id} className="rounded-[18px] bg-white/[0.06] p-2 ring-1 ring-white/10">
+            <p className="flex items-baseline justify-between gap-3 px-2 pb-2 pt-1">
+              <span className="text-sm font-bold text-white">
+                Chapter {chapter.position} · {chapter.title}
+              </span>
+              <span className="shrink-0 text-xs font-semibold text-light-glow">You are here</span>
+            </p>
+            {steps}
+          </li>
+        ) : (
+          <li key={chapter.id}>
+            <ChapterRow chapter={chapter} />
+          </li>
+        ),
+      )}
+    </ol>
+  );
+}
+
+const CHAPTER_NOTE: Record<Chapter["state"], (c: Chapter) => string> = {
+  COMPLETE: (c) => (c.totalSteps === 1 ? "Lit" : `All ${c.totalSteps} lit`),
+  CURRENT: (c) => `${c.completedSteps} of ${c.totalSteps} lit`,
+  STARTED: (c) => `${c.completedSteps} of ${c.totalSteps} lit`,
+  UPCOMING: (c) => (c.totalSteps === 1 ? "1 book waiting" : `${c.totalSteps} books waiting`),
+  NOT_READY: () => "Being made",
+};
+
+function ChapterRow({ chapter }: { chapter: Chapter }) {
+  const done = chapter.state === "COMPLETE";
+  const later = chapter.state === "UPCOMING" || chapter.state === "NOT_READY";
+  return (
+    <div className="flex items-center gap-3 rounded-[14px] px-2 py-1.5">
+      <span
+        aria-hidden
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
+          done ? "bg-light-soft text-light-deep" : later ? "bg-white/[0.06] text-tonle-300" : "bg-white/10 text-light-glow",
+        )}
+      >
+        {done ? <Check size={17} strokeWidth={3} /> : <BookOpen size={16} />}
+      </span>
+      <span className="flex min-w-0 flex-col">
+        <span className={cn("truncate text-sm font-semibold", later ? "text-tonle-200" : "text-white")}>
+          Chapter {chapter.position} · {chapter.title}
+        </span>
+        <span className="text-xs text-tonle-300">{CHAPTER_NOTE[chapter.state](chapter)}</span>
+      </span>
     </div>
   );
 }
