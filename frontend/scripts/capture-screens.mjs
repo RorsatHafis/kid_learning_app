@@ -176,6 +176,8 @@ for (const [size, viewport] of Object.entries(sizes)) {
   if (wants("4")) {
     await login(page, accounts.principal);
     await shot(page, "40-principal-home", size);
+    await page.getByRole("link", { name: /Grade 1 A/ }).first().click();
+    await shot(page, "42-principal-class", size);
     await page.evaluate(() => localStorage.clear());
     await login(page, accounts.teacher);
     await shot(page, "41-teacher-home", size);

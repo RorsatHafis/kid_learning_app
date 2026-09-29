@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, UserPlus, X } from "lucide-react";
+import { UserPlus, X } from "lucide-react";
+import { Breadcrumb } from "@/components/workspace/WorkspaceShell";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState } from "@/components/ui/States";
@@ -41,9 +42,7 @@ export function PrincipalClassPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <Link to="/principal" className="flex w-fit items-center gap-2 text-sm font-semibold text-ink-soft hover:text-ink">
-        <ArrowLeft size={16} aria-hidden /> School
-      </Link>
+      <Breadcrumb items={[{ label: "School", to: "/principal" }, { label: schoolClass.data?.name ?? "Class" }]} />
 
       {schoolClass.isLoading && <LoadingState label="Loading class…" />}
       {schoolClass.error && <ErrorState error={schoolClass.error} onRetry={schoolClass.refetch} />}

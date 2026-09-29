@@ -126,11 +126,11 @@ function JourneyStage({
           </BlueHour>
           {/* scrims behind the words only, so the lit path keeps its light */}
           <div className="absolute inset-0 hidden bg-[radial-gradient(90%_70%_at_0%_100%,rgba(10,21,51,0.92)_0%,rgba(10,21,51,0.55)_45%,rgba(10,21,51,0)_75%)] lg:block" />
-          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-tonle-950 to-transparent lg:hidden" />
+          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-tonle-950 to-transparent lg:hidden" />
           <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-tonle-950/50 to-transparent" />
         </div>
 
-        <div className="relative mx-auto -mt-10 grid w-full max-w-6xl gap-8 px-5 pb-8 sm:px-8 lg:mt-auto lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end lg:pb-14">
+        <div className="relative mx-auto -mt-2 grid w-full max-w-6xl gap-8 px-5 pb-8 sm:px-8 lg:mt-auto lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end lg:pb-14">
           <div className="flex max-w-xl flex-col gap-5">
             {switcher}
             <h1 id="greeting" className="font-display text-display font-bold tracking-[-0.02em] text-white" style={{ fontVariationSettings: '"opsz" 72' }}>
@@ -277,7 +277,7 @@ function StepRow({ step, index, isCurrent, playHref }: { step: JourneyStep; inde
 
 export function Waiting({ line }: { line: string }) {
   return (
-    <div role="status" className="flex flex-col items-center gap-4 px-6 pt-28 text-center">
+    <div role="status" className="flex flex-col items-center gap-4 px-6 pt-28 text-center motion-safe:animate-fade-in-late">
       <LearningBuddy mood="thinking" size={132} />
       <p className="text-lg font-semibold text-tonle-100">{line}</p>
     </div>
@@ -292,7 +292,7 @@ export function Trouble({ onRetry, compact, line }: { onRetry: () => void; compa
       <button
         type="button"
         onClick={onRetry}
-        className="min-h-12 rounded-pill bg-light px-8 text-base font-bold text-tonle-950 shadow-glow transition-transform duration-150 ease-out active:scale-[0.97]"
+        className="min-h-14 rounded-pill bg-light px-9 text-lg font-bold text-tonle-950 shadow-[0_5px_0_#B86A1C,0_12px_40px_rgba(243,168,59,0.45)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:bg-light-glow active:translate-y-1 active:shadow-[0_1px_0_#B86A1C]"
       >
         Try again
       </button>

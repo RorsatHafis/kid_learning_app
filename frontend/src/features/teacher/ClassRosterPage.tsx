@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { Breadcrumb } from "@/components/workspace/WorkspaceShell";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
@@ -21,9 +22,7 @@ export function ClassRosterPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link to="/teacher" className="flex w-fit items-center gap-2 text-sm font-semibold text-ink-soft hover:text-ink">
-        <ArrowLeft size={16} /> All classes
-      </Link>
+      <Breadcrumb items={[{ label: "Classes", to: "/teacher" }, { label: schoolClass?.name ?? "Class" }]} />
 
       {classLoading && <LoadingState label="Loading class…" />}
       {classError && (
@@ -33,7 +32,7 @@ export function ClassRosterPage() {
       {schoolClass && (
         <div>
           <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{schoolClass.name}</h1>
-          <p className="text-sm text-ink-soft">Students currently enrolled in this class.</p>
+          <p className="mt-1.5 text-[0.9375rem] text-ink-soft">Students currently enrolled in this class.</p>
         </div>
       )}
 

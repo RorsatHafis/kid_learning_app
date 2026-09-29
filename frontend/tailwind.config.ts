@@ -161,6 +161,11 @@ export default {
           "0%": { transform: "translateY(-20px) rotate(0)", opacity: "1" },
           "100%": { transform: "translateY(260px) rotate(540deg)", opacity: "0" },
         },
+        // Waiting indicators appear only if the wait is noticeable.
+        "fade-in-late": {
+          "0%, 40%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
         // A lantern on its string, moving in the evening air.
         sway: {
           "0%, 100%": { transform: "rotate(-4deg)" },
@@ -200,6 +205,7 @@ export default {
         "drift-up": "drift-up 2.6s cubic-bezier(0.23, 1, 0.32, 1) forwards",
         "fill-bar": "fill-bar 700ms cubic-bezier(0.23, 1, 0.32, 1) both",
         "confetti-fall": "confetti-fall 1.6s ease-in forwards",
+        "fade-in-late": "fade-in-late 500ms ease-out both",
         sway: "sway 3.6s ease-in-out infinite",
         "page-in": "page-in 420ms cubic-bezier(0.23, 1, 0.32, 1) both",
         burst: "burst 700ms cubic-bezier(0.23, 1, 0.32, 1) forwards",

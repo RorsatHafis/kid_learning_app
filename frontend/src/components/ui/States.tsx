@@ -6,7 +6,7 @@ import { Button } from "./Button";
 /** Three small books filling with light: the product's loading gesture. */
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div role="status" className="flex flex-col items-center justify-center gap-4 py-16 text-ink-soft">
+    <div role="status" className="flex flex-col items-center justify-center gap-4 py-16 text-ink-soft motion-safe:animate-fade-in-late">
       <span className="flex items-end gap-1.5" aria-hidden>
         {[0, 1, 2].map((i) => (
           <span

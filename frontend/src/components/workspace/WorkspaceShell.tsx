@@ -133,30 +133,7 @@ export function PageHeader({
 }) {
   return (
     <header className="flex flex-col gap-3 pb-7">
-      {breadcrumb && breadcrumb.length > 0 && (
-        <nav aria-label="Breadcrumb">
-          <ol className="flex flex-wrap items-center gap-1.5 text-sm">
-            {breadcrumb.map((crumb, i) => (
-              <li key={`${crumb.label}-${i}`} className="flex items-center gap-1.5">
-                {i > 0 && (
-                  <span aria-hidden className="text-ink-faint">
-                    /
-                  </span>
-                )}
-                {crumb.to ? (
-                  <Link to={crumb.to} className="font-medium text-tonle-700 underline-offset-4 hover:underline">
-                    {crumb.label}
-                  </Link>
-                ) : (
-                  <span aria-current="page" className="text-ink-soft">
-                    {crumb.label}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
-      )}
+      {breadcrumb && breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} />}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 max-w-3xl">
           <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{title}</h1>
@@ -203,5 +180,33 @@ export function Panel({
       )}
       <div className={cn(bodyClassName ?? "p-5")}>{children}</div>
     </section>
+  );
+}
+
+/** Where this page sits: each step back is a link, the page itself is plain text. */
+export function Breadcrumb({ items }: { items: { label: string; to?: string }[] }) {
+  return (
+    <nav aria-label="Breadcrumb">
+      <ol className="flex flex-wrap items-center gap-1.5 text-sm">
+        {items.map((crumb, i) => (
+          <li key={`${crumb.label}-${i}`} className="flex items-center gap-1.5">
+            {i > 0 && (
+              <span aria-hidden className="text-ink-faint">
+                /
+              </span>
+            )}
+            {crumb.to ? (
+              <Link to={crumb.to} className="font-medium text-tonle-700 underline-offset-4 hover:underline">
+                {crumb.label}
+              </Link>
+            ) : (
+              <span aria-current="page" className="text-ink-soft">
+                {crumb.label}
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
 }

@@ -1,5 +1,6 @@
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Lock } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Lock } from "lucide-react";
+import { Breadcrumb } from "@/components/workspace/WorkspaceShell";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
@@ -14,9 +15,13 @@ export function StudentDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link to={`/teacher/classes/${classId}`} className="flex w-fit items-center gap-2 text-sm font-semibold text-ink-soft hover:text-ink">
-        <ArrowLeft size={16} /> Back to roster
-      </Link>
+      <Breadcrumb
+        items={[
+          { label: "Classes", to: "/teacher" },
+          { label: "Class roster", to: `/teacher/classes/${classId}` },
+          { label: student?.displayName ?? "Student" },
+        ]}
+      />
 
       {isLoading && <LoadingState label="Loading student…" />}
       {error && <ErrorState error={error} />}
