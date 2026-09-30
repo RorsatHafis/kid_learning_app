@@ -8,7 +8,8 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
-import { ENTITLEMENT_LABEL, familyPlanApi, type Entitlement, type FamilyPlan } from "@/lib/api/subscriptions";
+import { familyPlanApi } from "@/lib/api/subscriptions";
+import { PlanDetails } from "./PlanDetails";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
@@ -345,12 +346,7 @@ function YourData() {
   );
 }
 
-const dateOnly = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
-
-/**
- * What the family's plan includes and how much of it is in use. Read-only: plans are given by
- * Bookeyond Kid, and nothing here pretends a checkout exists (PLATFORM-EXPANSION.md §3).
- */
+/** The family's plan, read-only (see PlanDetails). */
 function YourPlan() {
   const plan = useAsync(() => familyPlanApi.get(), []);
   return (
@@ -360,41 +356,4 @@ function YourPlan() {
       {plan.data && <PlanDetails plan={plan.data} />}
     </SettingsRow>
   );
-}
-
-function PlanDetails({ plan }: { plan: FamilyPlan }) {
-  const sub = plan.subscription;
-  let when: string | null = null;
-  if (sub && sub.grantsAccess) {
-    when = sub.currentPeriodEnd ? `Until ${dateOnly(sub.currentPeriodEnd)}` : "Ongoing";
-  } else if (sub && !sub.grantsAccess && sub.currentPeriodEnd) {
-    when = `An earlier plan ended on ${dateOnly(sub.currentPeriodEnd)}.`;
-  }
-  return (
-    <div className="flex flex-col gap-5">
-      <div>
-        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="font-display text-lg font-semibold text-tonle-950">{plan.plan.name}</span>
-          {when && <span className="text-sm text-ink-soft">{when}</span>}
-        </p>
-        {plan.plan.description && <p className="mt-1 text-sm leading-relaxed text-ink-soft">{plan.plan.description}</p>}
-      </div>
-      <dl className="grid gap-3 sm:grid-cols-2">
-        {plan.entitlements.map((entitlement) => (
-          <div key={entitlement.key} className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
-            <dt className="text-sm text-ink-faint">{ENTITLEMENT_LABEL[entitlement.key]}</dt>
-            <dd className="tabular font-semibold text-ink">{usageText(entitlement)}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-function usageText(e: Entitlement) {
-  if (e.key === "CHILDREN_MAX") {
-    const used = e.used ?? 0;
-    return e.limit === null ? `${used} added · no limit` : `${used} of ${e.limit}`;
-  }
-  return e.limit === null ? "No limit" : `Up to ${e.limit}`;
 }

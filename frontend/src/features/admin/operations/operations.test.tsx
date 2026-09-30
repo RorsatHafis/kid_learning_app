@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { AccountsPage } from "./AccountsPage";
 import { ActivityPage } from "./ActivityPage";
+import { valueText } from "./auditText";
 
 function respond(status: number, body?: unknown) {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -154,5 +155,17 @@ describe("AccountsPage", () => {
     await user.click(screen.getByRole("button", { name: "Find" }));
     expect(await screen.findByText(/No account uses that email address/)).toBeInTheDocument();
     expect(screen.getByLabelText("Email address")).toHaveAttribute("aria-invalid", "true");
+  });
+});
+
+describe("valueText", () => {
+  it("reads recorded instants as dates and leaves every other value as recorded", () => {
+    const shown = valueText("2026-10-10T11:09:34Z");
+    expect(shown).not.toContain("T11:09");
+    expect(shown).toMatch(/2026/);
+    expect(valueText("open-ended")).toBe("open-ended");
+    expect(valueText("2026-10-10")).toBe("2026-10-10");
+    expect(valueText(2)).toBe("2");
+    expect(valueText(null)).toBe("—");
   });
 });

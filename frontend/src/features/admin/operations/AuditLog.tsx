@@ -3,7 +3,7 @@ import { operationsApi, type AuditEntry, type AuditQuery } from "@/lib/api/studi
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { errorText } from "../studio/studioLogic";
-import { actionLabel } from "./auditText";
+import { actionLabel, valueText } from "./auditText";
 
 const PAGE_SIZE = 25;
 
@@ -11,12 +11,6 @@ const PAGE_SIZE = 25;
 function keyLabel(key: string): string {
   const spaced = key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-function valueText(value: unknown): string {
-  if (value === null || value === undefined) return "—";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
 }
 
 const when = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "medium" });

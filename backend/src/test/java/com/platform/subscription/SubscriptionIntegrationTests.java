@@ -22,7 +22,12 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -108,6 +113,67 @@ class SubscriptionIntegrationTests {
     }
 
     @Test
+    void aGrantsEndCanBeMovedAndTheFamilySeesWhatFollowsButNotTheOperatorNote() throws Exception {
+        String admin = token(PlatformRole.ADMIN);
+        String granted = activePlan(admin, 3, 2);
+        String choosable = activePlan(admin, 5, 5, true);
+        String email = "period-" + UUID.randomUUID() + "@example.com";
+        String parent = registerParent(email);
+        String familyId = json(get("/api/v1/admin/families?parentEmail=" + URLEncoder.encode(email, StandardCharsets.UTF_8), admin), 200)
+                .get("familyId").asString();
+
+        // No subscription yet: nothing to move.
+        assertThat(put(period(familyId), "{\"periodEnd\":\"" + Instant.now().plus(Duration.ofDays(5)) + "\",\"reason\":\"x\"}", admin)
+                .statusCode()).isEqualTo(409);
+
+        Instant until = Instant.now().plus(Duration.ofDays(30)).truncatedTo(ChronoUnit.SECONDS);
+        JsonNode given = json(post("/api/v1/admin/families/" + familyId + "/subscription",
+                "{\"planId\":\"" + granted + "\",\"periodEnd\":\"" + until + "\",\"note\":\"Operator-only remark\"}", admin), 200);
+        // As stored (a fresh read): the grant's own response carries the unrounded clock.
+        String startedAt = json(get("/api/v1/admin/families?parentEmail=" + URLEncoder.encode(email, StandardCharsets.UTF_8), admin), 200)
+                .get("plan").get("subscription").get("startedAt").asString();
+        assertThat(given.get("plan").get("subscription").get("note").asString()).isEqualTo("Operator-only remark");
+
+        // The family sees its plan, its end, what follows and plans it could choose - never the note.
+        HttpResponse<String> own = get("/api/v1/family/plan", parent);
+        assertThat(own.body()).doesNotContain("Operator-only remark");
+        JsonNode plan = json(own, 200);
+        assertThat(plan.get("subscription").has("note")).isFalse();
+        assertThat(plan.get("subscription").has("id")).isFalse();
+        assertThat(Instant.parse(plan.get("subscription").get("currentPeriodEnd").asString())).isEqualTo(until);
+        assertThat(plan.get("afterwards").get("plan").get("code").asString()).isEqualTo("EARLY_ACCESS");
+        List<String> choices = new ArrayList<>();
+        plan.get("choices").forEach(choice -> choices.add(choice.get("plan").get("id").asString()));
+        assertThat(choices).contains(choosable).doesNotContain(granted);
+
+        // Extended: same plan, same start, a later end, recorded with its reason.
+        Instant later = until.plus(Duration.ofDays(60));
+        JsonNode extended = json(put(period(familyId), "{\"periodEnd\":\"" + later + "\",\"reason\":\"Pilot extended\"}", admin), 200);
+        JsonNode sub = extended.get("plan").get("subscription");
+        assertThat(Instant.parse(sub.get("currentPeriodEnd").asString())).isEqualTo(later);
+        assertThat(sub.get("startedAt").asString()).isEqualTo(startedAt);
+        assertThat(extended.get("plan").get("plan").get("id").asString()).isEqualTo(granted);
+
+        // Refusals: an end in the past, no reason, a parent trying it.
+        assertThat(put(period(familyId), "{\"periodEnd\":\"" + Instant.now().minusSeconds(60) + "\",\"reason\":\"x\"}", admin)
+                .statusCode()).isEqualTo(400);
+        assertThat(put(period(familyId), "{\"periodEnd\":null,\"reason\":\" \"}", admin).statusCode()).isEqualTo(400);
+        assertThat(put(period(familyId), "{\"periodEnd\":null,\"reason\":\"x\"}", parent).statusCode()).isEqualTo(403);
+
+        // Open-ended: nothing follows, so the family isn't told about an end.
+        json(put(period(familyId), "{\"periodEnd\":null,\"reason\":\"Partner school family\"}", admin), 200);
+        assertThat(json(get("/api/v1/family/plan", parent), 200).get("afterwards").isNull()).isTrue();
+
+        // Once ended, a date change can't bring it back: that is a new grant.
+        json(post("/api/v1/admin/families/" + familyId + "/subscription/end", "{\"reason\":\"Pilot over\"}", admin), 200);
+        assertThat(put(period(familyId), "{\"periodEnd\":\"" + later + "\",\"reason\":\"x\"}", admin).statusCode()).isEqualTo(409);
+
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'SUBSCRIPTION_PERIOD_CHANGED' "
+                + "and resource_id = (select id from family_subscriptions where family_id = ?::uuid)",
+                Integer.class, UUID.fromString(familyId))).isEqualTo(2);
+    }
+
+    @Test
     void anActivePlanIsFrozenAndTheDefaultCantBeRetired() throws Exception {
         String admin = token(PlatformRole.ADMIN);
         String planId = activePlan(admin, 2, 2);
@@ -147,10 +213,15 @@ class SubscriptionIntegrationTests {
     // ------------------------------------------------------------------ helpers
 
     private String activePlan(String admin, int children, int journeys) throws Exception {
+        return activePlan(admin, children, journeys, false);
+    }
+
+    private String activePlan(String admin, int children, int journeys, boolean selfService) throws Exception {
         String planId = json(post("/api/v1/admin/plans",
                 "{\"code\":\"TEST_" + suffix() + "\",\"name\":\"Test plan\",\"description\":\"For tests\"}", admin), 201)
                 .get("plan").get("id").asString();
-        json(put("/api/v1/admin/plans/" + planId, revise(children, journeys), admin), 200);
+        json(put("/api/v1/admin/plans/" + planId, revise(children, journeys).replace("\"selfService\":false",
+                "\"selfService\":" + selfService), admin), 200);
         json(post("/api/v1/admin/plans/" + planId + "/activate", "{}", admin), 200);
         return planId;
     }
@@ -158,6 +229,10 @@ class SubscriptionIntegrationTests {
     private static String revise(int children, int journeys) {
         return "{\"name\":\"Test plan\",\"description\":\"For tests\",\"selfService\":false,"
                 + "\"limits\":{\"CHILDREN_MAX\":" + children + ",\"JOURNEYS_PER_CHILD_MAX\":" + journeys + "}}";
+    }
+
+    private static String period(String familyId) {
+        return "/api/v1/admin/families/" + familyId + "/subscription/period";
     }
 
     private static String suffix() {

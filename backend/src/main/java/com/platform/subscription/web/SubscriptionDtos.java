@@ -53,12 +53,51 @@ public final class SubscriptionDtos {
         }
     }
 
-    public record SubscriptionState(String status, String source, Instant startedAt, Instant currentPeriodEnd,
+    /** An operator's view of a subscription; {@code id} is its audit-log resource. */
+    public record SubscriptionState(UUID id, String status, String source, Instant startedAt, Instant currentPeriodEnd,
                                     boolean cancelAtPeriodEnd, String note, boolean grantsAccess) {
 
         static SubscriptionState of(FamilySubscription subscription, boolean grantsAccess) {
-            return new SubscriptionState(subscription.getStatus().name(), subscription.getSource().name(), subscription.getStartedAt(),
-                    subscription.getCurrentPeriodEnd(), subscription.isCancelAtPeriodEnd(), subscription.getNote(), grantsAccess);
+            return new SubscriptionState(subscription.getId(), subscription.getStatus().name(), subscription.getSource().name(),
+                    subscription.getStartedAt(), subscription.getCurrentPeriodEnd(), subscription.isCancelAtPeriodEnd(),
+                    subscription.getNote(), grantsAccess);
+        }
+    }
+
+    /** The family's own view of its subscription: no operator note (it is for administrators only). */
+    public record OwnSubscriptionState(String status, String source, Instant startedAt, Instant currentPeriodEnd,
+                                       boolean cancelAtPeriodEnd, boolean grantsAccess) {
+
+        static OwnSubscriptionState of(FamilySubscription subscription, boolean grantsAccess) {
+            return new OwnSubscriptionState(subscription.getStatus().name(), subscription.getSource().name(),
+                    subscription.getStartedAt(), subscription.getCurrentPeriodEnd(), subscription.isCancelAtPeriodEnd(), grantsAccess);
+        }
+    }
+
+    public record PlanOfferResponse(PlanSummary plan, List<Entitlement> entitlements) {
+
+        static PlanOfferResponse of(SubscriptionService.PlanOffer offer) {
+            return new PlanOfferResponse(PlanSummary.of(offer.plan()), entitlementList(offer.limits(), null));
+        }
+    }
+
+    /**
+     * What a parent sees of the family's plan.
+     *
+     * @param afterwards the plan that applies once the subscription ends, when an end is set
+     * @param choices    other plans families may choose themselves once payments exist (PD-09)
+     */
+    public record OwnFamilyPlanResponse(PlanSummary plan, boolean onDefaultPlan, OwnSubscriptionState subscription,
+                                        List<Entitlement> entitlements, PlanOfferResponse afterwards,
+                                        List<PlanOfferResponse> choices) {
+
+        public static OwnFamilyPlanResponse of(SubscriptionService.FamilyPlanView view) {
+            EntitlementService.FamilyPlan effective = view.effective();
+            return new OwnFamilyPlanResponse(PlanSummary.of(effective.plan()), !effective.fromSubscription(),
+                    effective.subscription().map(s -> OwnSubscriptionState.of(s, effective.fromSubscription())).orElse(null),
+                    entitlementList(effective.limits(), view.usage()),
+                    view.afterwards().map(PlanOfferResponse::of).orElse(null),
+                    view.choices().stream().map(PlanOfferResponse::of).toList());
         }
     }
 
@@ -100,6 +139,10 @@ public final class SubscriptionDtos {
     }
 
     public record GrantRequest(@NotNull UUID planId, Instant periodEnd, @Size(max = 500) String note) {
+    }
+
+    /** {@code periodEnd} null = open-ended. */
+    public record PeriodRequest(Instant periodEnd, @NotBlank @Size(max = 500) String reason) {
     }
 
     public record EndRequest(@NotBlank @Size(max = 500) String reason) {

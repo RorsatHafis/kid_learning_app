@@ -30,9 +30,8 @@ public class SubscriptionController {
     }
 
     @GetMapping("/api/v1/family/plan")
-    public SubscriptionDtos.FamilyPlanResponse familyPlan(@AuthenticationPrincipal UUID accountId) {
-        SubscriptionService.FamilyPlanView view = service.familyPlan(accountId);
-        return SubscriptionDtos.FamilyPlanResponse.of(view.effective(), view.usage());
+    public SubscriptionDtos.OwnFamilyPlanResponse familyPlan(@AuthenticationPrincipal UUID accountId) {
+        return SubscriptionDtos.OwnFamilyPlanResponse.of(service.familyPlan(accountId));
     }
 
     @GetMapping("/api/v1/admin/plans")
@@ -81,6 +80,12 @@ public class SubscriptionController {
     public SubscriptionDtos.FamilyResponse grant(@AuthenticationPrincipal UUID adminId, @PathVariable UUID familyId,
                                                  @Valid @RequestBody SubscriptionDtos.GrantRequest request) {
         return SubscriptionDtos.FamilyResponse.of(service.grant(adminId, familyId, request.planId(), request.periodEnd(), request.note()));
+    }
+
+    @PutMapping("/api/v1/admin/families/{familyId}/subscription/period")
+    public SubscriptionDtos.FamilyResponse changePeriod(@AuthenticationPrincipal UUID adminId, @PathVariable UUID familyId,
+                                                        @Valid @RequestBody SubscriptionDtos.PeriodRequest request) {
+        return SubscriptionDtos.FamilyResponse.of(service.changePeriodEnd(adminId, familyId, request.periodEnd(), request.reason()));
     }
 
     @PostMapping("/api/v1/admin/families/{familyId}/subscription/end")

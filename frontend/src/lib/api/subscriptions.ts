@@ -40,7 +40,9 @@ export interface PlanResponse {
   familiesOnPlan: number;
 }
 
+/** An operator's view; `id` is the audit log's resource for this subscription. */
 export interface SubscriptionState {
+  id: string;
   status: SubscriptionStatus;
   source: SubscriptionSource;
   startedAt: string;
@@ -60,6 +62,24 @@ export interface FamilyPlan {
   entitlements: Entitlement[];
 }
 
+/** A plan as a family compares it. */
+export interface PlanOffer {
+  plan: PlanSummary;
+  entitlements: Entitlement[];
+}
+
+/** The family's own view (`GET /family/plan`): no operator note, plus what follows and what else exists. */
+export interface OwnFamilyPlan {
+  plan: PlanSummary;
+  onDefaultPlan: boolean;
+  subscription: Omit<SubscriptionState, "id" | "note"> | null;
+  entitlements: Entitlement[];
+  /** The plan that applies once the subscription ends, when an end is set. */
+  afterwards: PlanOffer | null;
+  /** Other plans families may choose themselves once payment exists (PD-09); usually none. */
+  choices: PlanOffer[];
+}
+
 export interface FamilyAccountSummary {
   familyId: string;
   familyName: string;
@@ -73,8 +93,30 @@ export const ENTITLEMENT_LABEL: Record<EntitlementKey, string> = {
   JOURNEYS_PER_CHILD_MAX: "Journeys per child at a time",
 };
 
+/** How many decimals a currency's amounts have (USD 2, JPY 0); null for a code that isn't a currency. */
+export function currencyDigits(currency: string): number | null {
+  try {
+    return new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * "$4.99 / month". Amounts are in the currency's minor units (V42), so the number of decimals
+ * comes from the currency itself, not an assumed 2.
+ */
+export function priceText(price: Price | null): string | null {
+  if (!price) return null;
+  const per = price.interval === "MONTH" ? "month" : "year";
+  const digits = currencyDigits(price.currency);
+  if (digits === null) return `${price.currency} ${price.amountMinor} (minor units) / ${per}`;
+  const format = new Intl.NumberFormat(undefined, { style: "currency", currency: price.currency });
+  return `${format.format(price.amountMinor / 10 ** digits)} / ${per}`;
+}
+
 export const familyPlanApi = {
-  get: () => apiClient.get<FamilyPlan>("/family/plan"),
+  get: () => apiClient.get<OwnFamilyPlan>("/family/plan"),
 };
 
 export const plansApi = {
@@ -99,6 +141,9 @@ export const plansApi = {
     apiClient.get<FamilyAccountSummary>(`/admin/families?parentEmail=${encodeURIComponent(parentEmail)}`),
   grant: (familyId: string, body: { planId: string; periodEnd: string | null; note: string | null }) =>
     apiClient.post<FamilyAccountSummary>(`/admin/families/${familyId}/subscription`, body),
+  /** `periodEnd` null = open-ended. */
+  changePeriod: (familyId: string, periodEnd: string | null, reason: string) =>
+    apiClient.put<FamilyAccountSummary>(`/admin/families/${familyId}/subscription/period`, { periodEnd, reason }),
   end: (familyId: string, reason: string) =>
     apiClient.post<FamilyAccountSummary>(`/admin/families/${familyId}/subscription/end`, { reason }),
 };

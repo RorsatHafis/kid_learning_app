@@ -5,7 +5,9 @@ import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { ApiError } from "@/lib/api/ApiError";
 import {
   ENTITLEMENT_LABEL,
+  currencyDigits,
   plansApi,
+  priceText,
   type BillingInterval,
   type EntitlementKey,
   type FamilyAccountSummary,
@@ -18,17 +20,12 @@ import { FormField } from "@/features/auth/FormField";
 import { cn } from "@/lib/utils/cn";
 import { ComposerPanel, NewButton, Panel, SelectField, TextAreaField } from "../studio/shared";
 import { errorText, useComposer } from "../studio/studioLogic";
+import { AuditLog } from "./AuditLog";
 
 const KEYS: EntitlementKey[] = ["CHILDREN_MAX", "JOURNEYS_PER_CHILD_MAX"];
 const limitText = (limit: number | null) => (limit === null ? "No limit" : String(limit));
 const dateOnly = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-
-function priceText(plan: PlanResponse["plan"]) {
-  if (!plan.price) return "Not set";
-  const amount = (plan.price.amountMinor / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
-  return `${plan.price.currency} ${amount} / ${plan.price.interval === "MONTH" ? "month" : "year"}`;
-}
 
 /**
  * Plans and what families have (PLATFORM-EXPANSION.md §3). Names, limits and prices are the
@@ -116,7 +113,7 @@ export function PlansPage() {
                           </span>
                         ))}
                       </span>
-                      <span className="hidden text-sm text-ink-soft sm:block">{priceText(p.plan)}</span>
+                      <span className="hidden text-sm text-ink-soft sm:block">{priceText(p.plan.price) ?? "Not set"}</span>
                       <span className="hidden text-right text-sm text-ink-soft tabular sm:block">
                         {p.familiesOnPlan} {p.familiesOnPlan === 1 ? "family" : "families"}
                       </span>
@@ -220,7 +217,9 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
       number | null
     >,
   );
-  const [amount, setAmount] = useState(plan.plan.price ? String(plan.plan.price.amountMinor / 100) : "");
+  const [amount, setAmount] = useState(
+    plan.plan.price ? String(plan.plan.price.amountMinor / 10 ** (currencyDigits(plan.plan.price.currency) ?? 2)) : "",
+  );
   const [currency, setCurrency] = useState(plan.plan.price?.currency ?? "");
   const [interval, setBillingInterval] = useState<BillingInterval | "">(plan.plan.price?.interval ?? "");
   const [confirming, setConfirming] = useState<"activate" | "default" | "retire" | null>(null);
@@ -238,7 +237,8 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
         name: name.trim(),
         description: description.trim() || null,
         selfService,
-        priceAmountMinor: amount.trim() ? Math.round(Number(amount) * 100) : null,
+        // The server stores minor units; an unknown currency is refused there with its reason.
+        priceAmountMinor: amount.trim() ? Math.round(Number(amount) * 10 ** (currencyDigits(currency.trim()) ?? 0)) : null,
         priceCurrency: currency.trim() ? currency.trim().toUpperCase() : null,
         billingInterval: interval || null,
         limits,
@@ -347,7 +347,7 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
                   label="Amount"
                   type="number"
                   min={0}
-                  step="0.01"
+                  step={1 / 10 ** (currencyDigits(currency.trim()) ?? 2)}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                 />
@@ -409,7 +409,7 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
               ))}
               <div className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line sm:col-span-2">
                 <dt className="text-sm text-ink-faint">Price</dt>
-                <dd className="font-semibold text-ink">{priceText(plan.plan)}</dd>
+                <dd className="font-semibold text-ink">{priceText(plan.plan.price) ?? "Not set"}</dd>
               </div>
             </dl>
             {error && (
@@ -495,14 +495,7 @@ function FamilyAccess({ plans }: { plans: PlanResponse[] }) {
             <Search size={16} aria-hidden /> {finding ? "Finding…" : "Find family"}
           </Button>
         </form>
-        {family && (
-          <FamilyPlanCard
-            key={family.familyId + (family.plan.subscription?.status ?? "none")}
-            family={family}
-            plans={plans}
-            onChanged={setFamily}
-          />
-        )}
+        {family && <FamilyPlanCard key={family.familyId} family={family} plans={plans} onChanged={setFamily} />}
       </div>
     </Panel>
   );
@@ -524,28 +517,60 @@ function FamilyPlanCard({
   const [note, setNote] = useState("");
   const [ending, setEnding] = useState(false);
   const [reason, setReason] = useState("");
+  const [moving, setMoving] = useState(false);
+  const [newEnd, setNewEnd] = useState("");
+  const [moveReason, setMoveReason] = useState("");
+  const [historyVersion, setHistoryVersion] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<string | null>(null);
+  // Each message shows next to the action that caused it: the current plan's controls, or the grant form.
+  const [feedback, setFeedback] = useState<{ where: "plan" | "grant"; ok: boolean; text: string } | null>(null);
   const sub = family.plan.subscription;
 
   async function grant(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError(null);
-    setDone(null);
+    setFeedback(null);
     try {
       const updated = await plansApi.grant(family.familyId, {
         planId,
         periodEnd: until ? new Date(`${until}T23:59:59`).toISOString() : null,
         note: note.trim() || null,
       });
-      setDone(
-        `${updated.plan.plan.name} given${until ? ` until ${dateOnly(new Date(`${until}T23:59:59`).toISOString())}` : ""}.`,
-      );
+      setFeedback({
+        where: "grant",
+        ok: true,
+        text: `${updated.plan.plan.name} given${until ? ` until ${dateOnly(new Date(`${until}T23:59:59`).toISOString())}` : ""}.`,
+      });
+      setUntil("");
+      setNote("");
+      setHistoryVersion((v) => v + 1);
       onChanged(updated);
     } catch (err) {
-      setError(errorText(err, "The plan couldn't be given."));
+      setFeedback({ where: "grant", ok: false, text: errorText(err, "The plan couldn't be given.") });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function move(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setFeedback(null);
+    try {
+      const periodEnd = newEnd ? new Date(`${newEnd}T23:59:59`).toISOString() : null;
+      const updated = await plansApi.changePeriod(family.familyId, periodEnd, moveReason.trim());
+      setFeedback({
+        where: "plan",
+        ok: true,
+        text: periodEnd ? `It now runs until ${dateOnly(periodEnd)}.` : "It is now open-ended.",
+      });
+      setMoving(false);
+      setNewEnd("");
+      setMoveReason("");
+      setHistoryVersion((v) => v + 1);
+      onChanged(updated);
+    } catch (err) {
+      setFeedback({ where: "plan", ok: false, text: errorText(err, "The end date couldn't be changed.") });
     } finally {
       setBusy(false);
     }
@@ -554,14 +579,15 @@ function FamilyPlanCard({
   async function end(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    setError(null);
+    setFeedback(null);
     try {
       const updated = await plansApi.end(family.familyId, reason.trim());
-      setDone("Ended. The family is on the default plan now.");
+      setFeedback({ where: "plan", ok: true, text: "Ended. The family is on the default plan now." });
       setEnding(false);
+      setHistoryVersion((v) => v + 1);
       onChanged(updated);
     } catch (err) {
-      setError(errorText(err, "That didn't work."));
+      setFeedback({ where: "plan", ok: false, text: errorText(err, "That didn't work.") });
     } finally {
       setBusy(false);
     }
@@ -600,10 +626,47 @@ function FamilyPlanCard({
             ))}
           </ul>
         </div>
-        {sub?.grantsAccess && !ending && (
-          <Button variant="ghost" size="sm" className="w-fit" onClick={() => setEnding(true)}>
-            End this plan…
-          </Button>
+        {sub?.grantsAccess && sub.source === "PROVIDER" && (
+          <p className="text-sm text-ink-soft">This plan is paid through the payment provider; change it there.</p>
+        )}
+        {sub?.grantsAccess && sub.source === "ADMIN_GRANT" && !ending && !moving && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" className="w-fit" onClick={() => setMoving(true)}>
+              Change end date…
+            </Button>
+            <Button variant="ghost" size="sm" className="w-fit" onClick={() => setEnding(true)}>
+              End this plan…
+            </Button>
+          </div>
+        )}
+        {moving && (
+          <form onSubmit={move} className="flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line">
+            <p className="text-sm text-ink-soft">
+              The plan and its start stay the same.{" "}
+              {sub?.currentPeriodEnd ? `Now: until ${dateOnly(sub.currentPeriodEnd)}.` : "Now: open-ended."}
+            </p>
+            <FormField
+              label="New end (leave empty for open-ended)"
+              type="date"
+              value={newEnd}
+              onChange={(e) => setNewEnd(e.target.value)}
+            />
+            <FormField
+              label="Why it changes (recorded in the activity log)"
+              value={moveReason}
+              maxLength={500}
+              required
+              onChange={(e) => setMoveReason(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={busy || !moveReason.trim()}>
+                {busy ? "Saving…" : "Save end date"}
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setMoving(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
         )}
         {ending && (
           <form onSubmit={end} className="flex flex-col gap-3 rounded-[12px] bg-light-soft/60 p-4 ring-1 ring-light/40">
@@ -624,6 +687,7 @@ function FamilyPlanCard({
             </div>
           </form>
         )}
+        {feedback?.where === "plan" && <Feedback {...feedback} />}
       </div>
 
       {givable.length === 0 ? (
@@ -635,7 +699,15 @@ function FamilyPlanCard({
         </div>
       ) : (
         <form onSubmit={grant} className="flex flex-col gap-4">
-          <p className="text-sm font-semibold text-ink">Give a plan</p>
+          <div>
+            <p className="text-sm font-semibold text-ink">{sub?.grantsAccess ? "Replace with another plan" : "Give a plan"}</p>
+            {sub?.grantsAccess && (
+              <p className="text-sm text-ink-soft">
+                The new plan starts now and replaces {family.plan.plan.name}. To keep it and change only when it ends, use
+                &ldquo;Change end date&rdquo;.
+              </p>
+            )}
+          </div>
           <SelectField label="Plan" value={planId} onChange={(e) => setPlanId(e.target.value)}>
             {givable.map((p) => (
               <option key={p.plan.id} value={p.plan.id}>
@@ -655,21 +727,33 @@ function FamilyPlanCard({
             maxLength={500}
             onChange={(e) => setNote(e.target.value)}
           />
-          {error && (
-            <p role="alert" className="text-sm font-medium text-brick-deep">
-              {error}
-            </p>
-          )}
-          {done && (
-            <p role="status" className="text-sm font-medium text-palm-deep">
-              {done}
-            </p>
-          )}
+          {feedback?.where === "grant" && <Feedback {...feedback} />}
           <Button type="submit" disabled={busy || !planId} className="w-fit">
-            {busy ? "Giving…" : "Give this plan"}
+            {busy ? "Giving…" : sub?.grantsAccess ? "Replace the plan" : "Give this plan"}
           </Button>
         </form>
       )}
+
+      {sub && (
+        <section aria-labelledby="subscription-history" className="flex flex-col gap-2 lg:col-span-2">
+          <h3 id="subscription-history" className="text-sm font-semibold text-ink">
+            History of this family&apos;s plan
+          </h3>
+          <AuditLog refreshKey={historyVersion} filter={{ resourceId: sub.id }} emptyTitle="Nothing recorded for this plan yet" />
+        </section>
+      )}
     </div>
+  );
+}
+
+function Feedback({ ok, text }: { ok: boolean; text: string }) {
+  return ok ? (
+    <p role="status" className="text-sm font-medium text-palm-deep">
+      {text}
+    </p>
+  ) : (
+    <p role="alert" className="text-sm font-medium text-brick-deep">
+      {text}
+    </p>
   );
 }

@@ -84,8 +84,19 @@ public class SubscriptionService {
                              EntitlementService.FamilyPlan effective, Map<EntitlementKey, Integer> usage) {
     }
 
-    /** A family's own view of its plan. */
-    public record FamilyPlanView(EntitlementService.FamilyPlan effective, Map<EntitlementKey, Integer> usage) {
+    /** A plan as a family may compare it: what it includes. */
+    public record PlanOffer(SubscriptionPlan plan, Map<EntitlementKey, Integer> limits) {
+    }
+
+    /**
+     * A family's own view of its plan.
+     *
+     * @param afterwards what applies once its subscription ends - the default plan - when an end is set
+     * @param choices    other active plans marked for families to choose themselves (none today; choosing
+     *                   one needs a payment provider, PD-09)
+     */
+    public record FamilyPlanView(EntitlementService.FamilyPlan effective, Map<EntitlementKey, Integer> usage,
+                                 Optional<PlanOffer> afterwards, List<PlanOffer> choices) {
     }
 
     // ------------------------------------------------------------------ plans
@@ -225,6 +236,23 @@ public class SubscriptionService {
         return familyView(familyId);
     }
 
+    /** Extends, shortens or opens up a grant still in force, keeping its plan and start. */
+    @Transactional
+    public FamilyView changePeriodEnd(UUID adminId, UUID familyId, Instant periodEnd, String reason) {
+        requireAdmin(adminId);
+        FamilySubscription subscription = subscriptions.findByFamilyIdForUpdate(familyId)
+                .orElseThrow(() -> new IllegalStateException("This family has no subscription to change"));
+        Instant previous = subscription.getCurrentPeriodEnd();
+        subscription.changePeriodEnd(periodEnd, Instant.now());
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("plan", plans.findById(subscription.getPlanId()).map(SubscriptionPlan::getCode).orElse("?"));
+        metadata.put("from", previous == null ? "open-ended" : previous.toString());
+        metadata.put("until", periodEnd == null ? "open-ended" : periodEnd.toString());
+        metadata.put("reason", reason == null ? "" : reason.strip());
+        record(adminId, "SUBSCRIPTION_PERIOD_CHANGED", subscription.getId(), metadata);
+        return familyView(familyId);
+    }
+
     @Transactional
     public FamilyView end(UUID adminId, UUID familyId, String reason) {
         requireAdmin(adminId);
@@ -246,7 +274,20 @@ public class SubscriptionService {
                 .map(Membership::getFamilyId)
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Family for account", accountId));
-        return new FamilyPlanView(entitlementService.effectivePlan(familyId), entitlementService.usage(familyId));
+        EntitlementService.FamilyPlan effective = entitlementService.effectivePlan(familyId);
+        boolean ends = effective.fromSubscription()
+                && effective.subscription().map(s -> s.getCurrentPeriodEnd() != null).orElse(false);
+        Optional<PlanOffer> afterwards = ends ? Optional.of(offer(entitlementService.defaultPlan())) : Optional.empty();
+        List<PlanOffer> choices = plans.findAllByOrderByCreatedAtAsc().stream()
+                .filter(plan -> plan.getStatus() == PlanStatus.ACTIVE && plan.isSelfService())
+                .filter(plan -> !plan.getId().equals(effective.plan().getId()))
+                .map(this::offer)
+                .toList();
+        return new FamilyPlanView(effective, entitlementService.usage(familyId), afterwards, choices);
+    }
+
+    private PlanOffer offer(SubscriptionPlan plan) {
+        return new PlanOffer(plan, entitlementService.limitsOf(plan.getId()));
     }
 
     // ------------------------------------------------------------------

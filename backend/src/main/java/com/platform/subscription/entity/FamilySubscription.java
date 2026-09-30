@@ -67,6 +67,7 @@ public class FamilySubscription extends AuditableEntity {
 
     /** A new grant replaces whatever the family had (the previous state is audited by the caller). */
     public void regrant(UUID planId, Instant now, Instant periodEnd, String note) {
+        requireAdminManaged();
         Assert.notNull(planId, "planId must not be null");
         Assert.notNull(now, "now must not be null");
         if (periodEnd != null && !periodEnd.isAfter(now)) {
@@ -85,12 +86,40 @@ public class FamilySubscription extends AuditableEntity {
 
     /** Ends access now (an administrator ending a grant). */
     public void end(Instant now) {
+        requireAdminManaged();
         if (status == SubscriptionStatus.EXPIRED) {
             throw new IllegalStateException("This subscription has already ended");
         }
         this.status = SubscriptionStatus.EXPIRED;
         this.currentPeriodEnd = now;
         this.cancelAtPeriodEnd = false;
+    }
+
+    /**
+     * An administrator moves the end of a grant that is still in force: later, earlier, or
+     * open-ended ({@code null}). The plan and its start stay; a plan that has already ended
+     * needs a new grant instead.
+     */
+    public void changePeriodEnd(Instant periodEnd, Instant now) {
+        requireAdminManaged();
+        if (!grantsAccessAt(now)) {
+            throw new IllegalStateException("This plan has already ended: give the family a plan instead");
+        }
+        if (periodEnd != null && !periodEnd.isAfter(now)) {
+            throw new IllegalArgumentException("The new end must be in the future; to stop the plan now, end it");
+        }
+        this.currentPeriodEnd = periodEnd;
+    }
+
+    /**
+     * A provider's subscription follows the provider's events (payments, renewals, the family
+     * cancelling with them); an administrator changing it here would leave billing and access
+     * disagreeing. None exists until a provider is integrated (PD-09).
+     */
+    private void requireAdminManaged() {
+        if (source == SubscriptionSource.PROVIDER) {
+            throw new IllegalStateException("This subscription is managed by the payment provider; change it there");
+        }
     }
 
     /** Whether it gives the family its plan at {@code at}. */

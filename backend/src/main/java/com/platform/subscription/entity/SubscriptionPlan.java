@@ -8,6 +8,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import org.springframework.util.Assert;
 
+import java.util.Locale;
+
 /**
  * What a family can have (V42). Its entitlements are set while it is a DRAFT; activating
  * freezes them, so a family never finds its plan changed underneath it. The owner changes
@@ -74,11 +76,20 @@ public class SubscriptionPlan extends AuditableEntity {
         if (priceAmountMinor != null && priceAmountMinor < 0) {
             throw new IllegalArgumentException("A price can't be negative");
         }
+        String currency = priceCurrency == null ? null : priceCurrency.strip().toUpperCase(Locale.ROOT);
+        if (currency != null) {
+            // The amount is in this currency's minor units (V42), so it must be a real ISO 4217 code.
+            try {
+                java.util.Currency.getInstance(currency);
+            } catch (IllegalArgumentException unknown) {
+                throw new IllegalArgumentException("\"" + currency + "\" isn't a currency code (use ISO 4217, such as USD or KHR)");
+            }
+        }
         this.name = name.strip();
         this.description = description == null || description.isBlank() ? null : description.strip();
         this.selfService = selfService;
         this.priceAmountMinor = priceAmountMinor;
-        this.priceCurrency = priceCurrency == null ? null : priceCurrency.toUpperCase();
+        this.priceCurrency = currency;
         this.billingInterval = billingInterval;
     }
 

@@ -163,6 +163,12 @@ for (const [size, viewport] of Object.entries(sizes)) {
     await shot(page, "31-admin-staff", size);
     await page.goto(base + "/admin/activity");
     await shot(page, "32-admin-activity", size);
+    await page.goto(base + "/admin/plans");
+    await page.getByLabel(/email address/).fill(accounts.parent[0]);
+    await page.getByRole("button", { name: "Find family" }).click();
+    await page.getByRole("heading", { name: /History of this family/ }).waitFor();
+    await page.waitForTimeout(600);
+    await shot(page, "37-admin-plans", size);
     await page.goto(base + "/admin/studio");
     await page
       .getByRole("link", { name: /^Maths/ })
