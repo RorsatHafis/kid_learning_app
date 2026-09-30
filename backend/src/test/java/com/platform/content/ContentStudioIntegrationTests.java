@@ -459,6 +459,126 @@ class ContentStudioIntegrationTests {
         return titles;
     }
 
+    @Test
+    void theJourneyBuilderShowsTheStepsAChildGetsAndWhatIsMissing() throws Exception {
+        String admin = staff(PlatformRole.ADMIN);
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String subjectId = json(post("/api/v1/studio/subjects", "{\"code\":\"JB_" + suffix + "\",\"name\":\"Journey " + suffix + "\"}",
+                admin), 201).get("id").asString();
+        String ageHubId = ageHubRepository.save(AgeHub.create("JB_" + suffix, "Journey " + suffix, 90, 99, 99)).getId().toString();
+        String count = skill(admin, subjectId, "COUNT_" + suffix, "Count to 10");
+        String add = skill(admin, subjectId, "ADD_" + suffix, "Add within 10");
+        String bonds = skill(admin, subjectId, "BONDS_" + suffix, "Number bonds");
+        String shapes = skill(admin, subjectId, "SHAPES_" + suffix, "Name shapes");
+        json(post("/api/v1/studio/skills/" + add + "/prerequisites/" + count, "", admin), 200);
+        json(post("/api/v1/studio/skills/" + shapes + "/prerequisites/" + bonds, "", admin), 200);
+        String counting = objective(admin, subjectId, "OCOUNT_" + suffix, "Counting", count);
+        String adding = objective(admin, subjectId, "OADD_" + suffix, "Adding", add);
+        String shaping = objective(admin, subjectId, "OSHAPE_" + suffix, "Shapes", shapes);
+        String again = objective(admin, subjectId, "OAGAIN_" + suffix, "Counting again", count);
+
+        String lessonId = json(post("/api/v1/studio/lessons", "{\"subjectId\":\"" + subjectId + "\",\"title\":\"Journey lesson\"}", admin),
+                201).get("id").asString();
+        publishedActivity(admin, subjectId, lessonId, "Count apples", count, 1);
+        publishedActivity(admin, subjectId, lessonId, "Count stars", count, 3);
+        // Retagged after publishing: now placed for "Add within 10", but its question still records evidence
+        // only for counting - the kind of gap only the journey view reveals.
+        String addBlocks = publishedActivity(admin, subjectId, lessonId, "Add blocks", count, 2);
+        json(post("/api/v1/studio/activities/" + addBlocks + "/skills/" + add, "", admin), 200);
+        json(delete("/api/v1/studio/activities/" + addBlocks + "/skills/" + count, admin), 200);
+        json(post("/api/v1/studio/lessons/" + lessonId + "/activities", "{\"title\":\"Name the shapes\",\"skillIds\":[\"" + shapes + "\"]}",
+                admin), 201);
+
+        JsonNode curriculum = json(post("/api/v1/studio/curricula", "{\"subjectId\":\"" + subjectId + "\",\"ageHubId\":\"" + ageHubId
+                + "\",\"name\":\"Journey " + suffix + "\"}", admin), 201);
+        String versionId = curriculum.get("versions").get(0).get("id").asString();
+        json(put("/api/v1/studio/curriculum-versions/" + versionId + "/objectives", "{\"objectiveIds\":[\"" + counting + "\",\"" + adding
+                + "\",\"" + shaping + "\",\"" + again + "\"]}", admin), 200);
+
+        JsonNode map = json(get("/api/v1/studio/curriculum-versions/" + versionId + "/journey", admin), 200);
+        assertThat(map.get("totals").get("chapters").asInt()).isEqualTo(4);
+        assertThat(map.get("totals").get("steps").asInt()).isEqualTo(3);
+        JsonNode chapters = map.get("chapters");
+        assertThat(stepTitles(chapters.get(0).get("steps"))).containsExactlyInAnyOrder("Count apples", "Count stars");
+        assertThat(chapters.get(0).get("issues")).isEmpty();
+        JsonNode countCoverage = chapters.get(0).get("skills").get(0);
+        assertThat(countCoverage.get("publishedActivities").asInt()).isEqualTo(2);
+        assertThat(countCoverage.get("evidenceQuestions").asInt()).isEqualTo(2);
+        assertThat(countCoverage.get("minDifficulty").asInt()).isEqualTo(1);
+        assertThat(countCoverage.get("maxDifficulty").asInt()).isEqualTo(3);
+        assertThat(stepTitles(chapters.get(1).get("steps"))).containsExactly("Add blocks");
+        assertThat(codes(chapters.get(1).get("issues"))).containsExactly("SKILL_NO_EVIDENCE", "SKILL_ONE_ACTIVITY");
+        assertThat(chapters.get(2).get("steps")).isEmpty();
+        // Empty because nothing is published yet: said once, by the skill (the chapter adds nothing to it).
+        assertThat(codes(chapters.get(2).get("issues"))).containsExactly("SKILL_NO_ACTIVITY", "PREREQUISITE_NO_ACTIVITY");
+        assertThat(chapters.get(2).get("issues").get(0).get("message").asString()).contains("(1 in draft)");
+        assertThat(codes(chapters.get(3).get("issues"))).containsExactly("CHAPTER_NO_STEPS", "SKILL_REPEATED");
+        assertThat(chapters.get(3).get("issues").get(0).get("message").asString()).contains("earlier chapter");
+
+        // An unsaved order is previewed, not saved: taught before what it builds on, adding is flagged.
+        JsonNode preview = json(post("/api/v1/studio/curriculum-versions/" + versionId + "/journey/preview", "{\"objectiveIds\":[\""
+                + adding + "\",\"" + counting + "\",\"" + shaping + "\"]}", admin), 200);
+        assertThat(preview.get("preview").asBoolean()).isTrue();
+        assertThat(codes(preview.get("chapters").get(0).get("issues"))).contains("PREREQUISITE_LATER");
+        assertThat(json(get("/api/v1/studio/curriculum-versions/" + versionId + "/journey", admin), 200)
+                .get("chapters").get(0).get("title").asString()).isEqualTo("Counting");
+        assertThat(post("/api/v1/studio/curriculum-versions/" + versionId + "/journey/preview", "{\"objectiveIds\":[\"" + adding + "\",\""
+                + adding + "\"]}", admin).statusCode()).isEqualTo(400);
+
+        // Warnings don't block publishing (the checks decide that); a child then starts with exactly these steps.
+        json(post("/api/v1/studio/curriculum-versions/" + versionId + "/publish", "", admin), 200);
+        String parent = registerParent();
+        String childId = json(post("/api/v1/children", "{\"displayName\":\"Journey Child\",\"dateOfBirth\":\""
+                + LocalDate.now().minusYears(6) + "\"}", parent), 201).get("id").asString();
+        String enrollmentId = json(post("/api/v1/children/" + childId + "/enrollments", "{\"curriculumId\":\""
+                + curriculum.get("id").asString() + "\"}", parent), 201).get("id").asString();
+        List<String> childSteps = new ArrayList<>();
+        json(get("/api/v1/enrollments/" + enrollmentId + "/journey", parent), 200).get("steps")
+                .forEach(step -> childSteps.add(step.get("activityVersionId").asString()));
+        List<String> plannedSteps = new ArrayList<>();
+        json(get("/api/v1/studio/curriculum-versions/" + versionId + "/journey", admin), 200).get("chapters")
+                .forEach(chapter -> chapter.get("steps").forEach(step -> plannedSteps.add(step.get("activityVersionId").asString())));
+        assertThat(childSteps).containsExactlyElementsOf(plannedSteps);
+
+        // Only its authors: not another teacher, not a family.
+        assertThat(get("/api/v1/studio/curriculum-versions/" + versionId + "/journey", staff(PlatformRole.TEACHER)).statusCode()).isEqualTo(403);
+        assertThat(get("/api/v1/studio/curriculum-versions/" + versionId + "/journey", parent).statusCode()).isEqualTo(403);
+    }
+
+    private static List<String> stepTitles(JsonNode steps) {
+        List<String> titles = new ArrayList<>();
+        steps.forEach(step -> titles.add(step.get("title").asString()));
+        return titles;
+    }
+
+    private String skill(String admin, String subjectId, String code, String name) throws Exception {
+        return json(post("/api/v1/studio/subjects/" + subjectId + "/skills", "{\"code\":\"" + code + "\",\"name\":\"" + name + "\"}", admin),
+                201).get("id").asString();
+    }
+
+    private String objective(String admin, String subjectId, String code, String title, String skillId) throws Exception {
+        String id = json(post("/api/v1/studio/subjects/" + subjectId + "/objectives", "{\"code\":\"" + code + "\",\"title\":\"" + title + "\"}",
+                admin), 201).get("id").asString();
+        json(post("/api/v1/studio/objectives/" + id + "/skills/" + skillId, "", admin), 200);
+        return id;
+    }
+
+    /** A published activity for one skill, holding one published question tagged with that skill. */
+    private String publishedActivity(String admin, String subjectId, String lessonId, String title, String skillId, int difficulty)
+            throws Exception {
+        JsonNode question = json(post("/api/v1/studio/questions", numeric(subjectId, title + ": 2 + 2 = ?", "4", List.of(skillId)), admin), 201);
+        json(post("/api/v1/studio/question-versions/" + firstVersion(question) + "/publish", "", admin), 200);
+        JsonNode activity = json(post("/api/v1/studio/lessons/" + lessonId + "/activities", "{\"title\":\"" + title + "\",\"skillIds\":[\""
+                + skillId + "\"]}", admin), 201);
+        String versionId = firstVersion(activity);
+        json(put("/api/v1/studio/activity-versions/" + versionId, "{\"difficultyLevel\":" + difficulty + ",\"estimatedDurationSeconds\":120}",
+                admin), 200);
+        json(put("/api/v1/studio/activity-versions/" + versionId + "/items", "{\"items\":[{\"questionVersionId\":\"" + firstVersion(question)
+                + "\"}]}", admin), 200);
+        json(post("/api/v1/studio/activity-versions/" + versionId + "/publish", "", admin), 200);
+        return activity.get("id").asString();
+    }
+
     private static List<String> prompts(JsonNode page) {
         List<String> prompts = new ArrayList<>();
         page.get("items").forEach(item -> prompts.add(item.get("latestPrompt").asString()));
@@ -533,6 +653,10 @@ class ContentStudioIntegrationTests {
     private HttpResponse<String> post(String path, String body, String bearer) throws Exception {
         return send(HttpRequest.newBuilder(uri(path)).header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body)), bearer);
+    }
+
+    private HttpResponse<String> delete(String path, String bearer) throws Exception {
+        return send(HttpRequest.newBuilder(uri(path)).DELETE(), bearer);
     }
 
     private HttpResponse<String> put(String path, String body, String bearer) throws Exception {

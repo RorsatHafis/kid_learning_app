@@ -36,9 +36,11 @@ import java.util.UUID;
 public class StudioController {
 
     private final StudioService studio;
+    private final JourneyBuilderService journeys;
 
-    public StudioController(StudioService studio) {
+    public StudioController(StudioService studio, JourneyBuilderService journeys) {
         this.studio = studio;
+        this.journeys = journeys;
     }
 
     // ------------------------------------------------------------------ catalog
@@ -123,6 +125,19 @@ public class StudioController {
     @GetMapping("/curriculum-versions/{versionId}/validation")
     public ValidationReport validateCurriculumVersion(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId) {
         return studio.validateCurriculumVersion(accountId, versionId);
+    }
+
+    /** The version as the journey a child will meet: chapters, their steps, what backs each skill, and the gaps. */
+    @GetMapping("/curriculum-versions/{versionId}/journey")
+    public JourneyBuilderService.JourneyMap journey(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId) {
+        return journeys.journey(accountId, versionId);
+    }
+
+    /** The same, for chapters in an order the author hasn't saved yet: nothing is written. */
+    @PostMapping("/curriculum-versions/{versionId}/journey/preview")
+    public JourneyBuilderService.JourneyMap previewJourney(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId,
+                                                           @Valid @RequestBody ReplaceObjectivesRequest request) {
+        return journeys.preview(accountId, versionId, request.objectiveIds());
     }
 
     @PostMapping("/curriculum-versions/{versionId}/publish")

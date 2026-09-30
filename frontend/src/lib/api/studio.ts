@@ -72,6 +72,87 @@ export interface CurriculumDetail {
   versions: CurriculumVersionDetail[];
 }
 
+// ---- content/studio/JourneyBuilderService.java: a version as the journey a child meets ----
+
+export type JourneyIssueCode =
+  | "OBJECTIVE_OTHER_SUBJECT"
+  | "CHAPTER_NO_SKILLS"
+  | "CHAPTER_NO_STEPS"
+  | "SKILL_ARCHIVED"
+  | "SKILL_NO_ACTIVITY"
+  | "SKILL_NO_EVIDENCE"
+  | "SKILL_ONE_ACTIVITY"
+  | "SKILL_NO_HARDER_STEP"
+  | "SKILL_REPEATED"
+  | "PREREQUISITE_LATER"
+  | "PREREQUISITE_NO_ACTIVITY";
+
+/** WARNING: changes what a child experiences. TIP: limits how the path can adapt. Neither blocks publishing. */
+export interface JourneyIssue {
+  code: JourneyIssueCode;
+  severity: "WARNING" | "TIP";
+  message: string;
+  skillId: string | null;
+}
+
+export interface JourneyStep {
+  activityId: string;
+  activityVersionId: string;
+  title: string;
+  versionNumber: number;
+  difficulty: number | null;
+  estimatedSeconds: number | null;
+  questions: number;
+  placedBySkill: string;
+}
+
+export interface JourneySkill {
+  skillId: string;
+  name: string;
+  archived: boolean;
+  publishedActivities: number;
+  draftOnlyActivities: number;
+  evidenceQuestions: number;
+  minDifficulty: number | null;
+  maxDifficulty: number | null;
+  firstTaughtInChapter: number | null;
+  /** `chapter` is where this journey teaches the prerequisite, or null when it isn't in it. */
+  prerequisites: { skillId: string; name: string; chapter: number | null; hasActivity: boolean }[];
+}
+
+export interface JourneyChapter {
+  position: number;
+  objectiveId: string;
+  code: string;
+  title: string;
+  description: string | null;
+  otherSubject: boolean;
+  estimatedSeconds: number;
+  stepsWithoutDuration: number;
+  steps: JourneyStep[];
+  skills: JourneySkill[];
+  issues: JourneyIssue[];
+}
+
+export interface JourneyMap {
+  curriculumId: string;
+  curriculumVersionId: string;
+  versionNumber: number;
+  status: PublicationStatus;
+  /** True for an unsaved order: nothing was written. */
+  preview: boolean;
+  totals: {
+    chapters: number;
+    steps: number;
+    skills: number;
+    estimatedSeconds: number;
+    stepsWithoutDuration: number;
+    warnings: number;
+    tips: number;
+  };
+  chapters: JourneyChapter[];
+}
+
 export interface ActivitySummary {
   id: string;
   title: string;
@@ -238,6 +319,11 @@ export const studioApi = {
     apiClient.get<ValidationReport>(`${S}/curriculum-versions/${versionId}/validation`),
   publishCurriculumVersion: (versionId: string) =>
     apiClient.post<CurriculumDetail>(`${S}/curriculum-versions/${versionId}/publish`),
+  /** The version as the journey a child will meet (content/studio/JourneyBuilderService.java). */
+  journey: (versionId: string) => apiClient.get<JourneyMap>(`${S}/curriculum-versions/${versionId}/journey`),
+  /** The same for chapters in an unsaved order; nothing is written. */
+  previewJourney: (versionId: string, objectiveIds: string[]) =>
+    apiClient.post<JourneyMap>(`${S}/curriculum-versions/${versionId}/journey/preview`, { objectiveIds }),
 
   /** One page of the caller's lessons in a subject; `text` matches lesson and activity titles. */
   lessons: (subjectId: string, query: { text?: string; page?: number; size?: number } = {}) => {

@@ -2,20 +2,12 @@ package com.platform.learning.service;
 
 import com.platform.child.entity.Child;
 import com.platform.child.repository.ChildRepository;
-import com.platform.common.entity.PublicationStatus;
 import com.platform.common.web.ResourceNotFoundException;
-import com.platform.content.entity.ActivitySkill;
-import com.platform.content.entity.ActivityVersion;
-import com.platform.content.repository.ActivitySkillRepository;
-import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.curriculum.entity.AgeHub;
 import com.platform.curriculum.entity.Curriculum;
-import com.platform.curriculum.entity.CurriculumObjective;
 import com.platform.curriculum.entity.CurriculumVersion;
 import com.platform.curriculum.repository.AgeHubRepository;
 import com.platform.curriculum.service.CurriculumService;
-import com.platform.knowledge.entity.LearningObjectiveSkill;
-import com.platform.knowledge.service.LearningObjectiveSkillService;
 import com.platform.learning.entity.Enrollment;
 import com.platform.learning.entity.LearningPath;
 import com.platform.learning.entity.LearningPathItemSource;
@@ -27,10 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -48,32 +38,27 @@ public class EnrollmentService {
     private final LearningPathRepository learningPathRepository;
     private final LearningPathService learningPathService;
     private final CurriculumService curriculumService;
-    private final LearningObjectiveSkillService learningObjectiveSkillService;
-    private final ActivitySkillRepository activitySkillRepository;
-    private final ActivityVersionRepository activityVersionRepository;
     private final ChildRepository childRepository;
     private final AgeHubRepository ageHubRepository;
     private final PathContentScope pathContentScope;
     private final com.platform.subscription.service.EntitlementService entitlementService;
+    private final CurriculumPathPlanner pathPlanner;
 
     public EnrollmentService(EnrollmentRepository enrollmentRepository, LearningPathRepository learningPathRepository,
                               LearningPathService learningPathService, CurriculumService curriculumService,
-                              LearningObjectiveSkillService learningObjectiveSkillService,
-                              ActivitySkillRepository activitySkillRepository,
-                              ActivityVersionRepository activityVersionRepository, ChildRepository childRepository,
+                              ChildRepository childRepository,
                               AgeHubRepository ageHubRepository, PathContentScope pathContentScope,
-                              com.platform.subscription.service.EntitlementService entitlementService) {
+                              com.platform.subscription.service.EntitlementService entitlementService,
+                              CurriculumPathPlanner pathPlanner) {
         this.enrollmentRepository = enrollmentRepository;
         this.learningPathRepository = learningPathRepository;
         this.learningPathService = learningPathService;
         this.curriculumService = curriculumService;
-        this.learningObjectiveSkillService = learningObjectiveSkillService;
-        this.activitySkillRepository = activitySkillRepository;
-        this.activityVersionRepository = activityVersionRepository;
         this.childRepository = childRepository;
         this.ageHubRepository = ageHubRepository;
         this.pathContentScope = pathContentScope;
         this.entitlementService = entitlementService;
+        this.pathPlanner = pathPlanner;
     }
 
     /**
@@ -191,27 +176,10 @@ public class EnrollmentService {
      * scope (see {@link PathContentScope}) - a platform curriculum never seeds a
      * teacher's activity just because it is tagged with one of its skills.
      */
+    /** The curriculum's steps, as CurriculumPathPlanner defines them (the Studio's journey builder shows the same plan). */
     private void seedInitialPath(UUID learningPathId, UUID curriculumVersionId) {
-        Set<UUID> addedActivityIds = new LinkedHashSet<>();
-        PathContentScope.Scope scope = pathContentScope.forCurriculumVersion(curriculumVersionId);
-
-        for (CurriculumObjective objective : curriculumService.listObjectives(curriculumVersionId)) {
-            for (LearningObjectiveSkill skillMapping
-                    : learningObjectiveSkillService.listSkillsForObjective(objective.getLearningObjectiveId())) {
-
-                for (ActivitySkill activitySkill : activitySkillRepository.findBySkillId(skillMapping.getSkillId())) {
-                    UUID activityId = activitySkill.getActivityId();
-                    if (!pathContentScope.admitsActivity(scope, activityId) || !addedActivityIds.add(activityId)) {
-                        continue;
-                    }
-
-                    Optional<ActivityVersion> publishedVersion = activityVersionRepository
-                            .findFirstByActivityIdAndStatusOrderByVersionNumberDesc(activityId, PublicationStatus.PUBLISHED);
-
-                    publishedVersion.ifPresent(version ->
-                            learningPathService.appendItem(learningPathId, version.getId(), LearningPathItemSource.CURRICULUM));
-                }
-            }
+        for (CurriculumPathPlanner.PlannedStep step : pathPlanner.plan(curriculumVersionId)) {
+            learningPathService.appendItem(learningPathId, step.version().getId(), LearningPathItemSource.CURRICULUM);
         }
     }
 

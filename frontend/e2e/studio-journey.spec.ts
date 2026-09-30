@@ -69,9 +69,18 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await page.getByLabel("Name families will see").fill(`Counting stars ${tag}`);
   await page.getByLabel("Age group").selectOption({ label: "Junior (4–9 years)" });
   await page.getByRole("button", { name: "Create draft" }).click();
-  await page.getByLabel("Add an objective").selectOption({ label: `Counts small sets ${tag}` });
-  await page.getByRole("button", { name: "Add", exact: true }).click();
+  // The journey builder: a chapter is an objective; the unsaved order is previewed, then saved.
+  await page.getByLabel("Add a chapter").selectOption({ label: `Counts small sets ${tag}` });
+  await page.getByRole("button", { name: "Add at the end" }).click();
+  await expect(page.getByText(/Unsaved order: the journey below is a preview/)).toBeVisible();
   await page.getByRole("button", { name: "Save order" }).click();
+  await expect(page.getByText("Chapters saved.")).toBeVisible();
+  // The chapter's step is the activity just published: what a child will start with.
+  const chapters = page.getByRole("list", { name: "Chapters in order" });
+  const chapter = chapters.getByRole("button", { name: new RegExp(`Chapter 1: Counts small sets ${tag}`) });
+  if ((await chapter.getAttribute("aria-expanded")) !== "true") await chapter.click();
+  await expect(chapters.getByRole("link", { name: new RegExp(`Star counting ${tag}`) })).toBeVisible();
+  await expectNoViolations(page, "studio journey builder");
   await publish(page);
 
   // A family chooses the new path; the child plays exactly the published question.

@@ -186,6 +186,25 @@ assigned curriculum the family had already chosen. Open: school-assigned journey
   ("this chapter has no published activity for Blending sounds").
 - Draft/publish/version rules stay as they are (pinned versions, retirement never breaks
   existing paths).
+
+**Built (X5): the journey builder.** The curriculum page now shows a version as the journey a child
+meets. Editable: only which chapters (objectives) a draft has and their order. Derived, by the server:
+each chapter's steps come from `CurriculumPathPlanner`, the one plan enrolment also seeds paths from
+(extracted from `EnrollmentService`), so the builder cannot drift from what a child gets. For every
+skill: published and draft-only activities, questions that record evidence, difficulty range,
+prerequisites and where the journey teaches them. Gaps are stated in terms of the rules that run:
+- **Warnings** (what a child meets changes): a skill with no published activity (draft count shown);
+  a practised skill no question records evidence for; a prerequisite taught later; the prerequisite
+  reinforcement goes to first has no activity; a chapter whose activities were all placed earlier; an
+  archived skill; an objective from another subject; an objective with no skills.
+- **Tips** (how the path can adapt): one activity only (no different practice, nothing harder); all
+  activities the same difficulty (no challenge step); a skill already taught in an earlier chapter.
+- Warnings and tips never block publishing; the Checks (ContentValidator) still decide that.
+
+An unsaved order is previewed by the server before it is saved; a draft shows its changes against the
+published version; long curricula collapse to one line per chapter with a "Needs attention" filter and
+an overview ribbon (width = steps). Not built: authoring objectives or activities from the builder (it
+links to where each gap is fixed), media and audio.
 - Still open for the owner: content review before publishing (PD-20), withdrawing unsafe content
   (PD-04), and media and audio for literacy content. Khmer and English journeys need
   letter sounds and images, which the Studio can't attach yet.
