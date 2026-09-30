@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { AccountsPage } from "./AccountsPage";
 import { ActivityPage } from "./ActivityPage";
+import { OverviewPage } from "./OverviewPage";
 import { valueText } from "./auditText";
 
 function respond(status: number, body?: unknown) {
@@ -167,5 +168,60 @@ describe("valueText", () => {
     expect(valueText("2026-10-10")).toBe("2026-10-10");
     expect(valueText(2)).toBe("2");
     expect(valueText(null)).toBe("—");
+  });
+});
+
+function overview(waiting: Record<string, unknown>) {
+  return {
+    waiting: { principalsAwaitingApproval: 0, suspendedAccounts: 0, lockoutsLast24Hours: 0, plansEndingSoon: [], plansEndingSoonTotal: 0, ...waiting },
+    platform: { families: 1200, children: 1850, schools: 4, classes: 22, teachers: 30, principals: 4 },
+    content: { questionsInDraft: 3, activitiesInDraft: 1, curriculaInDraft: 0, curriculaPublished: 2 },
+  };
+}
+
+describe("OverviewPage", () => {
+  it("leads with what is waiting, each linked to where it is done", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        respond(
+          200,
+          overview({
+            principalsAwaitingApproval: 2,
+            lockoutsLast24Hours: 1,
+            plansEndingSoon: [
+              { familyId: "f1", familyName: "Sok family", parentEmail: "sok@example.com", planName: "Pilot", endsAt: "2026-10-05T00:00:00Z" },
+            ],
+            plansEndingSoonTotal: 1,
+          }),
+        ),
+      ),
+    );
+    render(
+      <MemoryRouter>
+        <OverviewPage />
+      </MemoryRouter>,
+    );
+
+    const waiting = await screen.findByRole("region", { name: "Waiting on you" });
+    expect(within(waiting).getByText("2 school applications to review")).toBeInTheDocument();
+    expect(within(waiting).getByRole("link", { name: /Review/ })).toHaveAttribute("href", "/admin/staff");
+    expect(within(waiting).getByRole("link", { name: /See the log/ })).toHaveAttribute("href", "/admin/activity?action=ACCOUNT_LOCKED");
+    expect(within(waiting).getByRole("link", { name: /Sok family/ })).toHaveAttribute(
+      "href",
+      "/admin/plans?parentEmail=sok%40example.com",
+    );
+    expect(within(waiting).queryByText(/suspended/)).not.toBeInTheDocument();
+    expect(screen.getByText("1,850")).toBeInTheDocument();
+  });
+
+  it("says so plainly when nothing is waiting", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => respond(200, overview({}))));
+    render(
+      <MemoryRouter>
+        <OverviewPage />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText(/Nothing is waiting/)).toBeInTheDocument();
   });
 });

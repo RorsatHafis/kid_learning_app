@@ -131,3 +131,48 @@ export const classAccessApi = {
     apiClient.get<MemberLearning>(`${C(classId)}/children/${childId}/learning`),
   removeMember: (classId: string, childId: string) => apiClient.delete<void>(`${C(classId)}/children/${childId}`),
 };
+
+// ---- school/service/SchoolOverviewService.java (X7): the staff home ----
+
+/** From the children's answers in the class's assigned curricula only. */
+export interface ClassAttention {
+  /** Children with at least one skill whose standing is "needs practice". */
+  childrenNeedingPractice: number;
+  skillsNeedingPractice: number;
+  /** Children with no step done in any assigned curriculum (0 when nothing is assigned). */
+  childrenNotStarted: number;
+}
+
+export interface ClassOverview {
+  classId: string;
+  className: string;
+  schoolId: string;
+  schoolName: string;
+  children: number;
+  curricula: ClassCurriculum[];
+  teachers: number;
+  /** `open`: families can use it now; `expiresAt` of the unrevoked code, open or expired. */
+  joinCode: { open: boolean; expiresAt: string | null };
+  attention: ClassAttention;
+}
+
+/** A principal's school: who it reaches and what is still to set up. */
+export interface SchoolOverview {
+  schoolId: string;
+  name: string;
+  childrenWithAccess: number;
+  classes: number;
+  classesWithoutTeacher: number;
+  classesWithoutCurriculum: number;
+  classesWithoutOpenCode: number;
+}
+
+export interface StaffOverview {
+  /** Principals only; empty for a teacher. */
+  schools: SchoolOverview[];
+  classes: ClassOverview[];
+}
+
+export const staffOverviewApi = {
+  get: () => apiClient.get<StaffOverview>("/schools/overview"),
+};

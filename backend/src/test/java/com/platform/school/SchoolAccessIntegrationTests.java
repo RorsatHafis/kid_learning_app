@@ -262,6 +262,70 @@ class SchoolAccessIntegrationTests {
     }
 
     @Test
+    void theStaffOverviewSummarisesOnlyTheirOwnClassesFromWhatTheClassSees() throws Exception {
+        Staff principal = staff(PlatformRole.PRINCIPAL);
+        Staff teacher = staff(PlatformRole.TEACHER);
+        SchoolClass taught = classTaughtBy(principal, teacher);
+        SchoolClass untaught = schoolService.createClass(taught.getSchoolId(), "Grade 2");
+        String classPath = "/api/v1/schools/classes/" + taught.getId();
+        Curriculum assigned = publishedCurriculum(null, "Overview maths");
+        Curriculum homeChoice = publishedCurriculum(null, "Overview reading");
+        json(post(classPath + "/curricula/" + assigned.getId(), "", teacher.token()), 200);
+
+        // Before anyone joins, the principal sees the school's setup gaps.
+        JsonNode school = json(get("/api/v1/schools/overview", principal.token()), 200).get("schools").get(0);
+        assertThat(school.get("classes").asInt()).isEqualTo(2);
+        assertThat(school.get("classesWithoutTeacher").asInt()).isEqualTo(1);
+        assertThat(school.get("classesWithoutCurriculum").asInt()).isEqualTo(1);
+        assertThat(school.get("classesWithoutOpenCode").asInt()).isEqualTo(2);
+        assertThat(school.get("childrenWithAccess").asInt()).isZero();
+
+        String code = json(post(classPath + "/join-code", "", teacher.token()), 201).get("code").asString();
+        Parent parent = parent();
+        String childId = createChild(parent.token(), "Sophea");
+        json(post("/api/v1/children/" + childId + "/enrollments", "{\"curriculumId\":\"" + homeChoice.getId() + "\"}",
+                parent.token()), 201);
+        confirmEmail(parent);
+        json(post("/api/v1/children/" + childId + "/schools/join", codeBody(code), parent.token()), 200);
+
+        // The teacher: only the class they teach, counted from grant-backed members; no names, no family choices.
+        HttpResponse<String> mine = get("/api/v1/schools/overview", teacher.token());
+        JsonNode teacherView = json(mine, 200);
+        assertThat(teacherView.get("schools")).isEmpty();
+        assertThat(teacherView.get("classes")).hasSize(1);
+        JsonNode row = teacherView.get("classes").get(0);
+        assertThat(row.get("classId").asString()).isEqualTo(taught.getId().toString());
+        assertThat(row.get("children").asInt()).isEqualTo(1);
+        assertThat(row.get("teachers").asInt()).isEqualTo(1);
+        assertThat(row.get("joinCode").get("open").asBoolean()).isTrue();
+        assertThat(row.get("curricula").get(0).get("curriculumId").asString()).isEqualTo(assigned.getId().toString());
+        assertThat(row.get("attention").get("childrenNotStarted").asInt()).isEqualTo(1);
+        assertThat(row.get("attention").get("childrenNeedingPractice").asInt()).isZero();
+        assertThat(mine.body()).doesNotContain("Sophea").doesNotContain(homeChoice.getName()).doesNotContain(childId);
+
+        // The principal: every class of the school, and the children the school now reaches.
+        JsonNode principalView = json(get("/api/v1/schools/overview", principal.token()), 200);
+        assertThat(principalView.get("classes")).hasSize(2);
+        assertThat(principalView.get("schools").get(0).get("childrenWithAccess").asInt()).isEqualTo(1);
+        assertThat(principalView.get("schools").get(0).get("classesWithoutOpenCode").asInt()).isEqualTo(1);
+        JsonNode second = principalView.get("classes").get(1);
+        assertThat(second.get("classId").asString()).isEqualTo(untaught.getId().toString());
+        assertThat(second.get("attention").get("childrenNotStarted").asInt()).isZero();
+
+        // Ending access removes the child from the counts at once.
+        assertThat(delete("/api/v1/children/" + childId + "/schools/" + taught.getSchoolId(), parent.token()).statusCode()).isEqualTo(204);
+        JsonNode after = json(get("/api/v1/schools/overview", principal.token()), 200);
+        assertThat(after.get("schools").get(0).get("childrenWithAccess").asInt()).isZero();
+        assertThat(after.get("classes").get(0).get("children").asInt()).isZero();
+
+        // Another teacher has nothing; an administrator and a parent have no class overview at all.
+        assertThat(json(get("/api/v1/schools/overview", staff(PlatformRole.TEACHER).token()), 200).get("classes")).isEmpty();
+        assertThat(get("/api/v1/schools/overview", staff(PlatformRole.ADMIN).token()).statusCode()).isEqualTo(403);
+        assertThat(get("/api/v1/schools/overview", parent.token()).statusCode()).isEqualTo(403);
+        assertThat(get("/api/v1/schools/overview", null).statusCode()).isEqualTo(401);
+    }
+
+    @Test
     void codeLookupsAreRateLimitedPerAccount() throws Exception {
         Parent parent = parent();
         String childId = createChild(parent.token(), "Rotha");

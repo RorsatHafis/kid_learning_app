@@ -98,6 +98,7 @@ test.describe("accessibility @phone", () => {
     test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
     await logIn(page, ADMIN_EMAIL, ADMIN_PASSWORD);
     for (const [path, screen] of [
+      ["/admin", "overview"],
       ["/admin/studio", "studio"],
       ["/admin/staff", "staff"],
       ["/admin/accounts", "accounts"],

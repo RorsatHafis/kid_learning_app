@@ -128,6 +128,23 @@ public class SchoolLearningService {
     @Transactional(readOnly = true)
     public ClassLearning classLearning(UUID accountId, UUID classId) {
         guard.requireClassStaff(accountId, classId);
+        ClassSnapshot snapshot = snapshot(classId);
+        List<CurriculumTally> tallies = snapshot.assigned().stream()
+                .map(curriculum -> tally(curriculum, snapshot.progressByMember()))
+                .toList();
+        return new ClassLearning(snapshot.assigned(), snapshot.members(), tallies);
+    }
+
+    /**
+     * A class's assigned curricula and, for each member, their journeys and skill progress in them -
+     * the one read behind the class workspace and the staff overview. Callers check the reader
+     * first ({@link SchoolAccessGuard#requireClassStaff}); it isn't part of the public API.
+     */
+    record ClassSnapshot(List<ClassCurriculum> assigned, List<MemberRow> members,
+                         Map<UUID, List<CurriculumProgress>> progressByMember) {
+    }
+
+    ClassSnapshot snapshot(UUID classId) {
         List<ClassCurriculum> assigned = assignedCurricula(classId);
         Set<UUID> assignedIds = assigned.stream().map(ClassCurriculum::curriculumId).collect(Collectors.toSet());
         List<MemberRow> rows = new ArrayList<>();
@@ -137,10 +154,7 @@ public class SchoolLearningService {
                     journeyViews(member.childId(), assigned)));
             progressByMember.put(member.childId(), latestPerCurriculum(skills.progressFor(member.childId()), assignedIds));
         }
-        List<CurriculumTally> tallies = assigned.stream()
-                .map(curriculum -> tally(curriculum, progressByMember))
-                .toList();
-        return new ClassLearning(assigned, rows, tallies);
+        return new ClassSnapshot(assigned, rows, progressByMember);
     }
 
     /** One member, in more detail: their assigned journeys and every skill standing in them. */

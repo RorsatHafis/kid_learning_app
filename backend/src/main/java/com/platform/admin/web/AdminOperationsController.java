@@ -1,6 +1,7 @@
 package com.platform.admin.web;
 
 import com.platform.admin.service.AdminOperationsService;
+import com.platform.admin.service.AdminOverviewService;
 import com.platform.common.web.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -28,9 +29,17 @@ import java.util.UUID;
 public class AdminOperationsController {
 
     private final AdminOperationsService service;
+    private final AdminOverviewService overview;
 
-    public AdminOperationsController(AdminOperationsService service) {
+    public AdminOperationsController(AdminOperationsService service, AdminOverviewService overview) {
         this.service = service;
+        this.overview = overview;
+    }
+
+    /** What is waiting on an administrator, and the platform in counts (X7). */
+    @GetMapping("/overview")
+    public AdminOverviewService.AdminOverview overview(@AuthenticationPrincipal UUID adminId) {
+        return overview.overview(adminId);
     }
 
     public record ReasonRequest(@NotBlank @Size(max = 500) String reason) {

@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, MailPlus, Plus, School as SchoolIcon, UserMinus } from "lucide-react";
+import { CheckCircle2, ChevronRight, MailPlus, Plus, School as SchoolIcon, UserMinus } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { problemMessage } from "@/lib/api/problemMessage";
 import type { SchoolStaffMember, SchoolSummary } from "@/lib/api/types";
+import { staffOverviewApi, type ClassOverview, type SchoolOverview, type StaffOverview } from "@/lib/api/schoolAccess";
+import { ClassSummary } from "@/features/school/ClassSummary";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
@@ -12,6 +14,7 @@ import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 export function PrincipalHome() {
   const schools = useAsync(() => schoolApi.mySchools(), []);
+  const overview = useAsync(() => staffOverviewApi.get(), []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   useDocumentTitle((schools.data?.find((s) => s.id === selectedId) ?? schools.data?.[0])?.name ?? (schools.data ? "Set up your school" : null));
 
@@ -25,7 +28,7 @@ export function PrincipalHome() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{school.name}</h1>
-          <p className="mt-1.5 text-[0.9375rem] text-ink-soft">Your school&apos;s classes and teachers.</p>
+          <p className="mt-1.5 text-[0.9375rem] text-ink-soft">Who your school reaches, what is still to set up, and each class.</p>
         </div>
         {schools.data.length > 1 && (
           <label className="flex items-center gap-2 text-sm text-ink-soft">
@@ -44,8 +47,10 @@ export function PrincipalHome() {
           </label>
         )}
       </div>
+      {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
+      {overview.data && <AtAGlance school={overview.data.schools.find((s) => s.schoolId === school.id)} />}
       <div className="grid gap-10 xl:grid-cols-2 xl:items-start xl:gap-8">
-        <Classes school={school} />
+        <Classes school={school} overview={overview.data} onChanged={overview.refetch} />
         <Teachers school={school} />
       </div>
     </div>
@@ -96,7 +101,70 @@ function SetUpSchool({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-function Classes({ school }: { school: SchoolSummary }) {
+/**
+ * The school at a glance: the children families have given it access to, its classes, and what
+ * stops a class from working yet. Counts only - the children themselves are in each class.
+ */
+function AtAGlance({ school }: { school: SchoolOverview | undefined }) {
+  if (!school) return null;
+  const todo = [
+    school.classesWithoutTeacher > 0 &&
+      `${school.classesWithoutTeacher} ${school.classesWithoutTeacher === 1 ? "class needs" : "classes need"} a teacher`,
+    school.classesWithoutCurriculum > 0 &&
+      `${school.classesWithoutCurriculum} ${school.classesWithoutCurriculum === 1 ? "class has" : "classes have"} nothing to learn assigned`,
+    school.classesWithoutOpenCode > 0 &&
+      `${school.classesWithoutOpenCode} ${school.classesWithoutOpenCode === 1 ? "class has" : "classes have"} no working class code`,
+  ].filter((item): item is string => Boolean(item));
+
+  return (
+    <section
+      aria-labelledby="glance-heading"
+      className="grid grid-cols-2 gap-6 rounded-[14px] border border-line bg-white px-5 py-5 sm:grid-cols-[auto_auto_minmax(0,1fr)] sm:gap-10 sm:px-6"
+    >
+      <h2 id="glance-heading" className="sr-only">
+        At a glance
+      </h2>
+      <div>
+        <p className="tabular font-display text-[2rem] font-semibold leading-none text-tonle-950">{school.childrenWithAccess}</p>
+        <p className="mt-1.5 text-sm text-ink-soft">{school.childrenWithAccess === 1 ? "child" : "children"} with access</p>
+      </div>
+      <div>
+        <p className="tabular font-display text-[2rem] font-semibold leading-none text-tonle-950">{school.classes}</p>
+        <p className="mt-1.5 text-sm text-ink-soft">{school.classes === 1 ? "class" : "classes"}</p>
+      </div>
+      <div className="col-span-2 border-t border-line pt-4 sm:col-span-1 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
+        {school.classes === 0 ? (
+          <p className="text-sm text-ink-soft">Add your first class below, then invite its teacher.</p>
+        ) : todo.length === 0 ? (
+          <p className="flex items-start gap-2 text-sm text-palm-deep">
+            <CheckCircle2 size={16} aria-hidden className="mt-0.5 shrink-0" />
+            Every class has a teacher, something to learn and a working class code.
+          </p>
+        ) : (
+          <>
+            <p className="text-sm font-semibold text-ink">Still to set up</p>
+            <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-5 text-sm text-light-deep marker:text-light">
+              {todo.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Classes({
+  school,
+  overview,
+  onChanged,
+}: {
+  school: SchoolSummary;
+  overview: StaffOverview | null;
+  onChanged: () => void;
+}) {
+  const byId = new Map<string, ClassOverview>((overview?.classes ?? []).map((c) => [c.classId, c]));
   const classes = useAsync(() => schoolApi.schoolClasses(school.id), [school.id]);
   const [name, setName] = useState("");
   const [adding, setAdding] = useState(false);
@@ -110,6 +178,7 @@ function Classes({ school }: { school: SchoolSummary }) {
       await schoolApi.createClass(school.id, name.trim());
       setName("");
       classes.refetch();
+      onChanged();
     } catch (err) {
       setError(problemMessage(err, "We couldn't add the class. Please try again."));
     } finally {
@@ -118,19 +187,12 @@ function Classes({ school }: { school: SchoolSummary }) {
   }
 
   return (
-    <section aria-labelledby="classes-heading" className="flex flex-col gap-3">
+    <section aria-labelledby="classes-heading" className="flex min-w-0 flex-col gap-3">
       <div>
         <h2 id="classes-heading" className="text-lg font-semibold text-tonle-950">
           Classes
         </h2>
-        {classes.data && classes.data.some((c) => c.teachers.length === 0) && (
-          <p className="text-sm font-medium text-light-deep">
-            {(() => {
-              const n = classes.data.filter((c) => c.teachers.length === 0).length;
-              return `${n} ${n === 1 ? "class still needs" : "classes still need"} a teacher — open a class to assign one.`;
-            })()}
-          </p>
-        )}
+        <p className="text-sm text-ink-soft">Open a class to assign its teacher, what it learns and its code.</p>
       </div>
       {classes.isLoading && !classes.data && <LoadingState label="Loading classes…" />}
       {classes.error && <ErrorState error={classes.error} onRetry={classes.refetch} />}
@@ -141,22 +203,29 @@ function Classes({ school }: { school: SchoolSummary }) {
       )}
       {classes.data && classes.data.length > 0 && (
         <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
-          {classes.data.map((c) => (
-            <li key={c.id}>
-              <Link
-                to={`/principal/classes/${c.id}`}
-                className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-tonle-50/60"
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold text-ink">{c.name}</p>
-                  <p className="truncate text-sm text-ink-soft">
-                    {c.teachers.length === 0 ? "No teacher assigned yet" : c.teachers.map((t) => t.email).join(", ")}
-                  </p>
-                </div>
-                <ChevronRight size={18} className="shrink-0 text-ink-soft" aria-hidden />
-              </Link>
-            </li>
-          ))}
+          {classes.data.map((c) => {
+            const summary = byId.get(c.id);
+            return summary ? (
+              <li key={c.id}>
+                <ClassSummary overview={summary} to={`/principal/classes/${c.id}`} teachers={c.teachers.map((t) => t.email)} />
+              </li>
+            ) : (
+              <li key={c.id}>
+                <Link
+                  to={`/principal/classes/${c.id}`}
+                  className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-tonle-50/60"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-ink">{c.name}</p>
+                    <p className="truncate text-sm text-ink-soft">
+                      {c.teachers.length === 0 ? "No teacher assigned yet" : c.teachers.map((t) => t.email).join(", ")}
+                    </p>
+                  </div>
+                  <ChevronRight size={18} className="shrink-0 text-ink-soft" aria-hidden />
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
       <form onSubmit={onAdd} className="flex flex-wrap items-end gap-3">
@@ -222,7 +291,7 @@ function Teachers({ school }: { school: SchoolSummary }) {
   const visible = staff.data?.filter((m) => m.status !== "REMOVED") ?? [];
 
   return (
-    <section aria-labelledby="teachers-heading" className="flex flex-col gap-3">
+    <section aria-labelledby="teachers-heading" className="flex min-w-0 flex-col gap-3">
       <div>
         <h2 id="teachers-heading" className="text-lg font-semibold text-tonle-950">
           Teachers

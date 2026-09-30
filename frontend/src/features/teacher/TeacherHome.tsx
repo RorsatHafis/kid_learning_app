@@ -1,52 +1,66 @@
-import { Link } from "react-router-dom";
-import { ChevronRight, Users } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
-import { schoolApi } from "@/lib/api/endpoints";
+import { staffOverviewApi, type ClassOverview } from "@/lib/api/schoolAccess";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
+import { ClassSummary } from "@/features/school/ClassSummary";
 import { SchoolInvitations } from "./SchoolInvitations";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
+/** Classes grouped by school, in the server's order (school, then class name). */
+function bySchool(classes: ClassOverview[]) {
+  const groups = new Map<string, { name: string; classes: ClassOverview[] }>();
+  for (const c of classes) {
+    const group = groups.get(c.schoolId) ?? { name: c.schoolName, classes: [] };
+    group.classes.push(c);
+    groups.set(c.schoolId, group);
+  }
+  return [...groups.entries()];
+}
+
+/**
+ * A teacher's home: each class they teach, with who is in it and what needs attention, from the
+ * same evidence the class workspace shows (X7).
+ */
 export function TeacherHome() {
-  const { data: classes, error, isLoading, refetch } = useAsync(() => schoolApi.myClasses(), []);
+  const { data, error, isLoading, refetch } = useAsync(() => staffOverviewApi.get(), []);
   useDocumentTitle("Your classes");
+  const groups = data ? bySchool(data.classes) : [];
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">Your classes</h1>
-        <p className="mt-1.5 text-[0.9375rem] text-ink-soft">Classes you&apos;re currently assigned to teach.</p>
+        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
+          Your classes
+        </h1>
+        <p className="mt-1.5 max-w-2xl text-[0.9375rem] text-ink-soft">
+          Who is in each class you teach, and where children need practice, from their answers in what the class learns.
+        </p>
       </div>
       <SchoolInvitations onAccepted={refetch} />
 
-      {isLoading && !classes && <LoadingState label="Loading your classes…" />}
+      {isLoading && !data && <LoadingState label="Loading your classes…" />}
       {error && <ErrorState error={error} onRetry={refetch} />}
 
-      {classes && classes.length === 0 && (
+      {data && data.classes.length === 0 && (
         <EmptyState
           title="No classes assigned yet"
           description="Once your school's principal assigns you to a class, it will show up here."
         />
       )}
 
-      {classes && classes.length > 0 && (
-        <div className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
-          {classes.map((schoolClass) => (
-            <Link
-              key={schoolClass.id}
-              to={`/teacher/classes/${schoolClass.id}`}
-              className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-tonle-50/60"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-tonle-50 text-tonle-600">
-                  <Users size={16} aria-hidden />
-                </div>
-                <p className="font-semibold text-ink">{schoolClass.name}</p>
-              </div>
-              <ChevronRight size={18} className="text-ink-faint" aria-hidden />
-            </Link>
-          ))}
-        </div>
-      )}
+      {groups.map(([schoolId, group]) => (
+        <section key={schoolId} aria-labelledby={`school-${schoolId}`} className="flex flex-col gap-2">
+          <h2 id={`school-${schoolId}`} className={groups.length > 1 ? "text-sm font-semibold text-ink-soft" : "sr-only"}>
+            {group.name}
+          </h2>
+          <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
+            {group.classes.map((c) => (
+              <li key={c.classId}>
+                <ClassSummary overview={c} to={`/teacher/classes/${c.classId}`} showSchool={groups.length === 1} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }

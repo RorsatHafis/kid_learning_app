@@ -174,6 +174,52 @@ class SubscriptionIntegrationTests {
     }
 
     @Test
+    void theAdminOverviewListsPlansEndingSoonAndOtherwiseOnlyCounts() throws Exception {
+        String admin = token(PlatformRole.ADMIN);
+        String planId = activePlan(admin, 3, 3);
+        String soonEmail = "soon-" + UUID.randomUUID() + "@example.com";
+        String laterEmail = "later-" + UUID.randomUUID() + "@example.com";
+        String soonParent = registerParent(soonEmail);
+        registerParent(laterEmail);
+        json(post("/api/v1/children", "{\"displayName\":\"Overview Child\",\"dateOfBirth\":\"" + LocalDate.now().minusYears(6)
+                + "\"}", soonParent), 201);
+        String soonFamily = familyOf(admin, soonEmail);
+        Instant soon = Instant.now().plus(Duration.ofDays(5)).truncatedTo(ChronoUnit.SECONDS);
+        json(post("/api/v1/admin/families/" + soonFamily + "/subscription", "{\"planId\":\"" + planId + "\",\"periodEnd\":\"" + soon
+                + "\"}", admin), 200);
+        json(post("/api/v1/admin/families/" + familyOf(admin, laterEmail) + "/subscription", "{\"planId\":\"" + planId
+                + "\",\"periodEnd\":\"" + Instant.now().plus(Duration.ofDays(40)) + "\"}", admin), 200);
+
+        HttpResponse<String> response = get("/api/v1/admin/overview", admin);
+        JsonNode overview = json(response, 200);
+        JsonNode ending = null;
+        for (JsonNode plan : overview.get("waiting").get("plansEndingSoon")) {
+            if (plan.get("familyId").asString().equals(soonFamily)) {
+                ending = plan;
+            }
+            assertThat(plan.get("parentEmail").asString()).isNotEqualTo(laterEmail);
+        }
+        assertThat(ending).as("the family whose plan ends in 5 days").isNotNull();
+        assertThat(ending.get("parentEmail").asString()).isEqualTo(soonEmail);
+        assertThat(ending.get("planName").asString()).isEqualTo("Test plan");
+        assertThat(Instant.parse(ending.get("endsAt").asString())).isEqualTo(soon);
+        assertThat(overview.get("waiting").get("plansEndingSoonTotal").asLong()).isGreaterThanOrEqualTo(1);
+        assertThat(overview.get("platform").get("children").asLong()).isGreaterThanOrEqualTo(1);
+        assertThat(overview.get("content").get("curriculaPublished").asLong()).isGreaterThanOrEqualTo(0);
+        // Counts, not children: no child's name reaches the operator's home.
+        assertThat(response.body()).doesNotContain("Overview Child");
+
+        assertThat(get("/api/v1/admin/overview", soonParent).statusCode()).isEqualTo(403);
+        assertThat(get("/api/v1/admin/overview", token(PlatformRole.TEACHER)).statusCode()).isEqualTo(403);
+        assertThat(get("/api/v1/admin/overview", null).statusCode()).isEqualTo(401);
+    }
+
+    private String familyOf(String admin, String parentEmail) throws Exception {
+        return json(get("/api/v1/admin/families?parentEmail=" + URLEncoder.encode(parentEmail, StandardCharsets.UTF_8), admin), 200)
+                .get("familyId").asString();
+    }
+
+    @Test
     void anActivePlanIsFrozenAndTheDefaultCantBeRetired() throws Exception {
         String admin = token(PlatformRole.ADMIN);
         String planId = activePlan(admin, 2, 2);

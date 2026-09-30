@@ -35,6 +35,28 @@ afterEach(() => vi.unstubAllGlobals());
 
 const SCHOOL = { id: "s1", name: "Sunrise Primary", principalAccountId: "p1" };
 
+const EMPTY_OVERVIEW = {
+  schools: [
+    { schoolId: "s1", name: "Sunrise Primary", childrenWithAccess: 0, classes: 0, classesWithoutTeacher: 0, classesWithoutCurriculum: 0, classesWithoutOpenCode: 0 },
+  ],
+  classes: [],
+};
+
+function classOverview(over: Record<string, unknown>) {
+  return {
+    classId: "c1",
+    className: "Grade 1A",
+    schoolId: "s1",
+    schoolName: "Sunrise Primary",
+    children: 12,
+    curricula: [{ curriculumId: "cu1", name: "Maths - Junior", subjectName: "Maths" }],
+    teachers: 1,
+    joinCode: { open: true, expiresAt: "2026-10-14T00:00:00Z" },
+    attention: { childrenNeedingPractice: 0, skillsNeedingPractice: 0, childrenNotStarted: 0 },
+    ...over,
+  };
+}
+
 describe("PrincipalHome", () => {
   it("asks a principal without a school to set one up, then shows the school", async () => {
     let created = false;
@@ -45,6 +67,7 @@ describe("PrincipalHome", () => {
         return respond(201, SCHOOL);
       },
       "GET /schools/s1/classes": respond(200, []),
+      "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, []),
     });
     const user = userEvent.setup();
@@ -70,6 +93,7 @@ describe("PrincipalHome", () => {
     server({
       "GET /schools/mine": respond(200, [SCHOOL]),
       "GET /schools/s1/classes": respond(200, []),
+      "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, staff),
       "POST /schools/s1/staff": (_m, body) =>
         (body as { email: string }).email === "parent@example.com"
@@ -101,6 +125,7 @@ describe("PrincipalHome", () => {
     const calls = server({
       "GET /schools/mine": respond(200, [SCHOOL]),
       "GET /schools/s1/classes": respond(200, []),
+      "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, [
         { id: "m1", accountId: "t1", email: "active@example.com", status: "ACTIVE", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
       ]),
@@ -156,6 +181,74 @@ describe("PrincipalClassPage", () => {
     await user.selectOptions(select, "t2");
     await user.click(screen.getByRole("button", { name: "Assign" }));
     expect(calls.find((c) => c.method === "POST")?.body).toEqual({ teacherAccountId: "t2" });
+  });
+});
+
+describe("Staff homes (X7)", () => {
+  it("shows a principal who the school reaches, what is left to set up, and each class's attention", async () => {
+    server({
+      "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/classes": respond(200, [
+        { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [{ accountId: "t1", email: "a@example.com" }] },
+        { id: "c2", schoolId: "s1", name: "Grade 2B", teachers: [] },
+      ]),
+      "GET /schools/s1/staff": respond(200, []),
+      "GET /schools/overview": respond(200, {
+        schools: [
+          { schoolId: "s1", name: "Sunrise Primary", childrenWithAccess: 12, classes: 2, classesWithoutTeacher: 1, classesWithoutCurriculum: 1, classesWithoutOpenCode: 1 },
+        ],
+        classes: [
+          classOverview({ attention: { childrenNeedingPractice: 3, skillsNeedingPractice: 2, childrenNotStarted: 1 } }),
+          classOverview({ classId: "c2", className: "Grade 2B", children: 0, curricula: [], teachers: 0, joinCode: { open: false, expiresAt: null } }),
+        ],
+      }),
+    });
+    render(
+      <MemoryRouter>
+        <PrincipalHome />
+      </MemoryRouter>,
+    );
+
+    const glance = await screen.findByRole("region", { name: "At a glance" });
+    expect(within(glance).getByText("children with access")).toBeInTheDocument();
+    expect(within(glance).getByText("1 class needs a teacher")).toBeInTheDocument();
+    expect(within(glance).getByText("1 class has nothing to learn assigned")).toBeInTheDocument();
+    expect(within(glance).getByText("1 class has no working class code")).toBeInTheDocument();
+
+    const first = screen.getByRole("link", { name: /Grade 1A/ });
+    expect(first).toHaveAttribute("href", "/principal/classes/c1");
+    expect(first).toHaveTextContent("12 children · Maths - Junior · a@example.com");
+    expect(first).toHaveTextContent("3 children need practice on 2 skills");
+    expect(first).toHaveTextContent("1 child hasn't started yet");
+    const second = screen.getByRole("link", { name: /Grade 2B/ });
+    expect(second).toHaveTextContent("No teacher yet");
+    expect(second).toHaveTextContent("Nothing assigned yet: choose what the class learns.");
+  });
+
+  it("gives a teacher their classes with a plain line when no skill needs practice", async () => {
+    server({
+      "GET /schools/invitations/mine": respond(200, []),
+      "GET /schools/overview": respond(200, {
+        schools: [],
+        classes: [
+          classOverview({}),
+          classOverview({ classId: "c3", className: "Grade 3", children: 0 }),
+        ],
+      }),
+    });
+    const { TeacherHome } = await import("@/features/teacher/TeacherHome");
+    render(
+      <MemoryRouter>
+        <TeacherHome />
+      </MemoryRouter>,
+    );
+
+    const first = await screen.findByRole("link", { name: /Grade 1A/ });
+    expect(first).toHaveAttribute("href", "/teacher/classes/c1");
+    expect(first).toHaveTextContent("Sunrise Primary");
+    expect(first).toHaveTextContent("No skill needs practice right now");
+    expect(first).not.toHaveTextContent("teacher");
+    expect(screen.getByRole("link", { name: /Grade 3/ })).toHaveTextContent(/No children yet\. The class code works until/);
   });
 });
 

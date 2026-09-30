@@ -158,6 +158,9 @@ for (const [size, viewport] of Object.entries(sizes)) {
 
   if (wants("3")) {
     await login(page, accounts.admin);
+    await page.getByRole("heading", { name: "Overview" }).waitFor();
+    await shot(page, "30-admin-overview", size);
+    await page.goto(base + "/admin/studio");
     await shot(page, "30-admin-studio", size);
     await page.goto(base + "/admin/staff");
     await shot(page, "31-admin-staff", size);

@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
@@ -454,18 +455,34 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
 
 /** Find a family by a parent's exact address and give it a plan, or end the one it has. */
 function FamilyAccess({ plans }: { plans: PlanResponse[] }) {
-  const [email, setEmail] = useState("");
+  // ?parentEmail= (a link from the overview) opens that family straight away.
+  const [params] = useSearchParams();
+  const linked = params.get("parentEmail") ?? "";
+  const [email, setEmail] = useState(linked);
   const [finding, setFinding] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [family, setFamily] = useState<FamilyAccountSummary | null>(null);
 
+  const openedLink = useRef(false);
+  useEffect(() => {
+    if (!linked || openedLink.current) return;
+    openedLink.current = true;
+    void find(linked);
+    // Only the address it was opened with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linked]);
+
   async function onFind(e: FormEvent) {
     e.preventDefault();
+    await find(email.trim());
+  }
+
+  async function find(address: string) {
     setFinding(true);
     setLookupError(null);
     setFamily(null);
     try {
-      setFamily(await plansApi.findFamily(email.trim()));
+      setFamily(await plansApi.findFamily(address));
     } catch (err) {
       setLookupError(
         err instanceof ApiError && err.status === 404

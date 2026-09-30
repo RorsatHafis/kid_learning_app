@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { operationsApi } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { Panel, SelectField } from "../studio/shared";
@@ -10,7 +10,10 @@ import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 export function ActivityPage() {
   useDocumentTitle("Activity log");
   const actions = useAsync(() => operationsApi.auditActions(), []);
-  const [action, setAction] = useState("");
+  // The filter lives in the address, so a link (e.g. from the overview) can open a filtered log.
+  const [params, setParams] = useSearchParams();
+  const action = params.get("action") ?? "";
+  const setAction = (value: string) => setParams(value ? { action: value } : {}, { replace: true });
 
   return (
     <div className="flex flex-col gap-6">
