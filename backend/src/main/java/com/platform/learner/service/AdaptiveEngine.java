@@ -1,9 +1,8 @@
 package com.platform.learner.service;
 
 import com.platform.common.entity.PublicationStatus;
-import com.platform.content.entity.ActivitySkill;
 import com.platform.content.entity.ActivityVersion;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.knowledge.entity.SkillPrerequisite;
 import com.platform.knowledge.repository.SkillPrerequisiteRepository;
@@ -71,14 +70,14 @@ public class AdaptiveEngine {
 
     private final LearnerSkillStateRepository skillStateRepository;
     private final SkillPrerequisiteRepository skillPrerequisiteRepository;
-    private final ActivitySkillRepository activitySkillRepository;
+    private final ActivityVersionSkillRepository activitySkillRepository;
     private final ActivityVersionRepository activityVersionRepository;
     private final LearningPathService learningPathService;
     private final PathContentScope pathContentScope;
 
     public AdaptiveEngine(LearnerSkillStateRepository skillStateRepository,
                            SkillPrerequisiteRepository skillPrerequisiteRepository,
-                           ActivitySkillRepository activitySkillRepository,
+                           ActivityVersionSkillRepository activitySkillRepository,
                            ActivityVersionRepository activityVersionRepository,
                            LearningPathService learningPathService, PathContentScope pathContentScope) {
         this.skillStateRepository = skillStateRepository;
@@ -207,14 +206,9 @@ public class AdaptiveEngine {
                                                     PathContentScope.Scope scope) {
         // N7: only content this path's scope admits - a family path never gets a
         // teacher's activity just because it is tagged with the same skill.
-        List<ActivityVersion> publishedCandidates = activitySkillRepository.findBySkillId(skillId).stream()
-                .map(ActivitySkill::getActivityId)
-                .distinct()
-                .filter(activityId -> pathContentScope.admitsActivity(scope, activityId))
-                .map(activityId -> activityVersionRepository
-                        .findFirstByActivityIdAndStatusOrderByVersionNumberDesc(
-                                activityId, PublicationStatus.PUBLISHED))
-                .flatMap(Optional::stream)
+        // PD-08: a published version is a candidate for the skills it was published with.
+        List<ActivityVersion> publishedCandidates = activitySkillRepository.findPublishedPractising(skillId).stream()
+                .filter(version -> pathContentScope.admitsActivity(scope, version.getActivityId()))
                 .toList();
 
         List<ActivityVersion> uncompletedCandidates = publishedCandidates.stream()

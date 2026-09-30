@@ -6,9 +6,9 @@ import com.platform.child.repository.ChildRepository;
 import com.platform.common.entity.CatalogStatus;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.content.entity.ActivityItem;
-import com.platform.content.entity.ActivitySkill;
+import com.platform.content.entity.ActivityVersionSkill;
 import com.platform.content.repository.ActivityItemRepository;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.curriculum.entity.Curriculum;
@@ -95,7 +95,7 @@ class GoldenLearningJourneyIntegrationTests {
     @Autowired private AgeHubRepository ageHubRepository;
     @Autowired private CurriculumRepository curriculumRepository;
     @Autowired private SkillRepository skillRepository;
-    @Autowired private ActivitySkillRepository activitySkillRepository;
+    @Autowired private ActivityVersionSkillRepository activitySkillRepository;
     @Autowired private ActivityVersionRepository activityVersionRepository;
     @Autowired private ActivityItemRepository activityItemRepository;
     @Autowired private QuestionVersionRepository questionVersionRepository;
@@ -234,9 +234,9 @@ class GoldenLearningJourneyIntegrationTests {
     // ---------------------------------------------------------------- helpers ----
 
     private boolean exercises(UUID activityVersionId, UUID skillId) {
-        UUID activityId = activityVersionRepository.findById(activityVersionId).orElseThrow().getActivityId();
-        return activitySkillRepository.findByActivityId(activityId).stream()
-                .map(ActivitySkill::getSkillId).anyMatch(skillId::equals);
+        // PD-08: what the version played practises, by its own tags.
+        return activitySkillRepository.findByActivityVersionIdOrderByCreatedAtAscIdAsc(activityVersionId).stream()
+                .map(ActivityVersionSkill::getSkillId).anyMatch(skillId::equals);
     }
 
     /** Every seeded question carries its activity's skill, so this is the evidence count the skill must show. */

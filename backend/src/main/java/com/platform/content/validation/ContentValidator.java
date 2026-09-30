@@ -5,20 +5,20 @@ import com.platform.common.entity.PublicationStatus;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.content.entity.Activity;
 import com.platform.content.entity.ActivityItem;
-import com.platform.content.entity.ActivitySkill;
+import com.platform.content.entity.ActivityVersionSkill;
 import com.platform.content.entity.ActivityVersion;
 import com.platform.content.entity.Question;
 import com.platform.content.entity.QuestionOption;
-import com.platform.content.entity.QuestionSkill;
+import com.platform.content.entity.QuestionVersionSkill;
 import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
 import com.platform.content.repository.ActivityItemRepository;
 import com.platform.content.repository.ActivityRepository;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.content.repository.QuestionOptionRepository;
 import com.platform.content.repository.QuestionRepository;
-import com.platform.content.repository.QuestionSkillRepository;
+import com.platform.content.repository.QuestionVersionSkillRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.content.service.ContentOwnership;
 import com.platform.content.service.QuestionCompleteness;
@@ -77,11 +77,11 @@ public class ContentValidator {
     private final QuestionRepository questions;
     private final QuestionVersionRepository questionVersions;
     private final QuestionOptionRepository questionOptions;
-    private final QuestionSkillRepository questionSkills;
+    private final QuestionVersionSkillRepository questionSkills;
     private final ActivityRepository activities;
     private final ActivityVersionRepository activityVersions;
     private final ActivityItemRepository activityItems;
-    private final ActivitySkillRepository activitySkills;
+    private final ActivityVersionSkillRepository activitySkills;
     private final SkillRepository skills;
     private final CurriculumRepository curricula;
     private final CurriculumVersionRepository curriculumVersions;
@@ -91,9 +91,9 @@ public class ContentValidator {
     private final ContentOwnership ownership;
 
     public ContentValidator(QuestionRepository questions, QuestionVersionRepository questionVersions,
-                            QuestionOptionRepository questionOptions, QuestionSkillRepository questionSkills,
+                            QuestionOptionRepository questionOptions, QuestionVersionSkillRepository questionSkills,
                             ActivityRepository activities, ActivityVersionRepository activityVersions,
-                            ActivityItemRepository activityItems, ActivitySkillRepository activitySkills,
+                            ActivityItemRepository activityItems, ActivityVersionSkillRepository activitySkills,
                             SkillRepository skills, CurriculumRepository curricula,
                             CurriculumVersionRepository curriculumVersions,
                             CurriculumObjectiveRepository curriculumObjectives,
@@ -140,8 +140,8 @@ public class ContentValidator {
             }
         }
 
-        List<Skill> tagged = skillsOf(questionSkills.findByQuestionId(question.getId()).stream()
-                .map(QuestionSkill::getSkillId).toList());
+        List<Skill> tagged = skillsOf(questionSkills.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(questionVersionId).stream()
+                .map(QuestionVersionSkill::getSkillId).toList());
         if (tagged.isEmpty()) {
             errors.add(new Issue("QUESTION_NO_SKILL",
                     "Tag at least one skill: answers are recorded as evidence for the question's skills, so without one "
@@ -167,8 +167,8 @@ public class ContentValidator {
         List<Issue> errors = new ArrayList<>();
         List<Issue> warnings = new ArrayList<>();
 
-        List<Skill> placedFor = skillsOf(activitySkills.findByActivityId(activity.getId()).stream()
-                .map(ActivitySkill::getSkillId).toList());
+        List<Skill> placedFor = skillsOf(activitySkills.findByActivityVersionIdOrderByCreatedAtAscIdAsc(activityVersionId).stream()
+                .map(ActivityVersionSkill::getSkillId).toList());
         if (placedFor.isEmpty()) {
             errors.add(new Issue("ACTIVITY_NO_SKILL",
                     "Tag at least one skill: learning paths choose activities by skill, so without one it is never placed."));
@@ -196,8 +196,8 @@ public class ContentValidator {
             if (!ContentOwnership.usableBy(question.getOwnerAccountId(), owner)) {
                 errors.add(new Issue("QUESTION_OUT_OF_SCOPE", label + " belongs to another author and can't be used here."));
             }
-            List<UUID> questionSkillIds = questionSkills.findByQuestionId(question.getId()).stream()
-                    .map(QuestionSkill::getSkillId).toList();
+            List<UUID> questionSkillIds = questionSkills.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(questionVersion.getId()).stream()
+                    .map(QuestionVersionSkill::getSkillId).toList();
             if (questionSkillIds.isEmpty()) {
                 errors.add(new Issue("QUESTION_NO_SKILL", label + " has no skill, so answering it records no evidence."));
             }
@@ -306,14 +306,11 @@ public class ContentValidator {
                 .toList();
     }
 
-    /** Mirrors enrollment seeding: an in-scope activity for the skill with a PUBLISHED version. */
+    /** Mirrors enrollment seeding: an in-scope PUBLISHED activity version that practises the skill. */
     private boolean hasPublishedActivityInScope(UUID skillId, UUID curriculumOwner) {
-        return activitySkills.findBySkillId(skillId).stream()
-                .map(ActivitySkill::getActivityId)
-                .filter(activityId -> ContentOwnership.usableBy(ownership.activityOwner(activityId).orElse(null), curriculumOwner))
-                .anyMatch(activityId -> activityVersions
-                        .findFirstByActivityIdAndStatusOrderByVersionNumberDesc(activityId, PublicationStatus.PUBLISHED)
-                        .isPresent());
+        return activitySkills.findPublishedPractising(skillId).stream()
+                .anyMatch(version -> ContentOwnership.usableBy(ownership.activityOwner(version.getActivityId()).orElse(null),
+                        curriculumOwner));
     }
 
     /** Whether a published curriculum that may use this owner's content includes the skill. */

@@ -2,11 +2,11 @@ package com.platform.learning.service;
 
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.content.entity.Activity;
-import com.platform.content.entity.ActivitySkill;
+import com.platform.content.entity.ActivityVersionSkill;
 import com.platform.content.entity.ActivityVersion;
 import com.platform.content.repository.ActivityItemRepository;
 import com.platform.content.repository.ActivityRepository;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.curriculum.entity.AgeHub;
 import com.platform.curriculum.entity.Curriculum;
@@ -74,7 +74,7 @@ public class LearningJourneyService {
     private final AnswerRecordRepository answerRecordRepository;
     private final ActivityVersionRepository activityVersionRepository;
     private final ActivityRepository activityRepository;
-    private final ActivitySkillRepository activitySkillRepository;
+    private final ActivityVersionSkillRepository activitySkillRepository;
     private final ActivityItemRepository activityItemRepository;
     private final SkillRepository skillRepository;
     private final AdaptationDecisionRepository adaptationDecisionRepository;
@@ -90,7 +90,7 @@ public class LearningJourneyService {
                                   ActivityAttemptRepository activityAttemptRepository,
                                   AnswerRecordRepository answerRecordRepository,
                                   ActivityVersionRepository activityVersionRepository,
-                                  ActivityRepository activityRepository, ActivitySkillRepository activitySkillRepository,
+                                  ActivityRepository activityRepository, ActivityVersionSkillRepository activitySkillRepository,
                                   ActivityItemRepository activityItemRepository, SkillRepository skillRepository,
                                   AdaptationDecisionRepository adaptationDecisionRepository,
                                   CurriculumService curriculumService, SubjectRepository subjectRepository,
@@ -368,7 +368,7 @@ public class LearningJourneyService {
                 .filter(attempt -> attempt.getStatus() == ActivityAttemptStatus.COMPLETED)
                 .max(Comparator.comparing(ActivityAttempt::getCompletedAt));
 
-        List<SkillRef> skills = lookups.skillsOf(activity.getId());
+        List<SkillRef> skills = lookups.skillsOf(version.getId());
         return new JourneyStep(item.getId(), version.getId(), activity.getTitle(), activity.getActivityType(),
                 version.getDifficultyLevel(), version.getEstimatedDurationSeconds(),
                 lookups.questionCount(version.getId()), item.getSequenceOrder(), item.getStatus(), item.getSource(),
@@ -384,7 +384,7 @@ public class LearningJourneyService {
             case ADAPTIVE -> lookups.decisionPlacing(item.getId())
                     .map(decision -> adaptiveExplanation(decision, lookups))
                     .orElseGet(() -> unexplained(item));
-            case REVIEW -> lookups.skillsOf(activity.getId()).stream()
+            case REVIEW -> lookups.skillsOf(item.getActivityVersionId()).stream()
                     .filter(skill -> reviewItemRepository.findByChildIdAndSkillId(lookups.childId(), skill.id()).isPresent())
                     .findFirst()
                     .map(skill -> new Explanation(PlacementReason.REVIEW, skill, null, null, null, item.getAddedAt()))
@@ -431,7 +431,7 @@ public class LearningJourneyService {
         String subjectName = lookups.subjectName(activity.getSubjectId());
         return new CompletedActivity(attempt.getId(), version.getId(), activity.getTitle(), subjectName, source,
                 attempt.getScore(), correct, answers.size(), attempt.getStartedAt(), attempt.getCompletedAt(),
-                lookups.skillsOf(activity.getId()), decision);
+                lookups.skillsOf(version.getId()), decision);
     }
 
     @Transactional(readOnly = true)
@@ -457,7 +457,8 @@ public class LearningJourneyService {
         private Map<UUID, AdaptationDecision> decisionsByPlacedItem;
         private final Map<UUID, ActivityVersion> versions = new HashMap<>();
         private final Map<UUID, Activity> activities = new HashMap<>();
-        private final Map<UUID, List<SkillRef>> skillsByActivity = new HashMap<>();
+        /** What each activity version practises: its own tags (PD-08), not whatever its activity has now. */
+        private final Map<UUID, List<SkillRef>> skillsByVersion = new HashMap<>();
         private final Map<UUID, SkillRef> skills = new HashMap<>();
         private final Map<UUID, Integer> questionCounts = new HashMap<>();
 
@@ -501,29 +502,34 @@ public class LearningJourneyService {
             activityIds.removeAll(activities.keySet());
             if (!activityIds.isEmpty()) {
                 activityRepository.findAllById(activityIds).forEach(a -> activities.put(a.getId(), a));
-                Map<UUID, List<UUID>> skillIdsByActivity = new HashMap<>();
-                for (ActivitySkill link : activitySkillRepository.findByActivityIdIn(activityIds)) {
-                    skillIdsByActivity.computeIfAbsent(link.getActivityId(), key -> new java.util.ArrayList<>()).add(link.getSkillId());
-                }
-                java.util.Set<UUID> skillIds = new java.util.HashSet<>();
-                skillIdsByActivity.values().forEach(skillIds::addAll);
-                for (AdaptationDecision decision : decisions()) {
-                    for (String key : List.of("governingSkillId", "targetSkillId")) {
-                        UUID id = contextId(decision, key);
-                        if (id != null) {
-                            skillIds.add(id);
-                        }
+            }
+            java.util.Set<UUID> untagged = new java.util.HashSet<>(versions.keySet());
+            untagged.removeAll(skillsByVersion.keySet());
+            if (untagged.isEmpty()) {
+                return;
+            }
+            Map<UUID, List<UUID>> skillIdsByVersion = new HashMap<>();
+            for (ActivityVersionSkill link : activitySkillRepository.findByActivityVersionIdIn(untagged)) {
+                skillIdsByVersion.computeIfAbsent(link.getActivityVersionId(), key -> new java.util.ArrayList<>()).add(link.getSkillId());
+            }
+            java.util.Set<UUID> skillIds = new java.util.HashSet<>();
+            skillIdsByVersion.values().forEach(skillIds::addAll);
+            for (AdaptationDecision decision : decisions()) {
+                for (String key : List.of("governingSkillId", "targetSkillId")) {
+                    UUID id = contextId(decision, key);
+                    if (id != null) {
+                        skillIds.add(id);
                     }
                 }
-                skillIds.removeAll(skills.keySet());
-                if (!skillIds.isEmpty()) {
-                    skillRepository.findAllById(skillIds).forEach(skill -> skills.put(skill.getId(), new SkillRef(skill.getId(), skill.getName())));
-                }
-                for (UUID activityId : activityIds) {
-                    skillsByActivity.put(activityId, skillIdsByActivity.getOrDefault(activityId, List.of()).stream()
-                            .map(this::skill).filter(java.util.Objects::nonNull)
-                            .sorted(Comparator.comparing(SkillRef::name)).toList());
-                }
+            }
+            skillIds.removeAll(skills.keySet());
+            if (!skillIds.isEmpty()) {
+                skillRepository.findAllById(skillIds).forEach(skill -> skills.put(skill.getId(), new SkillRef(skill.getId(), skill.getName())));
+            }
+            for (UUID versionId : untagged) {
+                skillsByVersion.put(versionId, skillIdsByVersion.getOrDefault(versionId, List.of()).stream()
+                        .map(this::skill).filter(java.util.Objects::nonNull)
+                        .sorted(Comparator.comparing(SkillRef::name)).toList());
             }
         }
 
@@ -580,10 +586,10 @@ public class LearningJourneyService {
                     .orElseThrow(() -> new ResourceNotFoundException("Activity", key)));
         }
 
-        List<SkillRef> skillsOf(UUID activityId) {
-            return skillsByActivity.computeIfAbsent(activityId, key -> activitySkillRepository.findByActivityId(key)
-                    .stream()
-                    .map(ActivitySkill::getSkillId)
+        List<SkillRef> skillsOf(UUID activityVersionId) {
+            return skillsByVersion.computeIfAbsent(activityVersionId, key -> activitySkillRepository
+                    .findByActivityVersionIdOrderByCreatedAtAscIdAsc(key).stream()
+                    .map(ActivityVersionSkill::getSkillId)
                     .map(this::skill)
                     .filter(java.util.Objects::nonNull)
                     .sorted(Comparator.comparing(SkillRef::name))

@@ -138,7 +138,7 @@ function draftQuestion(skillIds: string[]): QuestionDetail {
     questionType: "NUMERIC",
     skillIds,
     versions: [
-      { id: "qv1", versionNumber: 1, status: "DRAFT", publishedAt: null, prompt: "2 + 2 = ?", correctAnswer: "4", difficultyLevel: 1, options: [], pairs: [] },
+      { id: "qv1", versionNumber: 1, status: "DRAFT", publishedAt: null, prompt: "2 + 2 = ?", correctAnswer: "4", difficultyLevel: 1, options: [], pairs: [], skillIds },
     ],
   };
 }
@@ -179,6 +179,18 @@ describe("QuestionEditor", () => {
     expect(screen.getByRole("button", { name: "Publish" })).toBeDisabled();
     // The child's view renders from the learner-safe preview.
     expect(screen.getByText("Child's view")).toBeInTheDocument();
+  });
+
+  it("lets skills change only on a draft: a published version keeps its own (PD-08)", async () => {
+    const published = draftQuestion(["skill"]);
+    published.versions[0] = { ...published.versions[0], status: "PUBLISHED", publishedAt: "2026-09-30T00:00:00Z" };
+    api.question.mockResolvedValue(published);
+    renderEditor();
+
+    expect(await screen.findByText(/A published version keeps the skills it was published with/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Remove Count to 5/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Add a skill")).not.toBeInTheDocument();
+    expect(api.untagQuestionSkill).not.toHaveBeenCalled();
   });
 
   it("shows the server's report when publishing is refused, and the new state when it succeeds", async () => {

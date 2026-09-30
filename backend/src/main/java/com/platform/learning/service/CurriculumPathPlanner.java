@@ -1,9 +1,8 @@
 package com.platform.learning.service;
 
 import com.platform.common.entity.PublicationStatus;
-import com.platform.content.entity.ActivitySkill;
 import com.platform.content.entity.ActivityVersion;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.curriculum.entity.CurriculumObjective;
 import com.platform.curriculum.service.CurriculumService;
@@ -21,8 +20,8 @@ import java.util.UUID;
 
 /**
  * The curriculum steps a child starts a journey with, in order: for each objective in the version's
- * order, for each of its skills, each activity tagged with that skill that the curriculum's scope
- * admits (N7) and that has a published version, once. The one definition of it: enrolment seeds a
+ * order, for each of its skills, each published activity version that practises that skill (by its
+ * own tags, PD-08) and that the curriculum's scope admits (N7), once per activity. The one definition of it: enrolment seeds a
  * path from it, and the Studio's journey builder shows it, so what an author sees is what a child gets.
  */
 @Service
@@ -30,12 +29,12 @@ public class CurriculumPathPlanner {
 
     private final CurriculumService curriculumService;
     private final LearningObjectiveSkillService objectiveSkills;
-    private final ActivitySkillRepository activitySkills;
+    private final ActivityVersionSkillRepository activitySkills;
     private final ActivityVersionRepository activityVersions;
     private final PathContentScope pathContentScope;
 
     public CurriculumPathPlanner(CurriculumService curriculumService, LearningObjectiveSkillService objectiveSkills,
-                                 ActivitySkillRepository activitySkills, ActivityVersionRepository activityVersions,
+                                 ActivityVersionSkillRepository activitySkills, ActivityVersionRepository activityVersions,
                                  PathContentScope pathContentScope) {
         this.curriculumService = curriculumService;
         this.objectiveSkills = objectiveSkills;
@@ -63,14 +62,12 @@ public class CurriculumPathPlanner {
         Set<UUID> placed = new LinkedHashSet<>();
         for (UUID objectiveId : objectiveIds) {
             for (LearningObjectiveSkill mapping : objectiveSkills.listSkillsForObjective(objectiveId)) {
-                for (ActivitySkill activitySkill : activitySkills.findBySkillId(mapping.getSkillId())) {
-                    UUID activityId = activitySkill.getActivityId();
+                for (ActivityVersion version : activitySkills.findPublishedPractising(mapping.getSkillId())) {
+                    UUID activityId = version.getActivityId();
                     if (!pathContentScope.admitsActivity(scope, activityId) || !placed.add(activityId)) {
                         continue;
                     }
-                    Optional<ActivityVersion> published = activityVersions
-                            .findFirstByActivityIdAndStatusOrderByVersionNumberDesc(activityId, PublicationStatus.PUBLISHED);
-                    published.ifPresent(version -> steps.add(new PlannedStep(activityId, version, objectiveId, mapping.getSkillId())));
+                    steps.add(new PlannedStep(activityId, version, objectiveId, mapping.getSkillId()));
                 }
             }
         }

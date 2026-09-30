@@ -187,6 +187,8 @@ export interface ActivityVersionDetail extends VersionSummary {
   difficultyLevel: number | null;
   estimatedDurationSeconds: number | null;
   items: ItemDetail[];
+  /** What this version practises / gives evidence for (PD-08); frozen once it is published. */
+  skillIds: string[];
 }
 
 export interface ActivityDetail {
@@ -219,6 +221,8 @@ export interface QuestionVersionDetail extends VersionSummary {
   difficultyLevel: number | null;
   options: OptionDetail[];
   pairs: MatchPairDetail[];
+  /** What this version practises / gives evidence for (PD-08); frozen once it is published. */
+  skillIds: string[];
 }
 
 export interface QuestionSummary {

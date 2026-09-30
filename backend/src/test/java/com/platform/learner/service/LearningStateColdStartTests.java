@@ -1,9 +1,8 @@
 package com.platform.learner.service;
 
 import com.platform.common.entity.PublicationStatus;
-import com.platform.content.entity.ActivitySkill;
 import com.platform.content.entity.ActivityVersion;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.knowledge.repository.LearningObjectiveSkillRepository;
 import com.platform.knowledge.repository.SkillPrerequisiteRepository;
@@ -65,7 +64,7 @@ class LearningStateColdStartTests {
     @Mock private LearnerObjectiveStateRepository objectiveStateRepository;
     @Mock private LearningObjectiveSkillRepository learningObjectiveSkillRepository;
     @Mock private SkillPrerequisiteRepository skillPrerequisiteRepository;
-    @Mock private ActivitySkillRepository activitySkillRepository;
+    @Mock private ActivityVersionSkillRepository activitySkillRepository;
     @Mock private ActivityVersionRepository activityVersionRepository;
     @Mock private LearningPathService learningPathService;
     @Mock private ReviewItemRepository reviewItemRepository;
@@ -101,9 +100,7 @@ class LearningStateColdStartTests {
         practice.publish(Instant.now());
         ReflectionTestUtils.setField(practice, "id", UUID.randomUUID());
         when(skillPrerequisiteRepository.findBySkillId(SKILL)).thenReturn(List.of());
-        when(activitySkillRepository.findBySkillId(SKILL)).thenReturn(List.of(ActivitySkill.create(activityId, SKILL)));
-        when(activityVersionRepository.findFirstByActivityIdAndStatusOrderByVersionNumberDesc(activityId, PublicationStatus.PUBLISHED))
-                .thenReturn(Optional.of(practice));
+        when(activitySkillRepository.findPublishedPractising(SKILL)).thenReturn(List.of(practice));
         when(learningPathService.listItems(PATH)).thenReturn(List.of());
         when(learningPathService.appendItem(eq(PATH), any(UUID.class), any())).thenAnswer(i ->
                 LearningPathItem.place(PATH, i.getArgument(1), 0, i.getArgument(2), Instant.now()));

@@ -10,22 +10,22 @@ import com.platform.common.web.ResourceNotFoundException;
 import com.platform.common.web.SearchText;
 import com.platform.content.entity.Activity;
 import com.platform.content.entity.ActivityItem;
-import com.platform.content.entity.ActivitySkill;
+import com.platform.content.entity.ActivityVersionSkill;
 import com.platform.content.entity.ActivityVersion;
 import com.platform.content.entity.Lesson;
 import com.platform.content.entity.Question;
 import com.platform.content.entity.MatchSide;
 import com.platform.content.entity.QuestionOption;
-import com.platform.content.entity.QuestionSkill;
+import com.platform.content.entity.QuestionVersionSkill;
 import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
 import com.platform.content.repository.ActivityItemRepository;
 import com.platform.content.repository.ActivityRepository;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.content.repository.LessonRepository;
 import com.platform.content.repository.QuestionRepository;
-import com.platform.content.repository.QuestionSkillRepository;
+import com.platform.content.repository.QuestionVersionSkillRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.content.service.ActivityService;
 import com.platform.content.service.ContentAccessGuard;
@@ -99,11 +99,11 @@ public class StudioService {
     private final LessonService lessonService;
     private final ActivityRepository activities;
     private final ActivityService activityService;
-    private final ActivitySkillRepository activitySkills;
+    private final ActivityVersionSkillRepository activitySkills;
     private final ActivityItemRepository activityItems;
     private final QuestionRepository questions;
     private final QuestionService questionService;
-    private final QuestionSkillRepository questionSkills;
+    private final QuestionVersionSkillRepository questionSkills;
     private final QuestionVersionRepository questionVersions;
     private final ActivityVersionRepository activityVersions;
 
@@ -115,9 +115,9 @@ public class StudioService {
                          LearningObjectiveSkillService objectiveSkillService, CurriculumRepository curricula,
                          CurriculumService curriculumService, LessonRepository lessons, LessonService lessonService,
                          ActivityRepository activities, ActivityService activityService,
-                         ActivitySkillRepository activitySkills, ActivityItemRepository activityItems,
+                         ActivityVersionSkillRepository activitySkills, ActivityItemRepository activityItems,
                          QuestionRepository questions, QuestionService questionService,
-                         QuestionSkillRepository questionSkills, QuestionVersionRepository questionVersions,
+                         QuestionVersionSkillRepository questionSkills, QuestionVersionRepository questionVersions,
                          ActivityVersionRepository activityVersions) {
         this.guard = guard;
         this.audit = audit;
@@ -339,13 +339,20 @@ public class StudioService {
                 .collect(java.util.stream.Collectors.toMap(Lesson::getId, lesson -> lesson));
         List<Activity> all = activities.findByLessonIdIn(ids);
         List<UUID> activityIds = all.stream().map(Activity::getId).toList();
-        Map<UUID, List<UUID>> skillsOf = activityIds.isEmpty() ? Map.of() : activitySkills.findByActivityIdIn(activityIds).stream()
-                .collect(java.util.stream.Collectors.groupingBy(ActivitySkill::getActivityId,
-                        java.util.stream.Collectors.mapping(ActivitySkill::getSkillId, java.util.stream.Collectors.toList())));
-        Map<UUID, List<VersionSummary>> versionsOf = activityIds.isEmpty() ? Map.of()
-                : activityVersions.findByActivityIdInOrderByVersionNumberAsc(activityIds).stream()
+        List<ActivityVersion> allVersions = activityIds.isEmpty() ? List.of()
+                : activityVersions.findByActivityIdInOrderByVersionNumberAsc(activityIds);
+        Map<UUID, List<VersionSummary>> versionsOf = allVersions.stream()
                 .collect(java.util.stream.Collectors.groupingBy(ActivityVersion::getActivityId,
                         java.util.stream.Collectors.mapping(VersionSummary::of, java.util.stream.Collectors.toList())));
+        // What each activity practises: its latest version's tags (PD-08).
+        Map<UUID, UUID> latestVersionOf = new java.util.HashMap<>();
+        allVersions.forEach(v -> latestVersionOf.put(v.getActivityId(), v.getId()));
+        Map<UUID, List<UUID>> tagsOfVersion = latestVersionOf.isEmpty() ? Map.of()
+                : activitySkills.findByActivityVersionIdIn(latestVersionOf.values()).stream()
+                .collect(java.util.stream.Collectors.groupingBy(ActivityVersionSkill::getActivityVersionId,
+                        java.util.stream.Collectors.mapping(ActivityVersionSkill::getSkillId, java.util.stream.Collectors.toList())));
+        Map<UUID, List<UUID>> skillsOf = new java.util.HashMap<>();
+        latestVersionOf.forEach((activityId, versionId) -> skillsOf.put(activityId, tagsOfVersion.getOrDefault(versionId, List.of())));
         Map<UUID, List<Activity>> byLesson = all.stream().collect(java.util.stream.Collectors.groupingBy(Activity::getLessonId));
         String needle = pattern == null ? null : text.strip().toLowerCase(java.util.Locale.ROOT);
         List<LessonSummary> page = ids.stream().map(byId::get).filter(Objects::nonNull).map(lesson -> {
@@ -376,8 +383,8 @@ public class StudioService {
         Lesson lesson = guard.requireLessonWrite(accountId, lessonId);
         requireSkillsOfSubject(request.skillIds(), lesson.getSubjectId());
         Activity activity = activityService.createActivity(lesson.getSubjectId(), lessonId, PRACTICE, request.title().strip());
-        request.skillIds().forEach(skillId -> activityService.tagSkill(activity.getId(), skillId));
-        activityService.createDraftVersion(activity.getId(), null, null, null);
+        ActivityVersion draft = activityService.createDraftVersion(activity.getId(), null, null, null);
+        request.skillIds().forEach(skillId -> activityService.tagSkill(draft.getId(), skillId));
         return activity(accountId, activity.getId());
     }
 
@@ -389,7 +396,7 @@ public class StudioService {
                         version.getPublishedAt(), version.getInstructions(), version.getDifficultyLevel(),
                         version.getEstimatedDurationSeconds(),
                         activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(version.getId()).stream()
-                                .map(this::itemDetail).toList()))
+                                .map(this::itemDetail).toList(), activityService.skillsOf(version.getId())))
                 .toList();
         return new ActivityDetail(activity.getId(), activity.getTitle(), activity.getActivityType(), activity.getLessonId(),
                 activity.getSubjectId(), activitySkillIds(activityId), versions);
@@ -406,15 +413,23 @@ public class StudioService {
     public ActivityDetail tagActivitySkill(UUID accountId, UUID activityId, UUID skillId) {
         Activity activity = guard.requireActivityWrite(accountId, activityId);
         requireSkillsOfSubject(List.of(skillId), activity.getSubjectId());
-        activityService.tagSkill(activityId, skillId);
+        activityService.tagSkill(openActivityDraftId(activityId), skillId);
         return activity(accountId, activityId);
     }
 
     @Transactional
     public ActivityDetail untagActivitySkill(UUID accountId, UUID activityId, UUID skillId) {
         guard.requireActivityWrite(accountId, activityId);
-        activityService.untagSkill(activityId, skillId);
+        activityService.untagSkill(openActivityDraftId(activityId), skillId);
         return activity(accountId, activityId);
+    }
+
+    /** PD-08: skills change on the open draft only; a published version keeps what it was published with. */
+    private UUID openActivityDraftId(UUID activityId) {
+        return activityVersions.findTopByActivityIdOrderByVersionNumberDesc(activityId)
+                .filter(version -> version.getStatus() == PublicationStatus.DRAFT)
+                .orElseThrow(() -> new IllegalStateException("Start a new version to change the skills this activity practises: a published version keeps the skills it was published with."))
+                .getId();
     }
 
     @Transactional
@@ -491,9 +506,13 @@ public class StudioService {
                 .collect(java.util.stream.Collectors.toMap(Question::getId, question -> question));
         Map<UUID, List<QuestionVersion>> versionsOf = questionVersions.findByQuestionIdInOrderByVersionNumberAsc(ids).stream()
                 .collect(java.util.stream.Collectors.groupingBy(QuestionVersion::getQuestionId));
-        Map<UUID, List<UUID>> skillsOf = questionSkills.findByQuestionIdIn(ids).stream()
-                .collect(java.util.stream.Collectors.groupingBy(QuestionSkill::getQuestionId,
-                        java.util.stream.Collectors.mapping(QuestionSkill::getSkillId, java.util.stream.Collectors.toList())));
+        List<UUID> latestIds = versionsOf.values().stream().map(versions -> versions.get(versions.size() - 1).getId()).toList();
+        Map<UUID, List<UUID>> skillsOfVersion = latestIds.isEmpty() ? Map.of() : questionSkills.findByQuestionVersionIdIn(latestIds).stream()
+                .collect(java.util.stream.Collectors.groupingBy(QuestionVersionSkill::getQuestionVersionId,
+                        java.util.stream.Collectors.mapping(QuestionVersionSkill::getSkillId, java.util.stream.Collectors.toList())));
+        Map<UUID, List<UUID>> skillsOf = new java.util.HashMap<>();
+        versionsOf.forEach((questionId, versions) ->
+                skillsOf.put(questionId, skillsOfVersion.getOrDefault(versions.get(versions.size() - 1).getId(), List.of())));
         return ids.stream().map(byId::get).filter(Objects::nonNull).map(question -> {
             List<QuestionVersion> versions = versionsOf.getOrDefault(question.getId(), List.of());
             QuestionVersion latest = versions.isEmpty() ? null : versions.get(versions.size() - 1);
@@ -515,7 +534,7 @@ public class StudioService {
                         questionService.listOptions(version.getId()).stream()
                                 .filter(option -> option.getMatchSide() == null)
                                 .map(option -> new OptionDetail(option.getId(), option.getLabel(), option.isCorrect())).toList(),
-                        matchPairs(questionService.listOptions(version.getId()))))
+                        matchPairs(questionService.listOptions(version.getId())), questionService.skillsOf(version.getId())))
                 .toList());
     }
 
@@ -527,9 +546,9 @@ public class StudioService {
         requireSkillsOfSubject(request.skillIds(), request.subjectId());
         Question question = questionService.createOwnedQuestion(request.subjectId(), request.questionType(),
                 guard.authoringOwner(author));
-        request.skillIds().forEach(skillId -> questionService.tagSkill(question.getId(), skillId));
         QuestionVersion draft = questionService.createDraftVersion(question.getId(), request.prompt().strip(),
                 answerFor(request.questionType(), request.correctAnswer()), request.difficultyLevel());
+        request.skillIds().forEach(skillId -> questionService.tagSkill(draft.getId(), skillId));
         if (request.questionType() == QuestionType.MULTIPLE_CHOICE && request.options() != null) {
             questionService.replaceOptions(draft.getId(), optionDrafts(request.options()));
         }
@@ -565,15 +584,23 @@ public class StudioService {
     public QuestionDetail tagQuestionSkill(UUID accountId, UUID questionId, UUID skillId) {
         Question question = guard.requireQuestionWrite(accountId, questionId);
         requireSkillsOfSubject(List.of(skillId), question.getSubjectId());
-        questionService.tagSkill(questionId, skillId);
+        questionService.tagSkill(openQuestionDraftId(questionId), skillId);
         return question(accountId, questionId);
     }
 
     @Transactional
     public QuestionDetail untagQuestionSkill(UUID accountId, UUID questionId, UUID skillId) {
         guard.requireQuestionWrite(accountId, questionId);
-        questionService.untagSkill(questionId, skillId);
+        questionService.untagSkill(openQuestionDraftId(questionId), skillId);
         return question(accountId, questionId);
+    }
+
+    /** PD-08: skills change on the open draft only; answers to a published version count for what it was published with. */
+    private UUID openQuestionDraftId(UUID questionId) {
+        return questionVersions.findTopByQuestionIdOrderByVersionNumberDesc(questionId)
+                .filter(version -> version.getStatus() == PublicationStatus.DRAFT)
+                .orElseThrow(() -> new IllegalStateException("Start a new version to change the skills this question gives evidence for: a published version keeps the skills it was published with."))
+                .getId();
     }
 
     @Transactional(readOnly = true)
@@ -607,7 +634,7 @@ public class StudioService {
                 .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion", item.getQuestionVersionId()));
         Question question = questionService.getQuestion(version.getQuestionId());
         return new ItemDetail(version.getId(), question.getId(), question.getQuestionType(), version.getPrompt(),
-                version.getVersionNumber(), version.getStatus(), item.getPoints(), questionSkillIds(question.getId()));
+                version.getVersionNumber(), version.getStatus(), item.getPoints(), questionService.skillsOf(version.getId()));
     }
 
     private ActivityItemResponse learnerItem(UUID itemId, int sequenceOrder, QuestionVersion version) {
@@ -627,12 +654,16 @@ public class StudioService {
         }
     }
 
+    /** What an activity practises: its latest version's skills (the open draft's, or the published one's). */
     private List<UUID> activitySkillIds(UUID activityId) {
-        return activitySkills.findByActivityId(activityId).stream().map(ActivitySkill::getSkillId).toList();
+        return activityVersions.findTopByActivityIdOrderByVersionNumberDesc(activityId)
+                .map(version -> activityService.skillsOf(version.getId())).orElse(List.of());
     }
 
+    /** What a question's answers are evidence for: its latest version's skills. */
     private List<UUID> questionSkillIds(UUID questionId) {
-        return questionSkills.findByQuestionId(questionId).stream().map(QuestionSkill::getSkillId).toList();
+        return questionVersions.findTopByQuestionIdOrderByVersionNumberDesc(questionId)
+                .map(version -> questionService.skillsOf(version.getId())).orElse(List.of());
     }
 
     private SkillDto skillDto(Skill skill) {

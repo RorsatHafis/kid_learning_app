@@ -6,10 +6,9 @@ import com.platform.child.repository.ChildRepository;
 import com.platform.common.entity.CatalogStatus;
 import com.platform.common.entity.PublicationStatus;
 import com.platform.content.entity.ActivityItem;
-import com.platform.content.entity.ActivitySkill;
 import com.platform.content.entity.ActivityVersion;
 import com.platform.content.repository.ActivityItemRepository;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.curriculum.entity.Curriculum;
@@ -61,7 +60,7 @@ class ParentInsightTruthfulnessIntegrationTests {
     @Autowired private CurriculumRepository curriculumRepository;
     @Autowired private EnrollmentService enrollmentService;
     @Autowired private SkillRepository skillRepository;
-    @Autowired private ActivitySkillRepository activitySkillRepository;
+    @Autowired private ActivityVersionSkillRepository activitySkillRepository;
     @Autowired private ActivityVersionRepository activityVersionRepository;
     @Autowired private ActivityItemRepository activityItemRepository;
     @Autowired private QuestionVersionRepository questionVersionRepository;
@@ -125,11 +124,7 @@ class ParentInsightTruthfulnessIntegrationTests {
     /** {@code attempts} completed free-practice attempts of the seeded Recognition activity (2 questions each). */
     private void practiseRecognition(UUID childId, boolean correct, int attempts) {
         UUID skillId = skillRepository.findByCode(RECOGNITION_SKILL).orElseThrow().getId();
-        ActivityVersion version = activitySkillRepository.findBySkillId(skillId).stream()
-                .map(ActivitySkill::getActivityId)
-                .map(id -> activityVersionRepository
-                        .findFirstByActivityIdAndStatusOrderByVersionNumberDesc(id, PublicationStatus.PUBLISHED))
-                .flatMap(java.util.Optional::stream)
+        ActivityVersion version = activitySkillRepository.findPublishedPractising(skillId).stream()
                 .findFirst().orElseThrow();
         List<ActivityItem> items = activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(version.getId());
 

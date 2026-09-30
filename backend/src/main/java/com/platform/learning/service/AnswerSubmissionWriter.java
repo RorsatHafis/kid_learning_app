@@ -3,10 +3,10 @@ package com.platform.learning.service;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.common.idempotency.service.IdempotencyService;
 import com.platform.content.entity.Question;
-import com.platform.content.entity.QuestionSkill;
+import com.platform.content.entity.QuestionVersionSkill;
 import com.platform.content.entity.QuestionVersion;
 import com.platform.content.repository.QuestionRepository;
-import com.platform.content.repository.QuestionSkillRepository;
+import com.platform.content.repository.QuestionVersionSkillRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.learner.service.MasteryEngine;
 import com.platform.learning.entity.ActivityAttempt;
@@ -27,7 +27,7 @@ import java.util.UUID;
  * is proxy-based, and a same-bean method call bypasses the proxy entirely.
  *
  * This is also the one place a scored answer becomes mastery evidence: every skill
- * tagged on the question (via {@link QuestionSkill}) gets exactly one
+ * tagged on the answered question version (via {@link QuestionVersionSkill}, PD-08) gets exactly one
  * {@link MasteryEngine#recordEvidence} call using this same {@code correct} outcome,
  * in this same transaction - so an AnswerRecord is never persisted without its
  * mastery effect landing atomically alongside it. Previously this call was missing
@@ -40,7 +40,7 @@ class AnswerSubmissionWriter {
 
     private final QuestionVersionRepository questionVersionRepository;
     private final QuestionRepository questionRepository;
-    private final QuestionSkillRepository questionSkillRepository;
+    private final QuestionVersionSkillRepository questionSkillRepository;
     private final AnswerRecordRepository answerRecordRepository;
     private final AnswerScoringService scoringService;
     private final IdempotencyService idempotencyService;
@@ -48,7 +48,7 @@ class AnswerSubmissionWriter {
     private final ActivityAttemptRepository attemptRepository;
 
     AnswerSubmissionWriter(QuestionVersionRepository questionVersionRepository, QuestionRepository questionRepository,
-                           QuestionSkillRepository questionSkillRepository, AnswerRecordRepository answerRecordRepository,
+                           QuestionVersionSkillRepository questionSkillRepository, AnswerRecordRepository answerRecordRepository,
                            AnswerScoringService scoringService, IdempotencyService idempotencyService,
                            MasteryEngine masteryEngine, ActivityAttemptRepository attemptRepository) {
         this.questionVersionRepository = questionVersionRepository;
@@ -101,8 +101,9 @@ class AnswerSubmissionWriter {
         AnswerRecord record = answerRecordRepository.save(
                 AnswerRecord.record(activityAttemptId, questionVersionId, submittedAnswer, correct, timeSpentSeconds));
 
-        List<QuestionSkill> taggedSkills = questionSkillRepository.findByQuestionId(question.getId());
-        for (QuestionSkill taggedSkill : taggedSkills) {
+        // The version answered decides the skills (PD-08): its tags were frozen when it was published.
+        List<QuestionVersionSkill> taggedSkills = questionSkillRepository.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(questionVersionId);
+        for (QuestionVersionSkill taggedSkill : taggedSkills) {
             masteryEngine.recordEvidence(childId, taggedSkill.getSkillId(), correct, activityAttemptId);
         }
 

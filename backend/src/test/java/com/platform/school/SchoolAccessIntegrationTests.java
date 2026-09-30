@@ -330,11 +330,12 @@ class SchoolAccessIntegrationTests {
         Skill skill = skillService.createSkill(subjectId, "ACCESS_" + suffix, "Skill " + suffix, null);
         learningObjectiveSkillService.link(objective.getId(), skill.getId());
         Question question = questionService.createQuestion(subjectId, QuestionType.NUMERIC);
-        questionService.tagSkill(question.getId(), skill.getId());
-        var questionVersion = questionService.publish(questionService.createDraftVersion(question.getId(), "1 + 1 = ?", "2", 1).getId());
+        var questionDraft = questionService.createDraftVersion(question.getId(), "1 + 1 = ?", "2", 1);
+        questionService.tagSkill(questionDraft.getId(), skill.getId());
+        var questionVersion = questionService.publish(questionDraft.getId());
         Activity activity = activityService.createActivity(subjectId, null, "PRACTICE", "Access " + suffix);
-        activityService.tagSkill(activity.getId(), skill.getId());
         var activityVersion = activityService.createDraftVersion(activity.getId(), "Add", 1, 60);
+        activityService.tagSkill(activityVersion.getId(), skill.getId());
         activityService.addItem(activityVersion.getId(), questionVersion.getId(), 0, java.math.BigDecimal.ONE);
         activityService.publish(activityVersion.getId());
         Curriculum curriculum = ownerAccountId == null

@@ -22,20 +22,20 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
     /*
      * The question bank's search (StudioService#questions). One owner's active questions in a subject:
      * platform content when ownerId is null, otherwise that teacher's own. Every filter is optional:
-     * type, the latest version's status, a tagged skill, "has a published version" (live) and a
+     * type, the latest version's status, a skill the latest version is tagged with (PD-08), "has a published version" (live) and a
      * case-insensitive match on the latest version's prompt. Ordered like the bank reads, by prompt.
      */
     String BANK_FROM = """
             FROM questions q
-            LEFT JOIN LATERAL (SELECT v.prompt, v.status FROM question_versions v
+            LEFT JOIN LATERAL (SELECT v.id, v.prompt, v.status FROM question_versions v
                                WHERE v.question_id = q.id ORDER BY v.version_number DESC LIMIT 1) latest ON true
             WHERE q.subject_id = :subjectId
               AND q.status = 'ACTIVE'
               AND ((CAST(:ownerId AS uuid) IS NULL AND q.owner_account_id IS NULL) OR q.owner_account_id = CAST(:ownerId AS uuid))
               AND (CAST(:type AS varchar) IS NULL OR q.question_type = CAST(:type AS varchar))
               AND (CAST(:status AS varchar) IS NULL OR latest.status = CAST(:status AS varchar))
-              AND (CAST(:skillId AS uuid) IS NULL OR EXISTS (SELECT 1 FROM question_skills s
-                                                             WHERE s.question_id = q.id AND s.skill_id = CAST(:skillId AS uuid)))
+              AND (CAST(:skillId AS uuid) IS NULL OR EXISTS (SELECT 1 FROM question_version_skills s
+                                                             WHERE s.question_version_id = latest.id AND s.skill_id = CAST(:skillId AS uuid)))
               AND (:live = false OR EXISTS (SELECT 1 FROM question_versions p
                                             WHERE p.question_id = q.id AND p.status = 'PUBLISHED'))
               AND (CAST(:pattern AS varchar) IS NULL OR latest.prompt ILIKE CAST(:pattern AS varchar))

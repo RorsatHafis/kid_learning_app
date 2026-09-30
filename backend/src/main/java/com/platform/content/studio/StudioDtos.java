@@ -106,9 +106,10 @@ public final class StudioDtos {
                              List<UUID> questionSkillIds) {
     }
 
+    /** {@code skillIds}: what this version practises (PD-08); frozen once it is published. */
     public record ActivityVersionDetail(UUID id, int versionNumber, PublicationStatus status, Instant publishedAt,
                                         String instructions, Integer difficultyLevel, Integer estimatedDurationSeconds,
-                                        List<ItemDetail> items) {
+                                        List<ItemDetail> items, List<UUID> skillIds) {
     }
 
     public record ActivityDetail(UUID id, String title, String activityType, UUID lessonId, UUID subjectId,
@@ -142,9 +143,11 @@ public final class StudioDtos {
     public record MatchPairDetail(UUID leftId, String left, UUID rightId, String right) {
     }
 
+    /** {@code skillIds}: what answers to this version are evidence for (PD-08); frozen once it is published. */
     public record QuestionVersionDetail(UUID id, int versionNumber, PublicationStatus status, Instant publishedAt,
                                         String prompt, String correctAnswer, Integer difficultyLevel,
-                                        List<OptionDetail> options, List<MatchPairDetail> pairs) {
+                                        List<OptionDetail> options, List<MatchPairDetail> pairs,
+                                        List<UUID> skillIds) {
     }
 
     public record QuestionSummary(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,

@@ -1,9 +1,8 @@
 package com.platform.learner.service;
 
 import com.platform.common.entity.PublicationStatus;
-import com.platform.content.entity.ActivitySkill;
 import com.platform.content.entity.ActivityVersion;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.knowledge.repository.SkillPrerequisiteRepository;
 import com.platform.learner.entity.LearnerSkillState;
@@ -34,7 +33,7 @@ class AdaptiveEngineTests {
 
     @Mock private LearnerSkillStateRepository skillStateRepository;
     @Mock private SkillPrerequisiteRepository skillPrerequisiteRepository;
-    @Mock private ActivitySkillRepository activitySkillRepository;
+    @Mock private ActivityVersionSkillRepository activitySkillRepository;
     @Mock private ActivityVersionRepository activityVersionRepository;
     @Mock private LearningPathService learningPathService;
 
@@ -58,13 +57,8 @@ class AdaptiveEngineTests {
                 pathId, harderVersionId, 3, LearningPathItemSource.CURRICULUM, Instant.now());
 
         when(skillStateRepository.findByChildIdAndSkillId(childId, skillId)).thenReturn(Optional.of(confidentState));
-        when(activitySkillRepository.findBySkillId(skillId)).thenReturn(List.of(
-                ActivitySkill.create(currentActivityId, skillId),
-                ActivitySkill.create(harderActivityId, skillId)));
-        when(activityVersionRepository.findFirstByActivityIdAndStatusOrderByVersionNumberDesc(
-                currentActivityId, PublicationStatus.PUBLISHED)).thenReturn(Optional.of(current));
-        when(activityVersionRepository.findFirstByActivityIdAndStatusOrderByVersionNumberDesc(
-                harderActivityId, PublicationStatus.PUBLISHED)).thenReturn(Optional.of(harder));
+        // PD-08: the published versions that practise the skill, by their own tags.
+        when(activitySkillRepository.findPublishedPractising(skillId)).thenReturn(List.of(current, harder));
         when(learningPathService.listItems(pathId)).thenReturn(List.of(pendingHarder));
 
         AdaptiveEngine engine = new AdaptiveEngine(skillStateRepository, skillPrerequisiteRepository,

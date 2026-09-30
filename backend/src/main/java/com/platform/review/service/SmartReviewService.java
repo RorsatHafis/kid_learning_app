@@ -2,9 +2,8 @@ package com.platform.review.service;
 
 import com.platform.common.entity.PublicationStatus;
 import com.platform.common.web.ResourceNotFoundException;
-import com.platform.content.entity.ActivitySkill;
 import com.platform.content.entity.ActivityVersion;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.learner.entity.LearnerSkillState;
 import com.platform.learner.repository.LearnerSkillStateRepository;
@@ -54,7 +53,7 @@ public class SmartReviewService {
     private final ReviewScheduleRepository reviewScheduleRepository;
     private final ReviewAttemptRepository reviewAttemptRepository;
     private final LearnerSkillStateRepository skillStateRepository;
-    private final ActivitySkillRepository activitySkillRepository;
+    private final ActivityVersionSkillRepository activitySkillRepository;
     private final ActivityVersionRepository activityVersionRepository;
     private final LearningPathService learningPathService;
     private final PathContentScope pathContentScope;
@@ -62,7 +61,7 @@ public class SmartReviewService {
     public SmartReviewService(ReviewItemRepository reviewItemRepository, ReviewScheduleRepository reviewScheduleRepository,
                                ReviewAttemptRepository reviewAttemptRepository,
                                LearnerSkillStateRepository skillStateRepository,
-                               ActivitySkillRepository activitySkillRepository,
+                               ActivityVersionSkillRepository activitySkillRepository,
                                ActivityVersionRepository activityVersionRepository,
                                LearningPathService learningPathService, PathContentScope pathContentScope) {
         this.reviewItemRepository = reviewItemRepository;
@@ -265,13 +264,8 @@ public class SmartReviewService {
 
     /** N7: only content the path's scope admits (see {@link PathContentScope}). */
     private Optional<ActivityVersion> pickActivityForSkill(UUID skillId, PathContentScope.Scope scope) {
-        return activitySkillRepository.findBySkillId(skillId).stream()
-                .map(ActivitySkill::getActivityId)
-                .distinct()
-                .filter(activityId -> pathContentScope.admitsActivity(scope, activityId))
-                .map(activityId -> activityVersionRepository
-                        .findFirstByActivityIdAndStatusOrderByVersionNumberDesc(activityId, PublicationStatus.PUBLISHED))
-                .flatMap(Optional::stream)
+        return activitySkillRepository.findPublishedPractising(skillId).stream()
+                .filter(version -> pathContentScope.admitsActivity(scope, version.getActivityId()))
                 .min(Comparator.comparing(ActivityVersion::getDifficultyLevel, Comparator.nullsLast(Comparator.naturalOrder())));
     }
 

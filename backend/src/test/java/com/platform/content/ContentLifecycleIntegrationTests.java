@@ -304,10 +304,10 @@ class ContentLifecycleIntegrationTests {
         QuestionVersion q3v1 = republishQuestion(q3, "3 + 1 = ?", "4");
 
         Activity first = activityService.createActivity(subjectId, null, "PRACTICE", "Lifecycle first " + suffix);
-        activityService.tagSkill(first.getId(), skill.getId());
+        firstVersionSkill.put(first.getId(), skill.getId());
         ActivityVersion firstV1 = publishActivityVersion(first, 1, q1v1, q2v1);
         Activity second = activityService.createActivity(subjectId, null, "PRACTICE", "Lifecycle second " + suffix);
-        activityService.tagSkill(second.getId(), skill.getId());
+        firstVersionSkill.put(second.getId(), skill.getId());
         ActivityVersion secondV1 = publishActivityVersion(second, 2, q2v1, q3v1);
 
         // Published last: a curriculum needs a published activity first (ContentValidator).
@@ -315,19 +315,28 @@ class ContentLifecycleIntegrationTests {
         return new Catalog(curriculum, skill, q1, q1v1, q2, q2v1, first, firstV1, secondV1);
     }
 
+    /** The skill a content item's first version is tagged with; later versions carry their tags forward (PD-08). */
+    private final java.util.Map<UUID, UUID> firstVersionSkill = new java.util.HashMap<>();
+
     private Question numericQuestion(UUID subjectId, Skill skill) {
         Question question = questionService.createQuestion(subjectId, QuestionType.NUMERIC);
-        questionService.tagSkill(question.getId(), skill.getId());
+        firstVersionSkill.put(question.getId(), skill.getId());
         return question;
     }
 
     private QuestionVersion republishQuestion(Question question, String prompt, String answer) {
         QuestionVersion version = questionService.createDraftVersion(question.getId(), prompt, answer, null);
+        if (questionService.skillsOf(version.getId()).isEmpty()) {
+            questionService.tagSkill(version.getId(), firstVersionSkill.get(question.getId()));
+        }
         return questionService.publish(version.getId());
     }
 
     private ActivityVersion publishActivityVersion(Activity activity, int difficulty, QuestionVersion... questions) {
         ActivityVersion version = activityService.createDraftVersion(activity.getId(), "Add the numbers", difficulty, 60);
+        if (activityService.skillsOf(version.getId()).isEmpty()) {
+            activityService.tagSkill(version.getId(), firstVersionSkill.get(activity.getId()));
+        }
         for (int i = 0; i < questions.length; i++) {
             activityService.addItem(version.getId(), questions[i].getId(), i, BigDecimal.ONE);
         }

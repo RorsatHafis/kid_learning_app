@@ -346,13 +346,13 @@ class LearningJourneyApiIntegrationTests {
 
     private ActivityVersion activity(UUID subjectId, Skill skill, String title, int difficulty) {
         Activity activity = activityService.createActivity(subjectId, null, "PRACTICE", title);
-        activityService.tagSkill(activity.getId(), skill.getId());
         ActivityVersion version = activityService.createDraftVersion(activity.getId(), "Add", difficulty, 60);
+        activityService.tagSkill(version.getId(), skill.getId());
         for (int i = 0; i < 3; i++) {
             Question question = questionService.createQuestion(subjectId, QuestionType.NUMERIC);
-            questionService.tagSkill(question.getId(), skill.getId());
-            QuestionVersion questionVersion = questionService.publish(
-                    questionService.createDraftVersion(question.getId(), i + " + 2 = ?", String.valueOf(i + 2), null).getId());
+            QuestionVersion draft = questionService.createDraftVersion(question.getId(), i + " + 2 = ?", String.valueOf(i + 2), null);
+            questionService.tagSkill(draft.getId(), skill.getId());
+            QuestionVersion questionVersion = questionService.publish(draft.getId());
             activityService.addItem(version.getId(), questionVersion.getId(), i, BigDecimal.ONE);
         }
         return activityService.publish(version.getId());

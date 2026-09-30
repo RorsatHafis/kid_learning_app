@@ -337,14 +337,15 @@ class LearningLoopCompletionIntegrationTests {
 
     private QuestionVersion question(UUID subjectId, Skill skill, String prompt, String answer) {
         Question question = questionService.createQuestion(subjectId, QuestionType.NUMERIC);
-        questionService.tagSkill(question.getId(), skill.getId());
-        return questionService.publish(questionService.createDraftVersion(question.getId(), prompt + " = ?", answer, null).getId());
+        QuestionVersion draft = questionService.createDraftVersion(question.getId(), prompt + " = ?", answer, null);
+        questionService.tagSkill(draft.getId(), skill.getId());
+        return questionService.publish(draft.getId());
     }
 
     private ActivityVersion activity(UUID subjectId, List<Skill> skills, int difficulty, QuestionVersion... questions) {
         Activity activity = activityService.createActivity(subjectId, null, "PRACTICE", "Loop activity " + UUID.randomUUID());
-        skills.forEach(skill -> activityService.tagSkill(activity.getId(), skill.getId()));
         ActivityVersion version = activityService.createDraftVersion(activity.getId(), "Answer", difficulty, 60);
+        skills.forEach(skill -> activityService.tagSkill(version.getId(), skill.getId()));
         for (int i = 0; i < questions.length; i++) {
             activityService.addItem(version.getId(), questions[i].getId(), i, BigDecimal.ONE);
         }

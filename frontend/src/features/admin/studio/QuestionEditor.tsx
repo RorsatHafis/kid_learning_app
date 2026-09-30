@@ -133,22 +133,27 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
             )}
           </Panel>
 
-          <Panel title="Skills">
+          <Panel title={isDraft ? `Skills · version ${latest.versionNumber}` : "Skills"}>
             <div className="flex flex-col gap-3">
               <p className="text-sm text-ink-soft">A child&apos;s answer is recorded as evidence for each of these skills.</p>
               <SkillChips
                 skillIds={detail.skillIds}
                 catalog={catalog}
                 disabled={busy}
-                onRemove={(skillId) => run(() => studioApi.untagQuestionSkill(detail.id, skillId))}
+                onRemove={isDraft ? (skillId) => run(() => studioApi.untagQuestionSkill(detail.id, skillId)) : undefined}
               />
-              {everPublished && (
-                <p className="text-xs text-light-deep">
-                  Skills belong to the question, not one version: a change also applies to answers to its published version from now
-                  on. Evidence already recorded is kept.
+              {isDraft && everPublished && (
+                <p className="text-xs text-ink-soft">
+                  Changes apply to this draft. Answers to the published version keep counting for the skills it was published
+                  with.
                 </p>
               )}
-              {available.length > 0 && (
+              {!isDraft && (
+                <p className="text-xs text-ink-soft">
+                  A published version keeps the skills it was published with. To change them, start a new version.
+                </p>
+              )}
+              {isDraft && available.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   <label htmlFor="add-question-skill" className="sr-only">
                     Add a skill

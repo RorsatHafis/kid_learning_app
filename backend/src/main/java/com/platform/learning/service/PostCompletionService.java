@@ -1,13 +1,13 @@
 package com.platform.learning.service;
 
 import com.platform.content.entity.ActivityItem;
-import com.platform.content.entity.ActivitySkill;
+import com.platform.content.entity.ActivityVersionSkill;
 import com.platform.content.entity.ActivityVersion;
-import com.platform.content.entity.QuestionSkill;
+import com.platform.content.entity.QuestionVersionSkill;
 import com.platform.content.repository.ActivityItemRepository;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
-import com.platform.content.repository.QuestionSkillRepository;
+import com.platform.content.repository.QuestionVersionSkillRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.learner.entity.AdaptationDecision;
@@ -78,10 +78,10 @@ public class PostCompletionService {
     static final String GOVERNING_SKILL_RULE = "LOWEST_MASTERY_EXERCISED_SKILL";
 
     private final ActivityVersionRepository activityVersionRepository;
-    private final ActivitySkillRepository activitySkillRepository;
+    private final ActivityVersionSkillRepository activitySkillRepository;
     private final ActivityItemRepository activityItemRepository;
     private final QuestionVersionRepository questionVersionRepository;
-    private final QuestionSkillRepository questionSkillRepository;
+    private final QuestionVersionSkillRepository questionSkillRepository;
     private final AnswerRecordRepository answerRecordRepository;
     private final LearnerSkillStateRepository skillStateRepository;
     private final AdaptationDecisionRepository adaptationDecisionRepository;
@@ -90,10 +90,10 @@ public class PostCompletionService {
     private final SmartReviewService smartReviewService;
 
     public PostCompletionService(ActivityVersionRepository activityVersionRepository,
-                                 ActivitySkillRepository activitySkillRepository,
+                                 ActivityVersionSkillRepository activitySkillRepository,
                                  ActivityItemRepository activityItemRepository,
                                  QuestionVersionRepository questionVersionRepository,
-                                 QuestionSkillRepository questionSkillRepository,
+                                 QuestionVersionSkillRepository questionSkillRepository,
                                  AnswerRecordRepository answerRecordRepository,
                                  LearnerSkillStateRepository skillStateRepository,
                                  AdaptationDecisionRepository adaptationDecisionRepository,
@@ -170,22 +170,21 @@ public class PostCompletionService {
     }
 
     /**
-     * The skills an activity version exercises: the activity's own skill tags plus the
-     * skills of the questions it contains (evidence is recorded per question skill).
+     * The skills an activity version exercises: the version's own skill tags plus the tags of
+     * the question versions it pins (evidence is recorded per question version skill, PD-08).
      * Sorted, so every caller locks review items in the same order.
      */
     List<UUID> exercisedSkills(UUID activityVersionId) {
-        ActivityVersion version = activityVersionRepository.findById(activityVersionId)
+        activityVersionRepository.findById(activityVersionId)
                 .orElseThrow(() -> new ResourceNotFoundException("ActivityVersion", activityVersionId));
         TreeSet<UUID> skillIds = new TreeSet<>();
-        activitySkillRepository.findByActivityId(version.getActivityId()).stream()
-                .map(ActivitySkill::getSkillId)
+        activitySkillRepository.findByActivityVersionIdOrderByCreatedAtAscIdAsc(activityVersionId).stream()
+                .map(ActivityVersionSkill::getSkillId)
                 .forEach(skillIds::add);
         for (ActivityItem activityItem : activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId)) {
-            questionVersionRepository.findById(activityItem.getQuestionVersionId()).ifPresent(questionVersion ->
-                    questionSkillRepository.findByQuestionId(questionVersion.getQuestionId()).stream()
-                            .map(QuestionSkill::getSkillId)
-                            .forEach(skillIds::add));
+            questionSkillRepository.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(activityItem.getQuestionVersionId()).stream()
+                    .map(QuestionVersionSkill::getSkillId)
+                    .forEach(skillIds::add);
         }
         return List.copyOf(skillIds);
     }

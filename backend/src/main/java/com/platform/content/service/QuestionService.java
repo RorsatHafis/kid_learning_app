@@ -5,13 +5,13 @@ import com.platform.common.web.ResourceNotFoundException;
 import com.platform.content.entity.Question;
 import com.platform.content.entity.MatchSide;
 import com.platform.content.entity.QuestionOption;
-import com.platform.content.entity.QuestionSkill;
+import com.platform.content.entity.QuestionVersionSkill;
 import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
 import com.platform.content.exception.IncompleteQuestionException;
 import com.platform.content.repository.QuestionOptionRepository;
 import com.platform.content.repository.QuestionRepository;
-import com.platform.content.repository.QuestionSkillRepository;
+import com.platform.content.repository.QuestionVersionSkillRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.content.validation.ContentValidationException;
 import com.platform.content.validation.ContentValidator;
@@ -30,18 +30,18 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
     private final QuestionVersionRepository questionVersionRepository;
     private final QuestionOptionRepository questionOptionRepository;
-    private final QuestionSkillRepository questionSkillRepository;
+    private final QuestionVersionSkillRepository versionSkillRepository;
     private final SkillRepository skillRepository;
     private final ContentValidator contentValidator;
 
     public QuestionService(QuestionRepository questionRepository, QuestionVersionRepository questionVersionRepository,
                             QuestionOptionRepository questionOptionRepository,
-                            QuestionSkillRepository questionSkillRepository, SkillRepository skillRepository,
+                            QuestionVersionSkillRepository versionSkillRepository, SkillRepository skillRepository,
                             ContentValidator contentValidator) {
         this.questionRepository = questionRepository;
         this.questionVersionRepository = questionVersionRepository;
         this.questionOptionRepository = questionOptionRepository;
-        this.questionSkillRepository = questionSkillRepository;
+        this.versionSkillRepository = versionSkillRepository;
         this.skillRepository = skillRepository;
         this.contentValidator = contentValidator;
     }
@@ -66,11 +66,17 @@ public class QuestionService {
         if (!questionRepository.existsById(questionId)) {
             throw new ResourceNotFoundException("Question", questionId);
         }
-        int nextVersionNumber = questionVersionRepository.findTopByQuestionIdOrderByVersionNumberDesc(questionId)
-                .map(previous -> previous.getVersionNumber() + 1)
-                .orElse(1);
-        return questionVersionRepository.save(
+        java.util.Optional<QuestionVersion> previous = questionVersionRepository.findTopByQuestionIdOrderByVersionNumberDesc(questionId);
+        int nextVersionNumber = previous.map(v -> v.getVersionNumber() + 1).orElse(1);
+        QuestionVersion draft = questionVersionRepository.save(
                 QuestionVersion.draft(questionId, nextVersionNumber, prompt, correctAnswer, difficultyLevel));
+        // A new version starts out evidencing what the last one did; the draft is where that can change (PD-08).
+        previous.ifPresent(source -> {
+            for (QuestionVersionSkill tag : versionSkillRepository.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(source.getId())) {
+                versionSkillRepository.save(QuestionVersionSkill.create(draft.getId(), tag.getSkillId()));
+            }
+        });
+        return draft;
     }
 
     @Transactional(readOnly = true)
@@ -165,27 +171,26 @@ public class QuestionService {
         });
     }
 
-    /** Idempotent: tagging a skill the question already has returns the existing tag. */
+    /**
+     * PD-08: the skills a version's answers are evidence for are part of the version. Tags change only
+     * on a DRAFT; an answer to a published version always counts for the skills it was published with
+     * (V44 also enforces it). Idempotent.
+     */
     @Transactional
-    public QuestionSkill tagSkill(UUID questionId, UUID skillId) {
-        if (!questionRepository.existsById(questionId)) {
-            throw new ResourceNotFoundException("Question", questionId);
-        }
+    public QuestionVersionSkill tagSkill(UUID questionVersionId, UUID skillId) {
+        QuestionVersion version = getVersion(questionVersionId);
+        requireDraft(version);
         if (!skillRepository.existsById(skillId)) {
             throw new ResourceNotFoundException("Skill", skillId);
         }
-        return questionSkillRepository.findByQuestionIdAndSkillId(questionId, skillId)
-                .orElseGet(() -> questionSkillRepository.save(QuestionSkill.create(questionId, skillId)));
+        return versionSkillRepository.findByQuestionVersionIdAndSkillId(questionVersionId, skillId)
+                .orElseGet(() -> versionSkillRepository.save(QuestionVersionSkill.create(questionVersionId, skillId)));
     }
 
-    /**
-     * Skill tags belong to the question, not a version (PD-08): removing one also
-     * changes which skill answers to already-published versions count towards from
-     * now on. Evidence already recorded keeps its skill.
-     */
     @Transactional
-    public void untagSkill(UUID questionId, UUID skillId) {
-        questionSkillRepository.findByQuestionIdAndSkillId(questionId, skillId).ifPresent(questionSkillRepository::delete);
+    public void untagSkill(UUID questionVersionId, UUID skillId) {
+        requireDraft(getVersion(questionVersionId));
+        versionSkillRepository.findByQuestionVersionIdAndSkillId(questionVersionId, skillId).ifPresent(versionSkillRepository::delete);
     }
 
     @Transactional
@@ -262,9 +267,11 @@ public class QuestionService {
         }
     }
 
+    /** The skills answers to a version are evidence for, in the order they were tagged. */
     @Transactional(readOnly = true)
-    public List<QuestionSkill> listSkills(UUID questionId) {
-        return questionSkillRepository.findByQuestionId(questionId);
+    public List<UUID> skillsOf(UUID questionVersionId) {
+        return versionSkillRepository.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(questionVersionId).stream()
+                .map(QuestionVersionSkill::getSkillId).toList();
     }
 
 }

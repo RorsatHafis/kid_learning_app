@@ -3,13 +3,13 @@ package com.platform.content.service;
 import com.platform.common.entity.PublicationStatus;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.content.entity.Activity;
-import com.platform.content.entity.ActivitySkill;
+import com.platform.content.entity.ActivityVersionSkill;
 import com.platform.content.entity.ActivityItem;
 import com.platform.content.repository.ActivityItemRepository;
 import java.math.BigDecimal;
 import com.platform.content.entity.ActivityVersion;
 import com.platform.content.repository.ActivityRepository;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.content.entity.Question;
 import com.platform.content.entity.QuestionVersion;
@@ -32,7 +32,7 @@ public class ActivityService {
 
     private final ActivityRepository activityRepository;
     private final ActivityVersionRepository activityVersionRepository;
-    private final ActivitySkillRepository activitySkillRepository;
+    private final ActivityVersionSkillRepository versionSkillRepository;
     private final SkillRepository skillRepository;
     private final ActivityItemRepository activityItemRepository;
     private final QuestionVersionRepository questionVersionRepository;
@@ -41,7 +41,7 @@ public class ActivityService {
     private final ContentOwnership contentOwnership;
 
     public ActivityService(ActivityRepository activityRepository, ActivityVersionRepository activityVersionRepository,
-                            ActivitySkillRepository activitySkillRepository, SkillRepository skillRepository, ActivityItemRepository activityItemRepository, QuestionVersionRepository questionVersionRepository,
+                            ActivityVersionSkillRepository versionSkillRepository, SkillRepository skillRepository, ActivityItemRepository activityItemRepository, QuestionVersionRepository questionVersionRepository,
                             ContentValidator contentValidator, QuestionRepository questionRepository,
                             ContentOwnership contentOwnership) {
         this.contentValidator = contentValidator;
@@ -49,7 +49,7 @@ public class ActivityService {
         this.contentOwnership = contentOwnership;
         this.activityRepository = activityRepository;
         this.activityVersionRepository = activityVersionRepository;
-        this.activitySkillRepository = activitySkillRepository;
+        this.versionSkillRepository = versionSkillRepository;
         this.skillRepository = skillRepository;
         this.activityItemRepository = activityItemRepository;
         this.questionVersionRepository = questionVersionRepository;
@@ -76,11 +76,17 @@ public class ActivityService {
         if (!activityRepository.existsById(activityId)) {
             throw new ResourceNotFoundException("Activity", activityId);
         }
-        int nextVersionNumber = activityVersionRepository.findTopByActivityIdOrderByVersionNumberDesc(activityId)
-                .map(previous -> previous.getVersionNumber() + 1)
-                .orElse(1);
-        return activityVersionRepository.save(
+        Optional<ActivityVersion> previous = activityVersionRepository.findTopByActivityIdOrderByVersionNumberDesc(activityId);
+        int nextVersionNumber = previous.map(v -> v.getVersionNumber() + 1).orElse(1);
+        ActivityVersion draft = activityVersionRepository.save(
                 ActivityVersion.draft(activityId, nextVersionNumber, instructions, difficultyLevel, estimatedDurationSeconds));
+        // A new version starts out practising what the last one did; the draft is where that can change (PD-08).
+        previous.ifPresent(source -> {
+            for (ActivityVersionSkill tag : versionSkillRepository.findByActivityVersionIdOrderByCreatedAtAscIdAsc(source.getId())) {
+                versionSkillRepository.save(ActivityVersionSkill.create(draft.getId(), tag.getSkillId()));
+            }
+        });
+        return draft;
     }
 
     @Transactional(readOnly = true)
@@ -248,23 +254,25 @@ public class ActivityService {
         return activityVersionRepository.findByActivityIdOrderByVersionNumberAsc(activityId);
     }
 
-    /** Idempotent: tagging a skill the activity already has returns the existing tag. */
+    /**
+     * PD-08: what a version practises is part of the version. Tags change only on a DRAFT; a published
+     * version keeps its tags for as long as it exists (V44 also enforces it). Idempotent.
+     */
     @Transactional
-    public ActivitySkill tagSkill(UUID activityId, UUID skillId) {
-        if (!activityRepository.existsById(activityId)) {
-            throw new ResourceNotFoundException("Activity", activityId);
-        }
+    public ActivityVersionSkill tagSkill(UUID activityVersionId, UUID skillId) {
+        ActivityVersion version = getVersion(activityVersionId);
+        requireDraft(version);
         if (!skillRepository.existsById(skillId)) {
             throw new ResourceNotFoundException("Skill", skillId);
         }
-        return activitySkillRepository.findByActivityIdAndSkillId(activityId, skillId)
-                .orElseGet(() -> activitySkillRepository.save(ActivitySkill.create(activityId, skillId)));
+        return versionSkillRepository.findByActivityVersionIdAndSkillId(activityVersionId, skillId)
+                .orElseGet(() -> versionSkillRepository.save(ActivityVersionSkill.create(activityVersionId, skillId)));
     }
 
-    /** Skill tags belong to the activity, not a version (PD-08): this changes placement for its published version too. */
     @Transactional
-    public void untagSkill(UUID activityId, UUID skillId) {
-        activitySkillRepository.findByActivityIdAndSkillId(activityId, skillId).ifPresent(activitySkillRepository::delete);
+    public void untagSkill(UUID activityVersionId, UUID skillId) {
+        requireDraft(getVersion(activityVersionId));
+        versionSkillRepository.findByActivityVersionIdAndSkillId(activityVersionId, skillId).ifPresent(versionSkillRepository::delete);
     }
 
     /** N7: an activity may contain platform questions or its own owner's, nothing else - answered as not found. */
@@ -286,9 +294,11 @@ public class ActivityService {
         }
     }
 
+    /** The skills a version practises, in the order they were tagged. */
     @Transactional(readOnly = true)
-    public List<ActivitySkill> listSkills(UUID activityId) {
-        return activitySkillRepository.findByActivityId(activityId);
+    public List<UUID> skillsOf(UUID activityVersionId) {
+        return versionSkillRepository.findByActivityVersionIdOrderByCreatedAtAscIdAsc(activityVersionId).stream()
+                .map(ActivityVersionSkill::getSkillId).toList();
     }
 
 }

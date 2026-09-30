@@ -481,11 +481,16 @@ class ContentStudioIntegrationTests {
                 201).get("id").asString();
         publishedActivity(admin, subjectId, lessonId, "Count apples", count, 1);
         publishedActivity(admin, subjectId, lessonId, "Count stars", count, 3);
-        // Retagged after publishing: now placed for "Add within 10", but its question still records evidence
-        // only for counting - the kind of gap only the journey view reveals.
+        // TD-24: a published activity can't be retagged in place. Retagging it for "Add within 10" is a
+        // new draft, which the journey shows as waiting and the checks keep unpublished: its question
+        // records evidence only for counting.
         String addBlocks = publishedActivity(admin, subjectId, lessonId, "Add blocks", count, 2);
+        assertThat(post("/api/v1/studio/activities/" + addBlocks + "/skills/" + add, "", admin).statusCode()).isEqualTo(409);
+        JsonNode retag = json(post("/api/v1/studio/activities/" + addBlocks + "/draft", "", admin), 200);
         json(post("/api/v1/studio/activities/" + addBlocks + "/skills/" + add, "", admin), 200);
         json(delete("/api/v1/studio/activities/" + addBlocks + "/skills/" + count, admin), 200);
+        assertThat(publishErrors(post("/api/v1/studio/activity-versions/" + retag.get("versions").get(1).get("id").asString()
+                + "/publish", "", admin))).contains("SKILL_WITHOUT_EVIDENCE");
         json(post("/api/v1/studio/lessons/" + lessonId + "/activities", "{\"title\":\"Name the shapes\",\"skillIds\":[\"" + shapes + "\"]}",
                 admin), 201);
 
@@ -499,15 +504,17 @@ class ContentStudioIntegrationTests {
         assertThat(map.get("totals").get("chapters").asInt()).isEqualTo(4);
         assertThat(map.get("totals").get("steps").asInt()).isEqualTo(3);
         JsonNode chapters = map.get("chapters");
-        assertThat(stepTitles(chapters.get(0).get("steps"))).containsExactlyInAnyOrder("Count apples", "Count stars");
+        // The published "Add blocks" still practises counting, as it was published.
+        assertThat(stepTitles(chapters.get(0).get("steps"))).containsExactlyInAnyOrder("Count apples", "Count stars", "Add blocks");
         assertThat(chapters.get(0).get("issues")).isEmpty();
         JsonNode countCoverage = chapters.get(0).get("skills").get(0);
-        assertThat(countCoverage.get("publishedActivities").asInt()).isEqualTo(2);
-        assertThat(countCoverage.get("evidenceQuestions").asInt()).isEqualTo(2);
+        assertThat(countCoverage.get("publishedActivities").asInt()).isEqualTo(3);
+        assertThat(countCoverage.get("evidenceQuestions").asInt()).isEqualTo(3);
         assertThat(countCoverage.get("minDifficulty").asInt()).isEqualTo(1);
         assertThat(countCoverage.get("maxDifficulty").asInt()).isEqualTo(3);
-        assertThat(stepTitles(chapters.get(1).get("steps"))).containsExactly("Add blocks");
-        assertThat(codes(chapters.get(1).get("issues"))).containsExactly("SKILL_NO_EVIDENCE", "SKILL_ONE_ACTIVITY");
+        assertThat(chapters.get(1).get("steps")).isEmpty();
+        assertThat(codes(chapters.get(1).get("issues"))).containsExactly("SKILL_NO_ACTIVITY");
+        assertThat(chapters.get(1).get("issues").get(0).get("message").asString()).contains("(1 in draft)");
         assertThat(chapters.get(2).get("steps")).isEmpty();
         // Empty because nothing is published yet: said once, by the skill (the chapter adds nothing to it).
         assertThat(codes(chapters.get(2).get("issues"))).containsExactly("SKILL_NO_ACTIVITY", "PREREQUISITE_NO_ACTIVITY");
@@ -543,6 +550,65 @@ class ContentStudioIntegrationTests {
         // Only its authors: not another teacher, not a family.
         assertThat(get("/api/v1/studio/curriculum-versions/" + versionId + "/journey", staff(PlatformRole.TEACHER)).statusCode()).isEqualTo(403);
         assertThat(get("/api/v1/studio/curriculum-versions/" + versionId + "/journey", parent).statusCode()).isEqualTo(403);
+    }
+
+    @Test
+    void aPublishedVersionKeepsTheSkillsItWasPublishedWith() throws Exception {
+        String admin = staff(PlatformRole.ADMIN);
+        Catalog catalog = catalog(admin);
+        String other = skill(admin, catalog.subjectId(), "OTHER_" + catalog.suffix(), "Other skill");
+        String lessonId = json(post("/api/v1/studio/lessons", "{\"subjectId\":\"" + catalog.subjectId() + "\",\"title\":\"Frozen\"}", admin),
+                201).get("id").asString();
+        String activityId = publishedActivity(admin, catalog.subjectId(), lessonId, "Frozen counting", catalog.skillId(), 1);
+        JsonNode published = json(get("/api/v1/studio/activities/" + activityId, admin), 200);
+        String activityVersionId = firstVersion(published);
+        JsonNode item = published.get("versions").get(0).get("items").get(0);
+        String questionId = item.get("questionId").asString();
+        String questionVersionId = item.get("questionVersionId").asString();
+
+        // TD-24: neither the published activity nor its published question can be retagged in place...
+        assertThat(post("/api/v1/studio/activities/" + activityId + "/skills/" + other, "", admin).statusCode()).isEqualTo(409);
+        assertThat(delete("/api/v1/studio/activities/" + activityId + "/skills/" + catalog.skillId(), admin).statusCode()).isEqualTo(409);
+        assertThat(post("/api/v1/studio/questions/" + questionId + "/skills/" + other, "", admin).statusCode()).isEqualTo(409);
+        assertThat(delete("/api/v1/studio/questions/" + questionId + "/skills/" + catalog.skillId(), admin).statusCode()).isEqualTo(409);
+        assertThat(skillIds(json(get("/api/v1/studio/activities/" + activityId, admin), 200))).containsExactly(catalog.skillId());
+        // ...not even by writing to the database directly (V44).
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> jdbc.update(
+                "insert into activity_version_skills (id, activity_version_id, skill_id) values (?::uuid, ?::uuid, ?::uuid)",
+                UUID.randomUUID().toString(), activityVersionId, other)).isInstanceOf(org.springframework.dao.DataAccessException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> jdbc.update(
+                "delete from question_version_skills where question_version_id = ?::uuid", questionVersionId))
+                .isInstanceOf(org.springframework.dao.DataAccessException.class);
+
+        // A change is a new version: it starts with the published skills, may change them, and passes the
+        // same checks as any other change before it reaches a child.
+        JsonNode draft = json(post("/api/v1/studio/activities/" + activityId + "/draft", "", admin), 200);
+        assertThat(skillIds(draft.get("versions").get(1))).containsExactly(catalog.skillId());
+        JsonNode retagged = json(post("/api/v1/studio/activities/" + activityId + "/skills/" + other, "", admin), 200);
+        assertThat(skillIds(retagged)).containsExactly(catalog.skillId(), other);
+        assertThat(skillIds(retagged.get("versions").get(0))).containsExactly(catalog.skillId());
+        assertThat(skillIds(retagged.get("versions").get(1))).containsExactly(catalog.skillId(), other);
+        String draftId = retagged.get("versions").get(1).get("id").asString();
+        assertThat(publishErrors(post("/api/v1/studio/activity-versions/" + draftId + "/publish", "", admin)))
+                .contains("SKILL_WITHOUT_EVIDENCE");
+        json(delete("/api/v1/studio/activities/" + activityId + "/skills/" + other, admin), 200);
+        json(post("/api/v1/studio/activity-versions/" + draftId + "/publish", "", admin), 200);
+        JsonNode after = json(get("/api/v1/studio/activities/" + activityId, admin), 200);
+        assertThat(after.get("versions").get(0).get("status").asString()).isEqualTo("RETIRED");
+        assertThat(skillIds(after.get("versions").get(0))).containsExactly(catalog.skillId());
+
+        // A question's new draft may evidence another skill; its published version still evidences what it did.
+        JsonNode questionDraft = json(post("/api/v1/studio/questions/" + questionId + "/draft", "", admin), 200);
+        assertThat(skillIds(questionDraft.get("versions").get(1))).containsExactly(catalog.skillId());
+        JsonNode questionRetagged = json(post("/api/v1/studio/questions/" + questionId + "/skills/" + other, "", admin), 200);
+        assertThat(skillIds(questionRetagged.get("versions").get(0))).containsExactly(catalog.skillId());
+        assertThat(skillIds(questionRetagged.get("versions").get(1))).containsExactly(catalog.skillId(), other);
+    }
+
+    private static List<String> skillIds(JsonNode node) {
+        List<String> ids = new ArrayList<>();
+        node.get("skillIds").forEach(id -> ids.add(id.asString()));
+        return ids;
     }
 
     private static List<String> stepTitles(JsonNode steps) {

@@ -2,14 +2,13 @@ package com.platform.content.studio;
 
 import com.platform.common.entity.CatalogStatus;
 import com.platform.common.entity.PublicationStatus;
-import com.platform.content.entity.ActivitySkill;
 import com.platform.content.entity.ActivityVersion;
-import com.platform.content.entity.QuestionSkill;
+import com.platform.content.entity.QuestionVersionSkill;
 import com.platform.content.repository.ActivityItemRepository;
 import com.platform.content.repository.ActivityRepository;
-import com.platform.content.repository.ActivitySkillRepository;
+import com.platform.content.repository.ActivityVersionSkillRepository;
 import com.platform.content.repository.ActivityVersionRepository;
-import com.platform.content.repository.QuestionSkillRepository;
+import com.platform.content.repository.QuestionVersionSkillRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.content.service.ContentAccessGuard;
 import com.platform.curriculum.entity.Curriculum;
@@ -92,20 +91,20 @@ public class JourneyBuilderService {
     private final LearningObjectiveSkillRepository objectiveSkills;
     private final SkillRepository skills;
     private final SkillPrerequisiteRepository prerequisites;
-    private final ActivitySkillRepository activitySkills;
+    private final ActivityVersionSkillRepository activitySkills;
     private final ActivityRepository activities;
     private final ActivityVersionRepository activityVersions;
     private final ActivityItemRepository activityItems;
     private final QuestionVersionRepository questionVersions;
-    private final QuestionSkillRepository questionSkills;
+    private final QuestionVersionSkillRepository questionSkills;
 
     public JourneyBuilderService(ContentAccessGuard guard, CurriculumService curriculumService, CurriculumPathPlanner planner,
                                  PathContentScope scopes, LearningObjectiveRepository objectives,
                                  LearningObjectiveSkillRepository objectiveSkills, SkillRepository skills,
-                                 SkillPrerequisiteRepository prerequisites, ActivitySkillRepository activitySkills,
+                                 SkillPrerequisiteRepository prerequisites, ActivityVersionSkillRepository activitySkills,
                                  ActivityRepository activities, ActivityVersionRepository activityVersions,
                                  ActivityItemRepository activityItems, QuestionVersionRepository questionVersions,
-                                 QuestionSkillRepository questionSkills) {
+                                 QuestionVersionSkillRepository questionSkills) {
         this.guard = guard;
         this.curriculumService = curriculumService;
         this.planner = planner;
@@ -309,39 +308,43 @@ public class JourneyBuilderService {
         Integer maxDifficulty;
     }
 
+    /**
+     * PD-08: coverage by the versions' own tags. "Published" counts activities whose published version
+     * practises the skill; "draft only" counts activities whose open draft practises it but whose
+     * published version (if any) doesn't - a new activity, or a retag waiting to be published.
+     */
     private Coverage coverageOf(UUID skillId, PathContentScope.Scope scope) {
         Coverage c = new Coverage();
         java.util.Set<UUID> evidenceQuestions = new java.util.HashSet<>();
-        for (ActivitySkill tag : activitySkills.findBySkillId(skillId)) {
-            if (!scopes.admitsActivity(scope, tag.getActivityId())) {
+        java.util.Set<UUID> publishedActivities = new java.util.HashSet<>();
+        java.util.Set<UUID> draftedActivities = new java.util.HashSet<>();
+        for (ActivityVersion version : activitySkills.findAllPractising(skillId)) {
+            if (!scopes.admitsActivity(scope, version.getActivityId())) {
                 continue;
             }
-            Optional<ActivityVersion> published = activityVersions.findFirstByActivityIdAndStatusOrderByVersionNumberDesc(
-                    tag.getActivityId(), PublicationStatus.PUBLISHED);
-            if (published.isEmpty()) {
-                boolean drafted = activityVersions.findByActivityIdOrderByVersionNumberAsc(tag.getActivityId()).stream()
-                        .anyMatch(v -> v.getStatus() == PublicationStatus.DRAFT);
-                if (drafted) {
-                    c.draftOnly++;
-                }
+            if (version.getStatus() == PublicationStatus.DRAFT) {
+                draftedActivities.add(version.getActivityId());
                 continue;
             }
-            c.published++;
-            Integer difficulty = published.get().getDifficultyLevel();
+            if (version.getStatus() != PublicationStatus.PUBLISHED || !publishedActivities.add(version.getActivityId())) {
+                continue;
+            }
+            Integer difficulty = version.getDifficultyLevel();
             if (difficulty != null) {
                 c.minDifficulty = c.minDifficulty == null ? difficulty : Math.min(c.minDifficulty, difficulty);
                 c.maxDifficulty = c.maxDifficulty == null ? difficulty : Math.max(c.maxDifficulty, difficulty);
             }
-            for (var item : activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(published.get().getId())) {
-                questionVersions.findById(item.getQuestionVersionId()).ifPresent(qv -> {
-                    boolean tagged = questionSkills.findByQuestionId(qv.getQuestionId()).stream()
-                            .map(QuestionSkill::getSkillId).anyMatch(skillId::equals);
-                    if (tagged) {
-                        evidenceQuestions.add(qv.getQuestionId());
-                    }
-                });
+            for (var item : activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(version.getId())) {
+                boolean tagged = questionSkills.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(item.getQuestionVersionId()).stream()
+                        .map(QuestionVersionSkill::getSkillId).anyMatch(skillId::equals);
+                if (tagged) {
+                    questionVersions.findById(item.getQuestionVersionId()).ifPresent(qv -> evidenceQuestions.add(qv.getQuestionId()));
+                }
             }
         }
+        draftedActivities.removeAll(publishedActivities);
+        c.published = publishedActivities.size();
+        c.draftOnly = draftedActivities.size();
         c.evidenceQuestions = evidenceQuestions.size();
         return c;
     }

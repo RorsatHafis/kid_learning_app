@@ -238,13 +238,13 @@ class ContentTenancyIntegrationTests {
     /** A published activity of three numeric questions for the catalog's skill. */
     private ActivityVersion activity(Catalog catalog, UUID lessonId, String title, int difficulty) {
         Activity activity = activityService.createActivity(catalog.subjectId(), lessonId, "PRACTICE", title);
-        activityService.tagSkill(activity.getId(), catalog.skill().getId());
         ActivityVersion version = activityService.createDraftVersion(activity.getId(), "Add", difficulty, 60);
+        activityService.tagSkill(version.getId(), catalog.skill().getId());
         for (int i = 0; i < 3; i++) {
             Question question = questionService.createQuestion(catalog.subjectId(), QuestionType.NUMERIC);
-            questionService.tagSkill(question.getId(), catalog.skill().getId());
-            QuestionVersion questionVersion = questionService.publish(
-                    questionService.createDraftVersion(question.getId(), i + " + 1 = ?", String.valueOf(i + 1), null).getId());
+            QuestionVersion draft = questionService.createDraftVersion(question.getId(), i + " + 1 = ?", String.valueOf(i + 1), null);
+            questionService.tagSkill(draft.getId(), catalog.skill().getId());
+            QuestionVersion questionVersion = questionService.publish(draft.getId());
             activityService.addItem(version.getId(), questionVersion.getId(), i, BigDecimal.ONE);
         }
         return activityService.publish(version.getId());
