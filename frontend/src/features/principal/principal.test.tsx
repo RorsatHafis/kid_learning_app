@@ -123,7 +123,7 @@ describe("PrincipalHome", () => {
 });
 
 describe("PrincipalClassPage", () => {
-  it("offers only accepted teachers who aren't already assigned, and explains the empty roster", async () => {
+  it("offers only accepted teachers who aren't already assigned, and explains how children join", async () => {
     const calls = server({
       "GET /schools/classes/c1": respond(200, { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [{ accountId: "t1", email: "a@example.com" }] }),
       "GET /schools/s1/staff": respond(200, [
@@ -131,7 +131,10 @@ describe("PrincipalClassPage", () => {
         { id: "m2", accountId: "t2", email: "b@example.com", status: "ACTIVE", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
         { id: "m3", accountId: "t3", email: "c@example.com", status: "INVITED", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
       ]),
-      "GET /schools/classes/c1/children": respond(200, []),
+      "GET /schools/classes/c1/learning": respond(200, { curricula: [], members: [], skills: [] }),
+      "GET /schools/classes/c1/curricula": respond(200, []),
+      "GET /curricula": respond(200, []),
+      "GET /schools/classes/c1/join-code": respond(204),
       "POST /schools/classes/c1/teachers": respond(201, {}),
     });
     const user = userEvent.setup();
@@ -146,7 +149,9 @@ describe("PrincipalClassPage", () => {
     const select = await screen.findByLabelText("Assign a teacher");
     const options = within(select).getAllByRole("option").map((o) => o.textContent);
     expect(options).toEqual(["Choose one of your teachers…", "b@example.com"]);
-    expect(screen.getByText(/Families can't do that in Bookeyond Kid yet/)).toBeInTheDocument();
+    // Children join with the class code, by their family's choice (PD-01): the empty class says how.
+    expect(await screen.findByText(/Share the class code with families/)).toBeInTheDocument();
+    expect(await screen.findByText(/No code yet/)).toBeInTheDocument();
 
     await user.selectOptions(select, "t2");
     await user.click(screen.getByRole("button", { name: "Assign" }));

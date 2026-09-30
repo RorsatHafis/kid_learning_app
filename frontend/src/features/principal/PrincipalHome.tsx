@@ -5,7 +5,7 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { problemMessage } from "@/lib/api/problemMessage";
 import type { SchoolStaffMember, SchoolSummary } from "@/lib/api/types";
-import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
+import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
@@ -298,15 +298,5 @@ function Teachers({ school }: { school: SchoolSummary }) {
         </p>
       )}
     </section>
-  );
-}
-
-/** Shown where children would be listed: why none can be, instead of a silent empty list. */
-export function ChildrenNotYetAvailable() {
-  return (
-    <EmptyState
-      title="No children in this class yet"
-      description="Children join a class when their family gives the school access to their learning. Families can't do that in Bookeyond Kid yet, so no school can add children for now."
-    />
   );
 }

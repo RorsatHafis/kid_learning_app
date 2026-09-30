@@ -50,10 +50,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * The school side of the family boundary, over real HTTP against PostgreSQL.
  *
- * <p>A child belongs to a family. Nothing in the domain yet records a family
- * authorizing a school (PD-01), so no school staff member - teacher, principal or
- * admin - may put a family's child into a class: knowing a child's id is not
- * permission (CLAUDE.md §10, §15). And a class curriculum may only be one the
+ * <p>A child belongs to a family. Only the family puts a child in a class, by entering the
+ * class's code (PD-01, SchoolAccessIntegrationTests), so no school staff member - teacher,
+ * principal or admin - may: knowing a child's id is not permission (CLAUDE.md §10, §15). And a class curriculum may only be one the
  * assigning account is entitled to hand out (TD-12): published platform content, or
  * the account's own.
  */
@@ -128,11 +127,16 @@ class SchoolFamilyBoundaryIntegrationTests {
         Staff teacher = staff(PlatformRole.TEACHER);
         Staff otherTeacher = staff(PlatformRole.TEACHER);
         SchoolClass schoolClass = classTaughtBy(principal, teacher);
-        // A class member from before this boundary existed: the refusal below must not
-        // depend on the class being empty.
+        // A class member (with the family's grant, PD-01): the refusal below must not depend on
+        // the class being empty.
         String childId = createChild(registerParent());
         jdbc.update("insert into class_enrollments (id, school_class_id, child_id) values (?::uuid, ?::uuid, ?::uuid)",
                 UUID.randomUUID().toString(), schoolClass.getId().toString(), childId);
+        jdbc.update("""
+                insert into school_child_access (id, school_id, child_id, status, granted_by_account_id, granted_at)
+                select ?::uuid, ?::uuid, ?::uuid, 'ACTIVE', m.account_id, now()
+                from memberships m join children c on c.family_id = m.family_id where c.id = ?::uuid""",
+                UUID.randomUUID().toString(), schoolClass.getSchoolId().toString(), childId, childId);
 
         // Creating a child may auto-enroll it in a platform curriculum; only changes count.
         int enrollmentsBefore = enrollmentCount(childId);

@@ -19,7 +19,7 @@ import java.util.function.LongSupplier;
  * tracked key is still active the map may exceed the bound briefly rather than
  * forget an active client's spent budget.
  */
-final class TokenBucketLimiter {
+public final class TokenBucketLimiter {
 
     static final int MAX_KEYS = 50_000;
 
@@ -28,14 +28,14 @@ final class TokenBucketLimiter {
     private final LongSupplier nanoClock;
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-    TokenBucketLimiter(int capacity, Duration period, LongSupplier nanoClock) {
+    public TokenBucketLimiter(int capacity, Duration period, LongSupplier nanoClock) {
         this.capacity = capacity;
         this.tokensPerNano = capacity / (double) period.toNanos();
         this.nanoClock = nanoClock;
     }
 
     /** @return {@link Duration#ZERO} when allowed, otherwise how long until a token is available. */
-    Duration tryAcquire(String key) {
+    public Duration tryAcquire(String key) {
         long now = nanoClock.getAsLong();
         if (buckets.size() >= MAX_KEYS) {
             buckets.values().removeIf(bucket -> bucket.isFull(now));

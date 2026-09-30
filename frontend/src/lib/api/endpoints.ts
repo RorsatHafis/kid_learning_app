@@ -6,7 +6,6 @@ import type {
   AnswerRecord,
   AuthResponse,
   Child,
-  ClassRosterChild,
   CompletedActivity,
   CurriculumProgress,
   CurriculumSummary,
@@ -145,7 +144,6 @@ export const parentInsightApi = {
 // class — real, per-class server-side scoping, not just a role check.
 export const schoolApi = {
   myClasses: () => apiClient.get<SchoolClassSummary[]>("/schools/classes/mine"),
-  classRoster: (classId: string) => apiClient.get<ClassRosterChild[]>(`/schools/classes/${classId}/children`),
   // school/web/SchoolController.java
   mySchools: () => apiClient.get<SchoolSummary[]>("/schools/mine"),
   createSchool: (name: string) => apiClient.post<SchoolSummary>("/schools", { name }),

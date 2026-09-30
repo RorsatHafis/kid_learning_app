@@ -32,7 +32,8 @@ export function Pager({
     onPage(next);
     const list = ref.current?.parentElement;
     // Smooth unless the reader prefers reduced motion (index.css); clear of the sticky bars.
-    if (list && list.getBoundingClientRect().top < 80) list.scrollIntoView({ block: "start" });
+    // (Optional call: every browser has it; jsdom, which the unit tests run in, does not.)
+    if (list && list.getBoundingClientRect().top < 80) list.scrollIntoView?.({ block: "start" });
   }
   const from = page * size + 1;
   const to = Math.min(total, (page + 1) * size);

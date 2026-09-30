@@ -14,6 +14,7 @@ import { LearningNowSection } from "./LearningNowSection";
 import { SkillsSection } from "./SkillsSection";
 import { RecentActivitySection } from "./RecentActivitySection";
 import { InsightsSection } from "./InsightsSection";
+import { SchoolAccessSection } from "./SchoolAccessSection";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 export function ChildOverviewPage() {
@@ -66,9 +67,13 @@ function ChildOverview({ childId }: { childId: string }) {
         <div className="min-w-0 lg:col-start-1">
           <LearningNowSection childId={childId} childName={child.data.displayName} enrollments={enrollments} />
         </div>
-        <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:self-start">
+        <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:self-start">
           <InsightsSection childId={childId} />
         </aside>
+        {/* Next to the learning a class adds: where a parent with a class code looks. */}
+        <div className="min-w-0 lg:col-start-1">
+          <SchoolAccessSection childId={childId} childName={child.data.displayName} onJoined={enrollments.refetch} />
+        </div>
         <div className="min-w-0 lg:col-start-1">
           <SkillsSection childId={childId} />
         </div>

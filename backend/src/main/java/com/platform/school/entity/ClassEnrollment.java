@@ -13,5 +13,9 @@ public class ClassEnrollment extends AuditableEntity {
     protected ClassEnrollment() {}
     private ClassEnrollment(UUID classId, UUID childId) { schoolClassId=classId; this.childId=childId; status=ClassEnrollmentStatus.ACTIVE; }
     public static ClassEnrollment enroll(UUID classId, UUID childId) { Assert.notNull(classId,"schoolClassId must not be null"); Assert.notNull(childId,"childId must not be null"); return new ClassEnrollment(classId,childId); }
+    /** The child leaves the class: the family ended the school's access, or the class removed them. */
+    public void remove() { status=ClassEnrollmentStatus.REMOVED; }
+    /** The child joins the class again (only ever with an ACTIVE grant, SchoolJoinService). */
+    public void reactivate() { status=ClassEnrollmentStatus.ACTIVE; }
     public UUID getSchoolClassId(){return schoolClassId;} public UUID getChildId(){return childId;} public ClassEnrollmentStatus getStatus(){return status;}
 }

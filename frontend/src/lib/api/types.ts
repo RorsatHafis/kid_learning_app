@@ -377,10 +377,8 @@ export interface ApiProblem {
 }
 
 // ---- school/web/SchoolController.java ----
-// TEACHER-scoped views only carry what that controller actually returns —
-// notably ClassRosterChild has no dateOfBirth/status, unlike the parent-
-// facing Child type, because ChildResponse.of() in SchoolController only
-// serializes id + displayName.
+// A class's children and their learning are in lib/api/schoolAccess.ts (PD-01): school views
+// carry only what the school may see, never the parent-facing Child.
 
 export interface SchoolClassSummary {
   id: string;
@@ -419,9 +417,4 @@ export interface SchoolInvitation {
   schoolId: string;
   schoolName: string;
   invitedAt: string;
-}
-
-export interface ClassRosterChild {
-  id: string;
-  displayName: string;
 }

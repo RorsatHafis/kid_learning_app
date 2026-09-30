@@ -252,6 +252,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(TooManyAttemptsException.class)
+    public ResponseEntity<Object> handleTooManyAttempts(TooManyAttemptsException ex, WebRequest request) {
+
+        long seconds = Math.max(1, ex.retryAfter().toSeconds());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        problem.setTitle("Too Many Requests");
+        problem.setProperty("retryAfterSeconds", seconds);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.RETRY_AFTER, Long.toString(seconds));
+
+        return createResponseEntity(problem, headers, HttpStatus.TOO_MANY_REQUESTS, request);
+
+    }
+
     @ExceptionHandler(AccountLockedException.class)
     public ResponseEntity<Object> handleAccountLocked(AccountLockedException ex, WebRequest request) {
  

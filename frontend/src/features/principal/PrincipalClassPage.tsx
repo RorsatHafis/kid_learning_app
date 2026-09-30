@@ -7,12 +7,12 @@ import { schoolApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { problemMessage } from "@/lib/api/problemMessage";
-import { ChildrenNotYetAvailable } from "./PrincipalHome";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+import { ClassCurriculaPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
 
 /**
- * One class: who teaches it (assign from the school's own active teachers, or unassign)
- * and its children — none yet, and the page says why.
+ * One class: who teaches it (assign from the school's own active teachers, or unassign), its
+ * children's learning in what it assigns, what it assigns, and its code for families (PD-01).
  */
 export function PrincipalClassPage() {
   const { classId = "" } = useParams<{ classId: string }>();
@@ -20,7 +20,7 @@ export function PrincipalClassPage() {
   useDocumentTitle(schoolClass.data?.name);
   const schoolId = schoolClass.data?.schoolId;
   const staff = useAsync(() => (schoolId ? schoolApi.staff(schoolId) : Promise.resolve([])), [schoolId]);
-  const roster = useAsync(() => schoolApi.classRoster(classId), [classId]);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [selected, setSelected] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,23 +121,13 @@ export function PrincipalClassPage() {
             )}
           </section>
 
-          <section aria-labelledby="class-children" className="flex flex-col gap-3">
-            <h2 id="class-children" className="text-base font-semibold text-tonle-950">
-              Children
-            </h2>
-            {roster.isLoading && !roster.data && <LoadingState label="Loading children…" />}
-            {roster.error && <ErrorState error={roster.error} onRetry={roster.refetch} />}
-            {roster.data && roster.data.length === 0 && <ChildrenNotYetAvailable />}
-            {roster.data && roster.data.length > 0 && (
-              <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
-                {roster.data.map((child) => (
-                  <li key={child.id} className="px-5 py-3 font-medium text-ink">
-                    {child.displayName}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <ClassLearningPanel
+            classId={classId}
+            refreshKey={refreshKey}
+            memberHref={(childId) => `/principal/classes/${classId}/children/${childId}`}
+          />
+          <ClassCurriculaPanel classId={classId} onChanged={() => setRefreshKey((k) => k + 1)} />
+          <JoinCodePanel classId={classId} className={schoolClass.data.name} />
         </>
       )}
     </div>

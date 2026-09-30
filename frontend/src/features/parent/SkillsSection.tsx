@@ -4,29 +4,11 @@ import { learningApi } from "@/lib/api/endpoints";
 import type { EvidenceLevel, ObjectiveProgress, SkillProgress, SkillStanding } from "@/lib/api/types";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { evidenceDots, evidenceLabel, objectiveStandingLabel, standingHelp, standingLabel } from "@/features/learning/explain";
+import { Standing } from "@/features/learning/Standing";
 import { EvidenceLine } from "@/features/learning/EvidenceLine";
 import { formatDay } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
 import { SectionTitle } from "./SectionTitle";
-
-/** A quiet marker per standing — always next to its words, never colour alone. */
-const standingMark: Record<SkillStanding, { mark: string; text: string }> = {
-  NOT_STARTED: { mark: "border border-line-strong bg-white", text: "text-ink-faint" },
-  TOO_EARLY_TO_TELL: { mark: "border-2 border-tonle-300 bg-white", text: "text-tonle-700" },
-  NEEDS_PRACTICE: { mark: "bg-light", text: "text-light-deep" },
-  PROGRESSING: { mark: "bg-tonle-600", text: "text-tonle-700" },
-  SECURE: { mark: "bg-palm", text: "text-palm-deep" },
-};
-
-function Standing({ standing }: { standing: SkillStanding }) {
-  const m = standingMark[standing];
-  return (
-    <span className={cn("inline-flex items-center gap-2 text-sm font-semibold", m.text)} title={standingHelp[standing]}>
-      <span aria-hidden className={cn("h-3 w-3 rounded-[3px]", m.mark)} />
-      {standingLabel[standing]}
-    </span>
-  );
-}
 
 /**
  * What the evidence says, skill by skill (directive §13.3). Evidence strength and

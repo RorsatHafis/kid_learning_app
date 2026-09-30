@@ -135,6 +135,49 @@ The recommendation recorded under PD-01 is adopted:
 Teachers then get class learning views (roster, per-child progress in school-assigned
 curricula, the class's skills) and can assign a curriculum to their class.
 
+### Design (X4), written before building
+
+**Schema (V43), three relationships, each explicit:**
+- `class_join_codes`: a class's code (8 characters from an alphabet without 0/O/1/I/L), who made it,
+  `expires_at` (14 days), `revoked_at`. At most one open code per class (partial unique index); making a
+  new one revokes the old. The code identifies a class and grants nothing.
+- `school_child_access`: the family's grant, per (school, child): `ACTIVE` → `REVOKED`, `granted_by`,
+  `revoked_by`, timestamps. At most one ACTIVE row per pair (partial unique index); a later grant is a new
+  row, so the history stays.
+- `class_curriculum_assignments`: which curricula a class assigned, by whom (`ACTIVE` / `REMOVED`). It
+  defines what the school may see, and what a child joining later is enrolled in.
+- `class_enrollments` (existing) now counts only while the child's grant for that school is ACTIVE.
+  Rows without a grant (TD-14, pre-PD-01) are ignored by every read, so no data migration is needed.
+
+**Who does what:**
+- The **principal** of the class's school, or a teacher **assigned** to the class, makes and revokes the
+  code, sees the roster and learning, assigns curricula, and removes a child from the class. An **admin**
+  does none of this: platform administration isn't a way into children's data (CLAUDE.md §10, §22).
+- A **parent** of the child (family membership, confirmed email) previews a code (school, class, what the
+  school will see) and joins, and can see and end the school's access at any time. Code lookups are
+  rate-limited per account.
+- Joining: the grant is created (or reused), the class enrolment made (or reactivated), and the child is
+  enrolled in the class's assigned curricula, in one transaction, audited.
+- Ending access: the grant becomes REVOKED, and the child's enrolments in that school's classes end, in
+  one transaction, audited. The child keeps every journey and all evidence.
+
+**What the school sees:** the child's display name; for each curriculum the class assigned, the
+child's journey in it (steps done, chapter states) and skill standings with their evidence level.
+This includes earlier work the child did in that same curriculum, and the parent is told so before
+granting. Nothing else is visible: other journeys, the parent insights, the activity history, age,
+family or account details.
+
+**Plans:** a journey a school assigns is not the family's choice, so the family's plan never refuses
+it. How school-assigned journeys count toward a family's own journey limit is an open question for
+PD-09. It has no effect while the default plan has no limits.
+
+**Built (X4).** As designed above, with these specifics: code lookups are limited to 10 per parent account
+per hour; joining a class the child is already in changes and records nothing; the class may remove a child
+(the family's grant stays theirs to end); assigning a class curriculum is class-staff only (no longer
+admin). The parent's preview says exactly what the school will and won't see, including earlier work in an
+assigned curriculum the family had already chosen. Open: school-assigned journeys vs a family's plan limit
+(PD-09), school-wide reporting, grants in the family data export, and what a school sees after deletion (PD-24).
+
 ## 5. Content that can keep growing
 
 - Educators keep authoring everything in the Content Studio. Nothing canonical is generated.

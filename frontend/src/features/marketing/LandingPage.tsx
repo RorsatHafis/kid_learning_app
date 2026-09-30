@@ -341,7 +341,7 @@ function Schools() {
           {[
             ["Set up your school and its classes.", true],
             ["Invite teachers by email and assign them to classes.", true],
-            ["Class learning views arrive once families can link their child to your school.", false],
+            ["Families join a class with its code; you see their progress in what the class assigns.", true],
           ].map(([text, ready]) => (
             <li key={text as string} className="relative flex flex-col gap-1 pb-8 pl-8 last:pb-0">
               <span
