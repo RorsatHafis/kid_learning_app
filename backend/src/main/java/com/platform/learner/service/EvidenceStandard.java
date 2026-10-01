@@ -71,7 +71,14 @@ public class EvidenceStandard {
 
     /** {@code state} may be null: a skill the child has never been scored on. */
     public SkillStanding standingFor(LearnerSkillState state) {
-        int evidence = state == null ? 0 : state.getEvidenceCount();
+        return state == null ? SkillStanding.NOT_STARTED : standingFor(state.getEvidenceCount(), state.getMasteryProbability());
+    }
+
+    /**
+     * The same rule for evidence as it stood at any moment (StandingHistory): {@code mastery} is the
+     * estimate after the last of {@code evidence} answers, and is not read when there are too few.
+     */
+    public SkillStanding standingFor(int evidence, BigDecimal mastery) {
         EvidenceLevel level = levelFor(evidence);
         if (level == EvidenceLevel.NONE) {
             return SkillStanding.NOT_STARTED;
@@ -79,7 +86,6 @@ public class EvidenceStandard {
         if (level == EvidenceLevel.PARTIAL) {
             return SkillStanding.TOO_EARLY_TO_TELL;
         }
-        BigDecimal mastery = state.getMasteryProbability();
         if (mastery.compareTo(masteryProperties.objectiveMasteryThreshold()) >= 0) {
             return SkillStanding.SECURE;
         }

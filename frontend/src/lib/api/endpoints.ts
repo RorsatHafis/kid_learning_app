@@ -7,14 +7,15 @@ import type {
   AuthResponse,
   Child,
   CompletedActivity,
-  CurriculumProgress,
   CurriculumChoice,
+  CurriculumProgress,
   CurriculumSummary,
   Enrollment,
   EnrollmentOverview,
   Journey,
   LearningPathItem,
   ParentInsight,
+  ProgressSince,
   ProgressSummary,
   SchoolClassSummary,
   SchoolClassWithTeachers,
@@ -76,6 +77,8 @@ export const learningApi = {
   enrollments: (childId: string) => apiClient.get<EnrollmentOverview[]>(`/children/${childId}/enrollments`),
   journey: (enrollmentId: string) => apiClient.get<Journey>(`/enrollments/${enrollmentId}/journey`),
   skills: (childId: string) => apiClient.get<CurriculumProgress[]>(`/children/${childId}/skills`),
+  /** What changed in the last `days` (7–90): each skill answered on, where it stood then and stands now (X12). */
+  changes: (childId: string, days = 28) => apiClient.get<ProgressSince>(`/children/${childId}/changes?days=${days}`),
   /** Newest first; with `after` (the last one shown), the ones finished before it. */
   history: (childId: string, limit = 20, after?: CompletedActivity) => {
     const params = new URLSearchParams({ limit: String(limit) });

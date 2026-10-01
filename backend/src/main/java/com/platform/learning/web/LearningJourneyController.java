@@ -6,6 +6,7 @@ import com.platform.learning.service.LearningJourneyService;
 import com.platform.learning.service.LearningJourneyService.CompletedActivity;
 import com.platform.learning.service.LearningJourneyService.EnrollmentOverview;
 import com.platform.learning.service.LearningJourneyService.Journey;
+import com.platform.learning.service.ProgressChangeService;
 import com.platform.learning.service.SkillProgressService;
 import com.platform.learning.service.SkillProgressService.CurriculumProgress;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -40,14 +41,16 @@ public class LearningJourneyController {
     private final SkillProgressService skillProgressService;
     private final EnrollmentService enrollmentService;
     private final FamilyAccessGuard familyAccessGuard;
+    private final ProgressChangeService progressChangeService;
 
     public LearningJourneyController(LearningJourneyService learningJourneyService,
                                      SkillProgressService skillProgressService, EnrollmentService enrollmentService,
-                                     FamilyAccessGuard familyAccessGuard) {
+                                     FamilyAccessGuard familyAccessGuard, ProgressChangeService progressChangeService) {
         this.learningJourneyService = learningJourneyService;
         this.skillProgressService = skillProgressService;
         this.enrollmentService = enrollmentService;
         this.familyAccessGuard = familyAccessGuard;
+        this.progressChangeService = progressChangeService;
     }
 
     @GetMapping("/api/v1/children/{childId}/enrollments")
@@ -66,6 +69,14 @@ public class LearningJourneyController {
     public List<CurriculumProgress> skills(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
         familyAccessGuard.requireChildAccess(accountId, childId);
         return skillProgressService.progressFor(childId);
+    }
+
+    /** What changed in the last {@code days} (7-90): each skill answered on, where it stood then and stands now (X12). */
+    @GetMapping("/api/v1/children/{childId}/changes")
+    public ProgressChangeService.ProgressSince changes(@PathVariable UUID childId, @RequestParam(defaultValue = "28") int days,
+                                                        @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return progressChangeService.since(childId, days);
     }
 
     @GetMapping("/api/v1/children/{childId}/activity-history")

@@ -402,6 +402,8 @@ class SchoolAccessIntegrationTests {
             }
         }
         assertThat(arun.get("latestPractice").get("status").asString()).isEqualTo("COMPLETED");
+        // X12: where Arun stood when it was placed - no answers yet - against where he stands now.
+        assertThat(arun.get("latestPractice").get("standingWhenAssigned").asString()).isEqualTo("NOT_STARTED");
         assertThat(arun.get("scoredAnswers").asInt()).isPositive();
 
         // Placed for both again; one family ends the school's access, the class lets the other go:

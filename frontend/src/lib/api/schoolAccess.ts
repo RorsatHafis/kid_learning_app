@@ -148,6 +148,8 @@ export interface PlacedPractice {
   status: PathItemStatus;
   assignedAt: string;
   completedAt: string | null;
+  /** The child's standing on the skill when it was placed (X12): with today's, what happened afterwards. */
+  standingWhenAssigned: SkillStanding | null;
 }
 
 export interface ChildOnSkill {

@@ -32,6 +32,15 @@ function practiceText(practice: PlacedPractice): string {
   }
 }
 
+/** What happened afterwards: the standing when the practice was placed against today's. */
+function sinceAssigned(child: ChildOnSkill): string {
+  const then = child.latestPractice?.standingWhenAssigned;
+  if (!then || child.latestPractice?.status !== "COMPLETED") return "";
+  return then === child.standing
+    ? ` · still ${standingLabel[then].toLowerCase()}`
+    : ` · ${standingLabel[then].toLowerCase()} then, ${standingLabel[child.standing].toLowerCase()} now`;
+}
+
 const waiting = (child: ChildOnSkill) =>
   child.latestPractice?.status === "PENDING" || child.latestPractice?.status === "IN_PROGRESS";
 
@@ -325,7 +334,12 @@ function ChildRow({
               <span>{child.enrolled ? "No answers yet" : "Not on this path"}</span>
             )}
           </span>
-          {child.latestPractice && <span className="text-xs text-ink-faint">{practiceText(child.latestPractice)}</span>}
+          {child.latestPractice && (
+            <span className="text-xs text-ink-faint">
+              {practiceText(child.latestPractice)}
+              {sinceAssigned(child)}
+            </span>
+          )}
         </span>
       </span>
     </li>

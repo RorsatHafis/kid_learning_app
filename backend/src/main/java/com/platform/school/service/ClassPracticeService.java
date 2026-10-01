@@ -14,6 +14,7 @@ import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.repository.AccountRepository;
 import com.platform.learner.service.EvidenceStandard.EvidenceLevel;
 import com.platform.learner.service.EvidenceStandard.SkillStanding;
+import com.platform.learner.service.StandingHistory;
 import com.platform.learning.entity.Enrollment;
 import com.platform.learning.entity.EnrollmentStatus;
 import com.platform.learning.entity.LearningPath;
@@ -73,12 +74,14 @@ public class ClassPracticeService {
     private final PathContentScope contentScope;
     private final AccountRepository accounts;
     private final AuditService audit;
+    private final StandingHistory standingHistory;
 
     public ClassPracticeService(SchoolAccessGuard guard, SchoolLearningService learning, ActivityVersionSkillRepository activitySkills,
                                 ActivityRepository activities, ActivityVersionRepository activityVersions,
                                 ActivityItemRepository activityItems, EnrollmentRepository enrollments,
                                 LearningPathRepository paths, LearningPathItemRepository pathItems, LearningPathService pathService,
-                                PathContentScope contentScope, AccountRepository accounts, AuditService audit) {
+                                PathContentScope contentScope, AccountRepository accounts, AuditService audit,
+                                StandingHistory standingHistory) {
         this.guard = guard;
         this.learning = learning;
         this.activitySkills = activitySkills;
@@ -92,13 +95,17 @@ public class ClassPracticeService {
         this.contentScope = contentScope;
         this.accounts = accounts;
         this.audit = audit;
+        this.standingHistory = standingHistory;
     }
 
     // ------------------------------------------------------------------ the view
 
-    /** Practice the class placed for this skill for one child, and where it stands. */
+    /**
+     * Practice the class placed for this skill for one child, and where it stands. {@code standingWhenAssigned}
+     * (X12): the child's standing on the skill when it was placed - with today's standing, what happened afterwards.
+     */
     public record PlacedPractice(UUID activityId, String activityTitle, LearningPathItemStatus status, Instant assignedAt,
-                                 Instant completedAt) {
+                                 Instant completedAt, SkillStanding standingWhenAssigned) {
     }
 
     /** One member on this skill: their standing and the evidence behind it, and the class's practice. */
@@ -119,7 +126,7 @@ public class ClassPracticeService {
         guard.requireClassStaff(accountId, classId);
         ClassSnapshot snapshot = learning.snapshot(classId);
         Located located = locate(snapshot, skillId);
-        Map<UUID, PlacedPractice> latest = latestPractice(classId, skillId);
+        Map<UUID, PlacedPractice> latest = withStandingWhenAssigned(skillId, latestPractice(classId, skillId));
 
         List<ChildOnSkill> children = new ArrayList<>();
         for (MemberRow member : snapshot.members()) {
@@ -288,9 +295,20 @@ public class ClassPracticeService {
                     id -> activityVersions.findById(id).map(ActivityVersion::getActivityId).orElseThrow());
             String title = titles.computeIfAbsent(activityId, id -> activities.findById(id).map(a -> a.getTitle()).orElse(null));
             latest.put(practice.childId(), new PlacedPractice(activityId, title, practice.status(), practice.addedAt(),
-                    practice.completedAt()));
+                    practice.completedAt(), null));
         }
         return latest;
+    }
+
+    /** Each child's standing as it was when their practice was placed, from the evidence history (one query). */
+    private Map<UUID, PlacedPractice> withStandingWhenAssigned(UUID skillId, Map<UUID, PlacedPractice> latest) {
+        Map<UUID, Instant> placedAt = new HashMap<>();
+        latest.forEach((childId, practice) -> placedAt.put(childId, practice.assignedAt()));
+        Map<UUID, StandingHistory.Moment> then = standingHistory.forSkillAt(skillId, placedAt);
+        Map<UUID, PlacedPractice> result = new HashMap<>();
+        latest.forEach((childId, p) -> result.put(childId, new PlacedPractice(p.activityId(), p.activityTitle(), p.status(),
+                p.assignedAt(), p.completedAt(), then.getOrDefault(childId, StandingHistory.Moment.NONE).standing())));
+        return result;
     }
 
     private static int priority(SkillStanding standing) {

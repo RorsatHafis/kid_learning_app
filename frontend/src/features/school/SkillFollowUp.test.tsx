@@ -79,6 +79,14 @@ const VIEW = {
       evidenceLevel: "STRONG",
       scoredAnswers: 12,
       correctAnswers: 11,
+      latestPractice: {
+        activityId: "act1",
+        activityTitle: "Add more",
+        status: "COMPLETED",
+        assignedAt: "2026-09-20T08:00:00Z",
+        completedAt: "2026-09-21T08:00:00Z",
+        standingWhenAssigned: "NEEDS_PRACTICE",
+      },
     }),
     child({ childId: "d", displayName: "Dara", enrolled: false }),
   ],
@@ -114,6 +122,8 @@ describe("SkillFollowUpView", () => {
     expect(screen.queryByRole("checkbox", { name: "Choose Dara" })).not.toBeInTheDocument();
     expect(screen.getByText("Not on this path")).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /Add more/ })).toBeChecked();
+    // What happened after the class's practice: the standing then against now.
+    expect(screen.getByText(/Practice done .* · needs practice then, secure now/)).toBeInTheDocument();
   });
 
   it("assigns the chosen activity to the chosen children and reports what the server did", async () => {

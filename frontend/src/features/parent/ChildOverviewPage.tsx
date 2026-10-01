@@ -11,6 +11,7 @@ import { ChildSeal, SceneBand } from "./ui";
 import { ageFromDateOfBirth } from "@/lib/utils/date";
 import type { Child } from "@/lib/api/types";
 import { LearningNowSection } from "./LearningNowSection";
+import { ChangesSection } from "./ChangesSection";
 import { SkillsSection } from "./SkillsSection";
 import { RecentActivitySection } from "./RecentActivitySection";
 import { InsightsSection } from "./InsightsSection";
@@ -67,7 +68,11 @@ function ChildOverview({ childId }: { childId: string }) {
         <div className="min-w-0 lg:col-start-1">
           <LearningNowSection childId={childId} childName={child.data.displayName} enrollments={enrollments} />
         </div>
-        <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:self-start">
+        {/* "What is improving?": change over time, right after what is happening now. */}
+        <div className="min-w-0 lg:col-start-1">
+          <ChangesSection childId={childId} childName={child.data.displayName} />
+        </div>
+        <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-span-5 lg:row-start-1 lg:self-start">
           <InsightsSection childId={childId} />
         </aside>
         {/* Next to the learning a class adds: where a parent with a class code looks. */}

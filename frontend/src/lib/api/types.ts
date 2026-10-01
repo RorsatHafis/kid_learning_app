@@ -448,3 +448,27 @@ export interface SchoolInvitation {
   schoolName: string;
   invitedAt: string;
 }
+
+// ---- learning/service/ProgressChangeService.java (X12): what changed over a window ----
+
+/** How a skill moved; listed in this order. */
+export type ChangeKind = "BECAME_SECURE" | "MOVED_UP" | "FIRST_READING" | "STARTED" | "PRACTISED" | "MOVED_DOWN";
+
+export interface SkillChange {
+  skillId: string;
+  name: string;
+  kind: ChangeKind;
+  /** Where it stood at the start of the window, by the same rule as today's standing. */
+  then: SkillStanding;
+  now: SkillStanding;
+  answersSince: number;
+  lastPracticedAt: string | null;
+}
+
+export interface ProgressSince {
+  since: string;
+  days: number;
+  answersSince: number;
+  /** Only skills answered on in the window: nothing changes without answers. */
+  changes: SkillChange[];
+}
