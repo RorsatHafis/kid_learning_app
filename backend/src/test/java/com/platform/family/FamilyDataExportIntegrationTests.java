@@ -51,6 +51,12 @@ class FamilyDataExportIntegrationTests {
 
         // Sokha plays the first activity: one wrong answer, one right.
         playFirstActivity(parent.token(), childId, null);
+        // The family once gave a school access to Sokha and ended it: its own decision, so it is theirs to keep.
+        UUID schoolId = UUID.randomUUID();
+        jdbc.update("insert into schools (id, name) values (?, 'Export Primary')", schoolId);
+        jdbc.update("insert into school_child_access (id, school_id, child_id, status, granted_by_account_id, granted_at, "
+                + "revoked_by_account_id, revoked_at) values (?, ?, ?::uuid, 'REVOKED', ?::uuid, now() - interval '3 days', "
+                + "?::uuid, now() - interval '1 day')", UUID.randomUUID(), schoolId, childId, parent.id(), parent.id());
 
         HttpResponse<String> res = get("/api/v1/account/data-export", parent.token());
         assertThat(res.statusCode()).isEqualTo(200);
@@ -79,6 +85,17 @@ class FamilyDataExportIntegrationTests {
         assertThat(answers.get(1).get("correct").asBoolean()).isTrue();
         assertThat(export.get("children").get(1).get("id").asString()).isEqualTo(secondChildId);
         assertThat(export.get("children").get(1).get("answers")).isEmpty();
+
+        // The school access the family gave and ended, and the family's plan as the parent sees it.
+        JsonNode access = sokha.get("schoolAccess");
+        assertThat(access).hasSize(1);
+        assertThat(access.get(0).get("schoolName").asString()).isEqualTo("Export Primary");
+        assertThat(access.get(0).get("status").asString()).isEqualTo("REVOKED");
+        assertThat(access.get(0).get("endedAt").isNull()).isFalse();
+        assertThat(access.get(0).get("classNames")).isEmpty();
+        assertThat(export.get("children").get(1).get("schoolAccess")).isEmpty();
+        assertThat(export.get("plan").get("onDefaultPlan").asBoolean()).isTrue();
+        assertThat(export.get("plan").get("plan").get("name").asString()).isNotBlank();
 
         // Nothing of the other family; no answer key, password or session material.
         assertThat(res.body()).doesNotContain(strangerChild).doesNotContain("Stranger Child").doesNotContain(stranger.email())

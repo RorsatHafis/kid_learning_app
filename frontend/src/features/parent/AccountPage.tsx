@@ -325,8 +325,9 @@ function YourData() {
       <div className="flex flex-col gap-4">
         <p className="text-sm text-ink-soft">
           Download a copy of everything Bookeyond Kid holds about you and your children: your account, each child&apos;s
-          profile, learning paths, skills and the evidence behind them, every activity and answer, and the insights
-          you&apos;ve been shown. It&apos;s a JSON file, a standard format that other services and data tools can read.
+          profile, learning paths, skills and the evidence behind them, every activity and answer, the insights
+          you&apos;ve been shown, the schools you gave access to, and your family&apos;s plan. It&apos;s a JSON file, a
+          standard format that other services and data tools can read.
         </p>
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">

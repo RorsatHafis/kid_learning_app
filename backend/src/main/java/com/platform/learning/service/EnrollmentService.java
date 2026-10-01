@@ -145,9 +145,7 @@ public class EnrollmentService {
     public Optional<Enrollment> autoEnrollIfUnambiguous(Child child) {
         int age = child.ageInYears(LocalDate.now());
 
-        Optional<AgeHub> ageHub = ageHubRepository.findAllByOrderByDisplayOrderAsc().stream()
-                .filter(hub -> hub.includesAge(age))
-                .findFirst();
+        Optional<AgeHub> ageHub = ageHubRepository.findForAge(age);
         if (ageHub.isEmpty()) {
             return Optional.empty();
         }

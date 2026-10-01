@@ -269,11 +269,20 @@ public class SubscriptionService {
     /** The signed-in parent's family plan: what it includes and what the family uses. */
     @Transactional(readOnly = true)
     public FamilyPlanView familyPlan(UUID accountId) {
-        UUID familyId = memberships.findByAccountId(accountId).stream()
+        return familyPlanOf(accountId).orElseThrow(() -> new ResourceNotFoundException("Family for account", accountId));
+    }
+
+    /** The same, or empty for an account that is in no family (e.g. every membership ended). */
+    @Transactional(readOnly = true)
+    public Optional<FamilyPlanView> familyPlanOf(UUID accountId) {
+        return memberships.findByAccountId(accountId).stream()
                 .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
                 .map(Membership::getFamilyId)
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Family for account", accountId));
+                .map(this::planOfFamily);
+    }
+
+    private FamilyPlanView planOfFamily(UUID familyId) {
         EntitlementService.FamilyPlan effective = entitlementService.effectivePlan(familyId);
         boolean ends = effective.fromSubscription()
                 && effective.subscription().map(s -> s.getCurrentPeriodEnd() != null).orElse(false);

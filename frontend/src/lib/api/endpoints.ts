@@ -8,6 +8,7 @@ import type {
   Child,
   CompletedActivity,
   CurriculumProgress,
+  CurriculumChoice,
   CurriculumSummary,
   Enrollment,
   EnrollmentOverview,
@@ -64,6 +65,8 @@ export const childrenApi = {
   get: (childId: string) => apiClient.get<Child>(`/children/${childId}`),
   create: (input: { displayName: string; dateOfBirth: string }) => apiClient.post<Child>("/children", input),
   rename: (childId: string, displayName: string) => apiClient.patch<Child>(`/children/${childId}`, { displayName }),
+  /** The family catalog for this child: the child's age group first (curriculum/web/CurriculumController.java). */
+  curricula: (childId: string) => apiClient.get<CurriculumChoice[]>(`/children/${childId}/curricula`),
 };
 
 // learning/web/LearningJourneyController.java — server-side views of a child's

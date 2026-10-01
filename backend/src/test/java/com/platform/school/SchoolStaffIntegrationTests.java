@@ -59,6 +59,24 @@ class SchoolStaffIntegrationTests {
 
     private final HttpClient http = HttpClient.newHttpClient();
 
+    // ------------------------------------------------------------------ who creates a school
+
+    @Test
+    void onlyAPrincipalCreatesASchoolAndBecomesItsPrincipal() throws Exception {
+        User admin = user(PlatformRole.ADMIN);
+        User teacher = user(PlatformRole.TEACHER);
+        // TD-23: an administrator (or a teacher) would be recorded as a principal they aren't.
+        for (User notPrincipal : List.of(admin, teacher)) {
+            assertThat(post("/api/v1/schools", "{\"name\":\"Not Mine\"}", notPrincipal).statusCode()).isEqualTo(403);
+            assertThat(jdbc.queryForObject("select count(*) from schools where principal_account_id = ?::uuid", Integer.class,
+                    notPrincipal.id())).isZero();
+        }
+        User principal = user(PlatformRole.PRINCIPAL);
+        String schoolId = createSchool(principal, "Principal's Own School");
+        assertThat(jdbc.queryForObject("select principal_account_id::text from schools where id = ?::uuid", String.class, schoolId))
+                .isEqualTo(principal.id());
+    }
+
     // ------------------------------------------------------------------ the whole journey
 
     @Test

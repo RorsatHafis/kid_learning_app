@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Plus, Play } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -8,8 +8,9 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { ageFromDateOfBirth } from "@/lib/utils/date";
 import { chapterOf } from "@/features/learning/chapters";
 import { AddChildForm } from "./AddChildForm";
+import { lastPlayedText } from "./familyText";
 import { ChildSeal, SceneBand } from "./ui";
-import type { Child } from "@/lib/api/types";
+import type { Child, EnrollmentOverview } from "@/lib/api/types";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 /** The family: each child as a chapter — who they are, where they are on their path, what's next. */
@@ -86,8 +87,37 @@ export function ParentHome() {
   );
 }
 
+/** Where a path stands, in words that don't overclaim: finishing every step is not mastery. */
+function pathState(enrollment: EnrollmentOverview): ReactNode {
+  if (enrollment.nextStep === null) {
+    return enrollment.totalSteps > 0 && enrollment.completedSteps >= enrollment.totalSteps ? (
+      <span className="text-ink-soft">every step done so far</span>
+    ) : (
+      <span className="text-ink-soft">nothing waiting right now</span>
+    );
+  }
+  const chapter = enrollment.currentChapter ? chapterOf(enrollment.currentChapter, enrollment.chapterCount) : null;
+  return (
+    <>
+      {chapter && <span className="tabular text-ink-soft">{chapter} · </span>}
+      <span>{enrollment.currentChapter?.title ?? `next: ${enrollment.nextStep.title}`}</span>
+      <span className="tabular text-ink-faint">
+        {" "}
+        · {enrollment.completedSteps} of {enrollment.totalSteps} steps
+      </span>
+    </>
+  );
+}
+
 function ChildChapter({ child }: { child: Child }) {
   const { data: enrollments, error, isLoading } = useAsync(() => learningApi.enrollments(child.id), [child.id]);
+  // The most recent finished activity only - enough to say when the child last played.
+  const recent = useAsync(() => learningApi.history(child.id, 1), [child.id]);
+  const lastPlayed = recent.data?.[0]?.completedAt ?? null;
+  const allDone =
+    enrollments !== null &&
+    enrollments.length > 0 &&
+    enrollments.every((e) => e.nextStep === null && e.totalSteps > 0 && e.completedSteps >= e.totalSteps);
 
   return (
     <article className="grid gap-6 px-6 py-7 sm:px-8 lg:grid-cols-[200px_minmax(0,1fr)_auto] lg:items-center lg:gap-10">
@@ -98,6 +128,9 @@ function ChildChapter({ child }: { child: Child }) {
             {child.displayName}
           </h2>
           <p className="text-sm text-ink-faint">Age {ageFromDateOfBirth(child.dateOfBirth)}</p>
+          {recent.data && (
+            <p className="text-sm text-ink-faint">{lastPlayed ? `Played ${lastPlayedText(lastPlayed)}` : "Hasn't played yet"}</p>
+          )}
         </div>
       </Link>
 
@@ -111,21 +144,18 @@ function ChildChapter({ child }: { child: Child }) {
               <li key={enrollment.enrollmentId} className="text-[0.9375rem] leading-snug text-ink">
                 <span className="font-semibold text-tonle-950">{enrollment.curriculum.subjectName ?? enrollment.curriculum.name}</span>
                 <span className="text-ink-faint"> — </span>
-                {enrollment.nextStep === null ? (
-                  <span className="text-ink-soft">all caught up on this path</span>
-                ) : enrollment.currentChapter ? (
-                  <>
-                    {chapterOf(enrollment.currentChapter, enrollment.chapterCount) && (
-                      <span className="tabular text-ink-soft">{chapterOf(enrollment.currentChapter, enrollment.chapterCount)} · </span>
-                    )}
-                    <span>{enrollment.currentChapter.title}</span>
-                  </>
-                ) : (
-                  <>next: {enrollment.nextStep.title}</>
-                )}
+                {pathState(enrollment)}
               </li>
             ))}
           </ul>
+        )}
+        {allDone && (
+          <Link
+            to={`/parent/children/${child.id}?add=subject`}
+            className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-tonle-700 hover:text-tonle-900"
+          >
+            <Plus size={15} aria-hidden /> Add a subject for {child.displayName}
+          </Link>
         )}
       </div>
 

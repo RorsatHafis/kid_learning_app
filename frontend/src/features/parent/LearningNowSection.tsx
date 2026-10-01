@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ChevronDown, Plus } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { learningApi } from "@/lib/api/endpoints";
@@ -29,11 +30,23 @@ export function LearningNowSection({
   childName: string;
   enrollments: AsyncList;
 }) {
-  const [adding, setAdding] = useState(false);
+  // ?add=subject (the family home's "Add a subject" link) opens the choice straight away.
+  const [params, setParams] = useSearchParams();
+  const [adding, setAddingState] = useState(params.get("add") === "subject");
+  const setAdding = (open: boolean) => {
+    setAddingState(open);
+    if (!open && params.has("add")) setParams({}, { replace: true });
+  };
+  const section = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (params.get("add") === "subject") section.current?.scrollIntoView?.({ block: "start" });
+    // Only when the page opens with the link.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const list = enrollments.data ?? [];
 
   return (
-    <section aria-labelledby="learning-now" className="flex flex-col gap-4">
+    <section ref={section} aria-labelledby="learning-now" className="flex flex-col gap-4">
       <SectionTitle id="learning-now" title="Learning now" subtitle={`The paths ${childName} is on, and what comes next.`}>
         {list.length > 0 && !adding && (
           <Button variant="outline" size="md" onClick={() => setAdding(true)}>
@@ -48,6 +61,7 @@ export function LearningNowSection({
       {enrollments.data && (list.length === 0 || adding) && (
         <ChooseCurriculumPanel
           childId={childId}
+          childName={childName}
           excludeCurriculumIds={list.map((e) => e.curriculum.id)}
           onEnrolled={() => {
             setAdding(false);

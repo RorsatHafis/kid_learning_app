@@ -74,6 +74,19 @@ public class CurriculumService {
         return curriculumRepository.findByAgeHubIdAndStatus(ageHubId, CatalogStatus.ACTIVE);
     }
 
+    /**
+     * The family catalog (N7): ACTIVE platform curricula with a published version. One query for
+     * what is published, whatever the size of the catalog.
+     */
+    @Transactional(readOnly = true)
+    public List<Curriculum> listFamilyCatalog() {
+        java.util.Set<UUID> published = curriculumVersionRepository.findCurriculumIdsWithStatus(PublicationStatus.PUBLISHED);
+        return listActive().stream()
+                .filter(curriculum -> curriculum.getOwnerAccountId() == null)
+                .filter(curriculum -> published.contains(curriculum.getId()))
+                .toList();
+    }
+
     /** Non-throwing counterpart to {@link #getPublishedVersion}, for callers that need to check readiness across several candidates without exception-driven control flow. */
     @Transactional(readOnly = true)
     public boolean hasPublishedVersion(UUID curriculumId) {

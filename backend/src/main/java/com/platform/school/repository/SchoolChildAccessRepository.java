@@ -15,4 +15,6 @@ public interface SchoolChildAccessRepository extends JpaRepository<SchoolChildAc
     List<SchoolChildAccess> findByChildIdAndStatusOrderByGrantedAtAsc(UUID childId, SchoolChildAccessStatus status);
 
     long countBySchoolIdAndStatus(UUID schoolId, SchoolChildAccessStatus status);
+
+    List<SchoolChildAccess> findByChildIdOrderByGrantedAtAsc(UUID childId);
 }

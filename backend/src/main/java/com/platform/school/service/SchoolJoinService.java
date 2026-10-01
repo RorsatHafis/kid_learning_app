@@ -37,6 +37,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -215,6 +216,26 @@ public class SchoolJoinService {
         School school = schools.findById(schoolClass.getSchoolId()).orElseThrow();
         return new JoinPreview(school.getId(), school.getName(), schoolClass.getId(), schoolClass.getName(),
                 assignedCurriculumNames(schoolClass.getId()), true, true);
+    }
+
+    /**
+     * Every school the family has given access to the child, including access it has since ended -
+     * the family's own decisions, for its data export. {@code classNames} only while access lasts.
+     */
+    public record SchoolAccessRecord(String schoolName, String status, Instant grantedAt, Instant endedAt,
+                                     List<String> classNames) {
+    }
+
+    @Transactional(readOnly = true)
+    public List<SchoolAccessRecord> accessHistoryOf(UUID accountId, UUID childId) {
+        Map<UUID, List<String>> current = new HashMap<>();
+        accessOf(accountId, childId).forEach(view -> current.put(view.schoolId(), view.classNames()));
+        return grants.findByChildIdOrderByGrantedAtAsc(childId).stream().map(grant -> {
+            boolean active = grant.getStatus() == SchoolChildAccessStatus.ACTIVE;
+            return new SchoolAccessRecord(schools.findById(grant.getSchoolId()).map(School::getName).orElse(null),
+                    grant.getStatus().name(), grant.getGrantedAt(), grant.getRevokedAt(),
+                    active ? current.getOrDefault(grant.getSchoolId(), List.of()) : List.of());
+        }).toList();
     }
 
     /** A school with access to the child, and the classes the child is in there. */

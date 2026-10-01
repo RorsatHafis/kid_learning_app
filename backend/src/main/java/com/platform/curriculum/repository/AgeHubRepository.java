@@ -13,4 +13,12 @@ public interface AgeHubRepository extends JpaRepository<AgeHub, UUID> {
 
     List<AgeHub> findAllByOrderByDisplayOrderAsc();
 
+    /**
+     * The age group a child of {@code age} belongs to: the first, in display order, that includes it.
+     * Automatic enrolment and the family catalog use this one rule.
+     */
+    default Optional<AgeHub> findForAge(int age) {
+        return findAllByOrderByDisplayOrderAsc().stream().filter(hub -> hub.includesAge(age)).findFirst();
+    }
+
 }

@@ -64,6 +64,16 @@ export interface CurriculumSummary {
   ageHubName: string;
 }
 
+/** curriculum/web/CurriculumDtos.CurriculumChoiceResponse: a curriculum as offered for one child. */
+export interface CurriculumChoice extends CurriculumSummary {
+  minAge: number;
+  /** null when the age group has no upper bound. */
+  maxAge: number | null;
+  /** For the child's age group, by the rule automatic enrolment uses. */
+  forChildAge: boolean;
+  ageOrder: number;
+}
+
 // ---- learning/entity/EnrollmentStatus.java, learning/web/EnrollmentDtos.java ----
 
 export type EnrollmentStatus = "ACTIVE" | "COMPLETED" | "PAUSED" | "WITHDRAWN";

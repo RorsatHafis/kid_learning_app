@@ -15,6 +15,7 @@ import com.platform.content.repository.ActivityVersionRepository;
 import com.platform.content.repository.QuestionOptionRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.identity.entity.Account;
+import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.repository.AccountRepository;
 import com.platform.learning.entity.ActivityAttempt;
 import com.platform.learning.entity.AnswerRecord;
@@ -27,6 +28,10 @@ import com.platform.learning.service.SkillProgressService;
 import com.platform.learning.service.SkillProgressService.CurriculumProgress;
 import com.platform.parent.service.ParentInsightService;
 import com.platform.parent.web.ParentInsightResponse;
+import com.platform.school.service.SchoolJoinService;
+import com.platform.school.service.SchoolJoinService.SchoolAccessRecord;
+import com.platform.subscription.service.SubscriptionService;
+import com.platform.subscription.web.SubscriptionDtos.OwnFamilyPlanResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
@@ -49,7 +54,8 @@ import java.util.stream.Collectors;
  * <p>It contains exactly what the family can already see in the app, gathered in one place:
  * the account, each child's profile, learning paths, skill standings with their evidence,
  * every completed activity, every recorded answer (as the child gave it, with the question
- * asked and whether it was right) and the history of insights shown to the parent. It never
+ * asked and whether it was right), the history of insights shown to the parent, every school the
+ * family gave access to (and when it ended), and the family's plan. It never
  * contains another family's data, correct answers the child didn't give, passwords, or
  * session and link secrets. Every export is audited.
  */
@@ -73,13 +79,16 @@ public class FamilyDataExportService {
     private final QuestionVersionRepository questionVersions;
     private final QuestionOptionRepository questionOptions;
     private final AuditService auditService;
+    private final SchoolJoinService schoolAccess;
+    private final SubscriptionService subscriptions;
 
     public FamilyDataExportService(AccountRepository accounts, ChildService childService, FamilyAccessGuard familyAccessGuard,
                                    LearningJourneyService journeys, SkillProgressService skills, ParentInsightService insights,
                                    ActivityAttemptRepository attempts, AnswerRecordRepository answers,
                                    ActivityVersionRepository activityVersions, ActivityRepository activities,
                                    QuestionVersionRepository questionVersions, QuestionOptionRepository questionOptions,
-                                   AuditService auditService) {
+                                   AuditService auditService, SchoolJoinService schoolAccess,
+                                   SubscriptionService subscriptions) {
         this.accounts = accounts;
         this.childService = childService;
         this.familyAccessGuard = familyAccessGuard;
@@ -93,9 +102,13 @@ public class FamilyDataExportService {
         this.questionVersions = questionVersions;
         this.questionOptions = questionOptions;
         this.auditService = auditService;
+        this.schoolAccess = schoolAccess;
+        this.subscriptions = subscriptions;
     }
 
-    public record Export(String format, Instant exportedAt, AccountData account, List<ChildData> children) {
+    /** {@code plan}: the family's plan as the parent sees it (no administrator's note), when the account has a family. */
+    public record Export(String format, Instant exportedAt, AccountData account, OwnFamilyPlanResponse plan,
+                         List<ChildData> children) {
     }
 
     public record AccountData(UUID id, String email, String role, Instant createdAt, Instant emailConfirmedAt) {
@@ -104,7 +117,7 @@ public class FamilyDataExportService {
     public record ChildData(UUID id, String displayName, LocalDate dateOfBirth, Instant addedAt,
                             List<EnrollmentOverview> learningPaths, List<CurriculumProgress> skills,
                             List<CompletedActivity> completedActivities, List<AnswerData> answers,
-                            List<ParentInsightResponse> insightHistory) {
+                            List<ParentInsightResponse> insightHistory, List<SchoolAccessRecord> schoolAccess) {
     }
 
     /** One answer as the child gave it. {@code answer} is readable text; {@code submitted} is the raw value stored. */
@@ -121,10 +134,13 @@ public class FamilyDataExportService {
                 .toList();
         auditService.record(new RecordAuditEvent(null, accountId, AuditActorType.valueOf(account.getPlatformRole().name()),
                 "ACCOUNT_DATA_EXPORTED", "ACCOUNT", accountId, Map.of("children", children.size())));
+        // A parent no longer in any family (every membership ended) still gets their export, without a plan.
+        OwnFamilyPlanResponse plan = account.getPlatformRole() == PlatformRole.PARENT
+                ? subscriptions.familyPlanOf(accountId).map(OwnFamilyPlanResponse::of).orElse(null) : null;
         return new Export(FORMAT, Instant.now(),
                 new AccountData(account.getId(), account.getEmail(), account.getPlatformRole().name(), account.getCreatedAt(),
                         account.getEmailVerifiedAt()),
-                children);
+                plan, children);
     }
 
     private ChildData childData(UUID accountId, Child child) {
@@ -133,7 +149,8 @@ public class FamilyDataExportService {
         return new ChildData(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getCreatedAt(),
                 journeys.enrollmentsFor(child.getId()), skills.progressFor(child.getId()),
                 journeys.completedActivities(child.getId(), ALL), answersOf(child.getId()),
-                insights.listRecent(child.getId()).stream().map(ParentInsightResponse::from).toList());
+                insights.listRecent(child.getId()).stream().map(ParentInsightResponse::from).toList(),
+                schoolAccess.accessHistoryOf(accountId, child.getId()));
     }
 
     private List<AnswerData> answersOf(UUID childId) {

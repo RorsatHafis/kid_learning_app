@@ -17,4 +17,25 @@ public final class CurriculumDtos {
     ) {
     }
 
+    /**
+     * A curriculum as a family chooses one for a particular child.
+     *
+     * @param maxAge      null when the age group has no upper bound
+     * @param forChildAge whether it is for the child's age group (the rule automatic enrolment uses)
+     * @param ageOrder    the age group's display order, for sorting
+     */
+    public record CurriculumChoiceResponse(
+            UUID id,
+            String name,
+            String subjectCode,
+            String subjectName,
+            String ageHubCode,
+            String ageHubName,
+            int minAge,
+            Integer maxAge,
+            boolean forChildAge,
+            int ageOrder
+    ) {
+    }
+
 }
