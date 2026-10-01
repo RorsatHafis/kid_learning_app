@@ -50,4 +50,9 @@ public interface LearningPathItemRepository extends JpaRepository<LearningPathIt
             """)
     List<LearningPathItem> findWaitingClassPractice(@Param("classIds") Collection<UUID> classIds, @Param("childId") UUID childId);
 
+
+    long countByLearningPathId(UUID learningPathId);
+
+    long countByLearningPathIdAndStatus(UUID learningPathId, LearningPathItemStatus status);
+
 }

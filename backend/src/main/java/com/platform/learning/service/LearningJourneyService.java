@@ -25,7 +25,6 @@ import com.platform.learner.entity.AdaptationDecision;
 import com.platform.learner.entity.AdaptationDecisionType;
 import com.platform.learner.repository.AdaptationDecisionRepository;
 import com.platform.learning.entity.ActivityAttempt;
-import com.platform.learning.entity.ActivityAttemptStatus;
 import com.platform.learning.entity.AnswerRecord;
 import com.platform.learning.entity.Enrollment;
 import com.platform.learning.entity.EnrollmentStatus;
@@ -371,9 +370,8 @@ public class LearningJourneyService {
     private JourneyStep step(LearningPathItem item, Lookups lookups, List<ChapterSource> chapters) {
         ActivityVersion version = lookups.version(item.getActivityVersionId());
         Activity activity = lookups.activity(version.getActivityId());
-        Optional<ActivityAttempt> completedAttempt = lookups.attempts().stream()
+        Optional<ActivityAttempt> completedAttempt = lookups.completedOnPath(item.getLearningPathId()).stream()
                 .filter(attempt -> item.getId().equals(attempt.getLearningPathItemId()))
-                .filter(attempt -> attempt.getStatus() == ActivityAttemptStatus.COMPLETED)
                 .max(Comparator.comparing(ActivityAttempt::getCompletedAt));
 
         List<SkillRef> skills = lookups.skillsOf(version.getId());
@@ -462,7 +460,9 @@ public class LearningJourneyService {
     /** Per-request caches, so a journey of N steps doesn't re-read the same rows N times. */
     private final class Lookups {
         private final UUID childId;
-        private List<ActivityAttempt> attempts;
+        /** Completed attempts per path, loaded once per path (not the child's whole history). */
+        private final Map<UUID, List<ActivityAttempt>> completedByPath = new HashMap<>();
+        private final Map<UUID, Optional<ActivityAttempt>> attemptsById = new HashMap<>();
         private Map<UUID, AdaptationDecision> decisionsByPlacedItem;
         private final Map<UUID, ActivityVersion> versions = new HashMap<>();
         private final Map<UUID, Activity> activities = new HashMap<>();
@@ -480,15 +480,17 @@ public class LearningJourneyService {
             return childId;
         }
 
-        List<ActivityAttempt> attempts() {
-            if (attempts == null) {
-                attempts = activityAttemptRepository.findByChildIdOrderByStartedAtDesc(childId);
-            }
-            return attempts;
+        List<ActivityAttempt> completedOnPath(UUID learningPathId) {
+            return completedByPath.computeIfAbsent(learningPathId, activityAttemptRepository::findCompletedOnPath);
         }
 
+        /** An attempt of this child (a decision's trigger); another child's id reads as none. */
         ActivityAttempt attempt(UUID attemptId) {
-            return attempts().stream().filter(attempt -> attempt.getId().equals(attemptId)).findFirst().orElse(null);
+            if (attemptId == null) {
+                return null;
+            }
+            return attemptsById.computeIfAbsent(attemptId, id -> activityAttemptRepository.findById(id)
+                    .filter(attempt -> childId.equals(attempt.getChildId()))).orElse(null);
         }
 
         /**

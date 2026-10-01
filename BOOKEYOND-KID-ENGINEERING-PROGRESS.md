@@ -176,7 +176,7 @@ describe the product as complete.
 | **TD-08** | The compatibility views keep their POST mappings although they now only read | TD (minor) | `ActivityAttemptController` | Convert to GET, or remove once no client needs them |
 | **TD-09** | A REVIEW path item doesn't record which review item it served; completion chooses one deterministically (ACTIVE, then earliest due, then skill id) — exact for single-skill activities | TD | `SmartReviewService.recordReviewCompletion` | Link placement to review item if multi-skill review becomes common |
 | **TD-07** | Resuming an existing attempt answers 201 Created instead of 200 | TD (minor) | 3R runtime journey C | Contract cleanup when attempt APIs are next touched |
-| **TD-25** | `LearnerProgressController` (`GET /children/{id}/progress`, the family summary's activity counts and streak) loads every attempt a child ever made to count completions and minutes: it grows without bound with use | TD (performance) | Found in X12 | Count and sum in the database (an aggregate query) |
+| **TD-25** | `LearnerProgressController` (`GET /children/{id}/progress`, the family summary's activity counts and streak) loaded every attempt a child ever made to count completions and minutes; journey reads (every child home and parent page) loaded the child's whole attempt history to find each step's score | **RESOLVED** (after X12) | Counted in the database (`completionTotals`, path item counts); a journey reads only its own path's completed attempts and decision triggers by id; the summary's numbers now asserted in the school follow-up test; backend 328/328 | — |
 
 ---
 

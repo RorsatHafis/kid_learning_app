@@ -22,6 +22,29 @@ public interface ActivityAttemptRepository extends JpaRepository<ActivityAttempt
 
     List<ActivityAttempt> findByChildIdOrderByStartedAtDesc(UUID childId);
 
+    /** The completed attempts of one learning path's steps: what a journey shows, without the child's whole history. */
+    @org.springframework.data.jpa.repository.Query("""
+            select a from ActivityAttempt a
+            where a.status = com.platform.learning.entity.ActivityAttemptStatus.COMPLETED
+              and a.learningPathItemId in (select i.id from LearningPathItem i where i.learningPathId = :pathId)
+            """)
+    List<ActivityAttempt> findCompletedOnPath(@org.springframework.data.repository.query.Param("pathId") UUID learningPathId);
+
+    /** A child's completed activities and the time spent on them, counted in the database (TD-25). */
+    interface CompletionTotals {
+        long getCompleted();
+
+        long getSeconds();
+    }
+
+    @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
+            select count(*) as completed,
+                   coalesce(sum(extract(epoch from (completed_at - started_at))), 0)::bigint as seconds
+            from activity_attempts
+            where child_id = :childId and status = 'COMPLETED'
+            """)
+    CompletionTotals completionTotals(@org.springframework.data.repository.query.Param("childId") UUID childId);
+
     /** A child's completed attempts, newest first: the first page of their history. */
     @org.springframework.data.jpa.repository.Query("""
             select a from ActivityAttempt a

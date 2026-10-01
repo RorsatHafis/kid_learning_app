@@ -402,6 +402,11 @@ class SchoolAccessIntegrationTests {
             }
         }
         assertThat(arun.get("latestPractice").get("status").asString()).isEqualTo("COMPLETED");
+        // TD-25: the family summary counts in the database what the child did - one activity, one step.
+        JsonNode summary = json(get("/api/v1/children/" + childA + "/progress", familyA.token()), 200);
+        assertThat(summary.get("completedActivities").asLong()).isEqualTo(1);
+        assertThat(summary.get("completedPathItems").asLong()).isEqualTo(1);
+        assertThat(summary.get("totalPathItems").asLong()).isGreaterThan(1);
         // X12: where Arun stood when it was placed - no answers yet - against where he stands now.
         assertThat(arun.get("latestPractice").get("standingWhenAssigned").asString()).isEqualTo("NOT_STARTED");
         assertThat(arun.get("scoredAnswers").asInt()).isPositive();
