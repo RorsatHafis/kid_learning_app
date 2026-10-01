@@ -456,7 +456,10 @@ function SkillTallyRow({ skill, href }: { skill: SkillTally; href: string }) {
         to={href}
         className="group -mx-2 grid gap-1.5 rounded-[10px] px-2 py-1.5 transition-colors hover:bg-tonle-50/60 focus-visible:bg-tonle-50/60 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-4"
       >
-        <span className="text-sm text-ink group-hover:underline group-hover:underline-offset-4">{skill.name}</span>
+        <span className="flex items-center justify-between gap-2 text-sm font-medium text-tonle-800 group-hover:underline group-hover:underline-offset-4">
+          {skill.name}
+          <ChevronRight size={16} className="shrink-0 text-ink-soft sm:hidden" aria-hidden />
+        </span>
         <span className="flex flex-col gap-1">
           <span aria-hidden className="flex h-2.5 overflow-hidden rounded-full bg-paper">
             {TALLY.map((t) =>

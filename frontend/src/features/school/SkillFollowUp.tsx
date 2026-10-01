@@ -98,6 +98,7 @@ function FollowUp({
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   const counts = GROUPS.map((standing) => ({ standing, n: data.children.filter((c) => c.standing === standing).length }));
+  const activityTitle = data.practice.find((p) => p.activityId === activityId)?.title ?? "";
   const nameOf = (id: string) => data.children.find((c) => c.childId === id)?.displayName ?? "a child";
 
   function toggle(childId: string) {
@@ -145,7 +146,7 @@ function FollowUp({
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className={cn("flex flex-col gap-8", data.practice.length > 0 && "pb-32 lg:pb-0")}>
       <header className="flex flex-col gap-2">
         <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
           {data.skillName}
@@ -217,7 +218,7 @@ function FollowUp({
             </p>
           ) : (
             <>
-              <fieldset className="flex flex-col gap-2">
+              <fieldset id="practice-activity" className="flex scroll-mt-6 flex-col gap-2">
                 <legend className="mb-1 text-sm font-semibold text-ink">Activity</legend>
                 {data.practice.map((option) => (
                   <label
@@ -244,23 +245,35 @@ function FollowUp({
                   </label>
                 ))}
               </fieldset>
-              <p className="text-sm text-ink">
-                {chosen.size === 0
-                  ? "Choose the children on the left."
-                  : `For ${chosen.size === 1 ? nameOf([...chosen][0]) : `${chosen.size} children`}.`}
-              </p>
-              <Button onClick={assign} disabled={busy || chosen.size === 0 || !activityId} className="w-full">
-                <Send size={16} aria-hidden /> {busy ? "Assigning…" : "Assign practice"}
-              </Button>
+              {/* On a phone the list is long and this panel comes after it: the action stays in reach,
+                  pinned to the bottom of the screen, and says which activity it will place. */}
+              <div className="fixed inset-x-0 bottom-0 z-20 flex flex-col gap-2 border-t border-line bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_-12px_rgba(14,27,58,0.18)] backdrop-blur lg:static lg:z-auto lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
+                <div className="flex items-baseline justify-between gap-3 text-sm text-ink">
+                  <p className="min-w-0">
+                    {chosen.size === 0 ? (
+                      "Choose children from the list."
+                    ) : (
+                      <>
+                        For{" "}
+                        <span className="font-semibold">
+                          {chosen.size === 1 ? nameOf([...chosen][0]) : `${chosen.size} children`}
+                        </span>
+                        <span className="lg:hidden"> · {activityTitle}</span>
+                      </>
+                    )}
+                  </p>
+                  {data.practice.length > 1 && (
+                    <a href="#practice-activity" className="shrink-0 font-semibold text-tonle-700 lg:hidden">
+                      Change activity
+                    </a>
+                  )}
+                </div>
+                <Button onClick={assign} disabled={busy || chosen.size === 0 || !activityId} className="w-full">
+                  <Send size={16} aria-hidden /> {busy ? "Assigning…" : "Assign practice"}
+                </Button>
+                {message && <Outcome message={message} />}
+              </div>
             </>
-          )}
-          {message && (
-            <p
-              role={message.ok ? "status" : "alert"}
-              className={cn("text-sm font-medium", message.ok ? "text-palm-deep" : "text-brick-deep")}
-            >
-              {message.text}
-            </p>
           )}
         </section>
       </div>
@@ -316,5 +329,16 @@ function ChildRow({
         </span>
       </span>
     </li>
+  );
+}
+
+function Outcome({ message }: { message: { ok: boolean; text: string } }) {
+  return (
+    <p
+      role={message.ok ? "status" : "alert"}
+      className={cn("text-sm font-medium", message.ok ? "text-palm-deep" : "text-brick-deep")}
+    >
+      {message.text}
+    </p>
   );
 }
