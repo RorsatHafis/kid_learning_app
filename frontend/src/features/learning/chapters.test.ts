@@ -26,7 +26,7 @@ const step = (id: string, chapterId: string | null, status: JourneyStep["status"
   skills: [],
   score: null,
   completedAt: null,
-  explanation: { reason: "CURRICULUM", skill: null, targetSkill: null, afterActivityTitle: null, afterScore: null, decidedAt: null },
+  explanation: { reason: "CURRICULUM", skill: null, targetSkill: null, afterActivityTitle: null, afterScore: null, decidedAt: null, assignedBy: null },
   chapterId,
 });
 

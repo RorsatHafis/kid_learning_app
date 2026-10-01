@@ -27,7 +27,7 @@ export function childReason(step: JourneyStep): string {
     case "REVIEW":
       return `Time to review ${skillName(e)} so it sticks!`;
     case "TEACHER_ASSIGNED":
-      return "Your teacher picked this one for you.";
+      return e.skill ? `Your teacher picked this to practise ${e.skill.name}.` : "Your teacher picked this one for you.";
     default:
       return "Next stop on your journey!";
   }
@@ -57,7 +57,10 @@ export function parentReason(step: JourneyStep, curriculumName: string, chapter?
     case "REVIEW":
       return `Smart Review: recent answers on ${skillName(e)} were mostly incorrect, so it is scheduled for review.`;
     case "TEACHER_ASSIGNED":
-      return "Assigned by a teacher.";
+      // Which class asked (X10); practice placed before classes were recorded reads as before.
+      return `${e.skill ? `Practice on ${e.skill.name}, assigned` : "Assigned"} by ${
+        e.assignedBy ? `a teacher of ${e.assignedBy}` : "a teacher"
+      }.`;
     default:
       return "Added to the learning path.";
   }

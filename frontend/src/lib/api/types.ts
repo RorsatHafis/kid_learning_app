@@ -200,6 +200,8 @@ export interface Explanation {
   afterActivityTitle: string | null;
   afterScore: number | null;
   decidedAt: string | null;
+  /** TEACHER_ASSIGNED only: the class and school that placed it ("Grade 1 A · Wat Phnom Primary"), when recorded. */
+  assignedBy: string | null;
 }
 
 export interface JourneyStep {

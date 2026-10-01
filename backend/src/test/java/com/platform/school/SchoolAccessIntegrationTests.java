@@ -326,6 +326,102 @@ class SchoolAccessIntegrationTests {
     }
 
     @Test
+    void aTeacherFollowsUpASkillWithPracticeTheEngineServesAndEndedAccessWithdraws() throws Exception {
+        Staff principal = staff(PlatformRole.PRINCIPAL);
+        Staff teacher = staff(PlatformRole.TEACHER);
+        SchoolClass schoolClass = classTaughtBy(principal, teacher);
+        String classPath = "/api/v1/schools/classes/" + schoolClass.getId();
+        Curriculum assigned = publishedCurriculum(null, "Follow-up maths");
+        json(post(classPath + "/curricula/" + assigned.getId(), "", teacher.token()), 200);
+        String code = json(post(classPath + "/join-code", "", teacher.token()), 201).get("code").asString();
+
+        Parent familyA = parent();
+        String childA = createChild(familyA.token(), "Arun");
+        Parent familyB = parent();
+        String childB = createChild(familyB.token(), "Bopha");
+        for (Parent family : List.of(familyA, familyB)) {
+            confirmEmail(family);
+        }
+        json(post("/api/v1/children/" + childA + "/schools/join", codeBody(code), familyA.token()), 200);
+        json(post("/api/v1/children/" + childB + "/schools/join", codeBody(code), familyB.token()), 200);
+
+        String skillId = json(get(classPath + "/learning", teacher.token()), 200)
+                .get("skills").get(0).get("objectives").get(0).get("skills").get(0).get("skillId").asString();
+        String extraActivity = extraPracticeActivity(UUID.fromString(skillId));
+        String skillPath = classPath + "/skills/" + skillId;
+
+        // Who stands where, on what evidence, and what could be placed.
+        JsonNode view = json(get(skillPath, teacher.token()), 200);
+        assertThat(view.get("children")).hasSize(2);
+        assertThat(view.get("children").get(0).get("standing").asString()).isEqualTo("NOT_STARTED");
+        assertThat(view.get("children").get(0).get("latestPractice").isNull()).isTrue();
+        List<String> options = new ArrayList<>();
+        view.get("practice").forEach(option -> options.add(option.get("activityId").asString()));
+        assertThat(options).contains(extraActivity);
+        assertThat(json(get(skillPath, principal.token()), 200).get("children")).hasSize(2);
+
+        // Refused, without a trace: no class role, another teacher, a parent, a stranger child, a
+        // skill the class doesn't teach, an activity that doesn't practise it, nobody chosen.
+        String body = "{\"activityId\":\"" + extraActivity + "\",\"childIds\":[\"" + childA + "\"]}";
+        Staff otherTeacher = staff(PlatformRole.TEACHER);
+        for (String token : List.of(staff(PlatformRole.ADMIN).token(), otherTeacher.token(), familyA.token())) {
+            assertThat(get(skillPath, token).statusCode()).isIn(403, 404);
+            assertThat(post(skillPath + "/practice", body, token).statusCode()).isIn(403, 404);
+        }
+        String stranger = createChild(parent().token(), "Stranger");
+        assertThat(post(skillPath + "/practice", "{\"activityId\":\"" + extraActivity + "\",\"childIds\":[\"" + stranger + "\"]}",
+                teacher.token()).statusCode()).isEqualTo(404);
+        assertThat(get(classPath + "/skills/" + UUID.randomUUID(), teacher.token()).statusCode()).isEqualTo(404);
+        assertThat(post(skillPath + "/practice", "{\"activityId\":\"" + UUID.randomUUID() + "\",\"childIds\":[\"" + childA + "\"]}",
+                teacher.token()).statusCode()).isEqualTo(400);
+        assertThat(post(skillPath + "/practice", "{\"activityId\":\"" + extraActivity + "\",\"childIds\":[]}", teacher.token())
+                .statusCode()).isEqualTo(400);
+        assertThat(count("select count(*) from learning_path_items where assigned_class_id = ?", schoolClass.getId())).isZero();
+
+        // Placed once; a retry changes nothing.
+        JsonNode result = json(post(skillPath + "/practice", body, teacher.token()), 200);
+        assertThat(result.get("assigned").get(0).asString()).isEqualTo(childA);
+        assertThat(json(post(skillPath + "/practice", body, teacher.token()), 200).get("alreadyWaiting").get(0).asString()).isEqualTo(childA);
+        assertThat(count("select count(*) from learning_path_items where assigned_class_id = ? and source = 'TEACHER_ASSIGNED' "
+                + "and assigned_skill_id = ?::uuid and assigned_by_account_id = ?", schoolClass.getId(), skillId, teacher.id())).isEqualTo(1);
+        assertThat(audited("CLASS_PRACTICE_ASSIGNED", teacher.id())).isEqualTo(1);
+
+        // The engine serves it before the rest of the curriculum, and the family sees who asked and why.
+        JsonNode next = journeyIn(familyA.token(), childA, assigned.getId()).get("nextStep");
+        assertThat(next.get("source").asString()).isEqualTo("TEACHER_ASSIGNED");
+        assertThat(next.get("explanation").get("assignedBy").asString()).isEqualTo("Grade 1 · Access School");
+        assertThat(next.get("explanation").get("skill").get("id").asString()).isEqualTo(skillId);
+
+        // Played: the class sees it done, and the evidence it produced.
+        playNext(familyA.token(), childA, assigned.getId(), "4");
+        JsonNode after = json(get(skillPath, teacher.token()), 200);
+        JsonNode arun = null;
+        for (JsonNode child : after.get("children")) {
+            if (child.get("childId").asString().equals(childA)) {
+                arun = child;
+            }
+        }
+        assertThat(arun.get("latestPractice").get("status").asString()).isEqualTo("COMPLETED");
+        assertThat(arun.get("scoredAnswers").asInt()).isPositive();
+
+        // Placed for both again; one family ends the school's access, the class lets the other go:
+        // their waiting practice is withdrawn, finished practice stays.
+        JsonNode both = json(post(skillPath + "/practice", "{\"activityId\":\"" + extraActivity + "\",\"childIds\":[\"" + childA
+                + "\",\"" + childB + "\"]}", teacher.token()), 200);
+        assertThat(both.get("assigned")).hasSize(2);
+        assertThat(delete("/api/v1/children/" + childB + "/schools/" + schoolClass.getSchoolId(), familyB.token()).statusCode()).isEqualTo(204);
+        assertThat(delete(classPath + "/children/" + childA, teacher.token()).statusCode()).isEqualTo(204);
+        assertThat(count("select count(*) from learning_path_items where assigned_class_id = ? and status = 'PENDING'", schoolClass.getId()))
+                .isZero();
+        assertThat(count("select count(*) from learning_path_items where assigned_class_id = ? and status = 'SKIPPED'", schoolClass.getId()))
+                .isEqualTo(2);
+        assertThat(count("select count(*) from learning_path_items where assigned_class_id = ? and status = 'COMPLETED'", schoolClass.getId()))
+                .isEqualTo(1);
+        assertThat(journeyIn(familyB.token(), childB, assigned.getId()).get("nextStep").get("source").asString())
+                .isNotEqualTo("TEACHER_ASSIGNED");
+    }
+
+    @Test
     void codeLookupsAreRateLimitedPerAccount() throws Exception {
         Parent parent = parent();
         String childId = createChild(parent.token(), "Rotha");
@@ -409,6 +505,46 @@ class SchoolAccessIntegrationTests {
         curriculumService.addObjective(version.getId(), objective.getId(), 0);
         curriculumService.publish(version.getId());
         return curriculum;
+    }
+
+    /** A second published activity practising the skill: what a teacher can place beyond the curriculum's own steps. */
+    private String extraPracticeActivity(UUID skillId) {
+        UUID subjectId = jdbc.queryForObject("select subject_id from skills where id = ?", UUID.class, skillId);
+        Question question = questionService.createQuestion(subjectId, QuestionType.NUMERIC);
+        var questionDraft = questionService.createDraftVersion(question.getId(), "2 + 2 = ?", "4", 1);
+        questionService.tagSkill(questionDraft.getId(), skillId);
+        var questionVersion = questionService.publish(questionDraft.getId());
+        Activity activity = activityService.createActivity(subjectId, null, "PRACTICE", "More practice " + UUID.randomUUID());
+        var draft = activityService.createDraftVersion(activity.getId(), "Add more", 1, 60);
+        activityService.tagSkill(draft.getId(), skillId);
+        activityService.addItem(draft.getId(), questionVersion.getId(), 0, java.math.BigDecimal.ONE);
+        activityService.publish(draft.getId());
+        return activity.getId().toString();
+    }
+
+    /** The child's journey in one curriculum (a child may also follow others, e.g. one started by age). */
+    private JsonNode journeyIn(String token, String childId, UUID curriculumId) throws Exception {
+        for (JsonNode overview : json(get("/api/v1/children/" + childId + "/enrollments", token), 200)) {
+            if (overview.get("curriculum").get("id").asString().equals(curriculumId.toString())) {
+                return overview;
+            }
+        }
+        throw new AssertionError("no journey in " + curriculumId);
+    }
+
+    /** The child plays their next step in one curriculum, answering every question with {@code answer}. */
+    private void playNext(String token, String childId, UUID curriculumId, String answer) throws Exception {
+        JsonNode next = journeyIn(token, childId, curriculumId).get("nextStep");
+        String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts", "{\"activityVersionId\":\""
+                + next.get("activityVersionId").asString() + "\",\"learningPathItemId\":\"" + next.get("learningPathItemId").asString()
+                + "\"}", token), 201).get("id").asString();
+        JsonNode content = json(get("/api/v1/activity-versions/" + next.get("activityVersionId").asString(), token), 200);
+        for (JsonNode item : content.get("items")) {
+            json(post("/api/v1/activity-attempts/" + attemptId + "/answers", "{\"questionVersionId\":\""
+                    + item.get("questionVersionId").asString() + "\",\"submittedAnswer\":\"" + answer + "\",\"idempotencyKey\":\""
+                    + UUID.randomUUID() + "\"}", token), 201);
+        }
+        json(post("/api/v1/activity-attempts/" + attemptId + "/complete", "", token), 200);
     }
 
     private int count(String sql, Object... args) {

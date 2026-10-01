@@ -34,6 +34,7 @@ export function ClassRosterPage() {
             classId={classId}
             refreshKey={refreshKey}
             memberHref={(childId) => `/teacher/classes/${classId}/students/${childId}`}
+            skillHref={(skillId) => `/teacher/classes/${classId}/skills/${skillId}`}
           />
           <ClassCurriculaPanel classId={classId} onChanged={() => setRefreshKey((k) => k + 1)} />
           <JoinCodePanel classId={classId} className={schoolClass.data.name} />

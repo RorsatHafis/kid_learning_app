@@ -1,0 +1,31 @@
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { Breadcrumb } from "@/components/workspace/WorkspaceShell";
+import { useAsync } from "@/lib/hooks/useAsync";
+import { schoolApi } from "@/lib/api/endpoints";
+import { SkillFollowUpView } from "@/features/school/SkillFollowUp";
+
+/** One skill in a teacher's class: who needs practice, on what evidence, and practice to place (X10). */
+export function ClassSkillPage() {
+  const { classId = "", skillId = "" } = useParams<{ classId: string; skillId: string }>();
+  const schoolClass = useAsync(() => schoolApi.schoolClass(classId), [classId]);
+  const [skillName, setSkillName] = useState<string>();
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Breadcrumb
+        items={[
+          { label: "Classes", to: "/teacher" },
+          { label: schoolClass.data?.name ?? "Class", to: `/teacher/classes/${classId}` },
+          { label: skillName ?? "Skill" },
+        ]}
+      />
+      <SkillFollowUpView
+        classId={classId}
+        skillId={skillId}
+        memberHref={(childId) => `/teacher/classes/${classId}/students/${childId}`}
+        onName={setSkillName}
+      />
+    </div>
+  );
+}

@@ -322,10 +322,13 @@ function journeyLine(journey: SchoolJourney): string {
 export function ClassLearningPanel({
   classId,
   memberHref,
+  skillHref,
   refreshKey,
 }: {
   classId: string;
   memberHref: (childId: string) => string;
+  /** Where one skill's follow-up lives (X10): who stands where, on what evidence, and practice to place. */
+  skillHref: (skillId: string) => string;
   refreshKey: number;
 }) {
   const learning = useAsync(() => classAccessApi.learning(classId), [classId, refreshKey]);
@@ -348,7 +351,9 @@ export function ClassLearningPanel({
         )}
         {data && data.members.length > 0 && <MembersTable data={data} memberHref={memberHref} />}
       </WorkspaceSection>
-      {data && data.members.length > 0 && data.skills.some((c) => c.objectives.length > 0) && <ClassSkills data={data} />}
+      {data && data.members.length > 0 && data.skills.some((c) => c.objectives.length > 0) && (
+        <ClassSkills data={data} skillHref={skillHref} />
+      )}
     </>
   );
 }
@@ -402,12 +407,12 @@ const TALLY: { key: keyof Omit<SkillTally, "skillId" | "name">; standing: SkillS
 ];
 
 /** Where the class stands on each skill: counts of children, never a score or a ranking. */
-function ClassSkills({ data }: { data: ClassLearning }) {
+function ClassSkills({ data, skillHref }: { data: ClassLearning; skillHref: (skillId: string) => string }) {
   return (
     <WorkspaceSection
       id="class-skills"
       title="The class's skills"
-      description="How many children stand where on each skill, from their answers. A standing needs enough answers; until then it's too early to tell."
+      description="How many children stand where on each skill, from their answers. A standing needs enough answers; until then it's too early to tell. Open a skill to see who needs practice and to assign it."
     >
       <div className={cn(card, "flex flex-col gap-6 p-5")}>
         <ul aria-label="Key" className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-soft">
@@ -428,7 +433,7 @@ function ClassSkills({ data }: { data: ClassLearning }) {
                   <p className="text-sm font-medium text-ink">{objective.title}</p>
                   <ul className="flex flex-col gap-2.5">
                     {objective.skills.map((skill) => (
-                      <SkillTallyRow key={skill.skillId} skill={skill} />
+                      <SkillTallyRow key={skill.skillId} skill={skill} href={skillHref(skill.skillId)} />
                     ))}
                   </ul>
                 </div>
@@ -440,24 +445,30 @@ function ClassSkills({ data }: { data: ClassLearning }) {
   );
 }
 
-function SkillTallyRow({ skill }: { skill: SkillTally }) {
+function SkillTallyRow({ skill, href }: { skill: SkillTally; href: string }) {
   const total = TALLY.reduce((sum, t) => sum + skill[t.key], 0);
   const words = TALLY.filter((t) => skill[t.key] > 0)
     .map((t) => `${skill[t.key]} ${standingLabel[t.standing].toLowerCase()}`)
     .join(", ");
   return (
-    <li className="grid gap-1.5 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:items-center sm:gap-4">
-      <span className="text-sm text-ink">{skill.name}</span>
-      <span className="flex flex-col gap-1">
-        <span aria-hidden className="flex h-2.5 overflow-hidden rounded-full bg-paper">
-          {TALLY.map((t) =>
-            skill[t.key] > 0 ? (
-              <span key={t.key} className={t.bar} style={{ width: `${(skill[t.key] / total) * 100}%` }} />
-            ) : null,
-          )}
+    <li>
+      <Link
+        to={href}
+        className="group -mx-2 grid gap-1.5 rounded-[10px] px-2 py-1.5 transition-colors hover:bg-tonle-50/60 focus-visible:bg-tonle-50/60 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-4"
+      >
+        <span className="text-sm text-ink group-hover:underline group-hover:underline-offset-4">{skill.name}</span>
+        <span className="flex flex-col gap-1">
+          <span aria-hidden className="flex h-2.5 overflow-hidden rounded-full bg-paper">
+            {TALLY.map((t) =>
+              skill[t.key] > 0 ? (
+                <span key={t.key} className={t.bar} style={{ width: `${(skill[t.key] / total) * 100}%` }} />
+              ) : null,
+            )}
+          </span>
+          <span className="text-xs text-ink-soft">{words}</span>
         </span>
-        <span className="text-xs text-ink-soft">{words}</span>
-      </span>
+        <ChevronRight size={16} className="hidden shrink-0 text-ink-soft sm:block" aria-hidden />
+      </Link>
     </li>
   );
 }

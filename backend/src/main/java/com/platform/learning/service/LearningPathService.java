@@ -57,6 +57,21 @@ public class LearningPathService {
                 LearningPathItem.place(learningPathId, activityVersionId, nextSequenceOrder, source, Instant.now()));
     }
 
+    /**
+     * Appends practice a class's teacher placed for one skill (X10). Served like other placed
+     * practice (see {@link #nextOf}); the caller has checked the class may act on this path.
+     */
+    @Transactional
+    public LearningPathItem appendTeacherPractice(UUID learningPathId, UUID activityVersionId, UUID classId,
+                                                  UUID assignedByAccountId, UUID skillId) {
+        lockOrThrow(learningPathId);
+        int nextSequenceOrder = learningPathItemRepository.findTopByLearningPathIdOrderBySequenceOrderDesc(learningPathId)
+                .map(previous -> previous.getSequenceOrder() + 1)
+                .orElse(0);
+        return learningPathItemRepository.save(LearningPathItem.placeForClass(learningPathId, activityVersionId,
+                nextSequenceOrder, Instant.now(), classId, assignedByAccountId, skillId));
+    }
+
     @Transactional(readOnly = true)
     public List<LearningPathItem> listItems(UUID learningPathId) {
         return learningPathItemRepository.findByLearningPathIdOrderBySequenceOrderAsc(learningPathId);

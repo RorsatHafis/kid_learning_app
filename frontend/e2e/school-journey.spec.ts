@@ -144,10 +144,34 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expect(teacher.getByRole("region", { name: "Learning in this class" }).getByText(curriculum)).toBeVisible();
   await expectNoViolations(teacher, "teacher: one child's learning");
 
+  // X10: the teacher follows up a skill: who stands where, on what evidence, and practice placed for Rithy...
+  await teacher.goBack();
+  const skills = teacher.getByRole("region", { name: "The class's skills" });
+  const firstSkill = skills.getByRole("link").first();
+  const skillName = (await firstSkill.locator("span").first().innerText()).trim();
+  await firstSkill.click();
+  await expect(teacher.getByRole("heading", { level: 1, name: skillName })).toBeVisible();
+  await expect(teacher.getByRole("link", { name: "Rithy" })).toBeVisible();
+  await expectNoViolations(teacher, "teacher: following up a skill");
+  await teacher.getByRole("checkbox", { name: "Choose Rithy" }).check();
+  await teacher.getByRole("button", { name: "Assign practice" }).click();
+  await expect(teacher.getByRole("status")).toHaveText("Assigned to Rithy.");
+  await expect(teacher.getByText(/Practice assigned .* · waiting/)).toBeVisible();
+
+  // ...which the family sees first on Rithy's path, with who asked and why.
+  await parent.reload();
+  await expect(
+    parent.getByText(`Practice on ${skillName}, assigned by a teacher of Grade 1 A · ${schoolName}.`).first(),
+  ).toBeVisible();
+
   // The family ends the school's access: the class loses the child at once.
   await school.getByRole("button", { name: "End access…" }).click();
   await school.getByRole("button", { name: "End access", exact: true }).click();
   await expect(school.getByRole("status")).toHaveText(`${schoolName} can no longer see Rithy's learning.`);
+  // The class's waiting practice leaves Rithy's path with its access.
+  await parent.reload();
+  await expect(parent.getByRole("heading", { name: "Rithy" }).first()).toBeVisible();
+  await expect(parent.getByText(/assigned by a teacher of/)).toHaveCount(0);
   await teacher.goBack();
   await teacher.reload();
   await expect(teacher.getByText("No children in this class yet")).toBeVisible();

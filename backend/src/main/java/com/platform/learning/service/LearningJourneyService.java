@@ -84,6 +84,7 @@ public class LearningJourneyService {
     private final com.platform.review.repository.ReviewItemRepository reviewItemRepository;
     private final LearningObjectiveRepository learningObjectiveRepository;
     private final LearningObjectiveSkillService learningObjectiveSkillService;
+    private final PlacementNames placementNames;
 
     public LearningJourneyService(EnrollmentRepository enrollmentRepository, LearningPathRepository learningPathRepository,
                                   LearningPathItemRepository learningPathItemRepository,
@@ -97,7 +98,7 @@ public class LearningJourneyService {
                                   AgeHubRepository ageHubRepository,
                                   com.platform.review.repository.ReviewItemRepository reviewItemRepository,
                                   LearningObjectiveRepository learningObjectiveRepository,
-                                  LearningObjectiveSkillService learningObjectiveSkillService) {
+                                  LearningObjectiveSkillService learningObjectiveSkillService, PlacementNames placementNames) {
         this.enrollmentRepository = enrollmentRepository;
         this.learningPathRepository = learningPathRepository;
         this.learningPathItemRepository = learningPathItemRepository;
@@ -115,6 +116,7 @@ public class LearningJourneyService {
         this.reviewItemRepository = reviewItemRepository;
         this.learningObjectiveRepository = learningObjectiveRepository;
         this.learningObjectiveSkillService = learningObjectiveSkillService;
+        this.placementNames = placementNames;
     }
 
     // ------------------------------------------------------------------ view types
@@ -149,8 +151,14 @@ public class LearningJourneyService {
      * @param targetSkill     for REINFORCE_PREREQUISITE, the prerequisite practiced
      * @param afterActivityTitle / afterScore the completed activity that triggered the decision
      */
+    /** @param assignedBy for practice a class's teacher placed: the class and school ("Grade 1 A · Wat Phnom Primary") */
     public record Explanation(PlacementReason reason, SkillRef skill, SkillRef targetSkill,
-                              String afterActivityTitle, BigDecimal afterScore, Instant decidedAt) {
+                              String afterActivityTitle, BigDecimal afterScore, Instant decidedAt, String assignedBy) {
+
+        public Explanation(PlacementReason reason, SkillRef skill, SkillRef targetSkill, String afterActivityTitle,
+                           BigDecimal afterScore, Instant decidedAt) {
+            this(reason, skill, targetSkill, afterActivityTitle, afterScore, decidedAt, null);
+        }
     }
 
     /**
@@ -379,8 +387,9 @@ public class LearningJourneyService {
     private Explanation explain(LearningPathItem item, Activity activity, Lookups lookups) {
         return switch (item.getSource()) {
             case CURRICULUM -> new Explanation(PlacementReason.CURRICULUM, null, null, null, null, item.getAddedAt());
-            case TEACHER_ASSIGNED -> new Explanation(PlacementReason.TEACHER_ASSIGNED, null, null, null, null,
-                    item.getAddedAt());
+            // Which class asked for it, and for which skill (X10); older rows without them read as before.
+            case TEACHER_ASSIGNED -> new Explanation(PlacementReason.TEACHER_ASSIGNED, lookups.skill(item.getAssignedSkillId()), null,
+                    null, null, item.getAddedAt(), lookups.classLabel(item.getAssignedClassId()));
             case ADAPTIVE -> lookups.decisionPlacing(item.getId())
                     .map(decision -> adaptiveExplanation(decision, lookups))
                     .orElseGet(() -> unexplained(item));
@@ -461,6 +470,7 @@ public class LearningJourneyService {
         private final Map<UUID, List<SkillRef>> skillsByVersion = new HashMap<>();
         private final Map<UUID, SkillRef> skills = new HashMap<>();
         private final Map<UUID, Integer> questionCounts = new HashMap<>();
+        private final Map<UUID, Optional<String>> classLabels = new HashMap<>();
 
         Lookups(UUID childId) {
             this.childId = childId;
@@ -603,6 +613,11 @@ public class LearningJourneyService {
             return skills.computeIfAbsent(skillId, key -> skillRepository.findById(key)
                     .map((Skill skill) -> new SkillRef(skill.getId(), skill.getName()))
                     .orElse(null));
+        }
+
+        /** Once per class that placed practice on this path, however many steps it placed. */
+        String classLabel(UUID classId) {
+            return classId == null ? null : classLabels.computeIfAbsent(classId, placementNames::classLabel).orElse(null);
         }
 
         int questionCount(UUID activityVersionId) {

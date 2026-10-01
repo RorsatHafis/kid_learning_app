@@ -40,6 +40,16 @@ public class LearningPathItem extends AuditableEntity {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    /** TEACHER_ASSIGNED only (V45): the class whose teacher placed it, who, and for which skill. */
+    @Column(name = "assigned_class_id", updatable = false)
+    private UUID assignedClassId;
+
+    @Column(name = "assigned_by_account_id", updatable = false)
+    private UUID assignedByAccountId;
+
+    @Column(name = "assigned_skill_id", updatable = false)
+    private UUID assignedSkillId;
+
     protected LearningPathItem() {
         // JPA
     }
@@ -60,7 +70,25 @@ public class LearningPathItem extends AuditableEntity {
         Assert.notNull(activityVersionId, "activityVersionId must not be null");
         Assert.notNull(source, "source must not be null");
         Assert.notNull(addedAt, "addedAt must not be null");
+        Assert.isTrue(source != LearningPathItemSource.TEACHER_ASSIGNED, "teacher practice is placed with placeForClass");
         return new LearningPathItem(learningPathId, activityVersionId, sequenceOrder, source, addedAt);
+    }
+
+    /** Practice a class's teacher placed for one skill (X10). */
+    public static LearningPathItem placeForClass(UUID learningPathId, UUID activityVersionId, int sequenceOrder, Instant addedAt,
+                                                 UUID classId, UUID assignedByAccountId, UUID skillId) {
+        Assert.notNull(learningPathId, "learningPathId must not be null");
+        Assert.notNull(activityVersionId, "activityVersionId must not be null");
+        Assert.notNull(addedAt, "addedAt must not be null");
+        Assert.notNull(classId, "classId must not be null");
+        Assert.notNull(assignedByAccountId, "assignedByAccountId must not be null");
+        Assert.notNull(skillId, "skillId must not be null");
+        LearningPathItem item = new LearningPathItem(learningPathId, activityVersionId, sequenceOrder,
+                LearningPathItemSource.TEACHER_ASSIGNED, addedAt);
+        item.assignedClassId = classId;
+        item.assignedByAccountId = assignedByAccountId;
+        item.assignedSkillId = skillId;
+        return item;
     }
 
     public void start() {
@@ -118,6 +146,18 @@ public class LearningPathItem extends AuditableEntity {
 
     public Instant getCompletedAt() {
         return completedAt;
+    }
+
+    public UUID getAssignedClassId() {
+        return assignedClassId;
+    }
+
+    public UUID getAssignedByAccountId() {
+        return assignedByAccountId;
+    }
+
+    public UUID getAssignedSkillId() {
+        return assignedSkillId;
     }
 
 }

@@ -13,6 +13,8 @@ import com.platform.curriculum.service.CurriculumService;
 import com.platform.family.service.FamilyAccessGuard;
 import com.platform.identity.entity.Account;
 import com.platform.identity.repository.AccountRepository;
+import com.platform.learning.entity.LearningPathItem;
+import com.platform.learning.repository.LearningPathItemRepository;
 import com.platform.learning.service.EnrollmentService;
 import com.platform.school.entity.ClassCurriculumAssignment;
 import com.platform.school.entity.ClassCurriculumAssignmentStatus;
@@ -73,6 +75,7 @@ public class SchoolJoinService {
     private final CurriculumService curriculumService;
     private final EnrollmentService enrollmentService;
     private final AuditService audit;
+    private final LearningPathItemRepository pathItems;
     private final SecureRandom random = new SecureRandom();
     /** Code lookups per parent account: enough for typos, far too few to guess a code (31^8). */
     private final TokenBucketLimiter lookups = new TokenBucketLimiter(10, Duration.ofHours(1), System::nanoTime);
@@ -82,7 +85,7 @@ public class SchoolJoinService {
                              ClassJoinCodeRepository codes, SchoolChildAccessRepository grants,
                              ClassEnrollmentRepository classEnrollments, ClassCurriculumAssignmentRepository classCurricula,
                              CurriculumRepository curricula, CurriculumService curriculumService,
-                             EnrollmentService enrollmentService, AuditService audit) {
+                             EnrollmentService enrollmentService, AuditService audit, LearningPathItemRepository pathItems) {
         this.schoolGuard = schoolGuard;
         this.familyGuard = familyGuard;
         this.accounts = accounts;
@@ -97,6 +100,7 @@ public class SchoolJoinService {
         this.curriculumService = curriculumService;
         this.enrollmentService = enrollmentService;
         this.audit = audit;
+        this.pathItems = pathItems;
     }
 
     // ------------------------------------------------------------------ the class's side
@@ -145,7 +149,9 @@ public class SchoolJoinService {
                 .filter(enrollment -> enrollment.getChildId().equals(childId)).findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Class member", childId));
         member.remove();
-        record(accountId, "CLASS_MEMBER_REMOVED", "CLASS_ENROLLMENT", member.getId(), Map.of("childId", childId, "classId", classId));
+        int withdrawn = withdrawClassPractice(List.of(classId), childId);
+        record(accountId, "CLASS_MEMBER_REMOVED", "CLASS_ENROLLMENT", member.getId(),
+                Map.of("childId", childId, "classId", classId, "practiceWithdrawn", withdrawn));
     }
 
     // ------------------------------------------------------------------ the family's side
@@ -270,11 +276,26 @@ public class SchoolJoinService {
                 .orElseThrow(() -> new ResourceNotFoundException("School access", schoolId));
         grant.revoke(accountId, Instant.now());
         classEnrollments.findActiveInSchool(childId, schoolId).forEach(ClassEnrollment::remove);
+        int withdrawn = withdrawClassPractice(classes.findBySchoolId(schoolId).stream().map(SchoolClass::getId).toList(), childId);
         record(accountId, "SCHOOL_ACCESS_REVOKED", "SCHOOL_CHILD_ACCESS", grant.getId(),
-                Map.of("schoolId", schoolId, "childId", childId));
+                Map.of("schoolId", schoolId, "childId", childId, "practiceWithdrawn", withdrawn));
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /**
+     * When a class can no longer work with a child, the practice its teachers placed and the child
+     * hasn't started leaves the path (SKIPPED: kept as history, never served). Started practice is
+     * left to finish; finished practice and its evidence stay (X10).
+     */
+    private int withdrawClassPractice(List<UUID> classIds, UUID childId) {
+        if (classIds.isEmpty()) {
+            return 0;
+        }
+        List<LearningPathItem> waiting = pathItems.findWaitingClassPractice(classIds, childId);
+        waiting.forEach(LearningPathItem::skip);
+        return waiting.size();
+    }
 
     /** The open class a code names. Unknown, expired, revoked and archived all read the same. */
     private SchoolClass classFor(String rawCode) {

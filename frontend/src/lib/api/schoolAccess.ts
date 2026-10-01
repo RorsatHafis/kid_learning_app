@@ -130,7 +130,63 @@ export const classAccessApi = {
   memberLearning: (classId: string, childId: string) =>
     apiClient.get<MemberLearning>(`${C(classId)}/children/${childId}/learning`),
   removeMember: (classId: string, childId: string) => apiClient.delete<void>(`${C(classId)}/children/${childId}`),
+  /** Who stands where on one skill, on what evidence, and the class's practice for it (X10). */
+  skill: (classId: string, skillId: string) => apiClient.get<SkillFollowUp>(`${C(classId)}/skills/${skillId}`),
+  assignPractice: (classId: string, skillId: string, activityId: string, childIds: string[]) =>
+    apiClient.post<AssignPracticeResult>(`${C(classId)}/skills/${skillId}/practice`, { activityId, childIds }),
 };
+
+// ---- school/service/ClassPracticeService.java (X10): following up a skill ----
+
+export type PathItemStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "SKIPPED";
+
+/** The class's most recent practice for this skill for one child, and what became of it. */
+export interface PlacedPractice {
+  activityId: string;
+  activityTitle: string | null;
+  /** SKIPPED: withdrawn when the class's access to the child ended. */
+  status: PathItemStatus;
+  assignedAt: string;
+  completedAt: string | null;
+}
+
+export interface ChildOnSkill {
+  childId: string;
+  displayName: string;
+  standing: SkillStanding;
+  evidenceLevel: EvidenceLevel;
+  scoredAnswers: number;
+  correctAnswers: number;
+  /** On the class's curriculum path (practice can be placed). */
+  enrolled: boolean;
+  latestPractice: PlacedPractice | null;
+}
+
+export interface PracticeOption {
+  activityId: string;
+  title: string;
+  questionCount: number;
+  difficultyLevel: number | null;
+}
+
+export interface SkillFollowUp {
+  skillId: string;
+  skillName: string;
+  objectiveTitle: string;
+  curriculumId: string;
+  curriculumName: string;
+  /** Needs practice first, then too early to tell, progressing, not started, secure; by name within each. */
+  children: ChildOnSkill[];
+  practice: PracticeOption[];
+}
+
+export interface AssignPracticeResult {
+  assigned: string[];
+  /** The same practice is still waiting for them: nothing was added. */
+  alreadyWaiting: string[];
+  /** Not on the class's curriculum path, or the content isn't one their path may use. */
+  notOnThisPath: string[];
+}
 
 // ---- school/service/SchoolOverviewService.java (X7): the staff home ----
 
