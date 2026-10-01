@@ -192,6 +192,23 @@ export default {
           "55%": { transform: "scale(1.14)", filter: "brightness(1.3)" },
           "100%": { transform: "scale(1)", filter: "brightness(1)" },
         },
+        // A book on the river taking the light: its waiting cover fades from over the lit one.
+        "book-unlit": {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" },
+        },
+        // The light pooling around a book as it is lit.
+        bloom: {
+          "0%": { opacity: "0", transform: "scale(0.6)" },
+          "60%": { opacity: "1", transform: "scale(1.12)" },
+          "100%": { opacity: "0.55", transform: "scale(1)" },
+        },
+        // The firefly crossing from the book just lit to the next one; distance from --hop-x.
+        hop: {
+          "0%": { transform: "translate(var(--hop-x), 0)" },
+          "45%": { transform: "translate(calc(var(--hop-x) * 0.45), -22px)" },
+          "100%": { transform: "translate(0, 0)" },
+        },
       },
       animation: {
         "pop-in": "pop-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both",
@@ -211,6 +228,9 @@ export default {
         burst: "burst 700ms cubic-bezier(0.23, 1, 0.32, 1) forwards",
         "rise-away": "rise-away 3.4s cubic-bezier(0.45, 0, 0.55, 1) forwards",
         "lantern-lit": "lantern-lit 620ms cubic-bezier(0.23, 1, 0.32, 1) both",
+        "book-unlit": "book-unlit 700ms cubic-bezier(0.23, 1, 0.32, 1) both",
+        bloom: "bloom 1100ms cubic-bezier(0.23, 1, 0.32, 1) both",
+        hop: "hop 900ms cubic-bezier(0.16, 1, 0.3, 1) both",
       },
     },
   },

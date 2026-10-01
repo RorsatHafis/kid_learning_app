@@ -39,7 +39,7 @@ export function visibleWindow<T extends PathStep>(steps: T[], currentIndex: numb
   return steps.slice(start, start + size).map((step, i) => ({ step, index: start + i }));
 }
 
-function Book({ at, scale, state, number }: { at: Point; scale: number; state: BookState; number: number }) {
+export function Book({ at, scale, state, number }: { at: Point; scale: number; state: BookState; number: number }) {
   const w = 150 * scale;
   const h = 44 * scale;
   const t = 15 * scale;

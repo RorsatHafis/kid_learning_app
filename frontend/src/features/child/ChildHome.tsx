@@ -6,7 +6,7 @@ import { childrenApi, learningApi } from "@/lib/api/endpoints";
 import type { Chapter, EnrollmentOverview, Journey, JourneyStep } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { childReason, stepTag } from "@/features/learning/explain";
-import { chapterOf, focusChapter } from "@/features/learning/chapters";
+import { chapterOf, focusChapter, journeyLight } from "@/features/learning/chapters";
 import { BlueHour } from "@/features/world/BlueHour";
 import { PathOfBooks, khmerNumber } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
@@ -143,7 +143,7 @@ function JourneyStage({
         {/* The world. On a phone it is a tall window with the whole path in it; on a large
             screen it fills the stage and the words sit on it. */}
         <div aria-hidden className="relative h-[64svh] min-h-[430px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
-          <BlueHour crop="bottom">
+          <BlueHour crop="bottom" firstLight={journeyLight(overview)}>
             {focus && <PathOfBooks steps={focus.steps.map(({ step }) => step)} currentId={journey.data!.nextStepId} />}
           </BlueHour>
           {/* scrims behind the words only, so the lit path keeps its light */}

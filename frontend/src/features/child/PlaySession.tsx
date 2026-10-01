@@ -5,10 +5,13 @@ import { Lantern, LanternString } from "@/features/world/Lantern";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
-import type { ActivityVersionDetail, AnswerRecord, Chapter, JourneyStep } from "@/lib/api/types";
+import type { ActivityVersionDetail, AnswerRecord, Chapter, EnrollmentOverview, JourneyStep } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { play as playCue } from "@/features/buddy/sound";
 import { childReason } from "@/features/learning/explain";
+import { chapterRuns, focusChapter, journeyLight } from "@/features/learning/chapters";
+import { PathStrip } from "@/features/world/PathStrip";
+import type { PathStep } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { Trouble, Waiting } from "./ChildHome";
@@ -47,6 +50,12 @@ type Phase =
       finishedChapter: Chapter | null;
       /** The chapter the next step is in. */
       nextChapter: Chapter | null;
+      /** The finished step, and its chapter's steps as the server now has them (for the river). */
+      itemId: string;
+      chapterSteps: PathStep[];
+      nextId: string | null;
+      /** How far the path has brought the dawn, after this activity (see journeyLight). */
+      lightAfter: number | null;
     };
 
 /** The server's recorded answer for this question in this attempt, if any. */
@@ -76,10 +85,15 @@ export function PlaySession() {
   // start call could fire twice in a row for the same path item.
   const loadInFlight = useRef(false);
 
-  const nextStepOnPath = useCallback(async (): Promise<JourneyStep | null | undefined> => {
+  // How far the child's path has brought the dawn: the sky behind every play screen (journeyLight).
+  const [light, setLight] = useState(0);
+  // Only a change the child caused (finishing an activity) eases in; arriving values just appear.
+  const [lightEases, setLightEases] = useState(false);
+
+  const overviewOfPath = useCallback(async (): Promise<EnrollmentOverview | null | undefined> => {
     try {
       const overviews = await learningApi.enrollments(childId);
-      return overviews.find((overview) => overview.enrollmentId === enrollmentId)?.nextStep ?? null;
+      return overviews.find((overview) => overview.enrollmentId === enrollmentId) ?? null;
     } catch {
       return undefined;
     }
@@ -95,13 +109,22 @@ export function PlaySession() {
           step?.chapterId ? (journey.chapters.find((chapter) => chapter.id === step.chapterId) ?? null) : null;
         const done = chapterOf(journey.steps.find((step) => step.learningPathItemId === itemId));
         const nextChapter = chapterOf(next);
+        // The stretch of river the finished step lies on: its chapter's steps (practice met inside
+        // it included), or the chapter in focus when the step belongs to none.
+        const run = chapterRuns(journey).filter((r) => r.steps.some(({ step }) => step.learningPathItemId === itemId));
+        const chapterSteps = done
+          ? chapterRuns(journey).filter((r) => r.chapter?.id === done.id || run.includes(r)).flatMap((r) => r.steps.map(({ step }) => step))
+          : focusChapter(journey).steps.map(({ step }) => step);
         return {
           next,
           finishedChapter: done && done.state === "COMPLETE" && done.id !== nextChapter?.id ? done : null,
           nextChapter,
+          chapterSteps,
+          nextId: journey.nextStepId,
+          lightAfter: journeyLight(journey),
         };
       } catch {
-        return { next: undefined, finishedChapter: null, nextChapter: null };
+        return { next: undefined, finishedChapter: null, nextChapter: null, chapterSteps: [], nextId: null, lightAfter: null };
       }
     },
     [enrollmentId],
@@ -128,6 +151,7 @@ export function PlaySession() {
         title,
         correct: answers.filter((answer) => answer.correct).length,
         total: answers.length,
+        itemId,
         ...after,
       });
     },
@@ -154,11 +178,16 @@ export function PlaySession() {
           activityVersionId: item.activityVersionId,
           learningPathItemId: item.id,
         });
-        const [activity, answers, next] = await Promise.all([
+        const [activity, answers, overview] = await Promise.all([
           activityContentApi.getVersion(item.activityVersionId),
           activityAttemptApi.listAnswers(attempt.id),
-          nextStepOnPath(),
+          overviewOfPath(),
         ]);
+        if (overview) {
+          setLightEases(false);
+          setLight(journeyLight(overview));
+        }
+        const next = overview?.nextStep ?? null;
 
         const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
         const ordered = { ...activity, items };
@@ -172,7 +201,15 @@ export function PlaySession() {
           return;
         }
         if (resumeIndex === 0) {
-          const reason = next && next.learningPathItemId === item.id ? childReason(next) : null;
+          const ofThis = next && next.learningPathItemId === item.id ? next : null;
+          // The first book of a chapter opens the chapter: the child meets its name here.
+          const chapter = ofThis?.chapterId ? overview?.chapters.find((c) => c.id === ofThis.chapterId) : undefined;
+          const opensChapter = chapter && chapter.completedSteps === 0 && (overview?.chapterCount ?? 0) > 1;
+          const reason = opensChapter
+            ? `${chapter.position === 1 ? "Your journey begins" : "A new chapter begins"} · Chapter ${chapter.position}: ${chapter.title}`
+            : ofThis
+              ? childReason(ofThis)
+              : null;
           setPhase({ kind: "intro", attemptId: attempt.id, itemId: item.id, activity: ordered, reason });
           return;
         }
@@ -191,7 +228,19 @@ export function PlaySession() {
     } finally {
       loadInFlight.current = false;
     }
-  }, [childId, enrollmentId, finishAttempt, nextStepOnPath]);
+  }, [childId, enrollmentId, finishAttempt, overviewOfPath]);
+
+  // After a completion the sky moves to where the path now is — a finished chapter brings the
+  // dawn a step nearer while the child is looking (the scene eases it; reduced motion jumps).
+  const lightAfter = phase.kind === "completed" ? phase.lightAfter : null;
+  useEffect(() => {
+    if (lightAfter === null) return;
+    const timer = window.setTimeout(() => {
+      setLightEases(true);
+      setLight(lightAfter);
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [lightAfter]);
 
   useEffect(() => {
     void loadNext();
@@ -199,7 +248,7 @@ export function PlaySession() {
 
   const journeyHref = `/learn/${childId}?path=${enrollmentId}`;
   const shell = (content: React.ReactNode) => (
-    <ChildSpaceLayout childId={childId} childName={child.data?.displayName} home={journeyHref}>
+    <ChildSpaceLayout childId={childId} childName={child.data?.displayName} home={journeyHref} firstLight={light} easeLight={lightEases}>
       {content}
     </ChildSpaceLayout>
   );
@@ -508,36 +557,23 @@ function Completed({
   journeyHref: string;
   onKeepGoing: () => void;
 }) {
-  const { title, correct, total, next, finishedChapter, nextChapter } = phase;
+  const { title, correct, total, next, finishedChapter, nextChapter, itemId, chapterSteps, nextId } = phase;
   const allRight = total > 0 && correct === total;
   const keepGoingRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => keepGoingRef.current?.focus(), []);
-  const lanterns = Math.min(Math.max(total, 1), 10);
+  // The river shows the next book only while it is in this chapter.
+  const nextHere = nextId !== null && chapterSteps.some((s) => s.learningPathItemId === nextId) ? nextId : null;
 
   return (
-    <div className="px-4 pb-16 pt-6 sm:pt-8">
-      {/* Every lantern of the activity, lit and released into the evening sky. */}
-      <div aria-hidden className="relative mx-auto flex h-40 max-w-xl items-end justify-center gap-5 sm:h-48 sm:gap-8">
-        {Array.from({ length: lanterns }, (_, i) => (
-          <span
-            key={i}
-            className="motion-safe:animate-rise-away"
-            style={{
-              animationDelay: `${300 + i * 180}ms`,
-              ["--tilt" as string]: `${i % 2 ? -5 : 5}deg`,
-              marginBottom: `${(i * 37) % 28}px`,
-            }}
-          >
-            <Lantern state="lit" size={lanterns > 6 ? 32 : 48} />
-          </span>
-        ))}
-      </div>
-
-      <Page labelledBy="done-title" className="mt-2 px-6 pb-10 pt-12 text-center motion-safe:animate-pop-in sm:px-14 sm:pb-12">
-        <div aria-hidden className="absolute -top-[4.5rem] right-4 sm:-top-20 sm:right-10">
-          <LearningBuddy mood="cheer" size={96} className="sm:hidden" />
-          <LearningBuddy mood="cheer" size={118} className="hidden sm:block" />
-        </div>
+    <div className="px-4 pb-16 pt-24 sm:pt-28">
+      <Page labelledBy="done-title" className="px-6 pb-10 pt-12 text-center motion-safe:animate-pop-in sm:px-14 sm:pb-12">
+        {/* One firefly: on the river when the path is shown, otherwise at the page's corner. */}
+        {chapterSteps.length === 0 && (
+          <div aria-hidden className="absolute -top-[4.5rem] right-4 sm:-top-20 sm:right-10">
+            <LearningBuddy mood="cheer" size={96} className="sm:hidden" />
+            <LearningBuddy mood="cheer" size={118} className="hidden sm:block" />
+          </div>
+        )}
         <h1 id="done-title" className="font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
           {finishedChapter ? `Chapter ${finishedChapter.position} complete!` : allRight ? "Perfect!" : "Activity complete!"}
         </h1>
@@ -549,8 +585,24 @@ function Completed({
             You got {correct} of {total} right
           </p>
         )}
+        {chapterSteps.length > 0 && (
+          // The child's stretch of river: the book just finished takes the light where it sits.
+          <div
+            className={cn(
+              "mt-8 overflow-hidden bg-tonle-950 px-4 pt-3 shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)]",
+              next ? "rounded-t-[22px]" : "rounded-[22px] pb-3",
+            )}
+          >
+            <PathStrip steps={chapterSteps} justLitId={itemId} nextId={nextHere} chapterDone={finishedChapter !== null} />
+          </div>
+        )}
         {next && (
-          <div className="mt-8 flex items-center gap-4 rounded-[22px] bg-tonle-950 p-5 text-left text-white shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)]">
+          <div
+            className={cn(
+              "flex items-center gap-4 bg-tonle-950 p-5 text-left text-white shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)]",
+              chapterSteps.length > 0 ? "rounded-b-[22px] pt-1" : "mt-8 rounded-[22px]",
+            )}
+          >
             <Lantern state="current" size={30} className="shrink-0" />
             <div>
               <p className="text-sm font-semibold text-light-glow">

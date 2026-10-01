@@ -26,6 +26,20 @@ export function chapterRuns(journey: Journey): ChapterRun[] {
   return runs;
 }
 
+/**
+ * How far the child's path has come, as the world shows it: 0 at the start of the blue hour, 1
+ * at first light. With chapters it moves only when a chapter is finished (the server's COMPLETE
+ * state), so the sky changes at the moments that mean something; a path without chapters moves
+ * step by step. Read from the server's path, never kept separately — when the platform adds
+ * review or practice to a chapter, the light follows that too.
+ */
+export function journeyLight(path: { chapters: Chapter[]; completedSteps: number; totalSteps: number }): number {
+  if (path.chapters.length > 0) {
+    return path.chapters.filter((chapter) => chapter.state === "COMPLETE").length / path.chapters.length;
+  }
+  return path.totalSteps > 0 ? Math.min(1, path.completedSteps / path.totalSteps) : 0;
+}
+
 /** "Chapter 2 of 4" — only when the journey has more than one chapter ("1 of 1" says nothing). */
 export function chapterOf(chapter: Chapter | null, count: number) {
   return chapter && count > 1 ? `Chapter ${chapter.position} of ${count}` : null;

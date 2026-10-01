@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Chapter, Journey, JourneyStep } from "@/lib/api/types";
-import { chapterOf, chapterRuns, focusChapter } from "./chapters";
+import { chapterOf, chapterRuns, focusChapter, journeyLight } from "./chapters";
 
 const chapter = (id: string, position: number, state: Chapter["state"], total = 2, done = 0): Chapter => ({
   id,
@@ -74,6 +74,15 @@ describe("chapters", () => {
     const flat = journey([step("x", null), step("y", null)], [], "x");
     expect(focusChapter(flat).chapter).toBeNull();
     expect(focusChapter(flat).steps).toHaveLength(2);
+  });
+
+  it("lights the world by finished chapters, or by steps when a path has none", () => {
+    expect(journeyLight({ chapters, completedSteps: 2, totalSteps: 6 })).toBeCloseTo(1 / 3);
+    // A chapter half done doesn't move the sky: only finished chapters do.
+    expect(journeyLight({ chapters: [chapter("a", 1, "CURRENT", 4, 3)], completedSteps: 3, totalSteps: 4 })).toBe(0);
+    expect(journeyLight({ chapters: [chapter("a", 1, "COMPLETE", 2, 2)], completedSteps: 2, totalSteps: 2 })).toBe(1);
+    expect(journeyLight({ chapters: [], completedSteps: 3, totalSteps: 4 })).toBe(0.75);
+    expect(journeyLight({ chapters: [], completedSteps: 0, totalSteps: 0 })).toBe(0);
   });
 
   it("names a position only when there is more than one chapter", () => {

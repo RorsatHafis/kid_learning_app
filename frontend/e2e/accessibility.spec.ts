@@ -56,6 +56,21 @@ test.describe("accessibility @phone", () => {
     await expect(page.getByRole("button", { name: /next|finish/i })).toBeVisible();
     await expectNoViolations(page, "feedback after a wrong answer");
 
+    // Finish the activity: the completion page, with the chapter's river of books (X9).
+    for (let i = 0; i < 10; i++) {
+      const finish = page.getByRole("button", { name: /^Finish/ });
+      if (await finish.isVisible()) {
+        await finish.click();
+        break;
+      }
+      await page.getByRole("button", { name: /^Next/ }).click();
+      await page.getByRole("textbox").fill("1");
+      await page.getByRole("button", { name: "Check" }).click();
+      await expect(page.getByRole("button", { name: /^(Next|Finish)/ })).toBeVisible();
+    }
+    await expect(page.getByRole("heading", { name: /complete!|Perfect!/ })).toBeVisible();
+    await expectNoViolations(page, "activity complete");
+
     await page.goto("/parent/account");
     await page.waitForLoadState("networkidle");
     await expectNoViolations(page, "parent account");

@@ -70,6 +70,30 @@ const PALETTE = {
 
 type Palette = (typeof PALETTE)[SceneTime];
 
+/** Where the blue hour is heading: the same sky near sunrise (only the colours that change). */
+const FIRST_LIGHT = {
+  skyTop: "#24346F",
+  skyMid: "#4E5CA2",
+  skyLow: "#CC8FA2",
+  horizon: "#FFD49C",
+  river: "#6676B6",
+  // the first sun catching the temple and the far hills
+  temple: "#6E69A8",
+  far: "#5A5EA0",
+  mid: "#3E4C8E",
+};
+
+function mix(from: string, to: string, t: number) {
+  const a = parseInt(from.slice(1), 16);
+  const b = parseInt(to.slice(1), 16);
+  const channel = (shift: number) => Math.round(((a >> shift) & 255) + (((b >> shift) & 255) - ((a >> shift) & 255)) * t);
+  return `#${((channel(16) << 16) | (channel(8) << 8) | channel(0)).toString(16).padStart(6, "0")}`;
+}
+
+// Slow and settling: the sky changes like light does, not like a control.
+const SKY_EASE = "2.8s cubic-bezier(0.16, 1, 0.3, 1)";
+const SKY_TRANSITION = { transition: `stop-color ${SKY_EASE}, opacity ${SKY_EASE}, transform ${SKY_EASE}` };
+
 const STARS = Array.from({ length: 54 }, (_, i) => ({
   x: (i * 263.7) % 1200,
   y: ((i * 97.3) % 290) + 6,
@@ -213,8 +237,21 @@ export function BlueHour({
   fireflies = true,
   crop = "center",
   frame = true,
+  firstLight = 0,
+  easeLight = true,
 }: {
   time?: SceneTime;
+  /**
+   * 0–1: how far the night has turned toward sunrise — the child's path, as the world shows it
+   * (`journeyLight`: finished chapters). Changes ease in, so finishing a chapter visibly brings
+   * the dawn nearer; with reduced motion the new sky simply appears. Dusk only.
+   */
+  firstLight?: number;
+  /**
+   * Whether a change of `firstLight` eases in. Off while a screen only learns where the path
+   * stands: then the sky should simply be there, not seem to change.
+   */
+  easeLight?: boolean;
   className?: string;
   /** SVG drawn on the river plane, before the foreground (e.g. the path of books). */
   children?: ReactNode;
@@ -224,26 +261,39 @@ export function BlueHour({
   /** Foreground leaves framing the edges; off for thin bands. */
   frame?: boolean;
 }) {
-  const c = PALETTE[time];
+  const dusk = time === "dusk";
+  const light = dusk ? Math.min(1, Math.max(0, firstLight)) : 0;
+  const base = PALETTE[time];
+  const c = (
+    light === 0
+      ? base
+      : { ...base, ...Object.fromEntries(Object.entries(FIRST_LIGHT).map(([k, v]) => [k, mix(base[k as keyof typeof FIRST_LIGHT], v, light)])) }
+  ) as Palette;
   const uid = useId().replace(/:/g, "");
   const id = (s: string) => `${uid}-${s}`;
   const align = { center: "xMidYMid slice", bottom: "xMidYMax slice", top: "xMidYMin slice" }[crop];
-  const dusk = time === "dusk";
   const paper = `url(#${id("paper")})`;
+  const skyTransition = easeLight ? SKY_TRANSITION : undefined;
 
   return (
     <svg viewBox="0 0 1200 800" preserveAspectRatio={align} className={cn("block h-full w-full", className)} aria-hidden>
       <defs>
         <linearGradient id={id("sky")} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={c.skyTop} />
-          <stop offset="0.42" stopColor={c.skyMid} />
-          <stop offset="0.74" stopColor={c.skyLow} />
-          <stop offset="0.92" stopColor={c.horizon} />
+          <stop offset="0" style={{ stopColor: c.skyTop, ...skyTransition }} />
+          <stop offset="0.42" style={{ stopColor: c.skyMid, ...skyTransition }} />
+          <stop offset="0.74" style={{ stopColor: c.skyLow, ...skyTransition }} />
+          <stop offset="0.92" style={{ stopColor: c.horizon, ...skyTransition }} />
         </linearGradient>
         <linearGradient id={id("river")} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={c.river} />
+          <stop offset="0" style={{ stopColor: c.river, ...skyTransition }} />
           <stop offset="1" stopColor={c.riverDeep} />
         </linearGradient>
+        {/* sunrise gathering behind the temple */}
+        <radialGradient id={id("dawn")} cx="0.5" cy="0.62" r="0.5">
+          <stop offset="0" stopColor="#FFD9A0" stopOpacity="0.85" />
+          <stop offset="0.45" stopColor="#F6A97A" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#F6A97A" stopOpacity="0" />
+        </radialGradient>
         <radialGradient id={id("glow")}>
           <stop offset="0" stopColor={c.light} stopOpacity={dusk ? 0.32 : 0.55} />
           <stop offset="1" stopColor={c.light} stopOpacity="0" />
@@ -264,16 +314,21 @@ export function BlueHour({
 
       <rect width="1200" height="800" fill={`url(#${id("sky")})`} />
 
+      {dusk && <ellipse cx="800" cy="460" rx="680" ry="300" fill={`url(#${id("dawn")})`} style={{ opacity: Math.min(1, light * 1.3), ...skyTransition }} />}
+
       {dusk && (
-        <g fill={c.star}>
+        <g fill={c.star} style={{ opacity: 1 - light * 0.7, ...skyTransition }}>
           {STARS.map((s, i) => (
             <circle key={i} cx={s.x} cy={s.y} r={s.r} className={s.twinkle ? "animate-glow-breathe" : undefined} style={{ transformOrigin: `${s.x}px ${s.y}px`, animationDelay: `${(i % 7) * 0.4}s` }} opacity={0.5 + (i % 3) * 0.17} />
           ))}
         </g>
       )}
 
-      <circle cx="930" cy={dusk ? 150 : 330} r="150" fill={`url(#${id("glow")})`} />
-      {dusk ? <path d="M948 116 A42 42 0 1 0 964 190 A33 33 0 1 1 948 116 Z" fill="#FFF1D2" /> : <circle cx="930" cy="330" r="36" fill="#FFF7EA" />}
+      {/* the moon sets a little as the night turns */}
+      <g style={{ transform: `translateY(${light * 70}px)`, opacity: 1 - light * 0.35, ...skyTransition }}>
+        <circle cx="930" cy={dusk ? 150 : 330} r="150" fill={`url(#${id("glow")})`} />
+        {dusk ? <path d="M948 116 A42 42 0 1 0 964 190 A33 33 0 1 1 948 116 Z" fill="#FFF1D2" /> : <circle cx="930" cy="330" r="36" fill="#FFF7EA" />}
+      </g>
 
       {/* paper clouds */}
       <g fill={c.cloud} opacity={dusk ? 0.7 : 0.85} filter={paper}>
@@ -282,14 +337,14 @@ export function BlueHour({
         <path d="M1010 250 C1040 238 1080 240 1100 250 C1130 244 1170 250 1180 262 L996 264 C994 258 1000 252 1010 250 Z" />
       </g>
 
-      <g filter={paper}>
-        <Temple cx={800} base={440} color={c.temple} />
+      <g filter={paper} style={{ fill: c.temple, transition: skyTransition ? `fill ${SKY_EASE}` : undefined }}>
+        <Temple cx={800} base={440} color="inherit" />
       </g>
 
       {/* three bands of hills, full width */}
-      <path filter={paper} fill={c.far} d="M0 452 C110 424 220 436 330 448 C450 462 540 424 660 432 C780 440 870 456 990 442 C1090 430 1150 438 1200 446 L1200 800 L0 800 Z" />
+      <path filter={paper} style={{ fill: c.far, transition: skyTransition ? `fill ${SKY_EASE}` : undefined }} d="M0 452 C110 424 220 436 330 448 C450 462 540 424 660 432 C780 440 870 456 990 442 C1090 430 1150 438 1200 446 L1200 800 L0 800 Z" />
       <g filter={paper}>
-        <path fill={c.mid} d="M0 478 C120 456 230 462 340 474 C470 488 560 470 690 474 C820 478 920 466 1040 470 C1120 473 1170 470 1200 472 L1200 800 L0 800 Z" />
+        <path style={{ fill: c.mid, transition: skyTransition ? `fill ${SKY_EASE}` : undefined }} d="M0 478 C120 456 230 462 340 474 C470 488 560 470 690 474 C820 478 920 466 1040 470 C1120 473 1170 470 1200 472 L1200 800 L0 800 Z" />
         <SugarPalm x={60} y={474} h={150} color={c.palm} />
         <SugarPalm x={112} y={470} h={118} color={c.palm} />
         <SugarPalm x={990} y={468} h={140} color={c.palm} />

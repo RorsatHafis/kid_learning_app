@@ -23,6 +23,8 @@ export function ChildSpaceLayout({
   children,
   home,
   backdrop = true,
+  firstLight = 0,
+  easeLight = false,
 }: {
   childId: string;
   childName?: string;
@@ -30,12 +32,16 @@ export function ChildSpaceLayout({
   /** Where the top-left "home" goes: the child's journey. */
   home?: string;
   backdrop?: boolean;
+  /** How far the child's path has brought the dawn (see BlueHour, `journeyLight`). */
+  firstLight?: number;
+  /** Ease a change of the light in (a change the child caused); otherwise it just appears. */
+  easeLight?: boolean;
 }) {
   return (
     <div className="on-night relative min-h-[100dvh] bg-tonle-950 text-white">
       {backdrop && (
         <div aria-hidden className="fixed inset-0">
-          <BlueHour crop="bottom" />
+          <BlueHour crop="bottom" firstLight={firstLight} easeLight={easeLight} />
           <div className="absolute inset-0 bg-gradient-to-b from-tonle-950/55 via-tonle-950/25 to-tonle-950/60" />
         </div>
       )}
