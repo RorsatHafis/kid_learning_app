@@ -36,6 +36,13 @@ public class QuestionOption extends BaseEntity {
     @Column(name = "match_pair")
     private Integer matchPair;
 
+    /** X11: a picture standing for the item (its label then describes it, for screen readers), and a recording of it. */
+    @Column(name = "image_asset_id")
+    private UUID imageAssetId;
+
+    @Column(name = "audio_asset_id")
+    private UUID audioAssetId;
+
     protected QuestionOption() {
         // JPA
     }
@@ -67,12 +74,29 @@ public class QuestionOption extends BaseEntity {
         return option;
     }
 
-    /** A copy for another version of the same question, pairing included. */
+    /** A copy for another version of the same question, pairing and media included. */
     public QuestionOption copyFor(UUID otherVersionId) {
         QuestionOption copy = create(otherVersionId, label, correct, displayOrder);
         copy.matchSide = matchSide;
         copy.matchPair = matchPair;
+        copy.imageAssetId = imageAssetId;
+        copy.audioAssetId = audioAssetId;
         return copy;
+    }
+
+    /** Set on a new option only (options of a draft are replaced as a whole, never edited after publishing). */
+    public QuestionOption withMedia(UUID imageAssetId, UUID audioAssetId) {
+        this.imageAssetId = imageAssetId;
+        this.audioAssetId = audioAssetId;
+        return this;
+    }
+
+    public UUID getImageAssetId() {
+        return imageAssetId;
+    }
+
+    public UUID getAudioAssetId() {
+        return audioAssetId;
     }
 
     public void relabel(String newLabel) {

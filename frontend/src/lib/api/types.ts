@@ -98,14 +98,27 @@ export interface LearningPathItem {
 
 // ---- content/entity/QuestionType.java, content/web/ActivityContentDtos.java ----
 
-export type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "NUMERIC" | "MATCHING";
+export type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "NUMERIC" | "MATCHING" | "ORDERING";
+
+/** content/media/MediaService.MediaRef — an uploaded picture or recording, fetched by its signed URL (expires within hours). */
+export interface MediaRef {
+  id: string;
+  type: "IMAGE" | "AUDIO";
+  mimeType: string;
+  url: string;
+}
 
 export interface QuestionOption {
   id: string;
   label: string;
+  /** ORDERING: the order the child is given the items in — never the answer. */
   displayOrder: number;
   /** MATCHING only: which column the item is in. Which items pair up is never sent. */
   matchSide?: "LEFT" | "RIGHT" | null;
+  /** A picture standing for the item; `label` then describes it (screen readers). */
+  image?: MediaRef | null;
+  /** The item read aloud. */
+  audio?: MediaRef | null;
 }
 
 export interface ActivityItem {
@@ -114,6 +127,11 @@ export interface ActivityItem {
   questionVersionId: string;
   questionType: QuestionType;
   prompt: string;
+  /** A picture shown with the prompt, and the prompt read aloud (for children who don't read yet). */
+  promptImage?: MediaRef | null;
+  /** What the picture shows, for screen readers. */
+  promptImageDescription?: string | null;
+  promptAudio?: MediaRef | null;
   /** The choices for MULTIPLE_CHOICE (answered by option id). Not used for
    * TRUE_FALSE ("true"/"false") or free-response types. Never carries which
    * option is correct — that stays server-side. */
@@ -149,7 +167,7 @@ export interface ActivityAttempt {
  * the correct answer, so a mistake can be explained. Only ever present on a
  * recorded answer — the content endpoint never carries an answer key. */
 export interface CorrectAnswer {
-  /** MULTIPLE_CHOICE: the correct option id(s); empty for other types. */
+  /** MULTIPLE_CHOICE: the correct option id(s); ORDERING: every item in the correct order; empty for other types. */
   optionIds: string[];
   /** The correct answer as the child would read it. */
   text: string | null;

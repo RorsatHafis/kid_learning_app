@@ -1,22 +1,54 @@
 import { useState, type FormEvent } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import type { QuestionType } from "@/lib/api/types";
-import type { MatchPairInput, OptionInput, QuestionDraftInput } from "@/lib/api/studio";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import type { MediaRef, QuestionType } from "@/lib/api/types";
+import type { QuestionDraftInput } from "@/lib/api/studio";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { SelectField, TextAreaField } from "./shared";
 import { DIFFICULTIES } from "./studioLogic";
+import { MediaSlot } from "./MediaSlot";
 
 const MAX_OPTIONS = 10;
 const MAX_PAIRS = 6; // content/service/QuestionCompleteness.MAX_PAIRS
 const MIN_PAIRS = 2;
+const MAX_ITEMS = 8; // content/service/OrderingItems.MAX_ITEMS
+const MIN_ITEMS = 3;
+
+const fieldClass =
+  "flex-1 rounded-[10px] border border-line-strong px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15";
+const inputClass = `min-w-0 ${fieldClass}`;
+const removeClass = "rounded-full p-2 text-ink-soft hover:bg-tonle-50 hover:text-ink disabled:opacity-40";
+const addClass = "flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-tonle-700 hover:bg-tonle-50";
+
+type Media = MediaRef | null | undefined;
+
+/** A question version as the form edits it: media as references, so they can be shown and heard. */
+export interface DraftValues {
+  prompt: string;
+  correctAnswer: string | null;
+  difficultyLevel: number | null;
+  promptImage?: Media;
+  promptImageDescription?: string | null;
+  promptAudio?: Media;
+  options?: { label: string; correct: boolean; image?: Media; audio?: Media }[];
+  pairs?: { left: string; right: string; leftImage?: Media; rightImage?: Media }[];
+  /** ORDERING: the items in their correct order. */
+  items?: { label: string; image?: Media; audio?: Media }[];
+}
+
+const id = (media: Media) => media?.id ?? undefined;
 
 /**
  * The editable part of a question version. The answer contract follows the scorer
  * (AnswerScoringService): multiple choice is answered by choosing an option, so its
  * key lives on the options; true/false is "true" or "false"; number answers must be
  * numbers; short answers are compared to the text given; a matching question is its
- * pairs — the child sees the two columns, never which items belong together.
+ * pairs — the child sees the two columns, never which items belong together; an ordering
+ * question is its items in the right order — the child gets them mixed up.
+ *
+ * Any question can carry a picture and be read aloud (X11), and choices and items can be
+ * pictures and have a recording: for children who don't read yet, and for questions about
+ * what something looks or sounds like.
  */
 export function QuestionDraftForm({
   questionType,
@@ -27,16 +59,19 @@ export function QuestionDraftForm({
   children,
 }: {
   questionType: QuestionType;
-  initial: QuestionDraftInput;
+  initial: DraftValues;
   submitLabel: string;
   busy: boolean;
   onSubmit: (draft: QuestionDraftInput) => void;
   children?: React.ReactNode;
 }) {
   const [prompt, setPrompt] = useState(initial.prompt);
+  const [promptImage, setPromptImage] = useState<Media>(initial.promptImage ?? null);
+  const [description, setDescription] = useState(initial.promptImageDescription ?? "");
+  const [promptAudio, setPromptAudio] = useState<Media>(initial.promptAudio ?? null);
   const [answer, setAnswer] = useState(initial.correctAnswer ?? "");
   const [difficulty, setDifficulty] = useState(initial.difficultyLevel ? String(initial.difficultyLevel) : "");
-  const [options, setOptions] = useState<OptionInput[]>(
+  const [options, setOptions] = useState<NonNullable<DraftValues["options"]>>(
     initial.options && initial.options.length > 0
       ? initial.options
       : [
@@ -44,8 +79,7 @@ export function QuestionDraftForm({
           { label: "", correct: false },
         ],
   );
-
-  const [pairs, setPairs] = useState<MatchPairInput[]>(
+  const [pairs, setPairs] = useState<NonNullable<DraftValues["pairs"]>>(
     initial.pairs && initial.pairs.length > 0
       ? initial.pairs
       : [
@@ -53,22 +87,55 @@ export function QuestionDraftForm({
           { left: "", right: "" },
         ],
   );
+  const [items, setItems] = useState<NonNullable<DraftValues["items"]>>(
+    initial.items && initial.items.length > 0 ? initial.items : Array.from({ length: MIN_ITEMS }, () => ({ label: "" })),
+  );
+  const multipleChoice = questionType === "MULTIPLE_CHOICE";
   const matching = questionType === "MATCHING";
+  const ordering = questionType === "ORDERING";
 
   function submit(e: FormEvent) {
     e.preventDefault();
     onSubmit({
       prompt: prompt.trim(),
-      correctAnswer: questionType === "MULTIPLE_CHOICE" || matching ? null : answer.trim() || null,
+      correctAnswer: multipleChoice || matching || ordering ? null : answer.trim() || null,
       difficultyLevel: difficulty ? Number(difficulty) : null,
-      options: questionType === "MULTIPLE_CHOICE" ? options.map((o) => ({ label: o.label.trim(), correct: o.correct })) : undefined,
-      pairs: matching ? pairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() })) : undefined,
+      promptImageAssetId: id(promptImage),
+      promptImageDescription: promptImage && description.trim() ? description.trim() : undefined,
+      promptAudioAssetId: id(promptAudio),
+      options: multipleChoice
+        ? options.map((o) => ({
+            label: o.label.trim(),
+            correct: o.correct,
+            imageAssetId: id(o.image),
+            audioAssetId: id(o.audio),
+          }))
+        : undefined,
+      pairs: matching
+        ? pairs.map((p) => ({
+            left: p.left.trim(),
+            right: p.right.trim(),
+            leftImageAssetId: id(p.leftImage),
+            rightImageAssetId: id(p.rightImage),
+          }))
+        : undefined,
+      items: ordering
+        ? items.map((i) => ({ label: i.label.trim(), imageAssetId: id(i.image), audioAssetId: id(i.audio) }))
+        : undefined,
     });
   }
 
   const optionsComplete =
-    (questionType !== "MULTIPLE_CHOICE" || options.every((o) => o.label.trim())) &&
-    (!matching || pairs.every((p) => p.left.trim() && p.right.trim()));
+    (!multipleChoice || options.every((o) => o.label.trim())) &&
+    (!matching || pairs.every((p) => p.left.trim() && p.right.trim())) &&
+    (!ordering || items.every((i) => i.label.trim()));
+
+  function move(from: number, to: number) {
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setItems(next);
+  }
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
@@ -80,8 +147,32 @@ export function QuestionDraftForm({
         onChange={(e) => setPrompt(e.target.value)}
       />
 
-      {questionType === "MULTIPLE_CHOICE" && (
-        <fieldset className="flex flex-col gap-2">
+      <fieldset className="flex min-w-0 flex-col gap-4 rounded-[12px] bg-paper px-4 py-3 ring-1 ring-inset ring-line">
+        <legend className="sr-only">Picture and sound for the question</legend>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-ink">Picture with the question</span>
+          <MediaSlot kind="IMAGE" value={promptImage ?? null} onChange={setPromptImage} name="picture for the question" />
+          {promptImage && (
+            <FormField
+              label="Describe the picture (read to children who use a screen reader)"
+              value={description}
+              maxLength={300}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Three red apples on a plate"
+            />
+          )}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-ink">Question read aloud</span>
+          <MediaSlot kind="AUDIO" value={promptAudio ?? null} onChange={setPromptAudio} name="reading of the question" />
+          <p className="text-xs text-ink-soft">
+            For children who don&apos;t read yet: it plays when the question appears, and again whenever they tap Listen.
+          </p>
+        </div>
+      </fieldset>
+
+      {multipleChoice && (
+        <fieldset className="flex min-w-0 flex-col gap-2">
           <legend className="mb-1 text-sm font-semibold text-ink">Answer choices — mark the one correct answer</legend>
           {options.map((option, index) => (
             <div key={index} className="flex items-center gap-2">
@@ -98,78 +189,181 @@ export function QuestionDraftForm({
                 maxLength={300}
                 onChange={(e) => setOptions(options.map((o, i) => (i === index ? { ...o, label: e.target.value } : o)))}
                 aria-label={`Choice ${index + 1}`}
-                className="min-w-0 flex-1 rounded-[10px] border border-line-strong px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+                placeholder={option.image ? "Describe the picture" : undefined}
+                className={inputClass}
+              />
+              <MediaSlot
+                compact
+                kind="IMAGE"
+                value={option.image ?? null}
+                onChange={(image) => setOptions(options.map((o, i) => (i === index ? { ...o, image } : o)))}
+                name={`picture for choice ${index + 1}`}
+              />
+              <MediaSlot
+                compact
+                kind="AUDIO"
+                value={option.audio ?? null}
+                onChange={(audio) => setOptions(options.map((o, i) => (i === index ? { ...o, audio } : o)))}
+                name={`recording for choice ${index + 1}`}
               />
               <button
                 type="button"
                 onClick={() => setOptions(options.filter((_, i) => i !== index))}
                 disabled={options.length <= 2}
                 aria-label={`Remove choice ${index + 1}`}
-                className="rounded-full p-2 text-ink-soft hover:bg-tonle-50 hover:text-ink disabled:opacity-40"
+                className={removeClass}
               >
                 <Trash2 size={16} aria-hidden />
               </button>
             </div>
           ))}
           {options.length < MAX_OPTIONS && (
-            <button
-              type="button"
-              onClick={() => setOptions([...options, { label: "", correct: false }])}
-              className="flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-tonle-700 hover:bg-tonle-50"
-            >
+            <button type="button" onClick={() => setOptions([...options, { label: "", correct: false }])} className={addClass}>
               <Plus size={14} aria-hidden /> Add a choice
             </button>
+          )}
+          {options.some((o) => o.image) && (
+            <p className="text-xs text-ink-soft">
+              A choice with a picture shows only the picture; its words are what a screen reader says.
+            </p>
           )}
         </fieldset>
       )}
 
       {matching && (
-        <fieldset className="flex flex-col gap-2">
+        <fieldset className="flex min-w-0 flex-col gap-2">
           <legend className="mb-1 text-sm font-semibold text-ink">
             Pairs — each item on the left with its match. Children see the right column in a mixed-up order.
           </legend>
           {pairs.map((pair, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <span aria-hidden className="w-5 shrink-0 text-right text-xs font-bold text-ink-soft">
-                {index + 1}
-              </span>
-              <input
-                value={pair.left}
-                maxLength={300}
-                onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, left: e.target.value } : p)))}
-                aria-label={`Pair ${index + 1}: item`}
-                placeholder="Item"
-                className="min-w-0 flex-1 rounded-[10px] border border-line-strong px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
-              />
-              <span aria-hidden className="text-ink-soft">
-                ↔
-              </span>
-              <input
-                value={pair.right}
-                maxLength={300}
-                onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, right: e.target.value } : p)))}
-                aria-label={`Pair ${index + 1}: its match`}
-                placeholder="Its match"
-                className="min-w-0 flex-1 rounded-[10px] border border-line-strong px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
-              />
-              <button
-                type="button"
-                onClick={() => setPairs(pairs.filter((_, i) => i !== index))}
-                disabled={pairs.length <= MIN_PAIRS}
-                aria-label={`Remove pair ${index + 1}`}
-                className="rounded-full p-2 text-ink-soft hover:bg-tonle-50 hover:text-ink disabled:opacity-40"
-              >
-                <Trash2 size={16} aria-hidden />
-              </button>
+            <div key={index} className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+              <div className="flex min-w-[13rem] flex-1 items-center gap-2">
+                <span aria-hidden className="w-5 shrink-0 text-right text-xs font-bold text-ink-soft">
+                  {index + 1}
+                </span>
+                <input
+                  value={pair.left}
+                  maxLength={300}
+                  onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, left: e.target.value } : p)))}
+                  aria-label={`Pair ${index + 1}: item`}
+                  placeholder="Item"
+                  className={inputClass}
+                />
+                <MediaSlot
+                  compact
+                  kind="IMAGE"
+                  value={pair.leftImage ?? null}
+                  onChange={(leftImage) => setPairs(pairs.map((p, i) => (i === index ? { ...p, leftImage } : p)))}
+                  name={`picture for pair ${index + 1}'s item`}
+                />
+              </div>
+              <div className="flex min-w-[13rem] flex-1 items-center gap-2">
+                <span aria-hidden className="w-5 shrink-0 text-center text-ink-soft">
+                  ↔
+                </span>
+                <input
+                  value={pair.right}
+                  maxLength={300}
+                  onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, right: e.target.value } : p)))}
+                  aria-label={`Pair ${index + 1}: its match`}
+                  placeholder="Its match"
+                  className={inputClass}
+                />
+                <MediaSlot
+                  compact
+                  kind="IMAGE"
+                  value={pair.rightImage ?? null}
+                  onChange={(rightImage) => setPairs(pairs.map((p, i) => (i === index ? { ...p, rightImage } : p)))}
+                  name={`picture for pair ${index + 1}'s match`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setPairs(pairs.filter((_, i) => i !== index))}
+                  disabled={pairs.length <= MIN_PAIRS}
+                  aria-label={`Remove pair ${index + 1}`}
+                  className={removeClass}
+                >
+                  <Trash2 size={16} aria-hidden />
+                </button>
+              </div>
             </div>
           ))}
           {pairs.length < MAX_PAIRS && (
-            <button
-              type="button"
-              onClick={() => setPairs([...pairs, { left: "", right: "" }])}
-              className="flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-tonle-700 hover:bg-tonle-50"
-            >
+            <button type="button" onClick={() => setPairs([...pairs, { left: "", right: "" }])} className={addClass}>
               <Plus size={14} aria-hidden /> Add a pair
+            </button>
+          )}
+        </fieldset>
+      )}
+
+      {ordering && (
+        <fieldset className="flex min-w-0 flex-col gap-2">
+          <legend className="mb-1 text-sm font-semibold text-ink">
+            Items in the right order — {MIN_ITEMS} to {MAX_ITEMS}. Children get them mixed up and put them back in order.
+          </legend>
+          {items.map((item, index) => (
+            <div key={index} className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+              <div className="flex min-w-[13rem] flex-1 items-center gap-2">
+                <span aria-hidden className="w-5 shrink-0 text-right text-xs font-bold text-ink-soft">
+                  {index + 1}
+                </span>
+                <input
+                  value={item.label}
+                  maxLength={300}
+                  onChange={(e) => setItems(items.map((it, i) => (i === index ? { ...it, label: e.target.value } : it)))}
+                  aria-label={`Item ${index + 1}`}
+                  placeholder={item.image ? "Describe the picture" : undefined}
+                  className={inputClass}
+                />
+              </div>
+              <div className="ml-auto flex items-center gap-1">
+                <MediaSlot
+                  compact
+                  kind="IMAGE"
+                  value={item.image ?? null}
+                  onChange={(image) => setItems(items.map((it, i) => (i === index ? { ...it, image } : it)))}
+                  name={`picture for item ${index + 1}`}
+                />
+                <MediaSlot
+                  compact
+                  kind="AUDIO"
+                  value={item.audio ?? null}
+                  onChange={(audio) => setItems(items.map((it, i) => (i === index ? { ...it, audio } : it)))}
+                  name={`recording for item ${index + 1}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => move(index, index - 1)}
+                  disabled={index === 0}
+                  aria-label={`Move item ${index + 1} up`}
+                  className={removeClass}
+                >
+                  <ArrowUp size={16} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(index, index + 1)}
+                  disabled={index === items.length - 1}
+                  aria-label={`Move item ${index + 1} down`}
+                  className={removeClass}
+                >
+                  <ArrowDown size={16} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItems(items.filter((_, i) => i !== index))}
+                  disabled={items.length <= MIN_ITEMS}
+                  aria-label={`Remove item ${index + 1}`}
+                  className={removeClass}
+                >
+                  <Trash2 size={16} aria-hidden />
+                </button>
+              </div>
+            </div>
+          ))}
+          {items.length < MAX_ITEMS && (
+            <button type="button" onClick={() => setItems([...items, { label: "" }])} className={addClass}>
+              <Plus size={14} aria-hidden /> Add an item
             </button>
           )}
         </fieldset>
@@ -183,7 +377,13 @@ export function QuestionDraftForm({
         </SelectField>
       )}
       {questionType === "NUMERIC" && (
-        <FormField label="Correct answer (a number)" inputMode="decimal" value={answer} maxLength={40} onChange={(e) => setAnswer(e.target.value)} />
+        <FormField
+          label="Correct answer (a number)"
+          inputMode="decimal"
+          value={answer}
+          maxLength={40}
+          onChange={(e) => setAnswer(e.target.value)}
+        />
       )}
       {questionType === "SHORT_ANSWER" && (
         <FormField label="Correct answer" value={answer} maxLength={300} onChange={(e) => setAnswer(e.target.value)} />

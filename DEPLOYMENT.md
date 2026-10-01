@@ -60,6 +60,7 @@ required value is missing or unsafe (`ConfigurationContractTests`).
 | `CORS_ALLOWED_ORIGINS` | The exact public origin, e.g. `https://app.example.org` (no `*`) |
 | `APP_PUBLIC_URL` | The same origin; links in emails point here |
 | `MAIL_HOST`, `MAIL_FROM` | SMTP server and the sender address |
+| `MEDIA_ROOT` | A directory the backend can write, on **persistent storage**: the pictures and recordings educators upload. The backend refuses to start if it can't write there. |
 
 **Usually needed:** `MAIL_PORT` (587), `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SMTP_AUTH`
 (true), `MAIL_SMTP_STARTTLS` (true).
@@ -107,6 +108,10 @@ redeploying the previous images is enough.
 - **Test a restore** into a scratch database before relying on it.
 - The audit log (`audit_events`) cannot be updated or deleted by the application (a database
   trigger refuses it). Keep it in backups.
+- Back up `MEDIA_ROOT` with the database: questions refer to their pictures and recordings,
+  which live there as files named by their content (SHA-256), never changed once written. A
+  database restore needs the media taken at the same time or later. Running more than one
+  backend instance needs that directory on shared storage (or an object store - not built).
 
 ## 7. Observing it
 

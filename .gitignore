@@ -1,5 +1,7 @@
 # Build output (frontend/.gitignore also covers node_modules and dist)
 backend/target/
+# Media uploaded while developing locally (MEDIA_ROOT fallback, application-local.yml)
+backend/media/
 frontend/node_modules/
 frontend/dist/
 *.tsbuildinfo

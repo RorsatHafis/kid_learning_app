@@ -200,10 +200,42 @@ public class QuestionService {
         return questionVersionRepository.saveAndFlush(version);
     }
 
-    public record OptionDraft(String label, boolean correct) {
+    /** An answer choice, with an optional picture and recording (X11). */
+    public record OptionDraft(String label, boolean correct, UUID imageAssetId, UUID audioAssetId) {
+        public OptionDraft(String label, boolean correct) {
+            this(label, correct, null, null);
+        }
     }
 
-    public record MatchPairDraft(String left, String right) {
+    public record MatchPairDraft(String left, String right, UUID leftImageAssetId, UUID rightImageAssetId) {
+        public MatchPairDraft(String left, String right) {
+            this(left, right, null, null);
+        }
+    }
+
+    /** ORDERING: one of the things to put in order; drafts are given in the correct order. */
+    public record OrderItemDraft(String label, UUID imageAssetId, UUID audioAssetId) {
+    }
+
+    /** Replaces an ORDERING draft's items: their order here is the answer. Replaces every option of the draft. */
+    @Transactional
+    public List<QuestionOption> replaceOrderItems(UUID questionVersionId, List<OrderItemDraft> items) {
+        requireDraft(getVersion(questionVersionId));
+        questionOptionRepository.deleteByQuestionVersionId(questionVersionId);
+        questionOptionRepository.flush();
+        for (int i = 0; i < items.size(); i++) {
+            questionOptionRepository.save(QuestionOption.create(questionVersionId, items.get(i).label().strip(), false, i)
+                    .withMedia(items.get(i).imageAssetId(), items.get(i).audioAssetId()));
+        }
+        return listOptions(questionVersionId);
+    }
+
+    /** A draft's prompt picture and reading (X11); null removes one. */
+    @Transactional
+    public QuestionVersion setPromptMedia(UUID questionVersionId, UUID imageAssetId, String imageDescription, UUID audioAssetId) {
+        QuestionVersion version = getVersion(questionVersionId);
+        version.setPromptMedia(imageAssetId, imageDescription, audioAssetId);
+        return questionVersionRepository.saveAndFlush(version);
     }
 
     /**
@@ -216,8 +248,10 @@ public class QuestionService {
         questionOptionRepository.deleteByQuestionVersionId(questionVersionId);
         questionOptionRepository.flush();
         for (int i = 0; i < pairs.size(); i++) {
-            questionOptionRepository.save(QuestionOption.matchItem(questionVersionId, pairs.get(i).left().strip(), MatchSide.LEFT, i, i));
-            questionOptionRepository.save(QuestionOption.matchItem(questionVersionId, pairs.get(i).right().strip(), MatchSide.RIGHT, i, i));
+            questionOptionRepository.save(QuestionOption.matchItem(questionVersionId, pairs.get(i).left().strip(), MatchSide.LEFT, i, i)
+                    .withMedia(pairs.get(i).leftImageAssetId(), null));
+            questionOptionRepository.save(QuestionOption.matchItem(questionVersionId, pairs.get(i).right().strip(), MatchSide.RIGHT, i, i)
+                    .withMedia(pairs.get(i).rightImageAssetId(), null));
         }
         return listOptions(questionVersionId);
     }
@@ -230,14 +264,14 @@ public class QuestionService {
         questionOptionRepository.flush();
         for (int i = 0; i < options.size(); i++) {
             questionOptionRepository.save(QuestionOption.create(questionVersionId, options.get(i).label().strip(),
-                    options.get(i).correct(), i));
+                    options.get(i).correct(), i).withMedia(options.get(i).imageAssetId(), options.get(i).audioAssetId()));
         }
         return listOptions(questionVersionId);
     }
 
     /**
      * The draft to edit next: the open draft if there is one, otherwise a new draft
-     * copied from the latest version (prompt, answer, difficulty and choices), so
+     * copied from the latest version (prompt, its media, answer, difficulty and choices), so
      * changing published content never means retyping it.
      */
     @Transactional
@@ -249,6 +283,10 @@ public class QuestionService {
         }
         QuestionVersion draft = createDraftVersion(questionId, latest.getPrompt(), latest.getCorrectAnswer(),
                 latest.getDifficultyLevel());
+        if (latest.getPromptImageAssetId() != null || latest.getPromptAudioAssetId() != null) {
+            draft.setPromptMedia(latest.getPromptImageAssetId(), latest.getPromptImageDescription(), latest.getPromptAudioAssetId());
+            questionVersionRepository.saveAndFlush(draft);
+        }
         for (QuestionOption option : listOptions(latest.getId())) {
             questionOptionRepository.save(option.copyFor(draft.getId()));
         }

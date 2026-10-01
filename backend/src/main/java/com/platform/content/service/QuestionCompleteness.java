@@ -27,6 +27,10 @@ public final class QuestionCompleteness {
 
     /** Why the version can't be scored, or empty when it can. */
     public static Optional<Issue> problem(QuestionType questionType, QuestionVersion version, List<QuestionOption> options) {
+        if (version.getPromptImageAssetId() != null && version.getPromptImageDescription() == null) {
+            return Optional.of(new Issue("PROMPT_IMAGE_UNDESCRIBED",
+                    "Describe the question's picture: children who use a screen reader hear the description instead."));
+        }
         return Optional.ofNullable(switch (questionType) {
             case MULTIPLE_CHOICE -> {
                 long correctCount = options.stream().filter(QuestionOption::isCorrect).count();
@@ -40,6 +44,7 @@ public final class QuestionCompleteness {
                         : null;
             }
             case MATCHING -> matchingProblem(options);
+            case ORDERING -> orderingProblem(options);
             // TRUE_FALSE and NUMERIC must use the same canonical formats AnswerScoringService
             // scores against (CanonicalAnswers), so published content is always scorable.
             case TRUE_FALSE -> CanonicalAnswers.parseTrueFalse(version.getCorrectAnswer()).isEmpty()
@@ -78,6 +83,21 @@ public final class QuestionCompleteness {
         if (hasDuplicateLabels(lefts) || hasDuplicateLabels(rights)) {
             return new Issue("MATCHING_DUPLICATE_ITEM",
                     "Two items on the same side read the same, so a child couldn't tell which one is meant.");
+        }
+        return null;
+    }
+
+    /** ORDERING: 3-8 items, and at least two that differ - otherwise every order is the same. */
+    private static Issue orderingProblem(List<QuestionOption> items) {
+        if (items.size() < OrderingItems.MIN_ITEMS || items.size() > OrderingItems.MAX_ITEMS) {
+            return new Issue("ORDERING_ITEM_COUNT", "An ordering question needs %d to %d items (it has %d)."
+                    .formatted(OrderingItems.MIN_ITEMS, OrderingItems.MAX_ITEMS, items.size()));
+        }
+        if (items.stream().anyMatch(o -> o.getMatchSide() != null)) {
+            return new Issue("ORDERING_NOT_ITEMS", "Every item of an ordering question must be one of the things to put in order.");
+        }
+        if (OrderingItems.keys(items).stream().distinct().count() < 2) {
+            return new Issue("ORDERING_ALL_SAME", "The items are all the same, so every order would be right.");
         }
         return null;
     }

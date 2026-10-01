@@ -107,8 +107,12 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
                   prompt: latest.prompt,
                   correctAnswer: latest.correctAnswer,
                   difficultyLevel: latest.difficultyLevel,
-                  options: latest.options.map((o) => ({ label: o.label, correct: o.correct })),
-                  pairs: latest.pairs.map((p) => ({ left: p.left, right: p.right ?? "" })),
+                  promptImage: latest.promptImage,
+                  promptImageDescription: latest.promptImageDescription,
+                  promptAudio: latest.promptAudio,
+                  options: latest.options.map((o) => ({ label: o.label, correct: o.correct, image: o.image, audio: o.audio })),
+                  pairs: latest.pairs.map((p) => ({ left: p.left, right: p.right ?? "", leftImage: p.leftImage, rightImage: p.rightImage })),
+                  items: latest.items.map((i) => ({ label: i.label, image: i.image, audio: i.audio })),
                 }}
                 submitLabel="Save draft"
                 busy={busy}
@@ -227,9 +231,13 @@ function PublishedSummary({ detail }: { detail: QuestionDetail }) {
         <dd className="text-ink">{latest.prompt}</dd>
       </div>
       <div>
-        <dt className="font-semibold text-ink-soft">{detail.questionType === "MATCHING" ? "Pairs" : "Correct answer"}</dt>
+        <dt className="font-semibold text-ink-soft">
+          {detail.questionType === "MATCHING" ? "Pairs" : detail.questionType === "ORDERING" ? "Right order" : "Correct answer"}
+        </dt>
         <dd className="text-ink">
-          {detail.questionType === "MATCHING" ? (
+          {detail.questionType === "ORDERING" ? (
+            latest.items.map((i) => i.label).join(" → ")
+          ) : detail.questionType === "MATCHING" ? (
             <ul className="flex flex-col gap-0.5">
               {latest.pairs.map((p) => (
                 <li key={p.leftId}>
@@ -248,6 +256,16 @@ function PublishedSummary({ detail }: { detail: QuestionDetail }) {
         <div>
           <dt className="font-semibold text-ink-soft">Choices</dt>
           <dd className="text-ink">{latest.options.map((o) => o.label).join(" · ")}</dd>
+        </div>
+      )}
+      {(latest.promptImage || latest.promptAudio) && (
+        <div>
+          <dt className="font-semibold text-ink-soft">With the question</dt>
+          <dd className="text-ink">
+            {[latest.promptImage && `a picture (${latest.promptImageDescription ?? "not described"})`, latest.promptAudio && "a reading"]
+              .filter(Boolean)
+              .join(" and ")}
+          </dd>
         </div>
       )}
       <div>

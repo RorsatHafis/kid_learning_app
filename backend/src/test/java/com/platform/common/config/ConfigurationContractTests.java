@@ -1,5 +1,6 @@
 package com.platform.common.config;
 
+import com.platform.content.media.MediaProperties;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.learner.MasteryProperties;
 import com.platform.notification.PlatformMailProperties;
@@ -72,6 +73,7 @@ class ConfigurationContractTests {
         env.put("MAIL_SMTP_STARTTLS", "false");
         env.put("MAIL_FROM", "no-reply@bk-test.invalid");
         env.put("APP_PUBLIC_URL", "https://app.bk-test.invalid");
+        env.put("MEDIA_ROOT", "/var/lib/bk-test/media");
         return env;
     }
 
@@ -114,6 +116,7 @@ class ConfigurationContractTests {
             assertThat(ctx.getEnvironment().getProperty("spring.datasource.url")).isEqualTo("jdbc:postgresql://db.bk-test.invalid:5432/bk");
             assertThat(ctx.getEnvironment().getProperty("spring.datasource.username")).isEqualTo("bk_prod");
             assertThat(ctx.getEnvironment().getProperty("spring.datasource.password")).isEqualTo("bk_prod_password");
+            assertThat(ctx.getBean(MediaProperties.class).path()).isEqualTo(java.nio.file.Path.of("/var/lib/bk-test/media"));
         }
     }
 
@@ -139,6 +142,7 @@ class ConfigurationContractTests {
         env.put("MAIL_HOST", "smtp.bk-test.invalid");
         env.put("MAIL_FROM", "no-reply@bk-test.invalid");
         env.put("APP_PUBLIC_URL", "https://app.bk-test.invalid");
+        env.put("MEDIA_ROOT", "/var/lib/bk-test/media");
 
         try (ConfigurableApplicationContext ctx = start("prod", env)) {
             SecurityProperties security = ctx.getBean(SecurityProperties.class);
@@ -169,7 +173,8 @@ class ConfigurationContractTests {
 
     @ParameterizedTest
     @CsvSource({"prod,JWT_SECRET", "prod,JWT_ISSUER", "staging,JWT_SECRET", "staging,JWT_ISSUER",
-            "prod,MAIL_FROM", "prod,APP_PUBLIC_URL", "staging,MAIL_FROM", "staging,APP_PUBLIC_URL"})
+            "prod,MAIL_FROM", "prod,APP_PUBLIC_URL", "staging,MAIL_FROM", "staging,APP_PUBLIC_URL",
+            "prod,MEDIA_ROOT", "staging,MEDIA_ROOT"})
     void missingRequiredSecurityValueFailsStartup(String profile, String variable) {
         Map<String, Object> env = documentedProdEnvironment();
         env.remove(variable);
@@ -247,7 +252,8 @@ class ConfigurationContractTests {
             "SPRING_MAIL_HOST,MAIL_HOST",
             "SPRING_MAIL_PASSWORD,MAIL_PASSWORD",
             "PLATFORM_MAIL_PUBLICURL,APP_PUBLIC_URL",
-            "SPRING_DATASOURCE_PASSWORD,DB_PASSWORD"})
+            "SPRING_DATASOURCE_PASSWORD,DB_PASSWORD",
+            "PLATFORM_MEDIA_ROOT,MEDIA_ROOT"})
     void anUndocumentedVariableCannotSilentlyOverrideADocumentedOne(String bypass, String documented) {
         Map<String, Object> env = documentedProdEnvironment();
         env.put(bypass, env.get(documented));
@@ -286,6 +292,7 @@ class ConfigurationContractTests {
             assertThat(ctx.getEnvironment().getProperty("spring.mail.port")).isEqualTo("1025");
             assertThat(ctx.getEnvironment().getProperty("spring.mail.properties[mail.smtp.starttls.required]")).isEqualTo("false");
             assertThat(ctx.getBean(PlatformMailProperties.class).publicUrl()).isEqualTo("http://localhost:5173");
+            assertThat(ctx.getBean(MediaProperties.class).path()).isEqualTo(java.nio.file.Path.of("./media"));
         }
     }
 
@@ -334,7 +341,7 @@ class ConfigurationContractTests {
 
     @Configuration(proxyBeanMethods = false)
     @EnableConfigurationProperties({SecurityProperties.class, MasteryProperties.class, RateLimitProperties.class,
-            PlatformMailProperties.class})
+            PlatformMailProperties.class, MediaProperties.class})
     @Import({ConfigurationContract.class, JwtService.class})
     static class ConfigurationOnly {
     }

@@ -6,6 +6,7 @@ import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
 import com.platform.content.repository.QuestionOptionRepository;
 import com.platform.content.service.CanonicalAnswers;
+import com.platform.content.service.OrderingItems;
 import com.platform.learning.exception.InvalidAnswerException;
 import com.platform.learning.exception.UnscorableAnswerException;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import tools.jackson.databind.json.JsonMapper;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -39,6 +41,9 @@ import java.util.UUID;
  *       the right item the child matched it with, each right item used once. Correct
  *       only when every pair is right: evidence is one answer, right or wrong, as for
  *       every other type (partial credit would change the evidence model).</li>
+ *   <li>ORDERING: a JSON array of every item's option id, each once, in the order the child
+ *       put them. Correct when the items read in the correct order ({@link OrderingItems}):
+ *       interchangeable items (the same letter twice) may go either way round.</li>
  * </ul>
  * A submission that is not a valid response under this contract throws
  * {@link InvalidAnswerException} before anything is persisted, so it can never
@@ -63,6 +68,7 @@ public class AnswerScoringService {
             case SHORT_ANSWER -> scoreByExactText(version.getCorrectAnswer(), submittedAnswer);
             case NUMERIC -> scoreNumeric(version.getCorrectAnswer(), submittedAnswer);
             case MATCHING -> scoreMatching(version.getId(), submittedAnswer);
+            case ORDERING -> scoreOrdering(version.getId(), submittedAnswer);
         };
     }
 
@@ -130,6 +136,34 @@ public class AnswerScoringService {
             allCorrect &= left.getMatchPair().equals(right.getMatchPair());
         }
         return allCorrect;
+    }
+
+    private boolean scoreOrdering(UUID questionVersionId, String submittedAnswer) {
+        List<QuestionOption> items = questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(questionVersionId);
+        if (items.size() < 2) {
+            throw new UnscorableAnswerException("This ordering question has no items to put in order and cannot be scored");
+        }
+        Map<UUID, QuestionOption> byId = new HashMap<>();
+        items.forEach(item -> byId.put(item.getId(), item));
+        JsonNode answer;
+        try {
+            answer = JSON.readTree(submittedAnswer == null ? "" : submittedAnswer);
+        } catch (JacksonException e) {
+            throw new InvalidAnswerException("An ordering answer must place every item once");
+        }
+        if (answer == null || !answer.isArray() || answer.size() != items.size()) {
+            throw new InvalidAnswerException("An ordering answer must place every item once");
+        }
+        Set<UUID> placed = new HashSet<>();
+        List<QuestionOption> order = new java.util.ArrayList<>();
+        for (JsonNode node : answer) {
+            QuestionOption item = node.isString() ? byId.get(parseOptionId(node.asString())) : null;
+            if (item == null || !placed.add(item.getId())) {
+                throw new InvalidAnswerException("An ordering answer must place every item once");
+            }
+            order.add(item);
+        }
+        return OrderingItems.keys(order).equals(OrderingItems.keys(items));
     }
 
     private static UUID parseOptionId(String submittedAnswer) {

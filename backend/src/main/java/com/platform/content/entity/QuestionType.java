@@ -6,6 +6,8 @@ public enum QuestionType {
     TRUE_FALSE,
     SHORT_ANSWER,
     NUMERIC,
-    MATCHING
+    MATCHING,
+    /** Put the items in order (V46): the version's options, in their display order. */
+    ORDERING
 
 }

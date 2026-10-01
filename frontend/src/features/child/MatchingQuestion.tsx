@@ -95,6 +95,7 @@ export function MatchingQuestion({
               <li key={l.id}>
                 <MatchCard
                   label={l.label}
+                  image={l.image?.url}
                   badge={rightId ? index : null}
                   selected={isSelected}
                   verdict={verdict}
@@ -119,6 +120,7 @@ export function MatchingQuestion({
               <li key={r.id}>
                 <MatchCard
                   label={r.label}
+                  image={r.image?.url}
                   badge={leftId ? pairNumber(leftId) : null}
                   selected={isSelected}
                   verdict={null}
@@ -150,6 +152,7 @@ export function MatchingQuestion({
 
 function MatchCard({
   label,
+  image,
   badge,
   selected,
   verdict,
@@ -158,6 +161,8 @@ function MatchCard({
   ariaLabel,
 }: {
   label: string;
+  /** A picture item shows its picture; the card's aria-label carries its words. */
+  image?: string;
   badge: number | null;
   selected: boolean;
   verdict: "right" | "wrong" | null;
@@ -198,7 +203,11 @@ function MatchCard({
       >
         {verdict === "right" ? <Check size={18} strokeWidth={3} /> : verdict === "wrong" ? <X size={18} strokeWidth={3} /> : badge !== null ? badge + 1 : ""}
       </span>
-      <span className="min-w-0 break-words leading-tight">{label}</span>
+      {image ? (
+        <img src={image} alt="" className="h-14 w-14 rounded-[12px] object-contain sm:h-16 sm:w-16" />
+      ) : (
+        <span className="min-w-0 break-words leading-tight">{label}</span>
+      )}
     </button>
   );
 }

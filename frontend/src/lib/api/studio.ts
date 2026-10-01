@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { ActivityItem, Page, PlatformRole, QuestionType } from "./types";
+import type { ActivityItem, MediaRef, Page, PlatformRole, QuestionType } from "./types";
 
 // ---- content/studio/StudioDtos.java ----
 // Author-facing contract: carries answer keys, and every read is limited server-side
@@ -205,6 +205,8 @@ export interface OptionDetail {
   id: string;
   label: string;
   correct: boolean;
+  image: MediaRef | null;
+  audio: MediaRef | null;
 }
 
 /** content/studio/StudioDtos.MatchPairDetail — one pair of a MATCHING question, author view. */
@@ -213,14 +215,28 @@ export interface MatchPairDetail {
   left: string;
   rightId: string | null;
   right: string | null;
+  leftImage: MediaRef | null;
+  rightImage: MediaRef | null;
+}
+
+/** content/studio/StudioDtos.OrderItemDetail — one ORDERING item; a version lists them in the correct order. */
+export interface OrderItemDetail {
+  id: string;
+  label: string;
+  image: MediaRef | null;
+  audio: MediaRef | null;
 }
 
 export interface QuestionVersionDetail extends VersionSummary {
   prompt: string;
   correctAnswer: string | null;
   difficultyLevel: number | null;
+  promptImage: MediaRef | null;
+  promptImageDescription: string | null;
+  promptAudio: MediaRef | null;
   options: OptionDetail[];
   pairs: MatchPairDetail[];
+  items: OrderItemDetail[];
   /** What this version practises / gives evidence for (PD-08); frozen once it is published. */
   skillIds: string[];
 }
@@ -276,23 +292,40 @@ export interface LearnerActivityPreview {
   items: ActivityItem[];
 }
 
+/** Media fields are asset ids from `uploadMedia`; left out when there is none. */
 export interface OptionInput {
   label: string;
   correct: boolean;
+  imageAssetId?: string;
+  audioAssetId?: string;
 }
 
 export interface MatchPairInput {
   left: string;
   right: string;
+  leftImageAssetId?: string;
+  rightImageAssetId?: string;
+}
+
+export interface OrderItemInput {
+  label: string;
+  imageAssetId?: string;
+  audioAssetId?: string;
 }
 
 export interface QuestionDraftInput {
   prompt: string;
   correctAnswer: string | null;
   difficultyLevel: number | null;
+  promptImageAssetId?: string;
+  /** Required to publish when there is a picture: screen readers read it. */
+  promptImageDescription?: string;
+  promptAudioAssetId?: string;
   options?: OptionInput[];
   /** MATCHING: each item with its match (2–6 pairs to publish). */
   pairs?: MatchPairInput[];
+  /** ORDERING: the items in their correct order (3–8 to publish). */
+  items?: OrderItemInput[];
 }
 
 const S = "/studio";
@@ -382,6 +415,12 @@ export const studioApi = {
   validateQuestionVersion: (versionId: string) =>
     apiClient.get<ValidationReport>(`${S}/question-versions/${versionId}/validation`),
   previewQuestionVersion: (versionId: string) => apiClient.get<ActivityItem>(`${S}/question-versions/${versionId}/preview`),
+  /** A picture (PNG, JPEG, WebP, ≤ 2 MB) or recording (MP3, M4A, Ogg, WAV, ≤ 5 MB), inspected by the server. */
+  uploadMedia: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return apiClient.post<MediaRef>(`${S}/media`, form);
+  },
   publishQuestionVersion: (versionId: string) =>
     apiClient.post<QuestionDetail>(`${S}/question-versions/${versionId}/publish`),
 };

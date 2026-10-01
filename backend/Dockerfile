@@ -9,7 +9,8 @@ RUN --mount=type=cache,target=/root/.m2 mvn -q -B -DskipTests package && cp targ
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-RUN groupadd --system app && useradd --system --gid app --home /app app
+RUN groupadd --system app && useradd --system --gid app --home /app app \
+ && mkdir -p /var/lib/bookeyond/media && chown app:app /var/lib/bookeyond/media
 COPY --from=build --chown=app:app /app/app.jar app.jar
 USER app
 EXPOSE 8080

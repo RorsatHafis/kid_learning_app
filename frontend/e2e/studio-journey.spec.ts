@@ -5,8 +5,15 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqu
  * Content golden journey: an administrator authors a small maths path in the Content Studio
  * - subject, skill, objective, a question, an activity, a curriculum - the publish checks
  * catch what is missing, everything is published, and a child enrolled by their parent plays
- * exactly that question and is scored by exactly that answer key.
+ * exactly that question and is scored by exactly that answer key. X11: the second question puts
+ * numbers in order and carries a picture the author uploads and describes.
  */
+
+// A 1×1 PNG: the Studio uploads it, the server inspects and keeps it, the child is served it.
+const PICTURE = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+  "base64",
+);
 test.use({ contextOptions: { reducedMotion: "reduce" } });
 
 test("studio: author, check, publish; a child plays exactly what was published", async ({ page, browser }) => {
@@ -48,6 +55,27 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await publish(page);
   await expectNoViolations(page, "studio question editor");
 
+  // X11: an ordering question with an uploaded picture, which needs describing before it can be published.
+  const orderPrompt = `Smallest first (${tag})`;
+  await studioTab(page, "Questions");
+  await page.getByRole("button", { name: "New question" }).click();
+  const composer = page.getByRole("region", { name: "New question" });
+  await composer.getByLabel("Type").selectOption({ label: "Put in order" });
+  await composer.getByLabel("Question the child sees").fill(orderPrompt);
+  await composer.locator('input[type="file"]').first().setInputFiles({ name: "stars.png", mimeType: "image/png", buffer: PICTURE });
+  await expect(composer.getByRole("button", { name: "Replace the picture for the question" })).toBeVisible();
+  for (const [index, label] of ["1", "2", "3"].entries()) await composer.getByLabel(`Item ${index + 1}`, { exact: true }).fill(label);
+  await composer.getByRole("checkbox", { name: skill }).check();
+  await composer.getByRole("button", { name: "Create draft" }).click();
+  await expect(page.getByRole("heading", { name: "Checks" })).toBeVisible();
+  // The checks explain why it can't be published yet.
+  await expect(page.getByText(/Describe the question's picture/).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish" })).toBeDisabled();
+  await page.getByLabel(/Describe the picture/).fill("Three stars");
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page.getByText("Draft saved.")).toBeVisible();
+  await publish(page);
+
   // An activity in a lesson, using that question.
   await studioTab(page, "Activities");
   await page.getByLabel("Lesson title").fill(`Counting lesson ${tag}`);
@@ -59,6 +87,7 @@ test("studio: author, check, publish; a child plays exactly what was published",
   // Without questions the checks block publishing.
   await expect(page.getByRole("button", { name: "Publish" })).toBeDisabled();
   await page.getByRole("button", { name: new RegExp(`Add question: ${escape(prompt)}`) }).click();
+  await page.getByRole("button", { name: new RegExp(`Add question: ${escape(orderPrompt)}`) }).click();
   await page.getByRole("button", { name: "Save questions" }).click();
   await page.getByLabel("Instructions the child hears before starting").fill("Count the stars and type how many.");
   await page.getByRole("button", { name: "Save details" }).click();
@@ -110,6 +139,17 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await family.getByRole("textbox").fill("3");
   await family.getByRole("button", { name: "Check" }).click();
   await expect(family.getByText(/got it/i)).toBeVisible();
+
+  // The ordering question, with its picture described for screen readers: tapped into order.
+  await family.getByRole("button", { name: "Next" }).click();
+  await expect(family.getByText(orderPrompt)).toBeVisible();
+  await expect(family.getByRole("img", { name: "Three stars" })).toBeVisible();
+  expect(await family.getByRole("img", { name: "Three stars" }).evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1);
+  await expectNoViolations(family, "child: an ordering question with a picture");
+  for (const label of ["1", "2", "3"]) await family.getByRole("button", { name: `${label}: place it next` }).click();
+  await family.getByRole("button", { name: "Check my order" }).click();
+  await expect(family.getByText("That's the order!")).toBeVisible();
+  await expect(family.getByText(/That's right!/)).toBeVisible();
   await familyContext.close();
 });
 

@@ -26,6 +26,17 @@ public class QuestionVersion extends PublishableVersion {
     @Column(name = "difficulty_level")
     private Integer difficultyLevel;
 
+    /** X11: a picture shown with the prompt, and a recording of it read aloud (for children who don't read yet). */
+    @Column(name = "prompt_image_asset_id")
+    private UUID promptImageAssetId;
+
+    @Column(name = "prompt_audio_asset_id")
+    private UUID promptAudioAssetId;
+
+    /** What the prompt's picture shows, read by screen readers (the picture may carry the question). */
+    @Column(name = "prompt_image_description", columnDefinition = "text")
+    private String promptImageDescription;
+
     protected QuestionVersion() {
         // JPA
     }
@@ -57,6 +68,27 @@ public class QuestionVersion extends PublishableVersion {
         this.prompt = newPrompt;
         this.correctAnswer = newCorrectAnswer;
         this.difficultyLevel = newDifficultyLevel;
+    }
+
+    /** Part of the version like its text: set while it is a draft, carried to the next draft, frozen once published. */
+    public void setPromptMedia(UUID imageAssetId, String imageDescription, UUID audioAssetId) {
+        requireStatus(com.platform.common.entity.PublicationStatus.DRAFT, "edited");
+        this.promptImageAssetId = imageAssetId;
+        this.promptImageDescription = imageAssetId == null || imageDescription == null || imageDescription.isBlank()
+                ? null : imageDescription.strip();
+        this.promptAudioAssetId = audioAssetId;
+    }
+
+    public String getPromptImageDescription() {
+        return promptImageDescription;
+    }
+
+    public UUID getPromptImageAssetId() {
+        return promptImageAssetId;
+    }
+
+    public UUID getPromptAudioAssetId() {
+        return promptAudioAssetId;
     }
 
     public UUID getQuestionId() {

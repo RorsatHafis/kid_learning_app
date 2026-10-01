@@ -38,6 +38,9 @@ platform:
       # Dev-only fallback: the Vite dev server. Its proxy forwards the browser's
       # Origin while rewriting Host, so the backend sees these calls as cross-origin.
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  media:
+    # Dev-only fallback, next to where the API runs (git-ignored).
+    root: ${MEDIA_ROOT:./media}
   mail:
     from: ${MAIL_FROM:no-reply@bookeyond-kid.localhost}
     public-url: ${APP_PUBLIC_URL:http://localhost:5173}

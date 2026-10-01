@@ -36,6 +36,8 @@ platform:
       recovery-per-hour: 100000
     cors:
       allowed-origins: http://localhost:5173
+  media:
+    root: ${java.io.tmpdir}/bk-test-media
   mail:
     from: no-reply@bk-test.localhost
     public-url: http://localhost:5173

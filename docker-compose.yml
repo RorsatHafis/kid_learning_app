@@ -46,6 +46,8 @@ services:
       MAIL_PORT: 1025
       APP_PUBLIC_URL: http://localhost:5173
       CORS_ALLOWED_ORIGINS: http://localhost:5173
+      # Pictures and recordings uploaded in the Content Studio, kept with the data.
+      MEDIA_ROOT: /var/lib/bookeyond/media
       # The first administrator, created only when the database has none.
       PLATFORM_BOOTSTRAPADMIN_ENABLED: ${ADMIN_BOOTSTRAP:-false}
       PLATFORM_BOOTSTRAPADMIN_EMAIL: ${ADMIN_EMAIL:-}
@@ -54,6 +56,8 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
       LOGGING_LEVEL_ORG_HIBERNATE_SQL: WARN
       LOGGING_LEVEL_COM_PLATFORM: INFO
+    volumes:
+      - media_data:/var/lib/bookeyond/media
     depends_on:
       db:
         condition: service_healthy
@@ -73,3 +77,4 @@ services:
 
 volumes:
   db_data:
+  media_data:

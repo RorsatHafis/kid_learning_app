@@ -102,11 +102,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     fetch(`${API_BASE}${path}`, {
       ...rest,
       headers: {
-        "Content-Type": "application/json",
+        // A file upload sets its own multipart content type (with the boundary).
+        ...(body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...(skipAuth ? {} : { Authorization: `Bearer ${tokenStore.getAccessToken() ?? ""}` }),
         ...headers,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body instanceof FormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
     });
 
   let res = await doFetch();

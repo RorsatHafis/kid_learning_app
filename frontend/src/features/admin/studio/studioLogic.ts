@@ -68,9 +68,10 @@ export const QUESTION_TYPE_LABEL: Record<QuestionType, string> = {
   NUMERIC: "Number answer",
   SHORT_ANSWER: "Short answer",
   MATCHING: "Matching",
+  ORDERING: "Put in order",
 };
 
-export const AUTHORABLE_TYPES: QuestionType[] = ["MULTIPLE_CHOICE", "TRUE_FALSE", "NUMERIC", "SHORT_ANSWER", "MATCHING"];
+export const AUTHORABLE_TYPES: QuestionType[] = ["MULTIPLE_CHOICE", "TRUE_FALSE", "NUMERIC", "SHORT_ANSWER", "MATCHING", "ORDERING"];
 
 /**
  * Whether a "New …" composer is open. It starts open while the list it adds to is empty

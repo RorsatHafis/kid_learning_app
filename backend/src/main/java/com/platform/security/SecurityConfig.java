@@ -141,6 +141,9 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/**").hasRole("ADMIN")
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                // X11: media by signed URL only - the signature, issued inside a response the caller
+                // could read, is the permission (MediaService). Nothing else under it is public.
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/media/*").permitAll()
                 .anyRequest().authenticated()
             )
             // Battle 4D: 401 for "not authenticated" (no, malformed, forged, or expired

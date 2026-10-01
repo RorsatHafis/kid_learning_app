@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Check, Delete, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import type { ActivityItem, CorrectAnswer } from "@/lib/api/types";
+import type { ActivityItem, CorrectAnswer, MediaRef } from "@/lib/api/types";
 import { MatchingQuestion } from "./MatchingQuestion";
+import { OrderingQuestion } from "./OrderingQuestion";
+import { ListenButton, PromptFrame } from "./PromptMedia";
+import { useReadAloud } from "./speaker";
 
 // Answer contract (backend AnswerScoringService): MULTIPLE_CHOICE submits the chosen
 // option's id — the label is display text only; TRUE_FALSE submits "true"/"false";
 // SHORT_ANSWER/NUMERIC submit the typed value; MATCHING submits the pairing
-// (MatchingQuestion). The server scores; this view only
+// (MatchingQuestion); ORDERING the items in the child's order (OrderingQuestion). The server scores; this view only
 // shows the result it returns.
 
 export interface AnswerResult {
@@ -16,7 +19,8 @@ export interface AnswerResult {
   correctAnswer: CorrectAnswer | null;
 }
 
-type Choice = { value: string; label: string };
+/** A picture choice shows its picture; its label is what a screen reader says. */
+type Choice = { value: string; label: string; image?: MediaRef | null; audio?: MediaRef | null };
 
 const TRUE_FALSE: Choice[] = [
   { value: "true", label: "True" },
@@ -47,10 +51,14 @@ export function QuestionView({
 }) {
   const Heading = headingLevel === 1 ? "h1" : "h3";
   const promptId = headingLevel === 1 ? "question-prompt" : undefined;
+  // In the child's app the question is read aloud as it appears (unless sound is muted).
+  useReadAloud(item.promptAudio?.url, autoFocus);
   const prompt = (
-    <Heading id={promptId} className={cn(promptClass, "text-center text-[clamp(2rem,1.4rem+2.6vw,3.25rem)]")} style={promptStyle}>
-      {item.prompt}
-    </Heading>
+    <PromptFrame item={item}>
+      <Heading id={promptId} className={cn(promptClass, "text-center text-[clamp(2rem,1.4rem+2.6vw,3.25rem)]")} style={promptStyle}>
+        {item.prompt}
+      </Heading>
+    </PromptFrame>
   );
 
   switch (item.questionType) {
@@ -59,7 +67,9 @@ export function QuestionView({
         <div className="flex flex-col gap-8">
           {prompt}
           <Choices
-            choices={[...item.options].sort((a, b) => a.displayOrder - b.displayOrder).map((o) => ({ value: o.id, label: o.label }))}
+            choices={[...item.options]
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((o) => ({ value: o.id, label: o.label, image: o.image, audio: o.audio }))}
             correctValues={result?.correctAnswer?.optionIds ?? []}
             onAnswer={onAnswer}
             disabled={disabled}
@@ -90,6 +100,13 @@ export function QuestionView({
         <div className="flex flex-col gap-6">
           {prompt}
           <MatchingQuestion item={item} onAnswer={onAnswer} disabled={disabled} result={result} />
+        </div>
+      );
+    case "ORDERING":
+      return (
+        <div className="flex flex-col gap-6">
+          {prompt}
+          <OrderingQuestion item={item} onAnswer={onAnswer} disabled={disabled} result={result} />
         </div>
       );
     default:
@@ -168,7 +185,18 @@ function Choices({
     return () => window.removeEventListener("keydown", onKey);
   }, [choices, shortcuts]);
 
-  const columns = choices.length === 2 ? "grid-cols-2" : choices.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
+  // Pictures are compact and best compared side by side, on a phone too.
+  const pictures = choices.every((c) => c.image);
+  const columns =
+    choices.length === 2
+      ? "grid-cols-2"
+      : choices.length === 3
+        ? pictures
+          ? "grid-cols-3"
+          : "sm:grid-cols-3"
+        : pictures
+          ? "grid-cols-2"
+          : "sm:grid-cols-2";
   return (
     <div className={cn("grid gap-3 sm:gap-4", columns)} role="group" aria-label="Answers">
       {choices.map((choice, index) => {
@@ -177,38 +205,52 @@ function Choices({
         const isWrongPick = answered && isPicked && !result!.correct;
         const waiting = !answered && isPicked && disabled;
         return (
-          <button
-            key={choice.value}
-            type="button"
-            disabled={locked && !isPicked && !isCorrect}
-            aria-disabled={locked}
-            onClick={() => choose(choice.value)}
-            className={cn(
-              "group relative flex min-h-[88px] items-center justify-center rounded-[26px] px-6 pb-5 pt-6 text-center text-[1.625rem] font-bold leading-tight sm:min-h-[112px]",
-              "shadow-[0_5px_0_var(--tw-shadow-color)] transition-[transform,box-shadow,background-color,border-color,opacity] duration-150 ease-out",
-              !answered && "border-[3px] border-tonle-200 bg-white text-tonle-950 shadow-tonle-200",
-              !answered && !locked && "hover:-translate-y-1 hover:border-tonle-400 hover:shadow-[0_8px_0_var(--tw-shadow-color)] hover:shadow-tonle-300 active:translate-y-1 active:shadow-[0_1px_0_var(--tw-shadow-color)]",
-              waiting && "translate-y-1 border-tonle-500 bg-tonle-50 shadow-[0_1px_0_var(--tw-shadow-color)]",
-              isCorrect && "border-[3px] border-light bg-light-soft text-tonle-950 shadow-[#E0A050] motion-safe:animate-pop-in",
-              isWrongPick && "border-[3px] border-tonle-300 bg-tonle-50 text-tonle-800 shadow-tonle-200 motion-safe:animate-nudge",
-              answered && !isCorrect && !isWrongPick && "border-[3px] border-line bg-white/70 text-ink-faint opacity-60 shadow-transparent",
-              "disabled:cursor-default",
-            )}
-          >
-            <span
-              aria-hidden
+          <div key={choice.value} className="relative">
+            <button
+              type="button"
+              disabled={locked && !isPicked && !isCorrect}
+              aria-disabled={locked}
+              onClick={() => choose(choice.value)}
               className={cn(
-                "absolute left-3 top-3 flex h-7 w-7 items-center justify-center rounded-full text-sm",
-                isCorrect ? "bg-light text-tonle-950" : isWrongPick ? "bg-tonle-600 text-white" : "bg-tonle-50 text-tonle-600",
+                "group relative flex h-full min-h-[88px] w-full items-center justify-center rounded-[26px] text-center text-[1.625rem] font-bold leading-tight sm:min-h-[112px]",
+                !choice.image ? "px-6 pb-5 pt-6" : choice.audio ? "px-2 pb-3 pt-14 sm:px-3" : "px-2 pb-3 pt-9 sm:px-3",
+                "shadow-[0_5px_0_var(--tw-shadow-color)] transition-[transform,box-shadow,background-color,border-color,opacity] duration-150 ease-out",
+                !answered && "border-[3px] border-tonle-200 bg-white text-tonle-950 shadow-tonle-200",
+                !answered && !locked && "hover:-translate-y-1 hover:border-tonle-400 hover:shadow-[0_8px_0_var(--tw-shadow-color)] hover:shadow-tonle-300 active:translate-y-1 active:shadow-[0_1px_0_var(--tw-shadow-color)]",
+                waiting && "translate-y-1 border-tonle-500 bg-tonle-50 shadow-[0_1px_0_var(--tw-shadow-color)]",
+                isCorrect && "border-[3px] border-light bg-light-soft text-tonle-950 shadow-[#E0A050] motion-safe:animate-pop-in",
+                isWrongPick && "border-[3px] border-tonle-300 bg-tonle-50 text-tonle-800 shadow-tonle-200 motion-safe:animate-nudge",
+                answered && !isCorrect && !isWrongPick && "border-[3px] border-line bg-white/70 text-ink-faint opacity-60 shadow-transparent",
+                "disabled:cursor-default",
               )}
             >
-              {isCorrect ? <Check size={17} strokeWidth={3} /> : isWrongPick ? <X size={17} strokeWidth={3} /> : index + 1}
-            </span>
-            <span>{choice.label}</span>
-            {isCorrect && isPicked && <SparkBurst />}
-            {isCorrect && !isPicked && <span className="sr-only">(the correct answer)</span>}
-            {isPicked && answered && <span className="sr-only">{result!.correct ? "(your answer, correct)" : "(your answer)"}</span>}
-          </button>
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute left-3 top-3 flex h-7 w-7 items-center justify-center rounded-full text-sm",
+                  isCorrect ? "bg-light text-tonle-950" : isWrongPick ? "bg-tonle-600 text-white" : "bg-tonle-50 text-tonle-600",
+                )}
+              >
+                {isCorrect ? <Check size={17} strokeWidth={3} /> : isWrongPick ? <X size={17} strokeWidth={3} /> : index + 1}
+              </span>
+              {choice.image ? (
+                <>
+                  <img src={choice.image.url} alt="" className="aspect-square w-full max-w-32 rounded-[16px] object-contain" />
+                  <span className="sr-only">{choice.label}</span>
+                </>
+              ) : (
+                <span>{choice.label}</span>
+              )}
+              {isCorrect && isPicked && <SparkBurst />}
+              {isCorrect && !isPicked && <span className="sr-only">(the correct answer)</span>}
+              {isPicked && answered && <span className="sr-only">{result!.correct ? "(your answer, correct)" : "(your answer)"}</span>}
+            </button>
+            {choice.audio && (
+              <span className="absolute right-2 top-2 sm:right-2.5 sm:top-2.5">
+                <ListenButton audio={choice.audio} label={`Hear ${choice.label}`} />
+              </span>
+            )}
+          </div>
         );
       })}
     </div>
@@ -307,24 +349,28 @@ function FreeResponse({
 
   return (
     <form onSubmit={submit} className="flex flex-col items-center gap-8">
-      {inline ? (
-        <div className={cn(promptClass, "flex flex-wrap items-baseline justify-center gap-x-[0.3em] gap-y-2 text-center text-[clamp(2.5rem,1.6rem+3.6vw,4.25rem)]")} style={promptStyle}>
-          <Heading id={promptId} className="inline">
-            {lead}
-            {/* the rest of the prompt ("?"), so the heading still reads as the whole question */}
-            <span className="sr-only">{trimmedPrompt.slice(lead.length)}</span>
-          </Heading>
-          {slot}
-        </div>
-      ) : (
-        <>
-          <Heading id={promptId} className={cn(promptClass, "text-center text-[clamp(2rem,1.4rem+2.6vw,3.25rem)]")} style={promptStyle}>
-            {item.prompt}
-          </Heading>
-          <div className={cn(promptClass, "flex w-full justify-center", numeric ? "text-[clamp(2.5rem,1.6rem+3.6vw,4rem)]" : "text-[2rem]")} style={promptStyle}>
+      <PromptFrame item={item}>
+        {inline ? (
+          <div className={cn(promptClass, "flex flex-wrap items-baseline justify-center gap-x-[0.3em] gap-y-2 text-center text-[clamp(2.5rem,1.6rem+3.6vw,4.25rem)]")} style={promptStyle}>
+            <Heading id={promptId} className="inline">
+              {lead}
+              {/* the rest of the prompt ("?"), so the heading still reads as the whole question */}
+              <span className="sr-only">{trimmedPrompt.slice(lead.length)}</span>
+            </Heading>
             {slot}
           </div>
-        </>
+        ) : (
+          <>
+            <Heading id={promptId} className={cn(promptClass, "text-center text-[clamp(2rem,1.4rem+2.6vw,3.25rem)]")} style={promptStyle}>
+              {item.prompt}
+            </Heading>
+          </>
+        )}
+      </PromptFrame>
+      {!inline && (
+        <div className={cn(promptClass, "flex w-full justify-center", numeric ? "text-[clamp(2.5rem,1.6rem+3.6vw,4rem)]" : "text-[2rem]")} style={promptStyle}>
+          {slot}
+        </div>
       )}
 
       {!answered && numeric && <NumberPad onPress={press} canCheck={!!value.trim() && !disabled} />}

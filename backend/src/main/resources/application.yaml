@@ -32,6 +32,12 @@ spring:
         jdbc:
           time_zone: UTC
 
+  # X11 media uploads: a recording is at most 5 MB (MediaInspector); a little room for the form.
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
   # Outgoing email (address verification, password reset). MAIL_HOST is required: an
   # environment that cannot send mail cannot let a parent recover their account, so it
   # must not start as though it could. Credentials are optional (some relays
@@ -92,6 +98,10 @@ platform:
     from: ${MAIL_FROM}
     # Required. The origin families open the app at; links in emails point here.
     public-url: ${APP_PUBLIC_URL}
+  media:
+    # Required. A directory the API can write: where uploaded pictures and recordings are kept.
+    # In production a persistent volume, backed up with the database (DEPLOYMENT.md).
+    root: ${MEDIA_ROOT}
   mastery:
     learning-rate: ${MASTERY_LEARNING_RATE:0.2}
     confidence-saturation-count: ${MASTERY_CONFIDENCE_SATURATION_COUNT:10}
@@ -106,6 +116,10 @@ server:
   # has a public address. "framework" would believe the left-most entry, which the client
   # writes itself (ForwardedClientAddressIntegrationTests).
   forward-headers-strategy: native
+  # X11: an upload over the multipart limit is still read to its end (up to this much) so the
+  # author gets the 413 explaining the limit instead of a dropped connection.
+  tomcat:
+    max-swallow-size: 8MB
 
 management:
   endpoints:

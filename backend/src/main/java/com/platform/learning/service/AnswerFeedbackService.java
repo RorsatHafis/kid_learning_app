@@ -45,7 +45,7 @@ public class AnswerFeedbackService {
     }
 
     /**
-     * @param optionIds for MULTIPLE_CHOICE, the correct option(s); empty otherwise
+     * @param optionIds for MULTIPLE_CHOICE, the correct option(s); for ORDERING, every item in the correct order; empty otherwise
      * @param text      the correct answer as the child would read it (option label,
      *                  "true"/"false", the number, the expected text, or the pairs)
      * @param matches   for MATCHING, each left item's id with its match's id; empty otherwise
@@ -95,6 +95,12 @@ public class AnswerFeedbackService {
                             });
                 }
                 yield new CorrectAnswer(List.of(), String.join(", ", words), matches);
+            }
+            // The items in their correct order: optionIds is that order.
+            case ORDERING -> {
+                List<QuestionOption> items = questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId());
+                yield new CorrectAnswer(items.stream().map(QuestionOption::getId).toList(),
+                        String.join(" → ", items.stream().map(QuestionOption::getLabel).toList()));
             }
         };
     }

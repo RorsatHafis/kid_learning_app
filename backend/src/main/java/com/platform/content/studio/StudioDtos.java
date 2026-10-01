@@ -4,6 +4,7 @@ import com.platform.common.entity.CatalogStatus;
 import com.platform.common.entity.PublicationStatus;
 import com.platform.common.entity.PublishableVersion;
 import com.platform.content.entity.QuestionType;
+import com.platform.content.media.MediaService.MediaRef;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
@@ -136,17 +137,25 @@ public final class StudioDtos {
 
     // ------------------------------------------------------------------ questions
 
-    public record OptionDetail(UUID id, String label, boolean correct) {
+    public record OptionDetail(UUID id, String label, boolean correct, MediaRef image, MediaRef audio) {
     }
 
     /** One pair of a MATCHING question, as the author sees it. */
-    public record MatchPairDetail(UUID leftId, String left, UUID rightId, String right) {
+    public record MatchPairDetail(UUID leftId, String left, UUID rightId, String right, MediaRef leftImage, MediaRef rightImage) {
     }
 
-    /** {@code skillIds}: what answers to this version are evidence for (PD-08); frozen once it is published. */
+    /** One ORDERING item; a version's items are listed in their correct order. */
+    public record OrderItemDetail(UUID id, String label, MediaRef image, MediaRef audio) {
+    }
+
+    /**
+     * {@code skillIds}: what answers to this version are evidence for (PD-08); frozen once it is published.
+     * {@code promptImage}/{@code promptAudio} (X11): shown with the prompt and the prompt read aloud.
+     */
     public record QuestionVersionDetail(UUID id, int versionNumber, PublicationStatus status, Instant publishedAt,
                                         String prompt, String correctAnswer, Integer difficultyLevel,
-                                        List<OptionDetail> options, List<MatchPairDetail> pairs,
+                                        MediaRef promptImage, String promptImageDescription, MediaRef promptAudio,
+                                        List<OptionDetail> options, List<MatchPairDetail> pairs, List<OrderItemDetail> items,
                                         List<UUID> skillIds) {
     }
 
@@ -162,11 +171,17 @@ public final class StudioDtos {
                                  List<QuestionVersionDetail> versions) {
     }
 
-    public record OptionRequest(@NotBlank @Size(max = 300) String label, boolean correct) {
+    /** {@code label} describes the picture when there is one: screen readers read it, and the child sees the picture. */
+    public record OptionRequest(@NotBlank @Size(max = 300) String label, boolean correct, UUID imageAssetId, UUID audioAssetId) {
     }
 
-    /** MATCHING: an item and its match. */
-    public record MatchPairRequest(@NotBlank @Size(max = 300) String left, @NotBlank @Size(max = 300) String right) {
+    /** MATCHING: an item and its match, either of which may be a picture. */
+    public record MatchPairRequest(@NotBlank @Size(max = 300) String left, @NotBlank @Size(max = 300) String right,
+                                   UUID leftImageAssetId, UUID rightImageAssetId) {
+    }
+
+    /** ORDERING: one thing to put in order; the request lists them in the correct order. */
+    public record OrderItemRequest(@NotBlank @Size(max = 300) String label, UUID imageAssetId, UUID audioAssetId) {
     }
 
     public record CreateQuestionRequest(@NotNull UUID subjectId, @NotNull QuestionType questionType,
@@ -174,13 +189,19 @@ public final class StudioDtos {
                                         @Min(1) @Max(10) Integer difficultyLevel,
                                         @Size(max = 10) List<@Valid @NotNull OptionRequest> options,
                                         @Size(max = 6) List<@Valid @NotNull MatchPairRequest> pairs,
+                                        @Size(max = 8) List<@Valid @NotNull OrderItemRequest> items,
+                                        UUID promptImageAssetId, @Size(max = 300) String promptImageDescription,
+                                        UUID promptAudioAssetId,
                                         @NotNull @Size(max = 20) List<@NotNull UUID> skillIds) {
     }
 
     public record ReviseQuestionDraftRequest(@NotBlank @Size(max = 2000) String prompt, @Size(max = 300) String correctAnswer,
                                              @Min(1) @Max(10) Integer difficultyLevel,
                                              @Size(max = 10) List<@Valid @NotNull OptionRequest> options,
-                                             @Size(max = 6) List<@Valid @NotNull MatchPairRequest> pairs) {
+                                             @Size(max = 6) List<@Valid @NotNull MatchPairRequest> pairs,
+                                             @Size(max = 8) List<@Valid @NotNull OrderItemRequest> items,
+                                             UUID promptImageAssetId, @Size(max = 300) String promptImageDescription,
+                                             UUID promptAudioAssetId) {
     }
 
 }

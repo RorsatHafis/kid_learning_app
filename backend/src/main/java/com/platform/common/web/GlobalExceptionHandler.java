@@ -148,6 +148,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(com.platform.content.media.MediaRejectedException.class)
+    public ResponseEntity<Object> handleMediaRejected(com.platform.content.media.MediaRejectedException ex, WebRequest request) {
+
+        // X11: the upload arrived, but its bytes aren't a picture or recording the platform serves
+        // (or are too large for one). Written for the author; nothing was stored.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        problem.setTitle("Media Not Accepted");
+
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
+
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex, HttpHeaders headers,
+            org.springframework.http.HttpStatusCode status, WebRequest request) {
+
+        // X11: said in the author's terms, not the multipart limit's.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONTENT_TOO_LARGE,
+                "A file can be at most 5 MB (a picture at most 2 MB).");
+        problem.setTitle("Upload Too Large");
+
+        return createResponseEntity(problem, headers, HttpStatus.CONTENT_TOO_LARGE, request);
+
+    }
+
     @ExceptionHandler(UnscorableAnswerException.class)
     public ResponseEntity<Object> handleUnscorableAnswer(UnscorableAnswerException ex, WebRequest request) {
 

@@ -9,6 +9,7 @@ import com.platform.common.web.PageResponse;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.common.web.SearchText;
 import com.platform.content.entity.Activity;
+import com.platform.content.entity.AssetType;
 import com.platform.content.entity.ActivityItem;
 import com.platform.content.entity.ActivityVersionSkill;
 import com.platform.content.entity.ActivityVersion;
@@ -19,6 +20,7 @@ import com.platform.content.entity.QuestionOption;
 import com.platform.content.entity.QuestionVersionSkill;
 import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
+import com.platform.content.media.MediaService;
 import com.platform.content.repository.ActivityItemRepository;
 import com.platform.content.repository.ActivityRepository;
 import com.platform.content.repository.ActivityVersionSkillRepository;
@@ -36,7 +38,7 @@ import com.platform.content.validation.ContentValidator;
 import com.platform.content.validation.ValidationReport;
 import com.platform.content.web.ActivityContentDtos.ActivityItemResponse;
 import com.platform.content.web.ActivityContentDtos.ActivityVersionDetailResponse;
-import com.platform.content.web.ActivityContentDtos.QuestionOptionResponse;
+import com.platform.content.web.ActivityContentDtos;
 import com.platform.curriculum.entity.Curriculum;
 import com.platform.curriculum.entity.CurriculumObjective;
 import com.platform.curriculum.entity.CurriculumVersion;
@@ -106,6 +108,7 @@ public class StudioService {
     private final QuestionVersionSkillRepository questionSkills;
     private final QuestionVersionRepository questionVersions;
     private final ActivityVersionRepository activityVersions;
+    private final MediaService media;
 
     public StudioService(ContentAccessGuard guard, AuditService audit, ContentValidator validator,
                          SubjectRepository subjects, SubjectService subjectService, AgeHubRepository ageHubs,
@@ -118,7 +121,7 @@ public class StudioService {
                          ActivityVersionSkillRepository activitySkills, ActivityItemRepository activityItems,
                          QuestionRepository questions, QuestionService questionService,
                          QuestionVersionSkillRepository questionSkills, QuestionVersionRepository questionVersions,
-                         ActivityVersionRepository activityVersions) {
+                         ActivityVersionRepository activityVersions, MediaService media) {
         this.guard = guard;
         this.audit = audit;
         this.validator = validator;
@@ -146,6 +149,7 @@ public class StudioService {
         this.questionSkills = questionSkills;
         this.questionVersions = questionVersions;
         this.activityVersions = activityVersions;
+        this.media = media;
     }
 
     // ================================================================== catalog
@@ -527,14 +531,24 @@ public class StudioService {
     @Transactional(readOnly = true)
     public QuestionDetail question(UUID accountId, UUID questionId) {
         Question question = guard.requireQuestionWrite(accountId, questionId);
+        boolean ordering = question.getQuestionType() == QuestionType.ORDERING;
         return new QuestionDetail(question.getId(), question.getSubjectId(), question.getQuestionType(),
                 questionSkillIds(questionId), questionService.listVersions(questionId).stream()
-                .map(version -> new QuestionVersionDetail(version.getId(), version.getVersionNumber(), version.getStatus(),
-                        version.getPublishedAt(), version.getPrompt(), version.getCorrectAnswer(), version.getDifficultyLevel(),
-                        questionService.listOptions(version.getId()).stream()
-                                .filter(option -> option.getMatchSide() == null)
-                                .map(option -> new OptionDetail(option.getId(), option.getLabel(), option.isCorrect())).toList(),
-                        matchPairs(questionService.listOptions(version.getId())), questionService.skillsOf(version.getId())))
+                .map(version -> {
+                    List<QuestionOption> options = questionService.listOptions(version.getId());
+                    Map<UUID, MediaService.MediaRef> refs = media.refs(ActivityContentDtos.mediaOf(version, options));
+                    List<QuestionOption> plain = options.stream().filter(option -> option.getMatchSide() == null).toList();
+                    return new QuestionVersionDetail(version.getId(), version.getVersionNumber(), version.getStatus(),
+                            version.getPublishedAt(), version.getPrompt(), version.getCorrectAnswer(), version.getDifficultyLevel(),
+                            refs.get(version.getPromptImageAssetId()), version.getPromptImageDescription(),
+                            refs.get(version.getPromptAudioAssetId()),
+                            ordering ? List.of() : plain.stream().map(option -> new OptionDetail(option.getId(), option.getLabel(),
+                                    option.isCorrect(), refs.get(option.getImageAssetId()), refs.get(option.getAudioAssetId()))).toList(),
+                            matchPairs(options, refs),
+                            ordering ? plain.stream().map(item -> new OrderItemDetail(item.getId(), item.getLabel(),
+                                    refs.get(item.getImageAssetId()), refs.get(item.getAudioAssetId()))).toList() : List.of(),
+                            questionService.skillsOf(version.getId()));
+                })
                 .toList());
     }
 
@@ -549,12 +563,8 @@ public class StudioService {
         QuestionVersion draft = questionService.createDraftVersion(question.getId(), request.prompt().strip(),
                 answerFor(request.questionType(), request.correctAnswer()), request.difficultyLevel());
         request.skillIds().forEach(skillId -> questionService.tagSkill(draft.getId(), skillId));
-        if (request.questionType() == QuestionType.MULTIPLE_CHOICE && request.options() != null) {
-            questionService.replaceOptions(draft.getId(), optionDrafts(request.options()));
-        }
-        if (request.questionType() == QuestionType.MATCHING && request.pairs() != null) {
-            questionService.replaceMatchPairs(draft.getId(), pairDrafts(request.pairs()));
-        }
+        writeDraftContent(question, draft.getId(), request.promptImageAssetId(), request.promptImageDescription(),
+                request.promptAudioAssetId(), request.options(), request.pairs(), request.items());
         return question(accountId, question.getId());
     }
 
@@ -571,13 +581,50 @@ public class StudioService {
         Question question = guard.requireQuestionWrite(accountId, version.getQuestionId());
         questionService.reviseDraft(questionVersionId, request.prompt().strip(),
                 answerFor(question.getQuestionType(), request.correctAnswer()), request.difficultyLevel());
-        if (question.getQuestionType() == QuestionType.MULTIPLE_CHOICE && request.options() != null) {
-            questionService.replaceOptions(questionVersionId, optionDrafts(request.options()));
-        }
-        if (question.getQuestionType() == QuestionType.MATCHING && request.pairs() != null) {
-            questionService.replaceMatchPairs(questionVersionId, pairDrafts(request.pairs()));
-        }
+        writeDraftContent(question, questionVersionId, request.promptImageAssetId(), request.promptImageDescription(),
+                request.promptAudioAssetId(), request.options(), request.pairs(), request.items());
         return question(accountId, question.getId());
+    }
+
+    /**
+     * A draft's media and answer items, as its type has them. Every asset must be one this
+     * question's content may use, of the kind the field needs (X11), checked before anything is written.
+     */
+    private void writeDraftContent(Question question, UUID draftId, UUID promptImage, String promptImageDescription, UUID promptAudio,
+                                   List<OptionRequest> options, List<MatchPairRequest> pairs, List<OrderItemRequest> items) {
+        UUID owner = question.getOwnerAccountId();
+        media.requireAttachable(promptImage, AssetType.IMAGE, owner);
+        media.requireAttachable(promptAudio, AssetType.AUDIO, owner);
+        QuestionType type = question.getQuestionType();
+        if (type == QuestionType.MULTIPLE_CHOICE && options != null) {
+            options.forEach(option -> {
+                media.requireAttachable(option.imageAssetId(), AssetType.IMAGE, owner);
+                media.requireAttachable(option.audioAssetId(), AssetType.AUDIO, owner);
+            });
+        }
+        if (type == QuestionType.MATCHING && pairs != null) {
+            pairs.forEach(pair -> {
+                media.requireAttachable(pair.leftImageAssetId(), AssetType.IMAGE, owner);
+                media.requireAttachable(pair.rightImageAssetId(), AssetType.IMAGE, owner);
+            });
+        }
+        if (type == QuestionType.ORDERING && items != null) {
+            items.forEach(item -> {
+                media.requireAttachable(item.imageAssetId(), AssetType.IMAGE, owner);
+                media.requireAttachable(item.audioAssetId(), AssetType.AUDIO, owner);
+            });
+        }
+        questionService.setPromptMedia(draftId, promptImage, promptImageDescription, promptAudio);
+        if (type == QuestionType.MULTIPLE_CHOICE && options != null) {
+            questionService.replaceOptions(draftId, optionDrafts(options));
+        }
+        if (type == QuestionType.MATCHING && pairs != null) {
+            questionService.replaceMatchPairs(draftId, pairDrafts(pairs));
+        }
+        if (type == QuestionType.ORDERING && items != null) {
+            questionService.replaceOrderItems(draftId, items.stream()
+                    .map(item -> new QuestionService.OrderItemDraft(item.label(), item.imageAssetId(), item.audioAssetId())).toList());
+        }
     }
 
     @Transactional
@@ -639,10 +686,9 @@ public class StudioService {
 
     private ActivityItemResponse learnerItem(UUID itemId, int sequenceOrder, QuestionVersion version) {
         Question question = questionService.getQuestion(version.getQuestionId());
-        List<QuestionOptionResponse> options = QuestionOptionResponse.forLearner(version.getId(),
-                questionService.listOptions(version.getId()));
-        return new ActivityItemResponse(itemId, sequenceOrder, version.getId(), question.getQuestionType(),
-                version.getPrompt(), options);
+        List<QuestionOption> options = questionService.listOptions(version.getId());
+        return ActivityItemResponse.forLearner(itemId, sequenceOrder, question.getQuestionType(), version, options,
+                media.refs(ActivityContentDtos.mediaOf(version, options)));
     }
 
     private void requireSkillsOfSubject(List<UUID> skillIds, UUID subjectId) {
@@ -683,30 +729,33 @@ public class StudioService {
 
     /** Multiple choice is answered by option id; its correct answer lives on the options, not the text field. */
     private static List<QuestionService.MatchPairDraft> pairDrafts(List<MatchPairRequest> pairs) {
-        return pairs.stream().map(pair -> new QuestionService.MatchPairDraft(pair.left(), pair.right())).toList();
+        return pairs.stream().map(pair -> new QuestionService.MatchPairDraft(pair.left(), pair.right(), pair.leftImageAssetId(),
+                pair.rightImageAssetId())).toList();
     }
 
     /** The author's view of a MATCHING version: its pairs in order (empty for other types). */
-    private static List<MatchPairDetail> matchPairs(List<QuestionOption> options) {
+    private static List<MatchPairDetail> matchPairs(List<QuestionOption> options, Map<UUID, MediaService.MediaRef> refs) {
         List<QuestionOption> lefts = options.stream().filter(o -> o.getMatchSide() == MatchSide.LEFT)
                 .sorted(java.util.Comparator.comparing(QuestionOption::getMatchPair)).toList();
         return lefts.stream().map(left -> options.stream()
                         .filter(o -> o.getMatchSide() == MatchSide.RIGHT && o.getMatchPair().equals(left.getMatchPair()))
                         .findFirst()
-                        .map(right -> new MatchPairDetail(left.getId(), left.getLabel(), right.getId(), right.getLabel()))
-                        .orElse(new MatchPairDetail(left.getId(), left.getLabel(), null, null)))
+                        .map(right -> new MatchPairDetail(left.getId(), left.getLabel(), right.getId(), right.getLabel(),
+                                refs.get(left.getImageAssetId()), refs.get(right.getImageAssetId())))
+                        .orElse(new MatchPairDetail(left.getId(), left.getLabel(), null, null, refs.get(left.getImageAssetId()), null)))
                 .toList();
     }
 
     private static String answerFor(QuestionType type, String correctAnswer) {
-        if (type == QuestionType.MULTIPLE_CHOICE || type == QuestionType.MATCHING) {
+        if (type == QuestionType.MULTIPLE_CHOICE || type == QuestionType.MATCHING || type == QuestionType.ORDERING) {
             return null;
         }
         return blankToNull(correctAnswer == null ? null : correctAnswer.strip());
     }
 
     private static List<QuestionService.OptionDraft> optionDrafts(List<OptionRequest> options) {
-        return options.stream().map(option -> new QuestionService.OptionDraft(option.label(), option.correct())).toList();
+        return options.stream().map(option -> new QuestionService.OptionDraft(option.label(), option.correct(), option.imageAssetId(),
+                option.audioAssetId())).toList();
     }
 
     private static String blankToNull(String value) {

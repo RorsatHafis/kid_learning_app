@@ -3,8 +3,10 @@ package com.platform.content.web;
 import com.platform.content.entity.Activity;
 import com.platform.content.entity.ActivityItem;
 import com.platform.content.entity.ActivityVersion;
-import com.platform.content.entity.Question;
+import com.platform.content.entity.QuestionOption;
+import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
+import com.platform.content.media.MediaService;
 import com.platform.content.repository.ActivityItemRepository;
 import com.platform.content.service.ActivityService;
 import com.platform.content.service.QuestionService;
@@ -14,11 +16,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.platform.content.web.ActivityContentDtos.ActivityItemResponse;
 import static com.platform.content.web.ActivityContentDtos.ActivityVersionDetailResponse;
-import static com.platform.content.web.ActivityContentDtos.QuestionOptionResponse;
 
 /**
  * The missing "load the real questions" step of the golden journey: every other
@@ -38,12 +40,14 @@ public class ActivityContentController {
     private final ActivityService activityService;
     private final QuestionService questionService;
     private final ActivityItemRepository activityItemRepository;
+    private final MediaService mediaService;
 
     public ActivityContentController(ActivityService activityService, QuestionService questionService,
-                                      ActivityItemRepository activityItemRepository) {
+                                      ActivityItemRepository activityItemRepository, MediaService mediaService) {
         this.activityService = activityService;
         this.questionService = questionService;
         this.activityItemRepository = activityItemRepository;
+        this.mediaService = mediaService;
     }
 
     @GetMapping("/api/v1/activity-versions/{activityVersionId}")
@@ -54,27 +58,27 @@ public class ActivityContentController {
         ActivityVersion version = activityService.getLearnerVisibleVersionById(activityVersionId);
         Activity activity = activityService.getActivity(version.getActivityId());
 
-        List<ActivityItemResponse> items = activityItemRepository
-                .findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId).stream()
-                .map(this::toItemResponse)
+        // Known Backend Fix C, extended (Battle 3): published-only, matching the ActivityVersion check
+        // above - see QuestionService#getLearnerVisibleVersionById. Media for every item in one read.
+        record Loaded(ActivityItem item, QuestionVersion version, QuestionType type, List<QuestionOption> options) {
+        }
+        List<Loaded> loaded = activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId).stream()
+                .map(item -> {
+                    QuestionVersion questionVersion = questionService.getLearnerVisibleVersionById(item.getQuestionVersionId());
+                    return new Loaded(item, questionVersion, questionService.getQuestion(questionVersion.getQuestionId()).getQuestionType(),
+                            questionService.listOptions(questionVersion.getId()));
+                })
+                .toList();
+        Map<UUID, MediaService.MediaRef> media = mediaService.refs(loaded.stream()
+                .flatMap(l -> ActivityContentDtos.mediaOf(l.version(), l.options()).stream()).toList());
+        List<ActivityItemResponse> items = loaded.stream()
+                .map(l -> ActivityItemResponse.forLearner(l.item().getId(), l.item().getSequenceOrder(), l.type(), l.version(),
+                        l.options(), media))
                 .toList();
 
         return ResponseEntity.ok(new ActivityVersionDetailResponse(version.getId(), activity.getId(),
                 activity.getTitle(), version.getInstructions(), version.getDifficultyLevel(),
                 version.getEstimatedDurationSeconds(), items));
-    }
-
-    private ActivityItemResponse toItemResponse(ActivityItem item) {
-        // Known Backend Fix C, extended (Battle 3): published-only, matching the
-        // ActivityVersion check above - see QuestionService#getLearnerVisibleVersionById.
-        QuestionVersion questionVersion = questionService.getLearnerVisibleVersionById(item.getQuestionVersionId());
-        Question question = questionService.getQuestion(questionVersion.getQuestionId());
-
-        List<QuestionOptionResponse> options = QuestionOptionResponse.forLearner(questionVersion.getId(),
-                questionService.listOptions(questionVersion.getId()));
-
-        return new ActivityItemResponse(item.getId(), item.getSequenceOrder(), questionVersion.getId(),
-                question.getQuestionType(), questionVersion.getPrompt(), options);
     }
 
 }
