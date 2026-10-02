@@ -138,6 +138,11 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await teacher.getByRole("link", { name: /Grade 1 A/ }).click();
   const children = teacher.getByRole("list", { name: "Children in this class" });
   await expect(children.getByRole("link", { name: /Rithy/ })).toBeVisible();
+  // The class over time (X16): counted from today, when Rithy joined; the same weeks as a table.
+  const overTime = teacher.getByRole("region", { name: "The class over time" });
+  await expect(overTime.getByText(/Over the last 8 weeks/)).toBeVisible();
+  await overTime.getByText("Show as a table").click();
+  await expect(overTime.getByRole("rowheader", { name: "Now" })).toBeVisible();
   await expectNoViolations(teacher, "teacher class page with a child");
   await children.getByRole("link", { name: /Rithy/ }).click();
   await expect(teacher.getByRole("heading", { name: "Rithy" })).toBeVisible();

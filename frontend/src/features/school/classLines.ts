@@ -1,4 +1,18 @@
 import type { ClassOverview } from "@/lib/api/schoolAccess";
+import type { SkillStanding } from "@/lib/api/types";
+
+/** The standings a class tally counts, in reading order, with the fill each is drawn in (never colour alone). */
+export const TALLY: {
+  key: "secure" | "progressing" | "needsPractice" | "tooEarlyToTell" | "notStarted";
+  standing: SkillStanding;
+  bar: string;
+}[] = [
+  { key: "secure", standing: "SECURE", bar: "bg-palm" },
+  { key: "progressing", standing: "PROGRESSING", bar: "bg-tonle-600" },
+  { key: "needsPractice", standing: "NEEDS_PRACTICE", bar: "bg-light" },
+  { key: "tooEarlyToTell", standing: "TOO_EARLY_TO_TELL", bar: "bg-tonle-200" },
+  { key: "notStarted", standing: "NOT_STARTED", bar: "bg-line" },
+];
 
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;

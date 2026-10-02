@@ -2,6 +2,7 @@ package com.platform.school.web;
 
 import com.platform.school.entity.ClassJoinCode;
 import com.platform.school.service.ClassPracticeService;
+import com.platform.school.service.ClassTrendService;
 import com.platform.school.service.SchoolJoinService;
 import com.platform.school.service.SchoolLearningService;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,11 +38,14 @@ public class ClassAccessController {
     private final SchoolJoinService joins;
     private final SchoolLearningService learning;
     private final ClassPracticeService practice;
+    private final ClassTrendService trends;
 
-    public ClassAccessController(SchoolJoinService joins, SchoolLearningService learning, ClassPracticeService practice) {
+    public ClassAccessController(SchoolJoinService joins, SchoolLearningService learning, ClassPracticeService practice,
+                                 ClassTrendService trends) {
         this.joins = joins;
         this.learning = learning;
         this.practice = practice;
+        this.trends = trends;
     }
 
     /** What to place, and for whom: one activity for some of the class's children. */
@@ -89,6 +94,13 @@ public class ClassAccessController {
     @GetMapping("/learning")
     public SchoolLearningService.ClassLearning learning(@PathVariable UUID classId, @AuthenticationPrincipal UUID accountId) {
         return learning.classLearning(accountId, classId);
+    }
+
+    /** How the class has moved over the last {@code weeks} weeks (X16): counts only. */
+    @GetMapping("/trend")
+    public ClassTrendService.ClassTrend trend(@PathVariable UUID classId, @RequestParam(defaultValue = "8") int weeks,
+                                              @AuthenticationPrincipal UUID accountId) {
+        return trends.trend(accountId, classId, weeks);
     }
 
     @GetMapping("/children/{childId}/learning")

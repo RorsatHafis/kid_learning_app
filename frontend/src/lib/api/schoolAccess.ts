@@ -115,6 +115,32 @@ export interface MemberLearning extends ClassMember {
   }[];
 }
 
+// ---- school/service/ClassTrendService.java (X16): how the class has moved, week by week ----
+
+/** Where the class stood at `at`: the children in it by then, each skill of each in one standing. */
+export interface ClassTrendPoint {
+  at: string;
+  children: number;
+  notStarted: number;
+  tooEarlyToTell: number;
+  needsPractice: number;
+  progressing: number;
+  secure: number;
+}
+
+export interface ClassTrend {
+  weeks: number;
+  /** Skills of the curricula the class assigns. */
+  skills: number;
+  /** weeks + 1 points, oldest first; the last is now. */
+  points: ClassTrendPoint[];
+  /** One per week between points: answers given while in the class. */
+  answers: { from: string; to: string; answers: number; childrenAnswering: number }[];
+  /** Children-on-skills that moved over the window (from its start, or from when the child joined). */
+  movement: { becameSecure: number; movedUp: number; firstReading: number; movedDown: number };
+  bySkill: { skillId: string; name: string; becameSecure: number; movedUp: number; movedDown: number }[];
+}
+
 const C = (classId: string) => `/schools/classes/${classId}`;
 
 export const classAccessApi = {
@@ -127,6 +153,7 @@ export const classAccessApi = {
   assign: (classId: string, curriculumId: string) => apiClient.post<unknown>(`${C(classId)}/curricula/${curriculumId}`),
   unassign: (classId: string, curriculumId: string) => apiClient.delete<void>(`${C(classId)}/curricula/${curriculumId}`),
   learning: (classId: string) => apiClient.get<ClassLearning>(`${C(classId)}/learning`),
+  trend: (classId: string, weeks: number) => apiClient.get<ClassTrend>(`${C(classId)}/trend?weeks=${weeks}`),
   memberLearning: (classId: string, childId: string) =>
     apiClient.get<MemberLearning>(`${C(classId)}/children/${childId}/learning`),
   removeMember: (classId: string, childId: string) => apiClient.delete<void>(`${C(classId)}/children/${childId}`),

@@ -11,7 +11,7 @@ import {
   type SchoolJourney,
   type SkillTally,
 } from "@/lib/api/schoolAccess";
-import type { Chapter, SkillStanding } from "@/lib/api/types";
+import type { Chapter } from "@/lib/api/types";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
@@ -19,6 +19,8 @@ import { ChapterTrack } from "@/features/parent/ui";
 import { StandingMark } from "@/features/learning/Standing";
 import { standingLabel } from "@/features/learning/explain";
 import { cn } from "@/lib/utils/cn";
+import { TALLY } from "./classLines";
+import { ClassTrendSection } from "./ClassTrend";
 
 // A class's workspace, shared by its teachers (/teacher) and its school's principal (/principal):
 // the join code families enter, the curricula the class assigns, and its members' learning in those
@@ -352,7 +354,10 @@ export function ClassLearningPanel({
         {data && data.members.length > 0 && <MembersTable data={data} memberHref={memberHref} />}
       </WorkspaceSection>
       {data && data.members.length > 0 && data.skills.some((c) => c.objectives.length > 0) && (
-        <ClassSkills data={data} skillHref={skillHref} />
+        <>
+          <ClassSkills data={data} skillHref={skillHref} />
+          <ClassTrendSection classId={classId} skillHref={skillHref} refreshKey={refreshKey} />
+        </>
       )}
     </>
   );
@@ -397,14 +402,6 @@ function MembersTable({ data, memberHref }: { data: ClassLearning; memberHref: (
     </ul>
   );
 }
-
-const TALLY: { key: keyof Omit<SkillTally, "skillId" | "name">; standing: SkillStanding; bar: string }[] = [
-  { key: "secure", standing: "SECURE", bar: "bg-palm" },
-  { key: "progressing", standing: "PROGRESSING", bar: "bg-tonle-600" },
-  { key: "needsPractice", standing: "NEEDS_PRACTICE", bar: "bg-light" },
-  { key: "tooEarlyToTell", standing: "TOO_EARLY_TO_TELL", bar: "bg-tonle-200" },
-  { key: "notStarted", standing: "NOT_STARTED", bar: "bg-line" },
-];
 
 /** Where the class stands on each skill: counts of children, never a score or a ranking. */
 function ClassSkills({ data, skillHref }: { data: ClassLearning; skillHref: (skillId: string) => string }) {

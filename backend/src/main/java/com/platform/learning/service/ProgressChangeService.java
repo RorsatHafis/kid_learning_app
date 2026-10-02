@@ -93,7 +93,8 @@ public class ProgressChangeService {
         return new ProgressSince(since, days, changes.stream().mapToInt(SkillChange::answersSince).sum(), changes);
     }
 
-    static ChangeKind kind(SkillStanding then, SkillStanding now) {
+    /** How a skill moved between two standings (also the class trend's, X16). */
+    public static ChangeKind kind(SkillStanding then, SkillStanding now) {
         if (now == SkillStanding.SECURE && then != SkillStanding.SECURE) {
             return ChangeKind.BECAME_SECURE;
         }

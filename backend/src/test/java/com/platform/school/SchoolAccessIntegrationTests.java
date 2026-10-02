@@ -429,6 +429,84 @@ class SchoolAccessIntegrationTests {
     }
 
     @Test
+    void theClassTrendShowsWhereTheClassStoodEachWeekFromTheEvidenceAndOnlyToItsStaff() throws Exception {
+        Staff principal = staff(PlatformRole.PRINCIPAL);
+        Staff teacher = staff(PlatformRole.TEACHER);
+        SchoolClass taught = classTaughtBy(principal, teacher);
+        String classPath = "/api/v1/schools/classes/" + taught.getId();
+        Curriculum assigned = publishedCurriculum(null, "Trend maths");
+        json(post(classPath + "/curricula/" + assigned.getId(), "", teacher.token()), 200);
+        String code = json(post(classPath + "/join-code", "", teacher.token()), 201).get("code").asString();
+        Parent parent = parent();
+        String childId = createChild(parent.token(), "Dara");
+        confirmEmail(parent);
+        json(post("/api/v1/children/" + childId + "/schools/join", codeBody(code), parent.token()), 200);
+        UUID child = UUID.fromString(childId);
+        UUID skill = jdbc.queryForObject("""
+                select los.skill_id from curriculum_versions v
+                join curriculum_objectives co on co.curriculum_version_id = v.id
+                join learning_objective_skills los on los.learning_objective_id = co.learning_objective_id
+                where v.curriculum_id = ?""", UUID.class, assigned.getId());
+
+        // In the class for 40 days (the row is re-made: its timestamps are kept by a trigger). Three answers
+        // 20 days ago leave the skill needing practice; two 3 days ago make it secure.
+        Instant now = Instant.now();
+        jdbc.update("delete from class_enrollments where child_id = ?", child);
+        jdbc.update("insert into class_enrollments (id, school_class_id, child_id, status, created_at, updated_at) values (?, ?, ?, 'ACTIVE', ?, ?)",
+                UUID.randomUUID(), taught.getId(), child, java.sql.Timestamp.from(now.minus(java.time.Duration.ofDays(40))),
+                java.sql.Timestamp.from(now.minus(java.time.Duration.ofDays(40))));
+        history(child, skill, now.minus(java.time.Duration.ofDays(20)), "0.40", "0.45", "0.50");
+        history(child, skill, now.minus(java.time.Duration.ofDays(3)), "0.85", "0.90");
+
+        HttpResponse<String> response = get(classPath + "/trend?weeks=4", teacher.token());
+        JsonNode trend = json(response, 200);
+        assertThat(trend.get("skills").asInt()).isEqualTo(1);
+        JsonNode points = trend.get("points");
+        assertThat(points).hasSize(5);
+        assertThat(points.get(0).get("children").asInt()).isEqualTo(1);
+        assertThat(points.get(0).get("notStarted").asInt()).isEqualTo(1);
+        assertThat(points.get(1).get("notStarted").asInt()).isEqualTo(1);
+        assertThat(points.get(2).get("needsPractice").asInt()).isEqualTo(1);
+        assertThat(points.get(3).get("needsPractice").asInt()).isEqualTo(1);
+        assertThat(points.get(4).get("secure").asInt()).isEqualTo(1);
+        JsonNode answers = trend.get("answers");
+        assertThat(answers).hasSize(4);
+        assertThat(answers.get(1).get("answers").asInt()).isEqualTo(3);
+        assertThat(answers.get(1).get("childrenAnswering").asInt()).isEqualTo(1);
+        assertThat(answers.get(3).get("answers").asInt()).isEqualTo(2);
+        assertThat(trend.get("movement").get("becameSecure").asInt()).isEqualTo(1);
+        assertThat(trend.get("bySkill").get(0).get("skillId").asString()).isEqualTo(skill.toString());
+        // Counts only: no child is named.
+        assertThat(response.body()).doesNotContain("Dara").doesNotContain(childId);
+        // The principal sees it too; another teacher, an administrator and the family do not.
+        assertThat(get(classPath + "/trend", principal.token()).statusCode()).isEqualTo(200);
+        assertThat(get(classPath + "/trend", staff(PlatformRole.TEACHER).token()).statusCode()).isEqualTo(403);
+        assertThat(get(classPath + "/trend", staff(PlatformRole.ADMIN).token()).statusCode()).isEqualTo(403);
+        assertThat(get(classPath + "/trend", parent.token()).statusCode()).isEqualTo(403);
+        assertThat(get(classPath + "/trend?weeks=2", teacher.token()).statusCode()).isEqualTo(400);
+
+        // A child who joins today counts only from today: the earlier weeks are the class as it was.
+        Parent other = parent();
+        String newcomer = createChild(other.token(), "Bopha");
+        confirmEmail(other);
+        json(post("/api/v1/children/" + newcomer + "/schools/join", codeBody(code), other.token()), 200);
+        JsonNode later = json(get(classPath + "/trend?weeks=4", teacher.token()), 200).get("points");
+        assertThat(later.get(3).get("children").asInt()).isEqualTo(1);
+        assertThat(later.get(4).get("children").asInt()).isEqualTo(2);
+        assertThat(later.get(4).get("notStarted").asInt()).isEqualTo(1);
+    }
+
+    /** Evidence rows (one per answer, oldest first) as the mastery engine records them; history is append-only. */
+    private void history(UUID child, UUID skill, Instant at, String... masteryAfterEach) {
+        for (int i = 0; i < masteryAfterEach.length; i++) {
+            jdbc.update("insert into learner_skill_history (id, child_id, skill_id, mastery_probability, confidence, triggered_by_id,"
+                            + " triggered_by_type, occurred_at) values (?, ?, ?, ?, 0.1, ?, 'ACTIVITY_ATTEMPT', ?)",
+                    UUID.randomUUID(), child, skill, new java.math.BigDecimal(masteryAfterEach[i]), UUID.randomUUID(),
+                    java.sql.Timestamp.from(at.plusSeconds(i)));
+        }
+    }
+
+    @Test
     void codeLookupsAreRateLimitedPerAccount() throws Exception {
         Parent parent = parent();
         String childId = createChild(parent.token(), "Rotha");

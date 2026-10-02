@@ -154,7 +154,10 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await family.getByRole("button", { name: "Next" }).click();
   await expect(family.getByText(orderPrompt)).toBeVisible();
   await expect(family.getByRole("img", { name: "Three stars" })).toBeVisible();
-  expect(await family.getByRole("img", { name: "Three stars" }).evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1);
+  // The picture actually arrives (signed URL served): it decodes to the uploaded 1x1 PNG, however long loading takes.
+  await expect
+    .poll(() => family.getByRole("img", { name: "Three stars" }).evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBe(1);
   await expectNoViolations(family, "child: an ordering question with a picture");
   for (const label of ["1", "2", "3"]) await family.getByRole("button", { name: `${label}: place it next` }).click();
   await family.getByRole("button", { name: "Check my order" }).click();
