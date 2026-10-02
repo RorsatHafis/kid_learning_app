@@ -51,10 +51,10 @@ describe("MediaLibraryPage", () => {
     const archive = vi.spyOn(studioApi, "archiveMedia").mockResolvedValue(item({ archived: true }));
     const user = userEvent.setup();
     render(
-      <MemoryRouter initialEntries={["/admin/studio/media"]}>
+      <MemoryRouter initialEntries={["/admin/media"]}>
         <Routes>
           <Route
-            path="/admin/studio/media"
+            path="/admin/media"
             element={
               <>
                 <MediaLibraryPage />

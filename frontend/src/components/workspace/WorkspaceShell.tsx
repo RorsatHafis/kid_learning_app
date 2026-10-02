@@ -12,6 +12,19 @@ export interface WorkspaceNavItem {
   label: string;
   icon: LucideIcon;
   end?: boolean;
+  /** Items sharing a section are grouped under its name, in order; items before the first section stand alone. */
+  section?: string;
+}
+
+/** Consecutive items with the same section, kept in the order given. */
+function groupBySection(nav: WorkspaceNavItem[]) {
+  const groups: { section?: string; items: WorkspaceNavItem[] }[] = [];
+  for (const item of nav) {
+    const last = groups[groups.length - 1];
+    if (last && last.section === item.section) last.items.push(item);
+    else groups.push({ section: item.section, items: [item] });
+  }
+  return groups;
 }
 
 /**
@@ -33,30 +46,45 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
     navigate("/", { replace: true });
   }
 
+  const link = ({ to, label, icon: Icon, end }: WorkspaceNavItem) => (
+    <li key={to}>
+      <NavLink
+        to={to}
+        end={end}
+        className={({ isActive }) =>
+          cn(
+            "group flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] font-medium transition-colors duration-150 lg:h-9",
+            isActive ? "bg-white/[0.09] text-white" : "text-tonle-200 hover:bg-white/[0.05] hover:text-white",
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <Icon size={17} aria-hidden className={isActive ? "text-light" : "text-tonle-300 group-hover:text-tonle-100"} />
+            {label}
+          </>
+        )}
+      </NavLink>
+    </li>
+  );
+
   const links = (
-    <ul className="flex flex-col gap-0.5">
-      {nav.map(({ to, label, icon: Icon, end }) => (
-        <li key={to}>
-          <NavLink
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              cn(
-                "group flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] font-medium transition-colors duration-150",
-                isActive ? "bg-white/[0.09] text-white" : "text-tonle-200 hover:bg-white/[0.05] hover:text-white",
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <Icon size={17} aria-hidden className={isActive ? "text-light" : "text-tonle-300 group-hover:text-tonle-100"} />
-                {label}
-              </>
-            )}
-          </NavLink>
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-4 lg:gap-3">
+      {groupBySection(nav).map((group, index) =>
+        group.section ? (
+          <div key={group.section} role="group" aria-label={group.section}>
+            <p aria-hidden className="mb-1 px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-tonle-400">
+              {group.section}
+            </p>
+            <ul className="flex flex-col gap-0.5">{group.items.map(link)}</ul>
+          </div>
+        ) : (
+          <ul key={`group-${index}`} className="flex flex-col gap-0.5">
+            {group.items.map(link)}
+          </ul>
+        ),
+      )}
+    </div>
   );
 
   const account = (
@@ -82,7 +110,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
         <Link to={home} className="mb-1 w-fit rounded-[10px] px-3 py-1" aria-label="Bookeyond Kid — workspace home">
           <Logo tone="paper" size="sm" />
         </Link>
-        <p className="mb-6 px-3 text-sm text-tonle-300">{workspace}</p>
+        <p className="mb-5 px-3 text-sm text-tonle-300">{workspace}</p>
         <nav aria-label={workspace} className="flex-1 overflow-y-auto">
           {links}
         </nav>

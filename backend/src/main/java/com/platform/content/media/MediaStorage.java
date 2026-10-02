@@ -75,6 +75,11 @@ public class MediaStorage {
         }
     }
 
+    /** Free space where media is kept (System status, X15). */
+    public long usableSpace() {
+        return root.toFile().getUsableSpace();
+    }
+
     public Path resolve(String key) {
         if (key == null || !KEY.matcher(key).matches()) {
             throw new IllegalArgumentException("Not a media key");

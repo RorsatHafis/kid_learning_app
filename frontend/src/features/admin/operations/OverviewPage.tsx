@@ -18,7 +18,7 @@ export function OverviewPage() {
   const overview = useAsync(() => adminOverviewApi.get(), []);
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Overview" description="What is waiting on an administrator, and the platform in numbers." />
+      <PageHeader title="Dashboard" description="What is waiting on an administrator, and the platform in numbers." />
       {overview.isLoading && !overview.data && <LoadingState label="Loading the overview…" />}
       {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
       {overview.data && (

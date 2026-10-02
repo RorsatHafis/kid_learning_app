@@ -63,7 +63,6 @@ export function MediaLibraryPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        breadcrumb={[{ label: "Content Studio", to: "/admin/studio" }, { label: "Media library" }]}
         title="Media library"
         description="Pictures and recordings for questions. Upload a file once and use it in any question; describe it once and that description is offered wherever it goes. A file in use can't be deleted — archive it to take it out of the library."
         actions={<UploadButton onUploaded={list.refetch} />}

@@ -81,7 +81,7 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await publish(page);
 
   // X13: the uploaded picture is in the media library, named after its file, showing where it is used.
-  await page.goto(`/admin/studio/media?q=${tag}`);
+  await page.goto(`/admin/media?q=${tag}`);
   await expect(page.getByRole("button", { name: new RegExp(`Open: stars ${tag}, picture, used in 1 question`, "i") })).toBeVisible();
   await expectNoViolations(page, "studio media library");
   await page.goBack();

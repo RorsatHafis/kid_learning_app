@@ -25,7 +25,7 @@ export function StudioIndex() {
         description="Content is built subject by subject: skills and objectives first, then questions and activities, then the curriculum that places them on children's learning paths. Nothing reaches a child until it is published, and publishing checks that a child can actually play it."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Link to="/admin/studio/media" className={buttonClasses("outline")}>
+            <Link to="/admin/media" className={buttonClasses("outline")}>
               <Images size={16} aria-hidden /> Media library
             </Link>
             {!composer.open && <NewButton label="New subject" onClick={composer.show} />}

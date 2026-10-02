@@ -6,6 +6,10 @@ import { AccountsPage } from "./operations/AccountsPage";
 import { ActivityPage } from "./operations/ActivityPage";
 import { PlansPage } from "./operations/PlansPage";
 import { OverviewPage } from "./operations/OverviewPage";
+import { SchoolDetailPage, SchoolsPage } from "./operations/SchoolsPage";
+import { LearningOpsPage } from "./operations/LearningOpsPage";
+import { ReportsPage } from "./operations/ReportsPage";
+import { SystemPage } from "./operations/SystemPage";
 import { MediaLibraryPage } from "./studio/MediaLibrary";
 import { StudioIndex } from "./studio/StudioIndex";
 import { StudioLayout } from "./studio/StudioLayout";
@@ -24,7 +28,9 @@ export default function AdminArea() {
       <Route element={<AdminLayout />}>
         <Route index element={<OverviewPage />} />
         <Route path="studio" element={<StudioIndex />} />
-        <Route path="studio/media" element={<MediaLibraryPage />} />
+        <Route path="media" element={<MediaLibraryPage />} />
+        {/* Where the library lived before it had its own place in the menu (X13). */}
+        <Route path="studio/media" element={<Navigate to="/admin/media" replace />} />
         <Route path="studio/:subjectId" element={<StudioLayout />}>
           <Route index element={<Navigate to="catalog" replace />} />
           <Route path="catalog" element={<CatalogPage />} />
@@ -39,6 +45,11 @@ export default function AdminArea() {
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="activity" element={<ActivityPage />} />
         <Route path="plans" element={<PlansPage />} />
+        <Route path="schools" element={<SchoolsPage />} />
+        <Route path="schools/:schoolId" element={<SchoolDetailPage />} />
+        <Route path="learning" element={<LearningOpsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="system" element={<SystemPage />} />
         <Route path="account" element={<AccountPage />} />
       </Route>
     </Routes>
