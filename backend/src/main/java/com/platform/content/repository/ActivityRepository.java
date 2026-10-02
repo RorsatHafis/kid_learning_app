@@ -15,4 +15,6 @@ public interface ActivityRepository extends JpaRepository<Activity, UUID> {
 
     List<Activity> findByLessonIdIn(java.util.Collection<UUID> lessonIds);
 
+
+    boolean existsByLessonIdAndStatus(UUID lessonId, com.platform.common.entity.CatalogStatus status);
 }

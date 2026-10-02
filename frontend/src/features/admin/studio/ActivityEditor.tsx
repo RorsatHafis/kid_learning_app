@@ -17,6 +17,7 @@ import { FormField } from "@/features/auth/FormField";
 import { ChildPreview } from "./ChildPreview";
 import { DIFFICULTIES, errorText, QUESTION_TYPE_LABEL, reportFromError, useStudio } from "./studioLogic";
 import { Panel, SelectField, SkillChips, StatusBadge, TextAreaField, ValidationPanel, VersionHistory, IconButton } from "./shared";
+import { ArchivedBadge, ManageButton } from "./Lifecycle";
 
 export function ActivityEditor() {
   const { activityId = "" } = useParams<{ activityId: string }>();
@@ -29,7 +30,7 @@ export function ActivityEditor() {
 
   if (loaded.error) return <ErrorState error={loaded.error} onRetry={loaded.refetch} />;
   if (!detail) return <LoadingState label="Loading the activity…" />;
-  return <Editor detail={detail} onChange={setDetail} />;
+  return <Editor detail={detail} onChange={setDetail} onReload={loaded.refetch} />;
 }
 
 interface DraftItem {
@@ -39,7 +40,7 @@ interface DraftItem {
   skillIds: string[];
 }
 
-function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: ActivityDetail) => void }) {
+function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChange: (d: ActivityDetail) => void; onReload: () => void }) {
   const { catalog } = useStudio();
   const latest = detail.versions[detail.versions.length - 1];
   const isDraft = latest.status === "DRAFT";
@@ -93,6 +94,10 @@ function Editor({ detail, onChange }: { detail: ActivityDetail; onChange: (d: Ac
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-display text-[1.625rem] font-semibold leading-tight text-tonle-950">{detail.title}</h2>
           <StatusBadge status={latest.status} />
+          {detail.archived && <ArchivedBadge />}
+          <span className="ml-auto">
+            <ManageButton kind="activities" id={detail.id} name={detail.title} archived={detail.archived} onChanged={onReload} />
+          </span>
         </div>
         <p className="text-sm text-ink-soft">Practice activity · version {latest.versionNumber}</p>
       </div>

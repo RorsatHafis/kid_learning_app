@@ -58,6 +58,13 @@ public class Skill extends AuditableEntity {
         return new Skill(subjectId, code, name, description);
     }
 
+    /** X14: a clearer name or description; the code (its stable identity) never changes. */
+    public void rename(String newName, String newDescription) {
+        Assert.hasText(newName, "name must not be blank");
+        this.name = newName.strip();
+        this.description = newDescription == null || newDescription.isBlank() ? null : newDescription.strip();
+    }
+
     public void archive() {
         requireStatus(CatalogStatus.ACTIVE, "archived");
         this.status = CatalogStatus.ARCHIVED;

@@ -8,6 +8,7 @@ import com.platform.common.entity.PublicationStatus;
 import com.platform.common.web.PageResponse;
 import com.platform.content.entity.QuestionType;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,17 +38,19 @@ public class StudioController {
 
     private final StudioService studio;
     private final JourneyBuilderService journeys;
+    private final ContentLifecycleService lifecycle;
 
-    public StudioController(StudioService studio, JourneyBuilderService journeys) {
+    public StudioController(StudioService studio, JourneyBuilderService journeys, ContentLifecycleService lifecycle) {
         this.studio = studio;
         this.journeys = journeys;
+        this.lifecycle = lifecycle;
     }
 
     // ------------------------------------------------------------------ catalog
 
     @GetMapping("/subjects")
-    public List<SubjectDto> subjects(@AuthenticationPrincipal UUID accountId) {
-        return studio.subjects(accountId);
+    public List<SubjectDto> subjects(@AuthenticationPrincipal UUID accountId, @RequestParam(defaultValue = "false") boolean archived) {
+        return studio.subjects(accountId, archived);
     }
 
     @PostMapping("/subjects")
@@ -62,8 +65,9 @@ public class StudioController {
     }
 
     @GetMapping("/subjects/{subjectId}/catalog")
-    public CatalogDto catalog(@AuthenticationPrincipal UUID accountId, @PathVariable UUID subjectId) {
-        return studio.catalog(accountId, subjectId);
+    public CatalogDto catalog(@AuthenticationPrincipal UUID accountId, @PathVariable UUID subjectId,
+                              @RequestParam(defaultValue = "false") boolean archived) {
+        return studio.catalog(accountId, subjectId, archived);
     }
 
     @PostMapping("/subjects/{subjectId}/skills")
@@ -95,8 +99,9 @@ public class StudioController {
     // ------------------------------------------------------------------ curricula
 
     @GetMapping("/curricula")
-    public List<CurriculumSummary> curricula(@AuthenticationPrincipal UUID accountId) {
-        return studio.curricula(accountId);
+    public List<CurriculumSummary> curricula(@AuthenticationPrincipal UUID accountId,
+                                             @RequestParam(defaultValue = "false") boolean archived) {
+        return studio.curricula(accountId, archived);
     }
 
     @PostMapping("/curricula")
@@ -151,9 +156,10 @@ public class StudioController {
     public PageResponse<LessonSummary> lessons(@AuthenticationPrincipal UUID accountId,
                                                @RequestParam(required = false) UUID subjectId,
                                                @RequestParam(required = false) @Size(max = 200) String q,
+                                               @RequestParam(defaultValue = "false") boolean archived,
                                                @RequestParam(defaultValue = "0") int page,
                                                @RequestParam(defaultValue = "10") int size) {
-        return studio.lessons(accountId, subjectId, q, new PageResponse.Request(page, size));
+        return studio.lessons(accountId, subjectId, q, archived, new PageResponse.Request(page, size));
     }
 
     @PostMapping("/lessons")
@@ -228,9 +234,10 @@ public class StudioController {
                                                    @RequestParam(required = false) PublicationStatus status,
                                                    @RequestParam(required = false) UUID skillId,
                                                    @RequestParam(defaultValue = "false") boolean live,
+                                                   @RequestParam(defaultValue = "false") boolean archived,
                                                    @RequestParam(defaultValue = "0") int page,
                                                    @RequestParam(defaultValue = "25") int size) {
-        return studio.questions(accountId, subjectId, new QuestionFilter(q, type, status, skillId, live),
+        return studio.questions(accountId, subjectId, new QuestionFilter(q, type, status, skillId, live, archived),
                 new PageResponse.Request(page, size));
     }
 
@@ -281,6 +288,99 @@ public class StudioController {
     @PostMapping("/question-versions/{versionId}/publish")
     public QuestionDetail publishQuestionVersion(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId) {
         return studio.publishQuestionVersion(accountId, versionId);
+    }
+
+    // ================================================================== X14: edit details, archive, restore
+
+    /** New details for something the Studio manages: its name or title, and (catalog) a description. */
+    public record DetailsRequest(@NotBlank @Size(max = 200) String name, @Size(max = 2000) String description) {
+    }
+
+    @PutMapping("/subjects/{subjectId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateSubject(@AuthenticationPrincipal UUID accountId, @PathVariable UUID subjectId, @Valid @RequestBody DetailsRequest request) {
+        lifecycle.updateSubject(accountId, subjectId, request.name(), request.description());
+    }
+
+    @PostMapping("/subjects/{subjectId}/archive")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archiveSubject(@AuthenticationPrincipal UUID accountId, @PathVariable UUID subjectId) {
+        lifecycle.archiveSubject(accountId, subjectId);
+    }
+
+    @PostMapping("/subjects/{subjectId}/restore")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void restoreSubject(@AuthenticationPrincipal UUID accountId, @PathVariable UUID subjectId) {
+        lifecycle.restoreSubject(accountId, subjectId);
+    }
+
+    @PutMapping("/skills/{skillId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateSkill(@AuthenticationPrincipal UUID accountId, @PathVariable UUID skillId, @Valid @RequestBody DetailsRequest request) {
+        lifecycle.updateSkill(accountId, skillId, request.name(), request.description());
+    }
+
+    @PostMapping("/skills/{skillId}/{action:archive|restore}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archiveSkill(@AuthenticationPrincipal UUID accountId, @PathVariable UUID skillId, @PathVariable String action) {
+        lifecycle.archiveSkill(accountId, skillId, "archive".equals(action));
+    }
+
+    @PutMapping("/objectives/{objectiveId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateObjective(@AuthenticationPrincipal UUID accountId, @PathVariable UUID objectiveId,
+                                @Valid @RequestBody DetailsRequest request) {
+        lifecycle.updateObjective(accountId, objectiveId, request.name(), request.description());
+    }
+
+    @PostMapping("/objectives/{objectiveId}/{action:archive|restore}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archiveObjective(@AuthenticationPrincipal UUID accountId, @PathVariable UUID objectiveId, @PathVariable String action) {
+        lifecycle.archiveObjective(accountId, objectiveId, "archive".equals(action));
+    }
+
+    @PutMapping("/curricula/{curriculumId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void renameCurriculum(@AuthenticationPrincipal UUID accountId, @PathVariable UUID curriculumId,
+                                 @Valid @RequestBody DetailsRequest request) {
+        lifecycle.renameCurriculum(accountId, curriculumId, request.name());
+    }
+
+    @PostMapping("/curricula/{curriculumId}/{action:archive|restore}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archiveCurriculum(@AuthenticationPrincipal UUID accountId, @PathVariable UUID curriculumId, @PathVariable String action) {
+        lifecycle.archiveCurriculum(accountId, curriculumId, "archive".equals(action));
+    }
+
+    @PutMapping("/lessons/{lessonId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void retitleLesson(@AuthenticationPrincipal UUID accountId, @PathVariable UUID lessonId, @Valid @RequestBody DetailsRequest request) {
+        lifecycle.retitleLesson(accountId, lessonId, request.name());
+    }
+
+    @PostMapping("/lessons/{lessonId}/{action:archive|restore}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archiveLesson(@AuthenticationPrincipal UUID accountId, @PathVariable UUID lessonId, @PathVariable String action) {
+        lifecycle.archiveLesson(accountId, lessonId, "archive".equals(action));
+    }
+
+    @PutMapping("/activities/{activityId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void retitleActivity(@AuthenticationPrincipal UUID accountId, @PathVariable UUID activityId,
+                                @Valid @RequestBody DetailsRequest request) {
+        lifecycle.retitleActivity(accountId, activityId, request.name());
+    }
+
+    @PostMapping("/activities/{activityId}/{action:archive|restore}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archiveActivity(@AuthenticationPrincipal UUID accountId, @PathVariable UUID activityId, @PathVariable String action) {
+        lifecycle.archiveActivity(accountId, activityId, "archive".equals(action));
+    }
+
+    @PostMapping("/questions/{questionId}/{action:archive|restore}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archiveQuestion(@AuthenticationPrincipal UUID accountId, @PathVariable UUID questionId, @PathVariable String action) {
+        lifecycle.archiveQuestion(accountId, questionId, "archive".equals(action));
     }
 
 }

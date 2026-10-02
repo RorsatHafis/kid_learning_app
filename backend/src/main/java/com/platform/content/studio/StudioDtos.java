@@ -31,7 +31,7 @@ public final class StudioDtos {
 
     // ------------------------------------------------------------------ catalog
 
-    public record SubjectDto(UUID id, String code, String name, String description) {
+    public record SubjectDto(UUID id, String code, String name, String description, boolean archived) {
     }
 
     public record AgeHubDto(UUID id, String code, String name, int minAge, Integer maxAge) {
@@ -41,7 +41,7 @@ public final class StudioDtos {
                            List<UUID> prerequisiteSkillIds) {
     }
 
-    public record ObjectiveDto(UUID id, String code, String title, String description, List<UUID> skillIds) {
+    public record ObjectiveDto(UUID id, String code, String title, String description, List<UUID> skillIds, boolean archived) {
     }
 
     public record CatalogDto(SubjectDto subject, List<SkillDto> skills, List<ObjectiveDto> objectives) {
@@ -71,7 +71,8 @@ public final class StudioDtos {
 
     // ------------------------------------------------------------------ curricula
 
-    public record CurriculumSummary(UUID id, String name, UUID subjectId, UUID ageHubId, List<VersionSummary> versions) {
+    public record CurriculumSummary(UUID id, String name, UUID subjectId, UUID ageHubId, List<VersionSummary> versions,
+                                    boolean archived) {
     }
 
     public record CurriculumVersionDetail(UUID id, int versionNumber, PublicationStatus status, Instant publishedAt,
@@ -79,7 +80,7 @@ public final class StudioDtos {
     }
 
     public record CurriculumDetail(UUID id, String name, UUID subjectId, UUID ageHubId,
-                                   List<CurriculumVersionDetail> versions) {
+                                   List<CurriculumVersionDetail> versions, boolean archived) {
     }
 
     public record CreateCurriculumRequest(@NotNull UUID subjectId, @NotNull UUID ageHubId,
@@ -92,14 +93,15 @@ public final class StudioDtos {
     // ------------------------------------------------------------------ lessons & activities
 
     public record ActivitySummary(UUID id, String title, String activityType, List<UUID> skillIds,
-                                  List<VersionSummary> versions) {
+                                  List<VersionSummary> versions, boolean archived) {
     }
 
     /**
      * A lesson and its activities. When a search found the lesson through some of its activities,
      * {@code activities} holds only those, and {@code activityCount} still counts them all.
      */
-    public record LessonSummary(UUID id, String title, UUID subjectId, List<ActivitySummary> activities, int activityCount) {
+    public record LessonSummary(UUID id, String title, UUID subjectId, List<ActivitySummary> activities, int activityCount,
+                                boolean archived) {
     }
 
     public record ItemDetail(UUID questionVersionId, UUID questionId, QuestionType questionType, String prompt,
@@ -114,7 +116,7 @@ public final class StudioDtos {
     }
 
     public record ActivityDetail(UUID id, String title, String activityType, UUID lessonId, UUID subjectId,
-                                 List<UUID> skillIds, List<ActivityVersionDetail> versions) {
+                                 List<UUID> skillIds, List<ActivityVersionDetail> versions, boolean archived) {
     }
 
     public record CreateLessonRequest(@NotNull UUID subjectId, @NotBlank @Size(max = 200) String title) {
@@ -160,15 +162,18 @@ public final class StudioDtos {
     }
 
     public record QuestionSummary(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,
-                                  String latestPrompt, UUID publishedVersionId, List<VersionSummary> versions) {
+                                  String latestPrompt, UUID publishedVersionId, List<VersionSummary> versions, boolean archived) {
     }
 
-    /** The question bank's filters; every one is optional. {@code live}: has a published version. */
-    public record QuestionFilter(String text, QuestionType type, PublicationStatus status, UUID skillId, boolean live) {
+    /** The question bank's filters; every one is optional. {@code live}: has a published version; {@code archived}: the archived ones instead. */
+    public record QuestionFilter(String text, QuestionType type, PublicationStatus status, UUID skillId, boolean live, boolean archived) {
+        public QuestionFilter(String text, QuestionType type, PublicationStatus status, UUID skillId, boolean live) {
+            this(text, type, status, skillId, live, false);
+        }
     }
 
     public record QuestionDetail(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,
-                                 List<QuestionVersionDetail> versions) {
+                                 List<QuestionVersionDetail> versions, boolean archived) {
     }
 
     /** {@code label} describes the picture when there is one: screen readers read it, and the child sees the picture. */

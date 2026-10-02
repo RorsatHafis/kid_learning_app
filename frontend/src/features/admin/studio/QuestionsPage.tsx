@@ -10,8 +10,9 @@ import { SearchField } from "@/components/ui/SearchField";
 import { cn } from "@/lib/utils/cn";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { QuestionDraftForm } from "./QuestionDraftForm";
-import { AUTHORABLE_TYPES, currentStatus, errorText, QUESTION_TYPE_LABEL, useStudio, useComposer } from "./studioLogic";
+import { AUTHORABLE_TYPES, currentStatus, errorText, QUESTION_TYPE_LABEL, useStudio, useComposer, useArchivedView } from "./studioLogic";
 import { ComposerPanel, NewButton, Panel, SelectField, StatusBadge } from "./shared";
+import { ArchivedSwitch } from "./Lifecycle";
 
 const PAGE_SIZE = 25;
 const STATUS_FILTERS: { value: PublicationStatus; label: string }[] = [
@@ -35,19 +36,28 @@ export function QuestionsPage() {
   const skillId = skillParam && catalog.skills.some((s) => s.id === skillParam) ? skillParam : undefined;
   const search = useCallback((q: string) => update({ q: q || undefined }), [update]);
 
+  const [archived, setArchived] = useArchivedView();
   const questions = useAsync(
-    () => studioApi.questions(catalog.subject.id, { text, type, status, skillId, page, size: PAGE_SIZE }),
-    [catalog.subject.id, text, type, status, skillId, page],
+    () => studioApi.questions(catalog.subject.id, { text, type, status, skillId, archived, page, size: PAGE_SIZE }),
+    [catalog.subject.id, text, type, status, skillId, archived, page],
   );
   const filtered = Boolean(text || type || status || skillId);
-  const composer = useComposer(questions.data?.total === 0 && !filtered);
+  const composer = useComposer(!archived && questions.data?.total === 0 && !filtered);
   const data = questions.data;
 
   usePageInRange(data, setPage);
 
   return (
     <div className={cn("grid grid-cols-1 gap-6", composer.open && "lg:grid-cols-[minmax(0,1fr)_400px]")}>
-      <Panel title="Questions" action={!composer.open && <NewButton label="New question" onClick={composer.show} />}>
+      <Panel
+        title={archived ? "Archived questions" : "Questions"}
+        action={
+          <span className="flex flex-wrap items-center gap-3">
+            <ArchivedSwitch archived={archived} onChange={setArchived} noun="questions" />
+            {!composer.open && !archived && <NewButton label="New question" onClick={composer.show} />}
+          </span>
+        }
+      >
         <div role="search" aria-label="Find questions" className="mb-4 flex flex-col gap-3">
           <SearchField label="Search questions" value={text} onSearch={search} placeholder="Search by question text" />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

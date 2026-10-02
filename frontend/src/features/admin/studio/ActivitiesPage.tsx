@@ -11,7 +11,8 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, Panel, SkillChips, StatusBadge } from "./shared";
-import { currentStatus, errorText, useStudio, useComposer } from "./studioLogic";
+import { currentStatus, errorText, useStudio, useComposer, useArchivedView } from "./studioLogic";
+import { ArchivedBadge, ArchivedSwitch, ManageButton } from "./Lifecycle";
 
 const PAGE_SIZE = 10;
 
@@ -24,14 +25,15 @@ export function ActivitiesPage() {
   const { catalog } = useStudio();
   const { params, page, update, setPage } = useUrlFilters();
   const text = params.get("q") ?? "";
+  const [archived, setArchived] = useArchivedView();
   const search = useCallback((q: string) => update({ q: q || undefined }), [update]);
   const lessons = useAsync(
-    () => studioApi.lessons(catalog.subject.id, { text, page, size: PAGE_SIZE }),
-    [catalog.subject.id, text, page],
+    () => studioApi.lessons(catalog.subject.id, { text, archived, page, size: PAGE_SIZE }),
+    [catalog.subject.id, text, archived, page],
   );
   const data = lessons.data;
   const filtered = Boolean(text);
-  const composer = useComposer(data?.total === 0 && !filtered);
+  const composer = useComposer(!archived && data?.total === 0 && !filtered);
   usePageInRange(data, setPage);
 
   return (
@@ -40,7 +42,10 @@ export function ActivitiesPage() {
         <p className="text-sm text-ink-soft">
           Lessons group activities. An activity is what a learning path places and a child plays.
         </p>
-        {!composer.open && <NewButton label="New lesson" onClick={composer.show} />}
+        <div className="flex flex-wrap items-center gap-3">
+          <ArchivedSwitch archived={archived} onChange={setArchived} noun="lessons and activities" />
+          {!composer.open && !archived && <NewButton label="New lesson" onClick={composer.show} />}
+        </div>
       </div>
       {composer.open && (
         <NewLesson
@@ -83,7 +88,7 @@ export function ActivitiesPage() {
           aria-busy={lessons.isLoading}
         >
           {data.items.map((lesson) => (
-            <LessonPanel key={lesson.id} lesson={lesson} />
+            <LessonPanel key={lesson.id} lesson={lesson} onChanged={lessons.refetch} />
           ))}
           <Pager label="Lessons" page={data.page} size={data.size} total={data.total} onPage={setPage} />
         </div>
@@ -92,18 +97,22 @@ export function ActivitiesPage() {
   );
 }
 
-function LessonPanel({ lesson }: { lesson: LessonSummary }) {
+function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: () => void }) {
   const { catalog } = useStudio();
   const [adding, setAdding] = useState(false);
   return (
     <Panel
       title={lesson.title}
       action={
-        !adding && (
-          <Button variant="outline" size="sm" onClick={() => setAdding(true)} disabled={catalog.skills.length === 0}>
-            <Plus size={15} aria-hidden /> Activity
-          </Button>
-        )
+        <span className="flex items-center gap-2">
+          {lesson.archived && <ArchivedBadge />}
+          <ManageButton kind="lessons" id={lesson.id} name={lesson.title} archived={lesson.archived} onChanged={onChanged} />
+          {!adding && !lesson.archived && (
+            <Button variant="outline" size="sm" onClick={() => setAdding(true)} disabled={catalog.skills.length === 0}>
+              <Plus size={15} aria-hidden /> Activity
+            </Button>
+          )}
+        </span>
       }
     >
       {adding && <NewActivity lessonId={lesson.id} onCancel={() => setAdding(false)} />}
@@ -127,6 +136,7 @@ function LessonPanel({ lesson }: { lesson: LessonSummary }) {
                   <SkillChips skillIds={activity.skillIds} catalog={catalog} />
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
+                  {activity.archived && <ArchivedBadge />}
                   <span className="hidden text-xs text-ink-soft sm:inline">{status.label}</span>
                   {status.status && <StatusBadge status={status.status} />}
                   <ChevronRight size={18} className="text-ink-soft" aria-hidden />

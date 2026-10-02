@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils/cn";
 import { IconButton, Panel, StatusBadge, ValidationPanel, VersionHistory } from "./shared";
 import { errorText, reportFromError, useStudio } from "./studioLogic";
 import { chapterChanges, durationText, issueAction, warningsOf } from "./journeyLogic";
+import { ArchivedBadge, ManageButton } from "./Lifecycle";
 
 /**
  * The journey builder (PLATFORM-EXPANSION.md §5): a curriculum version as the journey a child will
@@ -47,10 +48,18 @@ export function CurriculumEditor() {
 
   if (loaded.error) return <ErrorState error={loaded.error} onRetry={loaded.refetch} />;
   if (!detail) return <LoadingState label="Loading the curriculum…" />;
-  return <JourneyBuilder detail={detail} onChange={setDetail} />;
+  return <JourneyBuilder detail={detail} onChange={setDetail} onReload={loaded.refetch} />;
 }
 
-function JourneyBuilder({ detail, onChange }: { detail: CurriculumDetail; onChange: (d: CurriculumDetail) => void }) {
+function JourneyBuilder({
+  detail,
+  onChange,
+  onReload,
+}: {
+  detail: CurriculumDetail;
+  onChange: (d: CurriculumDetail) => void;
+  onReload: () => void;
+}) {
   const { catalog } = useStudio();
   const latest = detail.versions[detail.versions.length - 1];
   const published = [...detail.versions].reverse().find((v) => v.status === "PUBLISHED");
@@ -189,6 +198,10 @@ function JourneyBuilder({ detail, onChange }: { detail: CurriculumDetail; onChan
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-display text-[1.625rem] font-semibold leading-tight text-tonle-950">{detail.name}</h2>
           <StatusBadge status={latest.status} />
+          {detail.archived && <ArchivedBadge />}
+          <span className="ml-auto">
+            <ManageButton kind="curricula" id={detail.id} name={detail.name} archived={detail.archived} onChanged={onReload} />
+          </span>
         </div>
         <p className="text-sm text-ink-soft">
           Version {latest.versionNumber}

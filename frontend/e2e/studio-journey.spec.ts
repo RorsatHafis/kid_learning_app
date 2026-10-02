@@ -161,6 +161,26 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await expect(family.getByText("That's the order!")).toBeVisible();
   await expect(family.getByText(/That's right!/)).toBeVisible();
   await familyContext.close();
+
+  // X14: a question is archived (out of the bank, its activity untouched) and restored, from the Studio.
+  await studioTab(page, "Questions");
+  await page.getByRole("link", { name: new RegExp(escape(orderPrompt)) }).click();
+  await page.getByRole("button", { name: /^Manage question:/ }).click();
+  const manage = page.getByRole("dialog", { name: "Manage question" });
+  await expect(manage.getByText(/leaves the question bank/)).toBeVisible();
+  await expectNoViolations(page, "studio manage dialog");
+  await manage.getByRole("button", { name: "Archive…" }).click();
+  await manage.getByRole("button", { name: "Archive the question" }).click();
+  await expect(page.getByText("Archived", { exact: true }).first()).toBeVisible();
+  await studioTab(page, "Questions");
+  await expect(page.getByRole("link", { name: new RegExp(escape(orderPrompt)) })).toHaveCount(0);
+  await page.getByRole("button", { name: "Archived", exact: true }).click();
+  await page.getByRole("link", { name: new RegExp(escape(orderPrompt)) }).click();
+  await page.getByRole("button", { name: /^Restore question:|^Manage question:/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Restore" }).click();
+  await studioTab(page, "Questions");
+  await page.getByRole("button", { name: "In use", exact: true }).click();
+  await expect(page.getByRole("link", { name: new RegExp(escape(orderPrompt)) })).toBeVisible();
 });
 
 async function publish(page: Page) {

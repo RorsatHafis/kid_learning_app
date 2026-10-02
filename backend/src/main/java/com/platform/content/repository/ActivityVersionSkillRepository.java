@@ -21,12 +21,16 @@ public interface ActivityVersionSkillRepository extends JpaRepository<ActivityVe
 
     /**
      * The published activity versions that practise a skill (at most one per activity, V20), in the
-     * order they were tagged: what paths place, what reinforcement and challenge choose from.
+     * order they were tagged: what paths place, what reinforcement and challenge choose from. X14: an
+     * archived activity is not placed anew (new paths, adaptive, Smart Review, class practice, publish
+     * checks); what is already on a child's path stays.
      */
     @Query("""
             select v from ActivityVersion v, ActivityVersionSkill t
             where t.activityVersionId = v.id and t.skillId = :skillId
               and v.status = com.platform.common.entity.PublicationStatus.PUBLISHED
+              and exists (select a.id from Activity a where a.id = v.activityId
+                          and a.status = com.platform.common.entity.CatalogStatus.ACTIVE)
             order by t.createdAt, v.activityId
             """)
     List<ActivityVersion> findPublishedPractising(@Param("skillId") UUID skillId);

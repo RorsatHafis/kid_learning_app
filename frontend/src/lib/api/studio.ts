@@ -19,6 +19,8 @@ export interface Subject {
   code: string;
   name: string;
   description: string | null;
+  /** X14: archived subjects are listed only in the archived view. */
+  archived?: boolean;
 }
 
 export interface AgeHub {
@@ -44,6 +46,7 @@ export interface CatalogObjective {
   title: string;
   description: string | null;
   skillIds: string[];
+  archived?: boolean;
 }
 
 export interface Catalog {
@@ -58,6 +61,7 @@ export interface CurriculumSummary {
   subjectId: string;
   ageHubId: string;
   versions: VersionSummary[];
+  archived?: boolean;
 }
 
 export interface CurriculumVersionDetail extends VersionSummary {
@@ -70,6 +74,7 @@ export interface CurriculumDetail {
   subjectId: string;
   ageHubId: string;
   versions: CurriculumVersionDetail[];
+  archived?: boolean;
 }
 
 // ---- content/studio/JourneyBuilderService.java: a version as the journey a child meets ----
@@ -159,6 +164,7 @@ export interface ActivitySummary {
   activityType: string;
   skillIds: string[];
   versions: VersionSummary[];
+  archived?: boolean;
 }
 
 export interface LessonSummary {
@@ -169,6 +175,7 @@ export interface LessonSummary {
   activities: ActivitySummary[];
   /** Every activity in the lesson. */
   activityCount: number;
+  archived?: boolean;
 }
 
 export interface ItemDetail {
@@ -199,6 +206,7 @@ export interface ActivityDetail {
   subjectId: string;
   skillIds: string[];
   versions: ActivityVersionDetail[];
+  archived?: boolean;
 }
 
 export interface OptionDetail {
@@ -249,10 +257,13 @@ export interface QuestionSummary {
   latestPrompt: string | null;
   publishedVersionId: string | null;
   versions: VersionSummary[];
+  archived?: boolean;
 }
 
 /** The question bank's filters; `live`: only questions with a published version. */
 export interface QuestionQuery {
+  /** X14: the archived questions instead. */
+  archived?: boolean;
   text?: string;
   type?: QuestionType;
   status?: PublicationStatus;
@@ -268,6 +279,7 @@ export interface QuestionDetail {
   questionType: QuestionType;
   skillIds: string[];
   versions: QuestionVersionDetail[];
+  archived?: boolean;
 }
 
 // ---- content/validation/ValidationReport.java ----
@@ -373,12 +385,21 @@ export interface MediaQuery {
 
 const S = "/studio";
 
+/** X14: what can be renamed, archived and restored in the Studio, by its API path. */
+export type ManagedKind = "subjects" | "skills" | "objectives" | "curricula" | "lessons" | "activities" | "questions";
+
 export const studioApi = {
-  subjects: () => apiClient.get<Subject[]>(`${S}/subjects`),
+  // ---- X14: edit details, archive, restore (archived = no new uses; nothing a child has changes)
+  updateDetails: (kind: Exclude<ManagedKind, "questions">, id: string, body: { name: string; description?: string | null }) =>
+    apiClient.put<void>(`${S}/${kind}/${id}`, body),
+  archive: (kind: ManagedKind, id: string) => apiClient.post<void>(`${S}/${kind}/${id}/archive`),
+  restore: (kind: ManagedKind, id: string) => apiClient.post<void>(`${S}/${kind}/${id}/restore`),
+  subjects: (archived = false) => apiClient.get<Subject[]>(`${S}/subjects${archived ? "?archived=true" : ""}`),
   createSubject: (body: { code: string; name: string; description?: string }) =>
     apiClient.post<Subject>(`${S}/subjects`, body),
   ageHubs: () => apiClient.get<AgeHub[]>(`${S}/age-hubs`),
-  catalog: (subjectId: string) => apiClient.get<Catalog>(`${S}/subjects/${subjectId}/catalog`),
+  catalog: (subjectId: string, archived = false) =>
+    apiClient.get<Catalog>(`${S}/subjects/${subjectId}/catalog${archived ? "?archived=true" : ""}`),
   createSkill: (subjectId: string, body: { code: string; name: string; description?: string }) =>
     apiClient.post<CatalogSkill>(`${S}/subjects/${subjectId}/skills`, body),
   createObjective: (subjectId: string, body: { code: string; title: string; description?: string }) =>
@@ -388,7 +409,7 @@ export const studioApi = {
   addPrerequisite: (skillId: string, prerequisiteSkillId: string) =>
     apiClient.post<CatalogSkill>(`${S}/skills/${skillId}/prerequisites/${prerequisiteSkillId}`),
 
-  curricula: () => apiClient.get<CurriculumSummary[]>(`${S}/curricula`),
+  curricula: (archived = false) => apiClient.get<CurriculumSummary[]>(`${S}/curricula${archived ? "?archived=true" : ""}`),
   curriculum: (id: string) => apiClient.get<CurriculumDetail>(`${S}/curricula/${id}`),
   createCurriculum: (body: { subjectId: string; ageHubId: string; name: string }) =>
     apiClient.post<CurriculumDetail>(`${S}/curricula`, body),
@@ -406,9 +427,10 @@ export const studioApi = {
     apiClient.post<JourneyMap>(`${S}/curriculum-versions/${versionId}/journey/preview`, { objectiveIds }),
 
   /** One page of the caller's lessons in a subject; `text` matches lesson and activity titles. */
-  lessons: (subjectId: string, query: { text?: string; page?: number; size?: number } = {}) => {
+  lessons: (subjectId: string, query: { text?: string; archived?: boolean; page?: number; size?: number } = {}) => {
     const params = new URLSearchParams({ subjectId });
     if (query.text?.trim()) params.set("q", query.text.trim());
+    if (query.archived) params.set("archived", "true");
     params.set("page", String(query.page ?? 0));
     params.set("size", String(query.size ?? 10));
     return apiClient.get<Page<LessonSummary>>(`${S}/lessons?${params}`);
@@ -442,6 +464,7 @@ export const studioApi = {
     if (query.status) params.set("status", query.status);
     if (query.skillId) params.set("skillId", query.skillId);
     if (query.live) params.set("live", "true");
+    if (query.archived) params.set("archived", "true");
     params.set("page", String(query.page ?? 0));
     params.set("size", String(query.size ?? 25));
     return apiClient.get<Page<QuestionSummary>>(`${S}/questions?${params}`);

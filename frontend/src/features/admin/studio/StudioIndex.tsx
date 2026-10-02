@@ -8,12 +8,14 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, TextAreaField } from "./shared";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
-import { codeFrom, errorText, useComposer } from "./studioLogic";
+import { codeFrom, errorText, useArchivedView, useComposer } from "./studioLogic";
+import { ArchivedSwitch, ManageButton } from "./Lifecycle";
 
 /** Where authoring starts: pick the subject to work in, or add a new one. */
 export function StudioIndex() {
-  const subjects = useAsync(() => studioApi.subjects(), []);
-  const composer = useComposer(subjects.data?.length === 0);
+  const [archived, setArchived] = useArchivedView();
+  const subjects = useAsync(() => studioApi.subjects(archived), [archived]);
+  const composer = useComposer(!archived && subjects.data?.length === 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,12 +43,39 @@ export function StudioIndex() {
         />
       )}
 
+      <ArchivedSwitch archived={archived} onChange={setArchived} noun="subjects" />
+
       {subjects.isLoading && !subjects.data && <LoadingState label="Loading subjects…" />}
       {subjects.error && <ErrorState error={subjects.error} onRetry={subjects.refetch} />}
       {subjects.data && subjects.data.length === 0 && (
-        <EmptyState title="No subjects yet" description="Add the first subject to start building content." />
+        <EmptyState
+          title={archived ? "No archived subjects" : "No subjects yet"}
+          description={archived ? "Subjects you archive appear here, to restore." : "Add the first subject to start building content."}
+        />
       )}
-      {subjects.data && subjects.data.length > 0 && (
+      {archived && subjects.data && subjects.data.length > 0 && (
+        <ul aria-label="Archived subjects" className="divide-y divide-line overflow-hidden rounded-[16px] bg-white ring-1 ring-line">
+          {subjects.data.map((subject) => (
+            <li key={subject.id} className="flex items-center justify-between gap-4 px-5 py-4">
+              <span className="min-w-0">
+                <span className="block font-semibold text-tonle-950">{subject.name}</span>
+                <span className="block font-mono text-xs text-ink-faint">{subject.code}</span>
+              </span>
+              <ManageButton
+                kind="subjects"
+                id={subject.id}
+                name={subject.name}
+                description={subject.description}
+                describable
+                archived
+                label="Restore…"
+                onChanged={subjects.refetch}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+      {!archived && subjects.data && subjects.data.length > 0 && (
         <ul className="divide-y divide-line overflow-hidden rounded-[16px] bg-white ring-1 ring-line">
           {subjects.data.map((subject) => (
             <li key={subject.id}>

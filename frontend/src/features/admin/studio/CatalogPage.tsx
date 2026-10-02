@@ -4,7 +4,10 @@ import { studioApi, type CatalogObjective, type CatalogSkill } from "@/lib/api/s
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, Panel, SkillChips, TextAreaField } from "./shared";
-import { codeFrom, errorText, useStudio, useComposer } from "./studioLogic";
+import { codeFrom, errorText, useArchivedView, useStudio, useComposer } from "./studioLogic";
+import { ArchivedSwitch, ManageButton } from "./Lifecycle";
+import { useAsync } from "@/lib/hooks/useAsync";
+import { ErrorState, LoadingState } from "@/components/ui/States";
 
 /**
  * The educational anchor: skills (what evidence is recorded against) and learning
@@ -15,43 +18,123 @@ export function CatalogPage() {
   const { catalog } = useStudio();
   const skills = useComposer(catalog.skills.length === 0);
   const objectives = useComposer(catalog.objectives.length === 0);
+  const [archived, setArchived] = useArchivedView();
 
   return (
+    <div className="flex flex-col gap-5">
+      <ArchivedSwitch archived={archived} onChange={setArchived} noun="skills and objectives" />
+      {archived ? (
+        <ArchivedCatalog subjectId={catalog.subject.id} />
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="flex flex-col gap-4">
+            {skills.open && <NewSkill onDone={skills.hide} focusOnOpen={skills.requested} />}
+            <Panel
+              title={`Skills (${catalog.skills.length})`}
+              action={!skills.open && <NewButton label="New skill" onClick={skills.show} />}
+            >
+              {catalog.skills.length === 0 ? (
+                <p className="text-sm text-ink-soft">
+                  No skills yet. Skills are what children&apos;s answers count as evidence for.
+                </p>
+              ) : (
+                <ul className="flex flex-col divide-y divide-line">
+                  {catalog.skills.map((skill) => (
+                    <SkillRow key={skill.id} skill={skill} />
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          </div>
+          <div className="flex flex-col gap-4">
+            {objectives.open && <NewObjective onDone={objectives.hide} focusOnOpen={objectives.requested} />}
+            <Panel
+              title={`Learning objectives (${catalog.objectives.length})`}
+              action={!objectives.open && <NewButton label="New objective" onClick={objectives.show} />}
+            >
+              {catalog.objectives.length === 0 ? (
+                <p className="text-sm text-ink-soft">No objectives yet. A curriculum is a sequence of objectives.</p>
+              ) : (
+                <ul className="flex flex-col divide-y divide-line">
+                  {catalog.objectives.map((objective) => (
+                    <ObjectiveRow key={objective.id} objective={objective} />
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** X14: the subject's archived skills and objectives, to restore. */
+function ArchivedCatalog({ subjectId }: { subjectId: string }) {
+  const { refreshCatalog } = useStudio();
+  const archived = useAsync(() => studioApi.catalog(subjectId, true), [subjectId]);
+  const changed = () => {
+    archived.refetch();
+    refreshCatalog();
+  };
+  if (archived.isLoading && !archived.data) return <LoadingState label="Loading archived skills and objectives…" />;
+  if (archived.error) return <ErrorState error={archived.error} onRetry={archived.refetch} />;
+  if (!archived.data) return null;
+  const { skills, objectives } = archived.data;
+  return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <div className="flex flex-col gap-4">
-        {skills.open && <NewSkill onDone={skills.hide} focusOnOpen={skills.requested} />}
-        <Panel
-          title={`Skills (${catalog.skills.length})`}
-          action={!skills.open && <NewButton label="New skill" onClick={skills.show} />}
-        >
-          {catalog.skills.length === 0 ? (
-            <p className="text-sm text-ink-soft">No skills yet. Skills are what children&apos;s answers count as evidence for.</p>
-          ) : (
-            <ul className="flex flex-col divide-y divide-line">
-              {catalog.skills.map((skill) => (
-                <SkillRow key={skill.id} skill={skill} />
-              ))}
-            </ul>
-          )}
-        </Panel>
-      </div>
-      <div className="flex flex-col gap-4">
-        {objectives.open && <NewObjective onDone={objectives.hide} focusOnOpen={objectives.requested} />}
-        <Panel
-          title={`Learning objectives (${catalog.objectives.length})`}
-          action={!objectives.open && <NewButton label="New objective" onClick={objectives.show} />}
-        >
-          {catalog.objectives.length === 0 ? (
-            <p className="text-sm text-ink-soft">No objectives yet. A curriculum is a sequence of objectives.</p>
-          ) : (
-            <ul className="flex flex-col divide-y divide-line">
-              {catalog.objectives.map((objective) => (
-                <ObjectiveRow key={objective.id} objective={objective} />
-              ))}
-            </ul>
-          )}
-        </Panel>
-      </div>
+      <Panel title={`Archived skills (${skills.length})`}>
+        {skills.length === 0 ? (
+          <p className="text-sm text-ink-soft">No archived skills.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-line">
+            {skills.map((skill) => (
+              <li key={skill.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <span className="min-w-0">
+                  <span className="block font-semibold text-ink">{skill.name}</span>
+                  <span className="block font-mono text-xs text-ink-faint">{skill.code}</span>
+                </span>
+                <ManageButton
+                  kind="skills"
+                  id={skill.id}
+                  name={skill.name}
+                  description={skill.description}
+                  describable
+                  archived
+                  label="Restore…"
+                  onChanged={changed}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+      <Panel title={`Archived objectives (${objectives.length})`}>
+        {objectives.length === 0 ? (
+          <p className="text-sm text-ink-soft">No archived objectives.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-line">
+            {objectives.map((objective) => (
+              <li key={objective.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <span className="min-w-0">
+                  <span className="block font-semibold text-ink">{objective.title}</span>
+                  <span className="block font-mono text-xs text-ink-faint">{objective.code}</span>
+                </span>
+                <ManageButton
+                  kind="objectives"
+                  id={objective.id}
+                  name={objective.title}
+                  description={objective.description}
+                  describable
+                  archived
+                  label="Restore…"
+                  onChanged={changed}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
     </div>
   );
 }
@@ -81,10 +164,20 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
 
   return (
     <li className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
-      <div>
-        <p className="font-semibold text-ink">{skill.name}</p>
-        <p className="font-mono text-xs text-ink-faint">{skill.code}</p>
-        {skill.description && <p className="mt-1 text-sm text-ink-soft">{skill.description}</p>}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold text-ink">{skill.name}</p>
+          <p className="font-mono text-xs text-ink-faint">{skill.code}</p>
+          {skill.description && <p className="mt-1 text-sm text-ink-soft">{skill.description}</p>}
+        </div>
+        <ManageButton
+          kind="skills"
+          id={skill.id}
+          name={skill.name}
+          description={skill.description}
+          describable
+          onChanged={refreshCatalog}
+        />
       </div>
       {skill.prerequisiteSkillIds.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
@@ -159,10 +252,20 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
 
   return (
     <li className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0">
-      <div>
-        <p className="font-semibold text-ink">{objective.title}</p>
-        <p className="font-mono text-xs text-ink-faint">{objective.code}</p>
-        {objective.description && <p className="mt-1 text-sm text-ink-soft">{objective.description}</p>}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold text-ink">{objective.title}</p>
+          <p className="font-mono text-xs text-ink-faint">{objective.code}</p>
+          {objective.description && <p className="mt-1 text-sm text-ink-soft">{objective.description}</p>}
+        </div>
+        <ManageButton
+          kind="objectives"
+          id={objective.id}
+          name={objective.title}
+          description={objective.description}
+          describable
+          onChanged={refreshCatalog}
+        />
       </div>
       <SkillChips skillIds={objective.skillIds} catalog={catalog} />
       {candidates.length > 0 && (

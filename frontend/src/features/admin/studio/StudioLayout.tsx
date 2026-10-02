@@ -5,6 +5,7 @@ import { ErrorState, LoadingState } from "@/components/ui/States";
 import { cn } from "@/lib/utils/cn";
 import type { StudioContext } from "./studioLogic";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
+import { ManageButton } from "./Lifecycle";
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -31,7 +32,19 @@ export function StudioLayout() {
         breadcrumb={[{ label: "Content Studio", to: "/admin/studio" }, { label: catalog.data?.subject.name ?? "…" }]}
         title={catalog.data?.subject.name ?? "Loading…"}
         actions={
-          subjects.data &&
+          <div className="flex flex-wrap items-center gap-3">
+            {catalog.data && (
+              <ManageButton
+                kind="subjects"
+                id={catalog.data.subject.id}
+                name={catalog.data.subject.name}
+                description={catalog.data.subject.description}
+                describable
+                label="Manage subject…"
+                onChanged={(change) => (change === "archived" ? navigate("/admin/studio") : (catalog.refetch(), subjects.refetch()))}
+              />
+            )}
+          {subjects.data &&
           subjects.data.length > 1 && (
             <label className="flex items-center gap-2 text-sm font-medium text-ink-soft">
               Subject
@@ -47,7 +60,8 @@ export function StudioLayout() {
                 ))}
               </select>
             </label>
-          )
+          )}
+          </div>
         }
       />
 

@@ -156,8 +156,14 @@ public class StudioService {
 
     @Transactional(readOnly = true)
     public List<SubjectDto> subjects(UUID accountId) {
+        return subjects(accountId, false);
+    }
+
+    /** X14: {@code archived} lists the archived subjects instead (to restore). */
+    @Transactional(readOnly = true)
+    public List<SubjectDto> subjects(UUID accountId, boolean archived) {
         guard.requireAuthor(accountId);
-        return subjects.findByStatus(CatalogStatus.ACTIVE).stream()
+        return subjects.findByStatus(archived ? CatalogStatus.ARCHIVED : CatalogStatus.ACTIVE).stream()
                 .sorted(Comparator.comparing(Subject::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(StudioService::subjectDto).toList();
     }
@@ -172,13 +178,20 @@ public class StudioService {
 
     @Transactional(readOnly = true)
     public CatalogDto catalog(UUID accountId, UUID subjectId) {
+        return catalog(accountId, subjectId, false);
+    }
+
+    /** X14: {@code archived} shows the subject's archived skills and objectives instead (to restore). */
+    @Transactional(readOnly = true)
+    public CatalogDto catalog(UUID accountId, UUID subjectId, boolean archived) {
         guard.requireAuthor(accountId);
         Subject subject = subjectService.getById(subjectId);
-        List<SkillDto> skillDtos = skills.findBySubjectIdAndStatus(subjectId, CatalogStatus.ACTIVE).stream()
+        CatalogStatus shown = archived ? CatalogStatus.ARCHIVED : CatalogStatus.ACTIVE;
+        List<SkillDto> skillDtos = skills.findBySubjectIdAndStatus(subjectId, shown).stream()
                 .sorted(Comparator.comparing(Skill::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(this::skillDto).toList();
         List<ObjectiveDto> objectiveDtos = objectives.findBySubjectId(subjectId).stream()
-                .filter(objective -> objective.getStatus() == CatalogStatus.ACTIVE)
+                .filter(objective -> objective.getStatus() == shown)
                 .sorted(Comparator.comparing(LearningObjective::getTitle, String.CASE_INSENSITIVE_ORDER))
                 .map(this::objectiveDto).toList();
         return new CatalogDto(subjectDto(subject), skillDtos, objectiveDtos);
@@ -256,13 +269,21 @@ public class StudioService {
 
     @Transactional(readOnly = true)
     public List<CurriculumSummary> curricula(UUID accountId) {
+        return curricula(accountId, false);
+    }
+
+    /** X14: {@code archived} lists the archived curricula instead (no longer offered to families; to restore). */
+    @Transactional(readOnly = true)
+    public List<CurriculumSummary> curricula(UUID accountId, boolean archived) {
         UUID owner = guard.authoringOwner(guard.requireAuthor(accountId));
         List<Curriculum> owned = owner == null ? curricula.findByOwnerAccountIdIsNull() : curricula.findByOwnerAccountId(owner);
+        CatalogStatus shown = archived ? CatalogStatus.ARCHIVED : CatalogStatus.ACTIVE;
         return owned.stream()
+                .filter(curriculum -> curriculum.getStatus() == shown)
                 .sorted(Comparator.comparing(Curriculum::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(curriculum -> new CurriculumSummary(curriculum.getId(), curriculum.getName(), curriculum.getSubjectId(),
                         curriculum.getAgeHubId(), curriculumService.listVersions(curriculum.getId()).stream()
-                        .map(VersionSummary::of).toList()))
+                        .map(VersionSummary::of).toList(), curriculum.getStatus() == CatalogStatus.ARCHIVED))
                 .toList();
     }
 
@@ -275,7 +296,7 @@ public class StudioService {
                         .map(CurriculumObjective::getLearningObjectiveId).toList()))
                 .toList();
         return new CurriculumDetail(curriculum.getId(), curriculum.getName(), curriculum.getSubjectId(),
-                curriculum.getAgeHubId(), versions);
+                curriculum.getAgeHubId(), versions, curriculum.getStatus() == CatalogStatus.ARCHIVED);
     }
 
     @Transactional
@@ -332,10 +353,21 @@ public class StudioService {
      */
     @Transactional(readOnly = true)
     public PageResponse<LessonSummary> lessons(UUID accountId, UUID subjectId, String text, PageResponse.Request request) {
+        return lessons(accountId, subjectId, text, false, request);
+    }
+
+    /**
+     * X14: the active view shows active lessons with their active activities; {@code archived} shows what was
+     * archived - archived lessons (with all their activities) and archived activities of active lessons.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<LessonSummary> lessons(UUID accountId, UUID subjectId, String text, boolean archived,
+                                               PageResponse.Request request) {
         UUID owner = guard.authoringOwner(guard.requireAuthor(accountId));
         String pattern = SearchText.containsPattern(text);
-        long total = lessons.countStudio(owner, subjectId, pattern);
-        List<UUID> ids = total == 0 ? List.of() : lessons.searchStudio(owner, subjectId, pattern, request.size(), request.offset());
+        long total = lessons.countStudio(owner, subjectId, pattern, archived);
+        List<UUID> ids = total == 0 ? List.of() : lessons.searchStudio(owner, subjectId, pattern, archived, request.size(),
+                request.offset());
         if (ids.isEmpty()) {
             return new PageResponse<>(List.of(), request.page(), request.size(), total);
         }
@@ -360,15 +392,20 @@ public class StudioService {
         Map<UUID, List<Activity>> byLesson = all.stream().collect(java.util.stream.Collectors.groupingBy(Activity::getLessonId));
         String needle = pattern == null ? null : text.strip().toLowerCase(java.util.Locale.ROOT);
         List<LessonSummary> page = ids.stream().map(byId::get).filter(Objects::nonNull).map(lesson -> {
-            List<Activity> own = byLesson.getOrDefault(lesson.getId(), List.of());
+            boolean lessonArchived = lesson.getStatus() == CatalogStatus.ARCHIVED;
+            List<Activity> own = byLesson.getOrDefault(lesson.getId(), List.of()).stream()
+                    .filter(activity -> archived ? lessonArchived || activity.getStatus() == CatalogStatus.ARCHIVED
+                            : activity.getStatus() == CatalogStatus.ACTIVE)
+                    .toList();
             boolean lessonMatches = needle == null || lesson.getTitle().toLowerCase(java.util.Locale.ROOT).contains(needle);
             List<ActivitySummary> shown = own.stream()
                     .filter(activity -> lessonMatches || activity.getTitle().toLowerCase(java.util.Locale.ROOT).contains(needle))
                     .sorted(Comparator.comparing(Activity::getTitle, String.CASE_INSENSITIVE_ORDER))
                     .map(activity -> new ActivitySummary(activity.getId(), activity.getTitle(), activity.getActivityType(),
-                            skillsOf.getOrDefault(activity.getId(), List.of()), versionsOf.getOrDefault(activity.getId(), List.of())))
+                            skillsOf.getOrDefault(activity.getId(), List.of()), versionsOf.getOrDefault(activity.getId(), List.of()),
+                            activity.getStatus() == CatalogStatus.ARCHIVED))
                     .toList();
-            return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), shown, own.size());
+            return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), shown, own.size(), lessonArchived);
         }).toList();
         return new PageResponse<>(page, request.page(), request.size(), total);
     }
@@ -378,7 +415,7 @@ public class StudioService {
         Account author = guard.requireAuthor(accountId);
         subjectService.getById(request.subjectId());
         Lesson lesson = lessonService.createOwnedLesson(request.subjectId(), request.title().strip(), guard.authoringOwner(author));
-        return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), List.of(), 0);
+        return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), List.of(), 0, false);
     }
 
     /** An activity with its skills and a first draft, in one step. Activities are PRACTICE: no other type is defined yet. */
@@ -403,7 +440,7 @@ public class StudioService {
                                 .map(this::itemDetail).toList(), activityService.skillsOf(version.getId())))
                 .toList();
         return new ActivityDetail(activity.getId(), activity.getTitle(), activity.getActivityType(), activity.getLessonId(),
-                activity.getSubjectId(), activitySkillIds(activityId), versions);
+                activity.getSubjectId(), activitySkillIds(activityId), versions, activity.getStatus() == CatalogStatus.ARCHIVED);
     }
 
     @Transactional
@@ -495,9 +532,9 @@ public class StudioService {
         String type = filter.type() == null ? null : filter.type().name();
         String status = filter.status() == null ? null : filter.status().name();
         String pattern = SearchText.containsPattern(filter.text());
-        long total = questions.countBank(subjectId, owner, type, status, filter.skillId(), filter.live(), pattern);
+        long total = questions.countBank(subjectId, owner, type, status, filter.skillId(), filter.live(), pattern, filter.archived());
         List<UUID> ids = total == 0 ? List.of() : questions.searchBank(subjectId, owner, type, status, filter.skillId(),
-                filter.live(), pattern, request.size(), request.offset());
+                filter.live(), pattern, filter.archived(), request.size(), request.offset());
         return new PageResponse<>(questionSummaries(ids), request.page(), request.size(), total);
     }
 
@@ -524,7 +561,7 @@ public class StudioService {
                     .map(QuestionVersion::getId).findFirst().orElse(null);
             return new QuestionSummary(question.getId(), question.getSubjectId(), question.getQuestionType(),
                     skillsOf.getOrDefault(question.getId(), List.of()), latest == null ? null : latest.getPrompt(), publishedId,
-                    versions.stream().map(VersionSummary::of).toList());
+                    versions.stream().map(VersionSummary::of).toList(), question.getStatus() == CatalogStatus.ARCHIVED);
         }).toList();
     }
 
@@ -549,7 +586,7 @@ public class StudioService {
                                     refs.get(item.getImageAssetId()), refs.get(item.getAudioAssetId()))).toList() : List.of(),
                             questionService.skillsOf(version.getId()));
                 })
-                .toList());
+                .toList(), question.getStatus() == CatalogStatus.ARCHIVED);
     }
 
     /** A question with its skills, a first draft and (multiple choice) its answer choices, in one step. */
@@ -722,11 +759,12 @@ public class StudioService {
     private ObjectiveDto objectiveDto(LearningObjective objective) {
         return new ObjectiveDto(objective.getId(), objective.getCode(), objective.getTitle(), objective.getDescription(),
                 objectiveSkills.findByLearningObjectiveId(objective.getId()).stream()
-                        .map(LearningObjectiveSkill::getSkillId).toList());
+                        .map(LearningObjectiveSkill::getSkillId).toList(), objective.getStatus() == CatalogStatus.ARCHIVED);
     }
 
     private static SubjectDto subjectDto(Subject subject) {
-        return new SubjectDto(subject.getId(), subject.getCode(), subject.getName(), subject.getDescription());
+        return new SubjectDto(subject.getId(), subject.getCode(), subject.getName(), subject.getDescription(),
+                subject.getStatus() == CatalogStatus.ARCHIVED);
     }
 
     /** Multiple choice is answered by option id; its correct answer lives on the options, not the text field. */

@@ -30,7 +30,7 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
             LEFT JOIN LATERAL (SELECT v.id, v.prompt, v.status FROM question_versions v
                                WHERE v.question_id = q.id ORDER BY v.version_number DESC LIMIT 1) latest ON true
             WHERE q.subject_id = :subjectId
-              AND q.status = 'ACTIVE'
+              AND q.status = (CASE WHEN :archived THEN 'ARCHIVED' ELSE 'ACTIVE' END)
               AND ((CAST(:ownerId AS uuid) IS NULL AND q.owner_account_id IS NULL) OR q.owner_account_id = CAST(:ownerId AS uuid))
               AND (CAST(:type AS varchar) IS NULL OR q.question_type = CAST(:type AS varchar))
               AND (CAST(:status AS varchar) IS NULL OR latest.status = CAST(:status AS varchar))
@@ -45,11 +45,12 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
             nativeQuery = true)
     List<UUID> searchBank(@Param("subjectId") UUID subjectId, @Param("ownerId") UUID ownerId, @Param("type") String type,
                           @Param("status") String status, @Param("skillId") UUID skillId, @Param("live") boolean live,
-                          @Param("pattern") String pattern, @Param("limit") int limit, @Param("offset") int offset);
+                          @Param("pattern") String pattern, @Param("archived") boolean archived,
+                          @Param("limit") int limit, @Param("offset") int offset);
 
     @Query(value = "SELECT count(*) " + BANK_FROM, nativeQuery = true)
     long countBank(@Param("subjectId") UUID subjectId, @Param("ownerId") UUID ownerId, @Param("type") String type,
                    @Param("status") String status, @Param("skillId") UUID skillId, @Param("live") boolean live,
-                   @Param("pattern") String pattern);
+                   @Param("pattern") String pattern, @Param("archived") boolean archived);
 
 }

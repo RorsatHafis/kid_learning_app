@@ -25,7 +25,9 @@ public interface LessonRepository extends JpaRepository<Lesson, UUID> {
      */
     String STUDIO_FROM = """
             FROM lessons l
-            WHERE l.status = 'ACTIVE'
+            WHERE ((:archived = false AND l.status = 'ACTIVE')
+                   OR (:archived = true AND (l.status = 'ARCHIVED'
+                       OR EXISTS (SELECT 1 FROM activities x WHERE x.lesson_id = l.id AND x.status = 'ARCHIVED'))))
               AND ((CAST(:ownerId AS uuid) IS NULL AND l.owner_account_id IS NULL) OR l.owner_account_id = CAST(:ownerId AS uuid))
               AND (CAST(:subjectId AS uuid) IS NULL OR l.subject_id = CAST(:subjectId AS uuid))
               AND (CAST(:pattern AS varchar) IS NULL OR l.title ILIKE CAST(:pattern AS varchar)
@@ -34,9 +36,10 @@ public interface LessonRepository extends JpaRepository<Lesson, UUID> {
 
     @Query(value = "SELECT l.id " + STUDIO_FROM + " ORDER BY lower(l.title), l.id LIMIT :limit OFFSET :offset", nativeQuery = true)
     List<UUID> searchStudio(@Param("ownerId") UUID ownerId, @Param("subjectId") UUID subjectId, @Param("pattern") String pattern,
-                            @Param("limit") int limit, @Param("offset") int offset);
+                            @Param("archived") boolean archived, @Param("limit") int limit, @Param("offset") int offset);
 
     @Query(value = "SELECT count(*) " + STUDIO_FROM, nativeQuery = true)
-    long countStudio(@Param("ownerId") UUID ownerId, @Param("subjectId") UUID subjectId, @Param("pattern") String pattern);
+    long countStudio(@Param("ownerId") UUID ownerId, @Param("subjectId") UUID subjectId, @Param("pattern") String pattern,
+                     @Param("archived") boolean archived);
 
 }

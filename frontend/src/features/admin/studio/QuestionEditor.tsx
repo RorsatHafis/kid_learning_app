@@ -7,6 +7,7 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { ChildPreview } from "./ChildPreview";
+import { ArchivedBadge, ManageButton } from "./Lifecycle";
 import { QuestionDraftForm } from "./QuestionDraftForm";
 import { errorText, QUESTION_TYPE_LABEL, reportFromError, useStudio } from "./studioLogic";
 import { Panel, SkillChips, StatusBadge, ValidationPanel, VersionHistory } from "./shared";
@@ -22,10 +23,10 @@ export function QuestionEditor() {
 
   if (loaded.error) return <ErrorState error={loaded.error} onRetry={loaded.refetch} />;
   if (!detail) return <LoadingState label="Loading the question…" />;
-  return <Editor detail={detail} onChange={setDetail} />;
+  return <Editor detail={detail} onChange={setDetail} onReload={loaded.refetch} />;
 }
 
-function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: QuestionDetail) => void }) {
+function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChange: (d: QuestionDetail) => void; onReload: () => void }) {
   const { catalog } = useStudio();
   const latest = detail.versions[detail.versions.length - 1];
   const isDraft = latest.status === "DRAFT";
@@ -77,6 +78,10 @@ function Editor({ detail, onChange }: { detail: QuestionDetail; onChange: (d: Qu
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-display text-[1.625rem] font-semibold leading-tight text-tonle-950">{latest.prompt}</h2>
           <StatusBadge status={latest.status} />
+          {detail.archived && <ArchivedBadge />}
+          <span className="ml-auto">
+            <ManageButton kind="questions" id={detail.id} name={latest.prompt} archived={detail.archived} renamable={false} onChanged={onReload} />
+          </span>
         </div>
         <p className="text-sm text-ink-soft">
           {QUESTION_TYPE_LABEL[detail.questionType]} · version {latest.versionNumber}

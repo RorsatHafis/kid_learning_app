@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useCallback, useState } from "react";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { ApiError } from "@/lib/api/ApiError";
 import type { Catalog, PublicationStatus, ValidationReport, VersionSummary } from "@/lib/api/studio";
 import type { QuestionType } from "@/lib/api/types";
@@ -86,4 +86,25 @@ export function useComposer(listIsEmpty: boolean) {
     show: () => setExplicit(true),
     hide: () => setExplicit(false),
   };
+}
+
+/** X14: whether a Studio list shows its archived things instead of those in use; kept in the address. */
+export function useArchivedView(): [boolean, (archived: boolean) => void] {
+  const [params, setParams] = useSearchParams();
+  const archived = params.get("archived") === "1";
+  const set = useCallback(
+    (value: boolean) =>
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (value) next.set("archived", "1");
+          else next.delete("archived");
+          next.delete("page");
+          return next;
+        },
+        { replace: true },
+      ),
+    [setParams],
+  );
+  return [archived, set];
 }

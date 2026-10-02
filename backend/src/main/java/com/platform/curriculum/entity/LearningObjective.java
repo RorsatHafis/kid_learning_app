@@ -54,6 +54,13 @@ public class LearningObjective extends AuditableEntity {
         return new LearningObjective(subjectId, code, title, description);
     }
 
+    /** X14: a clearer title or description; the code (its stable identity) never changes. */
+    public void rename(String newTitle, String newDescription) {
+        Assert.hasText(newTitle, "title must not be blank");
+        this.title = newTitle.strip();
+        this.description = newDescription == null || newDescription.isBlank() ? null : newDescription.strip();
+    }
+
     public void archive() {
         requireStatus(CatalogStatus.ACTIVE, "archived");
         this.status = CatalogStatus.ARCHIVED;

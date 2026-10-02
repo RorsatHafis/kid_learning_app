@@ -43,6 +43,8 @@ public class SchoolService {
      */
     @Transactional public List<Enrollment> assignCurriculum(UUID classId,UUID curriculumId,UUID accountId){
         Curriculum curriculum=curricula.findById(curriculumId).filter(c->c.getOwnerAccountId()==null||c.getOwnerAccountId().equals(accountId)).filter(c->curriculumService.hasPublishedVersion(c.getId())).orElseThrow(()->new ResourceNotFoundException("Curriculum",curriculumId));
+        // X14: an archived curriculum is not assigned anew; classes already assigning it keep it.
+        if(curriculum.getStatus()==com.platform.common.entity.CatalogStatus.ARCHIVED&&classCurricula.findBySchoolClassIdAndCurriculumId(classId,curriculumId).filter(a->a.getStatus()==ClassCurriculumAssignmentStatus.ACTIVE).isEmpty()) throw new IllegalStateException("This curriculum is archived and no longer offered.");
         ClassCurriculumAssignment assignment=classCurricula.findBySchoolClassIdAndCurriculumId(classId,curriculumId).map(existing->{existing.reassign(accountId);return existing;}).orElseGet(()->ClassCurriculumAssignment.assign(classId,curriculumId,accountId));
         classCurricula.saveAndFlush(assignment);
         record(accountId,"CLASS_CURRICULUM_ASSIGNED",classId,Map.of("curriculumId",curriculumId));

@@ -8,7 +8,8 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, Panel, SelectField, StatusBadge } from "./shared";
-import { currentStatus, errorText, useStudio, useComposer } from "./studioLogic";
+import { currentStatus, errorText, useStudio, useComposer, useArchivedView } from "./studioLogic";
+import { ArchivedSwitch } from "./Lifecycle";
 
 /**
  * A curriculum is the sequence of objectives a child's learning path is built from.
@@ -16,19 +17,31 @@ import { currentStatus, errorText, useStudio, useComposer } from "./studioLogic"
  */
 export function CurriculaPage() {
   const { catalog } = useStudio();
-  const curricula = useAsync(() => studioApi.curricula(), []);
+  const [archived, setArchived] = useArchivedView();
+  const curricula = useAsync(() => studioApi.curricula(archived), [archived]);
   const ageHubs = useAsync(() => studioApi.ageHubs(), []);
   const mine = (curricula.data ?? []).filter((c) => c.subjectId === catalog.subject.id);
   const hubName = (id: string) => ageHubs.data?.find((h) => h.id === id)?.name ?? "";
-  const composer = useComposer(!!curricula.data && mine.length === 0);
+  const composer = useComposer(!archived && !!curricula.data && mine.length === 0);
 
   return (
     <div className={cn("grid grid-cols-1 gap-6", composer.open && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
-      <Panel title="Curricula" action={!composer.open && <NewButton label="New curriculum" onClick={composer.show} />}>
+      <Panel
+        title={archived ? "Archived curricula" : "Curricula"}
+        action={
+          <span className="flex flex-wrap items-center gap-3">
+            <ArchivedSwitch archived={archived} onChange={setArchived} noun="curricula" />
+            {!composer.open && !archived && <NewButton label="New curriculum" onClick={composer.show} />}
+          </span>
+        }
+      >
         {curricula.isLoading && !curricula.data && <LoadingState label="Loading curricula…" />}
         {curricula.error && <ErrorState error={curricula.error} onRetry={curricula.refetch} />}
         {curricula.data && mine.length === 0 && (
-          <EmptyState title="No curricula yet" description="Create one once you have objectives and activities to put in it." />
+          <EmptyState
+            title={archived ? "No archived curricula" : "No curricula yet"}
+            description={archived ? "Curricula you archive appear here, to restore." : "Create one once you have objectives and activities to put in it."}
+          />
         )}
         <ul className="flex flex-col divide-y divide-line">
           {mine.map((curriculum) => {

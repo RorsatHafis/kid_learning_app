@@ -76,6 +76,10 @@ public class EnrollmentService {
         // child already follows is not, so it stays idempotent at any limit.
         CurriculumVersion published = curriculumService.getPublishedVersion(curriculumId);
         if (enrollmentRepository.findByChildIdAndCurriculumVersionId(childId, published.getId()).isEmpty()) {
+            // X14: an archived curriculum is no longer offered to families; a child already on it keeps it.
+            if (curriculumService.getCurriculum(curriculumId).getStatus() == com.platform.common.entity.CatalogStatus.ARCHIVED) {
+                throw new IllegalStateException("This learning path is no longer offered.");
+            }
             entitlementService.requireRoomForJourney(childId);
         }
         return enroll(childId, curriculumId);
