@@ -17,9 +17,10 @@ class MediaInspectorTests {
 
     @Test
     void recognisesThePicturesAndRecordingsBrowsersHandle() throws Exception {
-        assertThat(MediaInspector.inspect(image("png", 30, 20))).isEqualTo(new MediaInspector.Inspected(AssetType.IMAGE, "image/png"));
-        assertThat(MediaInspector.inspect(image("jpg", 30, 20))).isEqualTo(new MediaInspector.Inspected(AssetType.IMAGE, "image/jpeg"));
-        assertThat(MediaInspector.inspect(webpLossless(64, 48)).mimeType()).isEqualTo("image/webp");
+        // Pictures carry their size as inspected (X13: shown in the library).
+        assertThat(MediaInspector.inspect(image("png", 30, 20))).isEqualTo(new MediaInspector.Inspected(AssetType.IMAGE, "image/png", 30, 20));
+        assertThat(MediaInspector.inspect(image("jpg", 30, 20))).isEqualTo(new MediaInspector.Inspected(AssetType.IMAGE, "image/jpeg", 30, 20));
+        assertThat(MediaInspector.inspect(webpLossless(64, 48))).isEqualTo(new MediaInspector.Inspected(AssetType.IMAGE, "image/webp", 64, 48));
         assertThat(MediaInspector.inspect(bytes("ID3", 64)).mimeType()).isEqualTo("audio/mpeg");
         byte[] frame = new byte[64];
         frame[0] = (byte) 0xFF;
@@ -27,7 +28,7 @@ class MediaInspectorTests {
         assertThat(MediaInspector.inspect(frame).mimeType()).isEqualTo("audio/mpeg");
         assertThat(MediaInspector.inspect(bytes("OggS", 64)).mimeType()).isEqualTo("audio/ogg");
         byte[] m4a = bytes("\0\0\0 ftypM4A ", 64);
-        assertThat(MediaInspector.inspect(m4a)).isEqualTo(new MediaInspector.Inspected(AssetType.AUDIO, "audio/mp4"));
+        assertThat(MediaInspector.inspect(m4a)).isEqualTo(new MediaInspector.Inspected(AssetType.AUDIO, "audio/mp4", null, null));
         byte[] wav = bytes("RIFF\0\0\0\0WAVE", 64);
         assertThat(MediaInspector.inspect(wav).type()).isEqualTo(AssetType.AUDIO);
     }

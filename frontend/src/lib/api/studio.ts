@@ -328,6 +328,49 @@ export interface QuestionDraftInput {
   items?: OrderItemInput[];
 }
 
+// ---- content/media/MediaLibraryService.java (X13): the media library ----
+
+/** A library item: a MediaRef plus what authors manage. `usedBy`: question versions using it. */
+export interface MediaItem extends MediaRef {
+  sizeBytes: number;
+  width: number | null;
+  height: number | null;
+  title: string | null;
+  /** What it shows: offered as the screen-reader text wherever it is used. */
+  description: string | null;
+  archived: boolean;
+  createdAt: string | null;
+  usedBy: number;
+  /** Whether this author may describe, archive or delete it (platform media: administrators). */
+  editable: boolean;
+}
+
+export type MediaUseField = "PROMPT_IMAGE" | "PROMPT_AUDIO" | "ANSWER_IMAGE" | "ANSWER_AUDIO";
+
+export interface MediaUse {
+  questionId: string;
+  subjectId: string;
+  versionId: string;
+  versionNumber: number;
+  status: PublicationStatus;
+  prompt: string;
+  field: MediaUseField;
+}
+
+export interface MediaDetail {
+  item: MediaItem;
+  uses: MediaUse[];
+}
+
+export interface MediaQuery {
+  type?: "IMAGE" | "AUDIO";
+  text?: string;
+  archived?: boolean;
+  unused?: boolean;
+  page?: number;
+  size?: number;
+}
+
 const S = "/studio";
 
 export const studioApi = {
@@ -415,12 +458,32 @@ export const studioApi = {
   validateQuestionVersion: (versionId: string) =>
     apiClient.get<ValidationReport>(`${S}/question-versions/${versionId}/validation`),
   previewQuestionVersion: (versionId: string) => apiClient.get<ActivityItem>(`${S}/question-versions/${versionId}/preview`),
-  /** A picture (PNG, JPEG, WebP, ≤ 2 MB) or recording (MP3, M4A, Ogg, WAV, ≤ 5 MB), inspected by the server. */
+  /**
+   * A picture (PNG, JPEG, WebP, ≤ 2 MB) or recording (MP3, M4A, Ogg, WAV, ≤ 5 MB), inspected by the server.
+   * The same file uploaded again is the same library item (X13).
+   */
   uploadMedia: (file: File) => {
     const form = new FormData();
     form.append("file", file);
-    return apiClient.post<MediaRef>(`${S}/media`, form);
+    return apiClient.post<MediaItem>(`${S}/media`, form);
   },
+  /** The media library: platform media and the author's own, newest first (X13). */
+  mediaLibrary: (query: MediaQuery = {}) => {
+    const params = new URLSearchParams();
+    if (query.type) params.set("type", query.type);
+    if (query.text) params.set("q", query.text);
+    if (query.archived) params.set("archived", "true");
+    if (query.unused) params.set("unused", "true");
+    params.set("page", String(query.page ?? 0));
+    params.set("size", String(query.size ?? 24));
+    return apiClient.get<Page<MediaItem>>(`${S}/media?${params}`);
+  },
+  mediaDetail: (id: string) => apiClient.get<MediaDetail>(`${S}/media/${id}`),
+  describeMedia: (id: string, body: { title: string | null; description: string | null }) =>
+    apiClient.put<MediaItem>(`${S}/media/${id}`, body),
+  archiveMedia: (id: string) => apiClient.post<MediaItem>(`${S}/media/${id}/archive`),
+  restoreMedia: (id: string) => apiClient.post<MediaItem>(`${S}/media/${id}/restore`),
+  deleteMedia: (id: string) => apiClient.delete<void>(`${S}/media/${id}`),
   publishQuestionVersion: (versionId: string) =>
     apiClient.post<QuestionDetail>(`${S}/question-versions/${versionId}/publish`),
 };

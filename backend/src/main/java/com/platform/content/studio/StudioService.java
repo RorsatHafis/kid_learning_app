@@ -593,25 +593,27 @@ public class StudioService {
     private void writeDraftContent(Question question, UUID draftId, UUID promptImage, String promptImageDescription, UUID promptAudio,
                                    List<OptionRequest> options, List<MatchPairRequest> pairs, List<OrderItemRequest> items) {
         UUID owner = question.getOwnerAccountId();
-        media.requireAttachable(promptImage, AssetType.IMAGE, owner);
-        media.requireAttachable(promptAudio, AssetType.AUDIO, owner);
+        // X13: files this draft already uses stay usable on it even if archived since.
+        java.util.Set<UUID> onDraft = ActivityContentDtos.mediaOf(questionService.getVersion(draftId), questionService.listOptions(draftId));
+        media.requireAttachable(promptImage, AssetType.IMAGE, owner, onDraft);
+        media.requireAttachable(promptAudio, AssetType.AUDIO, owner, onDraft);
         QuestionType type = question.getQuestionType();
         if (type == QuestionType.MULTIPLE_CHOICE && options != null) {
             options.forEach(option -> {
-                media.requireAttachable(option.imageAssetId(), AssetType.IMAGE, owner);
-                media.requireAttachable(option.audioAssetId(), AssetType.AUDIO, owner);
+                media.requireAttachable(option.imageAssetId(), AssetType.IMAGE, owner, onDraft);
+                media.requireAttachable(option.audioAssetId(), AssetType.AUDIO, owner, onDraft);
             });
         }
         if (type == QuestionType.MATCHING && pairs != null) {
             pairs.forEach(pair -> {
-                media.requireAttachable(pair.leftImageAssetId(), AssetType.IMAGE, owner);
-                media.requireAttachable(pair.rightImageAssetId(), AssetType.IMAGE, owner);
+                media.requireAttachable(pair.leftImageAssetId(), AssetType.IMAGE, owner, onDraft);
+                media.requireAttachable(pair.rightImageAssetId(), AssetType.IMAGE, owner, onDraft);
             });
         }
         if (type == QuestionType.ORDERING && items != null) {
             items.forEach(item -> {
-                media.requireAttachable(item.imageAssetId(), AssetType.IMAGE, owner);
-                media.requireAttachable(item.audioAssetId(), AssetType.AUDIO, owner);
+                media.requireAttachable(item.imageAssetId(), AssetType.IMAGE, owner, onDraft);
+                media.requireAttachable(item.audioAssetId(), AssetType.AUDIO, owner, onDraft);
             });
         }
         questionService.setPromptMedia(draftId, promptImage, promptImageDescription, promptAudio);

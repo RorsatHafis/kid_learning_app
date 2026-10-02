@@ -66,6 +66,15 @@ public class MediaStorage {
         return key;
     }
 
+    /** Removes a stored file no asset refers to any more (X13: deleting unused media). */
+    public void delete(String key) {
+        try {
+            Files.deleteIfExists(resolve(key));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Could not delete media " + key, e);
+        }
+    }
+
     public Path resolve(String key) {
         if (key == null || !KEY.matcher(key).matches()) {
             throw new IllegalArgumentException("Not a media key");

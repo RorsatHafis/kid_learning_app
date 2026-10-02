@@ -62,7 +62,11 @@ test("studio: author, check, publish; a child plays exactly what was published",
   const composer = page.getByRole("region", { name: "New question" });
   await composer.getByLabel("Type").selectOption({ label: "Put in order" });
   await composer.getByLabel("Question the child sees").fill(orderPrompt);
-  await composer.locator('input[type="file"]').first().setInputFiles({ name: "stars.png", mimeType: "image/png", buffer: PICTURE });
+  // Bytes unique to this run (after the PNG's end, which browsers ignore): the library deduplicates identical files.
+  await composer
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles({ name: `stars-${tag}.png`, mimeType: "image/png", buffer: Buffer.concat([PICTURE, Buffer.from(tag)]) });
   await expect(composer.getByRole("button", { name: "Replace the picture for the question" })).toBeVisible();
   for (const [index, label] of ["1", "2", "3"].entries()) await composer.getByLabel(`Item ${index + 1}`, { exact: true }).fill(label);
   await composer.getByRole("checkbox", { name: skill }).check();
@@ -75,6 +79,12 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await page.getByRole("button", { name: "Save draft" }).click();
   await expect(page.getByText("Draft saved.")).toBeVisible();
   await publish(page);
+
+  // X13: the uploaded picture is in the media library, named after its file, showing where it is used.
+  await page.goto(`/admin/studio/media?q=${tag}`);
+  await expect(page.getByRole("button", { name: new RegExp(`Open: stars ${tag}, picture, used in 1 question`, "i") })).toBeVisible();
+  await expectNoViolations(page, "studio media library");
+  await page.goBack();
 
   // An activity in a lesson, using that question.
   await studioTab(page, "Activities");

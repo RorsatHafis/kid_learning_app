@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.util.Assert;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -41,6 +42,27 @@ public class ContentAsset extends BaseEntity {
     @Column(name = "uploaded_by_account_id", updatable = false)
     private UUID uploadedByAccountId;
 
+    /** X13: how authors find it in the library. */
+    @Column(name = "title", length = 200)
+    private String title;
+
+    /** What it shows, offered as the screen-reader text wherever it is used. */
+    @Column(name = "description", columnDefinition = "text")
+    private String description;
+
+    @Column(name = "width", updatable = false)
+    private Integer width;
+
+    @Column(name = "height", updatable = false)
+    private Integer height;
+
+    /** Out of the library and pickers; whatever already uses it keeps working. */
+    @Column(name = "archived_at")
+    private Instant archivedAt;
+
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private Instant createdAt;
+
     protected ContentAsset() {
         // JPA
     }
@@ -70,6 +92,57 @@ public class ContentAsset extends BaseEntity {
         asset.ownerAccountId = ownerAccountId;
         asset.uploadedByAccountId = uploadedByAccountId;
         return asset;
+    }
+
+    /** A picture's size as inspected at upload (null for recordings). */
+    public ContentAsset withDimensions(Integer width, Integer height) {
+        Assert.isTrue((width == null) == (height == null), "width and height go together");
+        this.width = width;
+        this.height = height;
+        return this;
+    }
+
+    public void describe(String title, String description) {
+        this.title = title == null || title.isBlank() ? null : title.strip();
+        this.description = description == null || description.isBlank() ? null : description.strip();
+    }
+
+    public void archive(Instant at) {
+        if (archivedAt == null) {
+            archivedAt = at;
+        }
+    }
+
+    public void restore() {
+        archivedAt = null;
+    }
+
+    public boolean isArchived() {
+        return archivedAt != null;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Integer getWidth() {
+        return width;
+    }
+
+    public Integer getHeight() {
+        return height;
+    }
+
+    public Instant getArchivedAt() {
+        return archivedAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
     public AssetType getAssetType() {

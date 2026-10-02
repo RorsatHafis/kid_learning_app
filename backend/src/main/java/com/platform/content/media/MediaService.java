@@ -66,15 +66,42 @@ public class MediaService {
 
     @Transactional
     public MediaRef upload(UUID accountId, byte[] bytes) {
+        return ref(uploadAsset(accountId, bytes, null));
+    }
+
+    /**
+     * Uploads, or finds the owner's asset for the same bytes (X13: uploading a file again reuses it, and
+     * brings it back to the library if it was archived). A new asset is titled after its file name.
+     */
+    @Transactional
+    public ContentAsset uploadAsset(UUID accountId, byte[] bytes, String fileName) {
         Account author = guard.requireAuthor(accountId);
         MediaInspector.Inspected inspected = MediaInspector.inspect(bytes);
         String sha256 = sha256(bytes);
         UUID owner = guard.authoringOwner(author);
         ContentAsset asset = (owner == null ? assets.findBySha256AndOwnerAccountIdIsNull(sha256)
                 : assets.findBySha256AndOwnerAccountId(sha256, owner))
-                .orElseGet(() -> assets.saveAndFlush(ContentAsset.uploaded(inspected.type(), sha256, storage.store(sha256, bytes),
-                        inspected.mimeType(), bytes.length, owner, author.getId())));
-        return ref(asset);
+                .orElseGet(() -> {
+                    ContentAsset created = ContentAsset.uploaded(inspected.type(), sha256, storage.store(sha256, bytes),
+                            inspected.mimeType(), bytes.length, owner, author.getId())
+                            .withDimensions(inspected.width(), inspected.height());
+                    created.describe(titleFrom(fileName), null);
+                    return created;
+                });
+        asset.restore();
+        return assets.saveAndFlush(asset);
+    }
+
+    /** "three-apples_v2.png" -> "three apples v2": a readable starting title, at most 200 characters. */
+    static String titleFrom(String fileName) {
+        if (fileName == null) {
+            return null;
+        }
+        String normalized = fileName.replace('\\', '/');
+        String base = normalized.substring(normalized.lastIndexOf('/') + 1);
+        int dot = base.lastIndexOf('.');
+        String title = (dot > 0 ? base.substring(0, dot) : base).replaceAll("[_\\-]+", " ").replaceAll("\\s+", " ").strip();
+        return title.isEmpty() ? null : title.substring(0, Math.min(200, title.length()));
     }
 
     /**
@@ -83,12 +110,24 @@ public class MediaService {
      */
     @Transactional(readOnly = true)
     public void requireAttachable(UUID assetId, AssetType expected, UUID contentOwner) {
+        requireAttachable(assetId, expected, contentOwner, java.util.Set.of());
+    }
+
+    /**
+     * X13: an archived asset can't be newly attached, but a draft that already uses it keeps it when it is
+     * saved again ({@code alreadyOnDraft}) - archiving never blocks editing the content that uses it.
+     */
+    @Transactional(readOnly = true)
+    public void requireAttachable(UUID assetId, AssetType expected, UUID contentOwner, java.util.Set<UUID> alreadyOnDraft) {
         if (assetId == null) {
             return;
         }
         ContentAsset asset = assets.findById(assetId).orElseThrow(() -> new ResourceNotFoundException("Media", assetId));
         if (asset.getSha256() == null || !ContentOwnership.usableBy(asset.getOwnerAccountId(), contentOwner)) {
             throw new AccessDeniedException("That media belongs to another author");
+        }
+        if (asset.isArchived() && !alreadyOnDraft.contains(assetId)) {
+            throw new IllegalStateException("That media is archived. Restore it in the media library to use it again.");
         }
         if (asset.getAssetType() != expected) {
             throw new IllegalArgumentException(expected == AssetType.IMAGE ? "That file is a recording, not a picture."

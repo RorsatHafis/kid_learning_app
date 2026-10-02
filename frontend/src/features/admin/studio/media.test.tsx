@@ -4,10 +4,31 @@ import userEvent from "@testing-library/user-event";
 import { QuestionDraftForm } from "./QuestionDraftForm";
 import { studioApi } from "@/lib/api/studio";
 import { ApiError } from "@/lib/api/ApiError";
-import type { MediaRef } from "@/lib/api/types";
+import type { MediaItem } from "@/lib/api/studio";
 
-const picture: MediaRef = { id: "img-1", type: "IMAGE", mimeType: "image/png", url: "/api/v1/media/img-1?e=1&s=a" };
-const reading: MediaRef = { id: "aud-1", type: "AUDIO", mimeType: "audio/mpeg", url: "/api/v1/media/aud-1?e=1&s=b" };
+const picture: MediaItem = libraryItem({ id: "img-1", type: "IMAGE", mimeType: "image/png", url: "/api/v1/media/img-1?e=1&s=a" });
+const reading: MediaItem = libraryItem({
+  id: "aud-1",
+  type: "AUDIO",
+  mimeType: "audio/mpeg",
+  url: "/api/v1/media/aud-1?e=1&s=b",
+});
+/** What the server returns for an upload: a library item (X13). */
+function libraryItem(ref: Pick<MediaItem, "id" | "type" | "mimeType" | "url">): MediaItem {
+  return {
+    ...ref,
+    sizeBytes: 1024,
+    width: null,
+    height: null,
+    title: null,
+    description: null,
+    archived: false,
+    createdAt: null,
+    usedBy: 0,
+    editable: true,
+  };
+}
+
 const EMPTY = { prompt: "", correctAnswer: null, difficultyLevel: null };
 
 const fileInputs = (container: HTMLElement) => [...container.querySelectorAll<HTMLInputElement>('input[type="file"]')];

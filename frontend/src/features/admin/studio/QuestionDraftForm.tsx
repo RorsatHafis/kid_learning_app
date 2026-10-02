@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import type { MediaRef, QuestionType } from "@/lib/api/types";
-import type { QuestionDraftInput } from "@/lib/api/studio";
+import type { MediaItem, QuestionDraftInput } from "@/lib/api/studio";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { SelectField, TextAreaField } from "./shared";
@@ -37,6 +37,9 @@ export interface DraftValues {
 }
 
 const id = (media: Media) => media?.id ?? undefined;
+
+/** An empty answer label takes the chosen picture's description (or title): the words a screen reader says. */
+const labelFrom = (item: MediaItem | undefined, current: string) => item?.description ?? item?.title ?? current;
 
 /**
  * The editable part of a question version. The answer contract follows the scorer
@@ -151,7 +154,16 @@ export function QuestionDraftForm({
         <legend className="sr-only">Picture and sound for the question</legend>
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-ink">Picture with the question</span>
-          <MediaSlot kind="IMAGE" value={promptImage ?? null} onChange={setPromptImage} name="picture for the question" />
+          <MediaSlot
+            kind="IMAGE"
+            value={promptImage ?? null}
+            onChange={(media, item) => {
+              setPromptImage(media);
+              // A library picture already described offers that description here.
+              if (media && !description.trim() && item?.description) setDescription(item.description);
+            }}
+            name="picture for the question"
+          />
           {promptImage && (
             <FormField
               label="Describe the picture (read to children who use a screen reader)"
@@ -196,7 +208,13 @@ export function QuestionDraftForm({
                 compact
                 kind="IMAGE"
                 value={option.image ?? null}
-                onChange={(image) => setOptions(options.map((o, i) => (i === index ? { ...o, image } : o)))}
+                onChange={(image, item) =>
+                  setOptions(
+                    options.map((o, i) =>
+                      i === index ? { ...o, image, label: o.label.trim() ? o.label : labelFrom(item, o.label) } : o,
+                    ),
+                  )
+                }
                 name={`picture for choice ${index + 1}`}
               />
               <MediaSlot
@@ -321,7 +339,13 @@ export function QuestionDraftForm({
                   compact
                   kind="IMAGE"
                   value={item.image ?? null}
-                  onChange={(image) => setItems(items.map((it, i) => (i === index ? { ...it, image } : it)))}
+                  onChange={(image, item) =>
+                    setItems(
+                      items.map((it, i) =>
+                        i === index ? { ...it, image, label: it.label.trim() ? it.label : labelFrom(item, it.label) } : it,
+                      ),
+                    )
+                  }
                   name={`picture for item ${index + 1}`}
                 />
                 <MediaSlot

@@ -6,6 +6,7 @@ import { AccountsPage } from "./operations/AccountsPage";
 import { ActivityPage } from "./operations/ActivityPage";
 import { PlansPage } from "./operations/PlansPage";
 import { OverviewPage } from "./operations/OverviewPage";
+import { MediaLibraryPage } from "./studio/MediaLibrary";
 import { StudioIndex } from "./studio/StudioIndex";
 import { StudioLayout } from "./studio/StudioLayout";
 import { CatalogPage } from "./studio/CatalogPage";
@@ -23,6 +24,7 @@ export default function AdminArea() {
       <Route element={<AdminLayout />}>
         <Route index element={<OverviewPage />} />
         <Route path="studio" element={<StudioIndex />} />
+        <Route path="studio/media" element={<MediaLibraryPage />} />
         <Route path="studio/:subjectId" element={<StudioLayout />}>
           <Route index element={<Navigate to="catalog" replace />} />
           <Route path="catalog" element={<CatalogPage />} />

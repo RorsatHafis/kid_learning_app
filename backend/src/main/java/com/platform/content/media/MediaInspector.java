@@ -20,7 +20,11 @@ public final class MediaInspector {
     private MediaInspector() {
     }
 
-    public record Inspected(AssetType type, String mimeType) {
+    /** {@code width}/{@code height}: a picture's size (null for recordings). */
+    public record Inspected(AssetType type, String mimeType, Integer width, Integer height) {
+        Inspected(AssetType type, String mimeType) {
+            this(type, mimeType, null, null);
+        }
     }
 
     public static Inspected inspect(byte[] b) {
@@ -39,17 +43,17 @@ public final class MediaInspector {
     private static Inspected recognise(byte[] b) {
         if (u8(b, 0) == 0x89 && ascii(b, 1, "PNG") && u8(b, 4) == 0x0D && u8(b, 5) == 0x0A && b.length >= 24) {
             requireSize(be32(b, 16), be32(b, 20));
-            return new Inspected(AssetType.IMAGE, "image/png");
+            return new Inspected(AssetType.IMAGE, "image/png", (int) be32(b, 16), (int) be32(b, 20));
         }
         if (u8(b, 0) == 0xFF && u8(b, 1) == 0xD8 && u8(b, 2) == 0xFF) {
             int[] size = jpegSize(b);
             requireSize(size[0], size[1]);
-            return new Inspected(AssetType.IMAGE, "image/jpeg");
+            return new Inspected(AssetType.IMAGE, "image/jpeg", size[0], size[1]);
         }
         if (ascii(b, 0, "RIFF") && ascii(b, 8, "WEBP") && b.length >= 30) {
             int[] size = webpSize(b);
             requireSize(size[0], size[1]);
-            return new Inspected(AssetType.IMAGE, "image/webp");
+            return new Inspected(AssetType.IMAGE, "image/webp", size[0], size[1]);
         }
         if (ascii(b, 0, "RIFF") && ascii(b, 8, "WAVE")) {
             return new Inspected(AssetType.AUDIO, "audio/wav");

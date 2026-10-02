@@ -115,6 +115,16 @@ public class ContentAccessGuard {
         return question;
     }
 
+    /**
+     * X13: write access to something owned like content (media): the same rule as a question or a lesson -
+     * platform-owned (null) is ADMIN-only; an author's own; ADMIN; a principal for their school's staff.
+     */
+    public Account requireOwnedWrite(UUID accountId, UUID ownerAccountId) {
+        Account account = requireAuthor(accountId);
+        requireOwnerWrite(account, ownerAccountId);
+        return account;
+    }
+
     private void requireOwnerWrite(Account account, UUID ownerAccountId) {
         PlatformRole role = account.getPlatformRole();
         if (ownerAccountId == null) {

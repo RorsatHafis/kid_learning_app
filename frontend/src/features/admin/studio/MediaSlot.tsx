@@ -1,25 +1,23 @@
 import { useRef, useState } from "react";
-import { ImagePlus, Mic, Play, Square, X } from "lucide-react";
+import { ImagePlus, Library, Mic, Play, Square, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { MediaRef } from "@/lib/api/types";
 import { studioApi } from "@/lib/api/studio";
-import { ApiError } from "@/lib/api/ApiError";
 import { speak, stopSpeaking, usePlaying } from "@/features/child/speaker";
+import type { MediaItem } from "@/lib/api/studio";
+import { uploadError } from "./mediaText";
+import { MediaPicker } from "./MediaLibrary";
 
 const ACCEPT = {
   IMAGE: "image/png,image/jpeg,image/webp",
   AUDIO: "audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav,audio/x-wav",
 };
 
-/** The server's reason for refusing a file (its type, size or dimensions), in the author's words. */
-function uploadError(err: unknown): string {
-  if (err instanceof ApiError && (err.status === 422 || err.status === 413) && err.problem?.detail) return err.problem.detail;
-  return "The upload didn't work. Check your connection and try again.";
-}
-
 /**
- * A picture or recording on a question (X11): add one (uploaded and checked by the server),
- * see or hear it, replace or remove it. `compact` fits in a row of answer choices.
+ * A picture or recording on a question (X11): add one (uploaded and checked by the server) or choose
+ * one already in the media library (X13), see or hear it, replace or remove it. `compact` fits in a
+ * row of answer choices. `onChange` also hands over the library item, so a form can offer its
+ * description (screen-reader text) where it is used.
  */
 export function MediaSlot({
   kind,
@@ -30,7 +28,7 @@ export function MediaSlot({
 }: {
   kind: "IMAGE" | "AUDIO";
   value: MediaRef | null;
-  onChange: (value: MediaRef | null) => void;
+  onChange: (value: MediaRef | null, item?: MediaItem) => void;
   /** What it belongs to, for its controls' names: "picture for choice 1". */
   name: string;
   compact?: boolean;
@@ -38,6 +36,7 @@ export function MediaSlot({
   const input = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
   const playing = usePlaying(value?.url);
 
   async function upload(file: File | undefined) {
@@ -50,7 +49,7 @@ export function MediaSlot({
         setError(kind === "IMAGE" ? "That file is a recording, not a picture." : "That file is a picture, not a recording.");
         return;
       }
-      onChange(media);
+      onChange(media, media);
     } catch (err) {
       setError(uploadError(err));
     } finally {
@@ -75,23 +74,41 @@ export function MediaSlot({
         aria-hidden
         onChange={(e) => void upload(e.target.files?.[0])}
       />
-      {!value ? (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => input.current?.click()}
-          aria-label={compact ? `Add a ${name}` : undefined}
-          title={compact ? `Add a ${name}` : undefined}
-          className={
-            compact
-              ? cn(iconButton, busy && "animate-pulse")
-              : "flex items-center gap-2 rounded-[10px] px-3 py-2 text-sm font-semibold text-tonle-700 ring-1 ring-inset ring-line hover:bg-tonle-50 disabled:opacity-50"
-          }
-        >
-          <Icon size={compact ? 18 : 16} aria-hidden />
-          {!compact && (busy ? "Uploading…" : `Add a ${noun}`)}
-        </button>
-      ) : (
+      {!value && (
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => input.current?.click()}
+            aria-label={compact ? `Add a ${name}` : undefined}
+            title={compact ? `Add a ${name}` : undefined}
+            className={
+              compact
+                ? cn(iconButton, busy && "animate-pulse")
+                : "flex items-center gap-2 rounded-[10px] px-3 py-2 text-sm font-semibold text-tonle-700 ring-1 ring-inset ring-line hover:bg-tonle-50 disabled:opacity-50"
+            }
+          >
+            <Icon size={compact ? 18 : 16} aria-hidden />
+            {!compact && (busy ? "Uploading…" : `Add a ${noun}`)}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setPicking(true)}
+            aria-label={`Choose a ${name} from the library`}
+            title={compact ? `Choose a ${name} from the library` : undefined}
+            className={
+              compact
+                ? iconButton
+                : "flex items-center gap-2 rounded-[10px] px-3 py-2 text-sm font-semibold text-tonle-700 ring-1 ring-inset ring-line hover:bg-tonle-50 disabled:opacity-50"
+            }
+          >
+            <Library size={compact ? 18 : 16} aria-hidden />
+            {!compact && "From the library"}
+          </button>
+        </div>
+      )}
+      {value && (
         <div className="flex items-center gap-1.5">
           {kind === "IMAGE" ? (
             <button
@@ -136,6 +153,16 @@ export function MediaSlot({
           </button>
         </div>
       )}
+      <MediaPicker
+        kind={kind}
+        open={picking}
+        onClose={() => setPicking(false)}
+        purpose={`the ${name}`}
+        onPick={(item) => {
+          setError(null);
+          onChange(item, item);
+        }}
+      />
       {error && (
         <p role="alert" className={cn("text-xs font-medium text-brick-deep", compact && "max-w-[12rem]")}>
           {error}
