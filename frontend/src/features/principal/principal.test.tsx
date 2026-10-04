@@ -184,6 +184,74 @@ describe("PrincipalClassPage", () => {
   });
 });
 
+describe("Class lifecycle (X17)", () => {
+  it("archives a class only after saying what it means, then shows it archived without its code or new assignments", async () => {
+    let archived = false;
+    const calls = server({
+      "GET /schools/classes/c1": () =>
+        respond(200, { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [{ accountId: "t1", email: "a@example.com" }], archived }),
+      "GET /schools/s1/staff": respond(200, [
+        { id: "m2", accountId: "t2", email: "b@example.com", status: "ACTIVE", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
+      ]),
+      "GET /schools/classes/c1/learning": respond(200, { curricula: [], members: [], skills: [] }),
+      "GET /schools/classes/c1/curricula": respond(200, []),
+      "GET /curricula": respond(200, [{ id: "cu9", name: "Reading", subjectName: "Reading", ageHubName: "Ages 5-6" }]),
+      "GET /schools/classes/c1/join-code": respond(204),
+      "POST /schools/classes/c1/archive": () => {
+        archived = true;
+        return respond(200, { id: "c1", schoolId: "s1", name: "Grade 1A", archived: true });
+      },
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/principal/classes/c1"]}>
+        <Routes>
+          <Route path="/principal/classes/:classId" element={<PrincipalClassPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /Manage class/ }));
+    const dialog = screen.getByRole("dialog", { name: "Manage class" });
+    expect(within(dialog).getByText(/Its code stops working/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: /Archive…/ }));
+    expect(calls.some((c) => c.path.endsWith("/archive"))).toBe(false);
+    await user.click(within(dialog).getByRole("button", { name: "Archive the class" }));
+    expect(calls.filter((c) => c.method === "POST" && c.path === "/schools/classes/c1/archive")).toHaveLength(1);
+
+    expect(await screen.findByText(/This class is archived\./)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Assign a teacher")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Assign a curriculum")).not.toBeInTheDocument();
+    expect(screen.queryByText(/No code yet/)).not.toBeInTheDocument();
+  });
+
+  it("keeps archived classes apart on the school's page, saying what they are", async () => {
+    server({
+      "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/classes": respond(200, [
+        { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [], archived: false },
+        { id: "c9", schoolId: "s1", name: "Last year", teachers: [], archived: true },
+      ]),
+      "GET /schools/s1/staff": respond(200, []),
+      "GET /schools/overview": respond(200, {
+        ...EMPTY_OVERVIEW,
+        classes: [classOverview({ archived: false }), classOverview({ classId: "c9", className: "Last year", archived: true })],
+      }),
+    });
+    render(
+      <MemoryRouter>
+        <PrincipalHome />
+      </MemoryRouter>,
+    );
+    const old = await screen.findByRole("link", { name: /Last year/ });
+    expect(old.closest("details")).not.toBeNull();
+    expect(old).toHaveTextContent("Archived: no one can join; its children keep their learning.");
+    expect(screen.getByText("Archived classes (1)")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Grade 1A/ }).closest("details")).toBeNull();
+    expect(screen.getByRole("button", { name: /Rename school/ })).toBeInTheDocument();
+  });
+});
+
 describe("Staff homes (X7)", () => {
   it("shows a principal who the school reaches, what is left to set up, and each class's attention", async () => {
     server({

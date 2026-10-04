@@ -191,6 +191,9 @@ public class SchoolStaffService {
     @Transactional
     public TeacherAssignment assign(UUID classId, UUID teacherId, UUID assignedBy) {
         SchoolClass schoolClass = classes.findById(classId).orElseThrow(() -> new ResourceNotFoundException("SchoolClass", classId));
+        if (schoolClass.isArchived()) {
+            throw new IllegalStateException(SchoolService.ARCHIVED_CLASS);
+        }
         if (!staff.existsBySchoolIdAndAccountIdAndStatus(schoolClass.getSchoolId(), teacherId, SchoolStaffStatus.ACTIVE)) {
             throw new ResourceNotFoundException("SchoolStaff", teacherId);
         }

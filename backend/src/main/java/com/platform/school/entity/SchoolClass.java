@@ -15,4 +15,9 @@ public class SchoolClass extends AuditableEntity {
     private SchoolClass(UUID schoolId, String name) { this.schoolId = schoolId; this.name = name; this.status = CatalogStatus.ACTIVE; }
     public static SchoolClass create(UUID schoolId, String name) { Assert.notNull(schoolId, "schoolId must not be null"); Assert.hasText(name, "name must not be blank"); return new SchoolClass(schoolId, name); }
     public UUID getSchoolId() { return schoolId; } public String getName() { return name; } public CatalogStatus getStatus() { return status; }
+    public boolean isArchived() { return status == CatalogStatus.ARCHIVED; }
+    public void rename(String name) { Assert.hasText(name, "name must not be blank"); this.name = name.trim(); }
+    /** X17 (PD-25): no new uses - no joining, assigning or placing; nothing its children have changes. */
+    public void archive() { Assert.state(status == CatalogStatus.ACTIVE, "class is already archived"); status = CatalogStatus.ARCHIVED; }
+    public void restore() { Assert.state(status == CatalogStatus.ARCHIVED, "class is not archived"); status = CatalogStatus.ACTIVE; }
 }

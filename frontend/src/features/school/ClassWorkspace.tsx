@@ -190,7 +190,16 @@ export function JoinCodePanel({ classId, className }: { classId: string; classNa
 
 // ------------------------------------------------------------------ assigned curricula
 
-export function ClassCurriculaPanel({ classId, onChanged }: { classId: string; onChanged: () => void }) {
+export function ClassCurriculaPanel({
+  classId,
+  onChanged,
+  archived = false,
+}: {
+  classId: string;
+  onChanged: () => void;
+  /** X17: an archived class assigns nothing new. */
+  archived?: boolean;
+}) {
   const assigned = useAsync(() => classAccessApi.curricula(classId), [classId]);
   const catalog = useAsync(() => curriculaApi.list(), []);
   const [selected, setSelected] = useState("");
@@ -271,6 +280,7 @@ export function ClassCurriculaPanel({ classId, onChanged }: { classId: string; o
             </div>
           </div>
         ) : (
+          !archived &&
           available.length > 0 && (
             <div className="flex flex-wrap items-end gap-2 border-t border-line pt-4">
               <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm font-semibold text-ink sm:max-w-sm">
@@ -326,12 +336,15 @@ export function ClassLearningPanel({
   memberHref,
   skillHref,
   refreshKey,
+  archived = false,
 }: {
   classId: string;
   memberHref: (childId: string) => string;
   /** Where one skill's follow-up lives (X10): who stands where, on what evidence, and practice to place. */
   skillHref: (skillId: string) => string;
   refreshKey: number;
+  /** X17: an archived class takes no one new, so its empty state doesn't point to the code. */
+  archived?: boolean;
 }) {
   const learning = useAsync(() => classAccessApi.learning(classId), [classId, refreshKey]);
   const data = learning.data;
@@ -348,7 +361,11 @@ export function ClassLearningPanel({
         {data && data.members.length === 0 && (
           <EmptyState
             title="No children in this class yet"
-            description="Share the class code with families. A child joins when their family enters the code and agrees to what the class will see."
+            description={
+              archived
+                ? "The class is archived, so no family can join it."
+                : "Share the class code with families. A child joins when their family enters the code and agrees to what the class will see."
+            }
           />
         )}
         {data && data.members.length > 0 && <MembersTable data={data} memberHref={memberHref} />}

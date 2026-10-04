@@ -181,6 +181,32 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await teacher.reload();
   await expect(teacher.getByText("No children in this class yet")).toBeVisible();
 
+  // X17: the principal renames the class, archives it (no new uses) and restores it.
+  await page.reload();
+  await page.getByRole("button", { name: "Manage class…" }).click();
+  const manage = page.getByRole("dialog", { name: "Manage class" });
+  await manage.getByLabel("Class name").fill("Grade 1 Lotus");
+  await manage.getByRole("button", { name: "Save" }).click();
+  await expect(manage.getByRole("status")).toHaveText("Saved.");
+  await expect(page.getByRole("heading", { level: 1, name: "Grade 1 Lotus" })).toBeVisible();
+  await manage.getByRole("button", { name: "Archive…" }).click();
+  await expectNoViolations(page, "principal: manage class");
+  await manage.getByRole("button", { name: "Archive the class" }).click();
+  await expect(manage.getByRole("status")).toHaveText("Archived.");
+  await page.keyboard.press("Escape");
+  await expect(page.getByText("This class is archived.")).toBeVisible();
+  await expect(page.getByLabel("Assign a curriculum")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Class code", exact: true })).toHaveCount(0);
+  await expectNoViolations(page, "principal: archived class");
+  await teacher.reload();
+  await expect(teacher.getByText("This class is archived.")).toBeVisible();
+  await page.getByRole("button", { name: "Manage class…" }).click();
+  await manage.getByRole("button", { name: "Restore the class" }).click();
+  await expect(manage.getByRole("status")).toHaveText("Restored.");
+  await page.keyboard.press("Escape");
+  await expect(page.getByText("This class is archived.")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Make a code" })).toBeVisible();
+
   await familyContext.close();
   await teacherContext.close();
 });

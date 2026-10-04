@@ -15,4 +15,5 @@ public class School extends AuditableEntity {
     private School(String name, UUID principalAccountId) { this.name = name; this.principalAccountId = principalAccountId; this.status = CatalogStatus.ACTIVE; }
     public static School create(String name, UUID principalAccountId) { Assert.hasText(name, "name must not be blank"); Assert.notNull(principalAccountId, "principalAccountId must not be null"); return new School(name, principalAccountId); }
     public String getName() { return name; } public UUID getPrincipalAccountId() { return principalAccountId; } public CatalogStatus getStatus() { return status; }
+    public void rename(String name) { Assert.hasText(name, "name must not be blank"); this.name = name.trim(); }
 }

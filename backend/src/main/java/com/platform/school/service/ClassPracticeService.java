@@ -157,7 +157,9 @@ public class ClassPracticeService {
      */
     @Transactional
     public AssignResult assign(UUID accountId, UUID classId, UUID skillId, UUID activityId, List<UUID> childIds) {
-        guard.requireClassStaff(accountId, classId);
+        if (guard.requireClassStaff(accountId, classId).isArchived()) {
+            throw new IllegalStateException(SchoolService.ARCHIVED_CLASS);
+        }
         Set<UUID> chosen = new LinkedHashSet<>(childIds);
         if (chosen.isEmpty() || chosen.size() > MAX_CHILDREN) {
             throw new IllegalArgumentException("Choose between 1 and " + MAX_CHILDREN + " children");

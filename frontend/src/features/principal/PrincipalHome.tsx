@@ -7,6 +7,8 @@ import { problemMessage } from "@/lib/api/problemMessage";
 import type { SchoolStaffMember, SchoolSummary } from "@/lib/api/types";
 import { staffOverviewApi, type ClassOverview, type SchoolOverview, type StaffOverview } from "@/lib/api/schoolAccess";
 import { ClassSummary } from "@/features/school/ClassSummary";
+import { RenameSchoolButton } from "@/features/school/ClassLifecycle";
+import type { SchoolClassWithTeachers } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
@@ -27,8 +29,13 @@ export function PrincipalHome() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{school.name}</h1>
-          <p className="mt-1.5 text-[0.9375rem] text-ink-soft">Who your school reaches, what is still to set up, and each class.</p>
+          <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
+            {school.name}
+          </h1>
+          <p className="mt-1.5 text-[0.9375rem] text-ink-soft">
+            Who your school reaches, what is still to set up, and each class.
+          </p>
+          <RenameSchoolButton schoolId={school.id} name={school.name} onChanged={schools.refetch} />
         </div>
         {schools.data.length > 1 && (
           <label className="flex items-center gap-2 text-sm text-ink-soft">
@@ -170,6 +177,9 @@ function Classes({
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const active = (classes.data ?? []).filter((c) => !c.archived);
+  const archived = (classes.data ?? []).filter((c) => c.archived);
+
   async function onAdd(e: FormEvent) {
     e.preventDefault();
     setAdding(true);
@@ -196,37 +206,22 @@ function Classes({
       </div>
       {classes.isLoading && !classes.data && <LoadingState label="Loading classes…" />}
       {classes.error && <ErrorState error={classes.error} onRetry={classes.refetch} />}
-      {classes.data && classes.data.length === 0 && (
+      {classes.data && active.length === 0 && (
         <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">
           No classes yet. Add your first class below.
         </p>
       )}
-      {classes.data && classes.data.length > 0 && (
-        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
-          {classes.data.map((c) => {
-            const summary = byId.get(c.id);
-            return summary ? (
-              <li key={c.id}>
-                <ClassSummary overview={summary} to={`/principal/classes/${c.id}`} teachers={c.teachers.map((t) => t.email)} />
-              </li>
-            ) : (
-              <li key={c.id}>
-                <Link
-                  to={`/principal/classes/${c.id}`}
-                  className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-tonle-50/60"
-                >
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink">{c.name}</p>
-                    <p className="truncate text-sm text-ink-soft">
-                      {c.teachers.length === 0 ? "No teacher assigned yet" : c.teachers.map((t) => t.email).join(", ")}
-                    </p>
-                  </div>
-                  <ChevronRight size={18} className="shrink-0 text-ink-soft" aria-hidden />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      {active.length > 0 && <ClassList classes={active} byId={byId} />}
+      {archived.length > 0 && (
+        <details className="group">
+          <summary className="w-fit cursor-pointer text-sm font-semibold text-tonle-700 hover:text-tonle-900">
+            Archived classes ({archived.length})
+          </summary>
+          <p className="mb-2 mt-1 text-sm text-ink-soft">
+            No one can join these; their children keep their learning. Open one to restore it.
+          </p>
+          <ClassList classes={archived} byId={byId} />
+        </details>
       )}
       <form onSubmit={onAdd} className="flex flex-wrap items-end gap-3">
         <div className="min-w-[14rem] flex-1">
@@ -245,10 +240,41 @@ function Classes({
   );
 }
 
+function ClassList({ classes, byId }: { classes: SchoolClassWithTeachers[]; byId: Map<string, ClassOverview> }) {
+  return (
+    <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
+      {classes.map((c) => {
+        const summary = byId.get(c.id);
+        return summary ? (
+          <li key={c.id}>
+            <ClassSummary overview={summary} to={`/principal/classes/${c.id}`} teachers={c.teachers.map((t) => t.email)} />
+          </li>
+        ) : (
+          <li key={c.id}>
+            <Link
+              to={`/principal/classes/${c.id}`}
+              className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-tonle-50/60"
+            >
+              <div className="min-w-0">
+                <p className="font-semibold text-ink">{c.name}</p>
+                <p className="truncate text-sm text-ink-soft">
+                  {c.teachers.length === 0 ? "No teacher assigned yet" : c.teachers.map((t) => t.email).join(", ")}
+                </p>
+              </div>
+              <ChevronRight size={18} className="shrink-0 text-ink-soft" aria-hidden />
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 const STATUS: Record<SchoolStaffMember["status"], { label: (m: SchoolStaffMember) => string; className: string }> = {
   ACTIVE: { label: () => "Teaching here", className: "text-palm-deep" },
   INVITED: {
-    label: (m) => `Invited ${new Date(m.invitedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })} · waiting for them to accept`,
+    label: (m) =>
+      `Invited ${new Date(m.invitedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })} · waiting for them to accept`,
     className: "text-light-deep",
   },
   DECLINED: { label: () => "Declined the invitation", className: "text-ink-soft" },
@@ -297,8 +323,8 @@ function Teachers({ school }: { school: SchoolSummary }) {
           Teachers
         </h2>
         <p className="text-sm text-ink-soft">
-          Invite teachers by email. New teachers choose their own password from the email; once they accept, you can assign
-          them to classes.
+          Invite teachers by email. New teachers choose their own password from the email; once they accept, you can assign them
+          to classes.
         </p>
       </div>
       {staff.isLoading && !staff.data && <LoadingState label="Loading teachers…" />}
@@ -352,7 +378,13 @@ function Teachers({ school }: { school: SchoolSummary }) {
         className="flex flex-wrap items-end gap-3"
       >
         <div className="min-w-[14rem] flex-1">
-          <FormField label="Teacher's email" type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <FormField
+            label="Teacher's email"
+            type="email"
+            autoComplete="off"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
         <Button type="submit" variant="outline" disabled={inviting || !email.trim()}>
           <MailPlus size={16} aria-hidden /> {inviting ? "Sending…" : "Invite"}

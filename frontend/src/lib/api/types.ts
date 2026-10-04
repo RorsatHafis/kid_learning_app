@@ -414,6 +414,8 @@ export interface SchoolClassSummary {
   id: string;
   schoolId: string;
   name: string;
+  /** X17: an archived class takes no new children, curricula, teachers or practice. */
+  archived: boolean;
 }
 
 // school/web/SchoolController.java SchoolResponse
@@ -429,6 +431,7 @@ export interface SchoolClassWithTeachers {
   schoolId: string;
   name: string;
   teachers: { accountId: string; email: string }[];
+  archived: boolean;
 }
 
 export type SchoolStaffStatus = "INVITED" | "ACTIVE" | "DECLINED" | "REMOVED";

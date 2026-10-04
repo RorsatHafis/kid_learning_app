@@ -76,7 +76,8 @@ public class SchoolOverviewService {
     }
 
     public record ClassOverview(UUID classId, String className, UUID schoolId, String schoolName, int children,
-                                List<ClassCurriculum> curricula, int teachers, JoinCodeState joinCode, Attention attention) {
+                                List<ClassCurriculum> curricula, int teachers, JoinCodeState joinCode, Attention attention,
+                                boolean archived) {
     }
 
     /** A principal's school at a glance: who it reaches and what is still to set up. */
@@ -113,7 +114,7 @@ public class SchoolOverviewService {
                 .thenComparing(ClassOverview::className, String.CASE_INSENSITIVE_ORDER));
 
         List<SchoolOverview> schoolOverviews = run.stream().map(school -> {
-            List<ClassOverview> ofSchool = overviews.stream().filter(c -> c.schoolId().equals(school.getId())).toList();
+            List<ClassOverview> ofSchool = overviews.stream().filter(c -> c.schoolId().equals(school.getId()) && !c.archived()).toList();
             return new SchoolOverview(school.getId(), school.getName(),
                     grants.countBySchoolIdAndStatus(school.getId(), SchoolChildAccessStatus.ACTIVE), ofSchool.size(),
                     (int) ofSchool.stream().filter(c -> c.teachers() == 0).count(),
@@ -131,7 +132,7 @@ public class SchoolOverviewService {
                 .orElse(new JoinCodeState(false, null));
         int teachers = assignments.findBySchoolClassIdAndStatus(schoolClass.getId(), TeacherAssignmentStatus.ACTIVE).size();
         return new ClassOverview(schoolClass.getId(), schoolClass.getName(), school.getId(), school.getName(),
-                snapshot.members().size(), snapshot.assigned(), teachers, code, attention(snapshot));
+                snapshot.members().size(), snapshot.assigned(), teachers, code, attention(snapshot), schoolClass.isArchived());
     }
 
     static Attention attention(ClassSnapshot snapshot) {

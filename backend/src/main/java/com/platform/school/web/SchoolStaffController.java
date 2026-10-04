@@ -65,7 +65,7 @@ public class SchoolStaffController {
         }
     }
 
-    public record ClassWithTeachers(UUID id, UUID schoolId, String name, List<TeacherSummary> teachers) {
+    public record ClassWithTeachers(UUID id, UUID schoolId, String name, List<TeacherSummary> teachers, boolean archived) {
     }
 
     public record InvitationResponse(UUID id, UUID schoolId, String schoolName, Instant invitedAt) {
@@ -123,7 +123,7 @@ public class SchoolStaffController {
 
     private ClassWithTeachers withTeachers(SchoolClass schoolClass) {
         return new ClassWithTeachers(schoolClass.getId(), schoolClass.getSchoolId(), schoolClass.getName(),
-                staffService.teachersOf(schoolClass.getId()).stream().map(TeacherSummary::of).toList());
+                staffService.teachersOf(schoolClass.getId()).stream().map(TeacherSummary::of).toList(), schoolClass.isArchived());
     }
 
     // ------------------------------------------------------------------ the teacher's side

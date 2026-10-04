@@ -154,6 +154,11 @@ export const schoolApi = {
   mySchools: () => apiClient.get<SchoolSummary[]>("/schools/mine"),
   createSchool: (name: string) => apiClient.post<SchoolSummary>("/schools", { name }),
   createClass: (schoolId: string, name: string) => apiClient.post<SchoolClassSummary>(`/schools/${schoolId}/classes`, { name }),
+  // school/web/SchoolLifecycleController.java (X17): the principal's
+  renameSchool: (schoolId: string, name: string) => apiClient.put<SchoolSummary>(`/schools/${schoolId}`, { name }),
+  renameClass: (classId: string, name: string) => apiClient.put<SchoolClassSummary>(`/schools/classes/${classId}`, { name }),
+  archiveClass: (classId: string) => apiClient.post<SchoolClassSummary>(`/schools/classes/${classId}/archive`),
+  restoreClass: (classId: string) => apiClient.post<SchoolClassSummary>(`/schools/classes/${classId}/restore`),
   assignTeacher: (classId: string, teacherAccountId: string) =>
     apiClient.post<unknown>(`/schools/classes/${classId}/teachers`, { teacherAccountId }),
   // school/web/SchoolStaffController.java

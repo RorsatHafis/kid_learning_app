@@ -18,7 +18,9 @@ export function ClassSummary({
   /** The principal's view names the teachers; a teacher's view doesn't need to. */
   teachers?: string[];
 }) {
-  const lines = classLines(overview);
+  const lines = overview.archived
+    ? [{ tone: "calm" as const, text: "Archived: no one can join; its children keep their learning." }]
+    : classLines(overview);
   const facts = [
     plural(overview.children, "child", "children"),
     overview.curricula.map((curriculum) => curriculum.name).join(", ") || null,
@@ -33,6 +35,11 @@ export function ClassSummary({
       <div className="flex min-w-0 flex-col gap-1">
         <p className="flex flex-wrap items-baseline gap-x-2">
           <span className="font-semibold text-ink">{overview.className}</span>
+          {overview.archived && (
+            <span className="rounded-full bg-paper px-2 py-0.5 text-xs font-semibold text-ink-soft ring-1 ring-line-strong">
+              Archived
+            </span>
+          )}
           {showSchool && <span className="text-sm text-ink-faint">{overview.schoolName}</span>}
         </p>
         <p className="text-sm text-ink-soft [overflow-wrap:anywhere]">{facts.join(" · ")}</p>

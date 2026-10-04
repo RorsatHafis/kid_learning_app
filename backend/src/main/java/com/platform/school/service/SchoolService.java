@@ -23,6 +23,7 @@ import java.util.*;
 public class SchoolService {
     private final SchoolRepository schools; private final SchoolClassRepository classes; private final TeacherAssignmentRepository assignments; private final ClassEnrollmentRepository enrollments; private final AccountRepository accounts; private final ChildRepository children; private final CurriculumRepository curricula; private final CurriculumService curriculumService; private final EnrollmentService enrollmentService; private final ClassCurriculumAssignmentRepository classCurricula; private final AuditService audit;
     public SchoolService(SchoolRepository schools, SchoolClassRepository classes, TeacherAssignmentRepository assignments, ClassEnrollmentRepository enrollments, AccountRepository accounts, ChildRepository children, CurriculumRepository curricula, CurriculumService curriculumService, EnrollmentService enrollmentService, ClassCurriculumAssignmentRepository classCurricula, AuditService audit) { this.schools=schools;this.classes=classes;this.assignments=assignments;this.enrollments=enrollments;this.accounts=accounts;this.children=children;this.curricula=curricula;this.curriculumService=curriculumService;this.enrollmentService=enrollmentService;this.classCurricula=classCurricula;this.audit=audit; }
+    static final String ARCHIVED_CLASS="This class is archived: restore it before adding to it.";
     @Transactional public School createSchool(String name, UUID principalAccountId) { return schools.save(School.create(name, principalAccountId)); }
     @Transactional public SchoolClass createClass(UUID schoolId,String name){ if(!schools.existsById(schoolId)) throw new ResourceNotFoundException("School",schoolId); return classes.save(SchoolClass.create(schoolId,name)); }
     /**
@@ -42,6 +43,8 @@ public class SchoolService {
      * failure part-way leaves no child half-assigned.
      */
     @Transactional public List<Enrollment> assignCurriculum(UUID classId,UUID curriculumId,UUID accountId){
+        // X17 (PD-25): an archived class takes nothing new.
+        if(classes.findById(classId).map(SchoolClass::isArchived).orElse(false)) throw new IllegalStateException(ARCHIVED_CLASS);
         Curriculum curriculum=curricula.findById(curriculumId).filter(c->c.getOwnerAccountId()==null||c.getOwnerAccountId().equals(accountId)).filter(c->curriculumService.hasPublishedVersion(c.getId())).orElseThrow(()->new ResourceNotFoundException("Curriculum",curriculumId));
         // X14: an archived curriculum is not assigned anew; classes already assigning it keep it.
         if(curriculum.getStatus()==com.platform.common.entity.CatalogStatus.ARCHIVED&&classCurricula.findBySchoolClassIdAndCurriculumId(classId,curriculumId).filter(a->a.getStatus()==ClassCurriculumAssignmentStatus.ACTIVE).isEmpty()) throw new IllegalStateException("This curriculum is archived and no longer offered.");

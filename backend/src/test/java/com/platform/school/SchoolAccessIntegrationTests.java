@@ -507,6 +507,71 @@ class SchoolAccessIntegrationTests {
     }
 
     @Test
+    void thePrincipalRenamesAndArchivesAClassAndArchiveMeansNoNewUsesWhileChildrenKeepEverything() throws Exception {
+        Staff principal = staff(PlatformRole.PRINCIPAL);
+        Staff teacher = staff(PlatformRole.TEACHER);
+        SchoolClass taught = classTaughtBy(principal, teacher);
+        String classPath = "/api/v1/schools/classes/" + taught.getId();
+        Curriculum assigned = publishedCurriculum(null, "Lifecycle maths");
+        Curriculum another = publishedCurriculum(null, "Lifecycle reading");
+        json(post(classPath + "/curricula/" + assigned.getId(), "", teacher.token()), 200);
+        String code = json(post(classPath + "/join-code", "", teacher.token()), 201).get("code").asString();
+        Parent parent = parent();
+        String childId = createChild(parent.token(), "Sokha");
+        confirmEmail(parent);
+        json(post("/api/v1/children/" + childId + "/schools/join", codeBody(code), parent.token()), 200);
+
+        // Only the school's principal shapes its classes and its name.
+        assertThat(put(classPath, "{\"name\":\"Teacher's name\"}", teacher.token()).statusCode()).isEqualTo(403);
+        assertThat(put(classPath, "{\"name\":\"Elsewhere\"}", staff(PlatformRole.PRINCIPAL).token()).statusCode()).isEqualTo(403);
+        assertThat(post(classPath + "/archive", "", teacher.token()).statusCode()).isEqualTo(403);
+        assertThat(put(classPath, "{\"name\":\" \"}", principal.token()).statusCode()).isEqualTo(400);
+        assertThat(json(put(classPath, "{\"name\":\"  Grade 1 Lotus \"}", principal.token()), 200).get("name").asString())
+                .isEqualTo("Grade 1 Lotus");
+        assertThat(json(put("/api/v1/schools/" + taught.getSchoolId(), "{\"name\":\"Riverside Primary\"}", principal.token()), 200)
+                .get("name").asString()).isEqualTo("Riverside Primary");
+        assertThat(put("/api/v1/schools/" + taught.getSchoolId(), "{\"name\":\"Mine now\"}", teacher.token()).statusCode()).isEqualTo(403);
+        assertThat(audited("CLASS_UPDATED", principal.id())).isEqualTo(1);
+        assertThat(audited("SCHOOL_UPDATED", principal.id())).isEqualTo(1);
+
+        // Archive: the open code stops at once and nothing new can be added.
+        JsonNode archived = json(post(classPath + "/archive", "", principal.token()), 200);
+        assertThat(archived.get("archived").asBoolean()).isTrue();
+        assertThat(get(classPath + "/join-code", teacher.token()).statusCode()).isEqualTo(204);
+        Parent latecomer = parent();
+        String lateChild = createChild(latecomer.token(), "Late");
+        confirmEmail(latecomer);
+        assertThat(post("/api/v1/children/" + lateChild + "/schools/join", codeBody(code), latecomer.token()).statusCode()).isEqualTo(404);
+        assertThat(post(classPath + "/join-code", "", teacher.token()).statusCode()).isEqualTo(409);
+        assertThat(post(classPath + "/curricula/" + another.getId(), "", teacher.token()).statusCode()).isEqualTo(409);
+        assertThat(post(classPath + "/teachers", "{\"teacherAccountId\":\"" + teacher.id() + "\"}", principal.token()).statusCode())
+                .isEqualTo(409);
+        UUID skill = jdbc.queryForObject("select los.skill_id from curriculum_versions v join curriculum_objectives co on co.curriculum_version_id = v.id"
+                + " join learning_objective_skills los on los.learning_objective_id = co.learning_objective_id where v.curriculum_id = ?",
+                UUID.class, assigned.getId());
+        assertThat(post(classPath + "/skills/" + skill + "/practice", "{\"activityId\":\"" + extraPracticeActivity(skill)
+                + "\",\"childIds\":[\"" + childId + "\"]}", teacher.token()).statusCode()).isEqualTo(409);
+        assertThat(post(classPath + "/archive", "", principal.token()).statusCode()).isEqualTo(409);
+
+        // ...while the child keeps everything: the class, the school's access, the journey; staff can still read it.
+        JsonNode learning = json(get(classPath + "/learning", teacher.token()), 200);
+        assertThat(learning.get("members")).hasSize(1);
+        assertThat(journeyIn(parent.token(), childId, assigned.getId())).isNotNull();
+        assertThat(json(get("/api/v1/schools/classes/" + taught.getId(), principal.token()), 200).get("archived").asBoolean()).isTrue();
+        // The school's setup no longer counts it as a gap; the class list says it is archived.
+        JsonNode overview = json(get("/api/v1/schools/overview", principal.token()), 200);
+        assertThat(overview.get("schools").get(0).get("classes").asInt()).isZero();
+        assertThat(overview.get("classes").get(0).get("archived").asBoolean()).isTrue();
+        assertThat(audited("CLASS_ARCHIVED", principal.id())).isEqualTo(1);
+
+        // Restore: usable again, with a fresh code.
+        assertThat(json(post(classPath + "/restore", "", principal.token()), 200).get("archived").asBoolean()).isFalse();
+        assertThat(post(classPath + "/restore", "", principal.token()).statusCode()).isEqualTo(409);
+        json(post(classPath + "/join-code", "", teacher.token()), 201);
+        assertThat(audited("CLASS_RESTORED", principal.id())).isEqualTo(1);
+    }
+
+    @Test
     void codeLookupsAreRateLimitedPerAccount() throws Exception {
         Parent parent = parent();
         String childId = createChild(parent.token(), "Rotha");
@@ -662,6 +727,11 @@ class SchoolAccessIntegrationTests {
     private HttpResponse<String> post(String path, String body, String bearer) throws Exception {
         return send(HttpRequest.newBuilder(uri(path)).header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body)), bearer);
+    }
+
+    private HttpResponse<String> put(String path, String body, String bearer) throws Exception {
+        return send(HttpRequest.newBuilder(uri(path)).header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(body)), bearer);
     }
 
     private HttpResponse<String> send(HttpRequest.Builder request, String bearer) throws Exception {

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { ClassCurriculaPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
+import { ArchivedClassNotice, ManageClassButton } from "@/features/school/ClassLifecycle";
 
 /**
  * One class: who teaches it (assign from the school's own active teachers, or unassign), its
@@ -51,7 +52,21 @@ export function PrincipalClassPage() {
 
       {schoolClass.data && (
         <>
-          <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{schoolClass.data.name}</h1>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
+              {schoolClass.data.name}
+            </h1>
+            <ManageClassButton
+              classId={classId}
+              name={schoolClass.data.name}
+              archived={schoolClass.data.archived}
+              onChanged={() => {
+                schoolClass.refetch();
+                setRefreshKey((k) => k + 1);
+              }}
+            />
+          </div>
+          {schoolClass.data.archived && <ArchivedClassNotice principal />}
 
           <section aria-labelledby="class-teachers" className="flex flex-col gap-3">
             <h2 id="class-teachers" className="text-base font-semibold text-tonle-950">
@@ -80,7 +95,7 @@ export function PrincipalClassPage() {
               </ul>
             )}
 
-            {staff.data && assignable.length > 0 && (
+            {!schoolClass.data.archived && staff.data && assignable.length > 0 && (
               <div className="flex flex-wrap items-end gap-3">
                 <label className="flex min-w-[14rem] flex-1 flex-col gap-1.5 text-sm font-semibold text-ink">
                   Assign a teacher
@@ -106,7 +121,7 @@ export function PrincipalClassPage() {
                 </Button>
               </div>
             )}
-            {staff.data && assignable.length === 0 && (
+            {!schoolClass.data.archived && staff.data && assignable.length === 0 && (
               <p className="text-sm text-ink-soft">
                 Only teachers who have accepted your invitation can be assigned.{" "}
                 <Link to="/principal" className="font-semibold text-tonle-700">
@@ -123,12 +138,17 @@ export function PrincipalClassPage() {
 
           <ClassLearningPanel
             classId={classId}
+            archived={schoolClass.data.archived}
             refreshKey={refreshKey}
             memberHref={(childId) => `/principal/classes/${classId}/children/${childId}`}
             skillHref={(skillId) => `/principal/classes/${classId}/skills/${skillId}`}
           />
-          <ClassCurriculaPanel classId={classId} onChanged={() => setRefreshKey((k) => k + 1)} />
-          <JoinCodePanel classId={classId} className={schoolClass.data.name} />
+          <ClassCurriculaPanel
+            classId={classId}
+            archived={schoolClass.data.archived}
+            onChanged={() => setRefreshKey((k) => k + 1)}
+          />
+          {!schoolClass.data.archived && <JoinCodePanel classId={classId} className={schoolClass.data.name} />}
         </>
       )}
     </div>

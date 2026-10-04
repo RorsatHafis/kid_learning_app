@@ -239,6 +239,8 @@ export interface ClassOverview {
   /** `open`: families can use it now; `expiresAt` of the unrevoked code, open or expired. */
   joinCode: { open: boolean; expiresAt: string | null };
   attention: ClassAttention;
+  /** X17: listed, but not counted among the school's setup gaps. */
+  archived: boolean;
 }
 
 /** A principal's school: who it reaches and what is still to set up. */
