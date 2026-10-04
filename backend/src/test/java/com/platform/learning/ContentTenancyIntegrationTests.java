@@ -15,7 +15,9 @@ import com.platform.content.repository.LessonRepository;
 import com.platform.content.service.ActivityService;
 import com.platform.content.service.LessonService;
 import com.platform.content.service.QuestionService;
-import com.platform.content.web.TeacherAuthoringController;
+import com.platform.content.studio.StudioDtos.CreateCurriculumRequest;
+import com.platform.content.studio.StudioDtos.CreateLessonRequest;
+import com.platform.content.studio.StudioService;
 import com.platform.curriculum.entity.AgeHub;
 import com.platform.curriculum.entity.Curriculum;
 import com.platform.curriculum.entity.LearningObjective;
@@ -91,7 +93,7 @@ class ContentTenancyIntegrationTests {
     @Autowired private LearningPathRepository learningPathRepository;
     @Autowired private LearningPathService learningPathService;
     @Autowired private ActivityAttemptService activityAttemptService;
-    @Autowired private TeacherAuthoringController teacherAuthoringController;
+    @Autowired private StudioService studioService;
 
     @Test
     void aFamilyPathIsSeededWithPlatformContentOnly() {
@@ -180,11 +182,10 @@ class ContentTenancyIntegrationTests {
         Account admin = accountRepository.save(Account.register(
                 "admin-" + UUID.randomUUID() + "@example.test", "x".repeat(60), PlatformRole.ADMIN));
 
-        var lesson = teacherAuthoringController.lesson(
-                new TeacherAuthoringController.LessonRequest(catalog.subjectId(), "Admin lesson"), admin.getId());
-        var curriculum = teacherAuthoringController.curriculum(
-                new TeacherAuthoringController.CurriculumRequest(catalog.subjectId(), catalog.ageHubId(), "Admin curriculum"),
-                admin.getId());
+        // Through the Studio, the one authoring API (TD-19).
+        var lesson = studioService.createLesson(admin.getId(), new CreateLessonRequest(catalog.subjectId(), "Admin lesson"));
+        var curriculum = studioService.createCurriculum(admin.getId(),
+                new CreateCurriculumRequest(catalog.subjectId(), catalog.ageHubId(), "Admin curriculum"));
 
         assertThat(lessonRepository.findById(lesson.id()).orElseThrow().getOwnerAccountId()).isNull();
         assertThat(curriculumService.getCurriculum(curriculum.id()).getOwnerAccountId()).isNull();

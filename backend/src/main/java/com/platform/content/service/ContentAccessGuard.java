@@ -26,9 +26,8 @@ import java.util.UUID;
  * content of teachers who are ACTIVE staff at a school they run (TD-17) - never another
  * school's teachers.
  *
- * Battle 4: system-owned (null-owner) content is writable by ADMIN only - the same
- * rule {@code TeacherAuthoringController#curriculumOwner} already applies to
- * system-owned curricula. Previously a null owner short-circuited the ownership
+ * Battle 4: system-owned (null-owner) content is writable by ADMIN only, curricula
+ * included. Previously a null owner short-circuited the ownership
  * check and let any non-PARENT account through.
  */
 @Service

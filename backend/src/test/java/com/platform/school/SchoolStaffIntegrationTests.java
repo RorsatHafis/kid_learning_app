@@ -298,16 +298,19 @@ class SchoolStaffIntegrationTests {
         createSchool(otherPrincipal, "Elsewhere School");
         String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         UUID subjectId = subjectRepository.save(Subject.create("STAFF_" + suffix, "Staff " + suffix, null)).getId();
-        String questionId = json(post("/api/v1/teacher/questions",
-                "{\"subjectId\":\"" + subjectId + "\",\"questionType\":\"NUMERIC\"}", teacher), 200).get("id").asString();
-        String draft = "{\"prompt\":\"2 + 2\",\"correctAnswer\":\"4\",\"difficultyLevel\":1}";
+        // TD-19: through the Studio API - the same guard every content write goes through.
+        String questionId = json(post("/api/v1/studio/questions", "{\"subjectId\":\"" + subjectId
+                + "\",\"questionType\":\"NUMERIC\",\"prompt\":\"2 + 2\",\"correctAnswer\":\"4\",\"difficultyLevel\":1,\"skillIds\":[]}", teacher), 201)
+                .get("id").asString();
+        String archive = "/api/v1/studio/questions/" + questionId + "/archive";
 
         // Invited is not yet staff: the principal has no say over the teacher's work.
-        assertThat(post("/api/v1/teacher/questions/" + questionId + "/versions", draft, principal).statusCode()).isEqualTo(403);
+        assertThat(post(archive, "", principal).statusCode()).isEqualTo(403);
         accept(teacher, schoolId);
-        assertThat(post("/api/v1/teacher/questions/" + questionId + "/versions", draft, principal).statusCode()).isEqualTo(200);
+        assertThat(post(archive, "", principal).statusCode()).isEqualTo(204);
+        assertThat(post("/api/v1/studio/questions/" + questionId + "/restore", "", principal).statusCode()).isEqualTo(204);
         // Another school's principal never could.
-        assertThat(post("/api/v1/teacher/questions/" + questionId + "/versions", draft, otherPrincipal).statusCode()).isEqualTo(403);
+        assertThat(post(archive, "", otherPrincipal).statusCode()).isEqualTo(403);
     }
 
     // ------------------------------------------------------------------ helpers
