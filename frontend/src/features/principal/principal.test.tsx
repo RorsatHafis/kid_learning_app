@@ -35,6 +35,8 @@ afterEach(() => vi.unstubAllGlobals());
 
 const SCHOOL = { id: "s1", name: "Sunrise Primary", principalAccountId: "p1" };
 
+const NO_LEARNING = { schoolId: "s1", schoolName: "Sunrise Primary", weeks: 4, classes: [] };
+
 const EMPTY_OVERVIEW = {
   schools: [
     { schoolId: "s1", name: "Sunrise Primary", childrenWithAccess: 0, classes: 0, classesWithoutTeacher: 0, classesWithoutCurriculum: 0, classesWithoutOpenCode: 0 },
@@ -62,6 +64,7 @@ describe("PrincipalHome", () => {
     let created = false;
     const calls = server({
       "GET /schools/mine": () => respond(200, created ? [SCHOOL] : []),
+      "GET /schools/s1/learning": respond(200, NO_LEARNING),
       "POST /schools": () => {
         created = true;
         return respond(201, SCHOOL);
@@ -92,6 +95,7 @@ describe("PrincipalHome", () => {
     ];
     server({
       "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/learning": respond(200, NO_LEARNING),
       "GET /schools/s1/classes": respond(200, []),
       "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, staff),
@@ -124,6 +128,7 @@ describe("PrincipalHome", () => {
   it("confirms before removing a teacher", async () => {
     const calls = server({
       "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/learning": respond(200, NO_LEARNING),
       "GET /schools/s1/classes": respond(200, []),
       "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, [
@@ -228,6 +233,7 @@ describe("Class lifecycle (X17)", () => {
   it("keeps archived classes apart on the school's page, saying what they are", async () => {
     server({
       "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/learning": respond(200, NO_LEARNING),
       "GET /schools/s1/classes": respond(200, [
         { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [], archived: false },
         { id: "c9", schoolId: "s1", name: "Last year", teachers: [], archived: true },
@@ -256,6 +262,7 @@ describe("Staff homes (X7)", () => {
   it("shows a principal who the school reaches, what is left to set up, and each class's attention", async () => {
     server({
       "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/learning": respond(200, NO_LEARNING),
       "GET /schools/s1/classes": respond(200, [
         { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [{ accountId: "t1", email: "a@example.com" }] },
         { id: "c2", schoolId: "s1", name: "Grade 2B", teachers: [] },

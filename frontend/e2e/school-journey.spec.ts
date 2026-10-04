@@ -77,7 +77,10 @@ test("school: principal applies, is approved, sets up the school; an invited tea
 
   // Back to the principal: the accepted teacher can now be assigned to the class.
   await page.reload();
-  await page.getByRole("link", { name: /Grade 1 A/ }).click();
+  await page
+    .getByRole("region", { name: "Classes", exact: true })
+    .getByRole("link", { name: /Grade 1 A/ })
+    .click();
   // (The page also assigns curricula: these are the teacher controls.)
   await page.getByLabel("Assign a teacher").selectOption({ label: teacherEmail });
   await page.getByRole("button", { name: "Assign", exact: true }).click();
@@ -144,6 +147,13 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await overTime.getByText("Show as a table").click();
   await expect(overTime.getByRole("rowheader", { name: "Now" })).toBeVisible();
   await expectNoViolations(teacher, "teacher class page with a child");
+
+  // X21: the principal sees learning across the school, class by class.
+  await page.goto("/principal");
+  const across = page.getByRole("region", { name: "Learning across the school" });
+  await expect(across.getByRole("link", { name: /Grade 1 A/ })).toContainText("0 of 1 child answered this week");
+  await expectNoViolations(page, "principal: learning across the school");
+  await page.goBack();
   await children.getByRole("link", { name: /Rithy/ }).click();
   await expect(teacher.getByRole("heading", { name: "Rithy" })).toBeVisible();
   await expect(teacher.getByRole("region", { name: "Learning in this class" }).getByText(curriculum)).toBeVisible();

@@ -572,6 +572,59 @@ class SchoolAccessIntegrationTests {
     }
 
     @Test
+    void thePrincipalSeesLearningAcrossTheSchoolClassByClassAndNoOneElseDoes() throws Exception {
+        Staff principal = staff(PlatformRole.PRINCIPAL);
+        Staff teacher = staff(PlatformRole.TEACHER);
+        SchoolClass taught = classTaughtBy(principal, teacher);
+        SchoolClass quiet = schoolService.createClass(taught.getSchoolId(), "Grade 2 Quiet");
+        SchoolClass old = schoolService.createClass(taught.getSchoolId(), "Grade 0 Old");
+        json(post("/api/v1/schools/classes/" + old.getId() + "/archive", "", principal.token()), 200);
+        String classPath = "/api/v1/schools/classes/" + taught.getId();
+        Curriculum assigned = publishedCurriculum(null, "School learning maths");
+        json(post(classPath + "/curricula/" + assigned.getId(), "", teacher.token()), 200);
+        String code = json(post(classPath + "/join-code", "", teacher.token()), 201).get("code").asString();
+        Parent parent = parent();
+        String childId = createChild(parent.token(), "Chenda");
+        confirmEmail(parent);
+        json(post("/api/v1/children/" + childId + "/schools/join", codeBody(code), parent.token()), 200);
+        UUID child = UUID.fromString(childId);
+        UUID skill = jdbc.queryForObject("""
+                select los.skill_id from curriculum_versions v
+                join curriculum_objectives co on co.curriculum_version_id = v.id
+                join learning_objective_skills los on los.learning_objective_id = co.learning_objective_id
+                where v.curriculum_id = ?""", UUID.class, assigned.getId());
+        // In the class for three weeks; three answers two days ago make the skill secure.
+        java.time.Instant now = java.time.Instant.now();
+        jdbc.update("delete from class_enrollments where child_id = ?", child);
+        jdbc.update("insert into class_enrollments (id, school_class_id, child_id, status, created_at, updated_at) values (?, ?, ?, 'ACTIVE', ?, ?)",
+                UUID.randomUUID(), taught.getId(), child, java.sql.Timestamp.from(now.minus(java.time.Duration.ofDays(21))),
+                java.sql.Timestamp.from(now.minus(java.time.Duration.ofDays(21))));
+        history(child, skill, now.minus(java.time.Duration.ofDays(2)), "0.85", "0.90", "0.95");
+
+        String path = "/api/v1/schools/" + taught.getSchoolId() + "/learning";
+        HttpResponse<String> response = get(path, principal.token());
+        JsonNode school = json(response, 200);
+        assertThat(school.get("weeks").asInt()).isEqualTo(4);
+        // Active classes only, by name.
+        assertThat(school.get("classes").valueStream().map(c -> c.get("className").asString()).toList())
+                .containsExactly("Grade 1", "Grade 2 Quiet");
+        JsonNode row = school.get("classes").get(0);
+        assertThat(row.get("children").asInt()).isEqualTo(1);
+        assertThat(row.get("answeringThisWeek").asInt()).isEqualTo(1);
+        assertThat(row.get("answersThisWeek").asInt()).isEqualTo(3);
+        assertThat(row.get("now").get("secure").asInt()).isEqualTo(1);
+        assertThat(row.get("movement").get("becameSecure").asInt()).isEqualTo(1);
+        assertThat(school.get("classes").get(1).get("children").asInt()).isZero();
+        assertThat(response.body()).doesNotContain("Chenda").doesNotContain(childId);
+
+        // Not the class's teacher, another principal, an administrator or a family.
+        assertThat(get(path, teacher.token()).statusCode()).isEqualTo(403);
+        assertThat(get(path, staff(PlatformRole.PRINCIPAL).token()).statusCode()).isEqualTo(403);
+        assertThat(get(path, staff(PlatformRole.ADMIN).token()).statusCode()).isEqualTo(403);
+        assertThat(get(path, parent.token()).statusCode()).isEqualTo(403);
+    }
+
+    @Test
     void codeLookupsAreRateLimitedPerAccount() throws Exception {
         Parent parent = parent();
         String childId = createChild(parent.token(), "Rotha");

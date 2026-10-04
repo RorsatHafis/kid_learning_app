@@ -263,3 +263,30 @@ export interface StaffOverview {
 export const staffOverviewApi = {
   get: () => apiClient.get<StaffOverview>("/schools/overview"),
 };
+
+// ---- school/service/SchoolLearningSummaryService.java (X21): learning across a school, its principal only ----
+
+export interface SchoolClassLearning {
+  classId: string;
+  className: string;
+  /** Children in the class now. */
+  children: number;
+  /** Skills of the curricula it assigns. */
+  skills: number;
+  answeringThisWeek: number;
+  answersThisWeek: number;
+  now: ClassTrendPoint;
+  movement: ClassTrend["movement"];
+}
+
+export interface SchoolLearning {
+  schoolId: string;
+  schoolName: string;
+  weeks: number;
+  /** Active classes, by name. */
+  classes: SchoolClassLearning[];
+}
+
+export const schoolLearningApi = {
+  get: (schoolId: string) => apiClient.get<SchoolLearning>(`/schools/${schoolId}/learning`),
+};

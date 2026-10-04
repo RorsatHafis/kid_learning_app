@@ -8,6 +8,7 @@ import type { SchoolStaffMember, SchoolSummary } from "@/lib/api/types";
 import { staffOverviewApi, type ClassOverview, type SchoolOverview, type StaffOverview } from "@/lib/api/schoolAccess";
 import { ClassSummary } from "@/features/school/ClassSummary";
 import { RenameSchoolButton } from "@/features/school/ClassLifecycle";
+import { SchoolLearningSection } from "./SchoolLearningSection";
 import type { SchoolClassWithTeachers } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
@@ -56,6 +57,7 @@ export function PrincipalHome() {
       </div>
       {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
       {overview.data && <AtAGlance school={overview.data.schools.find((s) => s.schoolId === school.id)} />}
+      <SchoolLearningSection key={school.id} schoolId={school.id} />
       <div className="grid gap-10 xl:grid-cols-2 xl:items-start xl:gap-8">
         <Classes school={school} overview={overview.data} onChanged={overview.refetch} />
         <Teachers school={school} />
