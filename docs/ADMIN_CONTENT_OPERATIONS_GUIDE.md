@@ -16,7 +16,7 @@ in `BOOKEYOND-KID-ENGINEERING-PROGRESS.md`).
 |---|---|---|
 | **Administrator** | `/admin` | Run the platform: build and publish platform content, manage staff and accounts, see schools and the learning loop in counts, plans, reports, system status and the audit log. **Never** reads a child's name or learning — running the platform is no way into children's data (CLAUDE.md §10, §22). |
 | **Principal** | `/principal` | Their own school: classes, teachers, what each class learns, its codes, and the learning of the children whose families joined (PD-01). |
-| **Teacher** | `/teacher` | Classes they are assigned to: children's learning in what the class assigns, the class over time, follow-up and practice. |
+| **Teacher** | `/teacher` | Classes they are assigned to: children's learning in what the class assigns, the class over time, follow-up and practice. **My content** (X22): their own questions, activities and curricula in the Studio, on the platform's catalog (read-only to them), and their own media. |
 | **Parent** | `/parent` | Their own family and children only. |
 
 Every rule below is enforced on the server. The screens only show what the server allows.
@@ -164,6 +164,16 @@ also have `/__play`, a development-only gallery of every interaction type; it is
 
 ---
 
+### 3.8 Teachers' own content (X22)
+Teachers open **My content** (`/teacher/studio`) - the same Studio screens, scoped to them:
+- They see the platform's subjects, skills and objectives but cannot change them (an administrator does).
+- Their questions, lessons, activities and curricula are theirs alone: another teacher can't see or change them,
+  and an administrator works on platform content. They may reuse **published platform questions** in their activities.
+- Their curricula reach children only through **their class**: a published curriculum of theirs appears (marked
+  "yours") in the class's *Assign a curriculum* list, next to the platform's. Their activities can then be placed as
+  practice for the class's children. They never appear in the family catalog (N7).
+- Their media library holds the platform's media and their own uploads.
+
 ## 4. Change, archive, restore — and why there is no "delete" for content
 
 | Thing | Create | Edit | Archive | Restore | Delete |
@@ -237,6 +247,5 @@ and **age groups with nothing offered** show where content is still needed.
 | Deleting accounts/data | PD-24 (retention) |
 | Withdrawing a published version from children who have it | PD-04 |
 | Challenges as a content type | OD-09 |
-| A teacher-facing Studio | TD-19 (the server already scopes teacher-owned content) |
 | Tracing and child voice recording | evidence-quality and privacy decisions |
 | Report export (CSV) | not yet prioritised |

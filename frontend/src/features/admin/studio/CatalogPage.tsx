@@ -4,7 +4,7 @@ import { studioApi, type CatalogObjective, type CatalogSkill } from "@/lib/api/s
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, Panel, SkillChips, TextAreaField } from "./shared";
-import { codeFrom, errorText, useArchivedView, useStudio, useComposer } from "./studioLogic";
+import { codeFrom, errorText, useArchivedView, useStudio, useStudioScope, useComposer } from "./studioLogic";
 import { ArchivedSwitch, ManageButton } from "./Lifecycle";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { ErrorState, LoadingState } from "@/components/ui/States";
@@ -16,13 +16,22 @@ import { ErrorState, LoadingState } from "@/components/ui/States";
  */
 export function CatalogPage() {
   const { catalog } = useStudio();
-  const skills = useComposer(catalog.skills.length === 0);
-  const objectives = useComposer(catalog.objectives.length === 0);
-  const [archived, setArchived] = useArchivedView();
+  const { catalogAdmin } = useStudioScope();
+  const skills = useComposer(catalogAdmin && catalog.skills.length === 0);
+  const objectives = useComposer(catalogAdmin && catalog.objectives.length === 0);
+  const [archivedView, setArchived] = useArchivedView();
+  const archived = catalogAdmin && archivedView;
 
   return (
     <div className="flex flex-col gap-5">
-      <ArchivedSwitch archived={archived} onChange={setArchived} noun="skills and objectives" />
+      {catalogAdmin ? (
+        <ArchivedSwitch archived={archived} onChange={setArchived} noun="skills and objectives" />
+      ) : (
+        <p className="max-w-3xl text-sm text-ink-soft">
+          These are the platform&apos;s skills and objectives: your questions count as evidence for them, and your curricula are
+          built from them. Only an administrator changes them.
+        </p>
+      )}
       {archived ? (
         <ArchivedCatalog subjectId={catalog.subject.id} />
       ) : (
@@ -31,7 +40,7 @@ export function CatalogPage() {
             {skills.open && <NewSkill onDone={skills.hide} focusOnOpen={skills.requested} />}
             <Panel
               title={`Skills (${catalog.skills.length})`}
-              action={!skills.open && <NewButton label="New skill" onClick={skills.show} />}
+              action={catalogAdmin && !skills.open && <NewButton label="New skill" onClick={skills.show} />}
             >
               {catalog.skills.length === 0 ? (
                 <p className="text-sm text-ink-soft">
@@ -50,7 +59,7 @@ export function CatalogPage() {
             {objectives.open && <NewObjective onDone={objectives.hide} focusOnOpen={objectives.requested} />}
             <Panel
               title={`Learning objectives (${catalog.objectives.length})`}
-              action={!objectives.open && <NewButton label="New objective" onClick={objectives.show} />}
+              action={catalogAdmin && !objectives.open && <NewButton label="New objective" onClick={objectives.show} />}
             >
               {catalog.objectives.length === 0 ? (
                 <p className="text-sm text-ink-soft">No objectives yet. A curriculum is a sequence of objectives.</p>
@@ -141,11 +150,14 @@ function ArchivedCatalog({ subjectId }: { subjectId: string }) {
 
 function SkillRow({ skill }: { skill: CatalogSkill }) {
   const { catalog, refreshCatalog } = useStudio();
+  const { catalogAdmin } = useStudioScope();
   const [prerequisite, setPrerequisite] = useState("");
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const candidates = catalog.skills.filter((s) => s.id !== skill.id && !skill.prerequisiteSkillIds.includes(s.id));
+  const candidates = catalogAdmin
+    ? catalog.skills.filter((s) => s.id !== skill.id && !skill.prerequisiteSkillIds.includes(s.id))
+    : [];
 
   async function add() {
     setBusy(true);
@@ -170,14 +182,16 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
           <p className="font-mono text-xs text-ink-faint">{skill.code}</p>
           {skill.description && <p className="mt-1 text-sm text-ink-soft">{skill.description}</p>}
         </div>
-        <ManageButton
-          kind="skills"
-          id={skill.id}
-          name={skill.name}
-          description={skill.description}
-          describable
-          onChanged={refreshCatalog}
-        />
+        {catalogAdmin && (
+          <ManageButton
+            kind="skills"
+            id={skill.id}
+            name={skill.name}
+            description={skill.description}
+            describable
+            onChanged={refreshCatalog}
+          />
+        )}
       </div>
       {skill.prerequisiteSkillIds.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
@@ -231,10 +245,11 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
 
 function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
   const { catalog, refreshCatalog } = useStudio();
+  const { catalogAdmin } = useStudioScope();
   const [skill, setSkill] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const candidates = catalog.skills.filter((s) => !objective.skillIds.includes(s.id));
+  const candidates = catalogAdmin ? catalog.skills.filter((s) => !objective.skillIds.includes(s.id)) : [];
 
   async function add() {
     setBusy(true);
@@ -258,14 +273,16 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
           <p className="font-mono text-xs text-ink-faint">{objective.code}</p>
           {objective.description && <p className="mt-1 text-sm text-ink-soft">{objective.description}</p>}
         </div>
-        <ManageButton
-          kind="objectives"
-          id={objective.id}
-          name={objective.title}
-          description={objective.description}
-          describable
-          onChanged={refreshCatalog}
-        />
+        {catalogAdmin && (
+          <ManageButton
+            kind="objectives"
+            id={objective.id}
+            name={objective.title}
+            description={objective.description}
+            describable
+            onChanged={refreshCatalog}
+          />
+        )}
       </div>
       <SkillChips skillIds={objective.skillIds} catalog={catalog} />
       {candidates.length > 0 && (

@@ -8,27 +8,33 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, TextAreaField } from "./shared";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
-import { codeFrom, errorText, useArchivedView, useComposer } from "./studioLogic";
+import { codeFrom, errorText, useArchivedView, useComposer, useStudioScope } from "./studioLogic";
 import { ArchivedSwitch, ManageButton } from "./Lifecycle";
 
 /** Where authoring starts: pick the subject to work in, or add a new one. */
 export function StudioIndex() {
-  const [archived, setArchived] = useArchivedView();
+  const { base, catalogAdmin } = useStudioScope();
+  const [archivedView, setArchived] = useArchivedView();
+  const archived = catalogAdmin && archivedView;
   const subjects = useAsync(() => studioApi.subjects(archived), [archived]);
-  const composer = useComposer(!archived && subjects.data?.length === 0);
+  const composer = useComposer(catalogAdmin && !archived && subjects.data?.length === 0);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         breadcrumb={[{ label: "Content Studio" }]}
         title="Subjects"
-        description="Content is built subject by subject: skills and objectives first, then questions and activities, then the curriculum that places them on children's learning paths. Nothing reaches a child until it is published, and publishing checks that a child can actually play it."
+        description={
+          catalogAdmin
+            ? "Content is built subject by subject: skills and objectives first, then questions and activities, then the curriculum that places them on children's learning paths. Nothing reaches a child until it is published, and publishing checks that a child can actually play it."
+            : "Build your own questions, activities and curricula on the platform's subjects and skills. Nothing reaches a child until it is published; your curricula reach children when you assign them to your class, and your activities can then be placed as practice."
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Link to="/admin/media" className={buttonClasses("outline")}>
+            <Link to={`${base}/media`} className={buttonClasses("outline")}>
               <Images size={16} aria-hidden /> Media library
             </Link>
-            {!composer.open && <NewButton label="New subject" onClick={composer.show} />}
+            {catalogAdmin && !composer.open && <NewButton label="New subject" onClick={composer.show} />}
           </div>
         }
       />
@@ -43,7 +49,7 @@ export function StudioIndex() {
         />
       )}
 
-      <ArchivedSwitch archived={archived} onChange={setArchived} noun="subjects" />
+      {catalogAdmin && <ArchivedSwitch archived={archived} onChange={setArchived} noun="subjects" />}
 
       {subjects.isLoading && !subjects.data && <LoadingState label="Loading subjects…" />}
       {subjects.error && <ErrorState error={subjects.error} onRetry={subjects.refetch} />}
@@ -80,7 +86,7 @@ export function StudioIndex() {
           {subjects.data.map((subject) => (
             <li key={subject.id}>
               <Link
-                to={`/admin/studio/${subject.id}/catalog`}
+                to={`${base}/studio/${subject.id}/${catalogAdmin ? "catalog" : "questions"}`}
                 className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 transition-colors hover:bg-paper sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_auto]"
               >
                 <span className="min-w-0">
@@ -120,7 +126,7 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
         description: description.trim() || undefined,
       });
       onCreated();
-      navigate(`/admin/studio/${subject.id}/catalog`);
+      navigate(`/admin/studio/${subject.id}/catalog`); // only an administrator creates subjects
     } catch (err) {
       setError(errorText(err, "The subject couldn't be created. Its code may already be in use."));
     } finally {

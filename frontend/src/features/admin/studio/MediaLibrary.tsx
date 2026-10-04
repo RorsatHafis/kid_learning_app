@@ -16,6 +16,7 @@ import { speak, stopSpeaking, usePlaying } from "@/features/child/speaker";
 import { cn } from "@/lib/utils/cn";
 import { StatusBadge, TextAreaField } from "./shared";
 import { uploadError } from "./mediaText";
+import { useStudioScope } from "./studioLogic";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav,audio/x-wav";
 
@@ -297,6 +298,7 @@ function MediaDetailBody({
   onDeleted: () => void;
 }) {
   const { item, uses } = detail;
+  const { base } = useStudioScope();
   const [title, setTitle] = useState(item.title ?? "");
   const [description, setDescription] = useState(item.description ?? "");
   const [busy, setBusy] = useState(false);
@@ -393,7 +395,7 @@ function MediaDetailBody({
               {uses.map((use) => (
                 <li key={`${use.versionId}:${use.field}`}>
                   <Link
-                    to={`/admin/studio/${use.subjectId}/questions/${use.questionId}`}
+                    to={`${base}/studio/${use.subjectId}/questions/${use.questionId}`}
                     className="flex flex-col gap-1 px-3 py-2.5 text-sm hover:bg-paper"
                   >
                     <span className="line-clamp-2 font-medium text-ink">{use.prompt}</span>

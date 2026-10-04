@@ -3,7 +3,7 @@ import { studioApi } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { cn } from "@/lib/utils/cn";
-import type { StudioContext } from "./studioLogic";
+import { useStudioScope, type StudioContext } from "./studioLogic";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
 import { ManageButton } from "./Lifecycle";
 
@@ -21,6 +21,7 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
 export function StudioLayout() {
   const { subjectId = "" } = useParams<{ subjectId: string }>();
   const navigate = useNavigate();
+  const { base, catalogAdmin } = useStudioScope();
   const subjects = useAsync(() => studioApi.subjects(), []);
   const catalog = useAsync(() => studioApi.catalog(subjectId), [subjectId]);
 
@@ -29,11 +30,11 @@ export function StudioLayout() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        breadcrumb={[{ label: "Content Studio", to: "/admin/studio" }, { label: catalog.data?.subject.name ?? "…" }]}
+        breadcrumb={[{ label: "Content Studio", to: `${base}/studio` }, { label: catalog.data?.subject.name ?? "…" }]}
         title={catalog.data?.subject.name ?? "Loading…"}
         actions={
           <div className="flex flex-wrap items-center gap-3">
-            {catalog.data && (
+            {catalogAdmin && catalog.data && (
               <ManageButton
                 kind="subjects"
                 id={catalog.data.subject.id}
@@ -41,7 +42,7 @@ export function StudioLayout() {
                 description={catalog.data.subject.description}
                 describable
                 label="Manage subject…"
-                onChanged={(change) => (change === "archived" ? navigate("/admin/studio") : (catalog.refetch(), subjects.refetch()))}
+                onChanged={(change) => (change === "archived" ? navigate(`${base}/studio`) : (catalog.refetch(), subjects.refetch()))}
               />
             )}
           {subjects.data &&
@@ -50,7 +51,7 @@ export function StudioLayout() {
               Subject
               <select
                 value={subjectId}
-                onChange={(e) => navigate(`/admin/studio/${e.target.value}/catalog`)}
+                onChange={(e) => navigate(`${base}/studio/${e.target.value}/${catalogAdmin ? "catalog" : "questions"}`)}
                 className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
               >
                 {subjects.data.map((s) => (
@@ -67,16 +68,16 @@ export function StudioLayout() {
 
       <nav aria-label="Studio sections" className="-mx-4 -mt-3 overflow-x-auto border-b border-line pl-4 pr-16 [mask-image:linear-gradient(to_right,black_82%,transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
         <div className="flex gap-7">
-          <NavLink to={`/admin/studio/${subjectId}/catalog`} className={tabClass}>
+          <NavLink to={`${base}/studio/${subjectId}/catalog`} className={tabClass}>
             Skills &amp; objectives
           </NavLink>
-          <NavLink to={`/admin/studio/${subjectId}/questions`} className={tabClass}>
+          <NavLink to={`${base}/studio/${subjectId}/questions`} className={tabClass}>
             Questions
           </NavLink>
-          <NavLink to={`/admin/studio/${subjectId}/activities`} className={tabClass}>
+          <NavLink to={`${base}/studio/${subjectId}/activities`} className={tabClass}>
             Activities
           </NavLink>
-          <NavLink to={`/admin/studio/${subjectId}/curricula`} className={tabClass}>
+          <NavLink to={`${base}/studio/${subjectId}/curricula`} className={tabClass}>
             Curricula
           </NavLink>
         </div>

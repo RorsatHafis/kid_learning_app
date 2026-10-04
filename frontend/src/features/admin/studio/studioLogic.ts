@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import { ApiError } from "@/lib/api/ApiError";
 import type { Catalog, PublicationStatus, ValidationReport, VersionSummary } from "@/lib/api/studio";
@@ -12,6 +12,23 @@ export interface StudioContext {
 
 export function useStudio() {
   return useOutletContext<StudioContext>();
+}
+
+/**
+ * Where the Studio is mounted and who uses it (X22): the platform administrator's console, or a
+ * teacher's workspace. A teacher builds their own questions, activities and curricula on the
+ * platform's subjects, skills and objectives, which only an administrator changes (the server
+ * enforces both; this only stops offering what would be refused).
+ */
+export interface StudioScope {
+  base: string;
+  catalogAdmin: boolean;
+}
+
+export const StudioScopeContext = createContext<StudioScope>({ base: "/admin", catalogAdmin: true });
+
+export function useStudioScope() {
+  return useContext(StudioScopeContext);
 }
 
 /** The most useful single status for a piece of content: its open draft, else what is live. */

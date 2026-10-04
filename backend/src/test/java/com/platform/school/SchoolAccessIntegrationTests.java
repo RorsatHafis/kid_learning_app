@@ -625,6 +625,39 @@ class SchoolAccessIntegrationTests {
     }
 
     @Test
+    void aTeachersOwnPublishedCurriculumCanBeAssignedToTheirClassButNoOneElsesCan() throws Exception {
+        Staff principal = staff(PlatformRole.PRINCIPAL);
+        Staff teacher = staff(PlatformRole.TEACHER);
+        Staff otherTeacher = staff(PlatformRole.TEACHER);
+        SchoolClass taught = classTaughtBy(principal, teacher);
+        Curriculum mine = publishedCurriculum(teacher.id(), "My own maths");
+        Curriculum theirs = publishedCurriculum(otherTeacher.id(), "Their maths");
+        Curriculum platform = publishedCurriculum(null, "Platform maths");
+
+        JsonNode assignable = json(get("/api/v1/schools/curricula/assignable", teacher.token()), 200);
+        java.util.Map<String, Boolean> offered = new java.util.HashMap<>();
+        assignable.forEach(c -> offered.put(c.get("id").asString(), c.get("own").asBoolean()));
+        assertThat(offered).containsEntry(mine.getId().toString(), true).containsEntry(platform.getId().toString(), false)
+                .doesNotContainKey(theirs.getId().toString());
+        // Their own come first.
+        assertThat(assignable.get(0).get("own").asBoolean()).isTrue();
+
+        String classPath = "/api/v1/schools/classes/" + taught.getId();
+        json(post(classPath + "/curricula/" + mine.getId(), "", teacher.token()), 200);
+        assertThat(post(classPath + "/curricula/" + theirs.getId(), "", teacher.token()).statusCode()).isEqualTo(404);
+        // A child who joins starts the teacher's curriculum with the class.
+        String code = json(post(classPath + "/join-code", "", teacher.token()), 201).get("code").asString();
+        Parent parent = parent();
+        String childId = createChild(parent.token(), "Vanna");
+        confirmEmail(parent);
+        json(post("/api/v1/children/" + childId + "/schools/join", codeBody(code), parent.token()), 200);
+        assertThat(journeyIn(parent.token(), childId, mine.getId()).get("totalSteps").asInt()).isPositive();
+
+        // Families have no assignable list.
+        assertThat(get("/api/v1/schools/curricula/assignable", parent.token()).statusCode()).isEqualTo(403);
+    }
+
+    @Test
     void codeLookupsAreRateLimitedPerAccount() throws Exception {
         Parent parent = parent();
         String childId = createChild(parent.token(), "Rotha");

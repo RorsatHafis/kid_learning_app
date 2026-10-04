@@ -39,7 +39,15 @@ const NO_LEARNING = { schoolId: "s1", schoolName: "Sunrise Primary", weeks: 4, c
 
 const EMPTY_OVERVIEW = {
   schools: [
-    { schoolId: "s1", name: "Sunrise Primary", childrenWithAccess: 0, classes: 0, classesWithoutTeacher: 0, classesWithoutCurriculum: 0, classesWithoutOpenCode: 0 },
+    {
+      schoolId: "s1",
+      name: "Sunrise Primary",
+      childrenWithAccess: 0,
+      classes: 0,
+      classesWithoutTeacher: 0,
+      classesWithoutCurriculum: 0,
+      classesWithoutOpenCode: 0,
+    },
   ],
   classes: [],
 };
@@ -90,8 +98,22 @@ describe("PrincipalHome", () => {
 
   it("invites a teacher, and shows the server's reason when an address can't be invited", async () => {
     const staff = [
-      { id: "m1", accountId: "t1", email: "active@example.com", status: "ACTIVE", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
-      { id: "m2", accountId: "t2", email: "gone@example.com", status: "REMOVED", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
+      {
+        id: "m1",
+        accountId: "t1",
+        email: "active@example.com",
+        status: "ACTIVE",
+        invitedAt: "2026-09-01T00:00:00Z",
+        respondedAt: null,
+      },
+      {
+        id: "m2",
+        accountId: "t2",
+        email: "gone@example.com",
+        status: "REMOVED",
+        invitedAt: "2026-09-01T00:00:00Z",
+        respondedAt: null,
+      },
     ];
     server({
       "GET /schools/mine": respond(200, [SCHOOL]),
@@ -101,8 +123,17 @@ describe("PrincipalHome", () => {
       "GET /schools/s1/staff": respond(200, staff),
       "POST /schools/s1/staff": (_m, body) =>
         (body as { email: string }).email === "parent@example.com"
-          ? respond(409, { status: 409, detail: "This email address can't be invited as a teacher. Ask them for a different address." })
-          : respond(201, { id: "m3", accountId: "t3", email: "new@example.com", status: "INVITED", invitedAt: "2026-09-26T00:00:00Z" }),
+          ? respond(409, {
+              status: 409,
+              detail: "This email address can't be invited as a teacher. Ask them for a different address.",
+            })
+          : respond(201, {
+              id: "m3",
+              accountId: "t3",
+              email: "new@example.com",
+              status: "INVITED",
+              invitedAt: "2026-09-26T00:00:00Z",
+            }),
     });
     const user = userEvent.setup();
     render(
@@ -132,7 +163,14 @@ describe("PrincipalHome", () => {
       "GET /schools/s1/classes": respond(200, []),
       "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, [
-        { id: "m1", accountId: "t1", email: "active@example.com", status: "ACTIVE", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
+        {
+          id: "m1",
+          accountId: "t1",
+          email: "active@example.com",
+          status: "ACTIVE",
+          invitedAt: "2026-09-01T00:00:00Z",
+          respondedAt: null,
+        },
       ]),
       "DELETE /schools/s1/staff/m1": respond(204),
     });
@@ -155,15 +193,41 @@ describe("PrincipalHome", () => {
 describe("PrincipalClassPage", () => {
   it("offers only accepted teachers who aren't already assigned, and explains how children join", async () => {
     const calls = server({
-      "GET /schools/classes/c1": respond(200, { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [{ accountId: "t1", email: "a@example.com" }] }),
+      "GET /schools/classes/c1": respond(200, {
+        id: "c1",
+        schoolId: "s1",
+        name: "Grade 1A",
+        teachers: [{ accountId: "t1", email: "a@example.com" }],
+      }),
       "GET /schools/s1/staff": respond(200, [
-        { id: "m1", accountId: "t1", email: "a@example.com", status: "ACTIVE", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
-        { id: "m2", accountId: "t2", email: "b@example.com", status: "ACTIVE", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
-        { id: "m3", accountId: "t3", email: "c@example.com", status: "INVITED", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
+        {
+          id: "m1",
+          accountId: "t1",
+          email: "a@example.com",
+          status: "ACTIVE",
+          invitedAt: "2026-09-01T00:00:00Z",
+          respondedAt: null,
+        },
+        {
+          id: "m2",
+          accountId: "t2",
+          email: "b@example.com",
+          status: "ACTIVE",
+          invitedAt: "2026-09-01T00:00:00Z",
+          respondedAt: null,
+        },
+        {
+          id: "m3",
+          accountId: "t3",
+          email: "c@example.com",
+          status: "INVITED",
+          invitedAt: "2026-09-01T00:00:00Z",
+          respondedAt: null,
+        },
       ]),
       "GET /schools/classes/c1/learning": respond(200, { curricula: [], members: [], skills: [] }),
       "GET /schools/classes/c1/curricula": respond(200, []),
-      "GET /curricula": respond(200, []),
+      "GET /schools/curricula/assignable": respond(200, []),
       "GET /schools/classes/c1/join-code": respond(204),
       "POST /schools/classes/c1/teachers": respond(201, {}),
     });
@@ -177,7 +241,9 @@ describe("PrincipalClassPage", () => {
     );
 
     const select = await screen.findByLabelText("Assign a teacher");
-    const options = within(select).getAllByRole("option").map((o) => o.textContent);
+    const options = within(select)
+      .getAllByRole("option")
+      .map((o) => o.textContent);
     expect(options).toEqual(["Choose one of your teachers…", "b@example.com"]);
     // Children join with the class code, by their family's choice (PD-01): the empty class says how.
     expect(await screen.findByText(/Share the class code with families/)).toBeInTheDocument();
@@ -194,13 +260,28 @@ describe("Class lifecycle (X17)", () => {
     let archived = false;
     const calls = server({
       "GET /schools/classes/c1": () =>
-        respond(200, { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [{ accountId: "t1", email: "a@example.com" }], archived }),
+        respond(200, {
+          id: "c1",
+          schoolId: "s1",
+          name: "Grade 1A",
+          teachers: [{ accountId: "t1", email: "a@example.com" }],
+          archived,
+        }),
       "GET /schools/s1/staff": respond(200, [
-        { id: "m2", accountId: "t2", email: "b@example.com", status: "ACTIVE", invitedAt: "2026-09-01T00:00:00Z", respondedAt: null },
+        {
+          id: "m2",
+          accountId: "t2",
+          email: "b@example.com",
+          status: "ACTIVE",
+          invitedAt: "2026-09-01T00:00:00Z",
+          respondedAt: null,
+        },
       ]),
       "GET /schools/classes/c1/learning": respond(200, { curricula: [], members: [], skills: [] }),
       "GET /schools/classes/c1/curricula": respond(200, []),
-      "GET /curricula": respond(200, [{ id: "cu9", name: "Reading", subjectName: "Reading", ageHubName: "Ages 5-6" }]),
+      "GET /schools/curricula/assignable": respond(200, [
+        { id: "cu9", name: "Reading", subjectName: "Reading", ageHubName: "Ages 5-6", own: false },
+      ]),
       "GET /schools/classes/c1/join-code": respond(204),
       "POST /schools/classes/c1/archive": () => {
         archived = true;
@@ -216,6 +297,7 @@ describe("Class lifecycle (X17)", () => {
       </MemoryRouter>,
     );
 
+    expect(await screen.findByLabelText("Assign a curriculum")).toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: /Manage class/ }));
     const dialog = screen.getByRole("dialog", { name: "Manage class" });
     expect(within(dialog).getByText(/Its code stops working/)).toBeInTheDocument();
@@ -270,11 +352,26 @@ describe("Staff homes (X7)", () => {
       "GET /schools/s1/staff": respond(200, []),
       "GET /schools/overview": respond(200, {
         schools: [
-          { schoolId: "s1", name: "Sunrise Primary", childrenWithAccess: 12, classes: 2, classesWithoutTeacher: 1, classesWithoutCurriculum: 1, classesWithoutOpenCode: 1 },
+          {
+            schoolId: "s1",
+            name: "Sunrise Primary",
+            childrenWithAccess: 12,
+            classes: 2,
+            classesWithoutTeacher: 1,
+            classesWithoutCurriculum: 1,
+            classesWithoutOpenCode: 1,
+          },
         ],
         classes: [
           classOverview({ attention: { childrenNeedingPractice: 3, skillsNeedingPractice: 2, childrenNotStarted: 1 } }),
-          classOverview({ classId: "c2", className: "Grade 2B", children: 0, curricula: [], teachers: 0, joinCode: { open: false, expiresAt: null } }),
+          classOverview({
+            classId: "c2",
+            className: "Grade 2B",
+            children: 0,
+            curricula: [],
+            teachers: 0,
+            joinCode: { open: false, expiresAt: null },
+          }),
         ],
       }),
     });
@@ -305,10 +402,7 @@ describe("Staff homes (X7)", () => {
       "GET /schools/invitations/mine": respond(200, []),
       "GET /schools/overview": respond(200, {
         schools: [],
-        classes: [
-          classOverview({}),
-          classOverview({ classId: "c3", className: "Grade 3", children: 0 }),
-        ],
+        classes: [classOverview({}), classOverview({ classId: "c3", className: "Grade 3", children: 0 })],
       }),
     });
     const { TeacherHome } = await import("@/features/teacher/TeacherHome");
@@ -332,7 +426,10 @@ describe("SchoolInvitations", () => {
     let answered = false;
     const calls = server({
       "GET /schools/invitations/mine": () =>
-        respond(200, answered ? [] : [{ id: "i1", schoolId: "s1", schoolName: "Sunrise Primary", invitedAt: "2026-09-26T00:00:00Z" }]),
+        respond(
+          200,
+          answered ? [] : [{ id: "i1", schoolId: "s1", schoolName: "Sunrise Primary", invitedAt: "2026-09-26T00:00:00Z" }],
+        ),
       "POST /schools/invitations/i1/accept": () => {
         answered = true;
         return respond(204);

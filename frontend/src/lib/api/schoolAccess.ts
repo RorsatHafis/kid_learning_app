@@ -287,6 +287,23 @@ export interface SchoolLearning {
   classes: SchoolClassLearning[];
 }
 
+// ---- school/web/AssignableCurriculaController.java (X22): what this member of staff may assign to a class ----
+
+export interface AssignableCurriculum {
+  id: string;
+  name: string;
+  subjectCode: string | null;
+  subjectName: string | null;
+  ageHubCode: string | null;
+  ageHubName: string | null;
+  /** Built and published by the caller in the Studio (listed first). */
+  own: boolean;
+}
+
+export const assignableCurriculaApi = {
+  list: () => apiClient.get<AssignableCurriculum[]>("/schools/curricula/assignable"),
+};
+
 export const schoolLearningApi = {
   get: (schoolId: string) => apiClient.get<SchoolLearning>(`/schools/${schoolId}/learning`),
 };

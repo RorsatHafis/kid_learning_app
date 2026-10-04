@@ -2,8 +2,8 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Copy, KeyRound, Users } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
-import { curriculaApi } from "@/lib/api/endpoints";
 import {
+  assignableCurriculaApi,
   classAccessApi,
   type ClassLearning,
   type JoinCode,
@@ -201,7 +201,8 @@ export function ClassCurriculaPanel({
   archived?: boolean;
 }) {
   const assigned = useAsync(() => classAccessApi.curricula(classId), [classId]);
-  const catalog = useAsync(() => curriculaApi.list(), []);
+  // The platform's curricula and the caller's own published ones (X22): what the server lets them assign.
+  const catalog = useAsync(() => assignableCurriculaApi.list(), []);
   const [selected, setSelected] = useState("");
   const [confirm, setConfirm] = useState<{ kind: "assign" | "unassign"; curriculumId: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -293,7 +294,7 @@ export function ClassCurriculaPanel({
                   <option value="">Choose…</option>
                   {available.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} ({c.subjectName}, {c.ageHubName})
+                      {c.name} ({[c.own ? "yours" : null, c.subjectName, c.ageHubName].filter(Boolean).join(", ")})
                     </option>
                   ))}
                 </select>

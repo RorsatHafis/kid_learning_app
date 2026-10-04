@@ -217,6 +217,22 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expect(page.getByText("This class is archived.")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Make a code" })).toBeVisible();
 
+  // X22: the teacher's own content, on the Studio's screens - the platform's catalog read-only to them.
+  await teacher.goto("/teacher/studio");
+  await expect(teacher.getByRole("heading", { level: 1, name: "Subjects" })).toBeVisible();
+  await expect(teacher.getByText(/Build your own questions, activities and curricula/)).toBeVisible();
+  await expect(teacher.getByRole("button", { name: "New subject" })).toHaveCount(0);
+  await expectNoViolations(teacher, "teacher: my content");
+  await teacher.getByRole("main").getByRole("listitem").getByRole("link").first().click();
+  await expect(teacher).toHaveURL(/\/teacher\/studio\/[0-9a-f-]+\/questions$/);
+  await teacher.getByRole("link", { name: "Skills & objectives" }).click();
+  await expect(teacher.getByText(/Only an administrator changes them/)).toBeVisible();
+  await expect(teacher.getByRole("button", { name: "New skill" })).toHaveCount(0);
+  await expect(teacher.getByRole("button", { name: /^Manage skill/ })).toHaveCount(0);
+  await expectNoViolations(teacher, "teacher: the catalog, read-only");
+  await teacher.getByRole("link", { name: "Media library" }).click();
+  await expect(teacher.getByRole("heading", { level: 1, name: "Media library" })).toBeVisible();
+
   await familyContext.close();
   await teacherContext.close();
 });

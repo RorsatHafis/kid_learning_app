@@ -1,4 +1,4 @@
-import { UserRound, UsersRound } from "lucide-react";
+import { Images, LibraryBig, UserRound, UsersRound } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 
 /**
@@ -12,6 +12,8 @@ export function TeacherLayout() {
       workspace="Teaching workspace"
       nav={[
         { to: "/teacher", label: "Classes", icon: UsersRound, end: true },
+        { to: "/teacher/studio", label: "My content", icon: LibraryBig, section: "Content" },
+        { to: "/teacher/media", label: "Media library", icon: Images, section: "Content" },
         { to: "/teacher/account", label: "Account", icon: UserRound },
       ]}
     />
