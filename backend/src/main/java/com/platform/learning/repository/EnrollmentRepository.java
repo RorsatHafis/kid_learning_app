@@ -3,6 +3,7 @@ package com.platform.learning.repository;
 import com.platform.learning.entity.Enrollment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,5 +14,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
     Optional<Enrollment> findByChildIdAndCurriculumVersionId(UUID childId, UUID curriculumVersionId);
 
     List<Enrollment> findByChildId(UUID childId);
+
+    List<Enrollment> findByChildIdIn(Collection<UUID> childIds);
 
 }

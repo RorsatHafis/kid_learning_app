@@ -10,7 +10,7 @@ import com.platform.learner.service.EvidenceStandard.EvidenceLevel;
 import com.platform.learner.service.EvidenceStandard.SkillStanding;
 import com.platform.learning.service.LearningJourneyService;
 import com.platform.learning.service.LearningJourneyService.ChapterState;
-import com.platform.learning.service.LearningJourneyService.EnrollmentOverview;
+import com.platform.learning.service.LearningJourneyService.EnrollmentSummary;
 import com.platform.learning.service.SkillProgressService;
 import com.platform.learning.service.SkillProgressService.CurriculumProgress;
 import com.platform.learning.service.SkillProgressService.ObjectiveStanding;
@@ -147,12 +147,17 @@ public class SchoolLearningService {
     ClassSnapshot snapshot(UUID classId) {
         List<ClassCurriculum> assigned = assignedCurricula(classId);
         Set<UUID> assignedIds = assigned.stream().map(ClassCurriculum::curriculumId).collect(Collectors.toSet());
+        List<Member> members = members(classId);
+        // Every member's paths and skills read together (X20): a fixed number of statements however big the class.
+        List<UUID> childIds = members.stream().map(Member::childId).toList();
+        Map<UUID, List<EnrollmentSummary>> summaries = journeys.summariesFor(childIds);
+        Map<UUID, List<CurriculumProgress>> progress = skills.progressForAll(childIds);
         List<MemberRow> rows = new ArrayList<>();
         Map<UUID, List<CurriculumProgress>> progressByMember = new LinkedHashMap<>();
-        for (Member member : members(classId)) {
+        for (Member member : members) {
             rows.add(new MemberRow(member.childId(), member.displayName(), member.joinedAt(),
-                    journeyViews(member.childId(), assigned)));
-            progressByMember.put(member.childId(), latestPerCurriculum(skills.progressFor(member.childId()), assignedIds));
+                    journeyViews(summaries.getOrDefault(member.childId(), List.of()), assigned)));
+            progressByMember.put(member.childId(), latestPerCurriculum(progress.getOrDefault(member.childId(), List.of()), assignedIds));
         }
         return new ClassSnapshot(assigned, rows, progressByMember);
     }
@@ -171,7 +176,8 @@ public class SchoolLearningService {
                                 objective.skills().stream().map(skill -> new SkillView(skill.skillId(), skill.name(), skill.standing(),
                                         skill.evidenceLevel(), skill.scoredAnswers(), skill.correctAnswers())).toList())).toList()))
                 .toList();
-        return new MemberLearning(member.childId(), member.displayName(), member.joinedAt(), journeyViews(childId, assigned), skillViews);
+        return new MemberLearning(member.childId(), member.displayName(), member.joinedAt(),
+                journeyViews(journeys.summariesFor(List.of(childId)).getOrDefault(childId, List.of()), assigned), skillViews);
     }
 
     // ------------------------------------------------------------------ assembly
@@ -200,14 +206,13 @@ public class SchoolLearningService {
     }
 
     /** The member's journey in each assigned curriculum: the most recent one if there were several versions. */
-    private List<JourneyView> journeyViews(UUID childId, List<ClassCurriculum> assigned) {
-        List<EnrollmentOverview> overviews = journeys.enrollmentsFor(childId);
+    private List<JourneyView> journeyViews(List<EnrollmentSummary> overviews, List<ClassCurriculum> assigned) {
         return assigned.stream().map(curriculum -> {
-            Optional<EnrollmentOverview> overview = overviews.stream()
+            Optional<EnrollmentSummary> overview = overviews.stream()
                     .filter(o -> o.curriculum().id().equals(curriculum.curriculumId()))
-                    .max(Comparator.comparing(EnrollmentOverview::enrolledAt));
+                    .max(Comparator.comparing(EnrollmentSummary::enrolledAt));
             return overview.map(o -> new JourneyView(curriculum.curriculumId(), curriculum.name(), true, o.completedSteps(),
-                            o.totalSteps(), o.currentChapter() == null ? null : chapter(o.currentChapter()), o.chapterCount(),
+                            o.totalSteps(), o.currentChapter() == null ? null : chapter(o.currentChapter()), o.chapters().size(),
                             o.chapters().stream().map(SchoolLearningService::chapter).toList()))
                     .orElse(new JourneyView(curriculum.curriculumId(), curriculum.name(), false, 0, 0, null, 0, List.of()));
         }).toList();

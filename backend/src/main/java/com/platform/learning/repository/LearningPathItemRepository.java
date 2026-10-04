@@ -16,6 +16,8 @@ public interface LearningPathItemRepository extends JpaRepository<LearningPathIt
 
     List<LearningPathItem> findByLearningPathIdOrderBySequenceOrderAsc(UUID learningPathId);
 
+    List<LearningPathItem> findByLearningPathIdInOrderBySequenceOrderAsc(Collection<UUID> learningPathIds);
+
     // "What's next" - the first not-yet-completed item in sequence order.
     Optional<LearningPathItem> findFirstByLearningPathIdAndStatusInOrderBySequenceOrderAsc(
             UUID learningPathId, List<LearningPathItemStatus> statuses);

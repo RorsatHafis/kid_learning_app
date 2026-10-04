@@ -304,7 +304,77 @@ public class LearningJourneyService {
 
         return new Journey(enrollment.getId(), enrollment.getChildId(), curriculum, enrollment.getStatus(),
                 enrollment.getEnrolledAt(), completed, steps.size(), nextStepId,
-                chapters(chapterSources, steps, nextStepId), steps);
+                chapters(chapterSources, steps.stream().map(step -> new StepPlace(step.learningPathItemId(), step.chapterId(),
+                        step.status())).toList(), nextStepId), steps);
+    }
+
+    /**
+     * Where each of a child's paths stands - counts and chapters, no step detail - for many children
+     * at once (a class, X20). The same rules as {@link #enrollmentsFor}: steps in play order, each in
+     * the first chapter covering one of its version's skills, the next step as the path serves it,
+     * chapter states as the journey has them. The statements depend on the curricula, not on how
+     * many children there are.
+     */
+    public record EnrollmentSummary(UUID enrollmentId, CurriculumRef curriculum, Instant enrolledAt, int completedSteps,
+                                    int totalSteps, Chapter currentChapter, List<Chapter> chapters) {
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, List<EnrollmentSummary>> summariesFor(java.util.Collection<UUID> childIds) {
+        Map<UUID, List<EnrollmentSummary>> result = new LinkedHashMap<>();
+        childIds.forEach(id -> result.put(id, new java.util.ArrayList<>()));
+        if (childIds.isEmpty()) {
+            return result;
+        }
+        List<Enrollment> enrollments = enrollmentRepository.findByChildIdIn(childIds).stream()
+                .sorted(Comparator.comparing(Enrollment::getEnrolledAt))
+                .toList();
+        if (enrollments.isEmpty()) {
+            return result;
+        }
+        Map<UUID, LearningPath> pathByEnrollment = new HashMap<>();
+        learningPathRepository.findByEnrollmentIdIn(enrollments.stream().map(Enrollment::getId).toList())
+                .forEach(path -> pathByEnrollment.put(path.getEnrollmentId(), path));
+        Map<UUID, List<LearningPathItem>> itemsByPath = new HashMap<>();
+        List<LearningPathItem> allItems = pathByEnrollment.isEmpty() ? List.of()
+                : learningPathItemRepository.findByLearningPathIdInOrderBySequenceOrderAsc(
+                        pathByEnrollment.values().stream().map(LearningPath::getId).toList());
+        allItems.forEach(item -> itemsByPath.computeIfAbsent(item.getLearningPathId(), id -> new java.util.ArrayList<>()).add(item));
+        Map<UUID, java.util.Set<UUID>> skillsByVersion = new HashMap<>();
+        java.util.Set<UUID> versionIds = new java.util.HashSet<>();
+        allItems.forEach(item -> versionIds.add(item.getActivityVersionId()));
+        if (!versionIds.isEmpty()) {
+            for (ActivityVersionSkill link : activitySkillRepository.findByActivityVersionIdIn(versionIds)) {
+                skillsByVersion.computeIfAbsent(link.getActivityVersionId(), id -> new java.util.HashSet<>()).add(link.getSkillId());
+            }
+        }
+        Map<UUID, List<ChapterSource>> sourcesByVersion = new HashMap<>();
+        Map<UUID, CurriculumRef> curriculumByVersion = new HashMap<>();
+        for (Enrollment enrollment : enrollments) {
+            LearningPath path = pathByEnrollment.get(enrollment.getId());
+            if (path == null) {
+                throw new ResourceNotFoundException("LearningPath for enrollment", enrollment.getId());
+            }
+            UUID versionId = enrollment.getCurriculumVersionId();
+            List<ChapterSource> sources = sourcesByVersion.computeIfAbsent(versionId, this::chapterSources);
+            CurriculumRef curriculum = curriculumByVersion.computeIfAbsent(versionId, this::curriculumFor);
+            List<LearningPathItem> items = itemsByPath.getOrDefault(path.getId(), List.of());
+            List<StepPlace> places = LearningPathService.playOrder(items).stream()
+                    .map(item -> new StepPlace(item.getId(), chapterOfSkills(skillsByVersion.getOrDefault(item.getActivityVersionId(),
+                            java.util.Set.of()), sources), item.getStatus()))
+                    .toList();
+            UUID nextStepId = LearningPathService.nextOf(items).map(LearningPathItem::getId).orElse(null);
+            List<Chapter> chapters = chapters(sources, places, nextStepId);
+            int completed = (int) places.stream().filter(place -> place.status() == LearningPathItemStatus.COMPLETED).count();
+            Chapter current = chapters.stream().filter(chapter -> chapter.state() == ChapterState.CURRENT).findFirst().orElse(null);
+            result.get(enrollment.getChildId()).add(new EnrollmentSummary(enrollment.getId(), curriculum, enrollment.getEnrolledAt(),
+                    completed, places.size(), current, chapters));
+        }
+        return result;
+    }
+
+    /** Where a step sits in its journey: what the chapter states are counted from. */
+    private record StepPlace(UUID itemId, UUID chapterId, LearningPathItemStatus status) {
     }
 
     /** One objective of the curriculum version with the skills it covers, in curriculum order. */
@@ -335,9 +405,13 @@ public class LearningJourneyService {
 
     /** The first chapter, in curriculum order, that covers one of the step's skills. */
     private static UUID chapterOf(List<SkillRef> skills, List<ChapterSource> chapters) {
+        return chapterOfSkills(skills.stream().map(SkillRef::id).toList(), chapters);
+    }
+
+    private static UUID chapterOfSkills(java.util.Collection<UUID> skillIds, List<ChapterSource> chapters) {
         for (ChapterSource chapter : chapters) {
-            for (SkillRef skill : skills) {
-                if (chapter.skillIds().contains(skill.id())) {
+            for (UUID skillId : skillIds) {
+                if (chapter.skillIds().contains(skillId)) {
                     return chapter.id();
                 }
             }
@@ -345,11 +419,11 @@ public class LearningJourneyService {
         return null;
     }
 
-    private static List<Chapter> chapters(List<ChapterSource> sources, List<JourneyStep> steps, UUID nextStepId) {
-        UUID currentChapter = steps.stream().filter(step -> step.learningPathItemId().equals(nextStepId))
-                .findFirst().map(JourneyStep::chapterId).orElse(null);
+    private static List<Chapter> chapters(List<ChapterSource> sources, List<StepPlace> steps, UUID nextStepId) {
+        UUID currentChapter = steps.stream().filter(step -> step.itemId().equals(nextStepId))
+                .findFirst().map(StepPlace::chapterId).orElse(null);
         return sources.stream().map(source -> {
-            List<JourneyStep> own = steps.stream().filter(step -> source.id().equals(step.chapterId())).toList();
+            List<StepPlace> own = steps.stream().filter(step -> source.id().equals(step.chapterId())).toList();
             int done = (int) own.stream().filter(step -> step.status() == LearningPathItemStatus.COMPLETED).count();
             ChapterState state;
             if (own.isEmpty()) {

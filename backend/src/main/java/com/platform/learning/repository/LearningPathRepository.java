@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +16,9 @@ public interface LearningPathRepository extends JpaRepository<LearningPath, UUID
 
     // Matches uq_learning_paths_enrollment (V14 migration) - one path per enrollment.
     Optional<LearningPath> findByEnrollmentId(UUID enrollmentId);
+
+    /** Several enrollments' paths at once (a class's journeys, X20). */
+    List<LearningPath> findByEnrollmentIdIn(Collection<UUID> enrollmentIds);
 
     /**
      * Battle 5A: row-locks the path (SELECT ... FOR UPDATE) until the calling

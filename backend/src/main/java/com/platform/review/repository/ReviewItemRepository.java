@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,6 +19,8 @@ public interface ReviewItemRepository extends JpaRepository<ReviewItem, UUID> {
     Optional<ReviewItem> findByChildIdAndSkillId(UUID childId, UUID skillId);
 
     List<ReviewItem> findByChildIdAndStatus(UUID childId, ReviewItemStatus status);
+
+    List<ReviewItem> findByChildIdInAndStatus(Collection<UUID> childIds, ReviewItemStatus status);
 
     /**
      * Battle 5D (N2): creates the (child, skill) review item unless one already exists,

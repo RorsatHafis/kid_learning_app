@@ -27,7 +27,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,54 +109,106 @@ public class SkillProgressService {
 
     @Transactional(readOnly = true)
     public List<CurriculumProgress> progressFor(UUID childId) {
-        Map<UUID, LearnerSkillState> skillStates = skillStateRepository.findByChildId(childId).stream()
-                .collect(Collectors.toMap(LearnerSkillState::getSkillId, Function.identity()));
-        Map<UUID, LearnerObjectiveState> objectiveStates = objectiveStateRepository.findByChildId(childId).stream()
-                .collect(Collectors.toMap(LearnerObjectiveState::getLearningObjectiveId, Function.identity()));
-        Map<UUID, ReviewItem> activeReviews = reviewItemRepository.findByChildIdAndStatus(childId, ReviewItemStatus.ACTIVE)
-                .stream()
-                .collect(Collectors.toMap(ReviewItem::getSkillId, Function.identity()));
-        return enrollmentRepository.findByChildId(childId).stream()
-                .sorted(Comparator.comparing(Enrollment::getEnrolledAt))
-                .map(enrollment -> new CurriculumProgress(enrollment.getId(),
-                        learningJourneyService.curriculumFor(enrollment.getCurriculumVersionId()),
-                        curriculumService.listObjectives(enrollment.getCurriculumVersionId()).stream()
-                                .sorted(Comparator.comparingInt(CurriculumObjective::getDisplayOrder))
-                                .map(objective -> objectiveProgress(objective.getLearningObjectiveId(), skillStates,
-                                        objectiveStates, activeReviews))
-                                .toList()))
-                .toList();
+        return progressForAll(List.of(childId)).getOrDefault(childId, List.of());
     }
 
-    private ObjectiveProgress objectiveProgress(UUID objectiveId, Map<UUID, LearnerSkillState> skillStates,
-                                                Map<UUID, LearnerObjectiveState> objectiveStates,
-                                                Map<UUID, ReviewItem> activeReviews) {
+    /**
+     * Several children at once - a class (X20). The same reading as {@link #progressFor}, with every
+     * child's states read together and each curriculum version's chapters and skills read once, so
+     * the statements depend on the curricula, not on how many children there are.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, List<CurriculumProgress>> progressForAll(Collection<UUID> childIds) {
+        Map<UUID, List<CurriculumProgress>> result = new LinkedHashMap<>();
+        if (childIds.isEmpty()) {
+            return result;
+        }
+        Map<UUID, Map<UUID, LearnerSkillState>> skillStates = new HashMap<>();
+        skillStateRepository.findByChildIdIn(childIds).forEach(state ->
+                skillStates.computeIfAbsent(state.getChildId(), id -> new HashMap<>()).put(state.getSkillId(), state));
+        Map<UUID, Map<UUID, LearnerObjectiveState>> objectiveStates = new HashMap<>();
+        objectiveStateRepository.findByChildIdIn(childIds).forEach(state ->
+                objectiveStates.computeIfAbsent(state.getChildId(), id -> new HashMap<>()).put(state.getLearningObjectiveId(), state));
+        List<ReviewItem> reviews = reviewItemRepository.findByChildIdInAndStatus(childIds, ReviewItemStatus.ACTIVE);
+        Map<UUID, Map<UUID, ReviewItem>> activeReviews = new HashMap<>();
+        reviews.forEach(item -> activeReviews.computeIfAbsent(item.getChildId(), id -> new HashMap<>()).put(item.getSkillId(), item));
+        Map<UUID, Instant> dueByReview = new HashMap<>();
+        if (!reviews.isEmpty()) {
+            reviewScheduleRepository.findByReviewItemIdIn(reviews.stream().map(ReviewItem::getId).toList())
+                    .forEach(schedule -> dueByReview.put(schedule.getReviewItemId(), schedule.getDueAt()));
+        }
+        Map<UUID, List<Enrollment>> enrollments = enrollmentRepository.findByChildIdIn(childIds).stream()
+                .collect(Collectors.groupingBy(Enrollment::getChildId));
+
+        Map<UUID, CurriculumStructure> structures = new HashMap<>();
+        Map<UUID, ObjectiveStructure> objectives = new HashMap<>();
+        for (UUID childId : childIds) {
+            Map<UUID, LearnerSkillState> childSkills = skillStates.getOrDefault(childId, Map.of());
+            Map<UUID, LearnerObjectiveState> childObjectives = objectiveStates.getOrDefault(childId, Map.of());
+            Map<UUID, ReviewItem> childReviews = activeReviews.getOrDefault(childId, Map.of());
+            result.put(childId, enrollments.getOrDefault(childId, List.of()).stream()
+                    .sorted(Comparator.comparing(Enrollment::getEnrolledAt))
+                    .map(enrollment -> {
+                        CurriculumStructure structure = structures.computeIfAbsent(enrollment.getCurriculumVersionId(),
+                                versionId -> structure(versionId, objectives));
+                        return new CurriculumProgress(enrollment.getId(), structure.curriculum(), structure.objectives().stream()
+                                .map(objective -> objectiveProgress(objective, childSkills, childObjectives, childReviews, dueByReview))
+                                .toList());
+                    })
+                    .toList());
+        }
+        return result;
+    }
+
+    /** One objective as a curriculum version lists it: its skills in their linked order. */
+    private record ObjectiveStructure(LearningObjective objective, List<Skill> skills) {
+    }
+
+    private record CurriculumStructure(LearningJourneyService.CurriculumRef curriculum, List<ObjectiveStructure> objectives) {
+    }
+
+    private CurriculumStructure structure(UUID curriculumVersionId, Map<UUID, ObjectiveStructure> objectives) {
+        List<ObjectiveStructure> ordered = curriculumService.listObjectives(curriculumVersionId).stream()
+                .sorted(Comparator.comparingInt(CurriculumObjective::getDisplayOrder))
+                .map(link -> objectives.computeIfAbsent(link.getLearningObjectiveId(), this::objectiveStructure))
+                .toList();
+        return new CurriculumStructure(learningJourneyService.curriculumFor(curriculumVersionId), ordered);
+    }
+
+    private ObjectiveStructure objectiveStructure(UUID objectiveId) {
         LearningObjective objective = learningObjectiveService.getById(objectiveId);
-        List<SkillProgress> skills = learningObjectiveSkillRepository.findByLearningObjectiveId(objectiveId).stream()
+        List<UUID> skillIds = learningObjectiveSkillRepository.findByLearningObjectiveId(objectiveId).stream()
                 .map(LearningObjectiveSkill::getSkillId)
-                .map(skillRepository::findById)
-                .flatMap(Optional::stream)
-                .map(skill -> skillProgress(skill, skillStates.get(skill.getId()), activeReviews.get(skill.getId())))
+                .toList();
+        Map<UUID, Skill> byId = skillRepository.findAllById(skillIds).stream().collect(Collectors.toMap(Skill::getId, Function.identity()));
+        return new ObjectiveStructure(objective, skillIds.stream().map(byId::get).filter(java.util.Objects::nonNull).toList());
+    }
+
+    private ObjectiveProgress objectiveProgress(ObjectiveStructure structure, Map<UUID, LearnerSkillState> skillStates,
+                                                Map<UUID, LearnerObjectiveState> objectiveStates,
+                                                Map<UUID, ReviewItem> activeReviews, Map<UUID, Instant> dueByReview) {
+        LearningObjective objective = structure.objective();
+        List<SkillProgress> skills = structure.skills().stream()
+                .map(skill -> skillProgress(skill, skillStates.get(skill.getId()), activeReviews.get(skill.getId()), dueByReview))
                 .toList();
 
         int practised = (int) skills.stream().filter(skill -> skill.evidenceLevel() != EvidenceLevel.NONE).count();
         int sufficient = (int) skills.stream()
                 .filter(skill -> skill.evidenceLevel() == EvidenceLevel.SUFFICIENT || skill.evidenceLevel() == EvidenceLevel.STRONG)
                 .count();
-        LearnerObjectiveState state = objectiveStates.get(objectiveId);
+        LearnerObjectiveState state = objectiveStates.get(objective.getId());
         ObjectiveStanding standing = practised == 0 ? ObjectiveStanding.NOT_STARTED
                 : state != null && state.getStatus() == LearnerObjectiveStatus.MASTERED && sufficient == skills.size()
                         ? ObjectiveStanding.SECURE
                         : ObjectiveStanding.IN_PROGRESS;
 
-        return new ObjectiveProgress(objectiveId, objective.getTitle(), objective.getDescription(), standing,
+        return new ObjectiveProgress(objective.getId(), objective.getTitle(), objective.getDescription(), standing,
                 skills.size(), practised, sufficient, skills);
     }
 
-    private SkillProgress skillProgress(Skill skill, LearnerSkillState state, ReviewItem review) {
+    private SkillProgress skillProgress(Skill skill, LearnerSkillState state, ReviewItem review, Map<UUID, Instant> dueByReview) {
         int evidence = state == null ? 0 : state.getEvidenceCount();
-        Instant reviewDueAt = review == null ? null
-                : reviewScheduleRepository.findByReviewItemId(review.getId()).map(ReviewSchedule::getDueAt).orElse(null);
+        Instant reviewDueAt = review == null ? null : dueByReview.get(review.getId());
         return new SkillProgress(skill.getId(), skill.getName(), skill.getDescription(),
                 evidenceStandard.levelFor(evidence), evidenceStandard.standingFor(state), evidence,
                 state == null ? 0 : state.getCorrectCount(), state == null ? null : state.getLastEvidenceAt(),
