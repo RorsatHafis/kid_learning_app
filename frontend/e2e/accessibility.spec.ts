@@ -37,7 +37,10 @@ test.describe("accessibility @phone", () => {
     await page.waitForLoadState("networkidle");
     await expectNoViolations(page, "child overview");
     // With several paths for this age the parent chooses one (otherwise the child was enrolled already).
-    const choose = page.getByRole("listitem").filter({ hasText: "Maths - Junior" }).getByRole("button", { name: "Start this path" });
+    const choose = page
+      .getByRole("listitem")
+      .filter({ hasText: "Maths - Junior" })
+      .getByRole("button", { name: "Start this path" });
     if (await choose.isVisible()) {
       await choose.click();
       await expect(page.getByText("Up next").first()).toBeVisible();
@@ -71,6 +74,17 @@ test.describe("accessibility @phone", () => {
     await expect(page.getByRole("heading", { name: /complete!|Perfect!/ })).toBeVisible();
     await expectNoViolations(page, "activity complete");
 
+    // X18: the child's shelf - the book just lit, its first lantern, the books still waiting.
+    const childSpace = new URL(page.url()).pathname.split("/play/")[0];
+    await page.goto(childSpace);
+    await page.getByRole("link", { name: "My shelf" }).click();
+    await expect(page.getByRole("heading", { name: "My shelf" })).toBeVisible();
+    await expect(page.getByText("1 book lit so far. Look how far you've come!")).toBeVisible();
+    await expect(page.getByRole("region", { name: "My lanterns" }).getByText("First book lit")).toBeVisible();
+    await expect(page.getByRole("listitem", { name: /, lit$/ })).toHaveCount(1);
+    await expect(page.getByRole("listitem", { name: /, up next$/ })).toHaveCount(1);
+    await expectNoViolations(page, "child shelf");
+
     await page.goto("/parent/account");
     await page.waitForLoadState("networkidle");
     await expectNoViolations(page, "parent account");
@@ -103,7 +117,11 @@ test.describe("accessibility @phone", () => {
       .poll(() =>
         page.evaluate(() => {
           const el = document.activeElement as HTMLElement;
-          return { color: getComputedStyle(el).outlineColor, style: getComputedStyle(el).outlineStyle, onNight: !!el.closest(".on-night") };
+          return {
+            color: getComputedStyle(el).outlineColor,
+            style: getComputedStyle(el).outlineStyle,
+            onNight: !!el.closest(".on-night"),
+          };
         }),
       )
       .toEqual({ color: "rgb(255, 210, 122)", style: "solid", onNight: true });

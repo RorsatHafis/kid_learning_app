@@ -18,6 +18,7 @@ import { ChildOverviewPage } from "@/features/parent/ChildOverviewPage";
 import { AccountPage } from "@/features/parent/AccountPage";
 import { ChildHome } from "@/features/child/ChildHome";
 import { PlaySession } from "@/features/child/PlaySession";
+import { ShelfPage } from "@/features/child/ShelfPage";
 
 // Staff areas are separate downloads: a family on a phone never loads the Content Studio,
 // the teacher console or the principal console.
@@ -66,6 +67,16 @@ export default function App() {
               <RequireAuth>
                 <RequireRole roles={["PARENT"]}>
                   <ChildHome />
+                </RequireRole>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/learn/:childId/shelf"
+            element={
+              <RequireAuth>
+                <RequireRole roles={["PARENT"]}>
+                  <ShelfPage />
                 </RequireRole>
               </RequireAuth>
             }

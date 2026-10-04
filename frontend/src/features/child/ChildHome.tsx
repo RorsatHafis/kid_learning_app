@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { BookOpen, Check, Play } from "lucide-react";
+import { BookOpen, Check, Library, Play } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
 import type { Chapter, EnrollmentOverview, Journey, JourneyStep } from "@/lib/api/types";
@@ -11,10 +11,9 @@ import { BlueHour } from "@/features/world/BlueHour";
 import { PathOfBooks, khmerNumber } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
+import { SHELF_SPINES } from "./shelf";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
-/** Book-spine colours for the subject shelf, so each subject keeps its own. */
-const SHELF_SPINES = ["bg-light", "bg-lotus", "bg-palm", "bg-dusk", "bg-tonle-400"];
 
 /**
  * The child's home: the blue-hour world with their journey laid across the river as books.
@@ -183,6 +182,17 @@ function JourneyStage({
                 <span className="text-sm font-medium text-tonle-200">{next.title}</span>
               </div>
             )}
+            {!next && (
+              <Link
+                to={`/learn/${childId}/shelf`}
+                className="inline-flex min-h-[3.75rem] w-fit items-center gap-3 rounded-pill bg-light pl-2.5 pr-7 text-xl font-bold text-tonle-950 shadow-glow transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.97]"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-950 text-light">
+                  <Library size={20} aria-hidden />
+                </span>
+                See my shelf
+              </Link>
+            )}
             {focus?.chapter ? (
               <BooksLit
                 done={focus.steps.filter(({ step }) => step.status === "COMPLETED").length}
@@ -192,6 +202,14 @@ function JourneyStage({
               />
             ) : (
               <BooksLit done={overview.completedSteps} total={overview.totalSteps} label="Books lit on this path" />
+            )}
+            {next && (
+              <Link
+                to={`/learn/${childId}/shelf`}
+                className="-mt-1 inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-950/55 px-4 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
+              >
+                <Library size={16} aria-hidden /> My shelf
+              </Link>
             )}
           </div>
 
