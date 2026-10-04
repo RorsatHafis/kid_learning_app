@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ChangesSection } from "./ChangesSection";
@@ -53,11 +54,20 @@ describe("ChangesSection", () => {
       }),
     );
     const user = userEvent.setup();
-    render(<ChangesSection childId="c1" childName="Sokha" />);
+    render(
+      <MemoryRouter>
+        <ChangesSection childId="c1" childName="Sokha" />
+      </MemoryRouter>,
+    );
 
     expect(await screen.findByText("9 answers")).toBeInTheDocument();
     const up = screen.getByRole("region", { name: "Moving up" });
     expect(within(up).getByText("Add within 10")).toBeInTheDocument();
+    // X19: each skill opens its evidence.
+    expect(within(up).getByRole("link", { name: "Add within 10" })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^\/parent\/children\/c1\/skills\//),
+    );
     expect(within(up).getByText("Needs practice")).toBeInTheDocument();
     expect(within(up).getByText("Progressing")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Just started" })).toHaveTextContent("Count to 20");

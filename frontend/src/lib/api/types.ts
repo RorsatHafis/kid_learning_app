@@ -342,6 +342,42 @@ export interface ObjectiveProgress {
   skills: SkillProgress[];
 }
 
+// ---- learning/service/SkillStoryService.java (X19): one skill, explained to its family ----
+
+export interface ActivityOnSkill {
+  attemptId: string;
+  activityTitle: string;
+  at: string;
+  /** Answers in this activity on this skill, and how many were right. */
+  answers: number;
+  correct: number;
+  /** Where the skill stood after this activity (same rule as today's standing); null if not recorded. */
+  standingAfter: SkillStanding | null;
+  evidenceAfter: number;
+}
+
+export interface WaitingStep {
+  learningPathItemId: string;
+  activityTitle: string;
+  status: LearningPathItemStatus;
+  source: LearningPathItemSource;
+  addedAt: string | null;
+  curriculumName: string;
+}
+
+export interface SkillStory {
+  skillId: string;
+  name: string;
+  description: string | null;
+  objectiveTitle: string;
+  curriculumName: string;
+  now: SkillProgress;
+  /** Newest first, the most recent 20. */
+  activities: ActivityOnSkill[];
+  activitiesInAll: number;
+  waiting: WaitingStep[];
+}
+
 export interface CurriculumProgress {
   enrollmentId: string;
   curriculum: CurriculumRef;

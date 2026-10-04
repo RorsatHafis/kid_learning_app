@@ -1,4 +1,5 @@
-import { RotateCcw } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ChevronRight, RotateCcw } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { learningApi } from "@/lib/api/endpoints";
 import type { EvidenceLevel, ObjectiveProgress, SkillProgress, SkillStanding } from "@/lib/api/types";
@@ -32,7 +33,7 @@ export function SkillsSection({ childId }: { childId: string }) {
         <div key={curriculum.enrollmentId} className="flex flex-col gap-4">
           {data.length > 1 && <h3 className="font-display text-lg font-semibold text-tonle-950">{curriculum.curriculum.name}</h3>}
           {curriculum.objectives.map((objective, i) => (
-            <ObjectiveTable key={objective.objectiveId} objective={objective} position={i + 1} />
+            <ObjectiveTable key={objective.objectiveId} childId={childId} objective={objective} position={i + 1} />
           ))}
         </div>
       ))}
@@ -79,7 +80,7 @@ export function SkillsSection({ childId }: { childId: string }) {
  * One chapter's skills. A chapter with answers opens its table; one not started yet stays a
  * single line until asked, so a long curriculum reads as its chapters, not as every skill.
  */
-function ObjectiveTable({ objective, position }: { objective: ObjectiveProgress; position: number }) {
+function ObjectiveTable({ childId, objective, position }: { childId: string; objective: ObjectiveProgress; position: number }) {
   const started = objective.skillsPractised > 0;
   return (
     <article className="overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
@@ -109,7 +110,7 @@ function ObjectiveTable({ objective, position }: { objective: ObjectiveProgress;
         </span>
       </header>
       {started ? (
-        <SkillTable objective={objective} />
+        <SkillTable childId={childId} objective={objective} />
       ) : (
         <details className="group border-t border-line">
           <summary className="flex cursor-pointer list-none items-center gap-2 px-6 py-3.5 text-sm font-semibold text-tonle-700 marker:hidden hover:bg-paper sm:px-8">
@@ -118,14 +119,14 @@ function ObjectiveTable({ objective, position }: { objective: ObjectiveProgress;
             </span>
             {objective.skills.length === 1 ? "Show its skill" : `Show its ${objective.skills.length} skills`}
           </summary>
-          <SkillTable objective={objective} />
+          <SkillTable childId={childId} objective={objective} />
         </details>
       )}
     </article>
   );
 }
 
-function SkillTable({ objective }: { objective: ObjectiveProgress }) {
+function SkillTable({ childId, objective }: { childId: string; objective: ObjectiveProgress }) {
   return (
     <div role="table" aria-label={`Skills in ${objective.title}`}>
       <div
@@ -138,18 +139,29 @@ function SkillTable({ objective }: { objective: ObjectiveProgress }) {
       </div>
       <div role="rowgroup" className="divide-y divide-line border-t border-line sm:border-t-0">
         {objective.skills.map((skill) => (
-          <SkillRow key={skill.skillId} skill={skill} />
+          <SkillRow key={skill.skillId} childId={childId} skill={skill} />
         ))}
       </div>
     </div>
   );
 }
 
-function SkillRow({ skill }: { skill: SkillProgress }) {
+function SkillRow({ childId, skill }: { childId: string; skill: SkillProgress }) {
   return (
     <div role="row" className="grid gap-3 px-6 py-4 sm:grid-cols-[minmax(0,1fr)_150px_150px] sm:items-center sm:gap-4 sm:px-8">
       <div role="cell">
-        <p className="font-semibold text-ink">{skill.name}</p>
+        {/* X19: each skill opens its evidence and what happens next. */}
+        <Link
+          to={`/parent/children/${childId}/skills/${skill.skillId}`}
+          className="group inline-flex items-center gap-1 font-semibold text-tonle-800 underline-offset-4 hover:underline"
+        >
+          {skill.name}
+          <ChevronRight
+            size={15}
+            aria-hidden
+            className="text-ink-faint transition-transform duration-150 group-hover:translate-x-0.5"
+          />
+        </Link>
         <p className="tabular text-sm text-ink-soft">
           {skill.scoredAnswers > 0
             ? `${skill.correctAnswers} of ${skill.scoredAnswers} answers correct${skill.lastPracticedAt ? ` · last practised ${formatDay(skill.lastPracticedAt)}` : ""}`

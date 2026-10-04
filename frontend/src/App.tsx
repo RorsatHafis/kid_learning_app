@@ -15,6 +15,7 @@ import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
 import { ParentLayout } from "@/features/parent/ParentLayout";
 import { ParentHome } from "@/features/parent/ParentHome";
 import { ChildOverviewPage } from "@/features/parent/ChildOverviewPage";
+import { SkillPage } from "@/features/parent/SkillPage";
 import { AccountPage } from "@/features/parent/AccountPage";
 import { ChildHome } from "@/features/child/ChildHome";
 import { PlaySession } from "@/features/child/PlaySession";
@@ -55,6 +56,7 @@ export default function App() {
           >
             <Route index element={<ParentHome />} />
             <Route path="children/:childId" element={<ChildOverviewPage />} />
+            <Route path="children/:childId/skills/:skillId" element={<SkillPage />} />
             <Route path="account" element={<AccountPage />} />
           </Route>
 

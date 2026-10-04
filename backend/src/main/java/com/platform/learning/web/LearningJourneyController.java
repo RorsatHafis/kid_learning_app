@@ -8,6 +8,7 @@ import com.platform.learning.service.LearningJourneyService.EnrollmentOverview;
 import com.platform.learning.service.LearningJourneyService.Journey;
 import com.platform.learning.service.ProgressChangeService;
 import com.platform.learning.service.SkillProgressService;
+import com.platform.learning.service.SkillStoryService;
 import com.platform.learning.service.SkillProgressService.CurriculumProgress;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -42,15 +43,18 @@ public class LearningJourneyController {
     private final EnrollmentService enrollmentService;
     private final FamilyAccessGuard familyAccessGuard;
     private final ProgressChangeService progressChangeService;
+    private final SkillStoryService skillStoryService;
 
     public LearningJourneyController(LearningJourneyService learningJourneyService,
                                      SkillProgressService skillProgressService, EnrollmentService enrollmentService,
-                                     FamilyAccessGuard familyAccessGuard, ProgressChangeService progressChangeService) {
+                                     FamilyAccessGuard familyAccessGuard, ProgressChangeService progressChangeService,
+                                     SkillStoryService skillStoryService) {
         this.learningJourneyService = learningJourneyService;
         this.skillProgressService = skillProgressService;
         this.enrollmentService = enrollmentService;
         this.familyAccessGuard = familyAccessGuard;
         this.progressChangeService = progressChangeService;
+        this.skillStoryService = skillStoryService;
     }
 
     @GetMapping("/api/v1/children/{childId}/enrollments")
@@ -69,6 +73,14 @@ public class LearningJourneyController {
     public List<CurriculumProgress> skills(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
         familyAccessGuard.requireChildAccess(accountId, childId);
         return skillProgressService.progressFor(childId);
+    }
+
+    /** One skill, explained (X19): where it stands, the activities behind it, and what is waiting for it. */
+    @GetMapping("/api/v1/children/{childId}/skills/{skillId}")
+    public SkillStoryService.SkillStory skill(@PathVariable UUID childId, @PathVariable UUID skillId,
+                                              @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return skillStoryService.story(childId, skillId);
     }
 
     /** What changed in the last {@code days} (7-90): each skill answered on, where it stood then and stands now (X12). */

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { learningApi } from "@/lib/api/endpoints";
@@ -101,7 +102,7 @@ export function ChangesSection({ childId, childName }: { childId: string; childN
                   </h3>
                   <ul className="flex flex-col gap-3">
                     {group.items.map((change) => (
-                      <ChangeRow key={change.skillId} change={change} />
+                      <ChangeRow key={change.skillId} childId={childId} change={change} />
                     ))}
                   </ul>
                 </section>
@@ -113,11 +114,16 @@ export function ChangesSection({ childId, childName }: { childId: string; childN
   );
 }
 
-function ChangeRow({ change }: { change: SkillChange }) {
+function ChangeRow({ childId, change }: { childId: string; change: SkillChange }) {
   const moved = change.then !== change.now;
   return (
     <li className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-      <span className="font-medium text-ink">{change.name}</span>
+      <Link
+        to={`/parent/children/${childId}/skills/${change.skillId}`}
+        className="font-medium text-tonle-800 underline-offset-4 hover:underline"
+      >
+        {change.name}
+      </Link>
       <span className="flex flex-col gap-1 text-sm text-ink-soft sm:flex-row sm:items-center sm:gap-2">
         <span className="flex flex-wrap items-center gap-2">
           {moved ? (

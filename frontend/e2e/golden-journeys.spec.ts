@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, linkIn, logIn, uniqueEmail, waitForEmail } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail } from "./support";
 
 /** "3 + 4 = ?" → "7". The seeded Maths path asks sums; anything else gets a plain guess. */
 function answerFor(prompt: string): string {
@@ -78,6 +78,16 @@ test.describe("golden journeys", () => {
     await expect(page.getByRole("heading", { name: /recent activity/i })).toBeVisible();
     await expect(page.getByText("Addition Recognition Practice").first()).toBeVisible();
     await expect(page.getByText(new RegExp(`${answered - 1} of ${answered}|${answered - 1}/${answered}`)).first()).toBeVisible();
+
+    // X19: from a skill to the evidence behind it and what happens next.
+    const skills = page.getByRole("region", { name: "Skills & evidence" });
+    const practised = skills.getByRole("row").filter({ hasText: /answers? correct/ }).first().getByRole("link");
+    const skillName = (await practised.innerText()).trim();
+    await practised.click();
+    await expect(page.getByRole("heading", { level: 1, name: skillName })).toBeVisible();
+    await expect(page.getByRole("region", { name: "How it got here" }).getByText("Addition Recognition Practice")).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "What happens next" })).toBeVisible();
+    await expectNoViolations(page, "parent: one skill explained");
 
     // The family can take a copy of everything held about them.
     await page.goto("/parent/account");

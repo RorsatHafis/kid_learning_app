@@ -9,3 +9,6 @@ export function lastPlayedText(completedAt: string, now = new Date()): string {
   if (days < 7) return `${days} days ago`;
   return new Date(completedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
+
+/** "1 activity", "3 activities". */
+export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
