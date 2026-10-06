@@ -98,7 +98,7 @@ export interface LearningPathItem {
 
 // ---- content/entity/QuestionType.java, content/web/ActivityContentDtos.java ----
 
-export type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "NUMERIC" | "MATCHING" | "ORDERING";
+export type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "NUMERIC" | "MATCHING" | "ORDERING" | "SORTING";
 
 /** content/media/MediaService.MediaRef — an uploaded picture or recording, fetched by its signed URL (expires within hours). */
 export interface MediaRef {
@@ -115,6 +115,8 @@ export interface QuestionOption {
   displayOrder: number;
   /** MATCHING only: which column the item is in. Which items pair up is never sent. */
   matchSide?: "LEFT" | "RIGHT" | null;
+  /** SORTING only (X23): a group to sort into, or an item to sort. Which group an item belongs to is never sent. */
+  sortRole?: "GROUP" | "ITEM" | null;
   /** A picture standing for the item; `label` then describes it (screen readers). */
   image?: MediaRef | null;
   /** The item read aloud. */
@@ -171,7 +173,7 @@ export interface CorrectAnswer {
   optionIds: string[];
   /** The correct answer as the child would read it. */
   text: string | null;
-  /** MATCHING: each left item's id with its match's id; empty for other types. */
+  /** MATCHING: each left item's id with its match's id; SORTING: each item's id with its group's id; empty otherwise. */
   matches?: { leftOptionId: string; rightOptionId: string }[];
 }
 

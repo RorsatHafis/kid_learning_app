@@ -36,6 +36,14 @@ public class QuestionOption extends BaseEntity {
     @Column(name = "match_pair")
     private Integer matchPair;
 
+    /** SORTING only (V49): a group, or an item belonging to the group with the same number; null otherwise. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sort_role", length = 5)
+    private SortRole sortRole;
+
+    @Column(name = "sort_group")
+    private Integer sortGroup;
+
     /** X11: a picture standing for the item (its label then describes it, for screen readers), and a recording of it. */
     @Column(name = "image_asset_id")
     private UUID imageAssetId;
@@ -74,11 +82,26 @@ public class QuestionOption extends BaseEntity {
         return option;
     }
 
-    /** A copy for another version of the same question, pairing and media included. */
+    /**
+     * A group or an item of a SORTING question. Like a matching item, never "correct" on its own:
+     * which group an item belongs to is the answer, and it is never sent to a learner.
+     */
+    public static QuestionOption sortOption(UUID questionVersionId, String label, SortRole role, int group, int displayOrder) {
+        Assert.notNull(role, "role must not be null");
+        Assert.isTrue(group >= 0, "group must not be negative");
+        QuestionOption option = create(questionVersionId, label, false, displayOrder);
+        option.sortRole = role;
+        option.sortGroup = group;
+        return option;
+    }
+
+    /** A copy for another version of the same question, pairing, grouping and media included. */
     public QuestionOption copyFor(UUID otherVersionId) {
         QuestionOption copy = create(otherVersionId, label, correct, displayOrder);
         copy.matchSide = matchSide;
         copy.matchPair = matchPair;
+        copy.sortRole = sortRole;
+        copy.sortGroup = sortGroup;
         copy.imageAssetId = imageAssetId;
         copy.audioAssetId = audioAssetId;
         return copy;
@@ -130,6 +153,14 @@ public class QuestionOption extends BaseEntity {
 
     public Integer getMatchPair() {
         return matchPair;
+    }
+
+    public SortRole getSortRole() {
+        return sortRole;
+    }
+
+    public Integer getSortGroup() {
+        return sortGroup;
     }
 
 }

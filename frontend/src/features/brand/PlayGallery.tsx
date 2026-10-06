@@ -145,6 +145,40 @@ const items: { item: ActivityItem; results: (AnswerResult | null)[] }[] = [
   },
   {
     item: {
+      activityItemId: "sort",
+      sequenceOrder: 3,
+      questionVersionId: "sort",
+      questionType: "SORTING",
+      prompt: "Even or odd?",
+      options: [
+        { ...opt("g-even", "Even", 0), sortRole: "GROUP" },
+        { ...opt("g-odd", "Odd", 1), sortRole: "GROUP" },
+        { ...opt("s3", "3", 0), sortRole: "ITEM" },
+        { ...opt("s4", "4", 1), sortRole: "ITEM" },
+        { ...opt("s7", "7", 2), sortRole: "ITEM" },
+        { ...opt("s2", "2", 3), sortRole: "ITEM" },
+      ],
+    },
+    results: [
+      null,
+      {
+        submitted: JSON.stringify({ s3: "g-odd", s4: "g-even", s7: "g-even", s2: "g-even" }),
+        correct: false,
+        correctAnswer: {
+          optionIds: [],
+          text: "3 → Odd, 4 → Even, 7 → Odd, 2 → Even",
+          matches: [
+            { leftOptionId: "s3", rightOptionId: "g-odd" },
+            { leftOptionId: "s4", rightOptionId: "g-even" },
+            { leftOptionId: "s7", rightOptionId: "g-odd" },
+            { leftOptionId: "s2", rightOptionId: "g-even" },
+          ],
+        },
+      },
+    ],
+  },
+  {
+    item: {
       activityItemId: "short",
       sequenceOrder: 4,
       questionVersionId: "short",

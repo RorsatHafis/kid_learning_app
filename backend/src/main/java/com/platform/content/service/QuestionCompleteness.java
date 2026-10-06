@@ -45,6 +45,7 @@ public final class QuestionCompleteness {
             }
             case MATCHING -> matchingProblem(options);
             case ORDERING -> orderingProblem(options);
+            case SORTING -> sortingProblem(options);
             // TRUE_FALSE and NUMERIC must use the same canonical formats AnswerScoringService
             // scores against (CanonicalAnswers), so published content is always scorable.
             case TRUE_FALSE -> CanonicalAnswers.parseTrueFalse(version.getCorrectAnswer()).isEmpty()
@@ -98,6 +99,51 @@ public final class QuestionCompleteness {
         }
         if (OrderingItems.keys(items).stream().distinct().count() < 2) {
             return new Issue("ORDERING_ALL_SAME", "The items are all the same, so every order would be right.");
+        }
+        return null;
+    }
+
+    public static final int MIN_GROUPS = 2;
+    public static final int MAX_GROUPS = 4;
+    public static final int MIN_SORT_ITEMS = 4;
+    public static final int MAX_SORT_ITEMS = 10;
+
+    /**
+     * SORTING (X23): 2-4 groups numbered 0..n-1 with different names, 4-10 items each in one of
+     * them, and every group used - a group nothing belongs to would only be a trap. Two items that
+     * read the same must be in the same group, or a child could be marked wrong for a right answer.
+     */
+    private static Issue sortingProblem(List<QuestionOption> options) {
+        if (options.stream().anyMatch(o -> o.getSortRole() == null)) {
+            return new Issue("SORTING_NOT_GROUPED", "Every option of a sorting question must be a group or an item.");
+        }
+        List<QuestionOption> groups = options.stream().filter(o -> o.getSortRole() == com.platform.content.entity.SortRole.GROUP).toList();
+        List<QuestionOption> items = options.stream().filter(o -> o.getSortRole() == com.platform.content.entity.SortRole.ITEM).toList();
+        if (groups.size() < MIN_GROUPS || groups.size() > MAX_GROUPS) {
+            return new Issue("SORTING_GROUP_COUNT", "A sorting question needs %d to %d groups (it has %d)."
+                    .formatted(MIN_GROUPS, MAX_GROUPS, groups.size()));
+        }
+        if (items.size() < MIN_SORT_ITEMS || items.size() > MAX_SORT_ITEMS) {
+            return new Issue("SORTING_ITEM_COUNT", "A sorting question needs %d to %d items (it has %d)."
+                    .formatted(MIN_SORT_ITEMS, MAX_SORT_ITEMS, items.size()));
+        }
+        Set<Integer> numbers = groups.stream().map(QuestionOption::getSortGroup).collect(Collectors.toSet());
+        if (items.stream().anyMatch(item -> !numbers.contains(item.getSortGroup()))) {
+            return new Issue("SORTING_ITEM_WITHOUT_GROUP", "Every item must belong to one of the groups.");
+        }
+        if (!items.stream().map(QuestionOption::getSortGroup).collect(Collectors.toSet()).equals(numbers)) {
+            return new Issue("SORTING_EMPTY_GROUP", "Every group needs at least one item that belongs in it.");
+        }
+        if (hasDuplicateLabels(groups)) {
+            return new Issue("SORTING_DUPLICATE_GROUP", "Two groups have the same name, so a child couldn't tell them apart.");
+        }
+        java.util.Map<String, Integer> groupOfLabel = new java.util.HashMap<>();
+        for (QuestionOption item : items) {
+            String key = item.getLabel().strip().toLowerCase(Locale.ROOT) + "|" + item.getImageAssetId() + "|" + item.getAudioAssetId();
+            Integer earlier = groupOfLabel.putIfAbsent(key, item.getSortGroup());
+            if (earlier != null && !earlier.equals(item.getSortGroup())) {
+                return new Issue("SORTING_SAME_ITEM_TWO_GROUPS", "Two items look the same but belong to different groups.");
+            }
         }
         return null;
     }

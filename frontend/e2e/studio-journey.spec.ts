@@ -80,6 +80,25 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await expect(page.getByText("Draft saved.")).toBeVisible();
   await publish(page);
 
+  // X23: a sorting question - the groups, and each item in the one it belongs to.
+  const sortPrompt = `Even or odd (${tag})`;
+  await studioTab(page, "Questions");
+  await page.getByRole("button", { name: "New question" }).click();
+  const sortComposer = page.getByRole("region", { name: "New question" });
+  await sortComposer.getByLabel("Type").selectOption({ label: "Sort into groups" });
+  await sortComposer.getByLabel("Question the child sees").fill(sortPrompt);
+  await sortComposer.getByLabel("Group 1", { exact: true }).fill("Even");
+  await sortComposer.getByLabel("Group 2", { exact: true }).fill("Odd");
+  // New items alternate between the first two groups: 2 → Even, 1 → Odd, 4 → Even, 3 → Odd.
+  for (const [index, label] of ["2", "1", "4", "3"].entries()) {
+    await sortComposer.getByLabel(`Item ${index + 1}`, { exact: true }).fill(label);
+  }
+  await sortComposer.getByRole("checkbox", { name: skill }).check();
+  await sortComposer.getByRole("button", { name: "Create draft" }).click();
+  await expect(page.getByRole("heading", { name: "Checks" })).toBeVisible();
+  await publish(page);
+  await expect(page.getByText("Even: 2, 4")).toBeVisible();
+
   // X13: the uploaded picture is in the media library, named after its file, showing where it is used.
   await page.goto(`/admin/media?q=${tag}`);
   await expect(page.getByRole("button", { name: new RegExp(`Open: stars ${tag}, picture, used in 1 question`, "i") })).toBeVisible();
@@ -98,6 +117,7 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await expect(page.getByRole("button", { name: "Publish" })).toBeDisabled();
   await page.getByRole("button", { name: new RegExp(`Add question: ${escape(prompt)}`) }).click();
   await page.getByRole("button", { name: new RegExp(`Add question: ${escape(orderPrompt)}`) }).click();
+  await page.getByRole("button", { name: new RegExp(`Add question: ${escape(sortPrompt)}`) }).click();
   await page.getByRole("button", { name: "Save questions" }).click();
   await page.getByLabel("Instructions the child hears before starting").fill("Count the stars and type how many.");
   await page.getByRole("button", { name: "Save details" }).click();
@@ -163,6 +183,22 @@ test("studio: author, check, publish; a child plays exactly what was published",
   await family.getByRole("button", { name: "Check my order" }).click();
   await expect(family.getByText("That's the order!")).toBeVisible();
   await expect(family.getByText(/That's right!/)).toBeVisible();
+
+  // X23: the sorting question - pick up each number and put it in its group.
+  await family.getByRole("button", { name: "Next" }).click();
+  await expect(family.getByText(sortPrompt)).toBeVisible();
+  await expectNoViolations(family, "child: a sorting question");
+  for (const [label, group] of [
+    ["2", "Even"],
+    ["1", "Odd"],
+    ["4", "Even"],
+    ["3", "Odd"],
+  ]) {
+    await family.getByRole("button", { name: `${label}: pick it up` }).click();
+    await family.getByRole("list", { name: "Groups" }).getByRole("button", { name: new RegExp(`^${group}`) }).click();
+  }
+  await family.getByRole("button", { name: "Check my groups" }).click();
+  await expect(family.getByText("Everything is in the right group!")).toBeVisible();
   await familyContext.close();
 
   // X14: a question is archived (out of the bank, its activity untouched) and restored, from the Studio.

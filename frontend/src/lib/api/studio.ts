@@ -235,6 +235,23 @@ export interface OrderItemDetail {
   audio: MediaRef | null;
 }
 
+/** content/studio/StudioDtos.SortGroupDetail (X23) — a SORTING group; `group` is its number. */
+export interface SortGroupDetail {
+  id: string;
+  label: string;
+  group: number;
+  image: MediaRef | null;
+}
+
+/** content/studio/StudioDtos.SortItemDetail (X23) — a SORTING item and the number of the group it belongs to. */
+export interface SortItemDetail {
+  id: string;
+  label: string;
+  group: number;
+  image: MediaRef | null;
+  audio: MediaRef | null;
+}
+
 export interface QuestionVersionDetail extends VersionSummary {
   prompt: string;
   correctAnswer: string | null;
@@ -247,6 +264,9 @@ export interface QuestionVersionDetail extends VersionSummary {
   items: OrderItemDetail[];
   /** What this version practises / gives evidence for (PD-08); frozen once it is published. */
   skillIds: string[];
+  /** SORTING (X23): its groups (by number) and its items. */
+  groups: SortGroupDetail[];
+  sortItems: SortItemDetail[];
 }
 
 export interface QuestionSummary {
@@ -325,6 +345,19 @@ export interface OrderItemInput {
   audioAssetId?: string;
 }
 
+export interface SortGroupInput {
+  label: string;
+  imageAssetId?: string;
+}
+
+/** `group`: the item's group, as a place (0-based) in the draft's groups. */
+export interface SortItemInput {
+  label: string;
+  group: number;
+  imageAssetId?: string;
+  audioAssetId?: string;
+}
+
 export interface QuestionDraftInput {
   prompt: string;
   correctAnswer: string | null;
@@ -338,6 +371,9 @@ export interface QuestionDraftInput {
   pairs?: MatchPairInput[];
   /** ORDERING: the items in their correct order (3–8 to publish). */
   items?: OrderItemInput[];
+  /** SORTING (X23): 2–4 groups and 4–10 items, each in one of them (every group used, to publish). */
+  groups?: SortGroupInput[];
+  sortItems?: SortItemInput[];
 }
 
 // ---- content/media/MediaLibraryService.java (X13): the media library ----

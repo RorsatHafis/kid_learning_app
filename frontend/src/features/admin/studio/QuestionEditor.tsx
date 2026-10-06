@@ -118,6 +118,13 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                   options: latest.options.map((o) => ({ label: o.label, correct: o.correct, image: o.image, audio: o.audio })),
                   pairs: latest.pairs.map((p) => ({ left: p.left, right: p.right ?? "", leftImage: p.leftImage, rightImage: p.rightImage })),
                   items: latest.items.map((i) => ({ label: i.label, image: i.image, audio: i.audio })),
+                  groups: (latest.groups ?? []).map((g) => ({ label: g.label, image: g.image })),
+                  sortItems: (latest.sortItems ?? []).map((i) => ({
+                    label: i.label,
+                    group: Math.max(0, (latest.groups ?? []).findIndex((g) => g.group === i.group)),
+                    image: i.image,
+                    audio: i.audio,
+                  })),
                 }}
                 submitLabel="Save draft"
                 busy={busy}
@@ -237,10 +244,28 @@ function PublishedSummary({ detail }: { detail: QuestionDetail }) {
       </div>
       <div>
         <dt className="font-semibold text-ink-soft">
-          {detail.questionType === "MATCHING" ? "Pairs" : detail.questionType === "ORDERING" ? "Right order" : "Correct answer"}
+          {detail.questionType === "MATCHING"
+            ? "Pairs"
+            : detail.questionType === "ORDERING"
+              ? "Right order"
+              : detail.questionType === "SORTING"
+                ? "Groups"
+                : "Correct answer"}
         </dt>
         <dd className="text-ink">
-          {detail.questionType === "ORDERING" ? (
+          {detail.questionType === "SORTING" ? (
+            <ul className="flex flex-col gap-0.5">
+              {(latest.groups ?? []).map((g) => (
+                <li key={g.id}>
+                  <span className="font-semibold">{g.label}:</span>{" "}
+                  {(latest.sortItems ?? [])
+                    .filter((i) => i.group === g.group)
+                    .map((i) => i.label)
+                    .join(", ")}
+                </li>
+              ))}
+            </ul>
+          ) : detail.questionType === "ORDERING" ? (
             latest.items.map((i) => i.label).join(" → ")
           ) : detail.questionType === "MATCHING" ? (
             <ul className="flex flex-col gap-0.5">

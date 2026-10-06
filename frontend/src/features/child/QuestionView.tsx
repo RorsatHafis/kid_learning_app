@@ -4,13 +4,15 @@ import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, CorrectAnswer, MediaRef } from "@/lib/api/types";
 import { MatchingQuestion } from "./MatchingQuestion";
 import { OrderingQuestion } from "./OrderingQuestion";
+import { SortingQuestion } from "./SortingQuestion";
 import { ListenButton, PromptFrame } from "./PromptMedia";
 import { useReadAloud } from "./speaker";
 
 // Answer contract (backend AnswerScoringService): MULTIPLE_CHOICE submits the chosen
 // option's id — the label is display text only; TRUE_FALSE submits "true"/"false";
 // SHORT_ANSWER/NUMERIC submit the typed value; MATCHING submits the pairing
-// (MatchingQuestion); ORDERING the items in the child's order (OrderingQuestion). The server scores; this view only
+// (MatchingQuestion); ORDERING the items in the child's order (OrderingQuestion); SORTING where the child put each
+// item (SortingQuestion). The server scores; this view only
 // shows the result it returns.
 
 export interface AnswerResult {
@@ -107,6 +109,13 @@ export function QuestionView({
         <div className="flex flex-col gap-6">
           {prompt}
           <OrderingQuestion item={item} onAnswer={onAnswer} disabled={disabled} result={result} />
+        </div>
+      );
+    case "SORTING":
+      return (
+        <div className="flex flex-col gap-6">
+          {prompt}
+          <SortingQuestion item={item} onAnswer={onAnswer} disabled={disabled} result={result} />
         </div>
       );
     default:

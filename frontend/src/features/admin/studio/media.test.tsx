@@ -66,6 +66,44 @@ describe("QuestionDraftForm (ORDERING)", () => {
   });
 });
 
+describe("QuestionDraftForm (SORTING, X23)", () => {
+  it("names the groups, puts each item in one, and keeps items with their group when a group is removed", async () => {
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<QuestionDraftForm questionType="SORTING" initial={EMPTY} submitLabel="Create draft" busy={false} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText("Question the child sees"), "Even or odd?");
+    await user.type(screen.getByLabelText("Group 1"), "Even");
+    await user.type(screen.getByLabelText("Group 2"), "Odd");
+    await user.click(screen.getByRole("button", { name: "Add a group" }));
+    await user.type(screen.getByLabelText("Group 3"), "Neither");
+    expect(screen.getByRole("button", { name: "Remove item 1" })).toBeDisabled();
+    for (const [index, label] of ["2", "3", "4", "5"].entries()) {
+      await user.type(screen.getByLabelText(`Item ${index + 1}`), label);
+    }
+    // The four start alternating Even/Odd; "5" goes to "Neither", then "Neither" is removed: it falls back to the first group.
+    await user.selectOptions(screen.getByLabelText("Group for item 4"), "Neither");
+    await user.click(screen.getByRole("button", { name: "Remove group 3" }));
+    expect(screen.getByRole("button", { name: "Remove group 1" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Create draft" }));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "Even or odd?",
+        correctAnswer: null,
+        groups: [{ label: "Even" }, { label: "Odd" }],
+        sortItems: [
+          { label: "2", group: 0 },
+          { label: "3", group: 1 },
+          { label: "4", group: 0 },
+          { label: "5", group: 0 },
+        ],
+        items: undefined,
+      }),
+    );
+  });
+});
+
 describe("MediaSlot in the question form", () => {
   it("uploads a picture and a reading for the question, asks for the picture's description, and saves their ids", async () => {
     const upload = vi.spyOn(studioApi, "uploadMedia").mockResolvedValueOnce(picture).mockResolvedValueOnce(reading);

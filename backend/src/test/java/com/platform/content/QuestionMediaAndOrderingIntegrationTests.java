@@ -247,6 +247,88 @@ class QuestionMediaAndOrderingIntegrationTests {
                 .isEqualTo(2);
     }
 
+    @Test
+    void aSortingQuestionIsServedWithoutItsGroupsGivenAwayAndScoredOnWhereEveryItemWent() throws Exception {
+        Staff admin = staff(PlatformRole.ADMIN);
+        Catalog catalog = catalog(admin.token());
+
+        // Refused at publish: one group; a group nothing belongs in; the same item in two groups.
+        assertThat(publishErrors(publish(sorting(catalog, List.of("Even"), List.of("2:0", "4:0", "6:0", "8:0")), admin)))
+                .anyMatch(body -> body.contains("needs 2 to 4 groups"));
+        assertThat(publishErrors(publish(sorting(catalog, List.of("Even", "Odd"), List.of("2:0", "4:0", "6:0", "8:0")), admin)))
+                .anyMatch(body -> body.contains("Every group needs at least one item"));
+        assertThat(publishErrors(publish(sorting(catalog, List.of("Even", "Odd"), List.of("2:0", "2:1", "6:0", "3:1")), admin)))
+                .anyMatch(body -> body.contains("look the same"));
+
+        JsonNode question = json(post("/api/v1/studio/questions",
+                sorting(catalog, List.of("Even", "Odd"), List.of("2:0", "4:0", "6:0", "1:1", "3:1", "5:1")), admin.token()), 201);
+        String version = firstVersion(question);
+        JsonNode authored = question.get("versions").get(0);
+        assertThat(labels(authored.get("groups"))).containsExactly("Even", "Odd");
+        assertThat(authored.get("sortItems")).hasSize(6);
+        assertThat(authored.get("sortItems").get(3).get("group").asInt()).isEqualTo(1);
+        json(post("/api/v1/studio/question-versions/" + version + "/publish", "", admin.token()), 200);
+
+        Played played = playableActivity(admin.token(), catalog, List.of(version));
+        JsonNode content = json(get("/api/v1/activity-versions/" + played.activityVersionId(), played.parent()), 200);
+        JsonNode item = itemFor(content, version);
+        List<JsonNode> groups = new ArrayList<>();
+        List<JsonNode> items = new ArrayList<>();
+        item.get("options").forEach(o -> (o.get("sortRole").asString().equals("GROUP") ? groups : items).add(o));
+        assertThat(groups.stream().map(g -> g.get("label").asString()).toList()).containsExactly("Even", "Odd");
+        assertThat(items).hasSize(6);
+        // Which group an item belongs to never leaves the server, and items aren't served grouped.
+        assertThat(item.toString()).doesNotContain("sortGroup").doesNotContain("\"group\"").doesNotContain("\"correct\"");
+        assertThat(items.stream().map(i -> i.get("label").asString()).toList()).isNotEqualTo(List.of("2", "4", "6", "1", "3", "5"));
+
+        java.util.Map<String, String> id = new java.util.HashMap<>();
+        groups.forEach(g -> id.put(g.get("label").asString(), g.get("id").asString()));
+        items.forEach(i -> id.put(i.get("label").asString(), i.get("id").asString()));
+        String attempt = played.attemptId();
+        // Not every item placed, an item put into an item, a made-up group: refused, nothing recorded.
+        for (String invalid : List.of(
+                "{\"" + id.get("2") + "\":\"" + id.get("Even") + "\"}",
+                placement(id, "2:4", "4:Even", "6:Even", "1:Odd", "3:Odd", "5:Odd"),
+                placement(id, "2:" + UUID.randomUUID(), "4:Even", "6:Even", "1:Odd", "3:Odd", "5:Odd"),
+                "[\"" + id.get("2") + "\"]")) {
+            HttpResponse<String> refused = post("/api/v1/activity-attempts/" + attempt + "/answers",
+                    answer(version, JSON.writeValueAsString(invalid)), played.parent());
+            assertThat(refused.statusCode()).as(invalid).isEqualTo(422);
+        }
+        assertThat(jdbc.queryForObject("select count(*) from answer_records where activity_attempt_id = ?::uuid", Integer.class, attempt))
+                .isZero();
+
+        // Every item in its group: right; the feedback says where each one belongs.
+        JsonNode right = json(post("/api/v1/activity-attempts/" + attempt + "/answers", answer(version,
+                JSON.writeValueAsString(placement(id, "2:Even", "4:Even", "6:Even", "1:Odd", "3:Odd", "5:Odd"))), played.parent()), 201);
+        assertThat(right.get("correct").asBoolean()).isTrue();
+        assertThat(right.get("correctAnswer").get("matches")).hasSize(6);
+        assertThat(right.get("correctAnswer").get("text").asString()).contains("2 → Even").contains("5 → Odd");
+        assertThat(jdbc.queryForObject("select count(*) from answer_records where activity_attempt_id = ?::uuid", Integer.class, attempt))
+                .isEqualTo(1);
+    }
+
+    private HttpResponse<String> publish(String questionJson, Staff admin) throws Exception {
+        String version = firstVersion(json(post("/api/v1/studio/questions", questionJson, admin.token()), 201));
+        return post("/api/v1/studio/question-versions/" + version + "/publish", "", admin.token());
+    }
+
+    /** {@code items}: "label:groupIndex". */
+    private static String sorting(Catalog catalog, List<String> groups, List<String> items) {
+        return "{\"subjectId\":\"" + catalog.subjectId() + "\",\"questionType\":\"SORTING\",\"prompt\":\"Even or odd?\","
+                + "\"groups\":[" + String.join(",", groups.stream().map(g -> "{\"label\":\"" + g + "\"}").toList()) + "],"
+                + "\"sortItems\":[" + String.join(",", items.stream().map(i -> "{\"label\":\"" + i.split(":")[0] + "\",\"group\":"
+                + i.split(":")[1] + "}").toList()) + "],\"skillIds\":[\"" + catalog.skillId() + "\"]}";
+    }
+
+    /** {@code pairs}: "itemLabel:groupLabel" (or an id in place of either). */
+    private static String placement(java.util.Map<String, String> id, String... pairs) {
+        return "{" + String.join(",", java.util.Arrays.stream(pairs).map(p -> {
+            String[] parts = p.split(":");
+            return "\"" + id.getOrDefault(parts[0], parts[0]) + "\":\"" + id.getOrDefault(parts[1], parts[1]) + "\"";
+        }).toList()) + "}";
+    }
+
     // ------------------------------------------------------------------ content
 
     private record Catalog(String suffix, String subjectId, String ageHubId, String skillId, String objectiveId) {

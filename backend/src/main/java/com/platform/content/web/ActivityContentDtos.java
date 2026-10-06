@@ -31,13 +31,15 @@ public final class ActivityContentDtos {
             String label,
             int displayOrder,
             MatchSide matchSide,
+            /* X23: SORTING - a group, or an item to sort into one; which group is the answer and is never sent. */
+            com.platform.content.entity.SortRole sortRole,
             /* X11: a picture standing for the item (label = its description) and a recording of it. */
             MediaRef image,
             MediaRef audio
     ) {
         static QuestionOptionResponse of(QuestionOption option, int displayOrder, Map<UUID, MediaRef> media) {
             return new QuestionOptionResponse(option.getId(), option.getLabel(), displayOrder, option.getMatchSide(),
-                    media.get(option.getImageAssetId()), media.get(option.getAudioAssetId()));
+                    option.getSortRole(), media.get(option.getImageAssetId()), media.get(option.getAudioAssetId()));
         }
 
         /**
@@ -55,6 +57,21 @@ public final class ActivityContentDtos {
                 List<QuestionOptionResponse> result = new ArrayList<>();
                 for (int i = 0; i < given.size(); i++) {
                     result.add(of(given.get(i), i, media));
+                }
+                return result;
+            }
+            if (questionType == QuestionType.SORTING) {
+                // Groups in their authored order; items in an order derived from their ids, unrelated to their groups.
+                List<QuestionOptionResponse> result = new ArrayList<>();
+                List<QuestionOption> groups = options.stream().filter(o -> o.getSortRole() == com.platform.content.entity.SortRole.GROUP)
+                        .sorted(Comparator.comparing(QuestionOption::getSortGroup)).toList();
+                for (int i = 0; i < groups.size(); i++) {
+                    result.add(of(groups.get(i), i, media));
+                }
+                List<QuestionOption> items = options.stream().filter(o -> o.getSortRole() == com.platform.content.entity.SortRole.ITEM)
+                        .sorted(Comparator.comparing(o -> RequestFingerprint.sha256Hex(questionVersionId + ":sort:" + o.getId()))).toList();
+                for (int i = 0; i < items.size(); i++) {
+                    result.add(of(items.get(i), i, media));
                 }
                 return result;
             }

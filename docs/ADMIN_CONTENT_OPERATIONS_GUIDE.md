@@ -135,6 +135,7 @@ Subject → Skills & objectives → Questions (+ media) → Lessons & activities
 | Number | types a number | numeric equality |
 | Matching | joins pairs | every pair correct |
 | Ordering | puts items in order (items may be pictures or recordings) | the exact order |
+| Sort into groups | sorts 4–10 items into 2–4 groups ("Even" / "Odd"); items and groups may be pictures | every item in its own group |
 
 A question can carry a **picture** and a **read-aloud recording** for its prompt, chosen from the media library or
 uploaded in place. Tag each question with the skills it is evidence for. Questions are **versioned**: a draft can be

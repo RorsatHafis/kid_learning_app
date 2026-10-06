@@ -17,6 +17,7 @@ import com.platform.content.entity.Lesson;
 import com.platform.content.entity.Question;
 import com.platform.content.entity.MatchSide;
 import com.platform.content.entity.QuestionOption;
+import com.platform.content.entity.SortRole;
 import com.platform.content.entity.QuestionVersionSkill;
 import com.platform.content.entity.QuestionType;
 import com.platform.content.entity.QuestionVersion;
@@ -569,12 +570,14 @@ public class StudioService {
     public QuestionDetail question(UUID accountId, UUID questionId) {
         Question question = guard.requireQuestionWrite(accountId, questionId);
         boolean ordering = question.getQuestionType() == QuestionType.ORDERING;
+        boolean sorting = question.getQuestionType() == QuestionType.SORTING;
         return new QuestionDetail(question.getId(), question.getSubjectId(), question.getQuestionType(),
                 questionSkillIds(questionId), questionService.listVersions(questionId).stream()
                 .map(version -> {
                     List<QuestionOption> options = questionService.listOptions(version.getId());
                     Map<UUID, MediaService.MediaRef> refs = media.refs(ActivityContentDtos.mediaOf(version, options));
-                    List<QuestionOption> plain = options.stream().filter(option -> option.getMatchSide() == null).toList();
+                    List<QuestionOption> plain = options.stream()
+                            .filter(option -> option.getMatchSide() == null && option.getSortRole() == null).toList();
                     return new QuestionVersionDetail(version.getId(), version.getVersionNumber(), version.getStatus(),
                             version.getPublishedAt(), version.getPrompt(), version.getCorrectAnswer(), version.getDifficultyLevel(),
                             refs.get(version.getPromptImageAssetId()), version.getPromptImageDescription(),
@@ -584,7 +587,14 @@ public class StudioService {
                             matchPairs(options, refs),
                             ordering ? plain.stream().map(item -> new OrderItemDetail(item.getId(), item.getLabel(),
                                     refs.get(item.getImageAssetId()), refs.get(item.getAudioAssetId()))).toList() : List.of(),
-                            questionService.skillsOf(version.getId()));
+                            questionService.skillsOf(version.getId()),
+                            sorting ? options.stream().filter(o -> o.getSortRole() == SortRole.GROUP)
+                                    .sorted(java.util.Comparator.comparing(QuestionOption::getSortGroup))
+                                    .map(group -> new SortGroupDetail(group.getId(), group.getLabel(), group.getSortGroup(),
+                                            refs.get(group.getImageAssetId()))).toList() : List.of(),
+                            sorting ? options.stream().filter(o -> o.getSortRole() == SortRole.ITEM)
+                                    .map(item -> new SortItemDetail(item.getId(), item.getLabel(), item.getSortGroup(),
+                                            refs.get(item.getImageAssetId()), refs.get(item.getAudioAssetId()))).toList() : List.of());
                 })
                 .toList(), question.getStatus() == CatalogStatus.ARCHIVED);
     }
@@ -601,7 +611,7 @@ public class StudioService {
                 answerFor(request.questionType(), request.correctAnswer()), request.difficultyLevel());
         request.skillIds().forEach(skillId -> questionService.tagSkill(draft.getId(), skillId));
         writeDraftContent(question, draft.getId(), request.promptImageAssetId(), request.promptImageDescription(),
-                request.promptAudioAssetId(), request.options(), request.pairs(), request.items());
+                request.promptAudioAssetId(), request.options(), request.pairs(), request.items(), request.groups(), request.sortItems());
         return question(accountId, question.getId());
     }
 
@@ -619,7 +629,7 @@ public class StudioService {
         questionService.reviseDraft(questionVersionId, request.prompt().strip(),
                 answerFor(question.getQuestionType(), request.correctAnswer()), request.difficultyLevel());
         writeDraftContent(question, questionVersionId, request.promptImageAssetId(), request.promptImageDescription(),
-                request.promptAudioAssetId(), request.options(), request.pairs(), request.items());
+                request.promptAudioAssetId(), request.options(), request.pairs(), request.items(), request.groups(), request.sortItems());
         return question(accountId, question.getId());
     }
 
@@ -628,7 +638,8 @@ public class StudioService {
      * question's content may use, of the kind the field needs (X11), checked before anything is written.
      */
     private void writeDraftContent(Question question, UUID draftId, UUID promptImage, String promptImageDescription, UUID promptAudio,
-                                   List<OptionRequest> options, List<MatchPairRequest> pairs, List<OrderItemRequest> items) {
+                                   List<OptionRequest> options, List<MatchPairRequest> pairs, List<OrderItemRequest> items,
+                                   List<SortGroupRequest> groups, List<SortItemRequest> sortItems) {
         UUID owner = question.getOwnerAccountId();
         // X13: files this draft already uses stay usable on it even if archived since.
         java.util.Set<UUID> onDraft = ActivityContentDtos.mediaOf(questionService.getVersion(draftId), questionService.listOptions(draftId));
@@ -653,12 +664,27 @@ public class StudioService {
                 media.requireAttachable(item.audioAssetId(), AssetType.AUDIO, owner, onDraft);
             });
         }
+        boolean sorting = type == QuestionType.SORTING && groups != null && sortItems != null;
+        if (sorting) {
+            groups.forEach(group -> media.requireAttachable(group.imageAssetId(), AssetType.IMAGE, owner, onDraft));
+            sortItems.forEach(item -> {
+                media.requireAttachable(item.imageAssetId(), AssetType.IMAGE, owner, onDraft);
+                media.requireAttachable(item.audioAssetId(), AssetType.AUDIO, owner, onDraft);
+            });
+        }
         questionService.setPromptMedia(draftId, promptImage, promptImageDescription, promptAudio);
         if (type == QuestionType.MULTIPLE_CHOICE && options != null) {
             questionService.replaceOptions(draftId, optionDrafts(options));
         }
         if (type == QuestionType.MATCHING && pairs != null) {
             questionService.replaceMatchPairs(draftId, pairDrafts(pairs));
+        }
+        if (sorting) {
+            // Completeness (publish) checks the groups are used and every item's group exists.
+            questionService.replaceSorting(draftId,
+                    groups.stream().map(group -> new QuestionService.SortGroupDraft(group.label(), group.imageAssetId())).toList(),
+                    sortItems.stream().map(item -> new QuestionService.SortItemDraft(item.label(), item.group(), item.imageAssetId(),
+                            item.audioAssetId())).toList());
         }
         if (type == QuestionType.ORDERING && items != null) {
             questionService.replaceOrderItems(draftId, items.stream()
@@ -787,7 +813,8 @@ public class StudioService {
     }
 
     private static String answerFor(QuestionType type, String correctAnswer) {
-        if (type == QuestionType.MULTIPLE_CHOICE || type == QuestionType.MATCHING || type == QuestionType.ORDERING) {
+        if (type == QuestionType.MULTIPLE_CHOICE || type == QuestionType.MATCHING || type == QuestionType.ORDERING
+                || type == QuestionType.SORTING) {
             return null;
         }
         return blankToNull(correctAnswer == null ? null : correctAnswer.strip());

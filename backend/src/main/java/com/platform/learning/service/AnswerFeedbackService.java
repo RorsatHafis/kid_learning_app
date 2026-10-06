@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -48,7 +49,8 @@ public class AnswerFeedbackService {
      * @param optionIds for MULTIPLE_CHOICE, the correct option(s); for ORDERING, every item in the correct order; empty otherwise
      * @param text      the correct answer as the child would read it (option label,
      *                  "true"/"false", the number, the expected text, or the pairs)
-     * @param matches   for MATCHING, each left item's id with its match's id; empty otherwise
+     * @param matches   for MATCHING, each left item's id with its match's id; for SORTING, each item's id with its group's id;
+     *                  empty otherwise
      */
     public record CorrectAnswer(List<UUID> optionIds, String text, List<MatchPair> matches) {
         CorrectAnswer(List<UUID> optionIds, String text) {
@@ -95,6 +97,24 @@ public class AnswerFeedbackService {
                             });
                 }
                 yield new CorrectAnswer(List.of(), String.join(", ", words), matches);
+            }
+            // Each item with the group it belongs to (matches: item id -> group id).
+            case SORTING -> {
+                List<QuestionOption> options = questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId());
+                Map<Integer, QuestionOption> groupByNumber = new java.util.HashMap<>();
+                options.stream().filter(o -> o.getSortRole() == com.platform.content.entity.SortRole.GROUP)
+                        .forEach(group -> groupByNumber.put(group.getSortGroup(), group));
+                List<MatchPair> placements = new ArrayList<>();
+                List<String> words = new ArrayList<>();
+                for (QuestionOption item : options) {
+                    QuestionOption group = item.getSortRole() == com.platform.content.entity.SortRole.ITEM
+                            ? groupByNumber.get(item.getSortGroup()) : null;
+                    if (group != null) {
+                        placements.add(new MatchPair(item.getId(), group.getId()));
+                        words.add(item.getLabel() + " → " + group.getLabel());
+                    }
+                }
+                yield new CorrectAnswer(List.of(), String.join(", ", words), placements);
             }
             // The items in their correct order: optionIds is that order.
             case ORDERING -> {

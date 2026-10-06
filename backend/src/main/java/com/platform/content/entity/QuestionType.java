@@ -8,6 +8,7 @@ public enum QuestionType {
     NUMERIC,
     MATCHING,
     /** Put the items in order (V46): the version's options, in their display order. */
-    ORDERING
+    ORDERING,
+    SORTING
 
 }

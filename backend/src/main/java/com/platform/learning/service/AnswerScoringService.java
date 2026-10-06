@@ -41,6 +41,9 @@ import java.util.UUID;
  *       the right item the child matched it with, each right item used once. Correct
  *       only when every pair is right: evidence is one answer, right or wrong, as for
  *       every other type (partial credit would change the evidence model).</li>
+ *   <li>SORTING: a JSON object mapping every item's option id to the id of the group the
+ *       child put it in. Correct only when every item is in its own group (one answer of
+ *       evidence, as for MATCHING).</li>
  *   <li>ORDERING: a JSON array of every item's option id, each once, in the order the child
  *       put them. Correct when the items read in the correct order ({@link OrderingItems}):
  *       interchangeable items (the same letter twice) may go either way round.</li>
@@ -69,6 +72,7 @@ public class AnswerScoringService {
             case NUMERIC -> scoreNumeric(version.getCorrectAnswer(), submittedAnswer);
             case MATCHING -> scoreMatching(version.getId(), submittedAnswer);
             case ORDERING -> scoreOrdering(version.getId(), submittedAnswer);
+            case SORTING -> scoreSorting(version.getId(), submittedAnswer);
         };
     }
 
@@ -134,6 +138,36 @@ public class AnswerScoringService {
                 throw new InvalidAnswerException("A matching answer must pair each item with a different match");
             }
             allCorrect &= left.getMatchPair().equals(right.getMatchPair());
+        }
+        return allCorrect;
+    }
+
+    private boolean scoreSorting(UUID questionVersionId, String submittedAnswer) {
+        Map<UUID, QuestionOption> options = new HashMap<>();
+        questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(questionVersionId)
+                .forEach(option -> options.put(option.getId(), option));
+        long itemCount = options.values().stream().filter(o -> o.getSortRole() == com.platform.content.entity.SortRole.ITEM).count();
+        if (itemCount == 0 || options.values().stream().noneMatch(o -> o.getSortRole() == com.platform.content.entity.SortRole.GROUP)) {
+            throw new UnscorableAnswerException("This sorting question has no groups or items and cannot be scored");
+        }
+        JsonNode answer;
+        try {
+            answer = JSON.readTree(submittedAnswer == null ? "" : submittedAnswer);
+        } catch (JacksonException e) {
+            throw new InvalidAnswerException("A sorting answer must put every item in a group");
+        }
+        if (answer == null || !answer.isObject() || answer.size() != itemCount) {
+            throw new InvalidAnswerException("A sorting answer must put every item in a group");
+        }
+        boolean allCorrect = true;
+        for (Map.Entry<String, JsonNode> placed : answer.properties()) {
+            QuestionOption item = options.get(parseOptionId(placed.getKey()));
+            QuestionOption group = placed.getValue().isString() ? options.get(parseOptionId(placed.getValue().asString())) : null;
+            if (item == null || item.getSortRole() != com.platform.content.entity.SortRole.ITEM
+                    || group == null || group.getSortRole() != com.platform.content.entity.SortRole.GROUP) {
+                throw new InvalidAnswerException("A sorting answer must put each of this question's items in one of its groups");
+            }
+            allCorrect &= item.getSortGroup().equals(group.getSortGroup());
         }
         return allCorrect;
     }

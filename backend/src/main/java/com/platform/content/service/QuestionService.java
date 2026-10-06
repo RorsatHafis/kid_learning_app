@@ -213,6 +213,32 @@ public class QuestionService {
         }
     }
 
+    /** SORTING: a group the child sorts into, with an optional picture. */
+    public record SortGroupDraft(String label, UUID imageAssetId) {
+    }
+
+    /** SORTING: an item and the index (in the draft's groups) of the group it belongs to. */
+    public record SortItemDraft(String label, int group, UUID imageAssetId, UUID audioAssetId) {
+    }
+
+    /** Replaces a SORTING draft's groups and items: group i is number i; every option of the draft is replaced. */
+    @Transactional
+    public List<QuestionOption> replaceSorting(UUID questionVersionId, List<SortGroupDraft> groups, List<SortItemDraft> items) {
+        requireDraft(getVersion(questionVersionId));
+        questionOptionRepository.deleteByQuestionVersionId(questionVersionId);
+        questionOptionRepository.flush();
+        int order = 0;
+        for (int i = 0; i < groups.size(); i++) {
+            questionOptionRepository.save(QuestionOption.sortOption(questionVersionId, groups.get(i).label().strip(),
+                    com.platform.content.entity.SortRole.GROUP, i, order++).withMedia(groups.get(i).imageAssetId(), null));
+        }
+        for (SortItemDraft item : items) {
+            questionOptionRepository.save(QuestionOption.sortOption(questionVersionId, item.label().strip(),
+                    com.platform.content.entity.SortRole.ITEM, item.group(), order++).withMedia(item.imageAssetId(), item.audioAssetId()));
+        }
+        return listOptions(questionVersionId);
+    }
+
     /** ORDERING: one of the things to put in order; drafts are given in the correct order. */
     public record OrderItemDraft(String label, UUID imageAssetId, UUID audioAssetId) {
     }

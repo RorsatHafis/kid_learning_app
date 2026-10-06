@@ -150,6 +150,14 @@ public final class StudioDtos {
     public record OrderItemDetail(UUID id, String label, MediaRef image, MediaRef audio) {
     }
 
+    /** SORTING (X23): a group, as the author sees it; {@code group} is its number. */
+    public record SortGroupDetail(UUID id, String label, int group, MediaRef image) {
+    }
+
+    /** SORTING (X23): an item and the number of the group it belongs to. */
+    public record SortItemDetail(UUID id, String label, int group, MediaRef image, MediaRef audio) {
+    }
+
     /**
      * {@code skillIds}: what answers to this version are evidence for (PD-08); frozen once it is published.
      * {@code promptImage}/{@code promptAudio} (X11): shown with the prompt and the prompt read aloud.
@@ -158,7 +166,7 @@ public final class StudioDtos {
                                         String prompt, String correctAnswer, Integer difficultyLevel,
                                         MediaRef promptImage, String promptImageDescription, MediaRef promptAudio,
                                         List<OptionDetail> options, List<MatchPairDetail> pairs, List<OrderItemDetail> items,
-                                        List<UUID> skillIds) {
+                                        List<UUID> skillIds, List<SortGroupDetail> groups, List<SortItemDetail> sortItems) {
     }
 
     public record QuestionSummary(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,
@@ -189,6 +197,15 @@ public final class StudioDtos {
     public record OrderItemRequest(@NotBlank @Size(max = 300) String label, UUID imageAssetId, UUID audioAssetId) {
     }
 
+    /** SORTING (X23): a group the child sorts into; its number is its place in the request's groups. */
+    public record SortGroupRequest(@NotBlank @Size(max = 120) String label, UUID imageAssetId) {
+    }
+
+    /** SORTING (X23): an item and the number (0-based place in the request's groups) of the group it belongs to. */
+    public record SortItemRequest(@NotBlank @Size(max = 300) String label, @Min(0) @Max(3) int group, UUID imageAssetId,
+                                  UUID audioAssetId) {
+    }
+
     public record CreateQuestionRequest(@NotNull UUID subjectId, @NotNull QuestionType questionType,
                                         @NotBlank @Size(max = 2000) String prompt, @Size(max = 300) String correctAnswer,
                                         @Min(1) @Max(10) Integer difficultyLevel,
@@ -197,7 +214,17 @@ public final class StudioDtos {
                                         @Size(max = 8) List<@Valid @NotNull OrderItemRequest> items,
                                         UUID promptImageAssetId, @Size(max = 300) String promptImageDescription,
                                         UUID promptAudioAssetId,
-                                        @NotNull @Size(max = 20) List<@NotNull UUID> skillIds) {
+                                        @NotNull @Size(max = 20) List<@NotNull UUID> skillIds,
+                                        @Size(max = 4) List<@Valid @NotNull SortGroupRequest> groups,
+                                        @Size(max = 10) List<@Valid @NotNull SortItemRequest> sortItems) {
+        /** Every type but SORTING. */
+        public CreateQuestionRequest(UUID subjectId, QuestionType questionType, String prompt, String correctAnswer,
+                                     Integer difficultyLevel, List<OptionRequest> options, List<MatchPairRequest> pairs,
+                                     List<OrderItemRequest> items, UUID promptImageAssetId, String promptImageDescription,
+                                     UUID promptAudioAssetId, List<UUID> skillIds) {
+            this(subjectId, questionType, prompt, correctAnswer, difficultyLevel, options, pairs, items, promptImageAssetId,
+                    promptImageDescription, promptAudioAssetId, skillIds, null, null);
+        }
     }
 
     public record ReviseQuestionDraftRequest(@NotBlank @Size(max = 2000) String prompt, @Size(max = 300) String correctAnswer,
@@ -206,7 +233,16 @@ public final class StudioDtos {
                                              @Size(max = 6) List<@Valid @NotNull MatchPairRequest> pairs,
                                              @Size(max = 8) List<@Valid @NotNull OrderItemRequest> items,
                                              UUID promptImageAssetId, @Size(max = 300) String promptImageDescription,
-                                             UUID promptAudioAssetId) {
+                                             UUID promptAudioAssetId,
+                                             @Size(max = 4) List<@Valid @NotNull SortGroupRequest> groups,
+                                             @Size(max = 10) List<@Valid @NotNull SortItemRequest> sortItems) {
+        /** Every type but SORTING. */
+        public ReviseQuestionDraftRequest(String prompt, String correctAnswer, Integer difficultyLevel, List<OptionRequest> options,
+                                          List<MatchPairRequest> pairs, List<OrderItemRequest> items, UUID promptImageAssetId,
+                                          String promptImageDescription, UUID promptAudioAssetId) {
+            this(prompt, correctAnswer, difficultyLevel, options, pairs, items, promptImageAssetId, promptImageDescription,
+                    promptAudioAssetId, null, null);
+        }
     }
 
 }

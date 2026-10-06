@@ -13,6 +13,10 @@ const MAX_PAIRS = 6; // content/service/QuestionCompleteness.MAX_PAIRS
 const MIN_PAIRS = 2;
 const MAX_ITEMS = 8; // content/service/OrderingItems.MAX_ITEMS
 const MIN_ITEMS = 3;
+const MIN_GROUPS = 2; // content/service/QuestionCompleteness.MIN_GROUPS
+const MAX_GROUPS = 4;
+const MIN_SORT_ITEMS = 4;
+const MAX_SORT_ITEMS = 10;
 
 const fieldClass =
   "flex-1 rounded-[10px] border border-line-strong px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15";
@@ -34,6 +38,9 @@ export interface DraftValues {
   pairs?: { left: string; right: string; leftImage?: Media; rightImage?: Media }[];
   /** ORDERING: the items in their correct order. */
   items?: { label: string; image?: Media; audio?: Media }[];
+  /** SORTING (X23): the groups, and each item with the place of its group in `groups`. */
+  groups?: { label: string; image?: Media }[];
+  sortItems?: { label: string; group: number; image?: Media; audio?: Media }[];
 }
 
 const id = (media: Media) => media?.id ?? undefined;
@@ -93,6 +100,15 @@ export function QuestionDraftForm({
   const [items, setItems] = useState<NonNullable<DraftValues["items"]>>(
     initial.items && initial.items.length > 0 ? initial.items : Array.from({ length: MIN_ITEMS }, () => ({ label: "" })),
   );
+  const [groups, setGroups] = useState<NonNullable<DraftValues["groups"]>>(
+    initial.groups && initial.groups.length > 0 ? initial.groups : [{ label: "" }, { label: "" }],
+  );
+  const [sortItems, setSortItems] = useState<NonNullable<DraftValues["sortItems"]>>(
+    initial.sortItems && initial.sortItems.length > 0
+      ? initial.sortItems
+      : Array.from({ length: MIN_SORT_ITEMS }, (_, i) => ({ label: "", group: i % 2 })),
+  );
+  const sorting = questionType === "SORTING";
   const multipleChoice = questionType === "MULTIPLE_CHOICE";
   const matching = questionType === "MATCHING";
   const ordering = questionType === "ORDERING";
@@ -101,7 +117,7 @@ export function QuestionDraftForm({
     e.preventDefault();
     onSubmit({
       prompt: prompt.trim(),
-      correctAnswer: multipleChoice || matching || ordering ? null : answer.trim() || null,
+      correctAnswer: multipleChoice || matching || ordering || sorting ? null : answer.trim() || null,
       difficultyLevel: difficulty ? Number(difficulty) : null,
       promptImageAssetId: id(promptImage),
       promptImageDescription: promptImage && description.trim() ? description.trim() : undefined,
@@ -125,13 +141,24 @@ export function QuestionDraftForm({
       items: ordering
         ? items.map((i) => ({ label: i.label.trim(), imageAssetId: id(i.image), audioAssetId: id(i.audio) }))
         : undefined,
+      groups: sorting ? groups.map((g) => ({ label: g.label.trim(), imageAssetId: id(g.image) })) : undefined,
+      sortItems: sorting
+        ? sortItems.map((i) => ({ label: i.label.trim(), group: i.group, imageAssetId: id(i.image), audioAssetId: id(i.audio) }))
+        : undefined,
     });
   }
 
   const optionsComplete =
     (!multipleChoice || options.every((o) => o.label.trim())) &&
     (!matching || pairs.every((p) => p.left.trim() && p.right.trim())) &&
-    (!ordering || items.every((i) => i.label.trim()));
+    (!ordering || items.every((i) => i.label.trim())) &&
+    (!sorting || (groups.every((g) => g.label.trim()) && sortItems.every((i) => i.label.trim())));
+
+  /** Removing a group moves its items to the first group and keeps the others pointing at theirs. */
+  function removeGroup(index: number) {
+    setGroups(groups.filter((_, i) => i !== index));
+    setSortItems(sortItems.map((it) => ({ ...it, group: it.group === index ? 0 : it.group > index ? it.group - 1 : it.group })));
+  }
 
   function move(from: number, to: number) {
     const next = [...items];
@@ -391,6 +418,128 @@ export function QuestionDraftForm({
             </button>
           )}
         </fieldset>
+      )}
+
+      {sorting && (
+        <>
+          <fieldset className="flex min-w-0 flex-col gap-2">
+            <legend className="mb-1 text-sm font-semibold text-ink">
+              Groups — {MIN_GROUPS} to {MAX_GROUPS}. Children sort the items into these (for example “Even” and “Odd”).
+            </legend>
+            {groups.map((group, index) => (
+              <div key={index} className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                <div className="flex min-w-[13rem] flex-1 items-center gap-2">
+                  <input
+                    value={group.label}
+                    maxLength={120}
+                    onChange={(e) => setGroups(groups.map((g, i) => (i === index ? { ...g, label: e.target.value } : g)))}
+                    aria-label={`Group ${index + 1}`}
+                    placeholder={group.image ? "Describe the picture" : undefined}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="ml-auto flex items-center gap-1">
+                  <MediaSlot
+                    compact
+                    kind="IMAGE"
+                    value={group.image ?? null}
+                    onChange={(image, item) =>
+                      setGroups(
+                        groups.map((g, i) =>
+                          i === index ? { ...g, image, label: g.label.trim() ? g.label : labelFrom(item, g.label) } : g,
+                        ),
+                      )
+                    }
+                    name={`picture for group ${index + 1}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeGroup(index)}
+                    disabled={groups.length <= MIN_GROUPS}
+                    aria-label={`Remove group ${index + 1}`}
+                    className={removeClass}
+                  >
+                    <Trash2 size={16} aria-hidden />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {groups.length < MAX_GROUPS && (
+              <button type="button" onClick={() => setGroups([...groups, { label: "" }])} className={addClass}>
+                <Plus size={14} aria-hidden /> Add a group
+              </button>
+            )}
+          </fieldset>
+          <fieldset className="flex min-w-0 flex-col gap-2">
+            <legend className="mb-1 text-sm font-semibold text-ink">
+              Items to sort — {MIN_SORT_ITEMS} to {MAX_SORT_ITEMS}, each in the group it belongs to. Children get them mixed up.
+            </legend>
+            {sortItems.map((item, index) => (
+              <div key={index} className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                <div className="flex min-w-[13rem] flex-1 items-center gap-2">
+                  <input
+                    value={item.label}
+                    maxLength={300}
+                    onChange={(e) => setSortItems(sortItems.map((it, i) => (i === index ? { ...it, label: e.target.value } : it)))}
+                    aria-label={`Item ${index + 1}`}
+                    placeholder={item.image ? "Describe the picture" : undefined}
+                    className={inputClass}
+                  />
+                  <select
+                    value={item.group}
+                    onChange={(e) =>
+                      setSortItems(sortItems.map((it, i) => (i === index ? { ...it, group: Number(e.target.value) } : it)))
+                    }
+                    aria-label={`Group for item ${index + 1}`}
+                    className="h-[42px] rounded-[10px] border border-line-strong bg-white px-2 text-sm text-ink"
+                  >
+                    {groups.map((g, gi) => (
+                      <option key={gi} value={gi}>
+                        {g.label.trim() || `Group ${gi + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="ml-auto flex items-center gap-1">
+                  <MediaSlot
+                    compact
+                    kind="IMAGE"
+                    value={item.image ?? null}
+                    onChange={(image, chosen) =>
+                      setSortItems(
+                        sortItems.map((it, i) =>
+                          i === index ? { ...it, image, label: it.label.trim() ? it.label : labelFrom(chosen, it.label) } : it,
+                        ),
+                      )
+                    }
+                    name={`picture for item ${index + 1}`}
+                  />
+                  <MediaSlot
+                    compact
+                    kind="AUDIO"
+                    value={item.audio ?? null}
+                    onChange={(audio) => setSortItems(sortItems.map((it, i) => (i === index ? { ...it, audio } : it)))}
+                    name={`recording for item ${index + 1}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSortItems(sortItems.filter((_, i) => i !== index))}
+                    disabled={sortItems.length <= MIN_SORT_ITEMS}
+                    aria-label={`Remove item ${index + 1}`}
+                    className={removeClass}
+                  >
+                    <Trash2 size={16} aria-hidden />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {sortItems.length < MAX_SORT_ITEMS && (
+              <button type="button" onClick={() => setSortItems([...sortItems, { label: "", group: 0 }])} className={addClass}>
+                <Plus size={14} aria-hidden /> Add an item
+              </button>
+            )}
+          </fieldset>
+        </>
       )}
 
       {questionType === "TRUE_FALSE" && (
