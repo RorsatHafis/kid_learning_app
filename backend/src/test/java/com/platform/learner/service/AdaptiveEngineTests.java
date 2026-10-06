@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,6 +73,48 @@ class AdaptiveEngineTests {
         assertThat(recommendation.get().direction()).isEqualTo(AdaptiveEngine.Direction.CHALLENGE);
         assertThat(recommendation.get().insertedItem()).isSameAs(pendingHarder);
         verify(learningPathService, never()).appendItem(pathId, harderVersionId, LearningPathItemSource.ADAPTIVE);
+    }
+
+    @Test
+    void aRevisedVersionOfAnActivityTheChildFinishedIsNeverPlacedAgain() {
+        UUID childId = UUID.randomUUID();
+        UUID skillId = UUID.randomUUID();
+        UUID pathId = UUID.randomUUID();
+        UUID finishedActivityId = UUID.randomUUID();
+        UUID otherActivityId = UUID.randomUUID();
+        UUID finishedV1 = UUID.randomUUID();
+        UUID finishedV2 = UUID.randomUUID();
+        UUID otherVersionId = UUID.randomUUID();
+
+        LearnerSkillState strugglingState = LearnerSkillState.initial(childId, skillId);
+        for (int i = 0; i < 3; i++) {
+            strugglingState.applyEvidence(new BigDecimal("0.1000"), new BigDecimal("0.6000"), false, Instant.now());
+        }
+        ActivityVersion v1 = publishedVersion(finishedActivityId, finishedV1, 5);
+        // v2 of the same activity, easier: by difficulty alone it would be the reinforcement.
+        ActivityVersion v2 = publishedVersion(finishedActivityId, finishedV2, 1);
+        ActivityVersion other = publishedVersion(otherActivityId, otherVersionId, 3);
+        LearningPathItem done = LearningPathItem.place(pathId, finishedV1, 1, LearningPathItemSource.CURRICULUM, Instant.now());
+        done.start();
+        done.complete(Instant.now());
+        LearningPathItem placed = LearningPathItem.place(pathId, otherVersionId, 2, LearningPathItemSource.ADAPTIVE, Instant.now());
+
+        when(skillStateRepository.findByChildIdAndSkillId(childId, skillId)).thenReturn(Optional.of(strugglingState));
+        when(activitySkillRepository.findPublishedPractising(skillId)).thenReturn(List.of(v1, v2, other));
+        when(activityVersionRepository.findAllById(Set.of(finishedV1))).thenReturn(List.of(v1));
+        when(learningPathService.listItems(pathId)).thenReturn(List.of(done));
+        when(learningPathService.appendItem(pathId, otherVersionId, LearningPathItemSource.ADAPTIVE)).thenReturn(placed);
+
+        AdaptiveEngine engine = new AdaptiveEngine(skillStateRepository, skillPrerequisiteRepository,
+                activitySkillRepository, activityVersionRepository, learningPathService,
+                ContentScopes.admittingEverything());
+
+        Optional<AdaptiveEngine.Recommendation> recommendation = engine.recommendNext(childId, skillId, pathId, finishedV1);
+
+        assertThat(recommendation).isPresent();
+        assertThat(recommendation.get().direction()).isEqualTo(AdaptiveEngine.Direction.REINFORCEMENT);
+        assertThat(recommendation.get().insertedItem()).isSameAs(placed);
+        verify(learningPathService, never()).appendItem(pathId, finishedV2, LearningPathItemSource.ADAPTIVE);
     }
 
     private static ActivityVersion publishedVersion(UUID activityId, UUID versionId, int difficulty) {

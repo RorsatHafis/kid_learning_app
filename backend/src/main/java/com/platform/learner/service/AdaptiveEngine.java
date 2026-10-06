@@ -155,8 +155,19 @@ public class AdaptiveEngine {
                 .map(LearningPathItem::getActivityVersionId)
                 .collect(java.util.stream.Collectors.toSet());
 
+        // OD-10 (decided in Y4): "finished" is per activity, not per version - a revised version
+        // of an activity the child has finished is the same activity, so it is never placed again.
+        Set<UUID> finishedVersionIds = new java.util.HashSet<>(completedActivityVersionIds);
+        if (justCompletedActivityVersionId != null) {
+            finishedVersionIds.add(justCompletedActivityVersionId);
+        }
+        Set<UUID> finishedActivityIds = finishedVersionIds.isEmpty() ? Set.of()
+                : activityVersionRepository.findAllById(finishedVersionIds).stream()
+                        .map(ActivityVersion::getActivityId)
+                        .collect(java.util.stream.Collectors.toSet());
+
         Optional<ActivityVersion> candidate = pickActivity(targetSkillId, direction, justCompletedActivityVersionId,
-                completedActivityVersionIds, pathContentScope.forPath(learningPathId));
+                completedActivityVersionIds, finishedActivityIds, pathContentScope.forPath(learningPathId));
         if (candidate.isEmpty()) {
             return new Decision(direction, skillId, targetSkillId, Optional.empty());
         }
@@ -203,6 +214,7 @@ public class AdaptiveEngine {
     private Optional<ActivityVersion> pickActivity(UUID skillId, Direction direction,
                                                     UUID excludeActivityVersionId,
                                                     Set<UUID> completedActivityVersionIds,
+                                                    Set<UUID> finishedActivityIds,
                                                     PathContentScope.Scope scope) {
         // N7: only content this path's scope admits - a family path never gets a
         // teacher's activity just because it is tagged with the same skill.
@@ -213,6 +225,7 @@ public class AdaptiveEngine {
 
         List<ActivityVersion> uncompletedCandidates = publishedCandidates.stream()
                 .filter(version -> !completedActivityVersionIds.contains(version.getId()))
+                .filter(version -> !finishedActivityIds.contains(version.getActivityId()))
                 .toList();
 
         if (uncompletedCandidates.isEmpty()) {
