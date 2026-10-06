@@ -1,15 +1,5 @@
 import { expect, test } from "@playwright/test";
-import {
-  ADMIN_EMAIL,
-  ADMIN_PASSWORD,
-  PASSWORD,
-  expectNoViolations,
-  linkIn,
-  logIn,
-  uniqueEmail,
-  waitForEmail,
-  workspaceLink,
-} from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, crawl, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail, workspaceLink } from "./support";
 
 /**
  * The school side end to end: a principal applies, an administrator approves, the principal sets
@@ -26,6 +16,7 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   request,
 }) => {
   test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
+  test.setTimeout(300_000);
   const principalEmail = uniqueEmail("principal");
   const teacherEmail = uniqueEmail("teacher");
   const schoolName = `E2E Primary ${Date.now().toString(36)}`;
@@ -242,6 +233,11 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expectNoViolations(teacher, "teacher: the catalog, read-only");
   await workspaceLink(teacher, "Media library");
   await expect(teacher.getByRole("heading", { level: 1, name: "Media library" })).toBeVisible();
+
+  // Every page each of them can reach by following links loads: no crash, server error, error state or dead link.
+  await crawl(page, "/principal", /^\/principal/);
+  await crawl(teacher, "/teacher", /^\/teacher/);
+  await crawl(parent, "/parent", /^\/parent/);
 
   await familyContext.close();
   await teacherContext.close();

@@ -54,6 +54,48 @@ export async function workspaceLink(page: Page, name: string) {
   await link.click();
 }
 
+/**
+ * Visits every page reachable through in-app links from `start` whose path matches `scope` (one page per
+ * route shape: ids are folded), and fails on a page that crashes, a server error, an error state or
+ * "Page not found". Returns the route shapes visited. Links only - nothing is clicked or submitted.
+ */
+export async function crawl(page: Page, start: string, scope: RegExp, limit = 60): Promise<string[]> {
+  const problems: string[] = [];
+  let current = start;
+  const onError = (error: Error) => problems.push(`${current}: page error ${error.message}`);
+  const onResponse = (response: { status(): number; url(): string }) => {
+    if (response.status() >= 500) problems.push(`${current}: ${response.status()} from ${response.url()}`);
+  };
+  page.on("pageerror", onError);
+  page.on("response", onResponse);
+  const shape = (path: string) => path.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, ":id");
+  const seen = new Set<string>();
+  const queue = [start];
+  try {
+    while (queue.length > 0 && seen.size < limit) {
+      const path = queue.shift()!;
+      if (seen.has(shape(path))) continue;
+      seen.add(shape(path));
+      current = path;
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      if (await page.getByRole("heading", { name: "Page not found" }).count()) problems.push(`${path}: page not found`);
+      if (await page.getByText("That didn't load").count()) problems.push(`${path}: an error state`);
+      const hrefs = await page.locator("a[href]").evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""));
+      for (const href of hrefs) {
+        const target = href.split("#")[0];
+        if (target.startsWith("/") && scope.test(target) && !seen.has(shape(target))) queue.push(target);
+      }
+    }
+  } finally {
+    page.off("pageerror", onError);
+    page.off("response", onResponse);
+  }
+  console.log(`crawled ${seen.size} pages from ${start}: ${[...seen].join(" ")}`);
+  expect(problems, `pages visited: ${[...seen].join(", ")}`).toEqual([]);
+  return [...seen];
+}
+
 export async function logIn(page: Page, email: string, password: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);

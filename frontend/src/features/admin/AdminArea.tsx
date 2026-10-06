@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { NotFound } from "@/components/ui/NotFound";
 import { AccountPage } from "@/features/parent/AccountPage";
 import { AdminLayout } from "./AdminLayout";
 import { StaffPage } from "./StaffPage";
@@ -51,6 +52,7 @@ export default function AdminArea() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="system" element={<SystemPage />} />
         <Route path="account" element={<AccountPage />} />
+        <Route path="*" element={<NotFound home="/admin" homeLabel="Go to the dashboard" />} />
       </Route>
     </Routes>
   );

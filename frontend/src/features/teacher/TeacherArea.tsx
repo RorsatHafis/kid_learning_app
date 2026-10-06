@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { NotFound } from "@/components/ui/NotFound";
 import { AccountPage } from "@/features/parent/AccountPage";
 import { TeacherLayout } from "./TeacherLayout";
 import { TeacherHome } from "./TeacherHome";
@@ -43,6 +44,7 @@ export default function TeacherArea() {
             <Route path="curricula/:curriculumId" element={<CurriculumEditor />} />
           </Route>
           <Route path="account" element={<AccountPage />} />
+          <Route path="*" element={<NotFound home="/teacher" homeLabel="Go to your classes" />} />
         </Route>
       </Routes>
     </StudioScopeContext.Provider>

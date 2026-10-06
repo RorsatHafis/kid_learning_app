@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import { NotFound } from "@/components/ui/NotFound";
 import { AccountPage } from "@/features/parent/AccountPage";
 import { PrincipalLayout } from "./PrincipalLayout";
 import { PrincipalHome } from "./PrincipalHome";
@@ -16,6 +17,7 @@ export default function PrincipalArea() {
         <Route path="classes/:classId/children/:childId" element={<PrincipalMemberPage />} />
         <Route path="classes/:classId/skills/:skillId" element={<PrincipalSkillPage />} />
         <Route path="account" element={<AccountPage />} />
+        <Route path="*" element={<NotFound home="/principal" homeLabel="Go to your school" />} />
       </Route>
     </Routes>
   );

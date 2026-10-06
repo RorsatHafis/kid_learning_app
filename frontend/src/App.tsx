@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from "react";
+import { NotFound } from "@/components/ui/NotFound";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
-import { AuthProvider } from "@/lib/auth/AuthContext";
+import { AuthProvider, useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState } from "@/components/ui/States";
 import { BrandSheet } from "@/features/brand/BrandSheet";
 import { PlayGallery } from "@/features/brand/PlayGallery";
@@ -12,6 +13,7 @@ import { RegisterPage } from "@/features/auth/RegisterPage";
 import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { ResetPasswordPage, SetUpAccountPage } from "@/features/auth/ResetPasswordPage";
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
+import { roleHomePath } from "@/features/auth/roleHomePath";
 import { ConfirmEmailChangePage } from "@/features/auth/ConfirmEmailChangePage";
 import { ParentLayout } from "@/features/parent/ParentLayout";
 import { ParentHome } from "@/features/parent/ParentHome";
@@ -30,6 +32,21 @@ const PrincipalArea = lazy(() => import("@/features/principal/PrincipalArea"));
 
 function StaffArea({ children }: { children: ReactNode }) {
   return <Suspense fallback={<LoadingState label="Loading…" />}>{children}</Suspense>;
+}
+
+/** An unknown address outside every workspace: home for whoever is signed in, else the public page. */
+function AppNotFound() {
+  const { session, isLoading } = useAuth();
+  if (isLoading) return <LoadingState label="Loading…" />;
+  return (
+    <main className="mx-auto max-w-xl px-4 py-16">
+      {session ? (
+        <NotFound home={roleHomePath(session.platformRole)} homeLabel="Go to my home page" />
+      ) : (
+        <NotFound home="/" homeLabel="Go to the home page" />
+      )}
+    </main>
+  );
 }
 
 export default function App() {
@@ -60,6 +77,7 @@ export default function App() {
             <Route path="children/:childId" element={<ChildOverviewPage />} />
             <Route path="children/:childId/skills/:skillId" element={<SkillPage />} />
             <Route path="account" element={<AccountPage />} />
+            <Route path="*" element={<NotFound home="/parent" homeLabel="Go to your family" />} />
           </Route>
 
           {/* The child's space — deliberately outside ParentLayout's chrome (a child
@@ -147,7 +165,7 @@ export default function App() {
 
           {import.meta.env.DEV && <Route path="/__brand" element={<BrandSheet />} />}
           {import.meta.env.DEV && <Route path="/__play" element={<PlayGallery />} />}
-          <Route path="*" element={<LandingPage />} />
+          <Route path="*" element={<AppNotFound />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
