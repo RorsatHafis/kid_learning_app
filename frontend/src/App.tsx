@@ -18,7 +18,7 @@ import { ChildOverviewPage } from "@/features/parent/ChildOverviewPage";
 import { SkillPage } from "@/features/parent/SkillPage";
 import { AccountPage } from "@/features/parent/AccountPage";
 import { ChildHome } from "@/features/child/ChildHome";
-import { PlaySession } from "@/features/child/PlaySession";
+import { PlaySession, PracticeSession } from "@/features/child/PlaySession";
 import { ShelfPage } from "@/features/child/ShelfPage";
 
 // Staff areas are separate downloads: a family on a phone never loads the Content Studio,
@@ -79,6 +79,16 @@ export default function App() {
               <RequireAuth>
                 <RequireRole roles={["PARENT"]}>
                   <ShelfPage />
+                </RequireRole>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/learn/:childId/practice/:activityVersionId"
+            element={
+              <RequireAuth>
+                <RequireRole roles={["PARENT"]}>
+                  <PracticeSession />
                 </RequireRole>
               </RequireAuth>
             }

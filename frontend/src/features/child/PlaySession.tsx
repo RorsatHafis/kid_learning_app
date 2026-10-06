@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen, Library } from "lucide-react";
 import { Lantern, LanternString } from "@/features/world/Lantern";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
@@ -313,7 +313,7 @@ export function PlaySession() {
   }
 }
 
-function JourneyLink({ href, solid }: { href: string; solid?: boolean }) {
+function JourneyLink({ href, solid, toShelf = false }: { href: string; solid?: boolean; toShelf?: boolean }) {
   return (
     <Link
       to={href}
@@ -322,9 +322,170 @@ function JourneyLink({ href, solid }: { href: string; solid?: boolean }) {
         solid ? "bg-white text-tonle-900 hover:bg-tonle-50" : "text-tonle-700 ring-1 ring-tonle-200 hover:bg-tonle-50",
       )}
     >
-      <BookOpen size={19} aria-hidden /> My path
+      {toShelf ? <Library size={19} aria-hidden /> : <BookOpen size={19} aria-hidden />} {toShelf ? "My shelf" : "My path"}
     </Link>
   );
+}
+
+// ------------------------------------------------------------------ playing a book again (X24)
+
+type PracticePhase =
+  | { kind: "loading" }
+  | { kind: "error"; message: string; retry: boolean }
+  | Extract<Phase, { kind: "intro" | "playing" }>
+  | { kind: "completing" }
+  | { kind: "done"; title: string; correct: number; total: number };
+
+/**
+ * A book the child has already lit, played again from their shelf. It is free practice - an
+ * attempt outside the path - so its answers are scored and count as evidence like any other, and
+ * it moves nothing on the path: no "up next" here, and the path stays where it is.
+ */
+export function PracticeSession() {
+  const { childId = "", activityVersionId = "" } = useParams<{ childId: string; activityVersionId: string }>();
+  const child = useAsync(() => childrenApi.get(childId), [childId]);
+  const [phase, setPhase] = useState<PracticePhase>({ kind: "loading" });
+  useDocumentTitle(phase.kind === "intro" || phase.kind === "playing" ? phase.activity.title : "Play again");
+  const loadInFlight = useRef(false);
+  const shelfHref = `/learn/${childId}/shelf`;
+
+  const finish = useCallback(async (attemptId: string, title: string) => {
+    setPhase({ kind: "completing" });
+    try {
+      await activityAttemptApi.complete(attemptId);
+    } catch {
+      setPhase({ kind: "error", message: SAVE_FAILED, retry: true });
+      return;
+    }
+    playCue("complete");
+    const answers = await activityAttemptApi.listAnswers(attemptId).catch(() => [] as AnswerRecord[]);
+    setPhase({ kind: "done", title, correct: answers.filter((a) => a.correct).length, total: answers.length });
+  }, []);
+
+  const load = useCallback(async () => {
+    if (!childId || !activityVersionId || loadInFlight.current) return;
+    loadInFlight.current = true;
+    setPhase({ kind: "loading" });
+    try {
+      let attempt;
+      try {
+        // No path item: free practice. An unfinished practice of this book is resumed.
+        attempt = await activityAttemptApi.start(childId, { activityVersionId });
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 409) {
+          setPhase({ kind: "error", message: "You've started this book on your path. Finish it there first!", retry: false });
+        } else if (err instanceof ApiError && err.status === 404) {
+          setPhase({ kind: "error", message: "This book can't be played again just now.", retry: false });
+        } else {
+          setPhase({ kind: "error", message: LOAD_FAILED, retry: true });
+        }
+        return;
+      }
+      const [activity, answers] = await Promise.all([
+        activityContentApi.getVersion(activityVersionId),
+        activityAttemptApi.listAnswers(attempt.id),
+      ]);
+      const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
+      const ordered = { ...activity, items };
+      const answered = new Set(answers.map((answer) => answer.questionVersionId));
+      const resumeIndex = items.findIndex((question) => !answered.has(question.questionVersionId));
+      if (resumeIndex === -1) {
+        await finish(attempt.id, activity.title);
+      } else if (resumeIndex === 0) {
+        setPhase({ kind: "intro", attemptId: attempt.id, itemId: "", activity: ordered, reason: "Playing it again" });
+      } else {
+        setPhase({ kind: "playing", attemptId: attempt.id, itemId: "", activity: ordered, index: resumeIndex, result: null, startedAt: Date.now() });
+      }
+    } catch {
+      setPhase({ kind: "error", message: LOAD_FAILED, retry: true });
+    } finally {
+      loadInFlight.current = false;
+    }
+  }, [childId, activityVersionId, finish]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const shell = (content: React.ReactNode) => (
+    <ChildSpaceLayout childId={childId} childName={child.data?.displayName} home={shelfHref}>
+      {content}
+    </ChildSpaceLayout>
+  );
+
+  switch (phase.kind) {
+    case "loading":
+      return shell(<Waiting line="Getting your book ready…" />);
+    case "completing":
+      return shell(<Waiting line="Saving your work…" />);
+    case "error":
+      return shell(
+        phase.retry ? (
+          <Trouble onRetry={load} line={phase.message} />
+        ) : (
+          <div className="flex flex-col items-center gap-8 px-6 pt-24 text-center">
+            <BuddySays mood="encourage" size={140} tone="night">
+              {phase.message}
+            </BuddySays>
+            <JourneyLink href={shelfHref} solid toShelf />
+          </div>
+        ),
+      );
+    case "intro":
+      return shell(
+        <Intro
+          activity={phase.activity}
+          reason={phase.reason}
+          journeyHref={shelfHref}
+          onStart={() =>
+            setPhase({ kind: "playing", attemptId: phase.attemptId, itemId: "", activity: phase.activity, index: 0, result: null, startedAt: Date.now() })
+          }
+        />,
+      );
+    case "playing":
+      return shell(
+        <Question
+          key={`${phase.attemptId}:${phase.index}`}
+          phase={phase}
+          journeyHref={shelfHref}
+          onAnswered={(result) => setPhase({ ...phase, result })}
+          onResync={load}
+          onContinue={() => {
+            const nextIndex = phase.index + 1;
+            if (nextIndex < phase.activity.items.length) {
+              setPhase({ ...phase, index: nextIndex, result: null, startedAt: Date.now() });
+              return;
+            }
+            void finish(phase.attemptId, phase.activity.title);
+          }}
+        />,
+      );
+    case "done":
+      return shell(
+        <div className="px-4 pb-16 pt-24 sm:pt-28">
+          <Page labelledBy="practice-done" className="px-6 pb-10 pt-12 text-center motion-safe:animate-pop-in sm:px-14 sm:pb-12">
+            <div aria-hidden className="absolute -top-[4.5rem] right-4 sm:-top-20 sm:right-10">
+              <LearningBuddy mood="cheer" size={110} />
+            </div>
+            <h1 id="practice-done" className="font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+              {phase.total > 0 && phase.correct === phase.total ? "Perfect again!" : "Practice done!"}
+            </h1>
+            <p className="mt-1 text-lg font-medium text-ink-soft">You played “{phase.title}” again.</p>
+            {phase.total > 0 && (
+              <p className="mx-auto mt-5 w-fit rounded-pill bg-light-soft px-5 py-2 text-lg font-bold text-light-deep ring-1 ring-light/40">
+                You got {phase.correct} of {phase.total} right
+              </p>
+            )}
+            <div className="mt-8 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
+              <JourneyLink href={`/learn/${childId}`} />
+              <Link to={shelfHref} className={goButton}>
+                <Library size={22} aria-hidden /> Back to my shelf
+              </Link>
+            </div>
+          </Page>
+        </div>,
+      );
+  }
 }
 
 /** The big warm button that moves the child forward: pressed like a real key. */

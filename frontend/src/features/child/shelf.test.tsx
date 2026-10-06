@@ -159,6 +159,9 @@ describe("ShelfPage (X18)", () => {
 
     expect(await screen.findByText("1 book lit so far. Look how far you've come!")).toBeInTheDocument();
     expect(screen.getByRole("listitem", { name: "Book 1, lit" })).toBeInTheDocument();
+    // X24: a lit book can be played again (free practice); a book not yet lit cannot.
+    expect(screen.getByRole("link", { name: "Play Book 1 again" })).toHaveAttribute("href", "/learn/c1/practice/av-1");
+    expect(screen.queryByRole("link", { name: "Play Book 2 again" })).not.toBeInTheDocument();
     expect(screen.getByRole("listitem", { name: "Book 2, up next" })).toBeInTheDocument();
     // Review placed outside every chapter has its own shelf.
     expect(screen.getByRole("heading", { name: "Extra practice" })).toBeInTheDocument();

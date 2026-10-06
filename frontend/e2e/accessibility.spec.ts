@@ -85,6 +85,29 @@ test.describe("accessibility @phone", () => {
     await expect(page.getByRole("listitem", { name: /, up next$/ })).toHaveCount(1);
     await expectNoViolations(page, "child shelf");
 
+    // X24: the lit book played again from the shelf - free practice, back to the shelf at the end.
+    await page
+      .getByRole("link", { name: /^Play .* again$/ })
+      .first()
+      .click();
+    await expect(page.getByText("Playing it again")).toBeVisible();
+    await page.getByRole("button", { name: "Let's go" }).click();
+    for (let i = 0; i < 10; i++) {
+      await page.getByRole("textbox").fill("1");
+      await page.getByRole("button", { name: "Check" }).click();
+      const finish = page.getByRole("button", { name: /^Finish/ });
+      await expect(page.getByRole("button", { name: /^(Next|Finish)/ })).toBeVisible();
+      if (await finish.isVisible()) {
+        await finish.click();
+        break;
+      }
+      await page.getByRole("button", { name: /^Next/ }).click();
+    }
+    await expect(page.getByRole("heading", { name: /^(Practice done!|Perfect again!)$/ })).toBeVisible();
+    await expectNoViolations(page, "child: a book played again");
+    await page.getByRole("link", { name: /Back to my shelf/ }).click();
+    await expect(page.getByRole("heading", { name: "My shelf" })).toBeVisible();
+
     await page.goto("/parent/account");
     await page.waitForLoadState("networkidle");
     await expectNoViolations(page, "parent account");

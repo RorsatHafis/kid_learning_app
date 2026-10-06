@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Check, Play } from "lucide-react";
+import { ArrowLeft, Check, Play, RotateCcw } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
 import type { CurriculumProgress, JourneyStep, SkillProgress } from "@/lib/api/types";
@@ -151,7 +151,12 @@ function Shelves({
         </BuddySays>
       ) : (
         shelves.map((shelf, i) => (
-          <PathShelf key={shelf.overview.enrollmentId} shelf={shelf} spine={SHELF_SPINES[i % SHELF_SPINES.length]} />
+          <PathShelf
+            key={shelf.overview.enrollmentId}
+            childId={childId}
+            shelf={shelf}
+            spine={SHELF_SPINES[i % SHELF_SPINES.length]}
+          />
         ))
       )}
     </div>
@@ -198,7 +203,7 @@ function SkillCard({
 }
 
 /** One path as shelves, a shelf per chapter: lit books first-to-last, then the ones waiting. */
-function PathShelf({ shelf, spine }: { shelf: Shelf; spine: string }) {
+function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; spine: string }) {
   const { overview, journey } = shelf;
   const subject = overview.curriculum.subjectName ?? overview.curriculum.name;
   const groups =
@@ -242,6 +247,7 @@ function PathShelf({ shelf, spine }: { shelf: Shelf; spine: string }) {
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {group.steps.map((step, i) => (
                 <Book
+                  childId={childId}
                   key={step.learningPathItemId}
                   step={step}
                   spine={spine}
@@ -258,7 +264,19 @@ function PathShelf({ shelf, spine }: { shelf: Shelf; spine: string }) {
   );
 }
 
-function Book({ step, spine, isNext, index }: { step: JourneyStep; spine: string; isNext: boolean; index: number }) {
+function Book({
+  childId,
+  step,
+  spine,
+  isNext,
+  index,
+}: {
+  childId: string;
+  step: JourneyStep;
+  spine: string;
+  isNext: boolean;
+  index: number;
+}) {
   const lit = step.status === "COMPLETED";
   const tag = stepTag(step);
   const state = lit ? "lit" : isNext ? "up next" : "waiting";
@@ -292,6 +310,16 @@ function Book({ step, spine, isNext, index }: { step: JourneyStep; spine: string
           {lit ? "Lit" : isNext ? "Up next" : "Waiting"}
           {tag ? ` · ${tag.label}` : ""}
         </span>
+        {/* X24: a lit book can be played again - free practice, outside the path. */}
+        {lit && (
+          <Link
+            to={`/learn/${childId}/practice/${step.activityVersionId}`}
+            aria-label={`Play ${step.title} again`}
+            className="inline-flex min-h-9 w-fit items-center gap-1.5 rounded-pill bg-tonle-950 px-3 text-xs font-bold text-light-glow transition-colors duration-150 hover:bg-tonle-800"
+          >
+            <RotateCcw size={12} aria-hidden /> Play again
+          </Link>
+        )}
       </span>
     </li>
   );
