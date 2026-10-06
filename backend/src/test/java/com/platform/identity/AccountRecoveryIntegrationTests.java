@@ -312,6 +312,115 @@ class AccountRecoveryIntegrationTests {
                 .statusCode()).isEqualTo(400);
     }
 
+    // ------------------------------------------------------------------ email change
+
+    @Test
+    void theSignInAddressChangesOnlyWhenTheLinkSentToTheNewAddressIsOpened() throws Exception {
+        Session parent = register("PARENT");
+        String newEmail = "moved-" + UUID.randomUUID() + "@example.com";
+
+        assertThat(changeEmail(parent, PASSWORD, newEmail).statusCode()).isEqualTo(202);
+        assertThat(me(parent).get("email").asString()).as("nothing changes before the link is opened")
+                .isEqualTo(parent.email());
+        Link link = onlyLink(newEmail, "Confirm your new email");
+        assertThat(link.page()).isEqualTo("http://localhost:5173/confirm-email-change");
+
+        assertThat(confirmEmailChange(link.token()).statusCode()).isEqualTo(204);
+
+        JsonNode account = me(parent);
+        assertThat(account.get("email").asString()).isEqualTo(newEmail);
+        assertThat(account.get("emailVerifiedAt").isNull()).as("the new address was just proven").isFalse();
+        assertThat(loginStatus(newEmail, PASSWORD)).isEqualTo(200);
+        assertThat(loginStatus(parent.email(), PASSWORD)).isEqualTo(401);
+        assertThat(refreshStatus(parent.refreshToken())).as("sessions are kept").isEqualTo(200);
+        assertThat(auditCount(parent, "ACCOUNT_EMAIL_CHANGED")).isEqualTo(1);
+        // The old address is told, without the new one spelled out in full.
+        MimeMessage notice = messagesTo(parent.email()).stream()
+                .filter(m -> subject(m).contains("sign-in email was changed")).findFirst().orElseThrow();
+        assertThat((String) notice.getContent()).contains("mo***@example.com").doesNotContain(newEmail);
+        assertThat(confirmEmailChange(link.token()).statusCode()).as("used once").isEqualTo(400);
+    }
+
+    @Test
+    void aWrongCurrentPasswordSendsNothingAndCountsTowardsTheLockout() throws Exception {
+        Session parent = register("PARENT");
+        String newEmail = "moved-" + UUID.randomUUID() + "@example.com";
+
+        assertThat(changeEmail(parent, "Not-The-Password-2026", newEmail).statusCode()).isEqualTo(422);
+        assertThat(changeEmail(parent, PASSWORD, "not-an-email").statusCode()).isEqualTo(400);
+        assertThat(post("/api/v1/account/email", "{\"currentPassword\":\"" + PASSWORD + "\",\"newEmail\":\"" + newEmail
+                + "\"}", null).statusCode()).isEqualTo(401);
+
+        drain();
+        assertThat(messagesTo(newEmail)).isEmpty();
+        assertThat(jdbc.queryForObject("select failed_login_attempts from accounts where id = ?::uuid", Integer.class,
+                UUID.fromString(parent.accountId()))).isEqualTo(1);
+        assertThat(changeEmail(parent, PASSWORD, parent.email().toUpperCase()).statusCode())
+                .as("already the sign-in address").isEqualTo(409);
+    }
+
+    @Test
+    void anAddressThatAlreadyHasAnAccountIsToldInsteadOfSentALink() throws Exception {
+        Session parent = register("PARENT");
+        Session other = register("PARENT");
+
+        assertThat(changeEmail(parent, PASSWORD, other.email()).statusCode()).as("same answer as a free address")
+                .isEqualTo(202);
+
+        drain();
+        List<MimeMessage> toOther = messagesTo(other.email());
+        assertThat(toOther).anyMatch(m -> subject(m).contains("Someone tried to use this address"));
+        assertThat(toOther).noneMatch(m -> subject(m).contains("Confirm your new email"));
+        assertThat(me(parent).get("email").asString()).isEqualTo(parent.email());
+        // It still counts as an email sent: the next request waits like after any other.
+        assertThat(changeEmail(parent, PASSWORD, "free-" + UUID.randomUUID() + "@example.com").statusCode()).isEqualTo(429);
+    }
+
+    @Test
+    void anAddressTakenAfterTheLinkWasSentIsRefusedAndNothingChanges() throws Exception {
+        Session parent = register("PARENT");
+        String newEmail = "contested-" + UUID.randomUUID() + "@example.com";
+        changeEmail(parent, PASSWORD, newEmail);
+        Link link = onlyLink(newEmail, "Confirm your new email");
+        post("/api/v1/auth/register", "{\"email\":\"" + newEmail + "\",\"password\":\"" + PASSWORD
+                + "\",\"role\":\"PARENT\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null);
+
+        assertThat(confirmEmailChange(link.token()).statusCode()).isEqualTo(409);
+        assertThat(me(parent).get("email").asString()).isEqualTo(parent.email());
+    }
+
+    @Test
+    void afterTheMoveLinksSentToTheOldAddressStopWorkingAndANewerChangeLinkReplacesTheOlder() throws Exception {
+        Session parent = register("PARENT");
+        requestReset(parent.email());
+        Link resetToOldAddress = onlyLink(parent.email(), "Reset your");
+        String first = "first-" + UUID.randomUUID() + "@example.com";
+        String second = "second-" + UUID.randomUUID() + "@example.com";
+        changeEmail(parent, PASSWORD, first);
+        Link firstLink = onlyLink(first, "Confirm your new email");
+        backdateLinks(parent, 61);
+        assertThat(changeEmail(parent, PASSWORD, second).statusCode()).isEqualTo(202);
+
+        assertThat(confirmEmailChange(firstLink.token()).statusCode()).as("replaced").isEqualTo(400);
+        assertThat(confirmEmailChange(onlyLink(second, "Confirm your new email").token()).statusCode()).isEqualTo(204);
+        assertThat(reset(resetToOldAddress.token(), NEW_PASSWORD).statusCode())
+                .as("the old mailbox no longer controls the account").isEqualTo(400);
+        assertThat(confirmEmail(onlyLink(parent.email(), "Confirm your email").token()).statusCode()).isEqualTo(400);
+    }
+
+    @Test
+    void aDisabledAccountsChangeLinkStopsWorking() throws Exception {
+        Session parent = register("PARENT");
+        String newEmail = "moved-" + UUID.randomUUID() + "@example.com";
+        changeEmail(parent, PASSWORD, newEmail);
+        Link link = onlyLink(newEmail, "Confirm your new email");
+        jdbc.update("update accounts set status = 'DISABLED' where id = ?::uuid", UUID.fromString(parent.accountId()));
+
+        assertThat(confirmEmailChange(link.token()).statusCode()).isEqualTo(400);
+        assertThat(jdbc.queryForObject("select email from accounts where id = ?::uuid", String.class,
+                UUID.fromString(parent.accountId()))).isEqualTo(parent.email());
+    }
+
     // ------------------------------------------------------------------ mail
 
     private record Link(String page, String token) {
@@ -423,6 +532,15 @@ class AccountRecoveryIntegrationTests {
 
     private HttpResponse<String> confirmEmail(String token) throws Exception {
         return post("/api/v1/auth/email-verification/confirm", "{\"token\":\"" + token + "\"}", null);
+    }
+
+    private HttpResponse<String> changeEmail(Session session, String currentPassword, String newEmail) throws Exception {
+        return post("/api/v1/account/email", "{\"currentPassword\":\"" + currentPassword + "\",\"newEmail\":\""
+                + newEmail + "\"}", session.accessToken());
+    }
+
+    private HttpResponse<String> confirmEmailChange(String token) throws Exception {
+        return post("/api/v1/auth/email-change/confirm", "{\"token\":\"" + token + "\"}", null);
     }
 
     private int loginStatus(String email, String password) throws Exception {

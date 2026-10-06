@@ -59,6 +59,7 @@ public class AccountRecoveryService {
     static final Duration VERIFICATION_LINK_TTL = Duration.ofHours(24);
     static final Duration RESET_LINK_TTL = Duration.ofMinutes(30);
     static final Duration SETUP_LINK_TTL = Duration.ofDays(7);
+    static final Duration EMAIL_CHANGE_LINK_TTL = Duration.ofHours(24);
     static final Duration MIN_GAP_BETWEEN_EMAILS = Duration.ofSeconds(60);
     static final int MAX_EMAILS_PER_HOUR = 5;
 
@@ -147,6 +148,117 @@ public class AccountRecoveryService {
 
                 If you didn't create a Bookeyond Kid account, you can ignore this email.
                 """.formatted(mail.link("/verify-email", raw))));
+    }
+
+    // ------------------------------------------------------------------ email change
+
+    /**
+     * Sends the link that moves {@code account}'s sign-in address to {@code newEmail}, to
+     * that new address. The caller has already proven the current password and holds the
+     * account's row lock. Nothing changes until the link is opened.
+     *
+     * <p>The answer never says whether {@code newEmail} already has an account: if it
+     * does, that mailbox is told (it belongs to someone who can already sign in with it)
+     * and no link is sent. Same per-account email limits as every other link (429).
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void sendEmailChange(Account account, String newEmail, String requestedIp) {
+        String wanted = newEmail.strip();
+        if (Account.normalize(wanted).equals(account.getNormalizedEmail())) {
+            throw new IllegalStateException("This is already your sign-in email");
+        }
+        Instant now = Instant.now();
+        waitBeforeNextEmail(account.getId(), AccountActionPurpose.EMAIL_CHANGE, now).ifPresent(wait -> {
+            throw new TooManyEmailsException(wait);
+        });
+        if (accounts.findByNormalizedEmail(Account.normalize(wanted)).isPresent()) {
+            // Counts against the limit like a real link, so the timing and the limits look the same.
+            tokens.findByAccountIdAndPurposeAndConsumedAtIsNullAndInvalidatedAtIsNull(account.getId(),
+                    AccountActionPurpose.EMAIL_CHANGE).forEach(open -> open.invalidate(now));
+            AccountActionToken placeholder = AccountActionToken.issueEmailChange(account.getId(), wanted,
+                    RequestFingerprint.sha256Hex(randomToken()), now, now.plus(EMAIL_CHANGE_LINK_TTL), requestedIp);
+            placeholder.invalidate(now);
+            tokens.save(placeholder);
+            audit(account, "ACCOUNT_EMAIL_CHANGE_REQUESTED", Map.of());
+            events.publishEvent(new EmailMessage(wanted, "Someone tried to use this address on Bookeyond Kid", """
+                    Hello,
+
+                    Someone signed in to a Bookeyond Kid account asked to move it to this email \
+                    address. This address already has its own Bookeyond Kid account, so nothing \
+                    was changed.
+
+                    If you forgot your password, you can reset it at %s/forgot-password.
+
+                    If you don't know what this is about, you can ignore this email.
+                    """.formatted(mail.publicUrl())));
+            return;
+        }
+        tokens.findByAccountIdAndPurposeAndConsumedAtIsNullAndInvalidatedAtIsNull(account.getId(),
+                AccountActionPurpose.EMAIL_CHANGE).forEach(open -> open.invalidate(now));
+        String raw = randomToken();
+        tokens.save(AccountActionToken.issueEmailChange(account.getId(), wanted, RequestFingerprint.sha256Hex(raw), now,
+                now.plus(EMAIL_CHANGE_LINK_TTL), requestedIp));
+        audit(account, "ACCOUNT_EMAIL_CHANGE_REQUESTED", Map.of());
+        events.publishEvent(new EmailMessage(wanted, "Confirm your new email for Bookeyond Kid", """
+                Hello,
+
+                You asked to sign in to Bookeyond Kid with this email address from now on. \
+                To make the change, open this link:
+
+                %s
+
+                This link works once and expires in 24 hours. Until you open it, you keep \
+                signing in with your current address.
+
+                If you didn't ask for this, you can ignore this email.
+                """.formatted(mail.link("/confirm-email-change", raw))));
+    }
+
+    /**
+     * Moves the sign-in address to the one the link was sent to. Refused (409) if that
+     * address has meanwhile been taken by another account. On success the new address
+     * counts as confirmed, every other open link - all of which went to the old address -
+     * stops working, and the old address is told. Sessions are kept.
+     */
+    @Transactional
+    public void confirmEmailChange(String rawToken) {
+        Instant now = Instant.now();
+        AccountActionToken token = usableToken(rawToken, AccountActionPurpose.EMAIL_CHANGE, now);
+        Account account = accounts.findForUpdate(token.getAccountId()).orElseThrow(InvalidActionLinkException::new);
+        if (account.getStatus() == AccountStatus.DISABLED) {
+            throw new InvalidActionLinkException();
+        }
+        String newEmail = token.getNewEmail();
+        if (accounts.findByNormalizedEmail(Account.normalize(newEmail))
+                .filter(other -> !other.getId().equals(account.getId())).isPresent()) {
+            throw new IllegalStateException("This email address now belongs to another account");
+        }
+        String oldEmail = account.getEmail();
+        token.consume(now);
+        tokens.findByAccountIdAndConsumedAtIsNullAndInvalidatedAtIsNull(account.getId())
+                .forEach(open -> open.invalidate(now));
+        account.changeEmail(newEmail, now);
+        accounts.flush();
+        audit(account, "ACCOUNT_EMAIL_CHANGED", Map.of());
+        events.publishEvent(new EmailMessage(oldEmail, "Your Bookeyond Kid sign-in email was changed", """
+                Hello,
+
+                The Bookeyond Kid account that used this address now signs in with %s. \
+                Emails about the account, including password resets, go there from now on.
+
+                If this was you, there is nothing else to do.
+
+                If it wasn't, someone may know your password: contact the person who runs \
+                Bookeyond Kid for your family or school straight away.
+                """.formatted(masked(newEmail))));
+    }
+
+    /** {@code an***@example.com}: enough for the owner to recognise, not enough to harvest. */
+    static String masked(String email) {
+        int at = email.indexOf('@');
+        if (at <= 0) return "***";
+        String local = email.substring(0, at);
+        return local.substring(0, Math.min(2, local.length())) + "***" + email.substring(at);
     }
 
     // ------------------------------------------------------------------ password reset
@@ -300,12 +412,16 @@ public class AccountRecoveryService {
         // The newest link is the only one that works.
         tokens.findByAccountIdAndPurposeAndConsumedAtIsNullAndInvalidatedAtIsNull(accountId, purpose)
                 .forEach(open -> open.invalidate(now));
-        byte[] bytes = new byte[32];
-        random.nextBytes(bytes);
-        String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String raw = randomToken();
         tokens.save(AccountActionToken.issue(accountId, purpose, RequestFingerprint.sha256Hex(raw), now,
                 now.plus(ttl), requestedIp));
         return raw;
+    }
+
+    private String randomToken() {
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private AccountActionToken usableToken(String rawToken, AccountActionPurpose purpose, Instant now) {

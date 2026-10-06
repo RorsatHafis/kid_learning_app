@@ -47,6 +47,8 @@ export const authApi = {
   confirmEmail: (token: string) => apiClient.post<void>("/auth/email-verification/confirm", { token }, { skipAuth: true }),
   completeAccountSetup: (input: { token: string; newPassword: string }) =>
     apiClient.post<void>("/auth/account-setup/confirm", input, { skipAuth: true }),
+  // 400 for an unusable link, 409 when the new address now belongs to another account.
+  confirmEmailChange: (token: string) => apiClient.post<void>("/auth/email-change/confirm", { token }, { skipAuth: true }),
 };
 
 // identity/web/AccountController.java — always the signed-in account; no id in any path.
@@ -55,6 +57,8 @@ export const accountApi = {
   changePassword: (input: { currentPassword: string; newPassword: string }) =>
     apiClient.post<AuthResponse>("/account/password", input),
   signOutEverywhere: () => apiClient.post<{ sessionsEnded: number }>("/account/sign-out-everywhere"),
+  // 202 whether or not the new address has an account; 422 wrong current password, 409 already this address, 429 too soon.
+  requestEmailChange: (input: { currentPassword: string; newEmail: string }) => apiClient.post<void>("/account/email", input),
   // identity/web/AccountRecoveryController.java — 409 when already confirmed, 429 when sent too recently.
   resendVerification: () => apiClient.post<void>("/account/email-verification"),
   // family/web/FamilyDataExportController.java — everything held about this account and its family's children.

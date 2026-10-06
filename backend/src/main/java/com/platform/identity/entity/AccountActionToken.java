@@ -49,6 +49,10 @@ public class AccountActionToken extends AuditableEntity {
     @Column(name = "requested_ip", length = 64, updatable = false)
     private String requestedIp;
 
+    /** The address an EMAIL_CHANGE link proves; null for every other purpose (V50). */
+    @Column(name = "new_email", length = 320, updatable = false)
+    private String newEmail;
+
     protected AccountActionToken() {
         // JPA
     }
@@ -66,6 +70,16 @@ public class AccountActionToken extends AuditableEntity {
         token.issuedAt = issuedAt;
         token.expiresAt = expiresAt;
         token.requestedIp = requestedIp == null || requestedIp.length() <= 64 ? requestedIp : requestedIp.substring(0, 64);
+        return token;
+    }
+
+    /** An EMAIL_CHANGE link: proves the owner reads {@code newEmail}. */
+    public static AccountActionToken issueEmailChange(UUID accountId, String newEmail, String tokenHash,
+                                                      Instant issuedAt, Instant expiresAt, String requestedIp) {
+        Assert.hasText(newEmail, "newEmail must not be blank");
+        AccountActionToken token = issue(accountId, AccountActionPurpose.EMAIL_CHANGE, tokenHash, issuedAt, expiresAt,
+                requestedIp);
+        token.newEmail = newEmail;
         return token;
     }
 
@@ -100,6 +114,10 @@ public class AccountActionToken extends AuditableEntity {
 
     public Instant getExpiresAt() {
         return expiresAt;
+    }
+
+    public String getNewEmail() {
+        return newEmail;
     }
 
     public Instant getConsumedAt() {

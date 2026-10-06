@@ -140,6 +140,44 @@ test.describe("golden journeys", () => {
     await anonymous.close();
   });
 
+  test("changing the sign-in email: a link to the new address, the old address told, sign in with the new one @phone", async ({
+    page,
+    browser,
+    request,
+  }) => {
+    const email = uniqueEmail("mover");
+    const newEmail = uniqueEmail("moved");
+    await registerParent(page, email);
+
+    await page.goto("/parent/account");
+    await page.getByRole("button", { name: "Change email" }).click();
+    const form = page.getByRole("form", { name: "Change email" });
+    await form.getByLabel("New email address").fill(newEmail);
+    await form.getByLabel("Current password").fill(PASSWORD);
+    await expectNoViolations(page, "account - change email");
+    await form.getByRole("button", { name: "Send link" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "We sent a link to" })).toContainText(newEmail);
+
+    // The link is opened from the new mailbox, on a device that isn't signed in.
+    const link = linkIn(await waitForEmail(request, newEmail, "Confirm your new email"), "/confirm-email-change");
+    const elsewhere = await browser.newContext();
+    const mailbox = await elsewhere.newPage();
+    await mailbox.goto(link);
+    await expect(mailbox.getByRole("heading", { name: "Email changed" })).toBeVisible();
+    await expect(mailbox).not.toHaveURL(/token/);
+    await expectNoViolations(mailbox, "email changed");
+    expect(await waitForEmail(request, email, "sign-in email was changed")).not.toContain(newEmail);
+
+    // This device, still signed in, shows the new address; only the new one signs in.
+    await page.reload();
+    await expect(page.getByRole("main").getByText(newEmail, { exact: true })).toBeVisible();
+    await logIn(mailbox, email, PASSWORD);
+    await expect(mailbox.getByRole("alert").first()).toBeVisible();
+    await logIn(mailbox, newEmail, PASSWORD);
+    await expect(mailbox.getByRole("heading", { name: "Your family" })).toBeVisible();
+    await elsewhere.close();
+  });
+
   test("admin: suspending a parent signs them out everywhere; reinstating lets them back", async ({ page, browser }) => {
     test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
     const parentContext = await browser.newContext();

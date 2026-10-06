@@ -7,6 +7,8 @@ import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.service.AccountSettingsService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -47,6 +49,9 @@ public class AccountController {
     public record SignOutEverywhereResponse(int sessionsEnded) {
     }
 
+    public record EmailChangeRequest(@NotBlank String currentPassword, @NotBlank @Email @Size(max = 320) String newEmail) {
+    }
+
     @GetMapping
     public AccountResponse me(@AuthenticationPrincipal UUID accountId) {
         return AccountResponse.of(accountSettingsService.get(accountId));
@@ -65,6 +70,18 @@ public class AccountController {
         Account account = accountSettingsService.get(accountId);
         return ResponseEntity.ok(new AuthResponse(result.accountId(), account.getEmail(), result.platformRole(),
                 result.accessToken(), result.expiresAt(), result.refreshToken(), result.refreshTokenExpiresAt()));
+    }
+
+    /**
+     * Sends a link to {@code newEmail}; the address changes when it is opened. 202 whether
+     * or not the new address already has an account (that mailbox is told instead).
+     */
+    @PostMapping("/email")
+    public ResponseEntity<Void> requestEmailChange(@Valid @RequestBody EmailChangeRequest request,
+                                                   @AuthenticationPrincipal UUID accountId, HttpServletRequest http) {
+        accountSettingsService.requestEmailChange(accountId, request.currentPassword(), request.newEmail(),
+                http.getRemoteAddr());
+        return ResponseEntity.accepted().build();
     }
 
     /** Ends every session on every device, this one included. */

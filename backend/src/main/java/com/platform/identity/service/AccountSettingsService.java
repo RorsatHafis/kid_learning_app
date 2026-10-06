@@ -42,11 +42,12 @@ public class AccountSettingsService {
     private final JwtService jwtService;
     private final AccountSessionService accountSessionService;
     private final AuditService auditService;
+    private final AccountRecoveryService recovery;
 
     public AccountSettingsService(AccountRepository accountRepository, PasswordEncoder passwordEncoder,
                                   PasswordPolicy passwordPolicy, SecurityProperties securityProperties,
                                   JwtService jwtService, AccountSessionService accountSessionService,
-                                  AuditService auditService) {
+                                  AuditService auditService, AccountRecoveryService recovery) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
@@ -54,6 +55,7 @@ public class AccountSettingsService {
         this.jwtService = jwtService;
         this.accountSessionService = accountSessionService;
         this.auditService = auditService;
+        this.recovery = recovery;
     }
 
     @Transactional(readOnly = true)
@@ -94,6 +96,31 @@ public class AccountSettingsService {
 
         return new LoginResult(account.getId(), account.getPlatformRole(), issued.token(), issued.expiresAt(),
                 session.rawToken(), session.expiresAt());
+    }
+
+    /**
+     * Asks to move the sign-in address. Needs the current password, under the same lockout
+     * as login, so a stolen access token can't redirect the account's emails; the move
+     * happens only when the link sent to the new address is opened.
+     */
+    @Transactional(noRollbackFor = {CurrentPasswordMismatchException.class, AccountLockedException.class})
+    public void requestEmailChange(UUID accountId, String currentPassword, String newEmail, String ipAddress) {
+        Account account = accountRepository.findForUpdate(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account", accountId));
+        Instant now = Instant.now();
+        if (account.getStatus() != AccountStatus.ACTIVE) {
+            throw new AccessDeniedException("Account is not active");
+        }
+        if (account.isLocked(now)) {
+            throw new AccountLockedException(account.getLockedUntil());
+        }
+        if (!passwordEncoder.matches(currentPassword, account.getPasswordHash())) {
+            account.recordFailedLogin(
+                    securityProperties.lockout().maxAttempts(), securityProperties.lockout().duration(), now);
+            throw new CurrentPasswordMismatchException();
+        }
+        account.resetFailedLogins();
+        recovery.sendEmailChange(account, newEmail, ipAddress);
     }
 
     /** Signs the account out on every device. Returns how many sessions were ended. */

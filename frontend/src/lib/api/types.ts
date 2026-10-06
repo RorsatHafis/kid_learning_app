@@ -37,7 +37,7 @@ export interface AccountProfile {
   email: string;
   platformRole: PlatformRole;
   status: AccountStatus;
-  /** null until the email address has been verified (no verification flow exists yet). */
+  /** null until the sign-in address has been proven by an emailed link. */
   emailVerifiedAt: string | null;
   createdAt: string;
 }

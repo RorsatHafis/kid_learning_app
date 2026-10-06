@@ -28,6 +28,8 @@ interface AuthContextValue {
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   /** Ends every session on every device, this one included, then signs out here. */
   signOutEverywhere: () => Promise<void>;
+  /** Re-reads the signed-in account (e.g. after its email changed) into the session. */
+  refreshAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -118,6 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   }, []);
 
+  const refreshAccount = useCallback(async () => {
+    const me = await accountApi.me();
+    setSession((current) => (current && current.accountId === me.id ? { ...current, email: me.email } : current));
+  }, []);
+
   const register = useCallback(
     async (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL" }) => {
       const data = await authApi.register(input);
@@ -150,7 +157,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, isLoading, sessionUnavailable, retrySession, login, register, logout, changePassword, signOutEverywhere }}
+      value={{
+        session,
+        isLoading,
+        sessionUnavailable,
+        retrySession,
+        login,
+        register,
+        logout,
+        changePassword,
+        signOutEverywhere,
+        refreshAccount,
+      }}
     >
       {children}
     </AuthContext.Provider>

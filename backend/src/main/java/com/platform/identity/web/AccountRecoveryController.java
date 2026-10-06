@@ -68,6 +68,13 @@ public class AccountRecoveryController {
         return ResponseEntity.noContent().build();
     }
 
+    /** Opened from the new mailbox: moves the sign-in address. Unauthenticated, like the others. */
+    @PostMapping("/auth/email-change/confirm")
+    public ResponseEntity<Void> confirmEmailChange(@Valid @RequestBody EmailVerificationConfirmRequest request) {
+        recovery.confirmEmailChange(request.token());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/account/email-verification")
     public ResponseEntity<Void> resendVerification(@AuthenticationPrincipal UUID accountId, HttpServletRequest http) {
         recovery.resendVerification(accountId, http.getRemoteAddr());

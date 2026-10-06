@@ -132,6 +132,20 @@ public class Account extends AuditableEntity {
 
     }
 
+    /**
+     * Moves the sign-in address to one its owner has just proven (an EMAIL_CHANGE link was
+     * opened from it), so the new address counts as confirmed from {@code provenAt}.
+     */
+    public void changeEmail(String newEmail, Instant provenAt) {
+
+        Assert.hasText(newEmail, "newEmail must not be blank");
+        Assert.notNull(provenAt, "provenAt must not be null");
+        this.email = newEmail.strip();
+        this.normalizedEmail = normalize(newEmail);
+        this.emailVerifiedAt = provenAt;
+
+    }
+
     public boolean isEmailVerified() {
         return emailVerifiedAt != null;
     }

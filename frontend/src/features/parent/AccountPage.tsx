@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckCircle2, Download, LogOut, MailCheck, ShieldCheck } from "lucide-react";
+import { AtSign, CheckCircle2, Download, LogOut, MailCheck, ShieldCheck } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { accountApi } from "@/lib/api/endpoints";
 import { ApiError, waitInWords } from "@/lib/api/ApiError";
@@ -49,6 +49,9 @@ export function AccountPage() {
                 <dd className="break-all font-semibold text-ink">{profile.data.email}</dd>
                 <dd className="mt-2">
                   <EmailConfirmation confirmed={profile.data.emailVerifiedAt !== null} onAlreadyConfirmed={profile.refetch} />
+                </dd>
+                <dd className="mt-4">
+                  <ChangeEmail currentEmail={profile.data.email} />
                 </dd>
               </div>
               <div>
@@ -140,6 +143,119 @@ function EmailConfirmation({ confirmed, onAlreadyConfirmed }: { confirmed: boole
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Moving the sign-in address. The current password is required, and nothing changes until
+ * the link sent to the new address is opened — so a typo can't lock anyone out.
+ */
+function ChangeEmail({ currentEmail }: { currentEmail: string }) {
+  const [open, setOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
+  const [saving, setSaving] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+
+  function close() {
+    setOpen(false);
+    setNewEmail("");
+    setPassword("");
+    setErrors({});
+  }
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const wanted = newEmail.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(wanted)) {
+      setErrors({ email: "Enter an email address like name@example.com." });
+      return;
+    }
+    if (wanted.toLowerCase() === currentEmail.toLowerCase()) {
+      setErrors({ email: "That's already your sign-in email." });
+      return;
+    }
+    setErrors({});
+    setSaving(true);
+    try {
+      await accountApi.requestEmailChange({ currentPassword: password, newEmail: wanted });
+      setSentTo(wanted);
+      close();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 422) {
+        setErrors({ password: "That isn't your current password." });
+      } else if (err instanceof ApiError && err.status === 409) {
+        setErrors({ email: "That's already your sign-in email." });
+      } else if (err instanceof ApiError && err.status === 423) {
+        setErrors({ form: "Too many incorrect attempts. For your security the account is locked for a while." });
+      } else if (err instanceof ApiError && err.isRateLimited) {
+        const seconds = err.problem?.retryAfterSeconds;
+        setErrors({ form: `We sent a link recently.${seconds ? ` You can ask for another in ${waitInWords(seconds)}.` : ""}` });
+      } else if (err instanceof ApiError && err.status === 400) {
+        setErrors({ email: "Enter an email address like name@example.com." });
+      } else {
+        setErrors({ form: "We couldn't send the link just now. Please try again." });
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <div className="flex flex-col items-start gap-2">
+        {sentTo && (
+          <p role="status" className="flex items-start gap-2 text-sm font-semibold text-palm-deep">
+            <MailCheck size={16} className="mt-0.5 shrink-0" aria-hidden />
+            <span>
+              We sent a link to <span className="break-all">{sentTo}</span>. Open it within 24 hours to finish — until then you
+              sign in with your current address.
+            </span>
+          </p>
+        )}
+        <Button size="md" variant="outline" onClick={() => setOpen(true)} className="w-fit">
+          <AtSign size={16} aria-hidden /> Change email
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={onSubmit} noValidate aria-label="Change email" className="flex flex-col gap-4">
+      <FormField
+        label="New email address"
+        type="email"
+        autoComplete="email"
+        required
+        value={newEmail}
+        onChange={(e) => setNewEmail(e.target.value)}
+        error={errors.email}
+      />
+      <FormField
+        label="Current password"
+        type="password"
+        autoComplete="current-password"
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        error={errors.password}
+      />
+      <p className="text-sm text-ink-soft">We'll send a link to the new address. Your email changes when you open it.</p>
+      {errors.form && (
+        <p role="alert" className="text-sm font-medium text-brick-deep">
+          {errors.form}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" size="md" disabled={saving || !newEmail || !password}>
+          <MailCheck size={16} aria-hidden /> {saving ? "Sending…" : "Send link"}
+        </Button>
+        <Button type="button" size="md" variant="ghost" onClick={close} disabled={saving}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }
 

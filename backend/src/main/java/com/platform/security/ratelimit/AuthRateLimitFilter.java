@@ -50,6 +50,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
                 "/api/v1/auth/password-reset/confirm", login,
                 "/api/v1/auth/email-verification/confirm", login,
                 "/api/v1/auth/account-setup/confirm", login,
+                "/api/v1/auth/email-change/confirm", login,
                 "/api/v1/auth/register", new TokenBucketLimiter(properties.registerPerHour(), Duration.ofHours(1), nanoClock),
                 "/api/v1/auth/password-reset",
                 new TokenBucketLimiter(properties.recoveryPerHour(), Duration.ofHours(1), nanoClock),
