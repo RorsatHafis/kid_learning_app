@@ -9,11 +9,13 @@ import com.platform.learning.service.LearningJourneyService.Journey;
 import com.platform.learning.service.ProgressChangeService;
 import com.platform.learning.service.SkillProgressService;
 import com.platform.learning.service.SkillStoryService;
+import com.platform.review.service.DueReviewService;
 import com.platform.learning.service.SkillProgressService.CurriculumProgress;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -44,17 +46,32 @@ public class LearningJourneyController {
     private final FamilyAccessGuard familyAccessGuard;
     private final ProgressChangeService progressChangeService;
     private final SkillStoryService skillStoryService;
+    private final DueReviewService dueReviewService;
 
     public LearningJourneyController(LearningJourneyService learningJourneyService,
                                      SkillProgressService skillProgressService, EnrollmentService enrollmentService,
                                      FamilyAccessGuard familyAccessGuard, ProgressChangeService progressChangeService,
-                                     SkillStoryService skillStoryService) {
+                                     SkillStoryService skillStoryService, DueReviewService dueReviewService) {
         this.learningJourneyService = learningJourneyService;
         this.skillProgressService = skillProgressService;
         this.enrollmentService = enrollmentService;
         this.familyAccessGuard = familyAccessGuard;
         this.progressChangeService = progressChangeService;
         this.skillStoryService = skillStoryService;
+        this.dueReviewService = dueReviewService;
+    }
+
+    public record PlacedReviews(int placed) {
+    }
+
+    /**
+     * X25: places the child's due reviews on their paths that have nothing waiting (Smart Review
+     * otherwise places them only after a completed step). Called when the child's space opens; idempotent.
+     */
+    @PostMapping("/api/v1/children/{childId}/reviews/place-due")
+    public PlacedReviews placeDueReviews(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return new PlacedReviews(dueReviewService.placeDueReviews(childId));
     }
 
     @GetMapping("/api/v1/children/{childId}/enrollments")

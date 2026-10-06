@@ -26,7 +26,11 @@ export function ChildHome() {
   const { childId = "" } = useParams<{ childId: string }>();
   const [params, setParams] = useSearchParams();
   const child = useAsync(() => childrenApi.get(childId), [childId]);
-  const enrollments = useAsync(() => learningApi.enrollments(childId), [childId]);
+  // X25: a review that fell due after the last step is placed first, so it is there to play. Never blocks the home.
+  const enrollments = useAsync(async () => {
+    await learningApi.placeDueReviews(childId).catch(() => null);
+    return learningApi.enrollments(childId);
+  }, [childId]);
 
   const selected: EnrollmentOverview | null = useMemo(() => {
     const list = enrollments.data ?? [];

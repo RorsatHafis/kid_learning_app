@@ -125,6 +125,15 @@ public class SmartReviewService {
      */
     @Transactional
     public Optional<LearningPathItem> insertDueReviewOnPath(UUID childId, UUID learningPathId) {
+        return insertDueReviewOnPath(childId, learningPathId, null);
+    }
+
+    /**
+     * The same placement, for due reviews of {@code skills} only (null: any skill). X25: used when a
+     * path has nothing waiting, so a review lands on a path whose curriculum teaches its skill.
+     */
+    @Transactional
+    public Optional<LearningPathItem> insertDueReviewOnPath(UUID childId, UUID learningPathId, java.util.Set<UUID> skills) {
         Instant now = Instant.now();
 
         // Repeated calls after the same completion are expected (browser retries,
@@ -143,6 +152,7 @@ public class SmartReviewService {
         List<ReviewItem> active = reviewItemRepository.findByChildIdAndStatus(childId, ReviewItemStatus.ACTIVE);
 
         List<ReviewItem> due = active.stream()
+                .filter(item -> skills == null || skills.contains(item.getSkillId()))
                 .filter(item -> reviewScheduleRepository.findByReviewItemId(item.getId())
                         .map(schedule -> !schedule.getDueAt().isAfter(now))
                         .orElse(false))

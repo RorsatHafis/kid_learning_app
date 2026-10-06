@@ -78,6 +78,8 @@ export const learningApi = {
   enrollments: (childId: string) => apiClient.get<EnrollmentOverview[]>(`/children/${childId}/enrollments`),
   journey: (enrollmentId: string) => apiClient.get<Journey>(`/enrollments/${enrollmentId}/journey`),
   skills: (childId: string) => apiClient.get<CurriculumProgress[]>(`/children/${childId}/skills`),
+  /** X25: places due reviews on paths with nothing waiting (Smart Review otherwise places them after a completed step). */
+  placeDueReviews: (childId: string) => apiClient.post<{ placed: number }>(`/children/${childId}/reviews/place-due`),
   /** One skill, explained (X19): where it stands, the activities behind it, what is waiting for it. */
   skill: (childId: string, skillId: string) => apiClient.get<SkillStory>(`/children/${childId}/skills/${skillId}`),
   /** What changed in the last `days` (7–90): each skill answered on, where it stood then and stands now (X12). */
