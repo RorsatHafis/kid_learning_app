@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail, workspaceLink } from "./support";
 
 /** "3 + 4 = ?" → "7". The seeded Maths path asks sums; anything else gets a plain guess. */
 function answerFor(prompt: string): string {
@@ -148,7 +148,7 @@ test.describe("golden journeys", () => {
     await registerParent(parentPage, email);
 
     await logIn(page, ADMIN_EMAIL, ADMIN_PASSWORD);
-    await page.getByRole("link", { name: "Accounts" }).click();
+    await workspaceLink(page, "Accounts");
     await page.getByLabel("Email address").fill(email);
     await page.getByRole("button", { name: "Find" }).click();
     await page.getByRole("button", { name: "Suspend account…" }).click();

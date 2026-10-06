@@ -56,6 +56,9 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
       LOGGING_LEVEL_ORG_HIBERNATE_SQL: WARN
       LOGGING_LEVEL_COM_PLATFORM: INFO
+      # Accounts registered per address per hour (abuse protection). The same 20 as the application's
+      # default; only the CI journeys raise it, since every one of them registers from one address.
+      RATE_LIMIT_REGISTER_PER_HOUR: ${RATE_LIMIT_REGISTER_PER_HOUR:-20}
     volumes:
       - media_data:/var/lib/bookeyond/media
     depends_on:

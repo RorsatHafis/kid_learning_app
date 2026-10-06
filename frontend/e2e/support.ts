@@ -45,6 +45,15 @@ export function linkIn(text: string, path: string): string {
   return match[0];
 }
 
+/** A workspace's menu link. On a phone the menu is behind its button, so it is opened first - as a person would. */
+export async function workspaceLink(page: Page, name: string) {
+  const menu = page.getByRole("button", { name: "Open menu" });
+  const link = page.getByRole("link", { name, exact: true });
+  await expect(menu.or(link).first()).toBeVisible();
+  if (await menu.isVisible()) await menu.click();
+  await link.click();
+}
+
 export async function logIn(page: Page, email: string, password: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);

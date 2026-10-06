@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqueEmail } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqueEmail, workspaceLink } from "./support";
 
 const isoDay = (daysFromNow: number) => {
   const d = new Date();
@@ -13,7 +13,7 @@ const isoDay = (daysFromNow: number) => {
  * moved with a recorded reason; ending it returns the family to the default plan. No payment
  * is involved anywhere (PD-09).
  */
-test("plans: an administrator gives a dated plan, the family sees its end and what follows, the end moves, then it ends", async ({
+test("plans: an administrator gives a dated plan, the family sees its end and what follows, the end moves, then it ends @phone", async ({
   page,
   browser,
 }) => {
@@ -29,7 +29,7 @@ test("plans: an administrator gives a dated plan, the family sees its end and wh
   const planName = `E2E pilot ${suffix}`;
   const operator = await (await browser.newContext()).newPage();
   await logIn(operator, ADMIN_EMAIL, ADMIN_PASSWORD);
-  await operator.getByRole("link", { name: "Plans" }).click();
+  await workspaceLink(operator, "Plans");
   await operator.getByRole("button", { name: "New plan" }).click();
   await operator.getByLabel("Name families will see").fill(planName);
   await operator.getByLabel(/^Code/).fill(`E2E_PILOT_${suffix}`);

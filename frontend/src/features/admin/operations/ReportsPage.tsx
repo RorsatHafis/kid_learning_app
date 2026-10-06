@@ -46,7 +46,7 @@ export function ReportsPage() {
             ))}
           </div>
           <Panel title="The same figures as a table" flush>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Weekly figures, as a table">
               <table className="w-full min-w-[40rem] text-sm">
                 <caption className="sr-only">Platform figures by week, oldest first</caption>
                 <thead>

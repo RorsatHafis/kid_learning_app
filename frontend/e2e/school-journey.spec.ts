@@ -1,5 +1,15 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail } from "./support";
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  PASSWORD,
+  expectNoViolations,
+  linkIn,
+  logIn,
+  uniqueEmail,
+  waitForEmail,
+  workspaceLink,
+} from "./support";
 
 /**
  * The school side end to end: a principal applies, an administrator approves, the principal sets
@@ -10,7 +20,7 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, linkIn, logI
  */
 test.use({ contextOptions: { reducedMotion: "reduce" } });
 
-test("school: principal applies, is approved, sets up the school; an invited teacher joins a class", async ({
+test("school: principal applies, is approved, sets up the school; an invited teacher joins a class @phone", async ({
   page,
   browser,
   request,
@@ -36,7 +46,7 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   const adminContext = await browser.newContext();
   const admin = await adminContext.newPage();
   await logIn(admin, ADMIN_EMAIL, ADMIN_PASSWORD);
-  await admin.getByRole("link", { name: "Staff" }).click();
+  await workspaceLink(admin, "Staff");
   const application = admin.getByRole("listitem").filter({ hasText: principalEmail });
   await application.getByRole("button", { name: "Approve" }).click();
   await expect(application).toHaveCount(0);
@@ -230,7 +240,7 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expect(teacher.getByRole("button", { name: "New skill" })).toHaveCount(0);
   await expect(teacher.getByRole("button", { name: /^Manage skill/ })).toHaveCount(0);
   await expectNoViolations(teacher, "teacher: the catalog, read-only");
-  await teacher.getByRole("link", { name: "Media library" }).click();
+  await workspaceLink(teacher, "Media library");
   await expect(teacher.getByRole("heading", { level: 1, name: "Media library" })).toBeVisible();
 
   await familyContext.close();

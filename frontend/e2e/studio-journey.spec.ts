@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqueEmail } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqueEmail, workspaceLink } from "./support";
 
 /**
  * Content golden journey: an administrator authors a small maths path in the Content Studio
@@ -16,7 +16,7 @@ const PICTURE = Buffer.from(
 );
 test.use({ contextOptions: { reducedMotion: "reduce" } });
 
-test("studio: author, check, publish; a child plays exactly what was published", async ({ page, browser }) => {
+test("studio: author, check, publish; a child plays exactly what was published @phone", async ({ page, browser }) => {
   test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
   test.setTimeout(180_000);
   const tag = Date.now().toString(36).toUpperCase();
@@ -25,7 +25,7 @@ test("studio: author, check, publish; a child plays exactly what was published",
   const prompt = `How many stars? ★★★ (${tag})`;
 
   await logIn(page, ADMIN_EMAIL, ADMIN_PASSWORD);
-  await page.getByRole("link", { name: "Content Studio" }).click();
+  await workspaceLink(page, "Content Studio");
   // Creation forms open on demand (they start open only while a list is empty).
   await page.getByRole("button", { name: "New subject" }).click();
   await page.getByLabel("Name", { exact: true }).fill(subject);

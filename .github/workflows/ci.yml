@@ -71,6 +71,8 @@ jobs:
       ADMIN_PASSWORD: CI-Admin-Pass-2026
       E2E_ADMIN_EMAIL: admin@bk-ci.test
       E2E_ADMIN_PASSWORD: CI-Admin-Pass-2026
+      # The journeys (desktop and phone) register more than 20 accounts from one address within the hour.
+      RATE_LIMIT_REGISTER_PER_HOUR: "1000"
     steps:
       - uses: actions/checkout@v4
       - name: Build and start the product

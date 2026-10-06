@@ -203,7 +203,7 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
         <summary className="w-fit cursor-pointer text-sm font-semibold text-tonle-700 hover:text-tonle-900">
           Show as a table
         </summary>
-        <div className="mt-3 overflow-x-auto">
+        <div className="mt-3 overflow-x-auto" tabIndex={0} role="region" aria-label="The class week by week, as a table">
           <table className="w-full min-w-[36rem] text-sm">
             <caption className="sr-only">Where the class stood at the end of each week, and its answers that week</caption>
             <thead>
