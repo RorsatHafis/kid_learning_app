@@ -49,17 +49,21 @@ export interface AccountProfile {
   /** null until the sign-in address has been proven by an emailed link. */
   emailVerifiedAt: string | null;
   createdAt: string;
+  /** When the account will be erased, if its owner asked to delete it. */
+  eraseAfter: string | null;
 }
 
 // ---- child/entity/ChildStatus.java, child/web/ChildDtos.java ----
 
-export type ChildStatus = "ACTIVE" | "ARCHIVED";
+/** DELETION_PENDING: the family asked to delete the child; erased at `eraseAfter` unless kept. */
+export type ChildStatus = "ACTIVE" | "ARCHIVED" | "DELETION_PENDING";
 
 export interface Child {
   id: string;
   displayName: string;
   dateOfBirth: string; // ISO date (LocalDate)
   status: ChildStatus;
+  eraseAfter: string | null;
 }
 
 // ---- curriculum/web/CurriculumDtos.java ----

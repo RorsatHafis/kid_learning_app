@@ -1,5 +1,6 @@
 package com.platform.subscription.service;
 
+import com.platform.child.entity.ChildStatus;
 import com.platform.child.entity.Child;
 import com.platform.child.repository.ChildRepository;
 import com.platform.common.web.ResourceNotFoundException;
@@ -94,7 +95,7 @@ public class EntitlementService {
     @Transactional(readOnly = true)
     public Map<EntitlementKey, Integer> usage(UUID familyId) {
         Map<EntitlementKey, Integer> usage = new EnumMap<>(EntitlementKey.class);
-        usage.put(EntitlementKey.CHILDREN_MAX, (int) children.countByFamilyId(familyId));
+        usage.put(EntitlementKey.CHILDREN_MAX, (int) children.countByFamilyIdAndStatus(familyId, ChildStatus.ACTIVE));
         int busiest = children.findByFamilyId(familyId).stream().mapToInt(child -> journeysOf(child.getId())).max().orElse(0);
         usage.put(EntitlementKey.JOURNEYS_PER_CHILD_MAX, busiest);
         return usage;
@@ -108,7 +109,8 @@ public class EntitlementService {
     public void requireRoomForChild(UUID familyId) {
         families.findByIdForUpdate(familyId).orElseThrow(() -> new ResourceNotFoundException("Family", familyId));
         Integer limit = effectivePlan(familyId).limit(EntitlementKey.CHILDREN_MAX);
-        if (limit != null && children.countByFamilyId(familyId) >= limit) {
+        // A child being deleted no longer takes a place.
+        if (limit != null && children.countByFamilyIdAndStatus(familyId, ChildStatus.ACTIVE) >= limit) {
             throw new PlanLimitException(EntitlementKey.CHILDREN_MAX, limit);
         }
     }

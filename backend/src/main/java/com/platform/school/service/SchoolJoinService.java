@@ -281,6 +281,25 @@ public class SchoolJoinService {
                 Map.of("schoolId", schoolId, "childId", childId, "practiceWithdrawn", withdrawn));
     }
 
+    /**
+     * Ends every school's access to a child the family is deleting (Y3), exactly as if the
+     * family ended each one. The caller has checked the family's access. Returns how many ended.
+     */
+    @Transactional
+    public int revokeEverySchool(UUID accountId, UUID childId) {
+        Instant now = Instant.now();
+        List<SchoolChildAccess> active = grants.findByChildIdAndStatusOrderByGrantedAtAsc(childId, SchoolChildAccessStatus.ACTIVE);
+        for (SchoolChildAccess grant : active) {
+            UUID schoolId = grant.getSchoolId();
+            grant.revoke(accountId, now);
+            classEnrollments.findActiveInSchool(childId, schoolId).forEach(ClassEnrollment::remove);
+            int withdrawn = withdrawClassPractice(classes.findBySchoolId(schoolId).stream().map(SchoolClass::getId).toList(), childId);
+            record(accountId, "SCHOOL_ACCESS_REVOKED", "SCHOOL_CHILD_ACCESS", grant.getId(),
+                    Map.of("schoolId", schoolId, "childId", childId, "practiceWithdrawn", withdrawn, "reason", "CHILD_DELETION"));
+        }
+        return active.size();
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /**

@@ -10,6 +10,7 @@ import { chapterOf } from "@/features/learning/chapters";
 import { AddChildForm } from "./AddChildForm";
 import { lastPlayedText } from "./familyText";
 import { ChildSeal, SceneBand } from "./ui";
+import { PendingChildChapter } from "./Deletion";
 import type { Child, EnrollmentOverview } from "@/lib/api/types";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
@@ -44,7 +45,11 @@ export function ParentHome() {
             <ul className="divide-y divide-line">
               {children.map((child) => (
                 <li key={child.id}>
-                  <ChildChapter child={child} />
+                  {child.status === "DELETION_PENDING" ? (
+                    <PendingChildChapter child={child} onKept={refetch} />
+                  ) : (
+                    <ChildChapter child={child} />
+                  )}
                 </li>
               ))}
             </ul>

@@ -39,6 +39,10 @@ public class Account extends AuditableEntity {
  
     @Column(name = "email_verified_at")
     private Instant emailVerifiedAt;
+
+    /** When this account is erased with its family (V51); null unless its owner asked. */
+    @Column(name = "erase_after")
+    private Instant eraseAfter;
  
     @Column(name = "failed_login_attempts", nullable = false)
     private int failedLoginAttempts;
@@ -144,6 +148,20 @@ public class Account extends AuditableEntity {
         this.normalizedEmail = normalize(newEmail);
         this.emailVerifiedAt = provenAt;
 
+    }
+
+    /** Its owner asked to delete the account; it keeps working until {@code at}. */
+    public void scheduleErasure(Instant at) {
+        Assert.notNull(at, "at must not be null");
+        this.eraseAfter = at;
+    }
+
+    public void cancelErasure() {
+        this.eraseAfter = null;
+    }
+
+    public Instant getEraseAfter() {
+        return eraseAfter;
     }
 
     public boolean isEmailVerified() {

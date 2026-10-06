@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { BookOpen, Check, Library, Play } from "lucide-react";
+import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
 import type { Chapter, EnrollmentOverview, Journey, JourneyStep } from "@/lib/api/types";
@@ -44,6 +45,15 @@ export function ChildHome() {
     return (
       <ChildSpaceLayout childId={childId} childName={name}>
         <Waiting line="Getting your world ready…" />
+      </ChildSpaceLayout>
+    );
+  }
+
+  if (child.error instanceof ApiError && child.error.status === 404) {
+    // Not this family's child, or one being deleted: trying again won't change that.
+    return (
+      <ChildSpaceLayout childId={childId} childName={name}>
+        <Trouble line="This space isn't open right now. Ask a grown-up for help." />
       </ChildSpaceLayout>
     );
   }
@@ -422,18 +432,21 @@ export function Waiting({ line }: { line: string }) {
   );
 }
 
-export function Trouble({ onRetry, compact, line }: { onRetry: () => void; compact?: boolean; line?: string }) {
+/** Something went wrong in the child space. Without `onRetry` there is nothing to try again (e.g. a closed space). */
+export function Trouble({ onRetry, compact, line }: { onRetry?: () => void; compact?: boolean; line?: string }) {
   return (
     <div role="alert" className={cn("flex flex-col items-center gap-4 px-6 text-center", compact ? "py-6" : "pt-28")}>
       <LearningBuddy mood="encourage" size={compact ? 88 : 124} />
       <p className="max-w-sm text-lg font-semibold text-white">{line ?? "Oops — we couldn't load that. Let's try again!"}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="min-h-14 rounded-pill bg-light px-9 text-lg font-bold text-tonle-950 shadow-[0_5px_0_#B86A1C,0_12px_40px_rgba(243,168,59,0.45)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:bg-light-glow active:translate-y-1 active:shadow-[0_1px_0_#B86A1C]"
-      >
-        Try again
-      </button>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="min-h-14 rounded-pill bg-light px-9 text-lg font-bold text-tonle-950 shadow-[0_5px_0_#B86A1C,0_12px_40px_rgba(243,168,59,0.45)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:bg-light-glow active:translate-y-1 active:shadow-[0_1px_0_#B86A1C]"
+        >
+          Try again
+        </button>
+      )}
     </div>
   );
 }

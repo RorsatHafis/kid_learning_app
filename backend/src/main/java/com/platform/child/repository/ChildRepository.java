@@ -19,6 +19,8 @@ public interface ChildRepository extends JpaRepository<Child, UUID> {
 
     long countByFamilyId(UUID familyId);
 
+    long countByFamilyIdAndStatus(UUID familyId, com.platform.child.entity.ChildStatus status);
+
     /** Serializes plan-limited changes to a child (starting journeys) so a limit can't be overrun by a race. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Child c where c.id = :id")

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AtSign, CheckCircle2, Download, LogOut, MailCheck, MonitorSmartphone, ShieldCheck } from "lucide-react";
 import { deviceName } from "./deviceName";
+import { DeleteAccount } from "./Deletion";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { accountApi } from "@/lib/api/endpoints";
 import { ApiError, waitInWords } from "@/lib/api/ApiError";
@@ -68,6 +69,11 @@ export function AccountPage() {
         <SignOutEverywhere />
         {profile.data?.platformRole === "PARENT" && <YourPlan />}
         {profile.data?.platformRole === "PARENT" && <YourData />}
+        {profile.data?.platformRole === "PARENT" && (
+          <SettingsRow id="delete-account" title="Delete account" subtitle="Your family's data, erased for good.">
+            <DeleteAccount eraseAfter={profile.data.eraseAfter} onChanged={profile.refetch} />
+          </SettingsRow>
+        )}
       </div>
     </div>
   );

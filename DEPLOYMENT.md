@@ -75,7 +75,11 @@ exists. Everyone else is provisioned from inside the app.
 `RATE_LIMIT_LOGIN_PER_MINUTE` (20), `RATE_LIMIT_REGISTER_PER_HOUR` (20),
 `RATE_LIMIT_REFRESH_PER_MINUTE` (60), `RATE_LIMIT_RECOVERY_PER_HOUR` (10),
 `MASTERY_LEARNING_RATE` (0.2), `MASTERY_CONFIDENCE_SATURATION_COUNT` (10),
-`MASTERY_OBJECTIVE_THRESHOLD` (0.8), `SERVER_PORT` (8080).
+`MASTERY_OBJECTIVE_THRESHOLD` (0.8), `SERVER_PORT` (8080),
+`ERASURE_GRACE_PERIOD` (7d: how long a family's deletion request waits before it is carried
+out, so a mistake can be undone; 0s–90d), `ERASURE_SWEEP_INTERVAL` (PT1H: how often due
+deletions run), `ERASURE_SWEEP_ENABLED` (true; with several instances every instance may run
+it — each deletion locks its rows).
 
 Keep secrets in your platform's secret store, never in the repository. (`backend/.env.example`
 is out of date — TD-02 — use this table.)
@@ -108,6 +112,12 @@ redeploying the previous images is enough.
 - **Test a restore** into a scratch database before relying on it.
 - The audit log (`audit_events`) cannot be updated or deleted by the application (a database
   trigger refuses it). Keep it in backups.
+- **Deletion and backups.** When a family deletes a child or their account, the data is erased
+  from the live database after the grace period (Y3); it remains in backups taken before that
+  until those backups expire. Choose a backup retention period and state it in the privacy
+  notice (PD-18). After restoring an old backup, deletions carried out since then must be
+  carried out again: the audit log's `CHILD_ERASED` and `ACCOUNT_ERASED` events (resource id)
+  name what to erase.
 - Back up `MEDIA_ROOT` with the database: questions refer to their pictures and recordings,
   which live there as files named by their content (SHA-256), never changed once written. A
   database restore needs the media taken at the same time or later. Running more than one
@@ -129,5 +139,7 @@ redeploying the previous images is enough.
 These are not engineering tasks and are not done:
 
 - Privacy notice and terms (PD-18) — legal text; no page is shown until it exists.
-- Consent and data-retention/deletion rules (PD-24); family data export exists.
+- Confirm the deletion rules adopted in Y3 (PD-24): what is erased, the waiting period, and how
+  long backups keep erased data. Families can already export their data and delete a child or
+  their account.
 - The product decisions listed at the end of [OWNER-GUIDE.md](OWNER-GUIDE.md).

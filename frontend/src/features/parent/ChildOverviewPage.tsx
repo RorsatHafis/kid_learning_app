@@ -16,6 +16,7 @@ import { SkillsSection } from "./SkillsSection";
 import { RecentActivitySection } from "./RecentActivitySection";
 import { InsightsSection } from "./InsightsSection";
 import { SchoolAccessSection } from "./SchoolAccessSection";
+import { DeleteChildSection } from "./Deletion";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 export function ChildOverviewPage() {
@@ -86,6 +87,7 @@ function ChildOverview({ childId }: { childId: string }) {
           <RecentActivitySection childId={childId} />
         </div>
       </div>
+      <DeleteChildSection child={child.data} />
     </div>
   );
 }

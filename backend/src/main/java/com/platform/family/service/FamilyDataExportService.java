@@ -145,7 +145,7 @@ public class FamilyDataExportService {
 
     private ChildData childData(UUID accountId, Child child) {
         // listForAccount already scopes to the caller's families; checked again per child on purpose.
-        familyAccessGuard.requireChildAccess(accountId, child.getId());
+        familyAccessGuard.requireChildRecord(accountId, child.getId());
         return new ChildData(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getCreatedAt(),
                 journeys.enrollmentsFor(child.getId()), skills.progressFor(child.getId()),
                 journeys.completedActivities(child.getId(), ALL), answersOf(child.getId()),

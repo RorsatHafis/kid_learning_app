@@ -102,6 +102,12 @@ platform:
     # Required. A directory the API can write: where uploaded pictures and recordings are kept.
     # In production a persistent volume, backed up with the database (DEPLOYMENT.md).
     root: ${MEDIA_ROOT}
+  # Deleting a child or a family account (PD-24 as adopted, Y3). A deletion waits this long
+  # before it is carried out, so a mistake can be undone (0s..90d); the sweep runs this often.
+  erasure:
+    grace-period: ${ERASURE_GRACE_PERIOD:7d}
+    sweep-interval: ${ERASURE_SWEEP_INTERVAL:PT1H}
+    sweep-enabled: ${ERASURE_SWEEP_ENABLED:true}
   mastery:
     learning-rate: ${MASTERY_LEARNING_RATE:0.2}
     confidence-saturation-count: ${MASTERY_CONFIDENCE_SATURATION_COUNT:10}

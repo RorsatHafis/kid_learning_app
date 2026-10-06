@@ -47,11 +47,12 @@ public class AccountController {
     public record DeviceResponse(UUID id, String userAgent, Instant signedInAt, Instant lastActiveAt, boolean current) {
     }
 
+    /** {@code eraseAfter}: when the account will be erased, if its owner asked; null otherwise. */
     public record AccountResponse(UUID id, String email, PlatformRole platformRole, AccountStatus status,
-                                  Instant emailVerifiedAt, Instant createdAt) {
+                                  Instant emailVerifiedAt, Instant createdAt, Instant eraseAfter) {
         static AccountResponse of(Account account) {
             return new AccountResponse(account.getId(), account.getEmail(), account.getPlatformRole(),
-                    account.getStatus(), account.getEmailVerifiedAt(), account.getCreatedAt());
+                    account.getStatus(), account.getEmailVerifiedAt(), account.getCreatedAt(), account.getEraseAfter());
         }
     }
 

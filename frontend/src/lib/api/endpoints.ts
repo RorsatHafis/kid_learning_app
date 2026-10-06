@@ -62,6 +62,9 @@ export const accountApi = {
   requestEmailChange: (input: { currentPassword: string; newEmail: string }) => apiClient.post<void>("/account/email", input),
   // One entry per signed-in device; `current` is this one. Signing one out ends that sign-in (404 if it isn't yours).
   devices: () => apiClient.get<SignedInDevice[]>("/account/devices"),
+  // family/erasure/FamilyErasureController.java — family accounts only; nothing changes until eraseAfter.
+  requestDeletion: (currentPassword: string) => apiClient.post<{ eraseAfter: string }>("/account/deletion", { currentPassword }),
+  keep: () => apiClient.delete<void>("/account/deletion"),
   signOutDevice: (deviceId: string) => apiClient.delete<void>(`/account/devices/${deviceId}`),
   // identity/web/AccountRecoveryController.java — 409 when already confirmed, 429 when sent too recently.
   resendVerification: () => apiClient.post<void>("/account/email-verification"),
@@ -75,6 +78,11 @@ export const childrenApi = {
   get: (childId: string) => apiClient.get<Child>(`/children/${childId}`),
   create: (input: { displayName: string; dateOfBirth: string }) => apiClient.post<Child>("/children", input),
   rename: (childId: string, displayName: string) => apiClient.patch<Child>(`/children/${childId}`, { displayName }),
+  // family/erasure/FamilyErasureController.java — 422 wrong password; the child leaves learning now, erased at eraseAfter.
+  requestDeletion: (childId: string, currentPassword: string) =>
+    apiClient.post<{ eraseAfter: string }>(`/children/${childId}/deletion`, { currentPassword }),
+  // Keeps a child whose deletion was asked (409 plan limit when the family has no room).
+  keep: (childId: string) => apiClient.delete<Child>(`/children/${childId}/deletion`),
   /** The family catalog for this child: the child's age group first (curriculum/web/CurriculumController.java). */
   curricula: (childId: string) => apiClient.get<CurriculumChoice[]>(`/children/${childId}/curricula`),
 };

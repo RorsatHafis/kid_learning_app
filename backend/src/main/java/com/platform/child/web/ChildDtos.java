@@ -1,5 +1,6 @@
 package com.platform.child.web;
 
+import java.time.Instant;
 import com.platform.child.entity.Child;
 import com.platform.child.entity.ChildStatus;
 import jakarta.validation.constraints.NotBlank;
@@ -30,10 +31,13 @@ public final class ChildDtos {
             UUID id,
             String displayName,
             LocalDate dateOfBirth,
-            ChildStatus status
+            ChildStatus status,
+            /** When a DELETION_PENDING child will be erased; null otherwise. */
+            Instant eraseAfter
     ) {
         public static ChildResponse from(Child child) {
-            return new ChildResponse(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getStatus());
+            return new ChildResponse(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getStatus(),
+                    child.getEraseAfter());
         }
     }
 

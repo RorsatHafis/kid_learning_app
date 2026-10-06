@@ -189,6 +189,48 @@ test.describe("golden journeys", () => {
     await elsewhere.close();
   });
 
+  test("deleting: a child leaves learning at once and can be kept; the account keeps working until its date @phone", async ({
+    page,
+  }) => {
+    await registerParent(page, uniqueEmail("deleter"));
+    await page.getByRole("button", { name: /add your first child/i }).click();
+    await page.getByLabel("Name").fill("Mealea");
+    await page.getByLabel("Date of birth").fill("2019-03-14");
+    await page.getByRole("button", { name: "Add child" }).click();
+    await page.getByRole("link", { name: /Mealea/ }).first().click();
+    const childUrl = page.url();
+
+    await page.getByRole("button", { name: "Delete Mealea…" }).click();
+    await page.getByLabel("Your password").fill("not-my-password");
+    await page.getByRole("button", { name: "Delete Mealea", exact: true }).click();
+    await expect(page.getByText("That isn't your current password.")).toBeVisible();
+    await page.getByLabel("Your password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Delete Mealea", exact: true }).click();
+
+    // Back on the family page: the date, and a way to keep Mealea; her space is closed meanwhile.
+    await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
+    await expect(page.getByText(/Will be deleted on/)).toBeVisible();
+    await expectNoViolations(page, "family - child being deleted");
+    await page.goto(childUrl.replace(/\/parent\/children\/([^/]+).*/, "/learn/$1"));
+    await expect(page.getByText(/isn.t open right now/)).toBeVisible();
+    await page.goto("/parent");
+    await page.getByRole("button", { name: "Keep Mealea" }).click();
+    await expect(page.getByRole("link", { name: "Start Mealea's session" })).toBeVisible();
+
+    // The account: scheduled, still working, kept.
+    await page.goto("/parent/account");
+    await page.getByRole("button", { name: "Delete my account…" }).click();
+    await page.getByRole("form", { name: "Delete my account" }).getByLabel("Your password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Delete my account", exact: true }).click();
+    await expect(page.getByText(/will be erased on/)).toBeVisible();
+    await expectNoViolations(page, "account - deletion scheduled");
+    await page.goto("/parent");
+    await expect(page.getByRole("link", { name: "Start Mealea's session" })).toBeVisible();
+    await page.goto("/parent/account");
+    await page.getByRole("button", { name: "Keep my account" }).click();
+    await expect(page.getByRole("button", { name: "Delete my account…" })).toBeVisible();
+  });
+
   test("admin: suspending a parent signs them out everywhere; reinstating lets them back", async ({ page, browser }) => {
     test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
     const parentContext = await browser.newContext();

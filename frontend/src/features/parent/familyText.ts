@@ -12,3 +12,8 @@ export function lastPlayedText(completedAt: string, now = new Date()): string {
 
 /** "1 activity", "3 activities". */
 export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** "14 October 2026": the day a scheduled deletion is carried out. */
+export function deletionDay(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+}

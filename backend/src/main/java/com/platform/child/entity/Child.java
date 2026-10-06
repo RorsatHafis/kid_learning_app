@@ -1,5 +1,6 @@
 package com.platform.child.entity;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.UUID;
@@ -36,6 +37,10 @@ public class Child extends AuditableEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private ChildStatus status;
+
+    /** When a DELETION_PENDING child is erased (V51); null otherwise. */
+    @Column(name = "erase_after")
+    private Instant eraseAfter;
  
     protected Child() {
         // JPA
@@ -81,6 +86,29 @@ public class Child extends AuditableEntity {
 
     }
  
+    /** The family asked to delete this child: out of learning now, erased at {@code at}. */
+    public void scheduleErasure(Instant at) {
+
+        Assert.notNull(at, "at must not be null");
+        requireStatus(ChildStatus.ACTIVE, "scheduled for deletion");
+        this.status = ChildStatus.DELETION_PENDING;
+        this.eraseAfter = at;
+
+    }
+
+    /** The family kept the child after all. */
+    public void cancelErasure() {
+
+        requireStatus(ChildStatus.DELETION_PENDING, "kept");
+        this.status = ChildStatus.ACTIVE;
+        this.eraseAfter = null;
+
+    }
+
+    public Instant getEraseAfter() {
+        return eraseAfter;
+    }
+
     private void requireStatus(ChildStatus required, String attemptedTransition) {
 
         if (status != required) {

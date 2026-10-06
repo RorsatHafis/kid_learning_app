@@ -1,5 +1,6 @@
 package com.platform.family.service;
 
+import com.platform.child.entity.ChildStatus;
 import com.platform.child.entity.Child;
 import com.platform.child.repository.ChildRepository;
 import com.platform.common.web.ResourceNotFoundException;
@@ -39,6 +40,21 @@ public class FamilyAccessGuard {
      */
     @Transactional(readOnly = true)
     public Child requireChildAccess(UUID accountId, UUID childId) {
+        Child child = requireChildRecord(accountId, childId);
+        // A child being deleted has left learning and schools: answered like any child the caller can't see.
+        if (child.getStatus() != ChildStatus.ACTIVE) {
+            throw new ResourceNotFoundException("Child", childId);
+        }
+        return child;
+    }
+
+    /**
+     * The family's access to the child's record whatever its state - for keeping a child whose
+     * deletion was asked, and for the family's data export. Every learning flow uses
+     * {@link #requireChildAccess} instead.
+     */
+    @Transactional(readOnly = true)
+    public Child requireChildRecord(UUID accountId, UUID childId) {
         Child child = childRepository.findById(childId)
                 .orElseThrow(() -> new ResourceNotFoundException("Child", childId));
 
