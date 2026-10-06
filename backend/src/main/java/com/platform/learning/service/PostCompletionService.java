@@ -61,8 +61,8 @@ import java.util.UUID;
  * <p>Evidence and mastery are not recomputed here: they were recorded, answer by
  * answer, when each answer was submitted.
  *
- * <p>Free practice (no learning path item) makes no path decisions - unchanged
- * semantics: those decisions place items on a path, and free practice has none.
+ * <p>Free practice (no learning path item) makes no path decisions - those place items on a
+ * path, and free practice has none - but Smart Review re-evaluates its skills (X26).
  */
 @Service
 public class PostCompletionService {
@@ -115,7 +115,15 @@ public class PostCompletionService {
     /** Applies the post-completion decisions for an attempt that has just become COMPLETED. */
     @Transactional(propagation = Propagation.MANDATORY)
     public void apply(ActivityAttempt attempt) {
-        if (attempt.getStatus() != ActivityAttemptStatus.COMPLETED || attempt.getLearningPathItemId() == null) {
+        if (attempt.getStatus() != ActivityAttemptStatus.COMPLETED) {
+            return;
+        }
+        if (attempt.getLearningPathItemId() == null) {
+            // Free practice (X24: a book played again): no path, so no adaptive decision and nothing placed -
+            // but its answers are evidence, so Smart Review re-evaluates the skills it exercised, as after any
+            // evidence. A due review is placed on a path later (the completion flow, or X25 when nothing waits).
+            exercisedSkills(attempt.getActivityVersionId())
+                    .forEach(skillId -> smartReviewService.evaluateAndSchedule(attempt.getChildId(), skillId));
             return;
         }
         UUID childId = attempt.getChildId();

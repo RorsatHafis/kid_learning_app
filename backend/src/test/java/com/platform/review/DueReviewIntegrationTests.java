@@ -88,6 +88,36 @@ class DueReviewIntegrationTests {
         assertThat(json(post("/api/v1/children/" + childId + "/reviews/place-due", "", parent), 200).get("placed").asInt()).isZero();
     }
 
+    @Test
+    void aBookPlayedAgainBadlyFlagsItsSkillForReviewWithoutTouchingThePath() throws Exception {
+        String parent = registerParent();
+        String childId = json(post("/api/v1/children", "{\"displayName\":\"Replay Child\",\"dateOfBirth\":\""
+                + LocalDate.now().minusYears(6) + "\"}", parent), 201).get("id").asString();
+        JsonNode enrollment = json(get("/api/v1/children/" + childId + "/enrollments", parent), 200).get(0);
+        String versionId = enrollment.get("nextStep").get("activityVersionId").asString();
+        String skillId = enrollment.get("nextStep").get("skills").get(0).get("id").asString();
+        UUID path = jdbc.queryForObject("select id from learning_paths where enrollment_id = ?::uuid", UUID.class,
+                enrollment.get("enrollmentId").asString());
+        int itemsBefore = jdbc.queryForObject("select count(*) from learning_path_items where learning_path_id = ?", Integer.class, path);
+
+        // Free practice (no path item), every answer wrong.
+        String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts", "{\"activityVersionId\":\"" + versionId + "\"}",
+                parent), 201).get("id").asString();
+        for (JsonNode item : json(get("/api/v1/activity-versions/" + versionId, parent), 200).get("items")) {
+            json(post("/api/v1/activity-attempts/" + attemptId + "/answers", "{\"questionVersionId\":\"" + item.get("questionVersionId").asString()
+                    + "\",\"submittedAnswer\":\"999\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", parent), 201);
+        }
+        json(post("/api/v1/activity-attempts/" + attemptId + "/complete", "", parent), 200);
+
+        // Smart Review has the skill now; the path is untouched and no adaptive decision was made.
+        assertThat(jdbc.queryForObject("select count(*) from review_items where child_id = ?::uuid and skill_id = ?::uuid and status = 'ACTIVE'",
+                Integer.class, childId, skillId)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from learning_path_items where learning_path_id = ?", Integer.class, path))
+                .isEqualTo(itemsBefore);
+        assertThat(jdbc.queryForObject("select count(*) from adaptation_decisions where activity_attempt_id = ?::uuid", Integer.class, attemptId))
+                .isZero();
+    }
+
     private void review(String childId, String skillId) {
         UUID item = UUID.randomUUID();
         jdbc.update("insert into review_items (id, child_id, skill_id, status) values (?, ?::uuid, ?::uuid, 'ACTIVE')", item, childId, skillId);

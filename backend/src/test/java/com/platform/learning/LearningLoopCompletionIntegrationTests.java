@@ -195,10 +195,10 @@ class LearningLoopCompletionIntegrationTests {
     void concurrentReviewEvaluationsConvergeOnOneReviewItem() throws Exception {
         Catalog catalog = catalog();
         Learner learner = enroll(catalog);
-        // Low mastery on s1 through free practice, which makes no review decision itself.
+        // Low mastery on s1: answers are evidence as they are submitted, and nothing evaluates Smart Review until a
+        // completion (since X26 a completed free practice re-evaluates it too), so the practice is left open here.
         ActivityAttempt practice = activityAttemptService.startAttempt(learner.childId(), catalog.easy().getId(), null, null);
         answerAll(practice, false);
-        activityAttemptService.completeAttempt(practice.getId());
         assertThat(smartReviewService.findItem(learner.childId(), catalog.s1().getId())).isEmpty();
 
         List<Optional<ReviewItem>> results = concurrently(8,
