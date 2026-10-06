@@ -126,6 +126,10 @@ people at once (e.g. the administrator and a parent).
   Turn the sound off with the speaker button. Use only the keyboard (Tab, Enter, and number keys
   on choice questions).
 - **Proves:** the child can learn, recover from interruptions, and use a keyboard.
+- **Also try:** **My shelf** (on the child's home): a lantern for each thing achieved (first book,
+  a chapter, a whole path), *I can…* and *Getting stronger* skills from the answers, every book lit
+  and still waiting, and **Play again** on a lit book (practice outside the path; its answers still
+  count as evidence). When every book is lit, the home offers the shelf instead of a dead end.
 
 ### 5. Leaving the child's space
 
@@ -141,6 +145,9 @@ people at once (e.g. the administrator and a parent).
   *Progressing* or *Secure* and how many answers it's based on; **Recent activity** with each
   activity's right/total and the decision taken next; insights only once there's enough
   evidence.
+- **Do:** click a skill's name (in *Skills & evidence* or *What changed*).
+- **See:** where it stands and the numbers behind it, each activity with its answers on that skill
+  and the standing after it, and what is waiting on the path for it and why.
 - **Proves:** parents see evidence, not just "completed", and claims never go beyond the answers.
 
 ### 7. The parent's account
@@ -174,7 +181,10 @@ people at once (e.g. the administrator and a parent).
 ### 10. The administrator's console
 
 - **Do:** log in with your administrator account.
-- **See:** the admin console: **Content Studio, Staff, Accounts, Activity log, My account**.
+- **See:** the admin console, grouped: **Dashboard**; **Content** (Content Studio, Media library);
+  **People** (Staff, Accounts); **Operations** (Schools, Learning operations, Reports); **Commerce**
+  (Plans); **System** (System status, Activity log); My account. The full guide is
+  [docs/ADMIN_CONTENT_OPERATIONS_GUIDE.md](docs/ADMIN_CONTENT_OPERATIONS_GUIDE.md).
 - **Do:** open **Activity log**.
 - **See:** everything that has happened — sign-ups, confirmations, password changes — newest
   first, filterable, with **Show older**.
@@ -194,6 +204,10 @@ people at once (e.g. the administrator and a parent).
 - **Do:** as a parent, add a new child (or use Sokha's **Add a subject**) and choose your path;
   play it as the child.
 - **See:** the child gets exactly the question you wrote and is marked by your answer.
+- **Also try:** the other question types — multiple choice (choices can be pictures), true or
+  false, short answer, matching, *Put in order* and *Sort into groups* — with a picture and a
+  recording on the question; the **Media library** to reuse uploads; **Manage…** to rename,
+  archive (no new uses; nothing a child has changes) and restore anything in the Studio.
 - **Proves:** an educator can author, check, publish and deliver real content — no code.
 
 ### 12. Staff and schools
@@ -208,8 +222,18 @@ people at once (e.g. the administrator and a parent).
   password, log in as the teacher and **Accept** the invitation.
 - **Do:** as the principal, open the class and assign the teacher.
 - **See:** the teacher now sees the class.
-- **Note:** classes have **no children yet** — on purpose, see Part 4 (PD-01).
-- **Proves:** schools, staff invitations and class assignments work, with every step authorized.
+- **Do:** as the teacher (or principal), open the class, assign a curriculum and **Make a code**.
+  As a parent (with a confirmed email), on the child's page choose **Join a class**, enter the code
+  and agree.
+- **See:** the child is in the class; the teacher sees the class's learning (only in what the
+  class was assigned), *The class over time*, and can open a skill to see who needs practice and **Assign practice**.
+  The family sees who asked and why, and can end the school's access at any time.
+- **Do:** as the principal, look at **Learning across the school**; open a class and use
+  **Manage class…** to rename or archive it (its code stops; its children keep everything).
+- **Do:** as the teacher, open **My content**: the same Studio, for your own questions, activities
+  and curricula (the platform's skills are read-only to you). A curriculum you publish can be
+  assigned to your class (it is marked *yours*).
+- **Proves:** schools, staff, classes and family consent work end to end, with every step authorized.
 
 ### 13. Suspending and reinstating an account
 
@@ -245,8 +269,11 @@ deliberately does not guess.
 
 | # | Decision | Effect today |
 |---|---|---|
-| PD-01 | How a family lets a school see their child (a written proposal is in the progress document) | Schools, staff and classes work; children can't be added to classes, so teachers see no progress. |
-| PD-09 | Plans, prices, subscriptions | Everything is free; no pricing is shown. |
+| PD-09 | Prices and a payment provider | Plans exist and limits apply, but a plan is given by an administrator; no payment is taken. |
+| PD-25 | What "archive" means (adopted: no new uses; nothing a child has changes) — please confirm | Archive works this way for content and classes. |
+| PD-26 | Closing or archiving a whole school | Not offered; classes can be archived. |
+| PD-27 | Whether the platform itself should place more practice when a child has played every step | The child can play any lit book again from the shelf; the engine doesn't add practice by itself. |
+| PD-04 | Withdrawing a published version from children who already have it | Published content is never changed; new versions are used for new work. |
 | PD-14 / PD-15 | Khmer interface text and Khmer/English lessons, written by native speakers and educators | The app is in English; only the Maths path exists (authors can add more in the Studio). |
 | PD-20 | Whether content needs a second person's review before publishing | One administrator can publish. |
 | PD-24 | What happens when a family deletes their account or a child | Families can export their data; deletion isn't offered yet. |
@@ -261,16 +288,18 @@ deliberately does not guess.
 
 ## Part 5 — How it was verified
 
-Before this handoff, from a completely empty database:
+At the latest verification (2026-10-06):
 
-- 279 backend tests (unit and integration against a real PostgreSQL), including security,
-  a sweep proving no one outside a family can read or change its children's data, concurrency
-  and performance (queries don't grow with a child's history);
-- 43 frontend unit tests, type checks, lint, a production build, and a dependency audit with no
-  known vulnerabilities;
-- 13 automated browser journeys (family, recovery, admin, boundaries, school, content
-  authoring; desktop and phone) with automated WCAG 2.2 AA accessibility checks on every main
-  screen, using real emails.
+- 345 backend tests (unit and integration against a real PostgreSQL), including security,
+  a sweep proving no one outside a family can read or change its children's data, role and
+  school boundaries, concurrency, and performance (queries don't grow with a child's history
+  or a class's size);
+- 124 frontend unit tests, type checks, lint, a production build, and a dependency audit with
+  no known vulnerabilities;
+- 19 automated browser journey runs — family, recovery, admin, boundaries, plans, school
+  (principal, teacher, family, archive), content authoring to a child playing it — on desktop
+  and on a phone, with automated WCAG 2.2 AA accessibility checks on every main screen, using
+  real emails.
 
 The full record — what was built, what was verified and how, and what remains — is in
 [BOOKEYOND-KID-ENGINEERING-PROGRESS.md](BOOKEYOND-KID-ENGINEERING-PROGRESS.md).
