@@ -32,6 +32,15 @@ export interface AuthResponse {
 
 export type AccountStatus = "ACTIVE" | "DISABLED" | "PENDING_VERIFICATION";
 
+/** identity/web/AccountController.DeviceResponse — a sign-in on some device. */
+export interface SignedInDevice {
+  id: string;
+  userAgent: string | null;
+  signedInAt: string;
+  lastActiveAt: string;
+  current: boolean;
+}
+
 export interface AccountProfile {
   id: string;
   email: string;

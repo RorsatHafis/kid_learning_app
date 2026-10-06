@@ -89,9 +89,10 @@ public class AccountSettingsService {
         account.resetFailedLogins();
         int revoked = accountSessionService.revokeAllSessions(accountId);
 
-        JwtService.IssuedToken issued = jwtService.issueAccessToken(account.getId(), account.getPlatformRole());
         AccountSessionService.IssuedSession session =
                 accountSessionService.issueSession(account.getId(), userAgent, ipAddress);
+        JwtService.IssuedToken issued = jwtService.issueAccessToken(account.getId(), account.getPlatformRole(),
+                session.familyId());
         audit(account, "ACCOUNT_PASSWORD_CHANGED", Map.of("sessionsEnded", revoked));
 
         return new LoginResult(account.getId(), account.getPlatformRole(), issued.token(), issued.expiresAt(),

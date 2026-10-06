@@ -106,9 +106,10 @@ public class LoginService {
  
         account.resetFailedLogins();
  
-        JwtService.IssuedToken issued = jwtService.issueAccessToken(account.getId(), account.getPlatformRole());
         AccountSessionService.IssuedSession session = accountSessionService.issueSession(
                 account.getId(), command.userAgent(), command.ipAddress());
+        JwtService.IssuedToken issued = jwtService.issueAccessToken(account.getId(), account.getPlatformRole(),
+                session.familyId());
 
         return new LoginResult(account.getId(), account.getPlatformRole(), issued.token(), issued.expiresAt(),
                 session.rawToken(), session.expiresAt());

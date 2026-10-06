@@ -116,7 +116,7 @@ public class AccountSessionService {
 
         sessions.save(session);
 
-        return new IssuedSession(rawToken, session.getId(), session.getExpiresAt());
+        return new IssuedSession(rawToken, session.getId(), session.getFamilyId(), session.getExpiresAt());
 
     }
 
@@ -275,7 +275,8 @@ public class AccountSessionService {
 
     private RefreshResult result(Account account, String rawToken, AccountSession session) {
 
-        JwtService.IssuedToken accessToken = jwtService.issueAccessToken(account.getId(), account.getPlatformRole());
+        JwtService.IssuedToken accessToken = jwtService.issueAccessToken(account.getId(), account.getPlatformRole(),
+                session.getFamilyId());
         return new RefreshResult(account.getId(), account.getEmail(), account.getPlatformRole(),
                 accessToken.token(), accessToken.expiresAt(), rawToken, session.getExpiresAt());
 
@@ -388,7 +389,56 @@ public class AccountSessionService {
 
     }
 
-    public record IssuedSession(String rawToken, UUID sessionId, Instant expiresAt) {
+    public record IssuedSession(String rawToken, UUID sessionId, UUID familyId, Instant expiresAt) {
+    }
+
+    /**
+     * One signed-in device: a session family with a live session. {@code signedInAt} is
+     * when that sign-in began; {@code lastActiveAt} is its latest refresh (a device in use
+     * refreshes about every quarter of an hour).
+     */
+    public record SignedInDevice(UUID id, String userAgent, Instant signedInAt, Instant lastActiveAt) {
+    }
+
+    /** The account's signed-in devices, most recently active first. */
+    @Transactional(readOnly = true)
+    public java.util.List<SignedInDevice> devices(UUID accountId) {
+
+        Instant now = Instant.now();
+        java.util.Map<UUID, AccountSession> newestPerFamily = new java.util.LinkedHashMap<>();
+        for (AccountSession live : sessions.findLive(accountId, now)) {
+            newestPerFamily.putIfAbsent(live.getFamilyId(), live);
+        }
+        if (newestPerFamily.isEmpty()) {
+            return java.util.List.of();
+        }
+        java.util.Map<UUID, Instant> began = new java.util.HashMap<>();
+        for (Object[] row : sessions.familyStarts(newestPerFamily.keySet())) {
+            began.put((UUID) row[0], (Instant) row[1]);
+        }
+        return newestPerFamily.values().stream()
+                .map(s -> new SignedInDevice(s.getFamilyId(), s.getUserAgent(),
+                        began.getOrDefault(s.getFamilyId(), s.getIssuedAt()), s.getIssuedAt()))
+                .toList();
+
+    }
+
+    /**
+     * Signs one device out: ends its whole session family. False when the account has no
+     * such sign-in (the caller answers 404, the same as for someone else's). Its access
+     * token, if any, stays valid until its own short expiry (PD-02).
+     */
+    @Transactional
+    public boolean signOutDevice(UUID accountId, UUID familyId) {
+
+        if (!sessions.existsByAccountIdAndFamilyId(accountId, familyId)) {
+            return false;
+        }
+        int revoked = sessions.revokeFamily(familyId, Instant.now());
+        accounts.findById(accountId).ifPresent(account -> audit(account, "ACCOUNT_DEVICE_SIGNED_OUT", familyId,
+                java.util.Map.of("sessionsRevoked", revoked)));
+        return true;
+
     }
 
     public record RefreshResult(UUID accountId, String email, PlatformRole platformRole, String accessToken,

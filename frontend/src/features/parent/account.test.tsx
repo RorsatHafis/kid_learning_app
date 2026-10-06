@@ -23,10 +23,30 @@ const PROFILE = {
   createdAt: "2026-09-01T00:00:00Z",
 };
 
-/** Answers the account read, and `onChange` for the email change request. */
-function server(onChange: (body: unknown) => Response) {
+const DEVICES = [
+  {
+    id: "dev-this",
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36",
+    signedInAt: "2026-09-01T08:00:00Z",
+    lastActiveAt: "2026-09-02T08:00:00Z",
+    current: true,
+  },
+  {
+    id: "dev-phone",
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+    signedInAt: "2026-08-20T08:00:00Z",
+    lastActiveAt: "2026-08-21T08:00:00Z",
+    current: false,
+  },
+];
+
+/** Answers the account read and its devices, and `onChange` for the email change request. */
+function server(onChange: (body: unknown) => Response, devices: () => unknown = () => DEVICES) {
   return vi.fn(async (url: string, init?: RequestInit) => {
     if (String(url).endsWith("/account/email") && init?.method === "POST") return onChange(JSON.parse(String(init.body)));
+    if (String(url).includes("/account/devices/") && init?.method === "DELETE") return respond(204);
+    if (String(url).endsWith("/account/devices")) return respond(200, devices());
     if (String(url).endsWith("/account")) return respond(200, PROFILE);
     return respond(404, { status: 404 });
   });
@@ -69,8 +89,9 @@ describe("Changing the sign-in email", () => {
 
     await fillAndSend("new@example.com", "my-current-password");
 
-    expect(await screen.findByRole("status")).toHaveTextContent(/We sent a link to new@example.com/);
-    expect(screen.getByRole("status")).toHaveTextContent(/until then you sign in with your current address/);
+    const sent = await screen.findByText(/We sent a link to/);
+    expect(sent).toHaveTextContent(/new@example.com/);
+    expect(sent).toHaveTextContent(/until then you sign in with your current address/);
     expect(bodies).toEqual([{ currentPassword: "my-current-password", newEmail: "new@example.com" }]);
     expect(screen.getByText("parent@example.com")).toBeInTheDocument();
   });
@@ -97,6 +118,35 @@ describe("Changing the sign-in email", () => {
     await fillAndSend("PARENT@example.com", "pw");
     expect(await screen.findByText("That's already your sign-in email.")).toBeInTheDocument();
     expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/account/email"))).toHaveLength(0);
+  });
+});
+
+describe("Signed-in devices", () => {
+  it("names each device, marks this one, and signs another out", async () => {
+    let remaining = DEVICES;
+    const fetchMock = server(
+      () => respond(202),
+      () => remaining,
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    renderAccount();
+
+    const list = await screen.findByRole("list", { name: "Signed-in devices" });
+    expect(list).toHaveTextContent("Chrome on Windows");
+    expect(list).toHaveTextContent("This device");
+    expect(list).toHaveTextContent("Safari on iPhone");
+    // This device is signed out with "Log out", not from the list.
+    expect(screen.getAllByRole("button", { name: /^Sign out Safari on iPhone/ })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /^Sign out Chrome on Windows/ })).not.toBeInTheDocument();
+
+    remaining = DEVICES.slice(0, 1);
+    await userEvent.setup().click(screen.getByRole("button", { name: /^Sign out Safari on iPhone/ }));
+
+    expect(await screen.findByText(/Safari on iPhone has been signed out/)).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(([url, init]) => String(url).endsWith("/account/devices/dev-phone") && init?.method === "DELETE"),
+    ).toBe(true);
+    expect(await screen.findByRole("list", { name: "Signed-in devices" })).not.toHaveTextContent("Safari on iPhone");
   });
 });
 

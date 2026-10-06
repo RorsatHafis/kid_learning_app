@@ -1,5 +1,11 @@
 package com.platform.identity.web;
 
+import java.util.List;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.security.core.Authentication;
+import com.platform.common.web.ResourceNotFoundException;
+import com.platform.security.session.AccountSessionService;
 import com.platform.identity.dto.LoginResult;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.AccountStatus;
@@ -30,9 +36,15 @@ import java.util.UUID;
 public class AccountController {
 
     private final AccountSettingsService accountSettingsService;
+    private final AccountSessionService sessions;
 
-    public AccountController(AccountSettingsService accountSettingsService) {
+    public AccountController(AccountSettingsService accountSettingsService, AccountSessionService sessions) {
         this.accountSettingsService = accountSettingsService;
+        this.sessions = sessions;
+    }
+
+    /** A signed-in device; {@code current} is the one making this request. */
+    public record DeviceResponse(UUID id, String userAgent, Instant signedInAt, Instant lastActiveAt, boolean current) {
     }
 
     public record AccountResponse(UUID id, String email, PlatformRole platformRole, AccountStatus status,
@@ -82,6 +94,23 @@ public class AccountController {
         accountSettingsService.requestEmailChange(accountId, request.currentPassword(), request.newEmail(),
                 http.getRemoteAddr());
         return ResponseEntity.accepted().build();
+    }
+
+    @GetMapping("/devices")
+    public List<DeviceResponse> devices(@AuthenticationPrincipal UUID accountId, Authentication authentication) {
+        Object current = authentication.getDetails();
+        return sessions.devices(accountId).stream()
+                .map(d -> new DeviceResponse(d.id(), d.userAgent(), d.signedInAt(), d.lastActiveAt(), d.id().equals(current)))
+                .toList();
+    }
+
+    /** Signs one of the account's devices out (404 for an id that isn't one of them). */
+    @DeleteMapping("/devices/{deviceId}")
+    public ResponseEntity<Void> signOutDevice(@AuthenticationPrincipal UUID accountId, @PathVariable UUID deviceId) {
+        if (!sessions.signOutDevice(accountId, deviceId)) {
+            throw new ResourceNotFoundException("Device", deviceId);
+        }
+        return ResponseEntity.noContent().build();
     }
 
     /** Ends every session on every device, this one included. */

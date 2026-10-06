@@ -54,6 +54,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         List.of(new SimpleGrantedAuthority("ROLE_" + principal.platformRole().name()));
                 var authentication = UsernamePasswordAuthenticationToken.authenticated(
                         principal.accountId(), null, authorities);
+                // Which sign-in this is (null for older tokens): read only by the device list.
+                authentication.setDetails(principal.sessionFamilyId());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (InvalidTokenException e) {

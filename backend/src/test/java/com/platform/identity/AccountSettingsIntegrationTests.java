@@ -127,6 +127,65 @@ class AccountSettingsIntegrationTests {
         assertThat(post("/api/v1/account/sign-out-everywhere", "", null).statusCode()).isEqualTo(401);
     }
 
+    @Test
+    void theDeviceListShowsOneEntryPerSignInAndMarksThisOne() throws Exception {
+        Session phone = register();
+        Session laptop = login(phone.email(), PASSWORD);
+        Session tablet = login(phone.email(), PASSWORD);
+        // A refresh is the same device continuing, not a new one.
+        JsonNode refreshed = json(post("/api/v1/auth/refresh", "{\"refreshToken\":\"" + laptop.refreshToken() + "\"}", null), 200);
+
+        HttpResponse<String> fromPhone = get("/api/v1/account/devices", phone.accessToken());
+        JsonNode devices = json(fromPhone, 200);
+        assertThat(devices).hasSize(3);
+        assertThat(fromPhone.body()).doesNotContainIgnoringCase("hash").doesNotContain("127.0.0.1");
+        String phoneId = currentDevice(devices);
+        String laptopId = currentDevice(json(get("/api/v1/account/devices", refreshed.get("accessToken").asString()), 200));
+        assertThat(laptopId).isNotEqualTo(phoneId);
+        assertThat(currentDevice(json(get("/api/v1/account/devices", tablet.accessToken()), 200))).isNotIn(phoneId, laptopId);
+        for (JsonNode device : devices) {
+            assertThat(device.get("userAgent").asString()).isNotBlank();
+            assertThat(device.get("signedInAt").asString()).isNotBlank();
+            assertThat(device.get("lastActiveAt").asString()).isNotBlank();
+        }
+        assertThat(get("/api/v1/account/devices", null).statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void signingOutOneDeviceEndsOnlyThatSignInAndOnlyForItsOwnAccount() throws Exception {
+        Session phone = register();
+        Session laptop = login(phone.email(), PASSWORD);
+        Session stranger = register();
+        String laptopId = currentDevice(json(get("/api/v1/account/devices", laptop.accessToken()), 200));
+        String strangerId = currentDevice(json(get("/api/v1/account/devices", stranger.accessToken()), 200));
+
+        assertThat(delete("/api/v1/account/devices/" + strangerId, phone.accessToken()).statusCode())
+                .as("someone else's device").isEqualTo(404);
+        assertThat(delete("/api/v1/account/devices/" + UUID.randomUUID(), phone.accessToken()).statusCode()).isEqualTo(404);
+        assertThat(refreshStatus(stranger.refreshToken())).isEqualTo(200);
+
+        assertThat(delete("/api/v1/account/devices/" + laptopId, phone.accessToken()).statusCode()).isEqualTo(204);
+
+        assertThat(refreshStatus(laptop.refreshToken())).isEqualTo(401);
+        assertThat(refreshStatus(phone.refreshToken())).isEqualTo(200);
+        assertThat(json(get("/api/v1/account/devices", phone.accessToken()), 200)).hasSize(1);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ACCOUNT_DEVICE_SIGNED_OUT' "
+                + "and resource_id = ?::uuid", Integer.class, laptopId)).isEqualTo(1);
+        assertThat(delete("/api/v1/account/devices/" + laptopId, null).statusCode()).isEqualTo(401);
+    }
+
+    private static String currentDevice(JsonNode devices) {
+        String current = null;
+        for (JsonNode device : devices) {
+            if (device.get("current").asBoolean()) {
+                assertThat(current).as("one current device").isNull();
+                current = device.get("id").asString();
+            }
+        }
+        assertThat(current).as("the requesting device is listed").isNotNull();
+        return current;
+    }
+
     // ------------------------------------------------------------------ HTTP
 
     private record Session(String email, String accessToken, String refreshToken) {
@@ -160,6 +219,14 @@ class AccountSettingsIntegrationTests {
 
     private HttpResponse<String> get(String path, String bearer) throws Exception {
         HttpRequest.Builder req = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).GET();
+        if (bearer != null) {
+            req.header("Authorization", "Bearer " + bearer);
+        }
+        return http.send(req.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> delete(String path, String bearer) throws Exception {
+        HttpRequest.Builder req = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).DELETE();
         if (bearer != null) {
             req.header("Authorization", "Bearer " + bearer);
         }

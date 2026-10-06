@@ -112,9 +112,10 @@ public class AuthController {
                             null, null, null, null));
         }
 
-        JwtService.IssuedToken issued = jwtService.issueAccessToken(account.getId(), account.getPlatformRole());
         AccountSessionService.IssuedSession session = accountSessionService.issueSession(
                 account.getId(), currentUserAgent(), currentIpAddress());
+        JwtService.IssuedToken issued = jwtService.issueAccessToken(account.getId(), account.getPlatformRole(),
+                session.familyId());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new AuthResponse(account.getId(), account.getEmail(), account.getPlatformRole(),

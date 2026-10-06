@@ -140,7 +140,7 @@ test.describe("golden journeys", () => {
     await anonymous.close();
   });
 
-  test("changing the sign-in email: a link to the new address, the old address told, sign in with the new one @phone", async ({
+  test("changing the sign-in email, then signing the other device out: link to the new address, old address told @phone", async ({
     page,
     browser,
     request,
@@ -175,6 +175,17 @@ test.describe("golden journeys", () => {
     await expect(mailbox.getByRole("alert").first()).toBeVisible();
     await logIn(mailbox, newEmail, PASSWORD);
     await expect(mailbox.getByRole("heading", { name: "Your family" })).toBeVisible();
+
+    // The first device sees both sign-ins and signs the other one out.
+    await page.reload();
+    const devices = page.getByRole("list", { name: "Signed-in devices" });
+    await expect(devices.getByRole("listitem")).toHaveCount(2);
+    await expect(devices).toContainText("This device");
+    await devices.getByRole("button", { name: /^Sign out / }).click();
+    await expect(page.getByText(/has been signed out/)).toBeVisible();
+    await expect(devices.getByRole("listitem")).toHaveCount(1);
+    await mailbox.reload();
+    await expect(mailbox).toHaveURL(/\/login/);
     await elsewhere.close();
   });
 

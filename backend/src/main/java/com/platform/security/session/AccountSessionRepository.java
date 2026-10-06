@@ -16,6 +16,22 @@ public interface AccountSessionRepository extends JpaRepository<AccountSession, 
 
     Optional<AccountSession> findByRefreshTokenHash(String refreshTokenHash);
 
+    /** The account's usable sessions (one per signed-in device, rarely two mid-rotation), newest first. */
+    @Query("""
+            select s from AccountSession s
+             where s.accountId = :accountId
+               and s.status = com.platform.security.session.AccountSessionStatus.ACTIVE
+               and s.expiresAt > :now
+             order by s.issuedAt desc
+            """)
+    java.util.List<AccountSession> findLive(@Param("accountId") UUID accountId, @Param("now") java.time.Instant now);
+
+    /** When each sign-in began: [familyId, first issuedAt]. */
+    @Query("select s.familyId, min(s.issuedAt) from AccountSession s where s.familyId in :familyIds group by s.familyId")
+    java.util.List<Object[]> familyStarts(@Param("familyIds") java.util.Collection<UUID> familyIds);
+
+    boolean existsByAccountIdAndFamilyId(UUID accountId, UUID familyId);
+
     long countByAccountIdAndStatus(UUID accountId, AccountSessionStatus status);
 
     /**

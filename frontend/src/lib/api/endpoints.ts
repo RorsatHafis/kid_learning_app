@@ -22,6 +22,7 @@ import type {
   SchoolInvitation,
   SchoolStaffMember,
   SchoolSummary,
+  SignedInDevice,
   SkillStory,
   StreakSummary,
 } from "./types";
@@ -59,6 +60,9 @@ export const accountApi = {
   signOutEverywhere: () => apiClient.post<{ sessionsEnded: number }>("/account/sign-out-everywhere"),
   // 202 whether or not the new address has an account; 422 wrong current password, 409 already this address, 429 too soon.
   requestEmailChange: (input: { currentPassword: string; newEmail: string }) => apiClient.post<void>("/account/email", input),
+  // One entry per signed-in device; `current` is this one. Signing one out ends that sign-in (404 if it isn't yours).
+  devices: () => apiClient.get<SignedInDevice[]>("/account/devices"),
+  signOutDevice: (deviceId: string) => apiClient.delete<void>(`/account/devices/${deviceId}`),
   // identity/web/AccountRecoveryController.java — 409 when already confirmed, 429 when sent too recently.
   resendVerification: () => apiClient.post<void>("/account/email-verification"),
   // family/web/FamilyDataExportController.java — everything held about this account and its family's children.

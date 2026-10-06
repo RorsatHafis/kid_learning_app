@@ -33,6 +33,7 @@ public class JwtService {
     }
 
     private static final String ROLE_CLAIM = "role";
+    private static final String SESSION_CLAIM = "sid";
 
     /**
      * {@code platformRole} is embedded as a signed claim (not looked up from the DB
@@ -43,15 +44,28 @@ public class JwtService {
      * are a rare, deliberate admin action, not something needing instant revocation).
      */
     public IssuedToken issueAccessToken(UUID accountId, PlatformRole platformRole) {
+        return issueAccessToken(accountId, platformRole, null);
+    }
+
+    /**
+     * As above, naming the sign-in (session family) the token belongs to in the
+     * {@code sid} claim, so the account's device list can tell "this device" (Y2). It
+     * identifies, it never authorizes: nothing is allowed or refused because of it.
+     */
+    public IssuedToken issueAccessToken(UUID accountId, PlatformRole platformRole, UUID sessionFamilyId) {
 
         Assert.notNull(platformRole, "platformRole must not be null");
 
         Instant now = Instant.now();
         Instant expiresAt = now.plus(accessTokenTtl);
  
-        String token = Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(accountId.toString())
-                .claim(ROLE_CLAIM, platformRole.name())
+                .claim(ROLE_CLAIM, platformRole.name());
+        if (sessionFamilyId != null) {
+            builder.claim(SESSION_CLAIM, sessionFamilyId.toString());
+        }
+        String token = builder
                 .issuer(issuer)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
@@ -82,7 +96,8 @@ public class JwtService {
  
             UUID accountId = UUID.fromString(claims.getSubject());
             PlatformRole role = PlatformRole.valueOf(claims.get(ROLE_CLAIM, String.class));
-            return new AuthenticatedPrincipal(accountId, role);
+            String sid = claims.get(SESSION_CLAIM, String.class);
+            return new AuthenticatedPrincipal(accountId, role, sid == null ? null : UUID.fromString(sid));
 
         } catch (JwtException | IllegalArgumentException | NullPointerException e) {
 
@@ -95,7 +110,8 @@ public class JwtService {
     public record IssuedToken(String token, Instant expiresAt) {
     }
 
-    public record AuthenticatedPrincipal(UUID accountId, PlatformRole platformRole) {
+    /** {@code sessionFamilyId} is null for a token issued without one. */
+    public record AuthenticatedPrincipal(UUID accountId, PlatformRole platformRole, UUID sessionFamilyId) {
     }
     
 }

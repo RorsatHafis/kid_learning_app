@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AtSign, CheckCircle2, Download, LogOut, MailCheck, ShieldCheck } from "lucide-react";
+import { AtSign, CheckCircle2, Download, LogOut, MailCheck, MonitorSmartphone, ShieldCheck } from "lucide-react";
+import { deviceName } from "./deviceName";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { accountApi } from "@/lib/api/endpoints";
 import { ApiError, waitInWords } from "@/lib/api/ApiError";
@@ -376,6 +377,7 @@ function SignOutEverywhere() {
   return (
     <SettingsRow id="devices" title="Devices" subtitle="Lost a phone or signed in on a shared computer?">
       <div className="flex flex-col gap-4">
+        <DeviceList />
         <p className="text-sm text-ink-soft">
           Signing out everywhere ends every session on every device, including this one. You'll need your password to sign
           back in.
@@ -403,6 +405,86 @@ function SignOutEverywhere() {
       </div>
     </SettingsRow>
   );
+}
+
+/** Where this account is signed in, with a way to sign any other device out. */
+function DeviceList() {
+  const devices = useAsync(() => accountApi.devices(), []);
+  const [working, setWorking] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ kind: "done" | "error"; text: string } | null>(null);
+
+  async function signOut(id: string, name: string) {
+    setWorking(id);
+    setNotice(null);
+    try {
+      await accountApi.signOutDevice(id);
+      setNotice({ kind: "done", text: `${name} has been signed out. A screen already open there can keep working for up to 15 minutes.` });
+    } catch (err) {
+      // Already gone (signed out elsewhere, or expired): the refreshed list says so.
+      if (!(err instanceof ApiError && err.status === 404)) {
+        setNotice({ kind: "error", text: `We couldn't sign ${name} out. Please try again.` });
+      }
+    } finally {
+      setWorking(null);
+      devices.refetch();
+    }
+  }
+
+  if (devices.isLoading && !devices.data) return <LoadingState label="Loading your devices…" />;
+  if (devices.error) return <ErrorState error={devices.error} onRetry={devices.refetch} />;
+  const list = devices.data ?? [];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <ul aria-label="Signed-in devices" className="flex flex-col divide-y divide-line rounded-[12px] ring-1 ring-line">
+        {list.map((device) => {
+          const name = deviceName(device.userAgent);
+          return (
+            <li key={device.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+              <MonitorSmartphone size={18} className="shrink-0 text-ink-faint" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-ink">
+                  {name}
+                  {device.current && (
+                    <span className="ml-2 rounded-full bg-palm-soft px-2 py-0.5 text-xs font-semibold text-palm-deep">This device</span>
+                  )}
+                </p>
+                <p className="text-sm text-ink-soft">
+                  Signed in {formatDay(device.signedInAt)} · last active {formatDay(device.lastActiveAt)}
+                </p>
+              </div>
+              {!device.current && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => signOut(device.id, name)}
+                  disabled={working !== null}
+                  aria-label={`Sign out ${name}, signed in ${formatDay(device.signedInAt)}`}
+                >
+                  {working === device.id ? "Signing out…" : "Sign out"}
+                </Button>
+              )}
+            </li>
+          );
+        })}
+        {list.length === 0 && <li className="px-4 py-3 text-sm text-ink-soft">No other devices are signed in.</li>}
+      </ul>
+      {notice && (
+        <p role={notice.kind === "error" ? "alert" : "status"} className={notice.kind === "error" ? "text-sm font-medium text-brick-deep" : "text-sm font-semibold text-palm-deep"}>
+          {notice.text}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function formatDay(iso: string) {
+  const date = new Date(iso);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) {
+    return `today at ${date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+  }
+  return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
 /**
