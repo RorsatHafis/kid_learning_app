@@ -81,3 +81,54 @@ test("plans: an administrator gives a dated plan, the family sees its end and wh
   await expect(plan.getByRole("heading", { name: /^After / })).toHaveCount(0);
   await operator.context().close();
 });
+
+/**
+ * Y11: a family asks for a plan it is offered; the request waits on the administrators' dashboard;
+ * an administrator opens the family from it and gives the plan, which answers the request. No payment.
+ */
+test("plans: a family asks for an offered plan, an administrator answers it from the dashboard @phone", async ({ page, browser }) => {
+  test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
+  const suffix = Date.now().toString(36).toUpperCase();
+  const planName = `E2E family ${suffix}`;
+  const operator = await (await browser.newContext()).newPage();
+  await logIn(operator, ADMIN_EMAIL, ADMIN_PASSWORD);
+  await workspaceLink(operator, "Plans");
+  await operator.getByRole("button", { name: "New plan" }).click();
+  await operator.getByLabel("Name families will see").fill(planName);
+  await operator.getByLabel(/^Code/).fill(`E2E_FAMILY_${suffix}`);
+  await operator.getByRole("button", { name: "Create draft plan" }).click();
+  await operator.getByLabel(/Families can ask for it/).check();
+  await operator.getByRole("button", { name: "Save draft" }).click();
+  await expect(operator.getByText("Saved.")).toBeVisible();
+  await operator.getByRole("button", { name: "Activate…" }).click();
+  await operator.getByRole("button", { name: "Yes, activate" }).click();
+
+  const email = uniqueEmail("plan-asker");
+  await page.goto("/register");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await page.getByRole("button", { name: /create/i }).click();
+  await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
+  await page.goto("/parent/account#plan");
+  const plan = page.getByRole("region", { name: "Your plan" });
+  await plan.getByRole("button", { name: `Ask for ${planName}` }).click();
+  await expect(plan.getByRole("status")).toContainText("You asked for this plan on");
+  await expectNoViolations(page, "account - a plan asked for");
+
+  // The request waits on the dashboard; "Answer" leads to it, and "Open the family" to the family.
+  await operator.goto("/admin");
+  await operator.getByRole("link", { name: "Answer" }).click();
+  const requests = operator.getByRole("list", { name: "Plan requests" });
+  const row = requests.getByRole("listitem").filter({ hasText: email });
+  await expect(row).toContainText(`asked for ${planName}`);
+  await expectNoViolations(operator, "admin - plan requests");
+  await row.getByRole("link", { name: "Open the family" }).click();
+  await operator.getByLabel("Plan", { exact: true }).selectOption({ label: planName });
+  await operator.getByRole("button", { name: "Give this plan" }).click();
+  await expect(requests.getByRole("listitem").filter({ hasText: email })).toHaveCount(0);
+
+  await page.reload();
+  await expect(plan.getByText(planName).first()).toBeVisible();
+  await expect(plan.getByRole("button", { name: `Ask for ${planName}` })).toHaveCount(0);
+  await operator.context().close();
+});

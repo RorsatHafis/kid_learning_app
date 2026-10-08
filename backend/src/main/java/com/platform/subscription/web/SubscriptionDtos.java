@@ -87,9 +87,13 @@ public final class SubscriptionDtos {
      * @param afterwards the plan that applies once the subscription ends, when an end is set
      * @param choices    other plans families may choose themselves once payments exist (PD-09)
      */
+    /** The family's open request for another plan (Y11). */
+    public record OpenPlanRequest(UUID planId, String planName, java.time.Instant requestedAt) {
+    }
+
     public record OwnFamilyPlanResponse(PlanSummary plan, boolean onDefaultPlan, OwnSubscriptionState subscription,
                                         List<Entitlement> entitlements, PlanOfferResponse afterwards,
-                                        List<PlanOfferResponse> choices) {
+                                        List<PlanOfferResponse> choices, OpenPlanRequest request) {
 
         public static OwnFamilyPlanResponse of(SubscriptionService.FamilyPlanView view) {
             EntitlementService.FamilyPlan effective = view.effective();
@@ -97,7 +101,8 @@ public final class SubscriptionDtos {
                     effective.subscription().map(s -> OwnSubscriptionState.of(s, effective.fromSubscription())).orElse(null),
                     entitlementList(effective.limits(), view.usage()),
                     view.afterwards().map(PlanOfferResponse::of).orElse(null),
-                    view.choices().stream().map(PlanOfferResponse::of).toList());
+                    view.choices().stream().map(PlanOfferResponse::of).toList(),
+                    view.request().map(r -> new OpenPlanRequest(r.planId(), r.planName(), r.requestedAt())).orElse(null));
         }
     }
 

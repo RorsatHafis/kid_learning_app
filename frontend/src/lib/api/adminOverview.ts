@@ -18,6 +18,8 @@ export interface AdminOverview {
     /** Soonest first, at most 20; `plansEndingSoonTotal` counts them all. */
     plansEndingSoon: EndingPlan[];
     plansEndingSoonTotal: number;
+    /** Families waiting for an answer to a plan request (Y11). */
+    planRequestsOpen: number;
   };
   platform: { families: number; children: number; schools: number; classes: number; teachers: number; principals: number };
   /** Items with an open draft, and curricula with a published version. */

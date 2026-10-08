@@ -55,11 +55,13 @@ public class SubscriptionService {
     private final ChildRepository children;
     private final EntitlementService entitlementService;
     private final AuditService audit;
+    private final PlanRequestService planRequests;
 
     public SubscriptionService(SubscriptionPlanRepository plans, PlanEntitlementRepository entitlements,
                                FamilySubscriptionRepository subscriptions, FamilyRepository families,
                                MembershipRepository memberships, AccountRepository accounts, ChildRepository children,
-                               EntitlementService entitlementService, AuditService audit) {
+                               EntitlementService entitlementService, AuditService audit,
+                               PlanRequestService planRequests) {
         this.plans = plans;
         this.entitlements = entitlements;
         this.subscriptions = subscriptions;
@@ -69,6 +71,7 @@ public class SubscriptionService {
         this.children = children;
         this.entitlementService = entitlementService;
         this.audit = audit;
+        this.planRequests = planRequests;
     }
 
     // ------------------------------------------------------------------ views
@@ -96,7 +99,8 @@ public class SubscriptionService {
      *                   one needs a payment provider, PD-09)
      */
     public record FamilyPlanView(EntitlementService.FamilyPlan effective, Map<EntitlementKey, Integer> usage,
-                                 Optional<PlanOffer> afterwards, List<PlanOffer> choices) {
+                                 Optional<PlanOffer> afterwards, List<PlanOffer> choices,
+                                 Optional<PlanRequestService.OpenRequest> request) {
     }
 
     // ------------------------------------------------------------------ plans
@@ -233,6 +237,8 @@ public class SubscriptionService {
             subscription.regrant(planId, now, periodEnd, note);
         }
         record(adminId, "SUBSCRIPTION_GRANTED", subscription.getId(), metadata);
+        // Y11: a family's open request for this plan is answered by the grant.
+        planRequests.onGranted(adminId, familyId, planId);
         return familyView(familyId);
     }
 
@@ -292,7 +298,8 @@ public class SubscriptionService {
                 .filter(plan -> !plan.getId().equals(effective.plan().getId()))
                 .map(this::offer)
                 .toList();
-        return new FamilyPlanView(effective, entitlementService.usage(familyId), afterwards, choices);
+        return new FamilyPlanView(effective, entitlementService.usage(familyId), afterwards, choices,
+                planRequests.openRequestOf(familyId));
     }
 
     private PlanOffer offer(SubscriptionPlan plan) {

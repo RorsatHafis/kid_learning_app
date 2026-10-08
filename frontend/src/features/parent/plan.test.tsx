@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
 import type { OwnFamilyPlan, PlanOffer, PlanSummary } from "@/lib/api/subscriptions";
 import { priceText } from "@/lib/api/subscriptions";
@@ -44,6 +45,7 @@ function granted(over: Partial<OwnFamilyPlan> = {}): OwnFamilyPlan {
     ],
     afterwards: earlyAccess,
     choices: [],
+    request: null,
     ...over,
   };
 }
@@ -103,6 +105,7 @@ describe("PlanDetails", () => {
               entitlements: [{ key: "CHILDREN_MAX", limit: 4, used: null }],
             },
           ],
+          request: null,
         }}
         now={NOW}
       />,
@@ -110,7 +113,7 @@ describe("PlanDetails", () => {
     expect(screen.getByText("1 added · no limit")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /^After / })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Other plans" })).toBeInTheDocument();
-    expect(screen.getByText("Plans can't be changed online at the moment.")).toBeInTheDocument();
+    expect(screen.getByText(/Plans can't be bought online yet\. Ask for one/)).toBeInTheDocument();
     expect(screen.getByText(priceText({ amountMinor: 499, currency: "USD", interval: "MONTH" })!)).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
@@ -145,5 +148,37 @@ describe("priceText", () => {
     expect(priceText({ amountMinor: 499, currency: "USD", interval: "MONTH" })).toMatch(/4\.99 \/ month$/);
     expect(priceText({ amountMinor: 500, currency: "JPY", interval: "YEAR" })).toMatch(/500 \/ year$/);
     expect(priceText(null)).toBeNull();
+  });
+
+  it("asks for an offered plan and withdraws the request, each time showing the plan as it now stands (Y11)", async () => {
+    const family = { id: "family", code: "FAMILY", name: "Family", selfService: true };
+    const offer: PlanOffer = { plan: summary(family), entitlements: [{ key: "CHILDREN_MAX", limit: 4, used: null }] };
+    const asked = granted({ choices: [offer], request: { planId: "family", planName: "Family", requestedAt: "2026-09-29T08:00:00Z" } });
+    const calls: { method: string; url: string; body: unknown }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        calls.push({ method: init?.method ?? "GET", url: String(url), body: init?.body ? JSON.parse(String(init.body)) : undefined });
+        return new Response(JSON.stringify(init?.method === "DELETE" ? granted({ choices: [offer] }) : asked), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+    const onChanged = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(<PlanDetails plan={granted({ choices: [offer] })} now={NOW} onChanged={onChanged} />);
+
+    await user.click(screen.getByRole("button", { name: "Ask for Family" }));
+    expect(calls[0]).toMatchObject({ method: "POST", body: { planId: "family" } });
+    expect(String(calls[0].url)).toContain("/family/plan/request");
+    expect(onChanged).toHaveBeenCalledWith(asked);
+
+    rerender(<PlanDetails plan={asked} now={NOW} onChanged={onChanged} />);
+    expect(screen.getByRole("status")).toHaveTextContent(/You asked for this plan on/);
+    expect(screen.queryByRole("button", { name: "Ask for Family" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Withdraw the request" }));
+    expect(calls[1].method).toBe("DELETE");
+    vi.unstubAllGlobals();
   });
 });

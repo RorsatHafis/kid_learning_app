@@ -76,8 +76,20 @@ export interface OwnFamilyPlan {
   entitlements: Entitlement[];
   /** The plan that applies once the subscription ends, when an end is set. */
   afterwards: PlanOffer | null;
-  /** Other plans families may choose themselves once payment exists (PD-09); usually none. */
+  /** Other plans the family may ask for (Y11; nothing is bought online, PD-09). */
   choices: PlanOffer[];
+  /** The family's open request for one of them, if any. */
+  request: { planId: string; planName: string; requestedAt: string } | null;
+}
+
+/** subscription/service/PlanRequestService.AdminRow - an open request, oldest first. */
+export interface PlanRequestRow {
+  id: string;
+  familyId: string;
+  familyName: string;
+  parentEmail: string;
+  planName: string;
+  requestedAt: string;
 }
 
 export interface FamilyAccountSummary {
@@ -117,6 +129,18 @@ export function priceText(price: Price | null): string | null {
 
 export const familyPlanApi = {
   get: () => apiClient.get<OwnFamilyPlan>("/family/plan"),
+  // Y11: ask for an offered plan / withdraw the request; each returns the family's plan as it now stands.
+  request: (planId: string) => apiClient.post<OwnFamilyPlan>("/family/plan/request", { planId }),
+  withdraw: () => apiClient.delete<OwnFamilyPlan>("/family/plan/request"),
+};
+
+export const planRequestsApi = {
+  open: (page = 0, size = 25) =>
+    apiClient.get<{ items: PlanRequestRow[]; page: number; size: number; total: number }>(
+      `/admin/plan-requests?page=${page}&size=${size}`,
+    ),
+  // 409 when the request was answered meanwhile.
+  decline: (requestId: string, message: string) => apiClient.post<void>(`/admin/plan-requests/${requestId}/decline`, { message }),
 };
 
 export const plansApi = {

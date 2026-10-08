@@ -42,6 +42,11 @@ function Waiting({ data }: { data: AdminOverview }) {
       to: "/admin/staff",
       action: "Review",
     },
+    w.planRequestsOpen > 0 && {
+      text: `${plural(w.planRequestsOpen, "family asked", "families asked")} for a plan`,
+      to: "/admin/plans#requests",
+      action: "Answer",
+    },
     w.lockoutsLast24Hours > 0 && {
       text: `${plural(w.lockoutsLast24Hours, "account was", "accounts were")} locked after failed sign-ins in the last 24 hours`,
       to: "/admin/activity?action=ACCOUNT_LOCKED",
@@ -61,7 +66,7 @@ function Waiting({ data }: { data: AdminOverview }) {
         {nothing && (
           <p className="flex items-start gap-2 text-sm text-palm-deep">
             <CheckCircle2 size={16} aria-hidden className="mt-0.5 shrink-0" />
-            Nothing is waiting: no applications, lockouts or plans ending in the next two weeks.
+            Nothing is waiting: no applications, plan requests, lockouts or plans ending in the next two weeks.
           </p>
         )}
         {items.length > 0 && (

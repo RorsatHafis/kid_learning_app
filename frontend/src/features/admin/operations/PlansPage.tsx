@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
@@ -7,6 +7,7 @@ import { ApiError } from "@/lib/api/ApiError";
 import {
   ENTITLEMENT_LABEL,
   currencyDigits,
+  planRequestsApi,
   plansApi,
   priceText,
   type BillingInterval,
@@ -37,6 +38,7 @@ export function PlansPage() {
   const plans = useAsync(() => plansApi.list(), []);
   const composer = useComposer(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [requestsVersion, setRequestsVersion] = useState(0);
   const selected = plans.data?.find((p) => p.plan.id === selectedId) ?? null;
 
   return (
@@ -128,7 +130,111 @@ export function PlansPage() {
         {selected && <PlanDetail key={selected.plan.id + selected.plan.status} plan={selected} onChanged={plans.refetch} />}
       </div>
 
-      <FamilyAccess plans={plans.data ?? []} />
+      <PlanRequests version={requestsVersion} />
+      <FamilyAccess plans={plans.data ?? []} onFamilyChanged={() => setRequestsVersion((n) => n + 1)} />
+    </div>
+  );
+}
+
+/**
+ * Families asking for a plan (Y11). Nothing is bought online (PD-09): an administrator opens the
+ * family below and gives the plan - which answers the request and tells the family - or declines
+ * it here with a message the family receives by email.
+ */
+function PlanRequests({ version }: { version: number }) {
+  const requests = useAsync(() => planRequestsApi.open(0, 100), [version]);
+  const [declining, setDeclining] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === "#requests" && requests.data) document.getElementById("requests")?.scrollIntoView({ block: "start" });
+  }, [hash, requests.data]);
+
+  async function decline(id: string, familyName: string) {
+    setBusy(true);
+    setFeedback(null);
+    try {
+      await planRequestsApi.decline(id, message.trim());
+      setFeedback({ ok: true, text: `Declined. ${familyName} has been told by email.` });
+      setDeclining(null);
+      setMessage("");
+    } catch (err) {
+      setFeedback({ ok: false, text: errorText(err, "That didn't work. Please try again.") });
+    } finally {
+      setBusy(false);
+      requests.refetch();
+    }
+  }
+
+  const rows = requests.data?.items ?? [];
+  return (
+    <div id="requests">
+      <Panel title="Plan requests">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-ink-soft">
+            Families who asked for a plan. Open the family to give it — that answers the request — or decline it with a
+            message.
+          </p>
+          {requests.isLoading && !requests.data && <LoadingState label="Loading requests…" />}
+          {requests.error && <ErrorState error={requests.error} onRetry={requests.refetch} />}
+          {feedback && <Feedback ok={feedback.ok} text={feedback.text} />}
+          {requests.data && rows.length === 0 && <p className="text-sm text-ink-soft">No family is waiting for an answer.</p>}
+          {rows.length > 0 && (
+            <ul aria-label="Plan requests" className="flex flex-col divide-y divide-line border-y border-line">
+              {rows.map((row) => (
+                <li key={row.id} className="flex flex-col gap-3 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                    <span className="min-w-0">
+                      <span className="block font-medium text-ink">
+                        {row.familyName} asked for {row.planName}
+                      </span>
+                      <span className="block text-sm text-ink-soft [overflow-wrap:anywhere]">
+                        {row.parentEmail} · {new Date(row.requestedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                      </span>
+                    </span>
+                    <span className="flex flex-wrap gap-2">
+                      <Link
+                        to={`/admin/plans?parentEmail=${encodeURIComponent(row.parentEmail)}`}
+                        className="inline-flex h-9 items-center rounded-[10px] px-3.5 text-[0.8125rem] font-semibold text-tonle-700 ring-1 ring-inset ring-line-strong hover:bg-paper"
+                      >
+                        Open the family
+                      </Link>
+                      {declining !== row.id && (
+                        <Button size="sm" variant="ghost" onClick={() => setDeclining(row.id)}>
+                          Decline…
+                        </Button>
+                      )}
+                    </span>
+                  </div>
+                  {declining === row.id && (
+                    <div className="flex flex-col gap-3" role="group" aria-label={`Decline ${row.familyName}'s request`}>
+                      <TextAreaField
+                        label="Message to the family (optional)"
+                        value={message}
+                        maxLength={500}
+                        onChange={(e) => setMessage(e.target.value)}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={() => decline(row.id, row.familyName)} disabled={busy}>
+                          {busy ? "Declining…" : "Decline the request"}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setDeclining(null)} disabled={busy}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {requests.data && requests.data.total > rows.length && (
+            <p className="text-sm text-ink-soft">The {rows.length} oldest of {requests.data.total} are shown.</p>
+          )}
+        </div>
+      </Panel>
     </div>
   );
 }
@@ -369,16 +475,16 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
                   <option value="YEAR">Year</option>
                 </SelectField>
               </div>
-              <label className="mt-3 flex items-start gap-2 text-sm text-ink">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-tonle-700"
-                  checked={selfService}
-                  onChange={(e) => setSelfService(e.target.checked)}
-                />
-                Families may choose it themselves (once online payment exists; nothing charges anyone today)
-              </label>
             </details>
+            <label className="flex items-start gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-tonle-700"
+                checked={selfService}
+                onChange={(e) => setSelfService(e.target.checked)}
+              />
+              Families can ask for it from their account page (nothing is bought online: you answer each request)
+            </label>
             {error && (
               <p role="alert" className="text-sm font-medium text-brick-deep">
                 {error}
@@ -454,7 +560,7 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
 }
 
 /** Find a family by a parent's exact address and give it a plan, or end the one it has. */
-function FamilyAccess({ plans }: { plans: PlanResponse[] }) {
+function FamilyAccess({ plans, onFamilyChanged }: { plans: PlanResponse[]; onFamilyChanged: () => void }) {
   // ?parentEmail= (a link from the overview) opens that family straight away.
   const [params] = useSearchParams();
   const linked = params.get("parentEmail") ?? "";
@@ -463,10 +569,12 @@ function FamilyAccess({ plans }: { plans: PlanResponse[] }) {
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [family, setFamily] = useState<FamilyAccountSummary | null>(null);
 
-  const openedLink = useRef(false);
+  // The address last opened from a link: a new link (e.g. from a plan request) opens its family too.
+  const openedLink = useRef<string | null>(null);
   useEffect(() => {
-    if (!linked || openedLink.current) return;
-    openedLink.current = true;
+    if (!linked || openedLink.current === linked) return;
+    openedLink.current = linked;
+    setEmail(linked);
     void find(linked);
     // Only the address it was opened with.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -512,7 +620,17 @@ function FamilyAccess({ plans }: { plans: PlanResponse[] }) {
             <Search size={16} aria-hidden /> {finding ? "Finding…" : "Find family"}
           </Button>
         </form>
-        {family && <FamilyPlanCard key={family.familyId} family={family} plans={plans} onChanged={setFamily} />}
+        {family && (
+          <FamilyPlanCard
+            key={family.familyId}
+            family={family}
+            plans={plans}
+            onChanged={(next) => {
+              setFamily(next);
+              onFamilyChanged();
+            }}
+          />
+        )}
       </div>
     </Panel>
   );

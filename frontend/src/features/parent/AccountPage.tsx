@@ -558,7 +558,7 @@ function YourPlan() {
     <SettingsRow id="plan" title="Your plan" subtitle="What your family's plan includes.">
       {plan.isLoading && !plan.data && <LoadingState label="Loading your plan…" />}
       {plan.error && <ErrorState error={plan.error} onRetry={plan.refetch} />}
-      {plan.data && <PlanDetails plan={plan.data} />}
+      {plan.data && <PlanDetails plan={plan.data} onChanged={plan.refetch} />}
     </SettingsRow>
   );
 }

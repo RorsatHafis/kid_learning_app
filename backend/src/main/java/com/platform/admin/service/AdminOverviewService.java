@@ -40,8 +40,9 @@ public class AdminOverviewService {
     }
 
     /** @param plansEndingSoon the soonest first, at most 20; {@code plansEndingSoonTotal} counts them all */
+    /** @param planRequestsOpen families waiting for an answer to a plan request (Y11) */
     public record Waiting(long principalsAwaitingApproval, long suspendedAccounts, long lockoutsLast24Hours,
-                          List<EndingPlan> plansEndingSoon, long plansEndingSoonTotal) {
+                          List<EndingPlan> plansEndingSoon, long plansEndingSoonTotal, long planRequestsOpen) {
     }
 
     public record Platform(long families, long children, long schools, long classes, long teachers, long principals) {
@@ -90,7 +91,8 @@ public class AdminOverviewService {
                 count("select count(*) from accounts where status = 'DISABLED'", params),
                 count("select count(*) from audit_events where action = 'ACCOUNT_LOCKED' and occurred_at > :dayAgo", params),
                 ending,
-                count("select count(*) from family_subscriptions s where " + endingSoon, params));
+                count("select count(*) from family_subscriptions s where " + endingSoon, params),
+                count("select count(*) from plan_requests where status = 'OPEN'", params));
         Platform platform = new Platform(
                 count("select count(*) from families", params),
                 count("select count(*) from children where status = 'ACTIVE'", params),

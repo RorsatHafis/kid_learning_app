@@ -179,11 +179,15 @@ class FamilyErasureIntegrationTests {
         assertThat(delete("/api/v1/account/deletion", parent.token()).statusCode()).isEqualTo(409);
 
         json(post("/api/v1/account/deletion", "{\"currentPassword\":\"" + PASSWORD + "\"}", parent.token()), 202);
+        // The family once asked for a plan (Y11): that request goes with the family.
+        jdbc.update("insert into plan_requests (id, family_id, plan_id, requested_by_account_id, status, requested_at) "
+                + "select gen_random_uuid(), ?::uuid, id, ?::uuid, 'OPEN', now() from subscription_plans limit 1", familyId, parent.id());
         jdbc.update("update accounts set erase_after = now() - interval '1 minute' where id = ?::uuid", parent.id());
         assertThat(erasure.eraseDue()).isEqualTo(1);
 
         assertThat(count("accounts", "id", parent.id())).isZero();
         assertThat(count("families", "id", familyId)).isZero();
+        assertThat(count("plan_requests", "family_id", familyId)).isZero();
         assertThat(count("memberships", "family_id", familyId)).isZero();
         assertThat(count("children", "id", child)).isZero();
         assertThat(count("activity_attempts", "child_id", child)).isZero();

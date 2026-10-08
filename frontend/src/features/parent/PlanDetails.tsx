@@ -1,4 +1,7 @@
-import { Info } from "lucide-react";
+import { useState } from "react";
+import { Info, Send, Undo2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { familyPlanApi } from "@/lib/api/subscriptions";
 import { ENTITLEMENT_LABEL, priceText, type Entitlement, type OwnFamilyPlan, type PlanOffer } from "@/lib/api/subscriptions";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -78,10 +81,31 @@ function OfferLimits({ offer }: { offer: PlanOffer }) {
 
 /**
  * What the family's plan includes, how much of it is in use, what follows when it ends, and
- * which other plans exist. Read-only: plans are given by Bookeyond Kid, and nothing here
- * pretends a checkout exists (PLATFORM-EXPANSION.md §3, PD-09).
+ * which other plans exist. Nothing here pretends a checkout exists (PLATFORM-EXPANSION.md §3,
+ * PD-09): with `onChanged`, a family may *ask* for another plan, which Bookeyond Kid answers (Y11).
  */
-export function PlanDetails({ plan, now = new Date() }: { plan: OwnFamilyPlan; now?: Date }) {
+export function PlanDetails({
+  plan,
+  now = new Date(),
+  onChanged,
+}: {
+  plan: OwnFamilyPlan;
+  now?: Date;
+  onChanged?: (next: OwnFamilyPlan) => void;
+}) {
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function act(call: () => Promise<OwnFamilyPlan>) {
+    setWorking(true);
+    setError(null);
+    try {
+      onChanged?.(await call());
+    } catch {
+      setError("That didn't work just now. Please try again.");
+    } finally {
+      setWorking(false);
+    }
+  }
   const period = periodText(plan, now);
   const overLimits = plan.entitlements.filter((e) => over(e.limit, e.used));
   const end = plan.subscription?.grantsAccess ? plan.subscription.currentPeriodEnd : null;
@@ -138,7 +162,9 @@ export function PlanDetails({ plan, now = new Date() }: { plan: OwnFamilyPlan; n
             <h3 id="plan-choices" className="text-sm font-semibold text-ink">
               Other plans
             </h3>
-            <p className="text-sm text-ink-soft">Plans can&apos;t be changed online at the moment.</p>
+            <p className="text-sm text-ink-soft">
+              Plans can&apos;t be bought online yet. Ask for one, and Bookeyond Kid replies by email; nothing changes until then.
+            </p>
           </div>
           <ul className="grid gap-3 sm:grid-cols-2">
             {plan.choices.map((offer) => (
@@ -149,9 +175,38 @@ export function PlanDetails({ plan, now = new Date() }: { plan: OwnFamilyPlan; n
                 </p>
                 {offer.plan.description && <p className="text-sm text-ink-soft">{offer.plan.description}</p>}
                 <OfferLimits offer={offer} />
+                {onChanged && plan.request?.planId === offer.plan.id && (
+                  <div className="flex flex-col items-start gap-2">
+                    <p role="status" className="text-sm font-semibold text-palm-deep">
+                      You asked for this plan on {dateOnly(plan.request.requestedAt)}.
+                    </p>
+                    <Button size="sm" variant="ghost" onClick={() => act(familyPlanApi.withdraw)} disabled={working}>
+                      <Undo2 size={15} aria-hidden /> Withdraw the request
+                    </Button>
+                  </div>
+                )}
+                {onChanged && plan.request?.planId !== offer.plan.id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-fit"
+                    onClick={() => act(() => familyPlanApi.request(offer.plan.id))}
+                    disabled={working}
+                  >
+                    <Send size={15} aria-hidden /> Ask for {offer.plan.name}
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
+          {plan.request && !plan.choices.some((offer) => offer.plan.id === plan.request?.planId) && (
+            <p className="text-sm text-ink-soft">You asked for the {plan.request.planName} plan on {dateOnly(plan.request.requestedAt)}.</p>
+          )}
+          {error && (
+            <p role="alert" className="text-sm font-medium text-brick-deep">
+              {error}
+            </p>
+          )}
         </section>
       )}
     </div>

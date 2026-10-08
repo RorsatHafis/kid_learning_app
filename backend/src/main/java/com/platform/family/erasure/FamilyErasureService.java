@@ -343,6 +343,7 @@ public class FamilyErasureService {
                 childrenErased++;
             }
             MapSqlParameterSource family = new MapSqlParameterSource("f", familyId);
+            rows += jdbc.update("delete from plan_requests where family_id = :f", family);
             rows += jdbc.update("delete from family_subscriptions where family_id = :f", family);
             rows += jdbc.update("delete from memberships where family_id = :f", family);
             rows += jdbc.update("delete from families where id = :f", family);

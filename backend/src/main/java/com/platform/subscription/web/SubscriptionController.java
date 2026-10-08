@@ -1,5 +1,10 @@
 package com.platform.subscription.web;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import com.platform.subscription.service.PlanRequestService;
+import com.platform.common.web.PageResponse;
 import com.platform.subscription.service.SubscriptionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -25,8 +30,46 @@ public class SubscriptionController {
 
     private final SubscriptionService service;
 
-    public SubscriptionController(SubscriptionService service) {
+    private final PlanRequestService planRequests;
+
+    public SubscriptionController(SubscriptionService service, PlanRequestService planRequests) {
         this.service = service;
+        this.planRequests = planRequests;
+    }
+
+    public record PlanRequestBody(@NotNull UUID planId) {
+    }
+
+    public record DeclineBody(@Size(max = 500) String message) {
+    }
+
+    /** Y11: asks for an offered plan (no payment: an administrator answers). Returns the family's plan view. */
+    @PostMapping("/api/v1/family/plan/request")
+    public SubscriptionDtos.OwnFamilyPlanResponse requestPlan(@AuthenticationPrincipal UUID accountId,
+                                                             @Valid @RequestBody PlanRequestBody body) {
+        planRequests.request(accountId, body.planId());
+        return SubscriptionDtos.OwnFamilyPlanResponse.of(service.familyPlan(accountId));
+    }
+
+    @DeleteMapping("/api/v1/family/plan/request")
+    public SubscriptionDtos.OwnFamilyPlanResponse withdrawPlanRequest(@AuthenticationPrincipal UUID accountId) {
+        planRequests.withdraw(accountId);
+        return SubscriptionDtos.OwnFamilyPlanResponse.of(service.familyPlan(accountId));
+    }
+
+    @GetMapping("/api/v1/admin/plan-requests")
+    public PageResponse<PlanRequestService.AdminRow> planRequests(
+            @AuthenticationPrincipal UUID adminId, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size) {
+        return planRequests.openRequests(adminId, new PageResponse.Request(page, size));
+    }
+
+    @PostMapping("/api/v1/admin/plan-requests/{requestId}/decline")
+    public ResponseEntity<Void> declinePlanRequest(@AuthenticationPrincipal UUID adminId,
+                                                                           @PathVariable UUID requestId,
+                                                                           @Valid @RequestBody DeclineBody body) {
+        planRequests.decline(adminId, requestId, body.message());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/api/v1/family/plan")

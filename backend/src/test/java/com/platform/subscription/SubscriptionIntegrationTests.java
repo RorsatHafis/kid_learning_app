@@ -43,6 +43,7 @@ class SubscriptionIntegrationTests {
     private static final String PASSWORD = "Subscription-Test-Pass-2026";
 
     @Value("${local.server.port}") private int port;
+    @Autowired private com.icegreen.greenmail.util.GreenMail greenMail;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private AccountRepository accountRepository;
     @Autowired private PasswordEncoder passwordEncoder;
@@ -254,6 +255,88 @@ class SubscriptionIntegrationTests {
         }
         assertThat(get("/api/v1/admin/plans", null).statusCode()).isEqualTo(401);
         assertThat(get("/api/v1/family/plan", null).statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void aFamilyAsksForAnOfferedPlanAndTheAdministratorsGrantAnswersIt() throws Exception {
+        String admin = token(PlatformRole.ADMIN);
+        String offered = activePlan(admin, 5, 5, true);
+        String notOffered = activePlan(admin, 2, 2, false);
+        String email = "asks-" + UUID.randomUUID() + "@example.com";
+        String parent = registerParent(email);
+        String familyId = familyOf(admin, email);
+
+        assertThat(post("/api/v1/family/plan/request", "{\"planId\":\"" + notOffered + "\"}", parent).statusCode())
+                .as("a plan the family isn't offered").isEqualTo(404);
+        JsonNode asked = json(post("/api/v1/family/plan/request", "{\"planId\":\"" + offered + "\"}", parent), 200);
+        assertThat(asked.get("request").get("planId").asString()).isEqualTo(offered);
+        json(post("/api/v1/family/plan/request", "{\"planId\":\"" + offered + "\"}", parent), 200);
+        assertThat(jdbc.queryForObject("select count(*) from plan_requests where family_id = ?::uuid", Integer.class, familyId))
+                .as("asking twice is one request").isEqualTo(1);
+        assertThat(mailTo(email, "Your request for the Test plan plan")).contains("can't be bought");
+
+        JsonNode open = json(get("/api/v1/admin/plan-requests?size=100", admin), 200);
+        assertThat(open.get("items").valueStream().anyMatch(row -> row.get("familyId").asString().equals(familyId)
+                && row.get("parentEmail").asString().equals(email))).isTrue();
+        assertThat(json(get("/api/v1/admin/overview", admin), 200).get("waiting").get("planRequestsOpen").asLong()).isPositive();
+
+        json(post("/api/v1/admin/families/" + familyId + "/subscription", "{\"planId\":\"" + offered + "\"}", admin), 200);
+
+        JsonNode after = json(get("/api/v1/family/plan", parent), 200);
+        assertThat(after.get("plan").get("id").asString()).isEqualTo(offered);
+        assertThat(after.get("request").isNull()).isTrue();
+        assertThat(jdbc.queryForObject("select status from plan_requests where family_id = ?::uuid", String.class, familyId))
+                .isEqualTo("GRANTED");
+        assertThat(mailTo(email, "Your family is on the Test plan plan")).contains("now on the Test plan plan");
+        assertThat(post("/api/v1/family/plan/request", "{\"planId\":\"" + offered + "\"}", parent).statusCode())
+                .as("already on it").isEqualTo(409);
+    }
+
+    @Test
+    void aFamilyWithdrawsItsRequestAndAnAdministratorDeclinesWithAMessage() throws Exception {
+        String admin = token(PlatformRole.ADMIN);
+        String offered = activePlan(admin, 5, 5, true);
+        String email = "declined-" + UUID.randomUUID() + "@example.com";
+        String parent = registerParent(email);
+        String familyId = familyOf(admin, email);
+
+        json(post("/api/v1/family/plan/request", "{\"planId\":\"" + offered + "\"}", parent), 200);
+        assertThat(json(delete("/api/v1/family/plan/request", parent), 200).get("request").isNull()).isTrue();
+        assertThat(delete("/api/v1/family/plan/request", parent).statusCode()).as("nothing open").isEqualTo(409);
+
+        json(post("/api/v1/family/plan/request", "{\"planId\":\"" + offered + "\"}", parent), 200);
+        String requestId = jdbc.queryForObject("select id::text from plan_requests where family_id = ?::uuid and status = 'OPEN'",
+                String.class, familyId);
+        assertThat(post("/api/v1/admin/plan-requests/" + requestId + "/decline", "{\"message\":\"x\"}", parent).statusCode())
+                .isEqualTo(403);
+        assertThat(get("/api/v1/admin/plan-requests", parent).statusCode()).isEqualTo(403);
+
+        assertThat(post("/api/v1/admin/plan-requests/" + requestId + "/decline",
+                "{\"message\":\"That plan is for schools taking part in the pilot.\"}", admin).statusCode()).isEqualTo(204);
+        assertThat(post("/api/v1/admin/plan-requests/" + requestId + "/decline", "{}", admin).statusCode())
+                .as("answered already").isEqualTo(409);
+        assertThat(json(get("/api/v1/family/plan", parent), 200).get("request").isNull()).isTrue();
+        assertThat(mailTo(email, "About your request for the Test plan plan")).contains("pilot");
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'PLAN_REQUEST_DECLINED' and resource_id = ?::uuid",
+                Integer.class, requestId)).isEqualTo(1);
+    }
+
+    private String mailTo(String to, String subject) throws Exception {
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (true) {
+            for (jakarta.mail.internet.MimeMessage message : greenMail.getReceivedMessages()) {
+                if (message.getRecipients(jakarta.mail.Message.RecipientType.TO)[0].toString().equalsIgnoreCase(to)
+                        && message.getSubject().contains(subject)) {
+                    return (String) message.getContent();
+                }
+            }
+            assertThat(System.currentTimeMillis()).as("email '%s' to %s", subject, to).isLessThan(deadline);
+            Thread.sleep(50);
+        }
+    }
+
+    private HttpResponse<String> delete(String path, String bearer) throws Exception {
+        return send(HttpRequest.newBuilder(uri(path)).DELETE(), bearer);
     }
 
     // ------------------------------------------------------------------ helpers
