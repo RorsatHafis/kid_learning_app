@@ -94,6 +94,8 @@ class ContentTenancyIntegrationTests {
     @Autowired private LearningPathService learningPathService;
     @Autowired private ActivityAttemptService activityAttemptService;
     @Autowired private StudioService studioService;
+    @Autowired private com.platform.learning.service.LearnerContentReadGuard learnerContentReadGuard;
+    @Autowired private com.platform.family.repository.MembershipRepository membershipRepository;
 
     @Test
     void aFamilyPathIsSeededWithPlatformContentOnly() {
@@ -198,6 +200,48 @@ class ContentTenancyIntegrationTests {
      * in a platform curriculum. Teacher content: the teacher's lesson with the easiest and
      * the hardest activity for the same skill, in the teacher's own curriculum.
      */
+    /**
+     * TD-13: a teacher's activity is read only by the children who may play it and the staff who may
+     * see it; a parent always names the child. Platform content is open to every child and every staff
+     * member. Everything else reads as "not found".
+     */
+    @Test
+    void learnerContentIsReadOnlyForAChildWhoMayPlayItAndForStaffWhoMaySeeIt() {
+        Catalog catalog = catalog();
+        Learner family = familyLearner(catalog.platformCurriculum());
+        Learner classroom = classLearner(catalog.teacherCurriculum());
+        UUID familyParent = parentOf(family.childId());
+        UUID classParent = parentOf(classroom.childId());
+        UUID owner = curriculumService.getCurriculum(catalog.teacherCurriculum().getId()).getOwnerAccountId();
+        UUID otherTeacher = teacher().getId();
+        UUID admin = accountRepository.save(Account.register("admin-" + UUID.randomUUID() + "@example.test", "x".repeat(60),
+                PlatformRole.ADMIN)).getId();
+
+        learnerContentReadGuard.requireReadable(familyParent, family.childId(), catalog.platformEasy());
+        learnerContentReadGuard.requireReadable(classParent, classroom.childId(), catalog.teacherEasiest());
+        learnerContentReadGuard.requireReadable(owner, null, catalog.teacherEasiest());
+        learnerContentReadGuard.requireReadable(admin, null, catalog.teacherEasiest());
+        learnerContentReadGuard.requireReadable(otherTeacher, null, catalog.platformEasy());
+
+        assertThatThrownBy(() -> learnerContentReadGuard.requireReadable(familyParent, family.childId(), catalog.teacherEasiest()))
+                .as("a family child outside the teacher's curriculum").isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> learnerContentReadGuard.requireReadable(familyParent, null, catalog.platformEasy()))
+                .as("no child named").isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> learnerContentReadGuard.requireReadable(familyParent, classroom.childId(), catalog.platformEasy()))
+                .as("another family's child").isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> learnerContentReadGuard.requireReadable(otherTeacher, null, catalog.teacherEasiest()))
+                .as("another teacher's private activity").isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    private UUID parentOf(UUID childId) {
+        Account parent = accountRepository.save(Account.register("parent-" + UUID.randomUUID() + "@example.test", "x".repeat(60),
+                PlatformRole.PARENT));
+        membershipRepository.save(com.platform.family.entity.Membership.create(
+                childRepository.findById(childId).orElseThrow().getFamilyId(), parent.getId(),
+                com.platform.family.entity.MembershipRole.OWNER));
+        return parent.getId();
+    }
+
     private Catalog catalog() {
         String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         UUID subjectId = subjectRepository.save(Subject.create("TENANCY_" + suffix, "Tenancy " + suffix, null)).getId();

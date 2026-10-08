@@ -74,6 +74,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ContentLifecycleIntegrationTests {
 
     @Autowired private FamilyRepository familyRepository;
+    @Autowired private com.platform.family.repository.MembershipRepository membershipRepository;
+    @Autowired private com.platform.identity.repository.AccountRepository accountRepository;
     @Autowired private ChildRepository childRepository;
     @Autowired private SubjectRepository subjectRepository;
     @Autowired private AgeHubRepository ageHubRepository;
@@ -103,7 +105,7 @@ class ContentLifecycleIntegrationTests {
         QuestionVersion draftQuestion = questionService.createDraftVersion(catalog.q1().getId(), "draft prompt", "2", null);
         Learner learner = enroll(catalog);
 
-        assertThatThrownBy(() -> activityContentController.getActivityVersion(draft.getId()))
+        assertThatThrownBy(() -> activityContentController.getActivityVersion(draft.getId(), learner.childId(), learner.parentId()))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThatThrownBy(() -> questionService.getLearnerVisibleVersionById(draftQuestion.getId()))
                 .isInstanceOf(ResourceNotFoundException.class);
@@ -140,7 +142,7 @@ class ContentLifecycleIntegrationTests {
         assertThat(next.getActivityVersionId()).isEqualTo(catalog.firstV1().getId());
 
         ActivityAttempt attempt = activityAttemptService.startAttempt(learner.childId(), next.getActivityVersionId(), next.getId(), null);
-        ActivityVersionDetailResponse content = activityContentController.getActivityVersion(next.getActivityVersionId()).getBody();
+        ActivityVersionDetailResponse content = activityContentController.getActivityVersion(next.getActivityVersionId(), learner.childId(), learner.parentId()).getBody();
         assertThat(content.items()).extracting(ActivityItemResponse::questionVersionId)
                 .containsExactly(catalog.q1v1().getId(), catalog.q2v1().getId());
         answerAll(attempt, content, true);
@@ -168,7 +170,7 @@ class ContentLifecycleIntegrationTests {
         ActivityAttempt resumed = activityAttemptService.startAttempt(learner.childId(), item.getActivityVersionId(), item.getId(), null);
         assertThat(resumed.getId()).isEqualTo(attempt.getId());
         assertThat(resumed.getActivityVersionId()).isEqualTo(catalog.firstV1().getId());
-        assertThat(activityContentController.getActivityVersion(resumed.getActivityVersionId()).getBody().items())
+        assertThat(activityContentController.getActivityVersion(resumed.getActivityVersionId(), learner.childId(), learner.parentId()).getBody().items())
                 .extracting(ActivityItemResponse::questionVersionId)
                 .containsExactly(catalog.q1v1().getId(), catalog.q2v1().getId());
         // The attempt stays on its own questions: the new question version is not part of it.
@@ -196,7 +198,7 @@ class ContentLifecycleIntegrationTests {
         for (Learner learner : List.of(existing, newcomer)) {
             LearningPathItem item = learningPathService.getNextItem(learner.pathId());
             ActivityAttempt attempt = activityAttemptService.startAttempt(learner.childId(), item.getActivityVersionId(), item.getId(), null);
-            ActivityVersionDetailResponse content = activityContentController.getActivityVersion(item.getActivityVersionId()).getBody();
+            ActivityVersionDetailResponse content = activityContentController.getActivityVersion(item.getActivityVersionId(), learner.childId(), learner.parentId()).getBody();
             assertThat(content.items().get(0).prompt()).isEqualTo("1 + 1 = ?");
             answerAll(attempt, content, true);
             assertThat(activityAttemptService.completeAttempt(attempt.getId()).getScore()).isEqualByComparingTo("100");
@@ -238,7 +240,7 @@ class ContentLifecycleIntegrationTests {
         List<AnswerRecord> answers = activityAttemptService.listAnswers(attempt.getId());
         assertThat(answers).extracting(AnswerRecord::getQuestionVersionId)
                 .containsExactlyInAnyOrder(catalog.q1v1().getId(), catalog.q2v1().getId());
-        ActivityVersionDetailResponse content = activityContentController.getActivityVersion(history.getActivityVersionId()).getBody();
+        ActivityVersionDetailResponse content = activityContentController.getActivityVersion(history.getActivityVersionId(), learner.childId(), learner.parentId()).getBody();
         assertThat(content.items()).extracting(ActivityItemResponse::prompt).containsExactly("1 + 1 = ?", "2 + 1 = ?");
         assertThat(learnerSkillHistoryRepository.findByChildIdAndSkillIdOrderByOccurredAtDesc(learner.childId(), catalog.skill().getId()))
                 .hasSize(evidenceBefore);
@@ -260,7 +262,7 @@ class ContentLifecycleIntegrationTests {
         LearningPathItem item = learningPathService.getNextItem(learner.pathId());
         assertThat(item.getActivityVersionId()).isEqualTo(catalog.firstV1().getId());
         ActivityAttempt attempt = activityAttemptService.startAttempt(learner.childId(), item.getActivityVersionId(), item.getId(), null);
-        answerAll(attempt, activityContentController.getActivityVersion(item.getActivityVersionId()).getBody(), false);
+        answerAll(attempt, activityContentController.getActivityVersion(item.getActivityVersionId(), learner.childId(), learner.parentId()).getBody(), false);
         activityAttemptService.completeAttempt(attempt.getId());
 
         LearningPathItem adaptive = learningPathService.getItem(
@@ -271,7 +273,7 @@ class ContentLifecycleIntegrationTests {
             ActivityVersion version = activityVersionRepository.findById(placed.getActivityVersionId()).orElseThrow();
             assertThat(version.getStatus()).isEqualTo(PublicationStatus.PUBLISHED);
             assertThat(version.getId()).isIn(firstV2.getId(), catalog.secondV1().getId());
-            ActivityVersionDetailResponse content = activityContentController.getActivityVersion(version.getId()).getBody();
+            ActivityVersionDetailResponse content = activityContentController.getActivityVersion(version.getId(), learner.childId(), learner.parentId()).getBody();
             assertThat(content.items()).isNotEmpty();
             ActivityAttempt placedAttempt = activityAttemptService.startAttempt(learner.childId(), version.getId(), placed.getId(), null);
             answerAll(placedAttempt, content, true);
@@ -350,8 +352,15 @@ class ContentLifecycleIntegrationTests {
     private Learner enroll(Catalog catalog) {
         Family family = familyRepository.save(Family.create("Lifecycle Family"));
         Child child = childRepository.save(Child.enroll(family.getId(), "Lifecycle Child", LocalDate.of(2018, 6, 1)));
+        // The parent whose device plays: learner content is read for one of their children (TD-13).
+        com.platform.identity.entity.Account parent = accountRepository.save(com.platform.identity.entity.Account.register(
+                "lifecycle-" + UUID.randomUUID() + "@example.com", "not-a-real-hash",
+                com.platform.identity.entity.PlatformRole.PARENT));
+        membershipRepository.save(com.platform.family.entity.Membership.create(family.getId(), parent.getId(),
+                com.platform.family.entity.MembershipRole.OWNER));
         Enrollment enrollment = enrollmentService.enroll(child.getId(), catalog.curriculum().getId());
-        return new Learner(child.getId(), learningPathRepository.findByEnrollmentId(enrollment.getId()).orElseThrow().getId());
+        return new Learner(child.getId(), learningPathRepository.findByEnrollmentId(enrollment.getId()).orElseThrow().getId(),
+                parent.getId());
     }
 
     private List<UUID> activityVersionIdsOnPath(Learner learner) {
@@ -370,7 +379,7 @@ class ContentLifecycleIntegrationTests {
                            QuestionVersion q2v1, Activity first, ActivityVersion firstV1, ActivityVersion secondV1) {
     }
 
-    private record Learner(UUID childId, UUID pathId) {
+    private record Learner(UUID childId, UUID pathId, UUID parentId) {
     }
 
 }

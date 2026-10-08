@@ -774,7 +774,7 @@ class SchoolAccessIntegrationTests {
         String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts", "{\"activityVersionId\":\""
                 + next.get("activityVersionId").asString() + "\",\"learningPathItemId\":\"" + next.get("learningPathItemId").asString()
                 + "\"}", token), 201).get("id").asString();
-        JsonNode content = json(get("/api/v1/activity-versions/" + next.get("activityVersionId").asString(), token), 200);
+        JsonNode content = json(get("/api/v1/activity-versions/" + next.get("activityVersionId").asString() + "?childId=" + childId, token), 200);
         for (JsonNode item : content.get("items")) {
             json(post("/api/v1/activity-attempts/" + attemptId + "/answers", "{\"questionVersionId\":\""
                     + item.get("questionVersionId").asString() + "\",\"submittedAnswer\":\"" + answer + "\",\"idempotencyKey\":\""

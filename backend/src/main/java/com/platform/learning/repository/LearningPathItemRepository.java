@@ -55,6 +55,14 @@ public interface LearningPathItemRepository extends JpaRepository<LearningPathIt
 
     long countByLearningPathId(UUID learningPathId);
 
+    /** Whether the version is on any of the child's paths, whatever its state (TD-13). */
+    @Query("""
+            select count(i) > 0 from LearningPathItem i, LearningPath p, Enrollment e
+             where i.learningPathId = p.id and p.enrollmentId = e.id
+               and e.childId = :childId and i.activityVersionId = :versionId
+            """)
+    boolean childHasVersionOnAPath(@Param("childId") UUID childId, @Param("versionId") UUID versionId);
+
     long countByLearningPathIdAndStatus(UUID learningPathId, LearningPathItemStatus status);
 
 }

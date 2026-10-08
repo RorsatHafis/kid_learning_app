@@ -179,7 +179,7 @@ export function PlaySession() {
           learningPathItemId: item.id,
         });
         const [activity, answers, overview] = await Promise.all([
-          activityContentApi.getVersion(item.activityVersionId),
+          activityContentApi.getVersion(item.activityVersionId, childId),
           activityAttemptApi.listAnswers(attempt.id),
           overviewOfPath(),
         ]);
@@ -382,7 +382,7 @@ export function PracticeSession() {
         return;
       }
       const [activity, answers] = await Promise.all([
-        activityContentApi.getVersion(activityVersionId),
+        activityContentApi.getVersion(activityVersionId, childId),
         activityAttemptApi.listAnswers(attempt.id),
       ]);
       const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);

@@ -1,5 +1,8 @@
 package com.platform.content.web;
 
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.platform.learning.service.LearnerContentReadGuard;
 import com.platform.content.entity.Activity;
 import com.platform.content.entity.ActivityItem;
 import com.platform.content.entity.ActivityVersion;
@@ -27,10 +30,8 @@ import static com.platform.content.web.ActivityContentDtos.ActivityVersionDetail
  * piece of the activity-attempt flow (start/submit/complete/adaptive-next/smart-review)
  * already existed, but nothing served the actual prompt/options a child needs to
  * see to answer a question - the frontend had no choice but to hardcode/mock
- * question content. Read-only and not family/child-scoped: activity/question
- * content is shared published catalog data, not per-child data (contrast
- * {@link com.platform.family.service.FamilyAccessGuard}-guarded endpoints, which
- * gate access to a specific child's own records). Never serializes
+ * question content. Read-only; since TD-13 scoped by
+ * {@link LearnerContentReadGuard}: a parent reads it for a child who may play it. Never serializes
  * {@code QuestionVersion.correctAnswer} or {@code QuestionOption.correct} - see
  * {@link ActivityContentDtos}.
  */
@@ -41,9 +42,12 @@ public class ActivityContentController {
     private final QuestionService questionService;
     private final ActivityItemRepository activityItemRepository;
     private final MediaService mediaService;
+    private final LearnerContentReadGuard readGuard;
 
     public ActivityContentController(ActivityService activityService, QuestionService questionService,
-                                      ActivityItemRepository activityItemRepository, MediaService mediaService) {
+                                      ActivityItemRepository activityItemRepository, MediaService mediaService,
+                                      LearnerContentReadGuard readGuard) {
+        this.readGuard = readGuard;
         this.activityService = activityService;
         this.questionService = questionService;
         this.activityItemRepository = activityItemRepository;
@@ -51,11 +55,15 @@ public class ActivityContentController {
     }
 
     @GetMapping("/api/v1/activity-versions/{activityVersionId}")
-    public ResponseEntity<ActivityVersionDetailResponse> getActivityVersion(@PathVariable UUID activityVersionId) {
+    public ResponseEntity<ActivityVersionDetailResponse> getActivityVersion(@PathVariable UUID activityVersionId,
+                                                                            @RequestParam(required = false) UUID childId,
+                                                                            @AuthenticationPrincipal UUID accountId) {
         // Known Backend Fix C (no draft learner content): getLearnerVisibleVersionById,
         // never the general getVersion - see its javadoc. A caller who knows a draft
         // ActivityVersion id must not be able to retrieve draft learner content here.
         ActivityVersion version = activityService.getLearnerVisibleVersionById(activityVersionId);
+        // TD-13: a parent reads it for a child who may play it; staff, what they may see.
+        readGuard.requireReadable(accountId, childId, version);
         Activity activity = activityService.getActivity(version.getActivityId());
 
         // Known Backend Fix C, extended (Battle 3): published-only, matching the ActivityVersion check

@@ -70,6 +70,8 @@ public interface ActivityAttemptRepository extends JpaRepository<ActivityAttempt
 
     List<ActivityAttempt> findByLearningPathItemId(UUID learningPathItemId);
 
+    boolean existsByChildIdAndActivityVersionId(UUID childId, UUID activityVersionId);
+
     long countByChildIdAndActivityVersionIdAndStatusAndCompletedAtGreaterThanEqualAndCompletedAtLessThanEqual(
             UUID childId, UUID activityVersionId, com.platform.learning.entity.ActivityAttemptStatus status, Instant from, Instant to);
 

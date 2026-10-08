@@ -244,7 +244,7 @@ class FamilyErasureIntegrationTests {
         String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts",
                 "{\"activityVersionId\":\"" + next.get("activityVersionId").asString() + "\",\"learningPathItemId\":\""
                         + next.get("learningPathItemId").asString() + "\"}", parent.token()), 201).get("id").asString();
-        JsonNode content = json(get("/api/v1/activity-versions/" + next.get("activityVersionId").asString(), parent.token()), 200);
+        JsonNode content = json(get("/api/v1/activity-versions/" + next.get("activityVersionId").asString() + "?childId=" + childId, parent.token()), 200);
         for (JsonNode item : content.get("items")) {
             json(post("/api/v1/activity-attempts/" + attemptId + "/answers", "{\"questionVersionId\":\""
                     + item.get("questionVersionId").asString() + "\",\"submittedAnswer\":\"999\",\"idempotencyKey\":\""

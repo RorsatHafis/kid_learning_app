@@ -65,7 +65,7 @@ class CrossFamilyAccessSweepIntegrationTests {
         String startBody = "{\"activityVersionId\":\"" + activityVersionId + "\",\"learningPathItemId\":\""
                 + next.get("learningPathItemId").asString() + "\"}";
         String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts", startBody, owner), 201).get("id").asString();
-        String questionVersionId = json(get("/api/v1/activity-versions/" + activityVersionId, owner), 200)
+        String questionVersionId = json(get("/api/v1/activity-versions/" + activityVersionId + "?childId=" + childId, owner), 200)
                 .get("items").get(0).get("questionVersionId").asString();
         String curriculumId = enrollment.get("curriculum").get("id").asString();
         String answerBody = "{\"questionVersionId\":\"" + questionVersionId + "\",\"submittedAnswer\":\"2\",\"idempotencyKey\":\""

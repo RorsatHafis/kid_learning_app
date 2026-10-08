@@ -45,7 +45,8 @@ function server(start: () => Response) {
       calls.push({ method, path, body });
       if (path === "/children/c1") return respond(200, { id: "c1", displayName: "Sokha" });
       if (method === "POST" && path === "/children/c1/activity-attempts") return start();
-      if (path === "/activity-versions/av1") return respond(200, ACTIVITY);
+      // The content is read for this child (TD-13).
+      if (path === "/activity-versions/av1?childId=c1") return respond(200, ACTIVITY);
       if (method === "GET" && path === "/activity-attempts/t1/answers") return respond(200, recorded);
       if (method === "POST" && path === "/activity-attempts/t1/answers") {
         const record = {

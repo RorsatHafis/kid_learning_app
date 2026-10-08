@@ -119,7 +119,7 @@ class ContentStudioIntegrationTests {
         String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts", "{\"activityVersionId\":\""
                 + step.get("activityVersionId").asString() + "\",\"learningPathItemId\":\""
                 + step.get("learningPathItemId").asString() + "\"}", parent), 201).get("id").asString();
-        JsonNode content = json(get("/api/v1/activity-versions/" + step.get("activityVersionId").asString(), parent), 200);
+        JsonNode content = json(get("/api/v1/activity-versions/" + step.get("activityVersionId").asString() + "?childId=" + childId, parent), 200);
         String correctOptionId = null;
         for (JsonNode option : content.get("items").get(0).get("options")) {
             if (option.get("label").asString().equals("3")) {
@@ -193,7 +193,7 @@ class ContentStudioIntegrationTests {
         String enrollmentId = json(post("/api/v1/children/" + childId + "/enrollments",
                 "{\"curriculumId\":\"" + curriculum.get("id").asString() + "\"}", parent), 201).get("id").asString();
         JsonNode step = json(get("/api/v1/enrollments/" + enrollmentId + "/journey", parent), 200).get("steps").get(0);
-        JsonNode item = json(get("/api/v1/activity-versions/" + activityVersionId, parent), 200).get("items").get(0);
+        JsonNode item = json(get("/api/v1/activity-versions/" + activityVersionId + "?childId=" + childId, parent), 200).get("items").get(0);
         assertThat(item.get("questionType").asString()).isEqualTo("MATCHING");
         assertThat(item.toString()).doesNotContain("matchPair").doesNotContain("correct");
         List<String> sides = new ArrayList<>();

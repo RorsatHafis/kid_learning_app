@@ -199,7 +199,7 @@ class QuestionMediaAndOrderingIntegrationTests {
         json(post("/api/v1/studio/question-versions/" + numbers + "/publish", "", admin.token()), 200);
 
         Played played = playableActivity(admin.token(), catalog, List.of(bookVersion, numbers));
-        JsonNode content = json(get("/api/v1/activity-versions/" + played.activityVersionId(), played.parent()), 200);
+        JsonNode content = json(get("/api/v1/activity-versions/" + played.activityVersionId() + "?childId=" + played.childId(), played.parent()), 200);
         JsonNode bookItem = itemFor(content, bookVersion);
         JsonNode numberItem = itemFor(content, numbers);
 
@@ -209,7 +209,7 @@ class QuestionMediaAndOrderingIntegrationTests {
         assertThat(displayOrders(bookItem.get("options"))).containsExactly(0, 1, 2, 3);
         assertThat(content.toString()).doesNotContain("\"correct\"");
         // ...and the same start every time it is read (deterministic for the version).
-        assertThat(labels(itemFor(json(get("/api/v1/activity-versions/" + played.activityVersionId(), played.parent()), 200),
+        assertThat(labels(itemFor(json(get("/api/v1/activity-versions/" + played.activityVersionId() + "?childId=" + played.childId(), played.parent()), 200),
                 bookVersion).get("options"))).isEqualTo(labels(bookItem.get("options")));
         // The picture and reading reach the child's browser through their signed URLs.
         String promptUrl = bookItem.get("promptImage").get("url").asString();
@@ -270,7 +270,7 @@ class QuestionMediaAndOrderingIntegrationTests {
         json(post("/api/v1/studio/question-versions/" + version + "/publish", "", admin.token()), 200);
 
         Played played = playableActivity(admin.token(), catalog, List.of(version));
-        JsonNode content = json(get("/api/v1/activity-versions/" + played.activityVersionId(), played.parent()), 200);
+        JsonNode content = json(get("/api/v1/activity-versions/" + played.activityVersionId() + "?childId=" + played.childId(), played.parent()), 200);
         JsonNode item = itemFor(content, version);
         List<JsonNode> groups = new ArrayList<>();
         List<JsonNode> items = new ArrayList<>();
@@ -369,7 +369,7 @@ class QuestionMediaAndOrderingIntegrationTests {
                 + "\"skillIds\":[\"" + catalog.skillId() + "\"]}";
     }
 
-    private record Played(String parent, String activityVersionId, String attemptId) {
+    private record Played(String parent, String activityVersionId, String attemptId, String childId) {
     }
 
     /** A published activity holding the questions, on a published curriculum a family's child is enrolled in, attempt started. */
@@ -398,7 +398,7 @@ class QuestionMediaAndOrderingIntegrationTests {
         String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts", "{\"activityVersionId\":\""
                 + step.get("activityVersionId").asString() + "\",\"learningPathItemId\":\""
                 + step.get("learningPathItemId").asString() + "\"}", parent), 201).get("id").asString();
-        return new Played(parent, step.get("activityVersionId").asString(), attemptId);
+        return new Played(parent, step.get("activityVersionId").asString(), attemptId, childId);
     }
 
     private static JsonNode itemFor(JsonNode content, String questionVersionId) {

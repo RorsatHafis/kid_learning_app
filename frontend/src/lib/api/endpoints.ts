@@ -127,10 +127,11 @@ export const enrollmentApi = {
     apiClient.get<LearningPathItem>(`/enrollments/${enrollmentId}/next-activity`),
 };
 
-// content/web/ActivityContentController.java — published, un-guarded catalog content
+// content/web/ActivityContentController.java — published learner content, never answer keys
 export const activityContentApi = {
-  getVersion: (activityVersionId: string) =>
-    apiClient.get<ActivityVersionDetail>(`/activity-versions/${activityVersionId}`),
+  // For one child, who must be allowed to play it (TD-13); 404 otherwise.
+  getVersion: (activityVersionId: string, childId: string) =>
+    apiClient.get<ActivityVersionDetail>(`/activity-versions/${activityVersionId}?childId=${encodeURIComponent(childId)}`),
 };
 
 // learning/web/ActivityAttemptController.java

@@ -103,7 +103,7 @@ class DueReviewIntegrationTests {
         // Free practice (no path item), every answer wrong.
         String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts", "{\"activityVersionId\":\"" + versionId + "\"}",
                 parent), 201).get("id").asString();
-        for (JsonNode item : json(get("/api/v1/activity-versions/" + versionId, parent), 200).get("items")) {
+        for (JsonNode item : json(get("/api/v1/activity-versions/" + versionId + "?childId=" + childId, parent), 200).get("items")) {
             json(post("/api/v1/activity-attempts/" + attemptId + "/answers", "{\"questionVersionId\":\"" + item.get("questionVersionId").asString()
                     + "\",\"submittedAnswer\":\"999\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", parent), 201);
         }
