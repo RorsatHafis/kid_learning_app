@@ -29,7 +29,7 @@ function entry(n: number, action = "ACCOUNT_SUSPENDED") {
   };
 }
 
-const parent = { id: "acct-1", email: "parent@example.com", platformRole: "PARENT", status: "ACTIVE", emailVerifiedAt: "2026-01-01T00:00:00Z" };
+const parent = { id: "acct-1", email: "parent@example.com", platformRole: "PARENT", status: "ACTIVE", emailVerifiedAt: "2026-01-01T00:00:00Z", eraseAfter: null as string | null };
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -139,6 +139,28 @@ describe("AccountsPage", () => {
     await user.click(screen.getByRole("button", { name: "Find" }));
     expect(await screen.findByText(/waiting for approval/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Suspend|Reinstate/ })).not.toBeInTheDocument();
+  });
+
+  it("says when the family has asked to delete the account, and until when they can keep it", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("/admin/accounts?email=")
+          ? respond(200, { ...parent, eraseAfter: "2026-10-15T08:00:00Z" })
+          : respond(200, { entries: [], nextBefore: null, nextBeforeId: null }),
+      ),
+    );
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <AccountsPage />
+      </MemoryRouter>,
+    );
+    await user.type(screen.getByLabelText("Email address"), "parent@example.com");
+    await user.click(screen.getByRole("button", { name: "Find" }));
+    expect(await screen.findByText(/asked to delete it: the account and its family will be erased on/)).toHaveTextContent(
+      /2026, unless they keep it before then/,
+    );
   });
 
   it("says plainly when no account has that address", async () => {

@@ -134,6 +134,8 @@ public class AdminInsightService {
     // ------------------------------------------------------------------ learning operations
 
     /** Over the last 7 days, and the loop's standing queues. */
+    static final int GAPS_SHOWN = 50;
+
     public record LoopActivity(long attemptsStarted, long attemptsCompleted, long childrenLearning, long answers, long answersCorrect,
                                long attemptsLeftOpen, Map<String, Long> placementsBySource, long reviewItemsActive, long reviewDueNow) {
     }
@@ -142,7 +144,9 @@ public class AdminInsightService {
     public record CoverageGap(UUID skillId, String skill, String subject, String curriculum) {
     }
 
-    public record LearningOperations(LoopActivity lastSevenDays, List<CoverageGap> coverageGaps, List<String> ageGroupsWithNothingOffered) {
+    /** {@code coverageGapTotal}: every gap; {@code coverageGaps} lists the first {@value #GAPS_SHOWN} of them. */
+    public record LearningOperations(LoopActivity lastSevenDays, List<CoverageGap> coverageGaps, long coverageGapTotal,
+                                     List<String> ageGroupsWithNothingOffered) {
     }
 
     @Transactional(readOnly = true)
@@ -178,7 +182,7 @@ public class AdminInsightService {
                 num(answers.get("answers")), num(answers.get("correct")), num(attempts.get("left_open")), placements,
                 num(review.get("active")), num(review.get("due")));
 
-        List<CoverageGap> gaps = jdbc.query("""
+        String gapRows = """
                 SELECT DISTINCT sk.id, sk.name AS skill, su.name AS subject, cu.name AS curriculum
                 FROM curriculums cu
                 JOIN curriculum_versions cv ON cv.curriculum_id = cu.id AND cv.status = 'PUBLISHED'
@@ -191,9 +195,10 @@ public class AdminInsightService {
                                   JOIN activity_versions av ON av.id = avs.activity_version_id AND av.status = 'PUBLISHED'
                                   JOIN activities ac ON ac.id = av.activity_id AND ac.status = 'ACTIVE'
                                   WHERE avs.skill_id = sk.id)
-                ORDER BY su.name, cu.name, sk.name
-                LIMIT 50
-                """, params, (rs, i) -> new CoverageGap(rs.getObject("id", UUID.class), rs.getString("skill"), rs.getString("subject"),
+                """;
+        Long gapTotal = jdbc.queryForObject("SELECT count(*) FROM (" + gapRows + ") gaps", params, Long.class);
+        List<CoverageGap> gaps = jdbc.query(gapRows + " ORDER BY su.name, cu.name, sk.name LIMIT " + GAPS_SHOWN, params,
+                (rs, i) -> new CoverageGap(rs.getObject("id", UUID.class), rs.getString("skill"), rs.getString("subject"),
                 rs.getString("curriculum")));
         List<String> uncovered = jdbc.queryForList("""
                 SELECT ah.name FROM age_hubs ah
@@ -201,7 +206,7 @@ public class AdminInsightService {
                                   WHERE c.age_hub_id = ah.id AND c.status = 'ACTIVE' AND c.owner_account_id IS NULL)
                 ORDER BY ah.display_order
                 """, params, String.class);
-        return new LearningOperations(loop, gaps, uncovered);
+        return new LearningOperations(loop, gaps, gapTotal == null ? 0 : gapTotal, uncovered);
     }
 
     // ------------------------------------------------------------------ reports

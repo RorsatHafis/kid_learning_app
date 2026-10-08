@@ -106,6 +106,11 @@ function Body({ data }: { data: LearningOperations }) {
                     </li>
                   ))}
                 </ul>
+                {data.coverageGapTotal > data.coverageGaps.length && (
+                  <p className="text-sm text-ink-soft">
+                    Showing the first {data.coverageGaps.length} of {data.coverageGapTotal}, by subject and curriculum.
+                  </p>
+                )}
                 <Link to="/admin/studio" className="text-sm font-semibold text-tonle-700 hover:text-tonle-900">
                   Open the Content Studio
                 </Link>

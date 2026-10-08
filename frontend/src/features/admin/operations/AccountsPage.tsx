@@ -168,6 +168,16 @@ function AccountCard({ account, onChanged }: { account: StaffAccount; onChanged:
             <StatusPill status={account.status} />
           </dd>
         </div>
+        {account.eraseAfter && (
+          <div>
+            <dt className="text-[0.8125rem] font-medium text-ink-faint">Deletion</dt>
+            <dd className="text-ink">
+              Its owner asked to delete it: the account and its family will be erased on{" "}
+              {new Date(account.eraseAfter).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}, unless
+              they keep it before then.
+            </dd>
+          </div>
+        )}
       </dl>
 
       <div className="mt-5 border-t border-line pt-5">

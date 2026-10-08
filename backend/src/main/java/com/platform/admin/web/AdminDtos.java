@@ -22,10 +22,13 @@ public final class AdminDtos {
             String email,
             PlatformRole platformRole,
             String status,
-            Instant emailVerifiedAt) {
+            Instant emailVerifiedAt,
+            /** When the account and its family will be erased, if its owner asked (Y3); null otherwise. */
+            Instant eraseAfter) {
         public static StaffAccountResponse of(Account account) {
             return new StaffAccountResponse(account.getId(), account.getEmail(),
-                    account.getPlatformRole(), account.getStatus().name(), account.getEmailVerifiedAt());
+                    account.getPlatformRole(), account.getStatus().name(), account.getEmailVerifiedAt(),
+                    account.getEraseAfter());
         }
     }
 }

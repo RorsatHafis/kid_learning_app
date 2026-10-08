@@ -40,7 +40,8 @@ public class AdminBootstrapRunner implements CommandLineRunner {
                 || properties.getPassword() == null || properties.getPassword().isBlank()) {
             throw new IllegalStateException("Bootstrap admin requires email and password");
         }
-        if (accounts.findAll().stream().anyMatch(a -> a.getPlatformRole() == PlatformRole.ADMIN)) return;
+        // One indexed existence check, not every account loaded at each start-up.
+        if (accounts.existsByPlatformRole(PlatformRole.ADMIN)) return;
         passwordPolicy.validate(properties.getPassword());
         Account admin = accounts.saveAndFlush(Account.register(
                 properties.getEmail(), passwordEncoder.encode(properties.getPassword()), PlatformRole.ADMIN));

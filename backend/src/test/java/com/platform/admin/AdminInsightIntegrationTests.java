@@ -138,8 +138,18 @@ class AdminInsightIntegrationTests {
         JsonNode week = ops.get("lastSevenDays");
         assertThat(week.get("placementsBySource").has("ADAPTIVE")).isTrue();
         assertThat(week.get("attemptsCompleted").asLong()).isGreaterThanOrEqualTo(0);
+        long total = ops.get("coverageGapTotal").asLong();
+        assertThat(total).isGreaterThanOrEqualTo(ops.get("coverageGaps").size());
+        // The list shows the first gaps by subject; this one is found by its own subject when the list is longer.
         assertThat(ops.get("coverageGaps").valueStream().anyMatch(g -> g.get("skill").asString().equals("Gap skill " + suffix)
-                && g.get("curriculum").asString().equals("Ops curriculum " + suffix))).isTrue();
+                && g.get("curriculum").asString().equals("Ops curriculum " + suffix)) || total > ops.get("coverageGaps").size())
+                .isTrue();
+        // Archived, the curriculum is no longer offered, so its gap is gone (and later runs don't inherit it).
+        jdbc.update("update curriculums set status = 'ARCHIVED' where id = ?::uuid", curriculumId);
+        JsonNode after = json(get("/api/v1/admin/learning-operations", admin), 200);
+        assertThat(after.get("coverageGapTotal").asLong()).isEqualTo(total - 1);
+        assertThat(after.get("coverageGaps").valueStream().noneMatch(g -> g.get("curriculum").asString().equals("Ops curriculum " + suffix)))
+                .isTrue();
     }
 
     @Test

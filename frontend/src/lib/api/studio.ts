@@ -558,6 +558,8 @@ export interface StaffAccount {
   platformRole: PlatformRole;
   status: string;
   emailVerifiedAt: string | null;
+  /** When the family asked to delete the account, the day it will be erased (Y3). */
+  eraseAfter: string | null;
 }
 
 export const adminApi = {

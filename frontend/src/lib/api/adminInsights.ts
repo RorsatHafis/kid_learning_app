@@ -50,6 +50,8 @@ export interface LearningOperations {
   };
   /** Skills an offered, published curriculum relies on that nothing published and in use practises (first 50). */
   coverageGaps: { skillId: string; skill: string; subject: string; curriculum: string }[];
+  /** Every gap; `coverageGaps` lists the first of them. */
+  coverageGapTotal: number;
   /** Age groups with no platform curriculum offered to families. */
   ageGroupsWithNothingOffered: string[];
 }

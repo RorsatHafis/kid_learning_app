@@ -39,4 +39,6 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
      List<Account> findByPlatformRoleAndStatusOrderByCreatedAtAsc(PlatformRole platformRole, AccountStatus status);
     
+    boolean existsByPlatformRole(com.platform.identity.entity.PlatformRole platformRole);
+
 }
