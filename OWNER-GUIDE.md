@@ -153,13 +153,19 @@ people at once (e.g. the administrator and a parent).
 ### 7. The parent's account
 
 - **Do:** open **Account**.
-- **See:** your details, confirmed email, **Change password**, **Sign out everywhere**, and
-  **Your data**.
+- **See:** your details, confirmed email, **Change email**, **Change password**, **Devices**
+  (every signed-in browser, with **Sign out** for the others and **Sign out everywhere**),
+  **Your plan**, **Your data** and **Delete account**.
 - **Do:** click **Download my family's data**.
 - **See:** a file `bookeyond-kid-data-<date>.json` with your account, Sokha, and every answer.
 - **Do:** change your password (you stay signed in here); then **Sign out everywhere**.
 - **See:** you're signed out and must log in with the new password.
-- **Proves:** families control their own account and can take their data with them.
+- **Also try:** **Change email** (the link goes to the new address; your old address is told);
+  on a child's page, **Delete {child}…** (the child leaves learning straight away and is erased
+  after a waiting period - 7 days by default - during which **Keep {child}** on the family page
+  undoes it); **Delete account** (everything keeps working until the date, and **Keep my
+  account** undoes it). In **Your plan**, **Ask for** a plan the administrator has offered.
+- **Proves:** families control their own account, can take their data with them, and can have it erased.
 
 ### 8. Forgotten password
 
@@ -269,14 +275,14 @@ deliberately does not guess.
 
 | # | Decision | Effect today |
 |---|---|---|
-| PD-09 | Prices and a payment provider | Plans exist and limits apply, but a plan is given by an administrator; no payment is taken. |
+| PD-09 | Prices and a payment provider | Plans exist and limits apply; families can ask for an offered plan and an administrator gives or declines it; no payment is taken. |
 | PD-25 | What "archive" means (adopted: no new uses; nothing a child has changes) — please confirm | Archive works this way for content and classes. |
 | PD-26 | Closing or archiving a whole school | Not offered; classes can be archived. |
 | PD-27 | Whether the platform itself should place more practice when a child has played every step | The child can play any lit book again from the shelf; the engine doesn't add practice by itself. |
 | PD-04 | Withdrawing a published version from children who already have it | Published content is never changed; new versions are used for new work. |
 | PD-14 / PD-15 | Khmer interface text and Khmer/English lessons, written by native speakers and educators | The app is in English; only the Maths path exists (authors can add more in the Studio). |
 | PD-20 | Whether content needs a second person's review before publishing | One administrator can publish. |
-| PD-24 | What happens when a family deletes their account or a child | Families can export their data; deletion isn't offered yet. |
+| PD-24 | Deleting a family account or a child (adopted in Y3 - please confirm: password-confirmed, a 7-day waiting period you can change, then everything about the child is erased; audit records keep ids only) | Families can export their data and delete a child or their account. Also decide how long backups keep erased data. |
 | PD-18 | Privacy notice and terms (legal text) | No such pages yet. |
 | PD-02 | Whether to cut the up-to-15-minute sign-in tail after a suspension or password reset | A signed-in tab keeps working for up to 15 minutes, then stops. |
 | PD-13, PD-16, PD-23 | Learning Buddy's name; one retry before showing the answer; final landing-page wording | Unnamed buddy; answer shown after a miss; honest interim copy. |

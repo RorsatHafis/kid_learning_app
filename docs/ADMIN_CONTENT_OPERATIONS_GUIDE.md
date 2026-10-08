@@ -66,7 +66,8 @@ Pictures and recordings used by questions, uploaded once and reused (X13).
 
 ### 2.5 Accounts
 Find any account by email; see its history (from the audit log); **suspend** (ends its sessions, a reason is
-required and recorded) or **reinstate**. Nothing is deleted.
+required and recorded) or **reinstate**. An administrator deletes nothing. When a family has asked to delete its
+account (Y3), the panel says on which day it and its family will be erased - the family can still keep it until then.
 
 ### 2.6 Schools (X15)
 Every school, its principal, its size (classes, teachers, children with access) and what is still to set up
@@ -80,7 +81,8 @@ product decision not taken).
   correct, activities left open for over a day, practice placed on paths by source (curricula, the adaptive engine,
   Smart Review, teachers), Smart Review items under review and due.
 - **Content gaps**: skills an offered, published curriculum relies on that no published, in-use activity practises —
-  children can't be given practice on them. Fix them in the Studio (add or publish an activity for the skill).
+  children can't be given practice on them. Fix them in the Studio (add or publish an activity for the skill). The
+  first 50 are listed by subject; the page says how many there are in all.
 - **Age groups with nothing offered** to families.
 
 ### 2.8 Reports (X15)
@@ -93,6 +95,9 @@ small chart per measure on its own scale, the latest week as the headline, and t
   already done is ever taken away.
 - **A family's plan**: find a family by the parent's email; give it a plan, change its period end, or end it — each
   with a recorded reason.
+- **Plan requests** (Y11): a plan marked *Families can ask for it* is shown to families, who may ask for it from their
+  account page. Requests wait here (and on the Dashboard). **Open the family** and give the plan - that answers the
+  request and emails the family - or **Decline…** with an optional message the family receives.
 - **No payment is taken in the product.** Prices and a payment provider are an owner decision (PD-09); until then
   plans are given by an administrator.
 
@@ -244,9 +249,8 @@ and **age groups with nothing offered** show where content is still needed.
 | Item | Waiting on |
 |---|---|
 | Archiving or closing a whole school | PD-26 (what happens to families' grants and staff) |
-| Payments | PD-09 (prices, provider) |
-| Deleting accounts/data | PD-24 (retention) |
+| Payments | PD-09 (prices, provider); families can already ask for a plan (Y11) |
 | Withdrawing a published version from children who have it | PD-04 |
-| Challenges as a content type | OD-09 |
+| Class challenges | a product decision (their unfinished API was retired in Y7; the data model stays) |
 | Tracing and child voice recording | evidence-quality and privacy decisions |
 | Report export (CSV) | not yet prioritised |
