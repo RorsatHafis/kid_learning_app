@@ -78,6 +78,9 @@ export const childrenApi = {
   get: (childId: string) => apiClient.get<Child>(`/children/${childId}`),
   create: (input: { displayName: string; dateOfBirth: string }) => apiClient.post<Child>("/children", input),
   rename: (childId: string, displayName: string) => apiClient.patch<Child>(`/children/${childId}`, { displayName }),
+  // Name and/or a corrected date of birth (Y12); 400 with field errors when either is invalid.
+  update: (childId: string, changes: { displayName?: string; dateOfBirth?: string }) =>
+    apiClient.patch<Child>(`/children/${childId}`, changes),
   // family/erasure/FamilyErasureController.java — 422 wrong password; the child leaves learning now, erased at eraseAfter.
   requestDeletion: (childId: string, currentPassword: string) =>
     apiClient.post<{ eraseAfter: string }>(`/children/${childId}/deletion`, { currentPassword }),

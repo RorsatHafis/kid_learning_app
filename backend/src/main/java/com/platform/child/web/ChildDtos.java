@@ -22,8 +22,14 @@ public final class ChildDtos {
     ) {
     }
 
+    /**
+     * Either or both: a new name, and a corrected date of birth (Y12: a mistyped date set the
+     * child's age and so the curricula offered first; the family can put it right).
+     */
     public record UpdateChildRequest(
-            @NotBlank @Size(max = 80) String displayName
+            @Size(max = 80) @jakarta.validation.constraints.Pattern(regexp = "(?s).*\\S.*", message = "must not be blank")
+            String displayName,
+            @PastOrPresent LocalDate dateOfBirth
     ) {
     }
 

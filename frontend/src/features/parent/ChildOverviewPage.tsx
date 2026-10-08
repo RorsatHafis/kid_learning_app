@@ -117,6 +117,7 @@ function BackLink({ name }: { name?: string }) {
 function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(child.displayName);
+  const [birth, setBirth] = useState(child.dateOfBirth);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -125,14 +126,19 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
     setSaving(true);
     setError(null);
     try {
-      await childrenApi.rename(child.id, name);
+      await childrenApi.update(child.id, {
+        displayName: name,
+        ...(birth !== child.dateOfBirth ? { dateOfBirth: birth } : {}),
+      });
       setEditing(false);
       onRenamed();
     } catch (err) {
       setError(
         err instanceof ApiError && err.validationErrors?.displayName
           ? "Please enter a name (up to 80 characters)."
-          : "Couldn't save the name. Please try again.",
+          : err instanceof ApiError && (err.validationErrors?.dateOfBirth || err.status === 400)
+            ? "Please enter the child's real date of birth (not in the future)."
+            : "Couldn't save the changes. Please try again.",
       );
     } finally {
       setSaving(false);
@@ -159,7 +165,22 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
                   aria-invalid={error ? true : undefined}
                   aria-describedby={error ? "child-name-error" : undefined}
                 />
-                <Button type="submit" disabled={saving || !name.trim()}>
+              </div>
+              <label htmlFor="child-birth" className="text-sm font-semibold text-ink">
+                Date of birth
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  id="child-birth"
+                  type="date"
+                  value={birth}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setBirth(e.target.value)}
+                  className={`${fieldClasses} h-11 w-56`}
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? "child-name-error" : undefined}
+                />
+                <Button type="submit" disabled={saving || !name.trim() || !birth}>
                   {saving ? "Saving…" : "Save"}
                 </Button>
                 <Button
@@ -168,6 +189,7 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
                   onClick={() => {
                     setEditing(false);
                     setName(child.displayName);
+                    setBirth(child.dateOfBirth);
                     setError(null);
                   }}
                 >
@@ -189,7 +211,7 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
-                  aria-label={`Rename ${child.displayName}`}
+                  aria-label={`Edit ${child.displayName}'s name or date of birth`}
                   className="rounded-[10px] p-2 text-ink-faint transition-colors hover:bg-white hover:text-tonle-800"
                 >
                   <Pencil size={16} aria-hidden />

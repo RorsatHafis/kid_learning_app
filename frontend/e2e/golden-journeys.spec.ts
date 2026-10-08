@@ -200,6 +200,15 @@ test.describe("golden journeys", () => {
     await page.getByRole("link", { name: /Mealea/ }).first().click();
     const childUrl = page.url();
 
+    // Y12: a mistyped date of birth is corrected on the child's page.
+    const ageBefore = await page.getByText(/^Age \d+$/).first().innerText();
+    await page.getByRole("button", { name: "Edit Mealea's name or date of birth" }).click();
+    await page.getByLabel("Date of birth").fill("2017-03-14");
+    await expectNoViolations(page, "child page - editing details");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Edit Mealea's name or date of birth" })).toBeVisible();
+    await expect(page.getByText(/^Age \d+$/).first()).not.toHaveText(ageBefore);
+
     await page.getByRole("button", { name: "Delete Mealea…" }).click();
     await page.getByLabel("Your password").fill("not-my-password");
     await page.getByRole("button", { name: "Delete Mealea", exact: true }).click();

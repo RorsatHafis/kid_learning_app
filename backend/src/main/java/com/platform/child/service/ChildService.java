@@ -67,9 +67,27 @@ public class ChildService {
     /** Renames a child. The caller has already verified family access. */
     @Transactional
     public Child rename(UUID childId, String displayName) {
+        return update(childId, displayName, null);
+    }
+
+    /**
+     * Changes the name, the date of birth, or both (null leaves it as it is). The caller has
+     * already verified family access. Journeys already started are not touched: the age only
+     * decides which curricula are offered first from now on.
+     */
+    @Transactional
+    public Child update(UUID childId, String displayName, LocalDate dateOfBirth) {
+        if (displayName == null && dateOfBirth == null) {
+            throw new IllegalArgumentException("Nothing to change: give a name or a date of birth");
+        }
         Child child = childRepository.findById(childId)
                 .orElseThrow(() -> new ResourceNotFoundException("Child", childId));
-        child.rename(displayName.trim());
+        if (displayName != null) {
+            child.rename(displayName.trim());
+        }
+        if (dateOfBirth != null) {
+            child.correctDateOfBirth(dateOfBirth);
+        }
         return child;
     }
 

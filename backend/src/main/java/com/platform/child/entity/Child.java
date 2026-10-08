@@ -72,6 +72,16 @@ public class Child extends AuditableEntity {
 
     }
 
+    /** The family corrects the date of birth (Y12). Same rules as when the child was added. */
+    public void correctDateOfBirth(LocalDate corrected) {
+
+        Assert.notNull(corrected, "dateOfBirth must not be null");
+        Assert.isTrue(!corrected.isAfter(LocalDate.now()), "The date of birth can't be in the future");
+        Assert.isTrue(corrected.isAfter(LocalDate.of(1900, 1, 1)), "Enter the child's real date of birth");
+        this.dateOfBirth = corrected;
+
+    }
+
     public void archive() {
 
         requireStatus(ChildStatus.ACTIVE, "archived");

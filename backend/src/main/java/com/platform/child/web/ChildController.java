@@ -52,7 +52,7 @@ public class ChildController {
                                                      @Valid @RequestBody UpdateChildRequest request,
                                                      @AuthenticationPrincipal UUID accountId) {
         familyAccessGuard.requireChildAccess(accountId, childId);
-        return ResponseEntity.ok(ChildResponse.from(childService.rename(childId, request.displayName())));
+        return ResponseEntity.ok(ChildResponse.from(childService.update(childId, request.displayName(), request.dateOfBirth())));
     }
 
     @GetMapping

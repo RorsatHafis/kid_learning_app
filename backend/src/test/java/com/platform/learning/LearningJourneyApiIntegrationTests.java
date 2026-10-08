@@ -199,6 +199,18 @@ class LearningJourneyApiIntegrationTests {
                 .get("displayName").asString()).isEqualTo("Sokha");
         assertThat(json(get("/api/v1/children/" + childId, token), 200).get("displayName").asString()).isEqualTo("Sokha");
         assertThat(patch("/api/v1/children/" + childId, "{\"displayName\":\"  \"}", token).statusCode()).isEqualTo(400);
+
+        // Y12: the date of birth can be corrected, on its own or with the name; the name stays.
+        String corrected = java.time.LocalDate.now().minusYears(7).withDayOfYear(10).toString();
+        JsonNode fixed = json(patch("/api/v1/children/" + childId, "{\"dateOfBirth\":\"" + corrected + "\"}", token), 200);
+        assertThat(fixed.get("dateOfBirth").asString()).isEqualTo(corrected);
+        assertThat(fixed.get("displayName").asString()).isEqualTo("Sokha");
+        assertThat(patch("/api/v1/children/" + childId, "{\"dateOfBirth\":\"" + java.time.LocalDate.now().plusDays(3) + "\"}", token)
+                .statusCode()).as("in the future").isEqualTo(400);
+        assertThat(patch("/api/v1/children/" + childId, "{\"dateOfBirth\":\"1890-01-01\"}", token).statusCode())
+                .as("not a child's date").isEqualTo(400);
+        assertThat(patch("/api/v1/children/" + childId, "{}", token).statusCode()).as("nothing to change").isEqualTo(400);
+        assertThat(json(get("/api/v1/children/" + childId, token), 200).get("dateOfBirth").asString()).isEqualTo(corrected);
         assertThat(get("/api/v1/children/" + childId + "/activity-history?limit=0", token).statusCode()).isEqualTo(400);
     }
 
