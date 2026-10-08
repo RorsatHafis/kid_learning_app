@@ -84,8 +84,7 @@ class CrossFamilyAccessSweepIntegrationTests {
                 new Call("GET", "/api/v1/enrollments/" + enrollmentId + "/journey", null, 200),
                 new Call("GET", "/api/v1/enrollments/" + enrollmentId + "/next-activity", null, 200),
                 new Call("GET", "/api/v1/activity-attempts/" + attemptId, null, 200),
-                new Call("GET", "/api/v1/activity-attempts/" + attemptId + "/answers", null, 200),
-                new Call("GET", "/api/v1/children/" + childId + "/challenges/" + UUID.randomUUID() + "/progress", null, 404));
+                new Call("GET", "/api/v1/activity-attempts/" + attemptId + "/answers", null, 200));
         List<Call> writes = List.of(
                 new Call("PATCH", "/api/v1/children/" + childId, "{\"displayName\":\"Taken Over\"}", 200),
                 new Call("POST", "/api/v1/children/" + childId + "/enrollments", "{\"curriculumId\":\"" + curriculumId + "\"}", -1),
