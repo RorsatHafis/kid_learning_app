@@ -86,6 +86,12 @@ platform:
       refresh-per-minute: ${RATE_LIMIT_REFRESH_PER_MINUTE:60}
       # Password-reset requests (each may send an email).
       recovery-per-hour: ${RATE_LIMIT_RECOVERY_PER_HOUR:10}
+    # PD-02 as adopted (Y13): every request checks that its sign-in is still live, so signing out,
+    # a password change or a suspension takes effect at once. false = trust a token until it expires
+    # (JWT_ACCESS_TOKEN_TTL). One answer is reused for SESSION_CHECK_CACHE_TTL (0s..1m).
+    session-check:
+      enabled: ${SESSION_CHECK_ENABLED:true}
+      cache-ttl: ${SESSION_CHECK_CACHE_TTL:10s}
     cors:
       # Exact browser origins (scheme://host[:port]) the frontend is served from,
       # comma-separated. No default on purpose, like the datasource: staging and

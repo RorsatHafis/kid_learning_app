@@ -36,6 +36,10 @@ platform:
       recovery-per-hour: 100000
     cors:
       allowed-origins: http://localhost:5173
+    # Every test sees a revocation at once.
+    session-check:
+      enabled: true
+      cache-ttl: 0s
   media:
     root: ${java.io.tmpdir}/bk-test-media
   # Tests carry out deletions themselves (FamilyErasureService.eraseDue).

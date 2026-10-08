@@ -174,6 +174,38 @@ class AccountSettingsIntegrationTests {
         assertThat(delete("/api/v1/account/devices/" + laptopId, null).statusCode()).isEqualTo(401);
     }
 
+    /** PD-02 (Y13): an ended sign-in's access token is refused at once, not when it expires. */
+    @Test
+    void anEndedSignInsAccessTokenIsRefusedAtOnce() throws Exception {
+        Session phone = register();
+        Session laptop = login(phone.email(), PASSWORD);
+        Session tablet = login(phone.email(), PASSWORD);
+        assertThat(get("/api/v1/account", laptop.accessToken()).statusCode()).isEqualTo(200);
+
+        // One device signed out from another: its token stops working, the others don't.
+        String laptopId = currentDevice(json(get("/api/v1/account/devices", laptop.accessToken()), 200));
+        assertThat(delete("/api/v1/account/devices/" + laptopId, phone.accessToken()).statusCode()).isEqualTo(204);
+        HttpResponse<String> refused = get("/api/v1/account", laptop.accessToken());
+        assertThat(refused.statusCode()).isEqualTo(401);
+        assertThat(refused.headers().firstValue("WWW-Authenticate").orElse("")).contains("invalid_token");
+        assertThat(get("/api/v1/account", phone.accessToken()).statusCode()).isEqualTo(200);
+
+        // Logging out ends this device's token too.
+        assertThat(post("/api/v1/auth/logout", "{\"refreshToken\":\"" + tablet.refreshToken() + "\"}", null).statusCode())
+                .isEqualTo(204);
+        assertThat(get("/api/v1/account", tablet.accessToken()).statusCode()).isEqualTo(401);
+
+        // A password change ends every other sign-in; the fresh one works.
+        JsonNode changed = json(post("/api/v1/account/password",
+                "{\"currentPassword\":\"" + PASSWORD + "\",\"newPassword\":\"" + NEW_PASSWORD + "\"}", phone.accessToken()), 200);
+        assertThat(get("/api/v1/account", phone.accessToken()).statusCode()).isEqualTo(401);
+        assertThat(get("/api/v1/account", changed.get("accessToken").asString()).statusCode()).isEqualTo(200);
+
+        // Signing out everywhere ends that one as well.
+        assertThat(post("/api/v1/account/sign-out-everywhere", "", changed.get("accessToken").asString()).statusCode()).isEqualTo(200);
+        assertThat(get("/api/v1/account", changed.get("accessToken").asString()).statusCode()).isEqualTo(401);
+    }
+
     private static String currentDevice(JsonNode devices) {
         String current = null;
         for (JsonNode device : devices) {

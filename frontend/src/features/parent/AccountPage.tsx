@@ -349,8 +349,8 @@ function ChangePassword() {
         {done && (
           <p role="status" className="flex items-start gap-2 rounded-[12px] bg-palm-soft p-3 text-sm font-semibold text-palm-deep">
             <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden />
-            Password changed. Your other devices have been signed out — a screen already open elsewhere can keep
-            working for up to 15 minutes.
+            Password changed. Your other devices have been signed out; a screen still open elsewhere stops working
+            straight away.
           </p>
         )}
         <Button type="submit" size="md" disabled={saving || !current || !next || !confirm} className="w-fit">
@@ -424,7 +424,7 @@ function DeviceList() {
     setNotice(null);
     try {
       await accountApi.signOutDevice(id);
-      setNotice({ kind: "done", text: `${name} has been signed out. A screen already open there can keep working for up to 15 minutes.` });
+      setNotice({ kind: "done", text: `${name} has been signed out. A screen still open there stops working straight away.` });
     } catch (err) {
       // Already gone (signed out elsewhere, or expired): the refreshed list says so.
       if (!(err instanceof ApiError && err.status === 404)) {

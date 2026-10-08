@@ -76,7 +76,9 @@ exists. Everyone else is provisioned from inside the app.
 `RATE_LIMIT_REFRESH_PER_MINUTE` (60), `RATE_LIMIT_RECOVERY_PER_HOUR` (10),
 `MASTERY_LEARNING_RATE` (0.2), `MASTERY_CONFIDENCE_SATURATION_COUNT` (10),
 `MASTERY_OBJECTIVE_THRESHOLD` (0.8), `SERVER_PORT` (8080),
-`ERASURE_GRACE_PERIOD` (7d: how long a family's deletion request waits before it is carried
+`SESSION_CHECK_ENABLED` (true: every request checks its sign-in is still live, so signing out, a password
+change or a suspension takes effect at once - PD-02), `SESSION_CHECK_CACHE_TTL` (10s: how long one answer is
+reused, 0s-1m), `ERASURE_GRACE_PERIOD` (7d: how long a family's deletion request waits before it is carried
 out, so a mistake can be undone; 0s–90d), `ERASURE_SWEEP_INTERVAL` (PT1H: how often due
 deletions run), `ERASURE_SWEEP_ENABLED` (true; with several instances every instance may run
 it — each deletion locks its rows).

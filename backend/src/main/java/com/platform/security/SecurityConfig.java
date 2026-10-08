@@ -44,9 +44,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService,
+                                                           // Lazy: filters are built while the server starts, before the
+                                                           // database is ready; the check first runs on a request.
+                                                           @org.springframework.context.annotation.Lazy
+                                                           com.platform.security.session.SessionLiveness liveness) {
 
-        return new JwtAuthenticationFilter(jwtService);
+        return new JwtAuthenticationFilter(jwtService, liveness);
 
     }
 

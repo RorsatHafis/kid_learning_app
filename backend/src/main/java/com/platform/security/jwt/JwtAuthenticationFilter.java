@@ -26,11 +26,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public static final String REJECTED_TOKEN_ATTRIBUTE = JwtAuthenticationFilter.class.getName() + ".REJECTED_TOKEN";
  
     private final JwtService jwtService;
- 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    private final com.platform.security.session.SessionLiveness liveness;
+
+    public JwtAuthenticationFilter(JwtService jwtService, com.platform.security.session.SessionLiveness liveness) {
 
         this.jwtService = jwtService;
-        
+        this.liveness = liveness;
+
     }
  
     @Override
@@ -46,6 +48,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
 
                 JwtService.AuthenticatedPrincipal principal = jwtService.validateAndGetPrincipal(token);
+                // PD-02 (Y13): a token whose sign-in has ended - signed out, password changed, account
+                // suspended - is refused now, like an expired one, instead of until it expires.
+                if (!liveness.isLive(principal.accountId(), principal.sessionFamilyId())) {
+                    throw new InvalidTokenException("The sign-in this token belongs to has ended", null);
+                }
                 // Principal stays the bare UUID (every existing controller reads it via
                 // "@AuthenticationPrincipal UUID accountId") - only authorities are new here,
                 // spring-security's conventional "ROLE_X" prefix so hasRole("TEACHER") in
