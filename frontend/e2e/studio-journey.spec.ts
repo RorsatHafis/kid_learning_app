@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqueEmail, workspaceLink } from "./support";
 
 /**
@@ -220,6 +220,149 @@ test("studio: author, check, publish; a child plays exactly what was published @
   await studioTab(page, "Questions");
   await page.getByRole("button", { name: "In use", exact: true }).click();
   await expect(page.getByRole("link", { name: new RegExp(escape(orderPrompt)) })).toBeVisible();
+});
+
+test("studio: multiple choice, true or false, short answer and matching - authored, played, scored, seen by the parent @phone", async ({
+  page,
+  browser,
+}) => {
+  test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
+  test.setTimeout(240_000);
+  const tag = Date.now().toString(36).toUpperCase();
+  const skill = `Names things ${tag}`;
+  const prompts = {
+    choice: `Which one says meow? (${tag})`,
+    trueFalse: `The sun is hot (${tag})`,
+    short: `What shines in the day? (${tag})`,
+    matching: `Match each number to its word (${tag})`,
+  };
+
+  await logIn(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+  await workspaceLink(page, "Content Studio");
+  await page.getByRole("button", { name: "New subject" }).click();
+  await page.getByLabel("Name", { exact: true }).fill(`E2E Words ${tag}`);
+  await page.getByRole("button", { name: "Add subject" }).click();
+  await page.getByLabel("Skill name").fill(skill);
+  await page.getByRole("button", { name: "Add skill" }).click();
+  await page.getByLabel("Objective title").fill(`Knows words ${tag}`);
+  await page.getByRole("button", { name: "Add objective" }).click();
+  await page.locator("select").filter({ hasText: "Add a skill…" }).first().selectOption({ label: skill });
+  await page.getByRole("button", { name: "Add", exact: true }).first().click();
+
+  async function newQuestion(type: string, prompt: string, fill: (composer: Locator) => Promise<void>) {
+    await studioTab(page, "Questions");
+    const opener = page.getByRole("button", { name: "New question" });
+    const composer = page.getByRole("region", { name: "New question" });
+    // The form starts open only while the bank is empty: wait for the bank before deciding.
+    await expect(page.getByText(/^\d+ questions?$/)).toBeVisible();
+    if (!(await composer.isVisible())) await opener.click();
+    await composer.getByLabel("Type").selectOption({ label: type });
+    await composer.getByLabel("Question the child sees").fill(prompt);
+    await fill(composer);
+    await composer.getByRole("checkbox", { name: skill }).check();
+    await composer.getByRole("button", { name: "Create draft" }).click();
+    await expect(page.getByRole("heading", { name: "Checks" })).toBeVisible();
+    await publish(page);
+  }
+  await newQuestion("Multiple choice", prompts.choice, async (c) => {
+    await c.getByLabel("Choice 1", { exact: true }).fill("Cat");
+    await c.getByLabel("Choice 2", { exact: true }).fill("Dog");
+    await c.getByLabel("Choice 1 is the correct answer").check();
+  });
+  await newQuestion("True or false", prompts.trueFalse, async (c) => {
+    await c.getByLabel("Correct answer").selectOption({ label: "True" });
+  });
+  await newQuestion("Short answer", prompts.short, async (c) => {
+    await c.getByLabel("Correct answer").fill("sun");
+  });
+  await newQuestion("Matching", prompts.matching, async (c) => {
+    await c.getByLabel("Pair 1: item").fill("1");
+    await c.getByLabel("Pair 1: its match").fill("one");
+    await c.getByLabel("Pair 2: item").fill("2");
+    await c.getByLabel("Pair 2: its match").fill("two");
+  });
+
+  await studioTab(page, "Activities");
+  await page.getByLabel("Lesson title").fill(`Words lesson ${tag}`);
+  await page.getByRole("button", { name: "Add lesson" }).click();
+  await page.getByRole("button", { name: "Activity", exact: true }).click();
+  await page.getByLabel("Activity title").fill(`Word play ${tag}`);
+  await page.getByRole("checkbox", { name: skill }).check();
+  await page.getByRole("button", { name: "Create activity" }).click();
+  for (const prompt of Object.values(prompts)) {
+    await page.getByRole("button", { name: new RegExp(`Add question: ${escape(prompt)}`) }).click();
+  }
+  await page.getByRole("button", { name: "Save questions" }).click();
+  await page.getByLabel("Instructions the child hears before starting").fill("Four little questions about words.");
+  await page.getByRole("button", { name: "Save details" }).click();
+  await publish(page);
+
+  await studioTab(page, "Curricula");
+  await page.getByLabel("Name families will see").fill(`Word play ${tag}`);
+  await page.getByLabel("Age group").selectOption({ label: "Junior (4–9 years)" });
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await page.getByLabel("Add a chapter").selectOption({ label: `Knows words ${tag}` });
+  await page.getByRole("button", { name: "Add at the end" }).click();
+  await page.getByRole("button", { name: "Save order" }).click();
+  await expect(page.getByText("Chapters saved.")).toBeVisible();
+  await publish(page);
+
+  // A family starts the path; the child answers all four kinds, one of them wrong on purpose.
+  const familyContext = await browser.newContext({ reducedMotion: "reduce" });
+  const family = await familyContext.newPage();
+  await family.goto("/register");
+  await family.getByLabel("Email").fill(uniqueEmail("types-family"));
+  await family.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await family.getByRole("button", { name: /create/i }).click();
+  await family.getByRole("button", { name: /add your first child/i }).click();
+  await family.getByLabel("Name").fill("Rith");
+  await family.getByLabel("Date of birth").fill("2019-05-05");
+  await family.getByRole("button", { name: "Add child" }).click();
+  await family.getByRole("link", { name: /Rith/ }).first().click();
+  const childPage = family.url();
+  const addSubject = family.getByRole("button", { name: "Add a subject" });
+  if (await addSubject.isVisible()) await addSubject.click();
+  await family.getByRole("listitem").filter({ hasText: `Word play ${tag}` }).getByRole("button", { name: "Start this path" }).click();
+  await expect(family.getByText(`Word play ${tag}`).first()).toBeVisible();
+  await family.getByRole("link", { name: "Start Rith's session" }).click();
+  await expect(family.getByText(`Word play ${tag}`).first()).toBeVisible();
+  await family.getByRole("link", { name: "Play", exact: true }).click();
+  await family.getByRole("button", { name: "Let's go" }).click();
+
+  const right = /You got it!|That's right!|Great thinking!/;
+  await expect(family.getByText(prompts.choice)).toBeVisible();
+  await family.getByRole("button", { name: "Cat" }).click();
+  await expect(family.getByText(right)).toBeVisible();
+  await family.getByRole("button", { name: "Next" }).click();
+
+  await expect(family.getByText(prompts.trueFalse)).toBeVisible();
+  await family.getByRole("button", { name: "False" }).click();
+  await expect(family.getByText("Not quite — good try!")).toBeVisible();
+  await family.getByRole("button", { name: "Next" }).click();
+
+  await expect(family.getByText(prompts.short)).toBeVisible();
+  await family.getByRole("textbox").fill("Sun");
+  await family.getByRole("button", { name: "Check" }).click();
+  await expect(family.getByText(right)).toBeVisible();
+  await family.getByRole("button", { name: "Next" }).click();
+
+  await expect(family.getByText(prompts.matching)).toBeVisible();
+  await expectNoViolations(family, "child: a matching question");
+  await family.getByRole("button", { name: /^1, not matched/ }).click();
+  await family.getByRole("button", { name: /^one, not matched/ }).click();
+  await family.getByRole("button", { name: /^2, not matched/ }).click();
+  await family.getByRole("button", { name: /^two, not matched/ }).click();
+  await family.getByRole("button", { name: "Check my matches" }).click();
+  await expect(family.getByText(right)).toBeVisible();
+  await family.getByRole("button", { name: "Finish" }).click();
+
+  // The parent sees the evidence: three of four right, on the skill it was about.
+  await family.goto(childPage);
+  await expect(family.getByText(`Word play ${tag}`).first()).toBeVisible();
+  await expect(family.getByText("3 of 4 answers correct").first()).toBeVisible();
+  await expect(family.getByText(skill).first()).toBeVisible();
+  await expectNoViolations(family, "parent: evidence from four kinds of question");
+  await familyContext.close();
 });
 
 async function publish(page: Page) {

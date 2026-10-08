@@ -104,7 +104,11 @@ export function QuestionsPage() {
         {questions.isLoading && !data && <LoadingState label="Loading questions…" />}
         {questions.error && <ErrorState error={questions.error} onRetry={questions.refetch} />}
         {data && data.total === 0 && !filtered && (
-          <EmptyState title="No questions yet" description="Write the first one in the New question form." />
+          <EmptyState
+            title="No questions yet"
+            description="Write the first one in the New question form."
+            action={!composer.open && !archived ? <NewButton label="New question" onClick={composer.show} /> : undefined}
+          />
         )}
         {data && data.total === 0 && filtered && <p className="text-sm text-ink-soft">No question matches these filters.</p>}
         {data && data.items.length > 0 && (
