@@ -264,9 +264,12 @@ export function PlaySession() {
       return shell(
         <div className="flex flex-col items-center gap-8 px-6 pt-24 text-center">
           <BuddySays mood="cheer" size={150} tone="night">
-            You lit every book here for now! Come back soon for more.
+            You lit every book here for now! You can play any of them again from your shelf.
           </BuddySays>
-          <JourneyLink href={journeyHref} solid />
+          <div className="flex flex-wrap justify-center gap-3">
+            <JourneyLink href={`/learn/${childId}/shelf`} solid toShelf />
+            <JourneyLink href={journeyHref} />
+          </div>
         </div>,
       );
     case "intro":
