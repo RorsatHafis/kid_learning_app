@@ -260,6 +260,8 @@ test.describe("golden journeys", () => {
     await parentPage.reload();
     await expect(parentPage).toHaveURL(/\/login/);
     await logIn(parentPage, email, PASSWORD);
+    // Refused, not merely not yet answered: the page says why and stays on the sign-in.
+    await expect(parentPage.getByRole("alert").first()).toBeVisible();
     await expect(parentPage).toHaveURL(/\/login/);
 
     await page.getByRole("button", { name: "Reinstate account…" }).click();

@@ -31,6 +31,8 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await page.getByRole("button", { name: /create|apply/i }).click();
   await expect(page.getByText("Application received")).toBeVisible();
   await logIn(page, principalEmail, PASSWORD);
+  // Refused until approved, not merely not yet answered.
+  await expect(page.getByRole("alert").first()).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
 
   // The administrator approves it.
