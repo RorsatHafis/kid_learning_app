@@ -296,16 +296,17 @@ deliberately does not guess.
 
 ## Part 5 — How it was verified
 
-At the latest verification (2026-10-06):
+At the latest verification (2026-10-09):
 
-- 345 backend tests (unit and integration against a real PostgreSQL), including security,
+- 377 backend tests (unit and integration against a real PostgreSQL), including security,
   a sweep proving no one outside a family can read or change its children's data, role and
   school boundaries, concurrency, and performance (queries don't grow with a child's history
   or a class's size);
-- 124 frontend unit tests, type checks, lint, a production build, and a dependency audit with
-  no known vulnerabilities;
-- 19 automated browser journey runs — family, recovery, admin, boundaries, plans, school
-  (principal, teacher, family, archive), content authoring to a child playing it — on desktop
+- 165 frontend unit tests, type checks, lint, a production build, and a dependency audit with
+  no known vulnerabilities in what the app ships (one advisory remains in build-time tools only);
+- 37 automated browser journey runs — family, recovery, admin, boundaries, plans, stopping a
+  path, school (principal, teacher, family, archiving a class and the school, a teacher leaving),
+  legal agreement, second-person review, content authoring to a child playing it — on desktop
   and on a phone, with automated WCAG 2.2 AA accessibility checks on every main screen, using
   real emails.
 

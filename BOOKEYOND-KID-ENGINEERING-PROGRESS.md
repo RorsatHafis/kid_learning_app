@@ -6,10 +6,13 @@ project actually stands against it. Where the two disagree on a verification lev
 evidence recorded here is newer (see §26 note under Battle 4A) — `CLAUDE.md` is not edited
 from here.
 
-- **Last reconciled:** 2026-09-28, after the RELEASE VERIFICATION and owner handoff (OWNER-GUIDE.md, DEPLOYMENT.md), E2E-STUDIO (content golden journey in the browser), PERF1 (read queries flat as history grows), S1 (IDOR/BOLA sweep; uniform not-found), P1 (family data export), R3 (operations: sign-in security events, JSON logs, admin-only actuator, staff areas loaded on demand, school E2E journey), R2 (automated golden journeys, accessibility scans and CI; an honest landing page) and R1 (the whole product runnable from one command; forwarded-address fix; self-hosted fonts; dependency advisories cleared), ADM1 (admin operations) and the TD-04 resolution; preceded on 2026-09-26 by L9, TD-22, W2.1 and W4.3.
-- **Reconciled against:** current source, Flyway migrations V1–V36, the last full test run
-  (`./mvnw -Pintegration test`: **279 run, 279 pass**; frontend `npm test`: **43 pass**; Playwright E2E + accessibility: **13 pass** against the Docker stack), and the
-  runtime/browser evidence gathered in each battle.
+- **Last reconciled:** 2026-10-09, after the Y1-Y21 completeness pass (rows Y1-Y21 below) and its final verification.
+- **Reconciled against:** current source, Flyway migrations V1-V55, and the final full run on the isolated
+  environment: `./mvnw -Pintegration test` **377 run, 377 pass**; Vitest **165 pass** (39 files); lint 0 errors
+  (6 warnings); types; production build; `npm audit --omit=dev` 0 vulnerabilities (a high advisory on `braces`
+  remains in build-time tools only - Tailwind 3 / ESLint - with no non-breaking fix); Playwright E2E + axe one file
+  at a time, desktop and phone: **33 pass, 4 skip** on the default server, and the 4 skipped (legal, review) **pass**
+  against a server with `LEGAL_*` set and `CONTENT_REVIEW_REQUIRED=true` - **37 of 37**. Docker runtime not re-run.
 - **Version control:** git repository at `D:\Bookeyond-Kid` (baseline commit `4db89ad`,
   then one commit per battle). TD-01 resolved.
 
