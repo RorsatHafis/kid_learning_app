@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { Download } from "lucide-react";
 import { adminInsightsApi, type WeekReport } from "@/lib/api/adminInsights";
+import { Button } from "@/components/ui/Button";
+import { downloadFile, toCsv } from "@/lib/utils/download";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
@@ -20,6 +23,14 @@ const MEASURES: { key: Measure; title: string; unit: string; about: string }[] =
   { key: "newFamilies", title: "New families", unit: "families", about: "Families who created an account." },
   { key: "newSchools", title: "New schools", unit: "schools", about: "Schools set up by their principals." },
 ];
+
+/** The table's figures as CSV, the week as an ISO date (Monday, UTC) so a spreadsheet sorts it. */
+function weeklyCsv(weeks: WeekReport[]): string {
+  return toCsv([
+    ["Week of (Monday, UTC)", ...MEASURES.map((m) => m.title)],
+    ...weeks.map((w) => [w.weekOf, ...MEASURES.map((m) => w[m.key])]),
+  ]);
+}
 
 const weekLabel = (iso: string) =>
   new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, { day: "numeric", month: "short", timeZone: "UTC" });
@@ -45,7 +56,25 @@ export function ReportsPage() {
               <WeekChart key={m.key} weeks={weeks.data!} measure={m} />
             ))}
           </div>
-          <Panel title="The same figures as a table" flush>
+          <Panel
+            title="The same figures as a table"
+            flush
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  downloadFile(
+                    `bookeyond-kid-weekly-${weeks.data![weeks.data!.length - 1]?.weekOf ?? "report"}.csv`,
+                    weeklyCsv(weeks.data!),
+                    "text/csv;charset=utf-8",
+                  )
+                }
+              >
+                <Download size={15} aria-hidden /> Download CSV
+              </Button>
+            }
+          >
             <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Weekly figures, as a table">
               <table className="w-full min-w-[40rem] text-sm">
                 <caption className="sr-only">Platform figures by week, oldest first</caption>

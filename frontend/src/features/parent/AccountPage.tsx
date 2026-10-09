@@ -13,6 +13,7 @@ import { FormField } from "@/features/auth/FormField";
 import { familyPlanApi } from "@/lib/api/subscriptions";
 import { PlanDetails } from "./PlanDetails";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+import { downloadFile } from "@/lib/utils/download";
 
 const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
 
@@ -508,14 +509,11 @@ function YourData() {
     setDone(false);
     try {
       const data = await accountApi.dataExport();
-      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `bookeyond-kid-data-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      downloadFile(
+        `bookeyond-kid-data-${new Date().toISOString().slice(0, 10)}.json`,
+        JSON.stringify(data, null, 2),
+        "application/json",
+      );
       setDone(true);
     } catch {
       setError("We couldn't prepare your file. Please try again.");

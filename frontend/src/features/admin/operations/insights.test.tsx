@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { SchoolsPage } from "./SchoolsPage";
 import { LearningOpsPage } from "./LearningOpsPage";
@@ -159,6 +160,26 @@ describe("ReportsPage", () => {
     const table = screen.getByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(13);
     expect(within(table).getByRole("columnheader", { name: "New schools" })).toBeInTheDocument();
+
+    // The same figures download as CSV, one row per week, oldest first.
+    let saved: Blob | null = null;
+    Object.assign(URL, {
+      createObjectURL: (blob: Blob) => {
+        saved = blob;
+        return "blob:report";
+      },
+      revokeObjectURL: vi.fn(),
+    });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Download CSV" }));
+    const text = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.readAsText(saved as unknown as Blob);
+    });
+    const lines = text.trim().split(/\r\n/);
+    expect(lines).toHaveLength(13);
+    expect(lines[0]).toBe('"Week of (Monday, UTC)",Children learning,Activities finished,Answers,New families,New schools');
+    expect(lines[12]).toBe("2026-09-28,22,55,440,11,0");
   });
 });
 

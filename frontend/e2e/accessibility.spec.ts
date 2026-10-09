@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqueEmail } from "./support";
 
@@ -153,6 +154,8 @@ test.describe("accessibility @phone", () => {
   test("admin console", async ({ page }) => {
     test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
     await logIn(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+    // Signed in before navigating away, or the first page load cancels the sign-in.
+    await page.waitForURL(/\/admin/);
     for (const [path, screen] of [
       ["/admin", "dashboard"],
       ["/admin/studio", "studio"],
@@ -170,5 +173,13 @@ test.describe("accessibility @phone", () => {
       await page.waitForLoadState("networkidle");
       await expectNoViolations(page, screen);
     }
+
+    // The weekly figures download as CSV (counts only).
+    await page.goto("/admin/reports");
+    const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download CSV" }).click()]);
+    expect(download.suggestedFilename()).toMatch(/^bookeyond-kid-weekly-\d{4}-\d{2}-\d{2}\.csv$/);
+    const lines = (await readFile((await download.path())!, "utf8")).trim().split(/\r\n/);
+    expect(lines[0]).toContain("Children learning");
+    expect(lines).toHaveLength(13);
   });
 });

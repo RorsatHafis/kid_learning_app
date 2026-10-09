@@ -87,7 +87,8 @@ product decision not taken).
 
 ### 2.8 Reports (X15)
 Twelve weeks (Monday, UTC) of children learning, activities finished, answers, new families and new schools — one
-small chart per measure on its own scale, the latest week as the headline, and the same figures as a table.
+small chart per measure on its own scale, the latest week as the headline, and the same figures as a table —
+**Download CSV** saves them for a spreadsheet (counts only).
 
 ### 2.9 Plans (Commerce)
 - **Plans**: create (code, name, description, limits), edit, **activate**, **retire**, **make default**. A family
@@ -260,4 +261,3 @@ and **age groups with nothing offered** show where content is still needed.
 | Discounting evidence gathered from a version later taken down | PD-04 (taking a version down is built: Studio → the version → **Take it down…**) |
 | Class challenges | a product decision (their unfinished API was retired in Y7; the data model stays) |
 | Tracing and child voice recording | evidence-quality and privacy decisions |
-| Report export (CSV) | not yet prioritised |
