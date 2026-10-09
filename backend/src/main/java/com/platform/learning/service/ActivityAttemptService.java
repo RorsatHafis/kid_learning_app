@@ -67,13 +67,17 @@ public class ActivityAttemptService {
     @Autowired(required = false)
     private LearnerStreakService learnerStreakService;
 
+    private final com.platform.content.withdrawal.WithdrawnContent withdrawn;
+
     public ActivityAttemptService(ActivityAttemptRepository attemptRepository, AnswerRecordRepository answerRecordRepository,
                                    ActivityItemRepository activityItemRepository,
                                    ActivityVersionRepository activityVersionRepository, ChildRepository childRepository,
                                    IdempotencyService idempotencyService, AnswerSubmissionWriter answerSubmissionWriter,
                                    LearningPathItemRepository learningPathItemRepository,
                                    LearningPathRepository learningPathRepository, EnrollmentRepository enrollmentRepository,
-                                   PostCompletionService postCompletionService, PathContentScope pathContentScope) {
+                                   PostCompletionService postCompletionService, PathContentScope pathContentScope,
+                                  com.platform.content.withdrawal.WithdrawnContent withdrawn) {
+        this.withdrawn = withdrawn;
         this.attemptRepository = attemptRepository;
         this.answerRecordRepository = answerRecordRepository;
         this.activityItemRepository = activityItemRepository;
@@ -201,6 +205,10 @@ public class ActivityAttemptService {
                 .orElseThrow(() -> new ResourceNotFoundException("ActivityVersion", activityVersionId));
         if (!version.wasPublished()) {
             throw new ResourceNotFoundException("Published ActivityVersion", activityVersionId);
+        }
+        // Y16: content taken down can't be started, from a path or as practice.
+        if (withdrawn.activityVersion(activityVersionId)) {
+            throw new ResourceNotFoundException("ActivityVersion", activityVersionId);
         }
         return version;
     }

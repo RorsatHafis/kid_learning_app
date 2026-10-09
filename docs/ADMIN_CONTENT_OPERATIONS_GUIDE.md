@@ -258,7 +258,7 @@ and **age groups with nothing offered** show where content is still needed.
 |---|---|
 | Archiving or closing a whole school | PD-26 (what happens to families' grants and staff) |
 | Payments | PD-09 (prices, provider); families can already ask for a plan (Y11) |
-| Withdrawing a published version from children who have it | PD-04 |
+| Discounting evidence gathered from a version later taken down | PD-04 (taking a version down is built: Studio → the version → **Take it down…**) |
 | Class challenges | a product decision (their unfinished API was retired in Y7; the data model stays) |
 | Tracing and child voice recording | evidence-quality and privacy decisions |
 | Report export (CSV) | not yet prioritised |

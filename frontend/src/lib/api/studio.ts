@@ -474,6 +474,25 @@ export const reviewApi = {
     apiClient.post<ReviewState>(`/studio/reviews/${reviewId}/request-changes`, { note }),
 };
 
+// ---- content/withdrawal/ContentWithdrawalController.java (Y16) ----
+
+export type WithdrawalKind = "QUESTION" | "ACTIVITY";
+export interface WithdrawalState {
+  withdrawal: { id: string; kind: WithdrawalKind; versionId: string; reason: string; withdrawnBy: string; withdrawnAt: string } | null;
+  /** An activity version taken down because a question in it was. */
+  viaQuestion: boolean;
+}
+const WITHDRAWAL_PATH: Record<WithdrawalKind, string> = { QUESTION: "question-versions", ACTIVITY: "activity-versions" };
+export const withdrawalApi = {
+  state: (kind: WithdrawalKind, versionId: string) =>
+    apiClient.get<WithdrawalState>(`/studio/${WITHDRAWAL_PATH[kind]}/${versionId}/withdrawal`),
+  // 409 for a draft, or a version already taken down.
+  withdraw: (kind: WithdrawalKind, versionId: string, reason: string) =>
+    apiClient.post<WithdrawalState>(`/studio/${WITHDRAWAL_PATH[kind]}/${versionId}/withdrawal`, { reason }),
+  restore: (kind: WithdrawalKind, versionId: string) =>
+    apiClient.delete<WithdrawalState>(`/studio/${WITHDRAWAL_PATH[kind]}/${versionId}/withdrawal`),
+};
+
 export const studioApi = {
   // ---- X14: edit details, archive, restore (archived = no new uses; nothing a child has changes)
   updateDetails: (kind: Exclude<ManagedKind, "questions">, id: string, body: { name: string; description?: string | null }) =>

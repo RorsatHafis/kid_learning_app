@@ -363,6 +363,17 @@ test("studio: multiple choice, true or false, short answer and matching - author
   await expect(family.getByText(skill).first()).toBeVisible();
   await expectNoViolations(family, "parent: evidence from four kinds of question");
   await familyContext.close();
+
+  // Y16: a published question found to be wrong is taken down - with a reason - and later restored.
+  await studioTab(page, "Questions");
+  await page.getByRole("link", { name: new RegExp(escape(prompts.choice)) }).click();
+  await page.getByRole("button", { name: "Take it down…" }).click();
+  await page.getByLabel("Why it is taken down").fill("E2E: checking the take-down");
+  await page.getByRole("button", { name: "Take it down now" }).click();
+  await expect(page.getByText(/Taken down on .*: E2E: checking the take-down/)).toBeVisible();
+  await expectNoViolations(page, "studio: a version taken down");
+  await page.getByRole("button", { name: "Restore it" }).click();
+  await expect(page.getByRole("button", { name: "Take it down…" })).toBeVisible();
 });
 
 async function publish(page: Page) {

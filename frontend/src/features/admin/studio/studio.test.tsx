@@ -21,7 +21,9 @@ const api = vi.hoisted(() => ({
 }));
 // Y14: review switched off (the default) - the editors publish directly.
 const reviewApi = vi.hoisted(() => ({ state: vi.fn(async () => ({ required: false, review: null })) }));
-vi.mock("@/lib/api/studio", () => ({ studioApi: api, reviewApi }));
+// Y16: nothing taken down.
+const withdrawalApi = vi.hoisted(() => ({ state: vi.fn(async () => ({ withdrawal: null, viaQuestion: false })) }));
+vi.mock("@/lib/api/studio", () => ({ studioApi: api, reviewApi, withdrawalApi }));
 
 // Imported after the mock so the editor talks to it.
 const { QuestionEditor } = await import("./QuestionEditor");

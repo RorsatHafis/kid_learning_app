@@ -71,6 +71,15 @@ class ActivityAttemptServiceTests {
     @Mock private EnrollmentRepository enrollmentRepository;
     @Mock private PostCompletionService postCompletionService;
 
+    /** Y16: nothing taken down in these tests. */
+    private static final com.platform.content.withdrawal.WithdrawnContent NOTHING_WITHDRAWN =
+            new com.platform.content.withdrawal.WithdrawnContent(null) {
+                @Override
+                public boolean activityVersion(UUID activityVersionId) {
+                    return false;
+                }
+            };
+
     private ActivityAttemptService service;
 
     @BeforeEach
@@ -78,7 +87,7 @@ class ActivityAttemptServiceTests {
         service = new ActivityAttemptService(attemptRepository, answerRecordRepository, activityItemRepository,
                 activityVersionRepository, childRepository, idempotencyService, answerSubmissionWriter,
                 learningPathItemRepository, learningPathRepository, enrollmentRepository, postCompletionService,
-                ContentScopes.admittingEverything());
+                ContentScopes.admittingEverything(), NOTHING_WITHDRAWN);
         lenient().when(activityVersionRepository.findById(ACTIVITY_VERSION_ID))
                 .thenReturn(Optional.of(publishedActivityVersion(ACTIVITY_VERSION_ID)));
     }

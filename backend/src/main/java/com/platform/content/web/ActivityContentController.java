@@ -1,5 +1,6 @@
 package com.platform.content.web;
 
+import com.platform.common.web.ResourceNotFoundException;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.platform.learning.service.LearnerContentReadGuard;
@@ -44,9 +45,13 @@ public class ActivityContentController {
     private final MediaService mediaService;
     private final LearnerContentReadGuard readGuard;
 
+    private final com.platform.content.withdrawal.WithdrawnContent withdrawn;
+
     public ActivityContentController(ActivityService activityService, QuestionService questionService,
                                       ActivityItemRepository activityItemRepository, MediaService mediaService,
-                                      LearnerContentReadGuard readGuard) {
+                                      LearnerContentReadGuard readGuard,
+                                      com.platform.content.withdrawal.WithdrawnContent withdrawn) {
+        this.withdrawn = withdrawn;
         this.readGuard = readGuard;
         this.activityService = activityService;
         this.questionService = questionService;
@@ -64,6 +69,10 @@ public class ActivityContentController {
         ActivityVersion version = activityService.getLearnerVisibleVersionById(activityVersionId);
         // TD-13: a parent reads it for a child who may play it; staff, what they may see.
         readGuard.requireReadable(accountId, childId, version);
+        // Y16: content taken down is no longer served to anyone.
+        if (withdrawn.activityVersion(activityVersionId)) {
+            throw new ResourceNotFoundException("ActivityVersion", activityVersionId);
+        }
         Activity activity = activityService.getActivity(version.getActivityId());
 
         // Known Backend Fix C, extended (Battle 3): published-only, matching the ActivityVersion check

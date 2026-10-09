@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { WithdrawalPanel } from "./Withdrawal";
 import { PublishControl } from "./Review";
 import { Link, useParams } from "react-router-dom";
 import { ArrowDown, ArrowLeft, ArrowUp, FilePlus2, Plus, Trash2 } from "lucide-react";
@@ -45,6 +46,8 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
   const { catalog } = useStudio();
   const latest = detail.versions[detail.versions.length - 1];
   const isDraft = latest.status === "DRAFT";
+  // Y16: the version children are given now - the one that can be taken down.
+  const liveVersion = [...detail.versions].reverse().find((v) => v.status === "PUBLISHED");
   const everPublished = detail.versions.some((v) => v.status !== "DRAFT");
   const [revision, setRevision] = useState(0);
   const [report, setReport] = useState<ValidationReport | null>(null);
@@ -241,6 +244,7 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
               </div>
             )}
           </Panel>
+          {liveVersion && <WithdrawalPanel kind="ACTIVITY" versionId={liveVersion.id} versionNumber={liveVersion.versionNumber} />}
           <Panel title="Versions">
             <VersionHistory versions={detail.versions} />
           </Panel>
