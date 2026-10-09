@@ -75,7 +75,10 @@ public class EnrollmentService {
         // A family starting another journey is a plan-limited action (§3); re-asking for one the
         // child already follows is not, so it stays idempotent at any limit.
         CurriculumVersion published = curriculumService.getPublishedVersion(curriculumId);
-        if (enrollmentRepository.findByChildIdAndCurriculumVersionId(childId, published.getId()).isEmpty()) {
+        // Y19: a journey the family stopped counts as a new one when it is chosen again.
+        if (enrollmentRepository.findByChildIdAndCurriculumVersionId(childId, published.getId())
+                .map(existing -> existing.getStatus() == com.platform.learning.entity.EnrollmentStatus.WITHDRAWN)
+                .orElse(true)) {
             // X14: an archived curriculum is no longer offered to families; a child already on it keeps it.
             if (curriculumService.getCurriculum(curriculumId).getStatus() == com.platform.common.entity.CatalogStatus.ARCHIVED) {
                 throw new IllegalStateException("This learning path is no longer offered.");
@@ -106,6 +109,11 @@ public class EnrollmentService {
 
         Optional<Enrollment> existing = enrollmentRepository.findByChildIdAndCurriculumVersionId(childId, publishedVersion.getId());
         if (existing.isPresent()) {
+            // Y19: chosen again (or assigned by a class) after it was stopped - it carries on where it stopped.
+            if (existing.get().getStatus() == com.platform.learning.entity.EnrollmentStatus.WITHDRAWN) {
+                existing.get().restart();
+                return enrollmentRepository.saveAndFlush(existing.get());
+            }
             return existing.get();
         }
 

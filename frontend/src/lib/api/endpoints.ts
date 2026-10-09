@@ -135,6 +135,8 @@ export const enrollmentApi = {
   enroll: (childId: string, curriculumId: string) =>
     apiClient.post<Enrollment>(`/children/${childId}/enrollments`, { curriculumId }),
   get: (enrollmentId: string) => apiClient.get<Enrollment>(`/enrollments/${enrollmentId}`),
+  /** Y19: the family stops a journey; nothing is deleted, and choosing the curriculum again carries on. */
+  stop: (enrollmentId: string) => apiClient.post<Enrollment>(`/enrollments/${enrollmentId}/stop`),
   /** 200 with the next pending item, or whatever the backend currently
    * has queued — see LearningPathItemResponse. */
   nextActivity: (enrollmentId: string) =>

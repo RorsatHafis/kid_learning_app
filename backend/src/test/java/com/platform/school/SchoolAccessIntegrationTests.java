@@ -586,6 +586,11 @@ class SchoolAccessIntegrationTests {
         String childId = createChild(parent.token(), "Rotha");
         confirmEmail(parent);
         json(post("/api/v1/children/" + childId + "/schools/join", codeBody(code), parent.token()), 200);
+        // Y19: a journey the class assigns is the class's while that lasts - the family can't stop it on its own.
+        String classJourney = journeyIn(parent.token(), childId, assigned.getId()).get("enrollmentId").asString();
+        HttpResponse<String> refused = post("/api/v1/enrollments/" + classJourney + "/stop", "", parent.token());
+        assertThat(refused.statusCode()).isEqualTo(409);
+        assertThat(refused.body()).contains("Grade 1 at Access School assigns this path");
 
         assertThat(post(schoolPath + "/archive", "", teacher.token()).statusCode()).as("a teacher").isEqualTo(403);
         assertThat(post(schoolPath + "/archive", "", staff(PlatformRole.PRINCIPAL).token()).statusCode()).as("another principal")
@@ -615,6 +620,9 @@ class SchoolAccessIntegrationTests {
                 .isEqualTo("ACTIVE");
         assertThat(journeyIn(parent.token(), childId, assigned.getId())).isNotNull();
         assertThat(audited("SCHOOL_ARCHIVED", principal.id())).isEqualTo(1);
+
+        // An archived class assigns nothing new: now the family may stop that journey.
+        assertThat(post("/api/v1/enrollments/" + classJourney + "/stop", "", parent.token()).statusCode()).isEqualTo(200);
 
         // Restored: the school can start again; its classes come back one by one.
         assertThat(json(post(schoolPath + "/restore", "", principal.token()), 200).get("archived").asBoolean()).isFalse();

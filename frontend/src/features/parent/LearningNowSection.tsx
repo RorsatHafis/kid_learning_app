@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChevronDown, Plus } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
-import { learningApi } from "@/lib/api/endpoints";
+import { enrollmentApi, learningApi } from "@/lib/api/endpoints";
+import { problemMessage } from "@/lib/api/problemMessage";
 import type { EnrollmentOverview, JourneyStep, Chapter } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
@@ -72,13 +73,26 @@ export function LearningNowSection({
       )}
 
       {list.map((enrollment) => (
-        <EnrollmentCard key={enrollment.enrollmentId} enrollment={enrollment} />
+        <EnrollmentCard
+          key={enrollment.enrollmentId}
+          enrollment={enrollment}
+          childName={childName}
+          onStopped={enrollments.refetch}
+        />
       ))}
     </section>
   );
 }
 
-function EnrollmentCard({ enrollment }: { enrollment: EnrollmentOverview }) {
+function EnrollmentCard({
+  enrollment,
+  childName,
+  onStopped,
+}: {
+  enrollment: EnrollmentOverview;
+  childName: string;
+  onStopped: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const { curriculum, completedSteps, totalSteps, nextStep } = enrollment;
 
@@ -117,6 +131,7 @@ function EnrollmentCard({ enrollment }: { enrollment: EnrollmentOverview }) {
           </p>
         )}
         <p className="text-[0.8125rem] text-ink-faint">Steps completed show activity, not mastery — Skills & evidence says what the answers show.</p>
+        <StopPath enrollment={enrollment} childName={childName} onStopped={onStopped} />
       </div>
 
       <button
@@ -134,6 +149,74 @@ function EnrollmentCard({ enrollment }: { enrollment: EnrollmentOverview }) {
         </div>
       )}
     </article>
+  );
+}
+
+/**
+ * Stopping a path (Y19): the family's way to change subject, its consequence said before it happens.
+ * The server refuses a path the child's class assigns, and says so.
+ */
+function StopPath({
+  enrollment,
+  childName,
+  onStopped,
+}: {
+  enrollment: EnrollmentOverview;
+  childName: string;
+  onStopped: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const name = enrollment.curriculum.name;
+
+  async function stop() {
+    setBusy(true);
+    setError(null);
+    try {
+      await enrollmentApi.stop(enrollment.enrollmentId);
+      onStopped();
+    } catch (err) {
+      setError(problemMessage(err, "That didn't work. Please try again."));
+      setBusy(false);
+    }
+  }
+
+  if (!confirming) {
+    return (
+      <Button variant="ghost" size="sm" className="-ml-2.5 w-fit" onClick={() => setConfirming(true)}>
+        Stop this path…<span className="sr-only">: {name}</span>
+      </Button>
+    );
+  }
+  return (
+    <div role="group" aria-label={`Stop ${name}`} className="flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line">
+      <p className="text-sm text-ink">
+        {childName} won&apos;t be given {name} any more, and it stops counting towards your plan. Nothing is deleted: what{" "}
+        {childName} has learned stays, and choosing it again later carries on where they stopped.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={busy} onClick={() => void stop()}>
+          {busy ? "Stopping…" : "Stop the path"}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={busy}
+          onClick={() => {
+            setConfirming(false);
+            setError(null);
+          }}
+        >
+          Keep it
+        </Button>
+      </div>
+      {error && (
+        <p role="alert" className="text-sm font-medium text-brick-deep">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

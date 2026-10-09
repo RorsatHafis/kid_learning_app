@@ -227,6 +227,8 @@ public class LearningJourneyService {
     public List<EnrollmentOverview> enrollmentsFor(UUID childId) {
         Lookups lookups = new Lookups(childId);
         return enrollmentRepository.findByChildId(childId).stream()
+                // Y19: a stopped journey is not one the child is on; choosing it again brings it back.
+                .filter(enrollment -> enrollment.getStatus() != EnrollmentStatus.WITHDRAWN)
                 .sorted(Comparator.comparing(Enrollment::getEnrolledAt))
                 .map(enrollment -> {
                     Journey journey = journey(enrollment, lookups);
@@ -327,6 +329,7 @@ public class LearningJourneyService {
             return result;
         }
         List<Enrollment> enrollments = enrollmentRepository.findByChildIdIn(childIds).stream()
+                .filter(enrollment -> enrollment.getStatus() != EnrollmentStatus.WITHDRAWN)
                 .sorted(Comparator.comparing(Enrollment::getEnrolledAt))
                 .toList();
         if (enrollments.isEmpty()) {

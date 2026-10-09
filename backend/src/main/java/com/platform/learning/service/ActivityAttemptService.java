@@ -257,6 +257,10 @@ public class ActivityAttemptService {
             throw new AccessDeniedException(
                     "LearningPathItem %s does not belong to child %s".formatted(learningPathItemId, childId));
         }
+        // Y19: a stopped journey can't be played from a screen opened before it was stopped.
+        if (enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.WITHDRAWN) {
+            throw new IllegalStateException("This path has been stopped.");
+        }
         if (!item.getActivityVersionId().equals(activityVersionId)) {
             throw new IllegalArgumentException(
                     "ActivityVersion %s does not match the activity version %s carried by learning path item %s"

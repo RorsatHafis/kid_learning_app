@@ -80,6 +80,12 @@ public class Enrollment extends AuditableEntity {
         this.status = EnrollmentStatus.WITHDRAWN;
     }
 
+    /** Y19: a journey the family stopped, chosen again, carries on where it stopped. */
+    public void restart() {
+        requireStatus(EnrollmentStatus.WITHDRAWN, "restarted");
+        this.status = EnrollmentStatus.ACTIVE;
+    }
+
     private void requireStatus(EnrollmentStatus required, String attemptedTransition) {
         if (status != required) {
             throw new IllegalStateException("Enrollment %s can only be %s from %s, was %s"

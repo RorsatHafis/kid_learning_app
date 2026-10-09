@@ -113,6 +113,69 @@ class SubscriptionIntegrationTests {
                 Integer.class, UUID.fromString(familyId))).isEqualTo(2);
     }
 
+    /** Y19: within a one-journey plan a family stops a journey to change subject; choosing it again carries on. */
+    @Test
+    void aFamilyStopsAJourneyToChangeSubjectAndChoosingItAgainCarriesOnWhereItStopped() throws Exception {
+        String admin = token(PlatformRole.ADMIN);
+        String planId = activePlan(admin, 1, 1);
+        String email = "stops-" + UUID.randomUUID() + "@example.com";
+        String parent = registerParent(email);
+        String familyId = json(get("/api/v1/admin/families?parentEmail=" + URLEncoder.encode(email, StandardCharsets.UTF_8), admin),
+                200).get("familyId").asString();
+        json(post("/api/v1/admin/families/" + familyId + "/subscription", "{\"planId\":\"" + planId + "\"}", admin), 200);
+        String childId = json(post("/api/v1/children", child(), parent), 201).get("id").asString();
+        String enrollments = "/api/v1/children/" + childId + "/enrollments";
+        JsonNode curricula = json(get("/api/v1/curricula", parent), 200);
+        assertThat(curricula.size()).as("two subjects to choose between").isGreaterThanOrEqualTo(2);
+        if (json(get(enrollments, parent), 200).isEmpty()) {
+            json(post(enrollments, "{\"curriculumId\":\"" + curricula.get(0).get("id").asString() + "\"}", parent), 201);
+        }
+        JsonNode first = json(get(enrollments, parent), 200).get(0);
+        String firstEnrollment = first.get("enrollmentId").asString();
+        String firstCurriculum = first.get("curriculum").get("id").asString();
+        String secondCurriculum = curricula.get(0).get("id").asString().equals(firstCurriculum)
+                ? curricula.get(1).get("id").asString() : curricula.get(0).get("id").asString();
+        assertThat(json(post(enrollments, "{\"curriculumId\":\"" + secondCurriculum + "\"}", parent), 409).get("entitlement")
+                .asString()).as("the plan is full").isEqualTo("JOURNEYS_PER_CHILD_MAX");
+
+        // An activity is open on the first journey when the family stops it.
+        JsonNode next = json(get("/api/v1/enrollments/" + firstEnrollment + "/next-activity", parent), 200);
+        String start = "{\"activityVersionId\":\"" + next.get("activityVersionId").asString() + "\",\"learningPathItemId\":\""
+                + next.get("id").asString() + "\"}";
+        String attemptId = json(post("/api/v1/children/" + childId + "/activity-attempts", start, parent), 201).get("id").asString();
+        String stranger = registerParent("stranger-" + UUID.randomUUID() + "@example.com");
+        assertThat(post("/api/v1/enrollments/" + firstEnrollment + "/stop", "", stranger).statusCode()).as("another family")
+                .isEqualTo(404);
+        assertThat(json(post("/api/v1/enrollments/" + firstEnrollment + "/stop", "", parent), 200).get("status").asString())
+                .isEqualTo("WITHDRAWN");
+        assertThat(post("/api/v1/enrollments/" + firstEnrollment + "/stop", "", parent).statusCode()).isEqualTo(409);
+
+        // Stopped: not listed, not served, not playable from an old screen; the open activity is closed, nothing deleted.
+        assertThat(jdbc.queryForObject("select status from activity_attempts where id = ?::uuid", String.class, attemptId))
+                .isEqualTo("ABANDONED");
+        assertThat(json(get(enrollments, parent), 200).isEmpty()).isTrue();
+        assertThat(get("/api/v1/enrollments/" + firstEnrollment + "/next-activity", parent).statusCode()).isEqualTo(409);
+        assertThat(post("/api/v1/children/" + childId + "/activity-attempts", start, parent).statusCode()).isEqualTo(409);
+        for (JsonNode entitlement : json(get("/api/v1/family/plan", parent), 200).get("entitlements")) {
+            if (entitlement.get("key").asString().equals("JOURNEYS_PER_CHILD_MAX")) {
+                assertThat(entitlement.get("used").asInt()).as("a stopped journey doesn't count").isZero();
+            }
+        }
+
+        // Room for another subject; the first, chosen again, carries on where it stopped (and counts again).
+        String secondEnrollment = json(post(enrollments, "{\"curriculumId\":\"" + secondCurriculum + "\"}", parent), 201)
+                .get("id").asString();
+        json(post(enrollments, "{\"curriculumId\":\"" + firstCurriculum + "\"}", parent), 409);
+        json(post("/api/v1/enrollments/" + secondEnrollment + "/stop", "", parent), 200);
+        JsonNode again = json(post(enrollments, "{\"curriculumId\":\"" + firstCurriculum + "\"}", parent), 201);
+        assertThat(again.get("id").asString()).isEqualTo(firstEnrollment);
+        assertThat(again.get("status").asString()).isEqualTo("ACTIVE");
+        assertThat(json(get("/api/v1/enrollments/" + firstEnrollment + "/next-activity", parent), 200).get("id").asString())
+                .as("the same step, where it stopped").isEqualTo(next.get("id").asString());
+        assertThat(json(post("/api/v1/children/" + childId + "/activity-attempts", start, parent), 201).get("id").asString())
+                .isNotEqualTo(attemptId);
+    }
+
     @Test
     void aGrantsEndCanBeMovedAndTheFamilySeesWhatFollowsButNotTheOperatorNote() throws Exception {
         String admin = token(PlatformRole.ADMIN);

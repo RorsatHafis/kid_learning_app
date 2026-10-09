@@ -35,9 +35,11 @@ public class EnrollmentController {
     private final EnrollmentService enrollmentService;
     private final LearningPathService learningPathService;
     private final FamilyAccessGuard familyAccessGuard;
+    private final com.platform.learning.service.JourneyStopService journeyStops;
 
     public EnrollmentController(EnrollmentService enrollmentService, LearningPathService learningPathService,
-                                 FamilyAccessGuard familyAccessGuard) {
+                                 FamilyAccessGuard familyAccessGuard, com.platform.learning.service.JourneyStopService journeyStops) {
+        this.journeyStops = journeyStops;
         this.enrollmentService = enrollmentService;
         this.learningPathService = learningPathService;
         this.familyAccessGuard = familyAccessGuard;
@@ -70,10 +72,22 @@ public class EnrollmentController {
         Enrollment enrollment = enrollmentService.getEnrollment(enrollmentId);
         familyAccessGuard.requireChildAccess(accountId, enrollment.getChildId());
 
+        if (enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.WITHDRAWN) {
+            throw new IllegalStateException("This path has been stopped.");
+        }
         LearningPath learningPath = enrollmentService.getLearningPath(enrollmentId);
         LearningPathItem nextItem = learningPathService.getNextItem(learningPath.getId());
 
         return ResponseEntity.ok(LearningPathItemResponse.from(nextItem));
+    }
+
+    /** Y19: the family stops one of the child's journeys; nothing is deleted, and choosing it again carries on. */
+    @PostMapping("/api/v1/enrollments/{enrollmentId}/stop")
+    public ResponseEntity<EnrollmentResponse> stop(@PathVariable UUID enrollmentId, @AuthenticationPrincipal UUID accountId) {
+        Enrollment enrollment = enrollmentService.getEnrollment(enrollmentId);
+        familyAccessGuard.requireChildAccess(accountId, enrollment.getChildId());
+
+        return ResponseEntity.ok(EnrollmentResponse.from(journeyStops.stop(enrollmentId)));
     }
 
 }
