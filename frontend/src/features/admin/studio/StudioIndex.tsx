@@ -10,6 +10,7 @@ import { ComposerPanel, NewButton, TextAreaField } from "./shared";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
 import { codeFrom, errorText, useArchivedView, useComposer, useStudioScope } from "./studioLogic";
 import { ArchivedSwitch, ManageButton } from "./Lifecycle";
+import { ReviewQueue } from "./Review";
 
 /** Where authoring starts: pick the subject to work in, or add a new one. */
 export function StudioIndex() {
@@ -38,6 +39,7 @@ export function StudioIndex() {
           </div>
         }
       />
+      {catalogAdmin && <ReviewQueue />}
       {composer.open && (
         <NewSubject
           focusOnOpen={composer.requested}

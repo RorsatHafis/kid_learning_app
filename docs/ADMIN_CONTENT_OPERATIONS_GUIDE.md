@@ -158,6 +158,14 @@ versioned like questions.
 added to a child's path as they learn (adaptive engine, Smart Review), not authored here.
 
 ### 3.6 Validate and publish
+
+**When review is switched on (`CONTENT_REVIEW_REQUIRED=true`, PD-20).** Platform content isn't published by its author:
+the Checks panel offers **Ask for review** instead of Publish. Another administrator finds the draft in **Waiting for
+review** (Content Studio, and *Waiting on you* on the Dashboard), opens it and chooses **Approve and publish** - which
+publishes it - or **Ask for changes…** with a note the author reads in the same place. A draft edited after the review was
+asked can't be approved until its author asks again. A teacher's own content is never reviewed: it reaches only their
+classes. Reviews need at least two administrators (Staff → New staff account → Administrator).
+
 Every question, activity and curriculum version has **Check** (validation) and **Publish**. Publishing re-runs the
 checks and refuses content a child couldn't actually play (no questions, an answer that can't be scored, a draft
 question inside an activity, a curriculum step with nothing to play). **Nothing reaches a child until it is

@@ -424,6 +424,56 @@ const S = "/studio";
 /** X14: what can be renamed, archived and restored in the Studio, by its API path. */
 export type ManagedKind = "subjects" | "skills" | "objectives" | "curricula" | "lessons" | "activities" | "questions";
 
+// ---- content/review/ContentReviewController.java (Y14) ----
+
+export type ReviewKind = "QUESTION" | "ACTIVITY" | "CURRICULUM";
+export interface ReviewView {
+  id: string;
+  status: "OPEN" | "APPROVED" | "CHANGES_REQUESTED" | "WITHDRAWN";
+  requestedBy: string;
+  requestedAt: string;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  note: string | null;
+  /** Asked by the signed-in account. */
+  mine: boolean;
+  /** The draft changed after the review was asked: it can't be approved as is. */
+  changedSince: boolean;
+}
+/** `required`: this draft is published through a review; `review`: its latest review. */
+export interface ReviewState {
+  required: boolean;
+  review: ReviewView | null;
+}
+export interface ReviewQueueRow {
+  id: string;
+  kind: ReviewKind;
+  versionId: string;
+  contentId: string;
+  subjectId: string;
+  title: string;
+  requestedBy: string;
+  requestedAt: string;
+}
+const VERSION_PATH: Record<ReviewKind, string> = {
+  QUESTION: "question-versions",
+  ACTIVITY: "activity-versions",
+  CURRICULUM: "curriculum-versions",
+};
+export const reviewApi = {
+  settings: () => apiClient.get<{ required: boolean }>("/studio/review-settings"),
+  state: (kind: ReviewKind, versionId: string) => apiClient.get<ReviewState>(`/studio/${VERSION_PATH[kind]}/${versionId}/review`),
+  // 422 when the draft fails its checks, like a refused publish.
+  request: (kind: ReviewKind, versionId: string) => apiClient.post<ReviewState>(`/studio/${VERSION_PATH[kind]}/${versionId}/review`),
+  withdraw: (kind: ReviewKind, versionId: string) => apiClient.delete<ReviewState>(`/studio/${VERSION_PATH[kind]}/${versionId}/review`),
+  queue: (page = 0, size = 50) =>
+    apiClient.get<{ items: ReviewQueueRow[]; page: number; size: number; total: number }>(`/studio/reviews?page=${page}&size=${size}`),
+  // 409 when asked by the reviewer, or the draft changed since.
+  approve: (reviewId: string) => apiClient.post<ReviewState>(`/studio/reviews/${reviewId}/approve`),
+  requestChanges: (reviewId: string, note: string) =>
+    apiClient.post<ReviewState>(`/studio/reviews/${reviewId}/request-changes`, { note }),
+};
+
 export const studioApi = {
   // ---- X14: edit details, archive, restore (archived = no new uses; nothing a child has changes)
   updateDetails: (kind: Exclude<ManagedKind, "questions">, id: string, body: { name: string; description?: string | null }) =>
@@ -574,7 +624,7 @@ export const adminApi = {
   },
   pendingPrincipals: () => apiClient.get<StaffAccount[]>("/admin/principals/pending"),
   // No password: the person chooses their own from an emailed setup link (admin/service/AdminService.java).
-  createStaff: (body: { email: string; role: "TEACHER" | "PRINCIPAL" }) =>
+  createStaff: (body: { email: string; role: StaffRole }) =>
     apiClient.post<StaffAccount>("/admin/staff", body),
   approvePrincipal: (id: string) => apiClient.post<StaffAccount>(`/admin/principals/${id}/approve`),
 };

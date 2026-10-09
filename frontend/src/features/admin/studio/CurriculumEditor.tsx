@@ -1,17 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { PublishControl } from "./Review";
 import { Link, useParams } from "react-router-dom";
-import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowLeft,
-  ArrowUp,
-  ChevronDown,
-  FilePlus2,
-  Lightbulb,
-  Plus,
-  Send,
-  Trash2,
-} from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, ChevronDown, FilePlus2, Lightbulb, Plus, Trash2 } from "lucide-react";
 import {
   studioApi,
   type CurriculumDetail,
@@ -407,15 +397,17 @@ function JourneyBuilder({
                   <Button variant="ghost" size="sm" disabled={busy} onClick={() => setRevision((r) => r + 1)}>
                     Check again
                   </Button>
-                  <Button
+                  <PublishControl
+                    kind="CURRICULUM"
                     size="sm"
-                    disabled={busy || dirty || !report || report.errors.length > 0}
-                    onClick={() =>
+                    versionId={latest.id}
+                    busy={busy}
+                    canPublish={!dirty && !!report && report.errors.length === 0}
+                    onPublish={() =>
                       run(() => studioApi.publishCurriculumVersion(latest.id), "Published. New enrolments start this journey.")
                     }
-                  >
-                    <Send size={15} aria-hidden /> Publish
-                  </Button>
+                    onPublished={() => run(() => studioApi.curriculum(detail.id), "Approved and published.")}
+                  />
                 </div>
               }
             >

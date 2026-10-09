@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { PublishControl } from "./Review";
 import { Link, useParams } from "react-router-dom";
-import { ArrowDown, ArrowLeft, ArrowUp, FilePlus2, Plus, Send, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, FilePlus2, Plus, Trash2 } from "lucide-react";
 import {
   studioApi,
   type ActivityDetail,
@@ -209,17 +210,19 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
                   <Button variant="ghost" className="px-3" disabled={busy} onClick={() => setRevision((r) => r + 1)}>
                     Check again
                   </Button>
-                  <Button
-                    disabled={busy || !report || report.errors.length > 0}
-                    onClick={() =>
+                  <PublishControl
+                    kind="ACTIVITY"
+                    versionId={latest.id}
+                    busy={busy}
+                    canPublish={!!report && report.errors.length === 0}
+                    onPublish={() =>
                       run(
                         () => studioApi.publishActivityVersion(latest.id),
                         "Published. Children enrolled in a curriculum with these skills can now be given it.",
                       )
                     }
-                  >
-                    <Send size={16} aria-hidden /> Publish
-                  </Button>
+                    onPublished={() => run(() => studioApi.activity(detail.id), "Approved and published.")}
+                  />
                 </div>
               }
             >

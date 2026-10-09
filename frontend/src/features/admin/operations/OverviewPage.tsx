@@ -47,6 +47,11 @@ function Waiting({ data }: { data: AdminOverview }) {
       to: "/admin/plans#requests",
       action: "Answer",
     },
+    w.contentReviewsOpen > 0 && {
+      text: `${plural(w.contentReviewsOpen, "draft is", "drafts are")} waiting for your review`,
+      to: "/admin/studio#reviews",
+      action: "Review drafts",
+    },
     w.lockoutsLast24Hours > 0 && {
       text: `${plural(w.lockoutsLast24Hours, "account was", "accounts were")} locked after failed sign-ins in the last 24 hours`,
       to: "/admin/activity?action=ACCOUNT_LOCKED",

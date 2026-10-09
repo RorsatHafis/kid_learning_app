@@ -19,7 +19,9 @@ const api = vi.hoisted(() => ({
   tagQuestionSkill: vi.fn(),
   untagQuestionSkill: vi.fn(),
 }));
-vi.mock("@/lib/api/studio", () => ({ studioApi: api }));
+// Y14: review switched off (the default) - the editors publish directly.
+const reviewApi = vi.hoisted(() => ({ state: vi.fn(async () => ({ required: false, review: null })) }));
+vi.mock("@/lib/api/studio", () => ({ studioApi: api, reviewApi }));
 
 // Imported after the mock so the editor talks to it.
 const { QuestionEditor } = await import("./QuestionEditor");

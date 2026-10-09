@@ -110,6 +110,7 @@ public class StudioService {
     private final QuestionVersionRepository questionVersions;
     private final ActivityVersionRepository activityVersions;
     private final MediaService media;
+    private final com.platform.content.review.ContentReviewService reviews;
 
     public StudioService(ContentAccessGuard guard, AuditService audit, ContentValidator validator,
                          SubjectRepository subjects, SubjectService subjectService, AgeHubRepository ageHubs,
@@ -122,7 +123,9 @@ public class StudioService {
                          ActivityVersionSkillRepository activitySkills, ActivityItemRepository activityItems,
                          QuestionRepository questions, QuestionService questionService,
                          QuestionVersionSkillRepository questionSkills, QuestionVersionRepository questionVersions,
-                         ActivityVersionRepository activityVersions, MediaService media) {
+                         ActivityVersionRepository activityVersions, MediaService media,
+                         com.platform.content.review.ContentReviewService reviews) {
+        this.reviews = reviews;
         this.guard = guard;
         this.audit = audit;
         this.validator = validator;
@@ -338,8 +341,15 @@ public class StudioService {
 
     @Transactional
     public CurriculumDetail publishCurriculumVersion(UUID accountId, UUID curriculumVersionId) {
+        return publishCurriculumVersion(accountId, curriculumVersionId, null);
+    }
+
+    /** Y14: {@code approval} comes only from an approved review; without one, the review gate decides. */
+    @Transactional
+    public CurriculumDetail publishCurriculumVersion(UUID accountId, UUID curriculumVersionId, com.platform.content.review.ContentReviewService.Approval approval) {
         CurriculumVersion version = curriculumService.getVersion(curriculumVersionId);
         guard.requireCurriculumWrite(accountId, version.getCurriculumId());
+        reviews.requirePublishable(com.platform.content.review.ContentReview.Kind.CURRICULUM, curriculumVersionId, approval);
         CurriculumVersion published = curriculumService.publish(curriculumVersionId);
         record(guard.requireAuthor(accountId), "CONTENT_PUBLISHED", "CURRICULUM_VERSION", published.getId(),
                 Map.of("curriculumId", published.getCurriculumId(), "versionNumber", published.getVersionNumber()));
@@ -500,8 +510,15 @@ public class StudioService {
 
     @Transactional
     public ActivityDetail publishActivityVersion(UUID accountId, UUID activityVersionId) {
+        return publishActivityVersion(accountId, activityVersionId, null);
+    }
+
+    /** Y14: {@code approval} comes only from an approved review; without one, the review gate decides. */
+    @Transactional
+    public ActivityDetail publishActivityVersion(UUID accountId, UUID activityVersionId, com.platform.content.review.ContentReviewService.Approval approval) {
         ActivityVersion version = activityService.getVersion(activityVersionId);
         guard.requireActivityWrite(accountId, version.getActivityId());
+        reviews.requirePublishable(com.platform.content.review.ContentReview.Kind.ACTIVITY, activityVersionId, approval);
         ActivityVersion published = activityService.publish(activityVersionId);
         record(guard.requireAuthor(accountId), "CONTENT_PUBLISHED", "ACTIVITY_VERSION", published.getId(),
                 Map.of("activityId", published.getActivityId(), "versionNumber", published.getVersionNumber()));
@@ -723,8 +740,15 @@ public class StudioService {
 
     @Transactional
     public QuestionDetail publishQuestionVersion(UUID accountId, UUID questionVersionId) {
+        return publishQuestionVersion(accountId, questionVersionId, null);
+    }
+
+    /** Y14: {@code approval} comes only from an approved review; without one, the review gate decides. */
+    @Transactional
+    public QuestionDetail publishQuestionVersion(UUID accountId, UUID questionVersionId, com.platform.content.review.ContentReviewService.Approval approval) {
         QuestionVersion version = questionService.getVersion(questionVersionId);
         guard.requireQuestionWrite(accountId, version.getQuestionId());
+        reviews.requirePublishable(com.platform.content.review.ContentReview.Kind.QUESTION, questionVersionId, approval);
         QuestionVersion published = questionService.publish(questionVersionId);
         record(guard.requireAuthor(accountId), "CONTENT_PUBLISHED", "QUESTION_VERSION", published.getId(),
                 Map.of("questionId", published.getQuestionId(), "versionNumber", published.getVersionNumber()));

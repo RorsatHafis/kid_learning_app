@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { PublishControl } from "./Review";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, FilePlus2, Send } from "lucide-react";
+import { ArrowLeft, FilePlus2 } from "lucide-react";
 import { studioApi, type QuestionDetail, type ValidationReport } from "@/lib/api/studio";
 import type { ActivityItem } from "@/lib/api/types";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -210,12 +211,14 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                   <Button variant="ghost" className="px-3" disabled={busy} onClick={() => setRevision((r) => r + 1)}>
                     Check again
                   </Button>
-                  <Button
-                    disabled={busy || !report || report.errors.length > 0}
-                    onClick={() => run(() => studioApi.publishQuestionVersion(latest.id), "Published. Children will see this version in new activities.")}
-                  >
-                    <Send size={16} aria-hidden /> Publish
-                  </Button>
+                  <PublishControl
+                    kind="QUESTION"
+                    versionId={latest.id}
+                    busy={busy}
+                    canPublish={!!report && report.errors.length === 0}
+                    onPublish={() => run(() => studioApi.publishQuestionVersion(latest.id), "Published. Children will see this version in new activities.")}
+                    onPublished={() => run(() => studioApi.question(detail.id), "Approved and published.")}
+                  />
                 </div>
               }
             >

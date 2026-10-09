@@ -20,6 +20,8 @@ export interface AdminOverview {
     plansEndingSoonTotal: number;
     /** Families waiting for an answer to a plan request (Y11). */
     planRequestsOpen: number;
+    /** Drafts waiting for a second administrator's review (Y14; 0 while review is off). */
+    contentReviewsOpen: number;
   };
   platform: { families: number; children: number; schools: number; classes: number; teachers: number; principals: number };
   /** Items with an open draft, and curricula with a published version. */

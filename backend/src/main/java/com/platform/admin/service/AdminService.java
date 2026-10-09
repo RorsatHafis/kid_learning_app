@@ -41,15 +41,17 @@ public class AdminService {
     }
 
     /**
-     * Creates a TEACHER or PRINCIPAL account and emails its owner a single-use link to choose
-     * their own password (TD-22): the account starts with a random password nobody knows, so
-     * the administrator never learns or hands over anyone's password.
+     * Creates a TEACHER, PRINCIPAL or ADMIN account and emails its owner a single-use link to
+     * choose their own password (TD-22): the account starts with a random password nobody knows,
+     * so the administrator never learns or hands over anyone's password. Y14: a platform needs
+     * more than the one administrator created at first start - for cover, and because a second
+     * person's review (PD-20) needs a second administrator. Audited like every provisioning.
      */
     @Transactional
     public Account createStaffAccount(UUID adminId, String email, PlatformRole role, String requestedIp) {
         requireAdmin(adminId);
-        if (role != PlatformRole.TEACHER && role != PlatformRole.PRINCIPAL) {
-            throw new IllegalArgumentException("Admin provisioning supports TEACHER or PRINCIPAL accounts only");
+        if (!STAFF_ROLES.contains(role)) {
+            throw new IllegalArgumentException("Staff accounts are teachers, principals or administrators; families sign up themselves");
         }
         String normalized = Account.normalize(email);
         if (accounts.findByNormalizedEmail(normalized).isPresent()) {
@@ -62,10 +64,14 @@ public class AdminService {
         auditService.record(new RecordAuditEvent(
                 null, adminId, AuditActorType.ADMIN, "ACCOUNT_PROVISIONED", "ACCOUNT",
                 account.getId(), java.util.Map.of("platformRole", role.name())));
-        String roleName = role == PlatformRole.PRINCIPAL ? "principal" : "teacher";
+        String roleName = switch (role) {
+            case PRINCIPAL -> "a principal";
+            case ADMIN -> "an administrator";
+            default -> "a teacher";
+        };
         recovery.sendAccountSetup(account, new AccountRecoveryService.SetupInvitation(
                 "Your Bookeyond Kid account is ready to set up",
-                "A Bookeyond Kid administrator has created a " + roleName + " account for you.",
+                "A Bookeyond Kid administrator has created " + roleName + " account for you.",
                 ""), requestedIp);
         return account;
     }

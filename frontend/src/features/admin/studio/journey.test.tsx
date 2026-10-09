@@ -14,7 +14,9 @@ const api = vi.hoisted(() => ({
   publishCurriculumVersion: vi.fn(),
   openCurriculumDraft: vi.fn(),
 }));
-vi.mock("@/lib/api/studio", () => ({ studioApi: api }));
+// Y14: review switched off (the default) - the editors publish directly.
+const reviewApi = vi.hoisted(() => ({ state: vi.fn(async () => ({ required: false, review: null })) }));
+vi.mock("@/lib/api/studio", () => ({ studioApi: api, reviewApi }));
 
 const { CurriculumEditor } = await import("./CurriculumEditor");
 

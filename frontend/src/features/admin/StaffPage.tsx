@@ -215,7 +215,7 @@ function PendingRow({ account, onApproved }: { account: StaffAccount; onApproved
 
 function NewStaff({ onCreated, onClose, focusOnOpen }: { onCreated: () => void; onClose: () => void; focusOnOpen: boolean }) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"TEACHER" | "PRINCIPAL">("TEACHER");
+  const [role, setRole] = useState<StaffRole>("TEACHER");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<string | null>(null);
@@ -248,10 +248,17 @@ function NewStaff({ onCreated, onClose, focusOnOpen }: { onCreated: () => void; 
           required
           onChange={(e) => setEmail(e.target.value)}
         />
-        <SelectField label="Role" value={role} onChange={(e) => setRole(e.target.value as "TEACHER" | "PRINCIPAL")}>
+        <SelectField label="Role" value={role} onChange={(e) => setRole(e.target.value as StaffRole)}>
           <option value="TEACHER">Teacher</option>
           <option value="PRINCIPAL">Principal</option>
+          <option value="ADMIN">Administrator</option>
         </SelectField>
+        {role === "ADMIN" && (
+          <p className="text-sm text-ink">
+            An administrator can do everything here: publish platform content, run plans, read the activity log and add other
+            administrators. Give it only to someone who runs Bookeyond Kid with you.
+          </p>
+        )}
         <p className="text-xs text-ink-soft">
           We&apos;ll email them a link to choose their own password. It lasts 7 days; after that they can use &ldquo;Forgot your
           password?&rdquo; on the log-in page. Teachers who work at a school are better invited by its principal, which also adds

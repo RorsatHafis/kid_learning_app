@@ -85,7 +85,10 @@ class AdminProvisioningIntegrationTests {
 
         assertThat(post("/api/v1/admin/staff", "{\"email\":\"" + existing + "\",\"role\":\"TEACHER\"}", admin).statusCode()).isEqualTo(409);
         assertThat(loginStatus(existing, PASSWORD)).isEqualTo(200);
+        // Y14: a second administrator is provisioned like any staff member (setup link, audited); a family never is.
         assertThat(post("/api/v1/admin/staff", "{\"email\":\"x-" + UUID.randomUUID() + "@example.com\",\"role\":\"ADMIN\"}", admin)
+                .statusCode()).isEqualTo(201);
+        assertThat(post("/api/v1/admin/staff", "{\"email\":\"p-" + UUID.randomUUID() + "@example.com\",\"role\":\"PARENT\"}", admin)
                 .statusCode()).isEqualTo(400);
         for (PlatformRole role : new PlatformRole[] {PlatformRole.PRINCIPAL, PlatformRole.TEACHER, PlatformRole.PARENT}) {
             assertThat(post("/api/v1/admin/staff", "{\"email\":\"y-" + UUID.randomUUID() + "@example.com\",\"role\":\"TEACHER\"}",
