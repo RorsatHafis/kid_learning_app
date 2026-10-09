@@ -78,8 +78,12 @@ public class AuthController {
     private final JwtService jwtService;
     private final AccountSessionService accountSessionService;
 
+    private final com.platform.identity.legal.LegalDocuments legal;
+
     public AuthController(RegisterAccountService registerAccountService, LoginService loginService,
-                           JwtService jwtService, AccountSessionService accountSessionService) {
+                           JwtService jwtService, AccountSessionService accountSessionService,
+                          com.platform.identity.legal.LegalDocuments legal) {
+        this.legal = legal;
         this.registerAccountService = registerAccountService;
         this.loginService = loginService;
         this.jwtService = jwtService;
@@ -99,9 +103,14 @@ public class AuthController {
                     "Public registration cannot create " + requestedRole + " accounts");
         }
 
+        // Y15 (PD-18): once the owner has published terms and a privacy notice, an account is created
+        // only by someone who agreed to the current version of them.
+        if (legal.configured() && !legal.version().equals(request.acceptedLegalVersion())) {
+            throw new IllegalArgumentException("Agree to the terms of use and the privacy notice to create an account");
+        }
         Account account = registerAccountService.register(new RegisterAccountCommand(
                 request.email(), request.password(), request.familyName(), request.idempotencyKey(),
-                requestedRole));
+                requestedRole, legal.configured() ? legal.version() : null));
 
         if (account.getStatus() != com.platform.identity.entity.AccountStatus.ACTIVE) {
             // Pending-approval accounts (principal awaiting admin sign-off) get no

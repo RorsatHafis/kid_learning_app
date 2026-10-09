@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { LegalUpdateNotice } from "@/features/legal/Legal";
 import { LogOut } from "lucide-react";
 import { BrandMark, Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils/cn";
@@ -58,6 +59,7 @@ export function ParentLayout() {
         </div>
       </header>
       <UnconfirmedEmailNotice />
+      <LegalUpdateNotice />
       <main id="main" tabIndex={-1} className="mx-auto max-w-[1180px] px-4 pb-20 pt-8 sm:px-8 sm:pt-10">
         <Outlet />
       </main>

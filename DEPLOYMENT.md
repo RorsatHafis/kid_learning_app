@@ -76,7 +76,9 @@ exists. Everyone else is provisioned from inside the app.
 `RATE_LIMIT_REFRESH_PER_MINUTE` (60), `RATE_LIMIT_RECOVERY_PER_HOUR` (10),
 `MASTERY_LEARNING_RATE` (0.2), `MASTERY_CONFIDENCE_SATURATION_COUNT` (10),
 `MASTERY_OBJECTIVE_THRESHOLD` (0.8), `SERVER_PORT` (8080),
-`CONTENT_REVIEW_REQUIRED` (false: when true, platform content is published only by a second administrator
+`LEGAL_PRIVACY_URL`, `LEGAL_TERMS_URL`, `LEGAL_VERSION` (unset: set all three once the privacy notice and
+terms of use are published - PD-18; sign-up then requires agreeing to that version, and changing `LEGAL_VERSION` asks
+every account to agree again), `CONTENT_REVIEW_REQUIRED` (false: when true, platform content is published only by a second administrator
 approving a review of the draft - PD-20; add a second administrator first, Admin → Staff), `SESSION_CHECK_ENABLED` (true: every request checks its sign-in is still live, so signing out, a password
 change or a suspension takes effect at once - PD-02), `SESSION_CHECK_CACHE_TTL` (10s: how long one answer is
 reused, 0s-1m), `ERASURE_GRACE_PERIOD` (7d: how long a family's deletion request waits before it is carried
@@ -141,7 +143,8 @@ redeploying the previous images is enough.
 
 These are not engineering tasks and are not done:
 
-- Privacy notice and terms (PD-18) — legal text; no page is shown until it exists.
+- Privacy notice and terms (PD-18) — legal text you publish; set `LEGAL_PRIVACY_URL`, `LEGAL_TERMS_URL` and
+  `LEGAL_VERSION` and the app links them everywhere and records each account's agreement.
 - Confirm the deletion rules adopted in Y3 (PD-24): what is erased, the waiting period, and how
   long backups keep erased data. Families can already export their data and delete a child or
   their account.

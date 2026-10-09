@@ -21,7 +21,7 @@ interface AuthContextValue {
   sessionUnavailable: boolean;
   retrySession: () => void;
   login: (email: string, password: string) => Promise<Session>;
-  register: (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL" }) => Promise<Session | "PENDING_APPROVAL">;
+  register: (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL"; acceptedLegalVersion?: string }) => Promise<Session | "PENDING_APPROVAL">;
   logout: () => Promise<void>;
   /** Changes the password (current one required). The server ends every session and
    * returns a fresh one, which this adopts so this device stays signed in. */
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL" }) => {
+    async (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL"; acceptedLegalVersion?: string }) => {
       const data = await authApi.register(input);
       // PRINCIPAL self-registration comes back 202 with no tokens — pending
       // ADMIN approval, per AuthController. Nothing to log in to yet.

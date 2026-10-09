@@ -1,4 +1,5 @@
 import { StrictMode } from "react";
+import { withLegal } from "@/test/withLegal";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -50,7 +51,7 @@ afterEach(() => {
 describe("VerifyEmailPage", () => {
   it("confirms the address exactly once, even under StrictMode, and drops the token from the address bar", async () => {
     const fetchMock = vi.fn().mockResolvedValue(respond(204));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withLegal(fetchMock));
 
     openLink("/verify-email", "#token=verify-once", <VerifyEmailPage />);
 
@@ -62,7 +63,7 @@ describe("VerifyEmailPage", () => {
   });
 
   it("says plainly when a link can't be used", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(400, { status: 400, detail: "This link is invalid" })));
+    vi.stubGlobal("fetch", withLegal(vi.fn().mockResolvedValue(respond(400, { status: 400, detail: "This link is invalid" }))));
 
     openLink("/verify-email", "#token=verify-used", <VerifyEmailPage />);
 
@@ -72,7 +73,7 @@ describe("VerifyEmailPage", () => {
 
   it("sends nothing when the link has no token", async () => {
     const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withLegal(fetchMock));
 
     openLink("/verify-email", "", <VerifyEmailPage />);
 
@@ -84,7 +85,7 @@ describe("VerifyEmailPage", () => {
 describe("ResetPasswordPage", () => {
   it("checks the passwords match before using the link, then sends the person to log in", async () => {
     const fetchMock = vi.fn().mockResolvedValue(respond(204));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withLegal(fetchMock));
     const user = userEvent.setup();
     openLink("/reset-password", "#token=reset-1", <ResetPasswordPage />);
 
@@ -103,7 +104,7 @@ describe("ResetPasswordPage", () => {
   });
 
   it("offers a new link when the link can't be used", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(400, { status: 400, detail: "This link is invalid" })));
+    vi.stubGlobal("fetch", withLegal(vi.fn().mockResolvedValue(respond(400, { status: 400, detail: "This link is invalid" }))));
     const user = userEvent.setup();
     openLink("/reset-password", "#token=reset-expired", <ResetPasswordPage />);
 
@@ -119,7 +120,7 @@ describe("ResetPasswordPage", () => {
 describe("SetUpAccountPage", () => {
   it("chooses the first password of an invited account with its own endpoint and copy", async () => {
     const fetchMock = vi.fn().mockResolvedValue(respond(204));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withLegal(fetchMock));
     const user = userEvent.setup();
     openLink("/set-up-account", "#token=setup-1", <SetUpAccountPage />);
 
@@ -137,7 +138,7 @@ describe("SetUpAccountPage", () => {
 describe("ForgotPasswordPage", () => {
   it("gives the same answer for any address, and handles the empty 202", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 202 }));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withLegal(fetchMock));
     const user = userEvent.setup();
     openLink("/forgot-password", "", <ForgotPasswordPage />);
 

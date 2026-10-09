@@ -35,7 +35,15 @@ public record RegisterRequest(
         @NotBlank
         String idempotencyKey,
 
-        String role
+        String role,
+
+        /** Y15: when legal documents are configured, the version the person agreed to (must be the current one). */
+        @jakarta.validation.constraints.Size(max = 40) String acceptedLegalVersion
 
 ) {
+
+    /** The request before Y15: no agreement given. */
+    public RegisterRequest(String email, String password, String familyName, String idempotencyKey, String role) {
+        this(email, password, familyName, idempotencyKey, role, null);
+    }
 }

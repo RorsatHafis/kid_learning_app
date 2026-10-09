@@ -7,7 +7,9 @@ public record RegisterAccountCommand(
     String rawPassword,
     String familyName,
     String idempotencyKey,
-    PlatformRole platformRole
+    PlatformRole platformRole,
+    /** The legal documents' version the person agreed to; null when none are configured (Y15). */
+    String acceptedLegalVersion
 ) {
 
     private static final String DEFAULT_FAMILY_NAME = "My Family";

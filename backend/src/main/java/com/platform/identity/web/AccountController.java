@@ -47,13 +47,20 @@ public class AccountController {
     public record DeviceResponse(UUID id, String userAgent, Instant signedInAt, Instant lastActiveAt, boolean current) {
     }
 
-    /** {@code eraseAfter}: when the account will be erased, if its owner asked; null otherwise. */
+    /**
+     * {@code eraseAfter}: when the account will be erased, if its owner asked; null otherwise.
+     * {@code legalVersionAccepted}: the version of the terms and privacy notice it agreed to (Y15).
+     */
     public record AccountResponse(UUID id, String email, PlatformRole platformRole, AccountStatus status,
-                                  Instant emailVerifiedAt, Instant createdAt, Instant eraseAfter) {
+                                  Instant emailVerifiedAt, Instant createdAt, Instant eraseAfter, String legalVersionAccepted) {
         static AccountResponse of(Account account) {
             return new AccountResponse(account.getId(), account.getEmail(), account.getPlatformRole(),
-                    account.getStatus(), account.getEmailVerifiedAt(), account.getCreatedAt(), account.getEraseAfter());
+                    account.getStatus(), account.getEmailVerifiedAt(), account.getCreatedAt(), account.getEraseAfter(),
+                    account.getLegalVersionAccepted());
         }
+    }
+
+    public record LegalAcceptance(@NotBlank @Size(max = 40) String version) {
     }
 
     public record ChangePasswordRequest(@NotBlank String currentPassword, @NotBlank String newPassword) {
@@ -112,6 +119,12 @@ public class AccountController {
             throw new ResourceNotFoundException("Device", deviceId);
         }
         return ResponseEntity.noContent().build();
+    }
+
+    /** Y15: agrees to the current terms and privacy notice (409 if that isn't the current version, or none exists). */
+    @PostMapping("/legal-acceptance")
+    public AccountResponse acceptLegal(@AuthenticationPrincipal UUID accountId, @Valid @RequestBody LegalAcceptance body) {
+        return AccountResponse.of(accountSettingsService.acceptLegal(accountId, body.version()));
     }
 
     /** Ends every session on every device, this one included. */

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { LegalLinks } from "@/features/legal/Legal";
 import { Logo } from "@/components/brand/Logo";
 import { sectionLinks } from "./Nav";
 
@@ -18,6 +19,7 @@ export function Footer() {
                 {link.label}
               </a>
             ))}
+            <LegalLinks className="col-span-2 hover:[&_a]:text-white" />
             <Link to="/login" className="w-fit hover:text-white hover:underline hover:underline-offset-4">
               Log in
             </Link>

@@ -108,6 +108,12 @@ platform:
     # Required. A directory the API can write: where uploaded pictures and recordings are kept.
     # In production a persistent volume, backed up with the database (DEPLOYMENT.md).
     root: ${MEDIA_ROOT}
+  # PD-18 (Y15): the privacy notice and terms of use the owner publishes. Set all three or none: while
+  # none, nothing is shown or asked. Changing LEGAL_VERSION asks every account to agree again.
+  legal:
+    privacy-url: ${LEGAL_PRIVACY_URL:}
+    terms-url: ${LEGAL_TERMS_URL:}
+    version: ${LEGAL_VERSION:}
   # PD-20 (Y14): whether platform content needs a second administrator's approval before it is published.
   # Off by default (an author publishes); a teacher's own content never needs it.
   content-review:

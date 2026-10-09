@@ -43,11 +43,13 @@ public class AccountSettingsService {
     private final AccountSessionService accountSessionService;
     private final AuditService auditService;
     private final AccountRecoveryService recovery;
+    private final com.platform.identity.legal.LegalDocuments legal;
 
     public AccountSettingsService(AccountRepository accountRepository, PasswordEncoder passwordEncoder,
                                   PasswordPolicy passwordPolicy, SecurityProperties securityProperties,
                                   JwtService jwtService, AccountSessionService accountSessionService,
-                                  AuditService auditService, AccountRecoveryService recovery) {
+                                  AuditService auditService, AccountRecoveryService recovery,
+                                  com.platform.identity.legal.LegalDocuments legal) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
@@ -56,6 +58,7 @@ public class AccountSettingsService {
         this.accountSessionService = accountSessionService;
         this.auditService = auditService;
         this.recovery = recovery;
+        this.legal = legal;
     }
 
     @Transactional(readOnly = true)
@@ -122,6 +125,19 @@ public class AccountSettingsService {
         }
         account.resetFailedLogins();
         recovery.sendEmailChange(account, newEmail, ipAddress);
+    }
+
+    /** Y15: records agreement to the current terms and privacy notice; audited. */
+    @Transactional
+    public Account acceptLegal(UUID accountId, String version) {
+        if (!legal.configured() || !legal.version().equals(version)) {
+            throw new IllegalStateException("That isn't the current version of the terms and privacy notice");
+        }
+        Account account = accountRepository.findForUpdate(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account", accountId));
+        account.acceptLegal(version, Instant.now());
+        audit(account, "LEGAL_TERMS_ACCEPTED", Map.of("version", version));
+        return account;
     }
 
     /** Signs the account out on every device. Returns how many sessions were ended. */

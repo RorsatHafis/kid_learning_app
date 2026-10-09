@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LegalLinks } from "@/features/legal/Legal";
 import { Link } from "react-router-dom";
 import { Logo } from "@/components/brand/Logo";
 import { BlueHour } from "@/features/world/BlueHour";
@@ -43,6 +44,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
             Bookeyond Kid
           </Link>{" "}
           · Learning for children 4–9, with parents alongside.
+          <LegalLinks className="ml-3" />
         </p>
       </main>
     </div>

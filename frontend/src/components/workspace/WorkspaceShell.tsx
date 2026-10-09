@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { LegalUpdateNotice } from "@/features/legal/Legal";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Menu, X, type LucideIcon } from "lucide-react";
 import { BrandMark, Logo } from "@/components/brand/Logo";
@@ -142,6 +143,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
       </header>
 
       <main id="main" tabIndex={-1} className="lg:pl-[248px]">
+        <LegalUpdateNotice />
         <div className="mx-auto max-w-[1180px] px-4 pb-20 pt-6 sm:px-8 sm:pt-9">
           <Outlet />
         </div>

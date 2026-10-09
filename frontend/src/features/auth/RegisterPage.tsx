@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from "react";
+import { LegalAgreement } from "@/features/legal/Legal";
+import { useLegal } from "@/features/legal/useLegal";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "./AuthLayout";
 import { FormField } from "./FormField";
@@ -20,14 +22,21 @@ export function RegisterPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [pendingApproval, setPendingApproval] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const legal = useLegal();
+  const [agreed, setAgreed] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setFormError(null);
     setFieldErrors({});
+    const version = legal.data?.version ?? undefined;
+    if (version && !agreed) {
+      setFieldErrors({ acceptedLegalVersion: "Agree to the terms of use and the privacy notice to create an account." });
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const result = await register({ email, password, familyName: familyName || undefined, role });
+      const result = await register({ email, password, familyName: familyName || undefined, role, acceptedLegalVersion: version });
       if (result === "PENDING_APPROVAL") {
         setPendingApproval(true);
       } else {
@@ -100,6 +109,7 @@ export function RegisterPage() {
           onChange={(e) => setPassword(e.target.value)}
           error={fieldErrors.password}
         />
+        <LegalAgreement checked={agreed} onChange={setAgreed} error={fieldErrors.acceptedLegalVersion} />
         {formError && <p className="text-sm font-medium text-brick-deep">{formError}</p>}
         {role === "PRINCIPAL" && (
           <p className="text-xs text-ink-soft">Principal accounts are reviewed by a Bookeyond Kid admin before they can log in.</p>

@@ -62,8 +62,11 @@ class AccountRegistrationWriter  {
 
         PlatformRole role = command.resolvedPlatformRole();
  
-        Account account = accountRepository.saveAndFlush(
-                Account.register(command.email(), passwordEncoder.encode(command.rawPassword()), role));
+        Account registered = Account.register(command.email(), passwordEncoder.encode(command.rawPassword()), role);
+        if (command.acceptedLegalVersion() != null) {
+            registered.acceptLegal(command.acceptedLegalVersion(), java.time.Instant.now());
+        }
+        Account account = accountRepository.saveAndFlush(registered);
         if (role == PlatformRole.PRINCIPAL) {
             account.markPendingApproval();
         }

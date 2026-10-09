@@ -1,4 +1,5 @@
 import { StrictMode } from "react";
+import { withLegal } from "@/test/withLegal";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -112,7 +113,7 @@ describe("Changing the sign-in email", () => {
 
   it("refuses its own address and a malformed one without asking the server", async () => {
     const fetchMock = server(() => respond(202));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withLegal(fetchMock));
     renderAccount();
 
     await fillAndSend("PARENT@example.com", "pw");
@@ -128,7 +129,7 @@ describe("Signed-in devices", () => {
       () => respond(202),
       () => remaining,
     );
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withLegal(fetchMock));
     renderAccount();
 
     const list = await screen.findByRole("list", { name: "Signed-in devices" });
@@ -168,7 +169,7 @@ function openLink(hash: string) {
 describe("ConfirmEmailChangePage", () => {
   it("moves the address exactly once and drops the token from the address bar", async () => {
     const fetchMock = vi.fn().mockResolvedValue(respond(204));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withLegal(fetchMock));
 
     openLink("#token=change-once");
 
@@ -180,7 +181,7 @@ describe("ConfirmEmailChangePage", () => {
   });
 
   it("says the address now belongs to someone else, and that nothing changed", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(409, { status: 409 })));
+    vi.stubGlobal("fetch", withLegal(vi.fn().mockResolvedValue(respond(409, { status: 409 }))));
 
     openLink("#token=taken");
 
@@ -189,7 +190,7 @@ describe("ConfirmEmailChangePage", () => {
   });
 
   it("explains an unusable link", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(400, { status: 400 })));
+    vi.stubGlobal("fetch", withLegal(vi.fn().mockResolvedValue(respond(400, { status: 400 }))));
 
     openLink("#token=used");
 

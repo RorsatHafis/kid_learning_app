@@ -32,7 +32,13 @@ import type {
 // calling apiClient directly from components.
 
 export const authApi = {
-  register: (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL" }) =>
+  register: (input: {
+    email: string;
+    password: string;
+    familyName?: string;
+    role?: "PARENT" | "PRINCIPAL";
+    acceptedLegalVersion?: string;
+  }) =>
     apiClient.post<AuthResponse>(
       "/auth/register",
       { ...input, idempotencyKey: crypto.randomUUID() },
@@ -48,6 +54,9 @@ export const authApi = {
   confirmEmail: (token: string) => apiClient.post<void>("/auth/email-verification/confirm", { token }, { skipAuth: true }),
   completeAccountSetup: (input: { token: string; newPassword: string }) =>
     apiClient.post<void>("/auth/account-setup/confirm", input, { skipAuth: true }),
+  // identity/legal/LegalController.java (Y15): all null while the owner hasn't published them (PD-18).
+  legal: () =>
+    apiClient.get<{ privacyUrl: string | null; termsUrl: string | null; version: string | null }>("/auth/legal", { skipAuth: true }),
   // 400 for an unusable link, 409 when the new address now belongs to another account.
   confirmEmailChange: (token: string) => apiClient.post<void>("/auth/email-change/confirm", { token }, { skipAuth: true }),
 };
@@ -62,6 +71,8 @@ export const accountApi = {
   requestEmailChange: (input: { currentPassword: string; newEmail: string }) => apiClient.post<void>("/account/email", input),
   // One entry per signed-in device; `current` is this one. Signing one out ends that sign-in (404 if it isn't yours).
   devices: () => apiClient.get<SignedInDevice[]>("/account/devices"),
+  // Y15: agree to the current terms and privacy notice (409 when that isn't the current version).
+  acceptLegal: (version: string) => apiClient.post<AccountProfile>("/account/legal-acceptance", { version }),
   // family/erasure/FamilyErasureController.java — family accounts only; nothing changes until eraseAfter.
   requestDeletion: (currentPassword: string) => apiClient.post<{ eraseAfter: string }>("/account/deletion", { currentPassword }),
   keep: () => apiClient.delete<void>("/account/deletion"),

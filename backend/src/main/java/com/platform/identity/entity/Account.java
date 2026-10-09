@@ -40,6 +40,13 @@ public class Account extends AuditableEntity {
     @Column(name = "email_verified_at")
     private Instant emailVerifiedAt;
 
+    /** The version of the terms and privacy notice this account agreed to, and when (V54, Y15). */
+    @Column(name = "legal_version_accepted", length = 40)
+    private String legalVersionAccepted;
+
+    @Column(name = "legal_accepted_at")
+    private Instant legalAcceptedAt;
+
     /** When this account is erased with its family (V51); null unless its owner asked. */
     @Column(name = "erase_after")
     private Instant eraseAfter;
@@ -162,6 +169,21 @@ public class Account extends AuditableEntity {
 
     public Instant getEraseAfter() {
         return eraseAfter;
+    }
+
+    public void acceptLegal(String version, Instant at) {
+        Assert.hasText(version, "version must not be blank");
+        Assert.notNull(at, "at must not be null");
+        this.legalVersionAccepted = version;
+        this.legalAcceptedAt = at;
+    }
+
+    public String getLegalVersionAccepted() {
+        return legalVersionAccepted;
+    }
+
+    public Instant getLegalAcceptedAt() {
+        return legalAcceptedAt;
     }
 
     public boolean isEmailVerified() {

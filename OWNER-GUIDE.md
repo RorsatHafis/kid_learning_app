@@ -283,7 +283,7 @@ deliberately does not guess.
 | PD-14 / PD-15 | Khmer interface text and Khmer/English lessons, written by native speakers and educators | The app is in English; only the Maths path exists (authors can add more in the Studio). |
 | PD-20 | Whether content needs a second person's review before publishing | Built and switched off: with `CONTENT_REVIEW_REQUIRED=true`, an author asks for a review and another administrator approves it (which publishes it) or asks for changes. Administrators can now add other administrators (Admin → Staff). Decide whether to switch it on. |
 | PD-24 | Deleting a family account or a child (adopted in Y3 - please confirm: password-confirmed, a 7-day waiting period you can change, then everything about the child is erased; audit records keep ids only) | Families can export their data and delete a child or their account. Also decide how long backups keep erased data. |
-| PD-18 | Privacy notice and terms (legal text) | No such pages yet. |
+| PD-18 | Privacy notice and terms (legal text) | Ready to plug in: publish the two texts anywhere on the web and set `LEGAL_PRIVACY_URL`, `LEGAL_TERMS_URL` and `LEGAL_VERSION`; the app then links them, asks for agreement at sign-up and records who agreed to which version. Until then nothing is shown. |
 | PD-02 | Ending a sign-in at once (adopted in Y13 - please confirm; `SESSION_CHECK_ENABLED=false` restores the old behaviour) | Signing out, a password change, signing a device out or a suspension stops an open tab on its next action (within 10 seconds). |
 | PD-13, PD-16, PD-23 | Learning Buddy's name; one retry before showing the answer; final landing-page wording | Unnamed buddy; answer shown after a miss; honest interim copy. |
 

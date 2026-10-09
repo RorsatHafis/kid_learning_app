@@ -51,6 +51,8 @@ export interface AccountProfile {
   createdAt: string;
   /** When the account will be erased, if its owner asked to delete it. */
   eraseAfter: string | null;
+  /** The version of the terms and privacy notice the account agreed to (Y15). */
+  legalVersionAccepted: string | null;
 }
 
 // ---- child/entity/ChildStatus.java, child/web/ChildDtos.java ----
