@@ -153,13 +153,15 @@ public class FamilyErasureService {
     private final PlatformMailProperties mail;
     private final NamedParameterJdbcTemplate jdbc;
     private final TransactionTemplate eachInItsOwnTransaction;
+    private final ErasureLedger ledger;
 
     public FamilyErasureService(ErasureProperties properties, PasswordConfirmation passwords,
                                 FamilyAccessGuard familyGuard, ChildRepository children, AccountRepository accounts,
                                 MembershipRepository memberships, SchoolJoinService schoolJoin,
                                 EntitlementService entitlements, AuditService audit, ApplicationEventPublisher events,
                                 PlatformMailProperties mail, NamedParameterJdbcTemplate jdbc,
-                                PlatformTransactionManager transactions) {
+                                PlatformTransactionManager transactions, ErasureLedger ledger) {
+        this.ledger = ledger;
         this.properties = properties;
         this.passwords = passwords;
         this.familyGuard = familyGuard;
@@ -271,31 +273,109 @@ public class FamilyErasureService {
 
     // ------------------------------------------------------------------ the sweep
 
-    /** Carries out every deletion that is due, each in its own transaction. Returns how many were done. */
+    /**
+     * Carries out every deletion that is due, each in its own transaction, after erasing again anything
+     * the ledger says was erased but a database restore brought back. Returns how many were done.
+     */
     public int eraseDue() {
+        int done = eraseRestored();
         Timestamp now = Timestamp.from(Instant.now());
-        int done = 0;
         List<UUID> dueChildren = jdbc.queryForList("select id from children where status = 'DELETION_PENDING' "
                 + "and erase_after <= :now order by erase_after limit 200", Map.of("now", now), UUID.class);
         for (UUID childId : dueChildren) {
-            done += run("child", childId, () -> eraseChildIfDue(childId));
+            done += run(ErasureLedger.Kind.CHILD, childId, () -> eraseChildIfDue(childId));
         }
         List<UUID> dueAccounts = jdbc.queryForList("select id from accounts where erase_after <= :now "
                 + "order by erase_after limit 200", Map.of("now", now), UUID.class);
         for (UUID accountId : dueAccounts) {
-            done += run("account", accountId, () -> eraseAccountIfDue(accountId));
+            done += run(ErasureLedger.Kind.ACCOUNT, accountId, () -> eraseAccountIfDue(accountId));
         }
         return done;
     }
 
-    private int run(String what, UUID id, java.util.function.BooleanSupplier erasure) {
+    private int run(ErasureLedger.Kind kind, UUID id, java.util.function.BooleanSupplier erasure) {
+        boolean erased;
+        try {
+            erased = Boolean.TRUE.equals(eachInItsOwnTransaction.execute(status -> erasure.getAsBoolean()));
+        } catch (RuntimeException e) {
+            // Left due: the next sweep tries again. An erasure that keeps failing needs a person.
+            log.error("Erasure of {} {} failed; it stays scheduled and will be retried", kind, id, e);
+            return 0;
+        }
+        if (erased) {
+            // Ids only: the application log is a second record of what to erase again after a restore.
+            log.info("Erased {} {}", kind, id);
+            try {
+                ledger.record(kind, id);
+            } catch (RuntimeException e) {
+                log.error("Erased {} {} but could not record it in the erasure ledger: record it by hand", kind, id, e);
+            }
+        }
+        return erased ? 1 : 0;
+    }
+
+    /**
+     * Restoring the database from a backup taken before an erasure brings the erased child or account
+     * back. Whatever the ledger lists that exists again is erased again - no new date, no email (the
+     * family was told when it first happened) - and audited as erased after a restore.
+     */
+    private int eraseRestored() {
+        List<ErasureLedger.Entry> entries = ledger.entries();
+        if (entries.isEmpty()) {
+            return 0;
+        }
+        int done = 0;
+        for (UUID childId : stillPresent("children", entries, ErasureLedger.Kind.CHILD)) {
+            log.warn("Child {} was erased but is back - the database was restored from an earlier backup; erasing it again", childId);
+            done += runAgain(childId, () -> eraseChildAgain(childId));
+        }
+        for (UUID accountId : stillPresent("accounts", entries, ErasureLedger.Kind.ACCOUNT)) {
+            log.warn("Account {} was erased but is back - the database was restored from an earlier backup; erasing it again",
+                    accountId);
+            done += runAgain(accountId, () -> eraseAccountAgain(accountId));
+        }
+        return done;
+    }
+
+    private List<UUID> stillPresent(String table, List<ErasureLedger.Entry> entries, ErasureLedger.Kind kind) {
+        List<UUID> ids = entries.stream().filter(entry -> entry.kind() == kind).map(ErasureLedger.Entry::id).distinct().toList();
+        List<UUID> present = new java.util.ArrayList<>();
+        for (int from = 0; from < ids.size(); from += 500) {
+            present.addAll(jdbc.queryForList("select id from " + table + " where id in (:ids)",
+                    Map.of("ids", ids.subList(from, Math.min(ids.size(), from + 500))), UUID.class));
+        }
+        return present;
+    }
+
+    private int runAgain(UUID id, java.util.function.BooleanSupplier erasure) {
         try {
             return Boolean.TRUE.equals(eachInItsOwnTransaction.execute(status -> erasure.getAsBoolean())) ? 1 : 0;
         } catch (RuntimeException e) {
-            // Left due: the next sweep tries again. An erasure that keeps failing needs a person.
-            log.error("Erasure of {} {} failed; it stays scheduled and will be retried", what, id, e);
+            log.error("Erasing {} again after a restore failed; the next sweep tries again", id, e);
             return 0;
         }
+    }
+
+    private boolean eraseChildAgain(UUID childId) {
+        if (jdbc.queryForList("select id from children where id = :c for update skip locked", Map.of("c", childId)).isEmpty()) {
+            return false;
+        }
+        allowErasure();
+        Map<String, Integer> erased = eraseChildRows(childId);
+        record(null, AuditActorType.SYSTEM, "CHILD_ERASED", "CHILD", childId,
+                Map.of("rowsErased", total(erased), "afterRestore", true));
+        return true;
+    }
+
+    private boolean eraseAccountAgain(UUID accountId) {
+        if (jdbc.queryForList("select id from accounts where id = :a for update skip locked", Map.of("a", accountId)).isEmpty()) {
+            return false;
+        }
+        allowErasure();
+        int[] erased = eraseAccountRows(accountId);
+        record(null, AuditActorType.SYSTEM, "ACCOUNT_ERASED", "ACCOUNT", accountId,
+                Map.of("childrenErased", erased[1], "rowsErased", erased[0], "afterRestore", true));
+        return true;
     }
 
     private boolean eraseChildIfDue(UUID childId) {
@@ -328,6 +408,22 @@ public class FamilyErasureService {
         }
         String email = (String) due.getFirst().get("email");
         allowErasure();
+        int[] erased = eraseAccountRows(accountId);
+        record(null, AuditActorType.SYSTEM, "ACCOUNT_ERASED", "ACCOUNT", accountId,
+                Map.of("childrenErased", erased[1], "rowsErased", erased[0]));
+        events.publishEvent(new EmailMessage(email, "Your Bookeyond Kid account has been deleted", """
+                Hello,
+
+                As you asked, your Bookeyond Kid account has been erased, with your family \
+                and everything about your children's learning. This can't be undone.
+
+                Thank you for learning with us.
+                """));
+        return true;
+    }
+
+    /** The account, its own families and their children; returns {rows, children}. */
+    private int[] eraseAccountRows(UUID accountId) {
         int rows = 0;
         int childrenErased = 0;
         for (Membership membership : activeMemberships(accountId)) {
@@ -352,17 +448,7 @@ public class FamilyErasureService {
         for (String statement : ACCOUNT_ERASURE) {
             rows += jdbc.update(statement, account);
         }
-        record(null, AuditActorType.SYSTEM, "ACCOUNT_ERASED", "ACCOUNT", accountId,
-                Map.of("childrenErased", childrenErased, "rowsErased", rows));
-        events.publishEvent(new EmailMessage(email, "Your Bookeyond Kid account has been deleted", """
-                Hello,
-
-                As you asked, your Bookeyond Kid account has been erased, with your family \
-                and everything about your children's learning. This can't be undone.
-
-                Thank you for learning with us.
-                """));
-        return true;
+        return new int[] {rows, childrenErased};
     }
 
     /** Lets this transaction - and only it - delete append-only evidence rows (V51). */

@@ -84,7 +84,9 @@ change or a suspension takes effect at once - PD-02), `SESSION_CHECK_CACHE_TTL` 
 reused, 0s-1m), `ERASURE_GRACE_PERIOD` (7d: how long a family's deletion request waits before it is carried
 out, so a mistake can be undone; 0s–90d), `ERASURE_SWEEP_INTERVAL` (PT1H: how often due
 deletions run), `ERASURE_SWEEP_ENABLED` (true; with several instances every instance may run
-it — each deletion locks its rows).
+it — each deletion locks its rows), `ERASURE_LEDGER_FILE` (**required in `prod`**; e.g.
+`/var/lib/bookeyond/erasures/ledger.log` on its own volume: the file where every erasure is recorded, ids
+only, so that restoring a database backup can't bring an erased child or account back — see section 6).
 
 Keep secrets in your platform's secret store, never in the repository. (`backend/.env.example`
 is out of date — TD-02 — use this table.)
@@ -120,9 +122,13 @@ redeploying the previous images is enough.
 - **Deletion and backups.** When a family deletes a child or their account, the data is erased
   from the live database after the grace period (Y3); it remains in backups taken before that
   until those backups expire. Choose a backup retention period and state it in the privacy
-  notice (PD-18). After restoring an old backup, deletions carried out since then must be
-  carried out again: the audit log's `CHILD_ERASED` and `ACCOUNT_ERASED` events (resource id)
-  name what to erase.
+  notice (PD-18). **After restoring an old backup, deletions carried out since then are carried
+  out again by themselves (Y18):** every erasure is also written to `ERASURE_LEDGER_FILE` (when,
+  child or account, the id — no names), and the sweep erases again anything listed there that a
+  restore brought back, without emailing the family a second time (audited as `CHILD_ERASED` /
+  `ACCOUNT_ERASED` with `afterRestore`). So keep that file **out of the database's backups and
+  restores**: on its own volume, backed up separately, and never replaced by an older copy. The
+  application log also says `Erased CHILD <id>` for each one, as a second record.
 - Back up `MEDIA_ROOT` with the database: questions refer to their pictures and recordings,
   which live there as files named by their content (SHA-256), never changed once written. A
   database restore needs the media taken at the same time or later. Running more than one

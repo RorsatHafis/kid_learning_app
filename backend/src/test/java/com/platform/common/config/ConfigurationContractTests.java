@@ -1,6 +1,7 @@
 package com.platform.common.config;
 
 import com.platform.content.media.MediaProperties;
+import com.platform.family.erasure.ErasureProperties;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.learner.MasteryProperties;
 import com.platform.notification.PlatformMailProperties;
@@ -74,6 +75,7 @@ class ConfigurationContractTests {
         env.put("MAIL_FROM", "no-reply@bk-test.invalid");
         env.put("APP_PUBLIC_URL", "https://app.bk-test.invalid");
         env.put("MEDIA_ROOT", "/var/lib/bk-test/media");
+        env.put("ERASURE_LEDGER_FILE", "/var/lib/bk-test/erasures/ledger.log");
         return env;
     }
 
@@ -143,6 +145,7 @@ class ConfigurationContractTests {
         env.put("MAIL_FROM", "no-reply@bk-test.invalid");
         env.put("APP_PUBLIC_URL", "https://app.bk-test.invalid");
         env.put("MEDIA_ROOT", "/var/lib/bk-test/media");
+        env.put("ERASURE_LEDGER_FILE", "/var/lib/bk-test/erasures/ledger.log");
 
         try (ConfigurableApplicationContext ctx = start("prod", env)) {
             SecurityProperties security = ctx.getBean(SecurityProperties.class);
@@ -174,7 +177,7 @@ class ConfigurationContractTests {
     @ParameterizedTest
     @CsvSource({"prod,JWT_SECRET", "prod,JWT_ISSUER", "staging,JWT_SECRET", "staging,JWT_ISSUER",
             "prod,MAIL_FROM", "prod,APP_PUBLIC_URL", "staging,MAIL_FROM", "staging,APP_PUBLIC_URL",
-            "prod,MEDIA_ROOT", "staging,MEDIA_ROOT"})
+            "prod,MEDIA_ROOT", "staging,MEDIA_ROOT", "prod,ERASURE_LEDGER_FILE"})
     void missingRequiredSecurityValueFailsStartup(String profile, String variable) {
         Map<String, Object> env = documentedProdEnvironment();
         env.remove(variable);
@@ -341,7 +344,7 @@ class ConfigurationContractTests {
 
     @Configuration(proxyBeanMethods = false)
     @EnableConfigurationProperties({SecurityProperties.class, MasteryProperties.class, RateLimitProperties.class,
-            PlatformMailProperties.class, MediaProperties.class})
+            PlatformMailProperties.class, MediaProperties.class, ErasureProperties.class})
     @Import({ConfigurationContract.class, JwtService.class})
     static class ConfigurationOnly {
     }

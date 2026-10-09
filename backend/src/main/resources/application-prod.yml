@@ -9,6 +9,11 @@ spring:
   flyway:
     clean-disabled: true
 
+platform:
+  erasure:
+    # A family's deletion must survive restoring a backup (PD-24): see DEPLOYMENT.md section 6.
+    ledger-required: true
+
 logging:
   # One JSON object per line (Elastic Common Schema) for the log platform: every field,
   # including the request's correlationId, is searchable. Accounts appear by id only.

@@ -63,6 +63,7 @@ class FamilyErasureIntegrationTests {
     @Autowired private SchoolService schoolService;
     @Autowired private SchoolStaffService schoolStaffService;
     @Autowired private SchoolStaffRepository schoolStaffRepository;
+    @Autowired private ErasureLedger ledger;
 
     private final HttpClient http = HttpClient.newHttpClient();
 
@@ -203,6 +204,41 @@ class FamilyErasureIntegrationTests {
         // The address is free again.
         assertThat(post("/api/v1/auth/register", "{\"email\":\"" + parent.email() + "\",\"password\":\"" + PASSWORD
                 + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null).statusCode()).isEqualTo(201);
+    }
+
+    /** Y18: a backup restored from before an erasure can't bring the child or the account back. */
+    @Test
+    void whatTheLedgerSaysWasErasedIsErasedAgainWhenARestoreBringsItBack() throws Exception {
+        erasure.eraseDue(); // anything an earlier run left due
+        Parent parent = registerParent();
+        String erased = createChild(parent, "Kanha");
+        json(deleteChild(parent, erased, PASSWORD), 202);
+        jdbc.update("update children set erase_after = now() - interval '1 minute' where id = ?::uuid", erased);
+        assertThat(erasure.eraseDue()).isEqualTo(1);
+        assertThat(ledger.entries()).as("recorded outside the database")
+                .contains(new ErasureLedger.Entry(ErasureLedger.Kind.CHILD, UUID.fromString(erased)));
+
+        // As if this database came from a backup taken before these were erased: the ledger lists them, the rows are here.
+        String restored = createChild(parent, "Restored");
+        playFirstActivity(parent, restored);
+        String sibling = createChild(parent, "Sibling");
+        ledger.record(ErasureLedger.Kind.CHILD, UUID.fromString(restored));
+        Parent gone = registerParent();
+        String goneChild = createChild(gone, "Gone");
+        ledger.record(ErasureLedger.Kind.ACCOUNT, UUID.fromString(gone.id()));
+
+        assertThat(erasure.eraseDue()).isEqualTo(2);
+        assertThat(count("children", "id", restored)).isZero();
+        assertThat(count("activity_attempts", "child_id", restored)).isZero();
+        assertThat(count("accounts", "id", gone.id())).isZero();
+        assertThat(count("children", "id", goneChild)).isZero();
+        assertThat(count("children", "id", sibling)).as("nothing else").isEqualTo(1);
+        assertThat(count("accounts", "id", parent.id())).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'CHILD_ERASED' and resource_id = ?::uuid "
+                + "and metadata ->> 'afterRestore' = 'true'", Long.class, restored)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ACCOUNT_ERASED' and resource_id = ?::uuid "
+                + "and metadata ->> 'afterRestore' = 'true'", Long.class, gone.id())).isEqualTo(1);
+        assertThat(erasure.eraseDue()).as("done once").isZero();
     }
 
     @Test

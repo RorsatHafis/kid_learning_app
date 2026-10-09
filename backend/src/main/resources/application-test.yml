@@ -45,6 +45,7 @@ platform:
   # Tests carry out deletions themselves (FamilyErasureService.eraseDue).
   erasure:
     sweep-enabled: false
+    ledger-file: ${java.io.tmpdir}/bookeyond-test-erasure-ledger.log
   mail:
     from: no-reply@bk-test.localhost
     public-url: http://localhost:5173

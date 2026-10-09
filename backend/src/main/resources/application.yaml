@@ -124,6 +124,8 @@ platform:
     grace-period: ${ERASURE_GRACE_PERIOD:7d}
     sweep-interval: ${ERASURE_SWEEP_INTERVAL:PT1H}
     sweep-enabled: ${ERASURE_SWEEP_ENABLED:true}
+    ledger-file: ${ERASURE_LEDGER_FILE:}
+    ledger-required: false
   mastery:
     learning-rate: ${MASTERY_LEARNING_RATE:0.2}
     confidence-saturation-count: ${MASTERY_CONFIDENCE_SATURATION_COUNT:10}
