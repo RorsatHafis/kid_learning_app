@@ -75,6 +75,13 @@ public class SchoolStaffController {
         }
     }
 
+    public record MembershipResponse(UUID id, UUID schoolId, String schoolName, Instant joinedAt) {
+        static MembershipResponse of(SchoolStaffService.Invitation membership) {
+            return new MembershipResponse(membership.membership().getId(), membership.school().getId(),
+                    membership.school().getName(), membership.membership().getRespondedAt());
+        }
+    }
+
     // ------------------------------------------------------------------ the school's side
 
     @GetMapping("/{schoolId}/staff")
@@ -134,6 +141,20 @@ public class SchoolStaffController {
         return staffService.openInvitations(accountId).stream().map(InvitationResponse::of).toList();
     }
 
+    /** Y21: the schools whose staff the teacher is on, so they can see them and leave one. */
+    @GetMapping("/staff/mine")
+    public List<MembershipResponse> myMemberships(@AuthenticationPrincipal UUID accountId) {
+        requireTeacher(accountId);
+        return staffService.memberships(accountId).stream().map(MembershipResponse::of).toList();
+    }
+
+    @PostMapping("/staff/mine/{membershipId}/leave")
+    public ResponseEntity<Void> leave(@PathVariable UUID membershipId, @AuthenticationPrincipal UUID accountId) {
+        requireTeacher(accountId);
+        staffService.leave(membershipId, accountId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/invitations/{membershipId}/accept")
     public ResponseEntity<Void> accept(@PathVariable UUID membershipId, @AuthenticationPrincipal UUID accountId) {
         requireTeacher(accountId);
@@ -150,7 +171,7 @@ public class SchoolStaffController {
 
     private void requireTeacher(UUID accountId) {
         if (guard.requireStaff(accountId).getPlatformRole() != PlatformRole.TEACHER) {
-            throw new AccessDeniedException("Only teachers have school invitations");
+            throw new AccessDeniedException("Only teachers are on a school's teaching staff");
         }
     }
 

@@ -20,6 +20,7 @@ import type {
   SchoolClassSummary,
   SchoolClassWithTeachers,
   SchoolInvitation,
+  SchoolMembership,
   SchoolStaffMember,
   SchoolSummary,
   SignedInDevice,
@@ -213,4 +214,7 @@ export const schoolApi = {
   myInvitations: () => apiClient.get<SchoolInvitation[]>("/schools/invitations/mine"),
   acceptInvitation: (id: string) => apiClient.post<void>(`/schools/invitations/${id}/accept`),
   declineInvitation: (id: string) => apiClient.post<void>(`/schools/invitations/${id}/decline`),
+  // Y21: the schools a teacher is on the staff of, and leaving one.
+  myMemberships: () => apiClient.get<SchoolMembership[]>("/schools/staff/mine"),
+  leaveSchool: (membershipId: string) => apiClient.post<void>(`/schools/staff/mine/${membershipId}/leave`),
 };

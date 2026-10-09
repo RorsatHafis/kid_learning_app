@@ -507,6 +507,14 @@ export interface SchoolInvitation {
   invitedAt: string;
 }
 
+/** A school whose staff the signed-in teacher is on (Y21). */
+export interface SchoolMembership {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  joinedAt: string | null;
+}
+
 // ---- learning/service/ProgressChangeService.java (X12): what changed over a window ----
 
 /** How a skill moved; listed in this order. */

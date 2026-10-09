@@ -263,6 +263,50 @@ class SchoolStaffIntegrationTests {
         assertThat(assign(principalA, classA, teacher.id()).statusCode()).as("no longer staff").isEqualTo(404);
     }
 
+    /** Y21: a teacher sees the schools they are on the staff of and leaves one themselves. */
+    @Test
+    void aTeacherLeavesASchoolThemselvesAndKeepsTheOther() throws Exception {
+        User principalA = user(PlatformRole.PRINCIPAL);
+        String schoolA = createSchool(principalA, "Leaving A");
+        String classA = createClass(principalA, schoolA, "A1");
+        User principalB = user(PlatformRole.PRINCIPAL);
+        String schoolB = createSchool(principalB, "Staying B");
+        String classB = createClass(principalB, schoolB, "B1");
+        User teacher = user(PlatformRole.TEACHER);
+        json(post("/api/v1/schools/" + schoolA + "/staff", "{\"email\":\"" + teacher.email() + "\"}", principalA), 201);
+        accept(teacher, schoolA);
+        json(post("/api/v1/schools/" + schoolB + "/staff", "{\"email\":\"" + teacher.email() + "\"}", principalB), 201);
+        accept(teacher, schoolB);
+        assign(principalA, classA, teacher.id());
+        assign(principalB, classB, teacher.id());
+
+        JsonNode mine = json(get("/api/v1/schools/staff/mine", teacher), 200);
+        assertThat(mine).hasSize(2);
+        String membershipA = null;
+        for (JsonNode membership : mine) {
+            if (membership.get("schoolName").asString().equals("Leaving A")) {
+                membershipA = membership.get("id").asString();
+            }
+        }
+        assertThat(membershipA).isNotNull();
+        assertThat(get("/api/v1/schools/staff/mine", principalA).statusCode()).as("a principal").isEqualTo(403);
+        User other = user(PlatformRole.TEACHER);
+        assertThat(post("/api/v1/schools/staff/mine/" + membershipA + "/leave", "", other).statusCode()).as("someone else's")
+                .isEqualTo(404);
+
+        assertThat(post("/api/v1/schools/staff/mine/" + membershipA + "/leave", "", teacher).statusCode()).isEqualTo(204);
+        assertThat(post("/api/v1/schools/staff/mine/" + membershipA + "/leave", "", teacher).statusCode()).as("already left")
+                .isEqualTo(404);
+        assertThat(staffStatus(schoolA, teacher.id())).isEqualTo("REMOVED");
+        assertThat(get("/api/v1/schools/classes/" + classA, teacher).statusCode()).isEqualTo(403);
+        assertThat(get("/api/v1/schools/classes/" + classB, teacher).statusCode()).isEqualTo(200);
+        assertThat(json(get("/api/v1/schools/staff/mine", teacher), 200)).hasSize(1);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'SCHOOL_STAFF_LEFT' and actor_id = ?::uuid",
+                Long.class, teacher.id())).isEqualTo(1);
+        // The principal can invite them again.
+        json(post("/api/v1/schools/" + schoolA + "/staff", "{\"email\":\"" + teacher.email() + "\"}", principalA), 201);
+    }
+
     @Test
     void aTeacherWhoNeverChoseAPasswordIsSentAFreshSetupLinkWhenInvitedAgain() throws Exception {
         User principal = user(PlatformRole.PRINCIPAL);

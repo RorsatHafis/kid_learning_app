@@ -172,6 +172,30 @@ public class SchoolStaffService {
                 Map.of("accountId", membership.getAccountId().toString(), "classAssignmentsEnded", unassigned));
     }
 
+    /** The schools this teacher is on the staff of (Y21), each with its school. */
+    @Transactional(readOnly = true)
+    public List<Invitation> memberships(UUID accountId) {
+        return staff.findByAccountIdAndStatus(accountId, SchoolStaffStatus.ACTIVE).stream()
+                .map(m -> new Invitation(m, schools.findById(m.getSchoolId()).orElseThrow()))
+                .toList();
+    }
+
+    /**
+     * Y21: a teacher leaves a school themselves - the same as the principal removing them: their
+     * classes there are unassigned at once and they no longer see its learning. Nothing a child has
+     * changes; the principal can invite them again. Someone else's membership reads as not found.
+     */
+    @Transactional
+    public void leave(UUID membershipId, UUID accountId) {
+        SchoolStaff membership = staff.findForUpdate(membershipId)
+                .filter(m -> m.getAccountId().equals(accountId) && m.getStatus() == SchoolStaffStatus.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("SchoolStaff", membershipId));
+        membership.remove(Instant.now());
+        int unassigned = endAssignmentsAtSchool(membership.getSchoolId(), accountId);
+        audit(accountId, "SCHOOL_STAFF_LEFT", "SCHOOL", membership.getSchoolId(),
+                Map.of("accountId", accountId.toString(), "classAssignmentsEnded", unassigned));
+    }
+
     private int endAssignmentsAtSchool(UUID schoolId, UUID teacherId) {
         int ended = 0;
         for (TeacherAssignment assignment : assignments.findByTeacherAccountIdAndStatus(teacherId, TeacherAssignmentStatus.ACTIVE)) {

@@ -3,6 +3,7 @@ import { staffOverviewApi, type ClassOverview } from "@/lib/api/schoolAccess";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { ClassSummary } from "@/features/school/ClassSummary";
 import { SchoolInvitations } from "./SchoolInvitations";
+import { YourSchools } from "./YourSchools";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 
 /** Classes grouped by school, in the server's order (school, then class name). */
@@ -61,6 +62,8 @@ export function TeacherHome() {
           </ul>
         </section>
       ))}
+
+      <YourSchools onLeft={refetch} />
     </div>
   );
 }

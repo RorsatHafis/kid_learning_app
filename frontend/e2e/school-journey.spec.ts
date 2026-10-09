@@ -267,6 +267,15 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await crawl(teacher, "/teacher", /^\/teacher/);
   await crawl(parent, "/parent", /^\/parent/);
 
+  // Y21: the teacher leaves the school themselves; its class leaves their home.
+  await teacher.goto("/teacher");
+  const yourSchools = teacher.getByRole("region", { name: "Your schools" });
+  await yourSchools.getByRole("button", { name: `Leave… ${schoolName}` }).click();
+  await expectNoViolations(teacher, "teacher: leaving a school");
+  await yourSchools.getByRole("button", { name: "Leave the school" }).click();
+  await expect(teacher.getByText(`You have left ${schoolName}.`)).toBeVisible();
+  await expect(teacher.getByText("No classes assigned yet")).toBeVisible();
+
   await familyContext.close();
   await teacherContext.close();
 });

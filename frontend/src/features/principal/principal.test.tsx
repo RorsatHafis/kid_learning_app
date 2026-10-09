@@ -459,6 +459,39 @@ describe("Staff homes (X7)", () => {
     expect(first).not.toHaveTextContent("teacher");
     expect(screen.getByRole("link", { name: /Grade 3/ })).toHaveTextContent(/No children yet\. The class code works until/);
   });
+
+  it("lists a teacher's schools and leaves one only after saying what that means (Y21)", async () => {
+    let left = false;
+    const calls = server({
+      "GET /schools/invitations/mine": respond(200, []),
+      "GET /schools/overview": respond(200, { schools: [], classes: [classOverview({})] }),
+      "GET /schools/staff/mine": () =>
+        respond(200, left ? [] : [{ id: "m1", schoolId: "s1", schoolName: "Sunrise Primary", joinedAt: "2026-09-26T00:00:00Z" }]),
+      "POST /schools/staff/mine/m1/leave": () => {
+        left = true;
+        return respond(204);
+      },
+    });
+    const { TeacherHome } = await import("@/features/teacher/TeacherHome");
+    render(
+      <MemoryRouter>
+        <TeacherHome />
+      </MemoryRouter>,
+    );
+    const user = userEvent.setup();
+
+    const schools = await screen.findByRole("region", { name: "Your schools" });
+    await user.click(within(schools).getByRole("button", { name: /Leave… Sunrise Primary/ }));
+    expect(calls.some((c) => c.path.endsWith("/leave"))).toBe(false);
+    expect(within(schools).getByRole("group", { name: "Leave Sunrise Primary" })).toHaveTextContent(
+      /Nothing the children have changes/,
+    );
+    await user.click(within(schools).getByRole("button", { name: "Leave the school" }));
+
+    expect(await screen.findByText("You have left Sunrise Primary.")).toBeInTheDocument();
+    expect(calls.filter((c) => c.method === "POST" && c.path === "/schools/staff/mine/m1/leave")).toHaveLength(1);
+    expect(calls.filter((c) => c.path === "/schools/overview").length).toBeGreaterThan(1);
+  });
 });
 
 describe("SchoolInvitations", () => {
