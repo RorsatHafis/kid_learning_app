@@ -194,6 +194,9 @@ export const schoolApi = {
   renameSchool: (schoolId: string, name: string) => apiClient.put<SchoolSummary>(`/schools/${schoolId}`, { name }),
   renameClass: (classId: string, name: string) => apiClient.put<SchoolClassSummary>(`/schools/classes/${classId}`, { name }),
   archiveClass: (classId: string) => apiClient.post<SchoolClassSummary>(`/schools/classes/${classId}/archive`),
+  // Y17: archiving a school archives its classes; restoring it leaves them to be restored one by one.
+  archiveSchool: (schoolId: string) => apiClient.post<SchoolSummary>(`/schools/${schoolId}/archive`),
+  restoreSchool: (schoolId: string) => apiClient.post<SchoolSummary>(`/schools/${schoolId}/restore`),
   restoreClass: (classId: string) => apiClient.post<SchoolClassSummary>(`/schools/classes/${classId}/restore`),
   assignTeacher: (classId: string, teacherAccountId: string) =>
     apiClient.post<unknown>(`/schools/classes/${classId}/teachers`, { teacherAccountId }),

@@ -106,6 +106,9 @@ public class SchoolStaffService {
     @Transactional
     public StaffMember invite(UUID schoolId, String email, UUID invitedBy, String requestedIp) {
         School school = schools.findById(schoolId).orElseThrow(() -> new ResourceNotFoundException("School", schoolId));
+        if (school.isArchived()) {
+            throw new IllegalStateException("This school is archived: restore it to invite staff.");
+        }
         Instant now = Instant.now();
         String normalized = Account.normalize(email);
         Account account = accounts.findByNormalizedEmail(normalized).orElse(null);
@@ -243,6 +246,10 @@ public class SchoolStaffService {
             throw new AccessDeniedException("Only teachers can join a school's teaching staff");
         }
         Instant now = Instant.now();
+        if (accept && schools.findById(membership.getSchoolId()).map(School::isArchived).orElse(false)) {
+            // PD-26 (Y17): an archived school takes no one new; the invitation can still be declined.
+            throw new IllegalStateException("This school is archived: no one can join it until its principal restores it.");
+        }
         if (accept) {
             membership.accept(now);
         } else {

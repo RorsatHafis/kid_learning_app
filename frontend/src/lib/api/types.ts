@@ -476,6 +476,8 @@ export interface SchoolSummary {
   id: string;
   name: string;
   principalAccountId: string;
+  /** PD-26 (Y17): the school takes nothing new; families and children keep everything. */
+  archived: boolean;
 }
 
 // school/web/SchoolStaffController.java

@@ -235,7 +235,8 @@ people at once (e.g. the administrator and a parent).
   class was assigned), *The class over time*, and can open a skill to see who needs practice and **Assign practice**.
   The family sees who asked and why, and can end the school's access at any time.
 - **Do:** as the principal, look at **Learning across the school**; open a class and use
-  **Manage class…** to rename or archive it (its code stops; its children keep everything).
+  **Manage class…** to rename or archive it (its code stops; its children keep everything). On the school's
+  page, **Manage school…** renames the school, or archives the whole school (every class with it) and restores it.
 - **Do:** as the teacher, open **My content**: the same Studio, for your own questions, activities
   and curricula (the platform's skills are read-only to you). A curriculum you publish can be
   assigned to your class (it is marked *yours*).
@@ -277,7 +278,7 @@ deliberately does not guess.
 |---|---|---|
 | PD-09 | Prices and a payment provider | Plans exist and limits apply; families can ask for an offered plan and an administrator gives or declines it; no payment is taken. |
 | PD-25 | What "archive" means (adopted: no new uses; nothing a child has changes) — please confirm | Archive works this way for content and classes. |
-| PD-26 | Closing or archiving a whole school | Not offered; classes can be archived. |
+| PD-26 | Archiving a whole school (adopted: no new uses — every class archived, no joining or staff invitations; families keep their grants and children keep everything) — please confirm; also decide whether families are told | Principal → **Manage school…** → Archive / Restore. |
 | PD-27 | Whether the platform itself should place more practice when a child has played every step | The child can play any lit book again from the shelf; the engine doesn't add practice by itself. |
 | PD-04 | Withdrawing a published version from children who already have it (mechanism built in Y16 - please confirm) | In the Studio, **Take it down…** (with a reason) stops a published question or activity reaching children at once: waiting steps are skipped, open attempts closed, nothing new places it; it can be restored. Answers already given are kept - decide whether evidence from a wrong version should be discounted. |
 | PD-14 / PD-15 | Khmer interface text and Khmer/English lessons, written by native speakers and educators | The app is in English; only the Maths path exists (authors can add more in the Studio). |

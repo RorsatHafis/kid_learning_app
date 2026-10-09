@@ -218,6 +218,32 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expect(page.getByText("This class is archived.")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Make a code" })).toBeVisible();
 
+  // Y17 (PD-26): the principal archives the whole school - its class with it - and restores it; the class comes back by itself.
+  const classUrl = page.url();
+  await page.goto("/principal");
+  await page.getByRole("button", { name: "Manage school…" }).click();
+  const manageSchool = page.getByRole("dialog", { name: "Manage school" });
+  await manageSchool.getByRole("button", { name: "Archive…" }).click();
+  await expectNoViolations(page, "principal: manage school");
+  await manageSchool.getByRole("button", { name: "Archive the school" }).click();
+  await expect(manageSchool.getByRole("status")).toHaveText("Archived.");
+  await page.keyboard.press("Escape");
+  await expect(page.getByText("This school is archived.")).toBeVisible();
+  await expectNoViolations(page, "principal: archived school");
+  await teacher.reload();
+  await expect(teacher.getByText("This class is archived.")).toBeVisible();
+  await page.getByRole("button", { name: "Manage school…" }).click();
+  await manageSchool.getByRole("button", { name: "Restore the school" }).click();
+  await expect(manageSchool.getByRole("status")).toHaveText("Restored.");
+  await page.keyboard.press("Escape");
+  await expect(page.getByText("This school is archived.")).toHaveCount(0);
+  await page.goto(classUrl);
+  await expect(page.getByText("This class is archived.")).toBeVisible();
+  await page.getByRole("button", { name: "Manage class…" }).click();
+  await manage.getByRole("button", { name: "Restore the class" }).click();
+  await expect(manage.getByRole("status")).toHaveText("Restored.");
+  await page.keyboard.press("Escape");
+
   // X22: the teacher's own content, on the Studio's screens - the platform's catalog read-only to them.
   await teacher.goto("/teacher/studio");
   await expect(teacher.getByRole("heading", { level: 1, name: "Subjects" })).toBeVisible();

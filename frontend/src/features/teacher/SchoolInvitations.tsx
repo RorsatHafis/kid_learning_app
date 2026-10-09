@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CheckCircle2, School } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
+import { ApiError } from "@/lib/api/ApiError";
 import { Button } from "@/components/ui/Button";
 import type { SchoolInvitation } from "@/lib/api/types";
 
@@ -58,8 +59,13 @@ function Invitation({ invitation, onAnswered }: { invitation: SchoolInvitation; 
     try {
       await (accept ? schoolApi.acceptInvitation(invitation.id) : schoolApi.declineInvitation(invitation.id));
       onAnswered(accept);
-    } catch {
-      setError("We couldn't record your answer. The invitation may have been withdrawn — refresh to check.");
+    } catch (err) {
+      // A refusal the server explains (an archived school, Y17) is shown as said; anything else stays general.
+      setError(
+        err instanceof ApiError && err.status === 409 && err.problem?.detail
+          ? err.problem.detail
+          : "We couldn't record your answer. The invitation may have been withdrawn — refresh to check.",
+      );
       setBusy(false);
     }
   }

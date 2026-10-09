@@ -571,6 +571,58 @@ class SchoolAccessIntegrationTests {
         assertThat(audited("CLASS_RESTORED", principal.id())).isEqualTo(1);
     }
 
+    /** PD-26 as adopted (Y17): an archived school takes nothing new; families and children keep everything. */
+    @Test
+    void anArchivedSchoolTakesNothingNewWhileFamiliesAndChildrenKeepEverything() throws Exception {
+        Staff principal = staff(PlatformRole.PRINCIPAL);
+        Staff teacher = staff(PlatformRole.TEACHER);
+        SchoolClass taught = classTaughtBy(principal, teacher);
+        String schoolPath = "/api/v1/schools/" + taught.getSchoolId();
+        String classPath = "/api/v1/schools/classes/" + taught.getId();
+        Curriculum assigned = publishedCurriculum(null, "Archived school maths");
+        json(post(classPath + "/curricula/" + assigned.getId(), "", teacher.token()), 200);
+        String code = json(post(classPath + "/join-code", "", teacher.token()), 201).get("code").asString();
+        Parent parent = parent();
+        String childId = createChild(parent.token(), "Rotha");
+        confirmEmail(parent);
+        json(post("/api/v1/children/" + childId + "/schools/join", codeBody(code), parent.token()), 200);
+
+        assertThat(post(schoolPath + "/archive", "", teacher.token()).statusCode()).as("a teacher").isEqualTo(403);
+        assertThat(post(schoolPath + "/archive", "", staff(PlatformRole.PRINCIPAL).token()).statusCode()).as("another principal")
+                .isEqualTo(403);
+        Staff invitee = staff(PlatformRole.TEACHER);
+        assertThat(json(post(schoolPath + "/archive", "", principal.token()), 200).get("archived").asBoolean()).isTrue();
+        assertThat(post(schoolPath + "/archive", "", principal.token()).statusCode()).isEqualTo(409);
+
+        // Nothing new: its class is archived with its code; no class, invitation or joining.
+        assertThat(json(get(classPath, principal.token()), 200).get("archived").asBoolean()).isTrue();
+        assertThat(get(classPath + "/join-code", teacher.token()).statusCode()).isEqualTo(204);
+        Parent latecomer = parent();
+        String lateChild = createChild(latecomer.token(), "Late");
+        confirmEmail(latecomer);
+        assertThat(post("/api/v1/children/" + lateChild + "/schools/join", codeBody(code), latecomer.token()).statusCode()).isEqualTo(404);
+        assertThat(post(schoolPath + "/classes", "{\"name\":\"Grade 9\"}", principal.token()).statusCode()).isEqualTo(409);
+        assertThat(post(schoolPath + "/staff", "{\"email\":\"new-" + UUID.randomUUID() + "@example.com\"}", principal.token())
+                .statusCode()).isEqualTo(409);
+        assertThat(post(classPath + "/restore", "", principal.token()).statusCode()).as("the school first").isEqualTo(409);
+        UUID invitationId = schoolStaffRepository.save(SchoolStaff.invite(taught.getSchoolId(), invitee.id(), principal.id(), Instant.now()))
+                .getId();
+        assertThat(post("/api/v1/schools/invitations/" + invitationId + "/accept", "", invitee.token()).statusCode())
+                .as("an invitation sent before").isEqualTo(409);
+
+        // Nothing existing changes: the family's grant and the child's journey stay.
+        assertThat(jdbc.queryForObject("select status from school_child_access where child_id = ?::uuid", String.class, childId))
+                .isEqualTo("ACTIVE");
+        assertThat(journeyIn(parent.token(), childId, assigned.getId())).isNotNull();
+        assertThat(audited("SCHOOL_ARCHIVED", principal.id())).isEqualTo(1);
+
+        // Restored: the school can start again; its classes come back one by one.
+        assertThat(json(post(schoolPath + "/restore", "", principal.token()), 200).get("archived").asBoolean()).isFalse();
+        assertThat(json(post(classPath + "/restore", "", principal.token()), 200).get("archived").asBoolean()).isFalse();
+        json(post(classPath + "/join-code", "", teacher.token()), 201);
+        assertThat(post("/api/v1/schools/invitations/" + invitationId + "/accept", "", invitee.token()).statusCode()).isEqualTo(204);
+    }
+
     @Test
     void thePrincipalSeesLearningAcrossTheSchoolClassByClassAndNoOneElseDoes() throws Exception {
         Staff principal = staff(PlatformRole.PRINCIPAL);

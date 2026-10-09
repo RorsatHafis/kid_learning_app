@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { FormField } from "@/features/auth/FormField";
 
-// Renaming a school or class, and archiving or restoring a class (X17) - the principal's. Archive means
+// Renaming a school or class, and archiving or restoring either (X17, Y17) - the principal's. Archive means
 // no new uses (PD-25): nothing a child has changes and nothing is deleted. The server decides who may.
 
 /** Said on an archived class's page, for its principal and its teachers. */
@@ -136,13 +136,37 @@ export function ManageClassButton({
   );
 }
 
-/** "Rename school…": what families and teachers see the school called. */
-export function RenameSchoolButton({ schoolId, name, onChanged }: { schoolId: string; name: string; onChanged: () => void }) {
+/** Said on an archived school's home (PD-26, Y17). */
+export function ArchivedSchoolNotice() {
+  return (
+    <p role="status" className="rounded-[14px] bg-paper px-5 py-4 text-sm leading-relaxed text-ink ring-1 ring-line-strong">
+      <span className="font-semibold">This school is archived.</span> It takes nothing new: no classes, codes, families joining or
+      staff invitations, and its classes are archived. Families keep the access they gave until they end it, and children keep
+      everything. Restore it from Manage school to start again.
+    </p>
+  );
+}
+
+/** "Manage school…": rename it, archive it (its consequence stated first) or restore it. */
+export function ManageSchoolButton({
+  schoolId,
+  name,
+  archived,
+  onChanged,
+}: {
+  schoolId: string;
+  name: string;
+  archived: boolean;
+  onChanged: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(name);
-  const { busy, error, run } = useAction(() => {
+  const [confirming, setConfirming] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const { busy, error, run } = useAction((message) => {
+    setDone(message);
+    setConfirming(false);
     onChanged();
-    setOpen(false);
   });
   return (
     <>
@@ -152,34 +176,73 @@ export function RenameSchoolButton({ schoolId, name, onChanged }: { schoolId: st
         className="-ml-2.5 mt-1"
         onClick={() => {
           setDraft(name);
+          setDone(null);
+          setConfirming(false);
           setOpen(true);
         }}
       >
-        <Pencil size={14} aria-hidden /> Rename school…
+        <Pencil size={14} aria-hidden /> Manage school…
       </Button>
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Rename school"
-        description="Families see this name when they join a class."
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void run(() => schoolApi.renameSchool(schoolId, draft.trim()), "Saved.");
-          }}
-          className="flex flex-col gap-3"
-        >
-          <FormField label="School name" value={draft} maxLength={120} required onChange={(e) => setDraft(e.target.value)} />
+      <Dialog open={open} onClose={() => setOpen(false)} title="Manage school" description={name}>
+        <div className="flex flex-col gap-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(() => schoolApi.renameSchool(schoolId, draft.trim()), "Saved.");
+            }}
+            className="flex flex-col gap-3"
+          >
+            <FormField label="School name" value={draft} maxLength={120} required onChange={(e) => setDraft(e.target.value)} />
+            <p className="text-xs text-ink-soft">Families see this name when they join a class.</p>
+            <Button type="submit" variant="outline" disabled={busy || !draft.trim() || draft.trim() === name} className="w-fit">
+              Save
+            </Button>
+          </form>
+          <section aria-labelledby="school-archive" className="flex flex-col gap-3 border-t border-line pt-5">
+            <h3 id="school-archive" className="text-sm font-semibold text-tonle-950">
+              {archived ? "Archived" : "Archive the school"}
+            </h3>
+            <p className="text-sm text-ink-soft">
+              {archived
+                ? "Restoring lets the school add classes and invite staff again. Its classes stay archived until you restore each one."
+                : "For a school that stops using Bookeyond Kid. Every class is archived and its code stops working; no class, family or staff member can be added. Families keep the access they gave until they end it, and children keep everything."}{" "}
+              Nothing is deleted.
+            </p>
+            {archived ? (
+              <Button
+                variant="outline"
+                disabled={busy}
+                className="w-fit"
+                onClick={() => void run(() => schoolApi.restoreSchool(schoolId), "Restored.")}
+              >
+                <RotateCcw size={15} aria-hidden /> Restore the school
+              </Button>
+            ) : confirming ? (
+              <div className="flex flex-wrap gap-2">
+                <Button disabled={busy} onClick={() => void run(() => schoolApi.archiveSchool(schoolId), "Archived.")}>
+                  <Archive size={15} aria-hidden /> Archive the school
+                </Button>
+                <Button variant="ghost" onClick={() => setConfirming(false)}>
+                  Keep it
+                </Button>
+              </div>
+            ) : (
+              <Button variant="outline" disabled={busy} className="w-fit" onClick={() => setConfirming(true)}>
+                <Archive size={15} aria-hidden /> Archive…
+              </Button>
+            )}
+          </section>
           {error && (
             <p role="alert" className="text-sm font-medium text-brick-deep">
               {error}
             </p>
           )}
-          <Button type="submit" disabled={busy || !draft.trim() || draft.trim() === name} className="w-fit">
-            Save
-          </Button>
-        </form>
+          {done && !error && (
+            <p role="status" className="text-sm font-medium text-palm-deep">
+              {done}
+            </p>
+          )}
+        </div>
       </Dialog>
     </>
   );

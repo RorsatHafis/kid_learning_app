@@ -199,7 +199,7 @@ Teachers open **My content** (`/teacher/studio`) - the same Studio screens, scop
 | Activity | ✓ | title; new draft version | ✓ | ✓ (refused while its lesson is archived) | ✗ |
 | Curriculum | ✓ | name; new draft version | ✓ | ✓ | ✗ |
 | Media | ✓ | title, description | ✓ | ✓ | only if never used |
-| School (principal) | ✓ | name | — (PD-26, open) | — | ✗ |
+| School (principal) | ✓ | name | ✓ (archives every class; PD-26 as adopted) | ✓ (classes restored one by one) | ✗ |
 | Class (principal) | ✓ | name | ✓ | ✓ | ✗ |
 | Plan | ✓ | ✓ | retire | activate | ✗ |
 | Staff / account | ✓ | — | suspend | reinstate | ✗ (PD-24 retention) |
@@ -256,7 +256,6 @@ and **age groups with nothing offered** show where content is still needed.
 
 | Item | Waiting on |
 |---|---|
-| Archiving or closing a whole school | PD-26 (what happens to families' grants and staff) |
 | Payments | PD-09 (prices, provider); families can already ask for a plan (Y11) |
 | Discounting evidence gathered from a version later taken down | PD-04 (taking a version down is built: Studio → the version → **Take it down…**) |
 | Class challenges | a product decision (their unfinished API was retired in Y7; the data model stays) |

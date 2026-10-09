@@ -25,7 +25,7 @@ public class SchoolService {
     public SchoolService(SchoolRepository schools, SchoolClassRepository classes, TeacherAssignmentRepository assignments, ClassEnrollmentRepository enrollments, AccountRepository accounts, ChildRepository children, CurriculumRepository curricula, CurriculumService curriculumService, EnrollmentService enrollmentService, ClassCurriculumAssignmentRepository classCurricula, AuditService audit) { this.schools=schools;this.classes=classes;this.assignments=assignments;this.enrollments=enrollments;this.accounts=accounts;this.children=children;this.curricula=curricula;this.curriculumService=curriculumService;this.enrollmentService=enrollmentService;this.classCurricula=classCurricula;this.audit=audit; }
     static final String ARCHIVED_CLASS="This class is archived: restore it before adding to it.";
     @Transactional public School createSchool(String name, UUID principalAccountId) { return schools.save(School.create(name, principalAccountId)); }
-    @Transactional public SchoolClass createClass(UUID schoolId,String name){ if(!schools.existsById(schoolId)) throw new ResourceNotFoundException("School",schoolId); return classes.save(SchoolClass.create(schoolId,name)); }
+    @Transactional public SchoolClass createClass(UUID schoolId,String name){ School school=schools.findById(schoolId).orElseThrow(()->new ResourceNotFoundException("School",schoolId)); if(school.isArchived()) throw new IllegalStateException("This school is archived: restore it to add classes."); return classes.save(SchoolClass.create(schoolId,name)); }
     /**
      * A family's child joins a class only with that family's authorization (CLAUDE.md §10, §15).
      * The family grants it with the class's code (PD-01, SchoolJoinService#join); no staff

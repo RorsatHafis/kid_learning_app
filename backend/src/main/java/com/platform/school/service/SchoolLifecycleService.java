@@ -32,8 +32,14 @@ public class SchoolLifecycleService {
     private final ClassJoinCodeRepository codes;
     private final AccountRepository accounts;
     private final AuditService audit;
+    private final com.platform.school.repository.SchoolClassRepository classes;
+    private final com.platform.school.repository.SchoolRepository schools;
 
-    public SchoolLifecycleService(SchoolAccessGuard guard, ClassJoinCodeRepository codes, AccountRepository accounts, AuditService audit) {
+    public SchoolLifecycleService(SchoolAccessGuard guard, ClassJoinCodeRepository codes, AccountRepository accounts, AuditService audit,
+                                  com.platform.school.repository.SchoolClassRepository classes,
+                                  com.platform.school.repository.SchoolRepository schools) {
+        this.classes = classes;
+        this.schools = schools;
         this.guard = guard;
         this.codes = codes;
         this.accounts = accounts;
@@ -74,11 +80,50 @@ public class SchoolLifecycleService {
         return schoolClass;
     }
 
+    /**
+     * PD-26 as adopted (Y17 - please confirm): a school that stops using Bookeyond Kid is archived
+     * like its classes - nothing new (no classes, codes, joining, staff invitations, curricula or
+     * practice: every class is archived and its code revoked), and nothing existing changes:
+     * families' grants stay (each family can still end access) and children keep everything.
+     * Restoring the school lets it start again; its classes are restored one by one.
+     */
+    @Transactional
+    public School archiveSchool(UUID accountId, UUID schoolId) {
+        School school = guard.requireSchoolManage(accountId, schoolId);
+        school.archive();
+        int archived = 0;
+        int codesRevoked = 0;
+        for (SchoolClass schoolClass : classes.findBySchoolId(schoolId)) {
+            if (schoolClass.isArchived()) {
+                continue;
+            }
+            schoolClass.archive();
+            archived++;
+            codesRevoked += codes.findBySchoolClassIdAndRevokedAtIsNull(schoolClass.getId()).map(open -> {
+                open.revoke(Instant.now());
+                return 1;
+            }).orElse(0);
+        }
+        record(accountId, "SCHOOL_ARCHIVED", "SCHOOL", schoolId, Map.of("classesArchived", archived, "joinCodesRevoked", codesRevoked));
+        return school;
+    }
+
+    @Transactional
+    public School restoreSchool(UUID accountId, UUID schoolId) {
+        School school = guard.requireSchoolManage(accountId, schoolId);
+        school.restore();
+        record(accountId, "SCHOOL_RESTORED", "SCHOOL", schoolId, Map.of());
+        return school;
+    }
+
     @Transactional
     public SchoolClass restoreClass(UUID accountId, UUID classId) {
         SchoolClass schoolClass = requireManagedClass(accountId, classId);
         if (!schoolClass.isArchived()) {
             throw new IllegalStateException("This class is not archived.");
+        }
+        if (schools.findById(schoolClass.getSchoolId()).map(School::isArchived).orElse(false)) {
+            throw new IllegalStateException("Restore the school first.");
         }
         schoolClass.restore();
         record(accountId, "CLASS_RESTORED", "SCHOOL_CLASS", classId, Map.of());

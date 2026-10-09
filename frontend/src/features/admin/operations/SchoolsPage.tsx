@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, ChevronRight, KeyRound } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle2, ChevronRight, KeyRound } from "lucide-react";
 import { adminInsightsApi, type AdminSchoolRow } from "@/lib/api/adminInsights";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { usePageInRange, useUrlFilters } from "@/lib/hooks/useUrlFilters";
@@ -11,6 +11,8 @@ import { Panel } from "../studio/shared";
 import { cn } from "@/lib/utils/cn";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+/** Archived by its principal (PD-26, Y17): it takes nothing new, so it has nothing left to set up. */
+const isArchived = (school: AdminSchoolRow) => school.status === "ARCHIVED";
 
 /** What still needs doing at a school before children can learn there, in plain words. */
 function gaps(school: AdminSchoolRow): string[] {
@@ -80,7 +82,11 @@ export function SchoolsPage() {
                         {plural(school.classes, "class", "classes")} · {plural(school.teachers, "teacher", "teachers")} ·{" "}
                         {plural(school.childrenWithAccess, "child", "children")} with access
                       </span>
-                      {todo.length === 0 ? (
+                      {isArchived(school) ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-soft">
+                          <Archive size={13} aria-hidden /> Archived: takes nothing new
+                        </span>
+                      ) : todo.length === 0 ? (
                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-palm-deep">
                           <CheckCircle2 size={13} aria-hidden /> Set up
                         </span>
@@ -117,11 +123,19 @@ export function SchoolDetailPage() {
       />
       {detail.isLoading && !data && <LoadingState label="Loading the school…" />}
       {detail.error && <ErrorState error={detail.error} onRetry={detail.refetch} />}
+      {data && isArchived(data.school) && (
+        <p role="status" className="rounded-[14px] bg-paper px-5 py-4 text-sm leading-relaxed text-ink ring-1 ring-line-strong">
+          <span className="font-semibold">Archived by its principal.</span> It takes nothing new and its classes are archived;
+          families keep the access they gave until they end it, and children keep everything.
+        </p>
+      )}
       {data && (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
           <Panel title={`Classes (${data.classes.length})`}>
             {data.classes.length === 0 ? (
-              <p className="text-sm text-ink-soft">No classes yet. The principal creates them.</p>
+              <p className="text-sm text-ink-soft">
+                {isArchived(data.school) ? "No active classes." : "No classes yet. The principal creates them."}
+              </p>
             ) : (
               <ul className="flex flex-col divide-y divide-line">
                 {data.classes.map((c) => (

@@ -42,10 +42,14 @@ afterEach(() => vi.unstubAllGlobals());
 describe("SchoolsPage", () => {
   it("says what is still to set up at each school, and links to the school", async () => {
     serve({
-      items: [school({}), school({ id: "s2", name: "Hill School", classesWithoutTeacher: 1, classesWithoutCurriculum: 2 })],
+      items: [
+        school({}),
+        school({ id: "s2", name: "Hill School", classesWithoutTeacher: 1, classesWithoutCurriculum: 2 }),
+        school({ id: "s3", name: "Old Mill School", status: "ARCHIVED", classes: 0 }),
+      ],
       page: 0,
       size: 25,
-      total: 2,
+      total: 3,
     });
     render(
       <MemoryRouter initialEntries={["/admin/schools"]}>
@@ -60,6 +64,10 @@ describe("SchoolsPage", () => {
     expect(within(riverside).getByText(/3 classes · 2 teachers · 41 children with access/)).toBeInTheDocument();
     const hill = within(list).getByRole("link", { name: /Hill School/ });
     expect(within(hill).getByText(/1 class has no teacher · 2 classes assign nothing to learn/)).toBeInTheDocument();
+    // Y17: an archived school is said to be archived, not listed as having nothing set up.
+    const mill = within(list).getByRole("link", { name: /Old Mill School/ });
+    expect(within(mill).getByText("Archived: takes nothing new")).toBeInTheDocument();
+    expect(within(mill).queryByText(/no classes yet/)).not.toBeInTheDocument();
   });
 
   it("explains an empty platform rather than showing an empty list", async () => {

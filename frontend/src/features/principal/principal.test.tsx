@@ -33,7 +33,7 @@ function server(routes: Record<string, Handler | Response>) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-const SCHOOL = { id: "s1", name: "Sunrise Primary", principalAccountId: "p1" };
+const SCHOOL = { id: "s1", name: "Sunrise Primary", principalAccountId: "p1", archived: false };
 
 const NO_LEARNING = { schoolId: "s1", schoolName: "Sunrise Primary", weeks: 4, classes: [] };
 
@@ -336,7 +336,47 @@ describe("Class lifecycle (X17)", () => {
     expect(old).toHaveTextContent("Archived: no one can join; its children keep their learning.");
     expect(screen.getByText("Archived classes (1)")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Grade 1A/ }).closest("details")).toBeNull();
-    expect(screen.getByRole("button", { name: /Rename school/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Manage school/ })).toBeInTheDocument();
+  });
+
+  it("archives the whole school only after its consequences are stated, then says so and can restore it (Y17)", async () => {
+    let archived = false;
+    const calls = server({
+      "GET /schools/mine": () => respond(200, [{ ...SCHOOL, archived }]),
+      "GET /schools/s1/learning": respond(200, NO_LEARNING),
+      "GET /schools/s1/classes": respond(200, []),
+      "GET /schools/s1/staff": respond(200, []),
+      "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
+      "POST /schools/s1/archive": () => {
+        archived = true;
+        return respond(200, { ...SCHOOL, archived: true });
+      },
+      "POST /schools/s1/restore": () => {
+        archived = false;
+        return respond(200, SCHOOL);
+      },
+    });
+    render(
+      <MemoryRouter>
+        <PrincipalHome />
+      </MemoryRouter>,
+    );
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: /Manage school/ }));
+    let dialog = screen.getByRole("dialog", { name: "Manage school" });
+    expect(within(dialog).getByText(/Families keep the access they gave/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: /Archive…/ }));
+    expect(calls.some((c) => c.path.endsWith("/archive"))).toBe(false);
+    await user.click(within(dialog).getByRole("button", { name: "Archive the school" }));
+    expect(calls.filter((c) => c.method === "POST" && c.path === "/schools/s1/archive")).toHaveLength(1);
+    expect(await screen.findByText(/This school is archived\./)).toBeInTheDocument();
+
+    dialog = screen.getByRole("dialog", { name: "Manage school" });
+    await user.click(await within(dialog).findByRole("button", { name: /Restore the school/ }));
+    expect(calls.filter((c) => c.method === "POST" && c.path === "/schools/s1/restore")).toHaveLength(1);
+    await screen.findByText("Restored.");
+    expect(screen.queryByText(/This school is archived\./)).not.toBeInTheDocument();
   });
 });
 
@@ -446,5 +486,21 @@ describe("SchoolInvitations", () => {
     expect(onAccepted).toHaveBeenCalled();
     expect(calls.some((c) => c.method === "POST" && c.path === "/schools/invitations/i1/accept")).toBe(true);
     expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument();
+  });
+
+  it("says why an archived school's invitation can't be accepted (Y17)", async () => {
+    const detail = "This school is archived: no one can join it until its principal restores it.";
+    server({
+      "GET /schools/invitations/mine": respond(200, [
+        { id: "i1", schoolId: "s1", schoolName: "Sunrise Primary", invitedAt: "2026-09-26T00:00:00Z" },
+      ]),
+      "POST /schools/invitations/i1/accept": respond(409, { status: 409, detail }),
+    });
+    const user = userEvent.setup();
+    render(<SchoolInvitations onAccepted={vi.fn()} />);
+
+    await user.click(await screen.findByRole("button", { name: "Accept" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(detail);
+    expect(screen.getByRole("button", { name: "Decline" })).toBeEnabled();
   });
 });

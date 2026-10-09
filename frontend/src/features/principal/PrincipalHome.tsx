@@ -7,7 +7,7 @@ import { problemMessage } from "@/lib/api/problemMessage";
 import type { SchoolStaffMember, SchoolSummary } from "@/lib/api/types";
 import { staffOverviewApi, type ClassOverview, type SchoolOverview, type StaffOverview } from "@/lib/api/schoolAccess";
 import { ClassSummary } from "@/features/school/ClassSummary";
-import { RenameSchoolButton } from "@/features/school/ClassLifecycle";
+import { ArchivedSchoolNotice, ManageSchoolButton } from "@/features/school/ClassLifecycle";
 import { SchoolLearningSection } from "./SchoolLearningSection";
 import type { SchoolClassWithTeachers } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
@@ -21,7 +21,7 @@ export function PrincipalHome() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   useDocumentTitle((schools.data?.find((s) => s.id === selectedId) ?? schools.data?.[0])?.name ?? (schools.data ? "Set up your school" : null));
 
-  if (schools.isLoading) return <LoadingState label="Loading your school…" />;
+  if (schools.isLoading && !schools.data) return <LoadingState label="Loading your school…" />;
   if (schools.error) return <ErrorState error={schools.error} onRetry={schools.refetch} />;
   if (!schools.data || schools.data.length === 0) return <SetUpSchool onCreated={schools.refetch} />;
 
@@ -36,7 +36,7 @@ export function PrincipalHome() {
           <p className="mt-1.5 text-[0.9375rem] text-ink-soft">
             Who your school reaches, what is still to set up, and each class.
           </p>
-          <RenameSchoolButton schoolId={school.id} name={school.name} onChanged={schools.refetch} />
+          <ManageSchoolButton schoolId={school.id} name={school.name} archived={school.archived} onChanged={schools.refetch} />
         </div>
         {schools.data.length > 1 && (
           <label className="flex items-center gap-2 text-sm text-ink-soft">
@@ -55,6 +55,7 @@ export function PrincipalHome() {
           </label>
         )}
       </div>
+      {school.archived && <ArchivedSchoolNotice />}
       {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
       {overview.data && <AtAGlance school={overview.data.schools.find((s) => s.schoolId === school.id)} />}
       <SchoolLearningSection key={school.id} schoolId={school.id} />

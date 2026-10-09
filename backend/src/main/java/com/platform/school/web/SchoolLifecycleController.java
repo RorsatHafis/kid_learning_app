@@ -54,6 +54,17 @@ public class SchoolLifecycleController {
         return ClassState.of(lifecycle.renameClass(accountId, classId, request.name()));
     }
 
+    /** PD-26 (Y17): the school stops being used; its classes are archived with it. */
+    @PostMapping("/{schoolId}/archive")
+    public SchoolController.SchoolResponse archiveSchool(@AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId) {
+        return SchoolController.SchoolResponse.of(lifecycle.archiveSchool(accountId, schoolId));
+    }
+
+    @PostMapping("/{schoolId}/restore")
+    public SchoolController.SchoolResponse restoreSchool(@AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId) {
+        return SchoolController.SchoolResponse.of(lifecycle.restoreSchool(accountId, schoolId));
+    }
+
     @PostMapping("/classes/{classId}/archive")
     public ClassState archiveClass(@PathVariable UUID classId, @AuthenticationPrincipal UUID accountId) {
         return ClassState.of(lifecycle.archiveClass(accountId, classId));

@@ -33,7 +33,7 @@ public class SchoolController {
  /** The class's members: children whose family gave the school access (PD-01). Its staff only. */
  @GetMapping("/classes/{classId}/children") public List<SchoolLearningService.Member> classChildren(@PathVariable UUID classId,@AuthenticationPrincipal UUID accountId){return learning.roster(accountId,classId);}
  public record CreateSchool(@NotBlank String name){} public record CreateClass(@NotBlank String name){} public record AssignTeacher(@NotNull UUID teacherAccountId){} public record EnrollChild(@NotNull UUID childId){}
- public record SchoolResponse(UUID id,String name,UUID principalAccountId){static SchoolResponse of(School x){return new SchoolResponse(x.getId(),x.getName(),x.getPrincipalAccountId());}}
+ public record SchoolResponse(UUID id,String name,UUID principalAccountId,boolean archived){static SchoolResponse of(School x){return new SchoolResponse(x.getId(),x.getName(),x.getPrincipalAccountId(),x.isArchived());}}
  public record ClassResponse(UUID id,UUID schoolId,String name,boolean archived){static ClassResponse of(SchoolClass x){return new ClassResponse(x.getId(),x.getSchoolId(),x.getName(),x.isArchived());}}
  public record AssignmentResponse(UUID id,UUID schoolClassId,UUID teacherAccountId){static AssignmentResponse of(TeacherAssignment x){return new AssignmentResponse(x.getId(),x.getSchoolClassId(),x.getTeacherAccountId());}}
  public record EnrollmentResponse(UUID id,UUID schoolClassId,UUID childId){static EnrollmentResponse of(ClassEnrollment x){return new EnrollmentResponse(x.getId(),x.getSchoolClassId(),x.getChildId());}}
