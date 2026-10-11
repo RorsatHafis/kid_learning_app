@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,19 +113,67 @@ public class ParentInsightService {
     }
 
     /**
-     * Derives the current interpretation (see {@link #currentInsights}) and records it
-     * as a fresh batch of immutable history rows (Section 26: a superseded insight is
-     * a new row, never an edit), returning exactly what it wrote.
+     * Derives the current interpretation (see {@link #currentInsights}) and records it as immutable
+     * history (Section 26: a superseded insight is a new row, never an edit). Only what changed is
+     * written: an insight identical to the latest one recorded about the same objective or review
+     * item is not recorded again, so asking repeatedly can't grow the history without the child's
+     * learning changing. Returns the current interpretation as recorded - the new rows, and the
+     * existing record for whatever was unchanged. Concurrent calls for one child are serialised.
      */
     @Transactional
     public List<ParentInsight> generateInsights(UUID childId) {
-        return parentInsightRepository.saveAll(buildInsights(childId));
+        parentInsightRepository.lockChild(childId);
+        Map<String, ParentInsight> latest = new HashMap<>();
+        for (ParentInsight recorded : parentInsightRepository.findLatestPerSubject(childId)) {
+            latest.put(subject(recorded), recorded);
+        }
+        List<ParentInsight> current = buildInsights(childId);
+        List<ParentInsight> changed = current.stream()
+                .filter(insight -> !sameClaim(latest.get(subject(insight)), insight))
+                .toList();
+        Map<ParentInsight, ParentInsight> written = new java.util.IdentityHashMap<>();
+        if (!changed.isEmpty()) {
+            List<ParentInsight> saved = parentInsightRepository.saveAll(changed);
+            for (int i = 0; i < changed.size(); i++) {
+                written.put(changed.get(i), saved.get(i));
+            }
+        }
+        return current.stream()
+                .map(insight -> written.containsKey(insight) ? written.get(insight) : latest.get(subject(insight)))
+                .toList();
     }
 
-    /** Every recorded snapshot, most recent first - history, not the current state. */
+    /** What an insight is about: its learning objective, or the review item it recommends. */
+    private static String subject(ParentInsight insight) {
+        Object objective = insight.getSupportingData().get("learningObjectiveId");
+        return objective != null ? "objective:" + objective : "review:" + insight.getSupportingData().get("reviewItemId");
+    }
+
+    /** The same claim on the same evidence (numbers compared by value, whatever JSON made of them). */
+    private static boolean sameClaim(ParentInsight recorded, ParentInsight current) {
+        return recorded != null
+                && recorded.getInsightType() == current.getInsightType()
+                && recorded.getHeadline().equals(current.getHeadline())
+                && java.util.Objects.equals(recorded.getDetail(), current.getDetail())
+                && normalized(recorded.getSupportingData()).equals(normalized(current.getSupportingData()));
+    }
+
+    private static String normalized(Map<String, Object> data) {
+        Map<String, String> sorted = new java.util.TreeMap<>();
+        data.forEach((key, value) -> sorted.put(key, value instanceof Number number
+                ? new java.math.BigDecimal(number.toString()).stripTrailingZeros().toPlainString()
+                : String.valueOf(value)));
+        return sorted.toString();
+    }
+
+    /** How many recorded snapshots a history read returns at most, newest first. */
+    public static final int HISTORY_LIMIT = 200;
+
+    /** The most recent recorded snapshots (at most {@link #HISTORY_LIMIT}), newest first - history, not the current state. */
     @Transactional(readOnly = true)
     public List<ParentInsight> listRecent(UUID childId) {
-        return parentInsightRepository.findByChildIdOrderByOccurredAtDesc(childId);
+        return parentInsightRepository.findByChildIdOrderByOccurredAtDesc(childId,
+                org.springframework.data.domain.Limit.of(HISTORY_LIMIT));
     }
 
     /**

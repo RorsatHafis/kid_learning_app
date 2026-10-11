@@ -121,6 +121,38 @@ class ParentInsightTruthfulnessIntegrationTests {
                 .contains(ParentInsightType.WEAKNESS);
     }
 
+    /** Asking again without the learning changing records nothing new; a change is recorded once. */
+    @Test
+    void generatingRecordsOnlyWhatChanged() {
+        UUID child = enroll("Repeat");
+        practiseRecognition(child, false, 2);
+        List<ParentInsight> first = parentInsightService.generateInsights(child);
+        long recorded = snapshots(child);
+        assertThat(recorded).isEqualTo(first.size());
+
+        for (int i = 0; i < 5; i++) {
+            List<ParentInsight> again = parentInsightService.generateInsights(child);
+            assertThat(again).extracting(ParentInsight::getId).as("the existing record")
+                    .containsExactlyElementsOf(first.stream().map(ParentInsight::getId).toList());
+        }
+        assertThat(snapshots(child)).as("nothing new to record").isEqualTo(recorded);
+
+        practiseRecognition(child, true, 4); // the learning changes
+        List<ParentInsight> changed = parentInsightService.generateInsights(child);
+        assertThat(changed).extracting(ParentInsight::getInsightType).contains(ParentInsightType.PROGRESS);
+        long afterChange = snapshots(child);
+        assertThat(afterChange).isGreaterThan(recorded);
+        parentInsightService.generateInsights(child);
+        assertThat(snapshots(child)).isEqualTo(afterChange);
+        // History still holds the earlier claim.
+        assertThat(parentInsightService.listRecent(child)).extracting(ParentInsight::getInsightType)
+                .contains(ParentInsightType.WEAKNESS, ParentInsightType.PROGRESS);
+    }
+
+    private long snapshots(UUID child) {
+        return jdbc.queryForObject("select count(*) from parent_insights where child_id = ?", Long.class, child);
+    }
+
     /** {@code attempts} completed free-practice attempts of the seeded Recognition activity (2 questions each). */
     private void practiseRecognition(UUID childId, boolean correct, int attempts) {
         UUID skillId = skillRepository.findByCode(RECOGNITION_SKILL).orElseThrow().getId();
