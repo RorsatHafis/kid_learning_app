@@ -1,3 +1,4 @@
+import { AppErrorBoundary } from "@/components/ui/AppErrorBoundary";
 import { lazy, Suspense, type ReactNode } from "react";
 import { NotFound } from "@/components/ui/NotFound";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
@@ -53,120 +54,122 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/set-up-account" element={<SetUpAccountPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
+        <AppErrorBoundary>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/set-up-account" element={<SetUpAccountPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
 
-          <Route
-            path="/parent"
-            element={
-              <RequireAuth>
-                <RequireRole roles={["PARENT"]}>
-                  <ParentLayout />
-                </RequireRole>
-              </RequireAuth>
-            }
-          >
-            <Route index element={<ParentHome />} />
-            <Route path="children/:childId" element={<ChildOverviewPage />} />
-            <Route path="children/:childId/skills/:skillId" element={<SkillPage />} />
-            <Route path="account" element={<AccountPage />} />
-            <Route path="*" element={<NotFound home="/parent" homeLabel="Go to your family" />} />
-          </Route>
+            <Route
+              path="/parent"
+              element={
+                <RequireAuth>
+                  <RequireRole roles={["PARENT"]}>
+                    <ParentLayout />
+                  </RequireRole>
+                </RequireAuth>
+              }
+            >
+              <Route index element={<ParentHome />} />
+              <Route path="children/:childId" element={<ChildOverviewPage />} />
+              <Route path="children/:childId/skills/:skillId" element={<SkillPage />} />
+              <Route path="account" element={<AccountPage />} />
+              <Route path="*" element={<NotFound home="/parent" homeLabel="Go to your family" />} />
+            </Route>
 
-          {/* The child's space — deliberately outside ParentLayout's chrome (a child
+            {/* The child's space — deliberately outside ParentLayout's chrome (a child
               surface must not look like a parent dashboard), but gated by the same
               auth/role guards: there is no child login (see PlatformRole). */}
-          <Route
-            path="/learn/:childId"
-            element={
-              <RequireAuth>
-                <RequireRole roles={["PARENT"]}>
-                  <ChildHome />
-                </RequireRole>
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/learn/:childId/shelf"
-            element={
-              <RequireAuth>
-                <RequireRole roles={["PARENT"]}>
-                  <ShelfPage />
-                </RequireRole>
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/learn/:childId/practice/:activityVersionId"
-            element={
-              <RequireAuth>
-                <RequireRole roles={["PARENT"]}>
-                  <PracticeSession />
-                </RequireRole>
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/learn/:childId/play/:enrollmentId"
-            element={
-              <RequireAuth>
-                <RequireRole roles={["PARENT"]}>
-                  <PlaySession />
-                </RequireRole>
-              </RequireAuth>
-            }
-          />
-          {/* The child space's former address, kept so saved links still work. */}
-          <Route path="/parent/children/:childId/learn" element={<LegacyLearnRedirect />} />
+            <Route
+              path="/learn/:childId"
+              element={
+                <RequireAuth>
+                  <RequireRole roles={["PARENT"]}>
+                    <ChildHome />
+                  </RequireRole>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/learn/:childId/shelf"
+              element={
+                <RequireAuth>
+                  <RequireRole roles={["PARENT"]}>
+                    <ShelfPage />
+                  </RequireRole>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/learn/:childId/practice/:activityVersionId"
+              element={
+                <RequireAuth>
+                  <RequireRole roles={["PARENT"]}>
+                    <PracticeSession />
+                  </RequireRole>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/learn/:childId/play/:enrollmentId"
+              element={
+                <RequireAuth>
+                  <RequireRole roles={["PARENT"]}>
+                    <PlaySession />
+                  </RequireRole>
+                </RequireAuth>
+              }
+            />
+            {/* The child space's former address, kept so saved links still work. */}
+            <Route path="/parent/children/:childId/learn" element={<LegacyLearnRedirect />} />
 
-          <Route
-            path="/teacher/*"
-            element={
-              <RequireAuth>
-                <RequireRole roles={["TEACHER"]}>
-                  <StaffArea>
-                    <TeacherArea />
-                  </StaffArea>
-                </RequireRole>
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/principal/*"
-            element={
-              <RequireAuth>
-                <RequireRole roles={["PRINCIPAL"]}>
-                  <StaffArea>
-                    <PrincipalArea />
-                  </StaffArea>
-                </RequireRole>
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/admin/*"
-            element={
-              <RequireAuth>
-                <RequireRole roles={["ADMIN"]}>
-                  <StaffArea>
-                    <AdminArea />
-                  </StaffArea>
-                </RequireRole>
-              </RequireAuth>
-            }
-          />
+            <Route
+              path="/teacher/*"
+              element={
+                <RequireAuth>
+                  <RequireRole roles={["TEACHER"]}>
+                    <StaffArea>
+                      <TeacherArea />
+                    </StaffArea>
+                  </RequireRole>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/principal/*"
+              element={
+                <RequireAuth>
+                  <RequireRole roles={["PRINCIPAL"]}>
+                    <StaffArea>
+                      <PrincipalArea />
+                    </StaffArea>
+                  </RequireRole>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/*"
+              element={
+                <RequireAuth>
+                  <RequireRole roles={["ADMIN"]}>
+                    <StaffArea>
+                      <AdminArea />
+                    </StaffArea>
+                  </RequireRole>
+                </RequireAuth>
+              }
+            />
 
-          {import.meta.env.DEV && <Route path="/__brand" element={<BrandSheet />} />}
-          {import.meta.env.DEV && <Route path="/__play" element={<PlayGallery />} />}
-          <Route path="*" element={<AppNotFound />} />
-        </Routes>
+            {import.meta.env.DEV && <Route path="/__brand" element={<BrandSheet />} />}
+            {import.meta.env.DEV && <Route path="/__play" element={<PlayGallery />} />}
+            <Route path="*" element={<AppNotFound />} />
+          </Routes>
+        </AppErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );
