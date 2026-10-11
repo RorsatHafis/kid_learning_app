@@ -15,4 +15,6 @@ For developers: `backend/` (Spring Boot 4, Java 21, PostgreSQL 18 with Flyway) a
 (React 18, Vite 7, Tailwind). Tests: `./mvnw -Pintegration test` in `backend/`;
 `npm run lint && npm run typecheck && npm test` in `frontend/`; end-to-end journeys
 `npm run test:e2e` against a running stack (see `frontend/playwright.config.ts`). CI runs all
-of them (`.github/workflows/ci.yml`).
+of them (`.github/workflows/ci.yml`), plus the legal-document and second-person-review journeys with
+those switched on (`.github/compose.features.yml`) and `scripts/verify-runtime.sh` against the Docker stack.
+Operations: `scripts/backup.sh` / `scripts/restore.sh` (DEPLOYMENT.md section 6).
