@@ -40,6 +40,8 @@ headers="$(curl -sI "$WEB/")"
 for h in content-security-policy x-frame-options x-content-type-options referrer-policy permissions-policy; do
   echo "$headers" | grep -qi "^$h:" && pass "header $h" || fail "header $h missing"
 done
+echo "$headers" | grep -qi "^strict-transport-security:" && fail "HSTS sent over plain http" || pass "no HSTS over plain http"
+curl -sI -H "X-Forwarded-Proto: https" "$WEB/" | grep -qi "^strict-transport-security: max-age=31536000"   && pass "HSTS when reached over https (behind a TLS proxy)" || fail "no HSTS over https"
 echo "$headers" | grep -qi "^server: nginx/[0-9]" && fail "nginx version disclosed" || pass "no server version disclosed"
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$WEB/some/deep/link")" = 200 ] && pass "a deep link serves the app" || fail "deep link"
 

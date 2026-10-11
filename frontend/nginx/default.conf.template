@@ -20,6 +20,13 @@ map $http_x_forwarded_proto $forwarded_proto {
     "" $scheme;
 }
 
+# HSTS only on https (behind the TLS proxy): browsers then refuse plain http for this host for a year.
+# No includeSubDomains - whether every subdomain is https is the domain owner's decision.
+map $forwarded_proto $hsts {
+    https "max-age=31536000";
+    default "";
+}
+
 server {
     listen 80;
     server_name _;
