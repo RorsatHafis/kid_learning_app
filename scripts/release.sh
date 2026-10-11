@@ -18,13 +18,16 @@ docker() { MSYS_NO_PATHCONV=1 command docker "$@"; }
 settings="${1:?usage: scripts/release.sh <settings file>}"
 here="$(cd "$(dirname "$0")/.." && pwd)"
 settings="$(cd "$(dirname "$settings")" && pwd)/$(basename "$settings")"
+here_native="$here"
+# Git Bash on Windows: Docker needs Windows paths (D:/...), not /d/...
+if command -v cygpath >/dev/null 2>&1; then settings="$(cygpath -m "$settings")"; here_native="$(cygpath -m "$here")"; fi
 RELEASE="${RELEASE:-$(git -C "$here" rev-parse --short HEAD)}"
 PROJECT="${PROJECT:-bookeyond-kid-prod}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/bookeyond-kid}"
 if [ -n "$(git -C "$here" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
   echo "The working tree has uncommitted changes: release a commit, not a working copy."; exit 1
 fi
-compose=(docker compose -p "$PROJECT" --env-file "$settings" -f "$here/deploy/compose.production.yml")
+compose=(docker compose -p "$PROJECT" --env-file "$settings" -f "$here_native/deploy/compose.production.yml")
 for extra in ${EXTRA_COMPOSE:-}; do compose+=(-f "$extra"); done
 export RELEASE SETTINGS_FILE="$settings"
 public="$(grep -E '^APP_PUBLIC_URL=' "$settings" | tail -1 | cut -d= -f2-)"

@@ -78,6 +78,7 @@ done
 if command -v docker >/dev/null 2>&1; then
   here="$(cd "$(dirname "$0")/.." && pwd)"
   absolute="$(cd "$(dirname "$file")" && pwd)/$(basename "$file")"
+  if command -v cygpath >/dev/null 2>&1; then absolute="$(cygpath -m "$absolute")"; here="$(cygpath -m "$here")"; fi
   if RELEASE=check SETTINGS_FILE="$absolute" docker compose --env-file "$file" -f "$here/deploy/compose.production.yml" config -q 2> "${TMPDIR:-/tmp}/compose-check.$$"; then
     echo "OK deploy/compose.production.yml resolves with these settings"
   else
