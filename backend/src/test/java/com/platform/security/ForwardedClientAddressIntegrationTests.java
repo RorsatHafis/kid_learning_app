@@ -53,6 +53,32 @@ class ForwardedClientAddressIntegrationTests {
         assertThat(login("203.0.113.21").statusCode()).isEqualTo(401);
     }
 
+    /**
+     * The web front passes on the scheme and port the browser used (X-Forwarded-Proto, X-Forwarded-Port);
+     * the app's own pages are then the same origin, however the app is reached, and another site is not.
+     */
+    @Test
+    void theAppsOwnOriginIsRecognisedFromTheForwardedSchemeAndPort() throws Exception {
+        String self = "localhost:" + port;
+        assertThat(login("http://" + self, "http", port, "203.0.113.31").statusCode()).as("own origin, plain http").isEqualTo(401);
+        assertThat(login("https://" + self, "https", port, "203.0.113.32").statusCode()).as("own origin behind TLS").isEqualTo(401);
+        assertThat(login("https://elsewhere.example", "https", port, "203.0.113.33").statusCode()).as("another site").isEqualTo(403);
+        assertThat(login("http://" + self, "https", port, "203.0.113.34").statusCode()).as("http when the app is https")
+                .isEqualTo(403);
+        assertThat(login("http://localhost:1", "http", port, "203.0.113.35").statusCode()).as("another port").isEqualTo(403);
+    }
+
+    private HttpResponse<String> login(String origin, String proto, int forwardedPort, String forwardedFor) throws Exception {
+        String body = "{\"email\":\"nobody-" + UUID.randomUUID() + "@example.com\",\"password\":\"whatever-it-is\"}";
+        return http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/auth/login"))
+                .header("Content-Type", "application/json")
+                .header("Origin", origin)
+                .header("X-Forwarded-Proto", proto)
+                .header("X-Forwarded-Port", String.valueOf(forwardedPort))
+                .header("X-Forwarded-For", forwardedFor)
+                .POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
+    }
+
     private HttpResponse<String> login(String forwardedFor) throws Exception {
         String body = "{\"email\":\"nobody-" + UUID.randomUUID() + "@example.com\",\"password\":\"whatever-it-is\"}";
         return http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/auth/login"))

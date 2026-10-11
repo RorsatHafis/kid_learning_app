@@ -40,7 +40,11 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   const admin = await adminContext.newPage();
   await logIn(admin, ADMIN_EMAIL, ADMIN_PASSWORD);
   await workspaceLink(admin, "Staff");
-  const application = admin.getByRole("listitem").filter({ hasText: principalEmail });
+  // Among the applications - once approved, the principal is listed under all staff instead.
+  const application = admin
+    .getByRole("region", { name: /^Principal applications/ })
+    .getByRole("listitem")
+    .filter({ hasText: principalEmail });
   await application.getByRole("button", { name: "Approve" }).click();
   await expect(application).toHaveCount(0);
   await adminContext.close();

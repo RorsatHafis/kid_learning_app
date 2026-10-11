@@ -8,7 +8,10 @@ COPY . .
 RUN npm run build
 
 FROM nginx:1.29-alpine
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+# The site is a template (see its header): the backend's address, and the container's own DNS so a
+# replaced backend is found again without restarting this one.
+ENV BACKEND_ORIGIN=http://backend:8080 NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
+COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80

@@ -1,0 +1,14 @@
+# CI only: the backend with the switches that are off by default turned on, so the journeys that
+# depend on them run instead of skipping. Used on top of docker-compose.yml:
+#   docker compose -f docker-compose.yml -f .github/compose.features.yml up -d --wait backend
+services:
+  backend:
+    environment:
+      # PD-18 integration points (Y15): placeholder documents - sign-up then requires agreeing to them.
+      LEGAL_PRIVACY_URL: https://legal.bk-ci.test/privacy
+      LEGAL_TERMS_URL: https://legal.bk-ci.test/terms
+      LEGAL_VERSION: ci-1
+      # PD-20 (Y14): platform content is published only after a second administrator approves it.
+      CONTENT_REVIEW_REQUIRED: "true"
+      # Y18: erasures recorded outside the database (the image prepares this directory).
+      ERASURE_LEDGER_FILE: /var/lib/bookeyond/erasures/ledger.log

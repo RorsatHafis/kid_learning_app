@@ -88,6 +88,21 @@ jobs:
         working-directory: frontend
       - run: npm run test:e2e
         working-directory: frontend
+      # Deployment behaviour: headers, migrations, invalid requests, media through nginx and on its
+      # volume, restart and replacement of the backend (scripts/verify-runtime.sh says what it checks).
+      - name: Runtime checks
+        run: bash scripts/verify-runtime.sh
+      # The legal-agreement and second-person-review journeys skip on the default stack (both are
+      # off by default); restart the backend with them on and run those journeys for real.
+      - name: Turn on legal documents, content review and the erasure ledger
+        # Only the backend is replaced; the web front finds it on its new address by itself (nginx
+        # resolves it per request), so this step also proves that recovery.
+        run: docker compose -f docker-compose.yml -f .github/compose.features.yml up -d --wait backend
+      - name: Configuration-specific journeys
+        run: npx playwright test e2e/legal.spec.ts e2e/review-journey.spec.ts
+        working-directory: frontend
+      - name: Those journeys ran rather than skipped
+        run: test "$(curl -fsS http://localhost:5173/api/v1/auth/legal | jq -r .version)" = ci-1
       - name: Server logs
         if: failure()
         run: docker compose logs --no-color --tail 300 backend web

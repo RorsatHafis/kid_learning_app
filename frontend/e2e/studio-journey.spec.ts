@@ -154,6 +154,7 @@ test("studio: author, check, publish; a child plays exactly what was published @
   await family.getByLabel("Date of birth").fill("2019-04-04");
   await family.getByRole("button", { name: "Add child" }).click();
   await family.getByRole("link", { name: /Vanna/ }).first().click();
+  const vannaPage = family.url();
   // With more than one path for the child's age the parent chooses (no invented default).
   const addSubject = family.getByRole("button", { name: "Add a subject" });
   if (await addSubject.isVisible()) await addSubject.click();
@@ -199,6 +200,14 @@ test("studio: author, check, publish; a child plays exactly what was published @
   }
   await family.getByRole("button", { name: "Check my groups" }).click();
   await expect(family.getByText("Everything is in the right group!")).toBeVisible();
+  await family.getByRole("button", { name: "Finish" }).click();
+  await expect(family.locator("#done-title")).toBeVisible();
+
+  // The parent sees the evidence from the number, ordering and sorting questions, on the skill they were about.
+  await family.goto(vannaPage);
+  await expect(family.getByText("3 of 3 answers correct").first()).toBeVisible();
+  await expect(family.getByText(skill).first()).toBeVisible();
+  await expectNoViolations(family, "parent: evidence from number, ordering and sorting questions");
   await familyContext.close();
 
   // X14: a question is archived (out of the bank, its activity untouched) and restored, from the Studio.

@@ -34,7 +34,7 @@ browser ──HTTPS──> TLS proxy / load balancer ──HTTP──> web (ngin
 - **Client addresses** (sign-in, registration and recovery limits are per client address):
   the bundled nginx sets `X-Forwarded-For` to the address *it* sees. If a TLS proxy or load
   balancer sits in front of it, that is the proxy's address, and every user would share one
-  budget. Add to `frontend/nginx/default.conf`, with your proxy's address range:
+  budget. Add to `frontend/nginx/default.conf.template`, with your proxy's address range:
   ```
   set_real_ip_from 10.0.0.0/8;          # your load balancer's range
   real_ip_header X-Forwarded-For;
@@ -43,6 +43,16 @@ browser ──HTTPS──> TLS proxy / load balancer ──HTTP──> web (ngin
   The backend itself only believes `X-Forwarded-For` entries added by private/loopback
   addresses (`server.forward-headers-strategy: native`). If the proxy in front of the backend
   has a public address, set `SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES` to a regex matching it.
+- **The app's own address, as the backend sees it:** the bundled nginx passes on the address the
+  browser used - host and port (`Host`, `X-Forwarded-Port`) and scheme (a TLS proxy's
+  `X-Forwarded-Proto` when there is one, else its own) - so requests from the app's own pages are
+  recognised as the same origin however it is reached (another port, a LAN address for testing on a
+  phone, https at a proxy). `CORS_ALLOWED_ORIGINS` is then only about other origins. A TLS proxy in front
+  must set `X-Forwarded-Proto` (most do by default).
+- **Where the web front finds the backend:** `BACKEND_ORIGIN` on the web container (default
+  `http://backend:8080`, the Compose service). nginx looks the name up through the container's own DNS
+  as requests arrive (an answer is kept 2 s), so a backend replaced on a new address - a redeploy or a restart -
+  is reached again without restarting the web container; while the backend is down, `/api` answers 502.
 - Do not expose the backend or the database to the internet.
 
 ## 3. Configuration
@@ -97,6 +107,18 @@ Use a transactional mail provider with your own sending domain, and publish **SP
 DMARC** records for it, or messages to parents will land in spam. Email bodies are never
 logged; delivery failures are logged with the recipient's domain only. A mail outage does not
 take the API down (mail health is excluded from readiness).
+
+## 4a. Checking a running stack
+
+`scripts/verify-runtime.sh` checks a running Compose stack through its web front: security headers,
+migrations, refusals (bad credentials, malformed and oversized requests, other sites), a picture
+uploaded and served back, file ownership, a backend restart and a backend replaced on a new address
+(the web front must reach it without being restarted), and that media survives both. CI runs it on
+every build. Run it against a test stack only - it uploads a picture and restarts the backend:
+
+```
+WEB=http://localhost:5173 ADMIN_EMAIL=... ADMIN_PASSWORD=... scripts/verify-runtime.sh
+```
 
 ## 5. Releasing
 
