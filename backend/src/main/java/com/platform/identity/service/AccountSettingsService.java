@@ -83,7 +83,7 @@ public class AccountSettingsService {
                     securityProperties.lockout().maxAttempts(), securityProperties.lockout().duration(), now);
             throw new CurrentPasswordMismatchException();
         }
-        passwordPolicy.validate(newPassword);
+        passwordPolicy.validate(newPassword, account.getEmail());
         if (passwordEncoder.matches(newPassword, account.getPasswordHash())) {
             throw new WeakPasswordException("The new password must be different from the current one");
         }

@@ -42,7 +42,7 @@ public class AdminBootstrapRunner implements CommandLineRunner {
         }
         // One indexed existence check, not every account loaded at each start-up.
         if (accounts.existsByPlatformRole(PlatformRole.ADMIN)) return;
-        passwordPolicy.validate(properties.getPassword());
+        passwordPolicy.validate(properties.getPassword(), properties.getEmail());
         Account admin = accounts.saveAndFlush(Account.register(
                 properties.getEmail(), passwordEncoder.encode(properties.getPassword()), PlatformRole.ADMIN));
         auditService.record(new RecordAuditEvent(null, admin.getId(), AuditActorType.SYSTEM,

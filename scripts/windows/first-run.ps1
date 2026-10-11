@@ -24,12 +24,38 @@ do {
     if (-not $ok) { Write-Host ' That does not look like an email address. Try again.' -ForegroundColor Yellow }
 } until ($ok)
 
+# The server's own password rules (identity/service/PasswordPolicy.java): a password it would refuse
+# here would stop the administrator from being created, so it is caught now, with the same reason.
+function PasswordProblem([string]$password, [string]$email) {
+    if ($password.Length -lt 12) { return 'The password must be at least 12 characters.' }
+    if ([Text.Encoding]::UTF8.GetByteCount($password) -gt 72) { return 'The password is too long: use at most 72 letters, digits or symbols.' }
+    $lower = $password.ToLowerInvariant()
+    foreach ($period in 1..3) {
+        if ($lower.Length % $period -eq 0 -and $lower -ceq ($lower.Substring(0, $period) * ($lower.Length / $period))) {
+            return 'That password is a few characters repeated: choose one that is harder to guess.'
+        }
+    }
+    foreach ($sequence in @('01234567890123456789012345678901234567890', 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 'qwertyuiopasdfghjklzxcvbnmqwertyuiop', '1234567890qwertyuiop')) {
+        $reversed = -join ($sequence.ToCharArray()[($sequence.Length - 1)..0])
+        if ($sequence.Contains($lower) -or $reversed.Contains($lower)) { return 'That password is counting or a row of the keyboard: choose one that is harder to guess.' }
+    }
+    $letters = $lower -replace '[^\p{L}]', ''
+    if (@('password', 'passwords', 'bookeyond', 'bookeyondkid', 'bookeyondkids', 'qwerty', 'letmein', 'welcome') -contains $letters) {
+        return 'That password is one of the first anyone would try: choose one that is harder to guess.'
+    }
+    $localLetters = ($email.ToLowerInvariant().Split('@')[0]) -replace '[^\p{L}]', ''
+    if ($lower.Contains($email.ToLowerInvariant()) -or ($localLetters.Length -ge 4 -and $letters -eq $localLetters)) {
+        return "Don't use your email address in your password."
+    }
+    return $null
+}
+
 do {
     $first = Plain (Read-Host ' Administrator password (at least 12 characters)' -AsSecureString)
     $second = Plain (Read-Host ' Type the password again' -AsSecureString)
     $problem = $null
-    if ($first.Length -lt 12) { $problem = 'The password must be at least 12 characters.' }
-    elseif ($first.Length -gt 128) { $problem = 'The password must be at most 128 characters.' }
+    $problem = PasswordProblem $first $email
+    if ($problem) { }
     elseif ($first.Contains("'")) { $problem = 'Please choose a password without an apostrophe ('').' }
     elseif ($first -cne $second) { $problem = 'The two passwords are different.' }
     if ($problem) { Write-Host " $problem Try again." -ForegroundColor Yellow }

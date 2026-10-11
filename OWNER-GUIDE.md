@@ -22,8 +22,10 @@ and a web browser.
 3. **The first time only**, it asks for the administrator account you will use:
    - an email address (any address you like, e.g. `owner@bookeyond.test` — nothing is really
      sent, see *Emails* below);
-   - a password of **at least 12 characters**, typed twice. The letters don't appear while you
-     type; that's normal. Please don't use an apostrophe (`'`).
+   - a password of **at least 12 characters** (at most 72), typed twice, that isn't easy to guess:
+     not one character repeated, counting or a keyboard row, "password" or "Bookeyond" with digits
+     added, or your email address - the window says so if it is. The letters don't appear while
+     you type; that's normal. Please don't use an apostrophe (`'`).
 
    It saves this in a private file `D:\Bookeyond-Kid\.env` on your computer only.
 4. Wait. **The first start takes 5–10 minutes** (it builds everything). Later starts take
@@ -77,7 +79,9 @@ http://localhost:8025. A simple pattern:
 | Principal | `principal@bookeyond.test` | `Principal-Test-2026` |
 | Teacher | `teacher@bookeyond.test` | chosen from the invitation email |
 
-Passwords need at least 12 characters.
+Passwords need at least 12 characters (at most 72) and must not be easy to guess: the app says why
+if one is refused (one character repeated, counting or a keyboard row, "password" or the app's name,
+or the account's own email address).
 
 The app starts with one published learning path, **Maths - Junior** (6 activities about
 addition, for ages 4–9). You can author more in the Content Studio (test 11).

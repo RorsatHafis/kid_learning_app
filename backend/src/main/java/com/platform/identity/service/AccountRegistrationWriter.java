@@ -52,7 +52,7 @@ class AccountRegistrationWriter  {
 
     @Transactional
     Account write(RegisterAccountCommand command, String normalizedEmail, UUID guardId) {
-        passwordPolicy.validate(command.rawPassword());
+        passwordPolicy.validate(command.rawPassword(), command.email());
  
         if (accountRepository.findByNormalizedEmail(normalizedEmail).isPresent()) {
 

@@ -393,7 +393,7 @@ public class AccountRecoveryService {
         if (account.getStatus() == AccountStatus.DISABLED) {
             throw new InvalidActionLinkException();
         }
-        passwordPolicy.validate(newPassword);
+        passwordPolicy.validate(newPassword, account.getEmail());
 
         token.consume(now);
         tokens.findByAccountIdAndPurposeAndConsumedAtIsNullAndInvalidatedAtIsNull(account.getId(), purpose)
