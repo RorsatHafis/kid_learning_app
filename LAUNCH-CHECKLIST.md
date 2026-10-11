@@ -10,6 +10,8 @@ domain, a legal text or a decision. Nothing here has been done yet.
 1. **Repository and CI.** Create a private GitHub repository, push `master`, allow Actions
    (Settings -> Actions -> General) and protect the release branch so merging needs the `CI` checks.
    No secrets are needed. Wait for the first run to be green (DEPLOYMENT.md section 8).
+   Before pushing, bring `backend/.env.example` in line with DEPLOYMENT.md section 3 or delete it: it is
+   out of date (TD-02), and the engineering agent may not edit `.env` files.
 2. **A server.** A Linux virtual machine (4 GB memory or more, 2 CPUs, 40 GB disk to start), with
    Docker Engine and the Compose plugin, SSH by key only, and a firewall allowing 22, 80 and 443 only.
    Clone the repository to `/opt/bookeyond-kid`.
