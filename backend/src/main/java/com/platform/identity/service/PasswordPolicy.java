@@ -8,7 +8,12 @@ import com.platform.identity.exception.WeakPasswordException;
 public class PasswordPolicy {
 
     public static final int MIN_LENGTH = 12;
-    public static final int MAX_LENGTH = 128;
+    /**
+     * Passwords are hashed with BCrypt, which reads no more than 72 bytes (UTF-8); Spring refuses a longer
+     * one. The limit is stated here, in words a person can act on, rather than surfacing as the encoder's
+     * error - 72 letters, digits or symbols, fewer with letters beyond A-Z (a Khmer letter is 3 bytes).
+     */
+    public static final int MAX_BYTES = 72;
  
     public void validate(String rawPassword) {
 
@@ -24,10 +29,11 @@ public class PasswordPolicy {
 
         }
 
-        if (rawPassword.length() > MAX_LENGTH) {
+        if (rawPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > MAX_BYTES) {
 
-            throw new WeakPasswordException("Password must be at most " + MAX_LENGTH + " characters long");
-            
+            throw new WeakPasswordException("Password is too long: use at most " + MAX_BYTES
+                    + " letters, digits or symbols (fewer if it has letters beyond A-Z, such as Khmer)");
+
         }
 
     }
