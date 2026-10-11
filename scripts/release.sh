@@ -12,7 +12,7 @@
 #
 # Optional: RELEASE (default: the current git commit), PROJECT (default bookeyond-kid-prod), BACKUP_DIR
 # (default /var/backups/bookeyond-kid), EXTRA_COMPOSE (more -f files, e.g. the rehearsal overlay),
-# and CACERT / RESOLVE for the smoke test (the local rehearsal).
+# CACERT / RESOLVE for the smoke test, and REHEARSAL_CA=1 to trust the rehearsal's local certificate authority.
 set -euo pipefail
 docker() { MSYS_NO_PATHCONV=1 command docker "$@"; }
 settings="${1:?usage: scripts/release.sh <settings file>}"
@@ -52,6 +52,12 @@ if ! "${compose[@]}" up -d --build --wait --wait-timeout 600; then
 fi
 
 echo "== 4. smoke test"
+if [ "${REHEARSAL_CA:-}" = 1 ]; then
+  # Local rehearsal: trust the certificate authority Caddy made for *.localhost, so TLS is still checked.
+  CACERT="$(mktemp)"; export CACERT
+  command -v cygpath >/dev/null 2>&1 && CACERT="$(cygpath -m "$CACERT")"
+  docker cp "$("${compose[@]}" ps -q proxy):/data/caddy/pki/authorities/local/root.crt" - | tar -xO > "$CACERT"
+fi
 if ! bash "$here/scripts/smoke-test.sh" "$public"; then
   echo "The smoke test failed."
   [ -n "$previous" ] && echo "To go back: RELEASE=$previous ${compose[*]} up -d --wait   (DEPLOYMENT.md section 5)"
