@@ -24,6 +24,9 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:5173",
+    // Only for the local rehearsal of the production deployment, whose TLS certificate comes from
+    // Caddy's own local authority (DEPLOYMENT.md section 5a). Never set against a real address.
+    ignoreHTTPSErrors: process.env.E2E_IGNORE_HTTPS_ERRORS === "1",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

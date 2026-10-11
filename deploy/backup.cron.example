@@ -1,0 +1,27 @@
+# Backups of Bookeyond Kid (install with: crontab -e, as the user that runs Docker; adjust paths).
+#
+# On the server: plain backup folders (the live database is on this machine anyway), pruned to
+# KEEP_DAILY/KEEP_WEEKLY, drilled monthly - these are what scripts/restore.sh uses after a mistake.
+# Off the server: only copies encrypted to the backup key (the server holds the PUBLIC key only), for
+# losing the server itself. Replace the rclone line with your own storage tool (rclone, rsync over ssh,
+# aws s3 cp, ...). Read the logs: a backup that has been failing unnoticed is no backup.
+#
+# Containers are named <project>-<service>-1; scripts/release.sh uses the project bookeyond-kid-prod.
+
+# 02:30 every day: back up, encrypt a copy, send it off the server, prune old local backups.
+30 2 * * * cd /opt/bookeyond-kid && \
+  BACKEND=bookeyond-kid-prod-backend-1 DB=bookeyond-kid-prod-db-1 scripts/backup.sh /var/backups/bookeyond-kid && \
+  latest="$(ls -d /var/backups/bookeyond-kid/bookeyond-kid-*Z | tail -1)" && \
+  scripts/encrypt-backup.sh "$latest" backups@your-domain && \
+  rclone copy "$latest.tar.gpg" offsite:bookeyond-kid-backups/ && \
+  rm -f "$latest.tar.gpg" && \
+  KEEP_DAILY=14 KEEP_WEEKLY=8 scripts/prune-backups.sh /var/backups/bookeyond-kid --yes \
+  >> /var/log/bookeyond-kid-backup.log 2>&1
+
+# 04:00 on the first Sunday of the month: restore the newest local backup into a throwaway database.
+0 4 1-7 * 0 cd /opt/bookeyond-kid && \
+  scripts/restore-drill.sh "$(ls -d /var/backups/bookeyond-kid/bookeyond-kid-*Z | tail -1)" \
+  >> /var/log/bookeyond-kid-restore-drill.log 2>&1
+
+# Off-site copies: every few months, on the trusted machine that holds the private key, fetch the
+# newest .tar.gpg and run scripts/restore-drill.sh on it (it decrypts first).

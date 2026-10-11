@@ -26,8 +26,12 @@ while read -r line; do problem "still a placeholder: line $line"; done < <(grep 
 domain="$(value APP_DOMAIN)"
 public="$(value APP_PUBLIC_URL)"
 if [ -n "$domain" ]; then
-  echo "$domain" | grep -qE '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$' \
-    || problem "APP_DOMAIN '$domain' is not a domain name (lower case, no scheme or path)"
+  if [ "$domain" = localhost ] && [ "${REHEARSAL:-}" = 1 ]; then
+    warning "APP_DOMAIN is localhost (rehearsal only)"
+  else
+    echo "$domain" | grep -qE '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$' \
+      || problem "APP_DOMAIN '$domain' is not a domain name (lower case, no scheme or path)"
+  fi
   echo "$public" | grep -qE "^https://$domain(:[0-9]+)?$" \
     || problem "APP_PUBLIC_URL must be https://$domain (it is '$public')"
 fi

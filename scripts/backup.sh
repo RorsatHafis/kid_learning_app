@@ -28,6 +28,15 @@ docker cp "$BACKEND:/var/lib/bookeyond/media" - > "$dir/media.tar"
 if docker exec "$BACKEND" test -f "$LEDGER"; then
   docker cp "$BACKEND:$LEDGER" - > "$dir/erasure-ledger.tar"
 fi
+# What the backup holds, for scripts/restore-drill.sh to compare a restore against.
+{
+  echo "taken_at=$stamp"
+  docker exec "$DB" psql -U "$DB_USER" -d "$DB_NAME" -tA -F= -c "select 'schema_version', max(version::int) from flyway_schema_history where success"
+  for table in accounts families children enrollments activity_attempts answer_records learner_skill_states content_assets audit_events; do
+    docker exec "$DB" psql -U "$DB_USER" -d "$DB_NAME" -tA -c "select '$table=' || count(*) from $table" 2>/dev/null || true
+  done
+  echo "media_files=$(tar -t < "$dir/media.tar" | grep -cv '/$')"
+} > "$dir/manifest.txt"
 (cd "$dir" && sha256sum ./* > SHA256SUMS)
 echo "Backed up to $dir:"
 ls -l "$dir"
