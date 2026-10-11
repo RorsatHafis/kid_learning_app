@@ -138,6 +138,14 @@ redeploying the previous images is enough.
 
 - Take automated daily PostgreSQL backups (e.g. `pg_dump -Fc`) plus point-in-time recovery
   if your provider offers it, kept encrypted and off the database host.
+- **On a Compose deployment, `scripts/backup.sh <folder>`** writes one dated folder: the database
+  (`pg_dump` custom format, checked readable), the media files and the erasure ledger, with checksums;
+  run it daily (cron) and copy the folder off the host, encrypted. **`scripts/restore.sh <that folder>
+  --yes`** checks the checksums first (a damaged backup changes nothing), stops the backend, puts the
+  database back, adds the backup's media and starts the backend; it never restores the ledger over the
+  live one. Both were run end to end on a test stack (Y25): what was written after the backup was gone,
+  what was in it was back, media still served, ownership kept. A managed database's own backups can
+  replace the `pg_dump` part.
 - **Test a restore** into a scratch database before relying on it.
 - The audit log (`audit_events`) cannot be updated or deleted by the application (a database
   trigger refuses it). Keep it in backups.
