@@ -302,17 +302,21 @@ deliberately does not guess.
 
 ## Part 5 — How it was verified
 
-At the latest verification (2026-10-09):
+At the latest verification (2026-10-11):
 
-- 377 backend tests (unit and integration against a real PostgreSQL), including security,
+- 387 backend tests (unit and integration against a real PostgreSQL), including security,
   a sweep proving no one outside a family can read or change its children's data, role and
   school boundaries, concurrency, and performance (queries don't grow with a child's history
   or a class's size);
-- 165 frontend unit tests, type checks, lint, a production build, and a dependency audit with
-  no known vulnerabilities in what the app ships (one advisory remains in build-time tools only);
-- 37 automated browser journey runs — family, recovery, admin, boundaries, plans, stopping a
+- 167 frontend unit tests, type checks, lint, a production build, and a dependency audit with
+  no known vulnerabilities in what the app ships (two advisories remain in build-time tools only);
+- the Docker deployment itself: 32 runtime checks through the web front (security headers, refusals,
+  pictures uploaded and kept across restarts, a replaced backend found again), and a backup taken,
+  data changed and the backup restored;
+- 39 automated browser journey runs — family, recovery, admin, boundaries, plans, stopping a
   path, school (principal, teacher, family, archiving a class and the school, a teacher leaving),
-  legal agreement, second-person review, content authoring to a child playing it — on desktop
+  legal agreement, second-person review, a screen that fails recovering, content authoring to a child
+  playing it and the parent seeing the evidence for all seven kinds of question — on desktop
   and on a phone, with automated WCAG 2.2 AA accessibility checks on every main screen, using
   real emails.
 

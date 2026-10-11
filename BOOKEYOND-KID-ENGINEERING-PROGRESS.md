@@ -6,13 +6,14 @@ project actually stands against it. Where the two disagree on a verification lev
 evidence recorded here is newer (see §26 note under Battle 4A) — `CLAUDE.md` is not edited
 from here.
 
-- **Last reconciled:** 2026-10-09, after the Y1-Y21 completeness pass (rows Y1-Y21 below) and its final verification.
-- **Reconciled against:** current source, Flyway migrations V1-V55, and the final full run on the isolated
-  environment: `./mvnw -Pintegration test` **377 run, 377 pass**; Vitest **165 pass** (39 files); lint 0 errors
-  (6 warnings); types; production build; `npm audit --omit=dev` 0 vulnerabilities (a high advisory on `braces`
-  remains in build-time tools only - Tailwind 3 / ESLint - with no non-breaking fix); Playwright E2E + axe one file
-  at a time, desktop and phone: **33 pass, 4 skip** on the default server, and the 4 skipped (legal, review) **pass**
-  against a server with `LEGAL_*` set and `CONTENT_REVIEW_REQUIRED=true` - **37 of 37**. Docker runtime not re-run.
+- **Last reconciled:** 2026-10-11, after Y22-Y30 and their final verification (rows below; decisions PD-29, PD-30 recorded).
+- **Reconciled against:** current source, Flyway V1-V55, and the final runs: backend `./mvnw -Pintegration test`
+  **387 run, 387 pass** (isolated PostgreSQL); Vitest **167 pass** (40 files); lint 0 errors (6 warnings); types;
+  production build; `npm audit --omit=dev` 0 vulnerabilities (build-time-only advisories in DEPLOYMENT.md 7a).
+  On Docker (isolated `bkverify` project, images built from this source): `scripts/verify-runtime.sh` **32/32**;
+  CI's E2E steps, desktop and phone - **35 passed, 4 skipped** on the default configuration, and the 4 (legal,
+  review) **passed** with the features on - **39 of 39**; backup/restore and erasure-ledger restore cycles run
+  (Y18, Y25). The GitHub workflow itself has not run (no repository remote).
 - **Version control:** git repository at `D:\Bookeyond-Kid` (baseline commit `4db89ad`,
   then one commit per battle). TD-01 resolved.
 
