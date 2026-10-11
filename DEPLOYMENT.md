@@ -145,6 +145,20 @@ redeploying the previous images is enough.
 - Not set up yet (your choice of platform): metrics collection and alerting. `staging`
   exposes `/actuator/metrics` to administrators only.
 
+## 7a. Dependency advisories
+
+`npm audit --omit=dev` (what the browser receives) reports **no vulnerabilities**, and CI fails if a high one
+appears. Two advisories remain in **build-time tools only** - nothing from them is shipped, and they only ever
+read this repository's own CSS and file patterns, never anything a user sends:
+
+| Package | Advisory | Reached through | Why not fixed |
+|---|---|---|---|
+| `braces` 3.0.3 | GHSA-vfj7-8cjw-p6xm (high): deeply nested brace patterns exhaust the stack | Tailwind 3 (file watching and content globs), the TypeScript ESLint 7 parser | No patched `braces` exists (every version is affected) |
+| `postcss-selector-parser` 6.1.4 | quadratic parsing of flat selectors (moderate) | Tailwind 3 | Fixed only in 7.1.6; Tailwind 3 requires 6.x |
+
+**Action:** move to Tailwind 4 (a styling migration - plan it as its own piece of work) or to a Tailwind 3
+release that drops these dependencies, when one exists; re-check with `npm audit` after each dependency update.
+
 ## 8. Before real families use it
 
 These are not engineering tasks and are not done:
