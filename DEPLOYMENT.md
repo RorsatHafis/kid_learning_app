@@ -225,6 +225,13 @@ off-server copies too, from the machine that holds the private key.
 **Restoring** - **`scripts/restore.sh <backup folder> --yes`** checks the checksums first (a damaged
 backup changes nothing), stops the backend, puts the database back, adds the backup's media and starts
 the backend. Everything written since the backup is lost. It never restores the erasure ledger.
+On the production stack (the release currently running in `RELEASE`):
+
+```
+RELEASE=<running release> SETTINGS_FILE=$PWD/deploy/production.settings COMPOSE="docker compose -p bookeyond-kid-prod --env-file deploy/production.settings -f deploy/compose.production.yml" BACKEND=bookeyond-kid-prod-backend-1 DB=bookeyond-kid-prod-db-1 scripts/restore.sh <backup folder> --yes
+```
+
+Then run `scripts/smoke-test.sh https://<domain>`.
 
 - The audit log (`audit_events`) cannot be updated or deleted by the application (a database
   trigger refuses it). Keep it in backups.

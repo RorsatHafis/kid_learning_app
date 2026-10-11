@@ -159,7 +159,8 @@ test("studio: author, check, publish; a child plays exactly what was published @
   const addSubject = family.getByRole("button", { name: "Add a subject" });
   if (await addSubject.isVisible()) await addSubject.click();
   await family.getByRole("listitem").filter({ hasText: `Counting stars ${tag}` }).getByRole("button", { name: "Start this path" }).click();
-  await expect(family.getByText(`Counting stars ${tag}`).first()).toBeVisible();
+  // Started: its "Learning now" card (the name alone is also in the list of choices, before it starts).
+  await expect(family.getByRole("heading", { name: `Counting stars ${tag}` })).toBeVisible();
 
   await family.getByRole("link", { name: "Start Vanna's session" }).click();
   // The published activity is on the child's home (beside Play and as the current step of the path).
@@ -332,7 +333,8 @@ test("studio: multiple choice, true or false, short answer and matching - author
   const addSubject = family.getByRole("button", { name: "Add a subject" });
   if (await addSubject.isVisible()) await addSubject.click();
   await family.getByRole("listitem").filter({ hasText: `Word play ${tag}` }).getByRole("button", { name: "Start this path" }).click();
-  await expect(family.getByText(`Word play ${tag}`).first()).toBeVisible();
+  // Started: its "Learning now" card (the name alone is also in the list of choices, before it starts).
+  await expect(family.getByRole("heading", { name: `Word play ${tag}` })).toBeVisible();
   await family.getByRole("link", { name: "Start Rith's session" }).click();
   await expect(family.getByText(`Word play ${tag}`).first()).toBeVisible();
   await family.getByRole("link", { name: "Play", exact: true }).click();
