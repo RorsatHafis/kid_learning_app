@@ -14,6 +14,9 @@ host="$(echo "$url" | sed -E 's#^https://([^/:]+).*#\1#')"
 curl_opts=(-s --max-time 20)
 [ -n "${CACERT:-}" ] && curl_opts+=(--cacert "$CACERT")
 [ -n "${RESOLVE:-}" ] && curl_opts+=(--resolve "$RESOLVE")
+# Windows curl (Schannel) also asks for the certificate's revocation status, which a local rehearsal CA
+# can't answer; the chain and the host name are still checked.
+curl -V | grep -qi schannel && curl_opts+=(--ssl-no-revoke)
 failures=0
 pass() { echo "PASS $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
