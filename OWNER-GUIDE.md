@@ -280,7 +280,7 @@ deliberately does not guess.
 
 | # | Decision | Effect today |
 |---|---|---|
-| PD-09 | Prices and a payment provider | Plans exist and limits apply; families can ask for an offered plan and an administrator gives or declines it; no payment is taken. |
+| PD-09 | Prices and a payment provider; also whether a path a child's class assigns counts against the family's plan | Plans exist and limits apply; families can ask for an offered plan and an administrator gives or declines it; no payment is taken. |
 | PD-25 | What "archive" means (adopted: no new uses; nothing a child has changes) — please confirm | Archive works this way for content and classes. |
 | PD-26 | Archiving a whole school (adopted: no new uses — every class archived, no joining or staff invitations; families keep their grants and children keep everything) — please confirm; also decide whether families are told | Principal → **Manage school…** → Archive / Restore. |
 | PD-28 | Stopping a path (adopted: a family stops a path to change subject; nothing is deleted and choosing it again carries on; a path a class assigns can't be stopped while it does) — please confirm | Family → the child → Learning now → **Stop this path…**. |
