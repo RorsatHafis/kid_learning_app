@@ -1,0 +1,18 @@
+# A local rehearsal of the production deployment - the same images, profile, volumes and TLS proxy -
+# with two stand-ins: a mail catcher instead of a mail provider, and a *.localhost domain, for which
+# Caddy uses its own local certificate authority instead of Let's Encrypt. Never for real use.
+# Run under its own project name so nothing is shared with a real deployment (DEPLOYMENT.md section 5a):
+#
+#   RELEASE=rehearsal docker compose -p bk-rehearsal --env-file <rehearsal settings> \
+#     -f deploy/compose.production.yml -f deploy/compose.rehearsal.yml up -d --build --wait
+services:
+  mail:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "127.0.0.1:${MAILPIT_PORT:-8045}:8025"
+    restart: unless-stopped
+
+  backend:
+    depends_on:
+      mail:
+        condition: service_started

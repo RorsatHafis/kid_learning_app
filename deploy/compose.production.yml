@@ -1,0 +1,79 @@
+# Bookeyond Kid in production on one server: PostgreSQL, the backend, the web front and Caddy (the TLS
+# proxy: certificates from Let's Encrypt, http redirected to https). See DEPLOYMENT.md.
+#
+#   RELEASE=<git commit> docker compose --env-file deploy/production.settings -f deploy/compose.production.yml up -d --build --wait
+#
+# scripts/release.sh does this with its checks, a backup first and a smoke test after. Only Caddy is
+# reachable from outside (ports 80 and 443); the database, backend and web front are internal.
+name: bookeyond-kid-prod
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: bookeyond_kid
+      POSTGRES_USER: bookeyond_kid
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in deploy/production.settings}
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookeyond_kid -d bookeyond_kid"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    build: ../backend
+    # Tagged per release, so the previous release can be started again (DEPLOYMENT.md, rollback).
+    image: bookeyond-kid-backend:${RELEASE:?set RELEASE to the release being deployed, e.g. the git commit}
+    # The same file Compose reads with --env-file (scripts/release.sh passes both).
+    env_file: ${SETTINGS_FILE:-production.settings}
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://db:5432/bookeyond_kid
+      DB_USERNAME: bookeyond_kid
+      MEDIA_ROOT: /var/lib/bookeyond/media
+      # On its own volume: never restored together with the database (DEPLOYMENT.md section 6).
+      ERASURE_LEDGER_FILE: /var/lib/bookeyond/erasures/ledger.log
+    volumes:
+      - media_data:/var/lib/bookeyond/media
+      - erasure_ledger:/var/lib/bookeyond/erasures
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build: ../frontend
+    image: bookeyond-kid-web:${RELEASE:?set RELEASE}
+    volumes:
+      # Believe the client address Caddy reports, so sign-in limits are per person, not per proxy.
+      - ./nginx-real-ip.conf:/etc/nginx/conf.d/real-ip.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2.10-alpine
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in deploy/production.settings}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in deploy/production.settings}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  media_data:
+  erasure_ledger:
+  caddy_data:
+  caddy_config:

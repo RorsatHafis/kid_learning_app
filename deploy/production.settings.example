@@ -1,0 +1,47 @@
+# Bookeyond Kid production settings. Copy this file to deploy/production.settings (it is ignored by git -
+# never commit it), replace every CHANGE_ME, then check it:
+#
+#   scripts/check-production-settings.sh deploy/production.settings
+#
+# Keep the filled-in file readable by the deploying user only (chmod 600) and a copy in your password
+# manager or secret store. Values are plain KEY=value, no quotes needed. DEPLOYMENT.md section 3 explains each.
+
+# --- The address ------------------------------------------------------------------------------------
+# The domain families use. Its DNS A/AAAA record must point at this server before the first start.
+APP_DOMAIN=CHANGE_ME
+# The same, as an origin: links in emails and the only browser origin the API accepts besides its own.
+APP_PUBLIC_URL=https://CHANGE_ME
+CORS_ALLOWED_ORIGINS=https://CHANGE_ME
+# Let's Encrypt writes here about certificate problems (expiry warnings, revocations).
+ACME_EMAIL=CHANGE_ME
+
+# --- Secrets ----------------------------------------------------------------------------------------
+# Sign-in token key: at least 32 bytes, random, only ever used here. Make one with:  openssl rand -base64 48
+# Changing it later signs everyone out.
+JWT_SECRET=CHANGE_ME
+JWT_ISSUER=bookeyond-kid-prod
+# The database password: long and random, e.g.  openssl rand -base64 32 | tr -d '/+='
+DB_PASSWORD=CHANGE_ME
+
+# --- Email (a transactional provider with SPF, DKIM and DMARC set up for MAIL_FROM's domain) -------------
+MAIL_HOST=CHANGE_ME
+MAIL_PORT=587
+MAIL_USERNAME=CHANGE_ME
+MAIL_PASSWORD=CHANGE_ME
+MAIL_FROM=CHANGE_ME
+
+# --- Privacy notice and terms of use (PD-18) - all three, once the texts are published -----------------
+# LEGAL_PRIVACY_URL=https://...
+# LEGAL_TERMS_URL=https://...
+# LEGAL_VERSION=2026-11
+
+# --- Policies with safe defaults (uncomment only to change) ---------------------------------------------
+# ERASURE_GRACE_PERIOD=7d          # PD-24: how long a family's deletion waits before it is carried out
+# CONTENT_REVIEW_REQUIRED=false    # PD-20: true = a second administrator approves platform content
+# SESSION_CHECK_ENABLED=true       # PD-02: signing out takes effect at once
+
+# --- The first administrator: ONLY for the very first start, then delete these three lines --------------
+# The password must pass the app's rules (12+ characters, not easy to guess - DEPLOYMENT.md section 3).
+# PLATFORM_BOOTSTRAPADMIN_ENABLED=true
+# PLATFORM_BOOTSTRAPADMIN_EMAIL=you@your-domain
+# PLATFORM_BOOTSTRAPADMIN_PASSWORD=CHANGE_ME

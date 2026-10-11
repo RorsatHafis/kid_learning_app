@@ -14,6 +14,10 @@ replay_pid*.log
 .env
 .env.*
 !.env.example
+# Production settings hold secrets (deploy/production.settings.example is the tracked template)
+deploy/*.settings
+# Backups made by scripts/backup.sh in the working tree hold real data
+/backups/
 
 # IDE / OS state
 .idea/

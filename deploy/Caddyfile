@@ -1,0 +1,12 @@
+# The TLS proxy in front of the web front. Caddy obtains and renews the certificate for APP_DOMAIN
+# itself (Let's Encrypt; the domain's DNS must point at this server and ports 80/443 be open) and
+# redirects http to https. It passes the client's address (X-Forwarded-For) and the scheme
+# (X-Forwarded-Proto: https), which the web front and backend rely on.
+{
+	email {$ACME_EMAIL}
+}
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:80
+}
