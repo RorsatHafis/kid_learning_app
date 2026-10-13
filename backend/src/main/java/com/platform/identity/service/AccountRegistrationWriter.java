@@ -66,6 +66,7 @@ class AccountRegistrationWriter  {
         if (command.acceptedLegalVersion() != null) {
             registered.acceptLegal(command.acceptedLegalVersion(), java.time.Instant.now());
         }
+        registered.changeLanguage(com.platform.identity.UiLanguage.orDefault(command.preferredLanguage()));
         Account account = accountRepository.saveAndFlush(registered);
         if (role == PlatformRole.PRINCIPAL) {
             account.markPendingApproval();

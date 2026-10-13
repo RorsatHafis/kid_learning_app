@@ -41,6 +41,10 @@ public class Account extends AuditableEntity {
     private Instant emailVerifiedAt;
 
     /** The version of the terms and privacy notice this account agreed to, and when (V54, Y15). */
+    /** The language the app's own words are shown in (en or km; V56). Never the content's language. */
+    @Column(name = "preferred_language", nullable = false, length = 5)
+    private String preferredLanguage = com.platform.identity.UiLanguage.ENGLISH;
+
     @Column(name = "legal_version_accepted", length = 40)
     private String legalVersionAccepted;
 
@@ -169,6 +173,15 @@ public class Account extends AuditableEntity {
 
     public Instant getEraseAfter() {
         return eraseAfter;
+    }
+
+    public void changeLanguage(String language) {
+        Assert.isTrue(com.platform.identity.UiLanguage.isSupported(language), "unsupported language: " + language);
+        this.preferredLanguage = language;
+    }
+
+    public String getPreferredLanguage() {
+        return preferredLanguage;
     }
 
     public void acceptLegal(String version, Instant at) {

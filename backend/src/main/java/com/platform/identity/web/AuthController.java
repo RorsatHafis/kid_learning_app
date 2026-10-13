@@ -79,15 +79,23 @@ public class AuthController {
     private final AccountSessionService accountSessionService;
 
     private final com.platform.identity.legal.LegalDocuments legal;
+    private final com.platform.identity.repository.AccountRepository accounts;
 
     public AuthController(RegisterAccountService registerAccountService, LoginService loginService,
                            JwtService jwtService, AccountSessionService accountSessionService,
-                          com.platform.identity.legal.LegalDocuments legal) {
+                          com.platform.identity.legal.LegalDocuments legal,
+                          com.platform.identity.repository.AccountRepository accounts) {
         this.legal = legal;
+        this.accounts = accounts;
         this.registerAccountService = registerAccountService;
         this.loginService = loginService;
         this.jwtService = jwtService;
         this.accountSessionService = accountSessionService;
+    }
+
+    /** The account's interface language, so a sign-in on any device opens in it. */
+    private String languageOf(java.util.UUID accountId) {
+        return accounts.findById(accountId).map(Account::getPreferredLanguage).orElse(com.platform.identity.UiLanguage.ENGLISH);
     }
 
     @PostMapping("/register")
@@ -110,7 +118,7 @@ public class AuthController {
         }
         Account account = registerAccountService.register(new RegisterAccountCommand(
                 request.email(), request.password(), request.familyName(), request.idempotencyKey(),
-                requestedRole, legal.configured() ? legal.version() : null));
+                requestedRole, legal.configured() ? legal.version() : null, request.preferredLanguage()));
 
         if (account.getStatus() != com.platform.identity.entity.AccountStatus.ACTIVE) {
             // Pending-approval accounts (principal awaiting admin sign-off) get no
@@ -118,7 +126,7 @@ public class AuthController {
             // either to authenticate.
             return ResponseEntity.status(HttpStatus.ACCEPTED)
                     .body(new AuthResponse(account.getId(), account.getEmail(), account.getPlatformRole(),
-                            null, null, null, null));
+                            null, null, null, null, account.getPreferredLanguage()));
         }
 
         AccountSessionService.IssuedSession session = accountSessionService.issueSession(
@@ -128,7 +136,8 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new AuthResponse(account.getId(), account.getEmail(), account.getPlatformRole(),
-                        issued.token(), issued.expiresAt(), session.rawToken(), session.expiresAt()));
+                        issued.token(), issued.expiresAt(), session.rawToken(), session.expiresAt(),
+                        account.getPreferredLanguage()));
     }
 
     @PostMapping("/login")
@@ -138,7 +147,8 @@ public class AuthController {
                 new LoginCommand(request.email(), request.password(), currentUserAgent(), currentIpAddress()));
 
         return ResponseEntity.ok(new AuthResponse(result.accountId(), request.email(), result.platformRole(),
-                result.accessToken(), result.expiresAt(), result.refreshToken(), result.refreshTokenExpiresAt()));
+                result.accessToken(), result.expiresAt(), result.refreshToken(), result.refreshTokenExpiresAt(),
+                languageOf(result.accountId())));
     }
 
     /**
@@ -158,7 +168,7 @@ public class AuthController {
 
         return ResponseEntity.ok(new AuthResponse(result.accountId(), result.email(), result.platformRole(),
                 result.accessToken(), result.accessTokenExpiresAt(), result.refreshToken(),
-                result.refreshTokenExpiresAt()));
+                result.refreshTokenExpiresAt(), languageOf(result.accountId())));
     }
 
     /**

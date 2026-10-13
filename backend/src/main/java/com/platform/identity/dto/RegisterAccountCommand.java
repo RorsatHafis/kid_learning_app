@@ -9,7 +9,9 @@ public record RegisterAccountCommand(
     String idempotencyKey,
     PlatformRole platformRole,
     /** The legal documents' version the person agreed to; null when none are configured (Y15). */
-    String acceptedLegalVersion
+    String acceptedLegalVersion,
+    /** en or km: the language chosen when signing up. */
+    String preferredLanguage
 ) {
 
     private static final String DEFAULT_FAMILY_NAME = "My Family";

@@ -38,12 +38,15 @@ public record RegisterRequest(
         String role,
 
         /** Y15: when legal documents are configured, the version the person agreed to (must be the current one). */
-        @jakarta.validation.constraints.Size(max = 40) String acceptedLegalVersion
+        @jakarta.validation.constraints.Size(max = 40) String acceptedLegalVersion,
+
+        /** The language chosen on the sign-up page (en or km); the account keeps it. English when absent. */
+        @jakarta.validation.constraints.Pattern(regexp = com.platform.identity.UiLanguage.PATTERN) String preferredLanguage
 
 ) {
 
     /** The request before Y15: no agreement given. */
     public RegisterRequest(String email, String password, String familyName, String idempotencyKey, String role) {
-        this(email, password, familyName, idempotencyKey, role, null);
+        this(email, password, familyName, idempotencyKey, role, null, null);
     }
 }

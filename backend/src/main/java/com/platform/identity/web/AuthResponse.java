@@ -19,7 +19,9 @@ public record AuthResponse(
         String accessToken,
         Instant expiresAt,
         String refreshToken,
-        Instant refreshTokenExpiresAt
+        Instant refreshTokenExpiresAt,
+        /** The account's interface language (en or km), applied as soon as it signs in. */
+        String preferredLanguage
 
 ) {
 }

@@ -140,6 +140,15 @@ public class AccountSettingsService {
         return account;
     }
 
+    /** The account's interface language (en or km). Only its own account: the caller is the signed-in account. */
+    @Transactional
+    public Account changeLanguage(UUID accountId, String language) {
+        Account account = accountRepository.findForUpdate(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account", accountId));
+        account.changeLanguage(language);
+        return account;
+    }
+
     /** Signs the account out on every device. Returns how many sessions were ended. */
     @Transactional
     public int signOutEverywhere(UUID accountId) {

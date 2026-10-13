@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,12 +53,18 @@ public class AccountController {
      * {@code legalVersionAccepted}: the version of the terms and privacy notice it agreed to (Y15).
      */
     public record AccountResponse(UUID id, String email, PlatformRole platformRole, AccountStatus status,
-                                  Instant emailVerifiedAt, Instant createdAt, Instant eraseAfter, String legalVersionAccepted) {
+                                  Instant emailVerifiedAt, Instant createdAt, Instant eraseAfter, String legalVersionAccepted,
+                                  String preferredLanguage) {
         static AccountResponse of(Account account) {
             return new AccountResponse(account.getId(), account.getEmail(), account.getPlatformRole(),
                     account.getStatus(), account.getEmailVerifiedAt(), account.getCreatedAt(), account.getEraseAfter(),
-                    account.getLegalVersionAccepted());
+                    account.getLegalVersionAccepted(), account.getPreferredLanguage());
         }
+    }
+
+    /** The interface language an account chooses (en or km); content is never translated by it. */
+    public record LanguageChange(@NotBlank @jakarta.validation.constraints.Pattern(regexp = com.platform.identity.UiLanguage.PATTERN)
+                                 String language) {
     }
 
     public record LegalAcceptance(@NotBlank @Size(max = 40) String version) {
@@ -89,7 +96,8 @@ public class AccountController {
                 request.newPassword(), http.getHeader("User-Agent"), http.getRemoteAddr());
         Account account = accountSettingsService.get(accountId);
         return ResponseEntity.ok(new AuthResponse(result.accountId(), account.getEmail(), result.platformRole(),
-                result.accessToken(), result.expiresAt(), result.refreshToken(), result.refreshTokenExpiresAt()));
+                result.accessToken(), result.expiresAt(), result.refreshToken(), result.refreshTokenExpiresAt(),
+                account.getPreferredLanguage()));
     }
 
     /**
@@ -125,6 +133,12 @@ public class AccountController {
     @PostMapping("/legal-acceptance")
     public AccountResponse acceptLegal(@AuthenticationPrincipal UUID accountId, @Valid @RequestBody LegalAcceptance body) {
         return AccountResponse.of(accountSettingsService.acceptLegal(accountId, body.version()));
+    }
+
+    /** The interface language this account uses everywhere it signs in (en or km). */
+    @PutMapping("/language")
+    public AccountResponse changeLanguage(@AuthenticationPrincipal UUID accountId, @Valid @RequestBody LanguageChange body) {
+        return AccountResponse.of(accountSettingsService.changeLanguage(accountId, body.language()));
     }
 
     /** Ends every session on every device, this one included. */

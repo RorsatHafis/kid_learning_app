@@ -401,6 +401,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         if (body instanceof ProblemDetail problem) {
 
+            // What a person reads is said in the request's language (en or km); logs keep the English.
+            problem.setDetail(ServerText.forCurrentRequest(problem.getDetail(), statusCode.value()));
+            if (problem.getProperties() != null && problem.getProperties().get("errors") instanceof Map<?, ?> errors) {
+                Map<Object, Object> localized = new LinkedHashMap<>();
+                errors.forEach((field, message) -> localized.put(field,
+                        message instanceof String text ? ServerText.forCurrentRequest(text, statusCode.value()) : message));
+                problem.setProperty("errors", localized);
+            }
             problem.setProperty("timestamp", Instant.now());
             problem.setProperty("correlationId", MDC.get(CorrelationIdFilter.MDC_KEY));
 
