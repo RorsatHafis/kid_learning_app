@@ -13,7 +13,10 @@ const KHMER = /[ក-៿]/;
 
 /** The language switch on public pages: a two-button group on wide screens, one toggle on a phone. */
 async function switchTo(page: Page, language: "ខ្មែរ" | "English") {
-  await page.getByRole("button", { name: new RegExp(language) }).first().click();
+  await page
+    .getByRole("button", { name: new RegExp(language) })
+    .first()
+    .click();
 }
 
 /** Account → Language, saved to the account before it is shown. */
@@ -59,7 +62,10 @@ test("language: a visitor switches to Khmer, signs up in Khmer and keeps it @pho
   await page.getByLabel("ពាក្យសម្ងាត់", { exact: true }).fill("abcabcabcabc");
   await agreeIfAsked(page);
   await page.getByRole("button", { name: "បង្កើតគណនី" }).click();
-  const refusal = page.getByText(KHMER).filter({ hasText: /ពាក្យសម្ងាត់/ }).last();
+  const refusal = page
+    .getByText(KHMER)
+    .filter({ hasText: /ពាក្យសម្ងាត់/ })
+    .last();
   await expect(refusal).toBeVisible();
   await expect(page.getByText(/repeated|characters/)).toHaveCount(0);
   await expectNoViolations(page, "register in Khmer with a server error");
