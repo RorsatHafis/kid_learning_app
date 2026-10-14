@@ -31,6 +31,7 @@ const ALLOWED_TEXT = new Set([
   "Bookeyond", // the product's name (wordmark)
   "Kid", // the product's name, second word of the wordmark
   "Samsung Internet", // a browser's product name (deviceName)
+  "USD", // an ISO currency code, as the example of one (PlansPage)
   "English", // a language named in itself (LanguageSwitcher)
   "ខ្មែរ", // a language named in itself (LanguageSwitcher)
 ]);
@@ -40,16 +41,6 @@ const ALLOWED_TEXT = new Set([
  * done. A file on it is still checked once it is removed from it.
  */
 const NOT_YET_MIGRATED = new Set<string>([
-  "features/admin/StaffPage.tsx",
-  "features/admin/operations/AccountsPage.tsx",
-  "features/admin/operations/ActivityPage.tsx",
-  "features/admin/operations/AuditLog.tsx",
-  "features/admin/operations/LearningOpsPage.tsx",
-  "features/admin/operations/OverviewPage.tsx",
-  "features/admin/operations/PlansPage.tsx",
-  "features/admin/operations/ReportsPage.tsx",
-  "features/admin/operations/SchoolsPage.tsx",
-  "features/admin/operations/SystemPage.tsx",
   "features/admin/studio/ActivitiesPage.tsx",
   "features/admin/studio/ActivityEditor.tsx",
   "features/admin/studio/CatalogPage.tsx",

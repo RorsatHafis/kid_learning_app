@@ -5,15 +5,13 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
 import { Panel } from "../studio/shared";
+import { useMessages } from "@/i18n/catalog";
+import { opsMessages } from "./messages";
+import { formatNumber } from "@/i18n/format";
 
-const SOURCE_LABEL: Record<PlacementSource, string> = {
-  CURRICULUM: "From curricula",
-  ADAPTIVE: "Added by the adaptive engine",
-  REVIEW: "Smart Review",
-  TEACHER_ASSIGNED: "Assigned by teachers",
-};
+const SOURCES: PlacementSource[] = ["CURRICULUM", "ADAPTIVE", "REVIEW", "TEACHER_ASSIGNED"];
 
-const n = (value: number) => value.toLocaleString();
+const n = (value: number) => formatNumber(value);
 
 /**
  * Learning operations (X15): is the learning loop running, and where does content leave children with
@@ -21,13 +19,11 @@ const n = (value: number) => value.toLocaleString();
  */
 export function LearningOpsPage() {
   const ops = useAsync(() => adminInsightsApi.learningOperations(), []);
+  const m = useMessages(opsMessages).learning;
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Learning operations"
-        description="Whether the learning loop is running - children answering, the engine placing practice, Smart Review scheduling - and where content leaves children with nothing to practise."
-      />
-      {ops.isLoading && !ops.data && <LoadingState label="Loading learning operations…" />}
+      <PageHeader title={m.title} description={m.lead} />
+      {ops.isLoading && !ops.data && <LoadingState label={m.loading} />}
       {ops.error && <ErrorState error={ops.error} onRetry={ops.refetch} />}
       {ops.data && <Body data={ops.data} />}
     </div>
@@ -36,32 +32,33 @@ export function LearningOpsPage() {
 
 function Body({ data }: { data: LearningOperations }) {
   const w = data.lastSevenDays;
+  const m = useMessages(opsMessages).learning;
   const accuracy = w.answers > 0 ? Math.round((w.answersCorrect / w.answers) * 100) : null;
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start">
       <div className="flex flex-col gap-6">
-        <Panel title="The last 7 days">
+        <Panel title={m.lastSevenDays}>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
-            <Figure label="Children learning" value={n(w.childrenLearning)} />
-            <Figure label="Activities finished" value={n(w.attemptsCompleted)} note={`of ${n(w.attemptsStarted)} started`} />
-            <Figure label="Answers" value={n(w.answers)} note={accuracy === null ? undefined : `${accuracy}% correct`} />
+            <Figure label={m.childrenLearning} value={n(w.childrenLearning)} />
+            <Figure label={m.activitiesFinished} value={n(w.attemptsCompleted)} note={m.ofStarted(n(w.attemptsStarted))} />
+            <Figure label={m.answers} value={n(w.answers)} note={accuracy === null ? undefined : m.correctShare(accuracy)} />
             <Figure
-              label="Left mid-activity"
+              label={m.leftMid}
               value={n(w.attemptsLeftOpen)}
-              note="open for over a day"
+              note={m.openOverDay}
               tone={w.attemptsLeftOpen > 0 ? "warn" : undefined}
             />
           </dl>
         </Panel>
 
-        <Panel title="Practice placed on paths (7 days)">
+        <Panel title={m.placed}>
           <ul className="flex flex-col gap-2.5">
-            {(Object.keys(SOURCE_LABEL) as PlacementSource[]).map((source) => {
+            {SOURCES.map((source) => {
               const value = w.placementsBySource[source] ?? 0;
               const max = Math.max(1, ...Object.values(w.placementsBySource));
               return (
                 <li key={source} className="grid grid-cols-[minmax(0,13rem)_minmax(0,1fr)_3.5rem] items-center gap-3 text-sm">
-                  <span className="text-ink">{SOURCE_LABEL[source]}</span>
+                  <span className="text-ink">{m.source[source]}</span>
                   <span aria-hidden className="h-2.5 overflow-hidden rounded-full bg-paper">
                     <span className="block h-full rounded-full bg-tonle-600" style={{ width: `${(value / max) * 100}%` }} />
                   </span>
@@ -71,31 +68,28 @@ function Body({ data }: { data: LearningOperations }) {
             })}
           </ul>
           <p className="mt-3 text-xs text-ink-soft">
-            Smart Review: {n(w.reviewItemsActive)} skills under review, {n(w.reviewDueNow)} due now.
+            {m.review(n(w.reviewItemsActive), n(w.reviewDueNow))}
           </p>
         </Panel>
       </div>
 
       <div className="flex flex-col gap-6">
-        <Panel title="Content gaps">
+        <Panel title={m.gaps}>
           <div className="flex flex-col gap-4">
             {data.ageGroupsWithNothingOffered.length > 0 && (
               <p className="flex items-start gap-2 text-sm font-medium text-light-deep">
                 <AlertTriangle size={15} aria-hidden className="mt-0.5 shrink-0" />
-                Nothing is offered to families for: {data.ageGroupsWithNothingOffered.join(", ")}.
+                {m.nothingOffered(data.ageGroupsWithNothingOffered.join(", "))}
               </p>
             )}
             {data.coverageGaps.length === 0 ? (
               <p className="flex items-start gap-2 text-sm text-palm-deep">
                 <CheckCircle2 size={15} aria-hidden className="mt-0.5 shrink-0" />
-                Every skill in an offered curriculum has a published activity that practises it.
+                {m.allCovered}
               </p>
             ) : (
               <>
-                <p className="text-sm text-ink-soft">
-                  Offered curricula rely on these skills, but no published activity in use practises them, so children can't be
-                  given practice on them.
-                </p>
+                <p className="text-sm text-ink-soft">{m.gapsLead}</p>
                 <ul className="flex flex-col divide-y divide-line border-y border-line">
                   {data.coverageGaps.map((gap) => (
                     <li key={`${gap.skillId}:${gap.curriculum}`} className="flex flex-col gap-0.5 py-2.5 text-sm">
@@ -108,11 +102,11 @@ function Body({ data }: { data: LearningOperations }) {
                 </ul>
                 {data.coverageGapTotal > data.coverageGaps.length && (
                   <p className="text-sm text-ink-soft">
-                    Showing the first {data.coverageGaps.length} of {data.coverageGapTotal}, by subject and curriculum.
+                    {m.showingFirst(data.coverageGaps.length, data.coverageGapTotal)}
                   </p>
                 )}
                 <Link to="/admin/studio" className="text-sm font-semibold text-tonle-700 hover:text-tonle-900">
-                  Open the Content Studio
+                  {m.openStudio}
                 </Link>
               </>
             )}

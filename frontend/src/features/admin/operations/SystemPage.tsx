@@ -7,6 +7,9 @@ import { ErrorState, LoadingState } from "@/components/ui/States";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
 import { Panel } from "../studio/shared";
 import { formatBytes, formatUptime } from "./systemText";
+import { useMessages } from "@/i18n/catalog";
+import { opsMessages } from "./messages";
+import { formatDateTime, formatNumber } from "@/i18n/format";
 
 /** Below this, uploads may start failing; the operator should add space or move MEDIA_ROOT. */
 const LOW_MEDIA_SPACE = 1024 ** 3;
@@ -17,18 +20,19 @@ const LOW_MEDIA_SPACE = 1024 ** 3;
  */
 export function SystemPage() {
   const status = useAsync(() => adminInsightsApi.system(), []);
+  const m = useMessages(opsMessages).system;
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="System"
-        description="The running build, its database and storage, and where mail goes. Read-only: configuration is set where the platform is deployed."
+        title={m.title}
+        description={m.lead}
         actions={
           <Button variant="outline" onClick={status.refetch} disabled={status.isLoading}>
-            <RefreshCw size={15} aria-hidden /> Check again
+            <RefreshCw size={15} aria-hidden /> {m.checkAgain}
           </Button>
         }
       />
-      {status.isLoading && !status.data && <LoadingState label="Checking the system…" />}
+      {status.isLoading && !status.data && <LoadingState label={m.checking} />}
       {status.error && <ErrorState error={status.error} onRetry={status.refetch} />}
       {status.data && <Body data={status.data} />}
     </div>
@@ -36,63 +40,57 @@ export function SystemPage() {
 }
 
 function Body({ data }: { data: SystemStatus }) {
+  const m = useMessages(opsMessages).system;
   const heapShare = data.heapMaxBytes > 0 ? Math.round((data.heapUsedBytes / data.heapMaxBytes) * 100) : null;
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-      <Panel title="Build">
+      <Panel title={m.build}>
         <Facts
           rows={[
-            ["Version", data.version],
-            ["Database schema", `V${data.schemaVersion}`],
-            ["Profile", data.profiles || "default"],
-            ["Java", data.javaVersion],
-            ["Up for", formatUptime(data.uptimeSeconds)],
-            [
-              "Memory",
-              `${formatBytes(data.heapUsedBytes)} of ${formatBytes(data.heapMaxBytes)}${heapShare === null ? "" : ` (${heapShare}%)`}`,
-            ],
+            [m.version, data.version],
+            [m.schema, `V${data.schemaVersion}`],
+            [m.profile, data.profiles || m.defaultProfile],
+            [m.java, data.javaVersion],
+            [m.upFor, formatUptime(data.uptimeSeconds)],
+            [m.memory, m.memoryOf(formatBytes(data.heapUsedBytes), formatBytes(data.heapMaxBytes), heapShare)],
           ]}
         />
       </Panel>
-      <Panel title="Storage">
+      <Panel title={m.storage}>
         <Facts
           rows={[
-            ["Database size", formatBytes(data.databaseBytes)],
-            ["Media files", `${data.mediaFiles.toLocaleString()} (${formatBytes(data.mediaBytes)})`],
-            ["Free space for media", formatBytes(data.mediaFreeBytes)],
+            [m.databaseSize, formatBytes(data.databaseBytes)],
+            [m.mediaFiles, `${formatNumber(data.mediaFiles)} (${formatBytes(data.mediaBytes)})`],
+            [m.freeSpace, formatBytes(data.mediaFreeBytes)],
           ]}
         />
         {data.mediaFreeBytes < LOW_MEDIA_SPACE && (
           <p className="mt-4 flex items-start gap-2 text-sm font-medium text-light-deep">
             <AlertTriangle size={15} aria-hidden className="mt-0.5 shrink-0" />
-            Less than 1 GB is free where media is stored. Uploads will fail when it runs out: add space to the media volume.
+            {m.lowSpace}
           </p>
         )}
-        <p className="mt-4 text-xs text-ink-soft">
-          Back up the database and the media volume together: one without the other loses pictures or their records.
-        </p>
+        <p className="mt-4 text-xs text-ink-soft">{m.backupTogether}</p>
       </Panel>
-      <Panel title="Mail and links">
+      <Panel title={m.mail}>
         <Facts
           rows={[
-            ["Mail server", data.mailHost],
-            ["Links in emails open", data.publicUrl],
+            [m.mailServer, data.mailHost],
+            [m.linksOpen, data.publicUrl],
           ]}
         />
       </Panel>
-      <Panel title="Audit">
-        <p className="text-sm text-ink-soft">
-          Every sign-in, approval, content change and account action is recorded, with who did it and when.
-        </p>
+      <Panel title={m.audit}>
+        <p className="text-sm text-ink-soft">{m.auditLead}</p>
         <Link
           to="/admin/activity"
           className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-tonle-700 hover:text-tonle-900"
         >
-          Open the activity log <ArrowRight size={14} aria-hidden />
+          {m.openLog} <ArrowRight size={14} aria-hidden />
         </Link>
       </Panel>
       <p className="text-xs text-ink-faint lg:col-span-2">
-        Checked {new Date(data.checkedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}.
+        {m.checked(formatDateTime(data.checkedAt))}
       </p>
     </div>
   );

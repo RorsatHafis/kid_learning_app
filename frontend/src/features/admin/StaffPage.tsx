@@ -12,17 +12,9 @@ import { ComposerPanel, NewButton, Panel, SelectField } from "./studio/shared";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
 import { cn } from "@/lib/utils/cn";
 import { errorText, useComposer } from "./studio/studioLogic";
+import { useMessages } from "@/i18n/catalog";
+import { adminMessages } from "./messages";
 
-const ROLE_LABEL: Record<string, string> = {
-  TEACHER: "Teacher",
-  PRINCIPAL: "Principal",
-  ADMIN: "Administrator",
-};
-const STATUS_LABEL: Record<string, string> = {
-  ACTIVE: "Active",
-  PENDING_VERIFICATION: "Awaiting approval",
-  DISABLED: "Disabled",
-};
 
 const PAGE_SIZE = 25;
 const STAFF_ROLES: StaffRole[] = ["TEACHER", "PRINCIPAL", "ADMIN"];
@@ -45,6 +37,8 @@ export function StaffPage() {
   const composer = useComposer(data?.total === 0 && !filtered);
 
   usePageInRange(data, setPage);
+  const all = useMessages(adminMessages);
+  const m = all.staff;
 
   function refresh() {
     staff.refetch();
@@ -54,13 +48,13 @@ export function StaffPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Staff"
-        description="Teachers, principals and administrators on the platform."
-        actions={!composer.open && <NewButton label="New staff account" onClick={composer.show} />}
+        title={m.title}
+        description={m.lead}
+        actions={!composer.open && <NewButton label={m.newAccount} onClick={composer.show} />}
       />
 
       {pending.data && pending.data.length > 0 && (
-        <Panel title={`Principal applications (${pending.data.length})`}>
+        <Panel title={m.applications(pending.data.length)}>
           <ul className="flex flex-col divide-y divide-line">
             {pending.data.map((account) => (
               <PendingRow key={account.id} account={account} onApproved={refresh} />
@@ -70,22 +64,22 @@ export function StaffPage() {
       )}
 
       <div className={cn("grid grid-cols-1 gap-6", composer.open && "lg:grid-cols-[minmax(0,1fr)_380px]")}>
-        <Panel title="All staff" flush>
-          <div role="search" aria-label="Find staff" className="flex flex-col gap-3 px-5 pb-4 sm:flex-row sm:items-end sm:px-6">
+        <Panel title={m.all} flush>
+          <div role="search" aria-label={m.find} className="flex flex-col gap-3 px-5 pb-4 sm:flex-row sm:items-end sm:px-6">
             <SearchField
-              label="Search staff by email"
+              label={m.search}
               value={text}
               onSearch={search}
-              placeholder="Search by email"
+              placeholder={m.searchHint}
               maxLength={320}
               className="sm:flex-1"
             />
             <div className="sm:w-48">
-              <SelectField label="Role" value={role ?? ""} onChange={(e) => update({ role: e.target.value || undefined })}>
-                <option value="">Any role</option>
+              <SelectField label={m.role} value={role ?? ""} onChange={(e) => update({ role: e.target.value || undefined })}>
+                <option value="">{m.anyRole}</option>
                 {STAFF_ROLES.map((r) => (
                   <option key={r} value={r}>
-                    {ROLE_LABEL[r]}
+                    {all.roles[r]}
                   </option>
                 ))}
               </SelectField>
@@ -95,7 +89,7 @@ export function StaffPage() {
             <div className="px-5 pb-3 sm:px-6">
               <ListCount
                 total={data.total}
-                counted={`${data.total} ${data.total === 1 ? "staff account" : "staff accounts"}`}
+                counted={m.counted(data.total)}
                 filtered={filtered}
                 onClear={() => update({ q: undefined, role: undefined })}
               />
@@ -103,10 +97,10 @@ export function StaffPage() {
           )}
           {((staff.isLoading && !data) || staff.error || data?.total === 0) && (
             <div className="px-5 pb-5 sm:px-6 sm:pb-6">
-              {staff.isLoading && !data && <LoadingState label="Loading staff…" />}
+              {staff.isLoading && !data && <LoadingState label={m.loading} />}
               {staff.error && <ErrorState error={staff.error} onRetry={staff.refetch} />}
-              {data && data.total === 0 && !filtered && <EmptyState title="No staff accounts yet" />}
-              {data && data.total === 0 && filtered && <p className="text-sm text-ink-soft">No staff account matches.</p>}
+              {data && data.total === 0 && !filtered && <EmptyState title={m.none} />}
+              {data && data.total === 0 && filtered && <p className="text-sm text-ink-soft">{m.noMatch}</p>}
             </div>
           )}
           {data && data.items.length > 0 && (
@@ -115,13 +109,13 @@ export function StaffPage() {
                 <thead>
                   <tr className="border-b border-line bg-paper text-[0.8125rem] text-ink-faint">
                     <th scope="col" className="px-5 py-2.5 font-medium">
-                      Email
+                      {m.email}
                     </th>
                     <th scope="col" className="px-5 py-2.5 font-medium">
-                      Role
+                      {m.role}
                     </th>
                     <th scope="col" className="px-5 py-2.5 font-medium">
-                      Status
+                      {m.status}
                     </th>
                   </tr>
                 </thead>
@@ -129,7 +123,7 @@ export function StaffPage() {
                   {data.items.map((account) => (
                     <tr key={account.id} className="transition-colors hover:bg-paper/70">
                       <td className="max-w-[20rem] truncate px-5 py-3 font-medium text-ink">{account.email}</td>
-                      <td className="px-5 py-3 text-ink">{ROLE_LABEL[account.platformRole] ?? account.platformRole}</td>
+                      <td className="px-5 py-3 text-ink">{all.roles[account.platformRole] ?? account.platformRole}</td>
                       <td className="px-5 py-3">
                         <AccountStatus status={account.status} />
                       </td>
@@ -137,12 +131,12 @@ export function StaffPage() {
                   ))}
                 </tbody>
               </table>
-              <ul className="divide-y divide-line border-t border-line sm:hidden" aria-label="All staff">
+              <ul className="divide-y divide-line border-t border-line sm:hidden" aria-label={m.all}>
                 {data.items.map((account) => (
                   <li key={account.id} className="flex flex-col gap-1 px-5 py-3">
                     <span className="break-all font-medium text-ink">{account.email}</span>
                     <span className="flex items-center gap-2 text-sm text-ink-soft">
-                      {ROLE_LABEL[account.platformRole] ?? account.platformRole}
+                      {all.roles[account.platformRole] ?? account.platformRole}
                       <span aria-hidden>·</span>
                       <AccountStatus status={account.status} />
                     </span>
@@ -150,7 +144,7 @@ export function StaffPage() {
                 ))}
               </ul>
               <Pager
-                label="Staff"
+                label={m.pager}
                 page={data.page}
                 size={data.size}
                 total={data.total}
@@ -181,6 +175,7 @@ export function StaffPage() {
 function PendingRow({ account, onApproved }: { account: StaffAccount; onApproved: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(adminMessages).staff;
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 py-3">
       <span className="font-medium text-ink">{account.email}</span>
@@ -206,7 +201,7 @@ function PendingRow({ account, onApproved }: { account: StaffAccount; onApproved
             }
           }}
         >
-          <CheckCircle2 size={16} aria-hidden /> Approve
+          <CheckCircle2 size={16} aria-hidden /> {m.approve}
         </Button>
       </span>
     </li>
@@ -219,6 +214,8 @@ function NewStaff({ onCreated, onClose, focusOnOpen }: { onCreated: () => void; 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<string | null>(null);
+  const all = useMessages(adminMessages);
+  const m = all.staff;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -231,39 +228,32 @@ function NewStaff({ onCreated, onClose, focusOnOpen }: { onCreated: () => void; 
       setEmail("");
       onCreated();
     } catch (err) {
-      setError(errorText(err, "The account couldn't be created."));
+      setError(errorText(err, m.createFailed));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <ComposerPanel title="New staff account" onClose={onClose} focusOnOpen={focusOnOpen}>
+    <ComposerPanel title={m.newAccount} onClose={onClose} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <FormField
-          label="Email"
+          label={m.email}
           type="email"
           autoComplete="off"
           value={email}
           required
           onChange={(e) => setEmail(e.target.value)}
         />
-        <SelectField label="Role" value={role} onChange={(e) => setRole(e.target.value as StaffRole)}>
-          <option value="TEACHER">Teacher</option>
-          <option value="PRINCIPAL">Principal</option>
-          <option value="ADMIN">Administrator</option>
+        <SelectField label={m.role} value={role} onChange={(e) => setRole(e.target.value as StaffRole)}>
+          <option value="TEACHER">{all.roles.TEACHER}</option>
+          <option value="PRINCIPAL">{all.roles.PRINCIPAL}</option>
+          <option value="ADMIN">{all.roles.ADMIN}</option>
         </SelectField>
         {role === "ADMIN" && (
-          <p className="text-sm text-ink">
-            An administrator can do everything here: publish platform content, run plans, read the activity log and add other
-            administrators. Give it only to someone who runs Bookeyond Kid with you.
-          </p>
+          <p className="text-sm text-ink">{m.adminWarning}</p>
         )}
-        <p className="text-xs text-ink-soft">
-          We&apos;ll email them a link to choose their own password. It lasts 7 days; after that they can use &ldquo;Forgot your
-          password?&rdquo; on the log-in page. Teachers who work at a school are better invited by its principal, which also adds
-          them to the school.
-        </p>
+        <p className="text-xs text-ink-soft">{m.setupNote}</p>
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
@@ -271,11 +261,11 @@ function NewStaff({ onCreated, onClose, focusOnOpen }: { onCreated: () => void; 
         )}
         {created && (
           <p role="status" className="rounded-[10px] bg-palm-soft px-3 py-2 text-sm font-medium text-palm-deep">
-            Account created. We&apos;ve emailed {created} a link to set their password.
+            {m.created(created)}
           </p>
         )}
         <Button type="submit" disabled={busy || !email.trim()} className="w-fit">
-          <UserPlus size={16} aria-hidden /> {busy ? "Creating…" : "Create account"}
+          <UserPlus size={16} aria-hidden /> {busy ? m.creating : m.create}
         </Button>
       </form>
     </ComposerPanel>
@@ -289,10 +279,11 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 function AccountStatus({ status }: { status: string }) {
+  const statuses = useMessages(adminMessages).statuses;
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-sm font-medium", STATUS_TONE[status] ?? "text-ink-soft")}>
       <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current" />
-      {STATUS_LABEL[status] ?? status}
+      {statuses[status] ?? status}
     </span>
   );
 }

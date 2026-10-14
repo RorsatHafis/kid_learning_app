@@ -8,7 +8,7 @@ import.meta.glob(["/src/**/messages.ts", "/src/**/*.messages.ts"], { eager: true
  * Words that are the same in both languages on purpose: names and the like. A Khmer entry equal
  * to its English one is otherwise an untranslated copy.
  */
-const SAME_IN_BOTH = new Set(["Bookeyond Kid", "English", "Email", "OK", "PDF", "ID"]);
+const SAME_IN_BOTH = new Set(["Bookeyond Kid", "English", "Email", "OK", "PDF", "ID", "Java"]);
 
 const KHMER = /[ក-៿]/;
 

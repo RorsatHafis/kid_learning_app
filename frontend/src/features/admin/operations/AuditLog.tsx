@@ -4,6 +4,9 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { errorText } from "../studio/studioLogic";
 import { actionLabel, valueText } from "./auditText";
+import { useMessages } from "@/i18n/catalog";
+import { opsMessages } from "./messages";
+import { formatDateTime } from "@/i18n/format";
 
 const PAGE_SIZE = 25;
 
@@ -13,7 +16,6 @@ function keyLabel(key: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-const when = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "medium" });
 
 /**
  * The audit log, newest first, filtered by `filter`. "Show older" continues from the last entry
@@ -22,7 +24,7 @@ const when = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle
  */
 export function AuditLog({
   filter,
-  emptyTitle = "Nothing recorded yet",
+  emptyTitle,
   refreshKey = 0,
 }: {
   filter: Omit<AuditQuery, "before" | "beforeId" | "limit">;
@@ -36,6 +38,7 @@ export function AuditLog({
   const [firstError, setFirstError] = useState<Error | null>(null);
   const [moreError, setMoreError] = useState<string | null>(null);
   const request = useRef(0);
+  const m = useMessages(opsMessages).activity;
   const key = JSON.stringify(filter);
 
   const loadFirst = useCallback((clear = true) => {
@@ -80,19 +83,19 @@ export function AuditLog({
       setEntries((current) => [...current, ...page.entries]);
       setCursor(page.nextBefore && page.nextBeforeId ? { before: page.nextBefore, beforeId: page.nextBeforeId } : null);
     } catch (err) {
-      if (id === request.current) setMoreError(errorText(err, "Older entries couldn't be loaded."));
+      if (id === request.current) setMoreError(errorText(err, m.olderFailed));
     } finally {
       if (id === request.current) setLoading(false);
     }
   }
 
   if (firstError) return <ErrorState error={firstError} onRetry={() => loadFirst()} />;
-  if (loading && entries.length === 0) return <LoadingState label="Loading activity…" />;
-  if (entries.length === 0) return <EmptyState title={emptyTitle} />;
+  if (loading && entries.length === 0) return <LoadingState label={m.loading} />;
+  if (entries.length === 0) return <EmptyState title={emptyTitle ?? m.nothingYet} />;
 
   return (
     <div className="flex flex-col gap-4">
-      <ol className="flex flex-col divide-y divide-line" aria-label="Recorded events, newest first">
+      <ol className="flex flex-col divide-y divide-line" aria-label={m.list}>
         {entries.map((entry) => (
           <AuditRow key={entry.id} entry={entry} />
         ))}
@@ -104,10 +107,10 @@ export function AuditLog({
       )}
       {cursor ? (
         <Button variant="outline" className="w-fit px-4 py-2" disabled={loading} onClick={loadMore}>
-          {loading ? "Loading…" : "Show older"}
+          {loading ? m.loadingMore : m.showOlder}
         </Button>
       ) : (
-        <p className="text-xs text-ink-soft">That&apos;s everything recorded.</p>
+        <p className="text-xs text-ink-soft">{m.everything}</p>
       )}
     </div>
   );
@@ -115,16 +118,17 @@ export function AuditLog({
 
 function AuditRow({ entry }: { entry: AuditEntry }) {
   const details = Object.entries(entry.metadata ?? {});
-  const actor = entry.actorType === "SYSTEM" ? "the platform" : (entry.actorEmail ?? "an account no longer on the platform");
+  const m = useMessages(opsMessages).activity;
+  const actor = entry.actorType === "SYSTEM" ? m.platform : (entry.actorEmail ?? m.goneAccount);
   return (
     <li className="grid gap-1 py-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
       <time dateTime={entry.occurredAt} className="text-xs tabular-nums text-ink-soft sm:pt-0.5">
-        {when.format(new Date(entry.occurredAt))}
+        {formatDateTime(entry.occurredAt, { dateStyle: "medium", timeStyle: "medium" })}
       </time>
       <div className="flex min-w-0 flex-col gap-1">
         <p className="text-sm text-ink">
           <span className="font-semibold">{actionLabel(entry.action)}</span>
-          <span className="text-ink-soft"> by </span>
+          <span className="text-ink-soft"> {m.by} </span>
           <span className="break-all">{actor}</span>
         </p>
         <p className="text-xs text-ink-soft">

@@ -13,6 +13,8 @@ import {
   Users,
 } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
+import { useMessages } from "@/i18n/catalog";
+import { opsMessages } from "./operations/messages";
 
 /**
  * The platform administrator's console (X15), in separate areas: the dashboard; content; people;
@@ -20,23 +22,24 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
  * Every action is authorized and audited server-side.
  */
 export function AdminLayout() {
+  const m = useMessages(opsMessages).nav;
   return (
     <WorkspaceShell
       home="/admin"
-      workspace="Platform admin"
+      workspace={m.workspace}
       nav={[
-        { to: "/admin", label: "Dashboard", icon: Gauge, end: true },
-        { to: "/admin/studio", label: "Content Studio", icon: LibraryBig, section: "Content" },
-        { to: "/admin/media", label: "Media library", icon: Images, section: "Content" },
-        { to: "/admin/staff", label: "Staff", icon: Users, section: "People" },
-        { to: "/admin/accounts", label: "Accounts", icon: ShieldOff, section: "People" },
-        { to: "/admin/schools", label: "Schools", icon: School, section: "Operations" },
-        { to: "/admin/learning", label: "Learning operations", icon: Activity, section: "Operations" },
-        { to: "/admin/reports", label: "Reports", icon: BarChart3, section: "Operations" },
-        { to: "/admin/plans", label: "Plans", icon: Layers, section: "Commerce" },
-        { to: "/admin/system", label: "System status", icon: Server, section: "System" },
-        { to: "/admin/activity", label: "Activity log", icon: History, section: "System" },
-        { to: "/admin/account", label: "My account", icon: UserRound },
+        { to: "/admin", label: m.dashboard, icon: Gauge, end: true },
+        { to: "/admin/studio", label: m.studio, icon: LibraryBig, section: m.content },
+        { to: "/admin/media", label: m.media, icon: Images, section: m.content },
+        { to: "/admin/staff", label: m.staff, icon: Users, section: m.people },
+        { to: "/admin/accounts", label: m.accounts, icon: ShieldOff, section: m.people },
+        { to: "/admin/schools", label: m.schools, icon: School, section: m.operations },
+        { to: "/admin/learning", label: m.learning, icon: Activity, section: m.operations },
+        { to: "/admin/reports", label: m.reports, icon: BarChart3, section: m.operations },
+        { to: "/admin/plans", label: m.plans, icon: Layers, section: m.commerce },
+        { to: "/admin/system", label: m.system, icon: Server, section: m.systemSection },
+        { to: "/admin/activity", label: m.activity, icon: History, section: m.systemSection },
+        { to: "/admin/account", label: m.myAccount, icon: UserRound },
       ]}
     />
   );

@@ -1,3 +1,5 @@
+import { messagesNow } from "@/i18n/catalog";
+import { opsMessages } from "./messages";
 /** Sizes and durations on the System page, for a person rather than a machine. */
 export function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -12,10 +14,11 @@ export function formatBytes(bytes: number) {
 }
 
 export function formatUptime(seconds: number) {
+  const m = messagesNow(opsMessages).system;
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  if (days > 0) return `${days} d ${hours} h`;
-  if (hours > 0) return `${hours} h ${minutes} min`;
-  return `${minutes} min`;
+  if (days > 0) return m.days(days, hours);
+  if (hours > 0) return m.hours(hours, minutes);
+  return m.minutes(minutes);
 }
