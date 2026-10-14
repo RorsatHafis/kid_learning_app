@@ -17,12 +17,15 @@ import { ActivityEditor } from "@/features/admin/studio/ActivityEditor";
 import { CurriculaPage } from "@/features/admin/studio/CurriculaPage";
 import { CurriculumEditor } from "@/features/admin/studio/CurriculumEditor";
 import { MediaLibraryPage } from "@/features/admin/studio/MediaLibrary";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 /** A teacher authors on the Studio's own screens, scoped to their own content (X22). */
 const TEACHER_STUDIO = { base: "/teacher", catalogAdmin: false };
 
 /** Everything under /teacher, loaded only when a teacher opens it (App.tsx). */
 export default function TeacherArea() {
+  const m = useMessages(common);
   return (
     <StudioScopeContext.Provider value={TEACHER_STUDIO}>
       <Routes>
@@ -44,7 +47,7 @@ export default function TeacherArea() {
             <Route path="curricula/:curriculumId" element={<CurriculumEditor />} />
           </Route>
           <Route path="account" element={<AccountPage />} />
-          <Route path="*" element={<NotFound home="/teacher" homeLabel="Go to your classes" />} />
+          <Route path="*" element={<NotFound home="/teacher" homeLabel={m.goToClasses} />} />
         </Route>
       </Routes>
     </StudioScopeContext.Provider>

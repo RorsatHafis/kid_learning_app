@@ -1,3 +1,4 @@
+import { currentLocale } from "../../i18n/store";
 import { ApiError } from "./ApiError";
 import { tokenStore } from "./tokenStore";
 import type { ApiProblem, AuthResponse } from "./types";
@@ -66,7 +67,7 @@ async function performRefresh(): Promise<RefreshOutcome> {
   try {
     res = await fetch(`${API_BASE}/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Accept-Language": currentLocale() },
       body: JSON.stringify({ refreshToken }),
     });
   } catch {
@@ -105,6 +106,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         // A file upload sets its own multipart content type (with the boundary).
         ...(body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...(skipAuth ? {} : { Authorization: `Bearer ${tokenStore.getAccessToken() ?? ""}` }),
+        // The server answers (errors, field messages) in the language on screen - read per request,
+        // so a request sent after switching is answered in the new language.
+        "Accept-Language": currentLocale(),
         ...headers,
       },
       body: body instanceof FormData ? body : body !== undefined ? JSON.stringify(body) : undefined,

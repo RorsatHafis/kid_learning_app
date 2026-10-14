@@ -9,9 +9,13 @@ import { cn } from "@/lib/utils/cn";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
 import { roleHomePath } from "./roleHomePath";
+import { useMessages } from "@/i18n/catalog";
+import { authMessages } from "./messages";
 
 export function RegisterPage() {
   const { register } = useAuth();
+  const m = useMessages(authMessages);
+  const r = m.register;
   const navigate = useNavigate();
 
   const [role, setRole] = useState<"PARENT" | "PRINCIPAL">("PARENT");
@@ -31,7 +35,7 @@ export function RegisterPage() {
     setFieldErrors({});
     const version = legal.data?.version ?? undefined;
     if (version && !agreed) {
-      setFieldErrors({ acceptedLegalVersion: "Agree to the terms of use and the privacy notice to create an account." });
+      setFieldErrors({ acceptedLegalVersion: r.agreeFirst });
       return;
     }
     setIsSubmitting(true);
@@ -48,9 +52,9 @@ export function RegisterPage() {
       } else if (err instanceof ApiError && err.isRateLimited) {
         setFormError(rateLimitedMessage(err));
       } else if (err instanceof ApiError) {
-        setFormError(err.problem?.detail ?? "Couldn't create that account.");
+        setFormError(err.problem?.detail ?? r.failed);
       } else {
-        setFormError("Something went wrong. Please try again.");
+        setFormError(m.somethingWentWrong);
       }
     } finally {
       setIsSubmitting(false);
@@ -59,29 +63,27 @@ export function RegisterPage() {
 
   if (pendingApproval) {
     return (
-      <AuthLayout title="Application received" subtitle="Your principal account is awaiting approval.">
+      <AuthLayout title={r.pendingTitle} subtitle={r.pendingSubtitle}>
         <p className="text-center text-sm leading-relaxed text-ink-soft">
-          We've received your school administrator application. An existing Bookeyond Kid admin needs to approve it
-          before you can log in. Once it's approved, log in with{" "}
-          <span className="font-semibold text-ink">{email}</span>.
+          {r.pendingBody} <span className="font-semibold text-ink">{email}</span>
         </p>
         <Link to="/" className="mt-6 block text-center text-sm font-semibold text-tonle-700">
-          Back to home
+          {r.backHome}
         </Link>
       </AuthLayout>
     );
   }
 
   return (
-    <AuthLayout title="Create your account" subtitle="Start your family's learning journey with Bookeyond Kid.">
-      <div role="group" aria-label="Account type" className="mb-7 grid grid-cols-2 gap-1 rounded-[14px] bg-tonle-50 p-1 ring-1 ring-inset ring-line">
+    <AuthLayout title={r.title} subtitle={r.subtitle}>
+      <div role="group" aria-label={r.accountType} className="mb-7 grid grid-cols-2 gap-1 rounded-[14px] bg-tonle-50 p-1 ring-1 ring-inset ring-line">
         <button
           type="button"
           aria-pressed={role === "PARENT"}
           onClick={() => setRole("PARENT")}
           className={cn("h-10 rounded-[10px] text-sm font-semibold transition-[background-color,color,box-shadow] duration-150", role === "PARENT" ? "bg-white text-tonle-900 shadow-tight ring-1 ring-line" : "text-ink-soft hover:text-tonle-900")}
         >
-          I'm a parent
+          {r.parent}
         </button>
         <button
           type="button"
@@ -89,20 +91,20 @@ export function RegisterPage() {
           onClick={() => setRole("PRINCIPAL")}
           className={cn("h-10 rounded-[10px] text-sm font-semibold transition-[background-color,color,box-shadow] duration-150", role === "PRINCIPAL" ? "bg-white text-tonle-900 shadow-tight ring-1 ring-line" : "text-ink-soft hover:text-tonle-900")}
         >
-          I'm a principal
+          {r.principal}
         </button>
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField
-          label={role === "PARENT" ? "Family name (optional)" : "School name"}
+          label={role === "PARENT" ? r.familyName : r.schoolName}
           value={familyName}
           onChange={(e) => setFamilyName(e.target.value)}
           error={fieldErrors.familyName}
         />
-        <FormField label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} error={fieldErrors.email} />
+        <FormField label={m.email} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} error={fieldErrors.email} />
         <FormField
-          label="Password"
+          label={m.password}
           type="password"
           required
           value={password}
@@ -112,16 +114,16 @@ export function RegisterPage() {
         <LegalAgreement checked={agreed} onChange={setAgreed} error={fieldErrors.acceptedLegalVersion} />
         {formError && <p className="text-sm font-medium text-brick-deep">{formError}</p>}
         {role === "PRINCIPAL" && (
-          <p className="text-xs text-ink-soft">Principal accounts are reviewed by a Bookeyond Kid admin before they can log in.</p>
+          <p className="text-xs text-ink-soft">{r.principalReview}</p>
         )}
         <Button type="submit" size="lg" disabled={isSubmitting} className="mt-2 w-full">
-          {isSubmitting ? "Creating account…" : "Create account"}
+          {isSubmitting ? r.submitting : r.submit}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-ink-soft">
-        Already have an account?{" "}
+        {r.haveAccount}{" "}
         <Link to="/login" className="font-semibold text-tonle-700">
-          Log in
+          {m.logIn}
         </Link>
       </p>
     </AuthLayout>

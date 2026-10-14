@@ -1,6 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 type Props = { children: ReactNode; resetKey: string };
 type State = { failed: boolean };
@@ -27,29 +29,32 @@ class Boundary extends Component<Props, State> {
 
   render() {
     if (!this.state.failed) return this.props.children;
-    return (
-      <main className="mx-auto max-w-xl px-4 py-16">
-        <section
-          role="alert"
-          aria-labelledby="screen-failed"
-          className="flex flex-col items-center justify-center gap-4 rounded-paper bg-white px-6 py-16 text-center ring-1 ring-line"
-        >
-          <h1 id="screen-failed" className="font-display text-2xl font-semibold text-tonle-950">
-            This page couldn&apos;t be shown
-          </h1>
-          <p className="max-w-sm text-sm text-ink-soft">
-            Something went wrong while showing it. Nothing you saved is lost. Try again, or go back to the start.
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button onClick={() => this.setState({ failed: false })}>Try again</Button>
-            <Link to="/" className={buttonClasses("outline", "md")}>
-              Go to the start
-            </Link>
-          </div>
-        </section>
-      </main>
-    );
+    return <ScreenFailed onRetry={() => this.setState({ failed: false })} />;
   }
+}
+
+function ScreenFailed({ onRetry }: { onRetry: () => void }) {
+  const m = useMessages(common);
+  return (
+    <main className="mx-auto max-w-xl px-4 py-16">
+      <section
+        role="alert"
+        aria-labelledby="screen-failed"
+        className="flex flex-col items-center justify-center gap-4 rounded-paper bg-white px-6 py-16 text-center ring-1 ring-line"
+      >
+        <h1 id="screen-failed" className="font-display text-2xl font-semibold text-tonle-950">
+          {m.screenFailedTitle}
+        </h1>
+        <p className="max-w-sm text-sm text-ink-soft">{m.screenFailedBody}</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button onClick={onRetry}>{m.tryAgain}</Button>
+          <Link to="/" className={buttonClasses("outline", "md")}>
+            {m.goToStart}
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
 }
 
 export function AppErrorBoundary({ children }: { children: ReactNode }) {

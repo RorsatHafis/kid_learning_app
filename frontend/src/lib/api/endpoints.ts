@@ -1,3 +1,4 @@
+import type { Locale } from "../../i18n/store";
 import { apiClient } from "./client";
 import type {
   AccountProfile,
@@ -39,6 +40,8 @@ export const authApi = {
     familyName?: string;
     role?: "PARENT" | "PRINCIPAL";
     acceptedLegalVersion?: string;
+    /** The language chosen before signing up; the account keeps it. */
+    preferredLanguage?: Locale;
   }) =>
     apiClient.post<AuthResponse>(
       "/auth/register",
@@ -65,6 +68,8 @@ export const authApi = {
 // identity/web/AccountController.java — always the signed-in account; no id in any path.
 export const accountApi = {
   me: () => apiClient.get<AccountProfile>("/account"),
+  // The account's own interface language (en or km); never anyone else's.
+  changeLanguage: (language: Locale) => apiClient.put<AccountProfile>("/account/language", { language }),
   changePassword: (input: { currentPassword: string; newPassword: string }) =>
     apiClient.post<AuthResponse>("/account/password", input),
   signOutEverywhere: () => apiClient.post<{ sessionsEnded: number }>("/account/sign-out-everywhere"),
@@ -98,6 +103,8 @@ export const childrenApi = {
     apiClient.post<{ eraseAfter: string }>(`/children/${childId}/deletion`, { currentPassword }),
   // Keeps a child whose deletion was asked (409 plan limit when the family has no room).
   keep: (childId: string) => apiClient.delete<Child>(`/children/${childId}/deletion`),
+  // The language of the child's own space - the child's, never the parent's.
+  changeLanguage: (childId: string, language: Locale) => apiClient.put<Child>(`/children/${childId}/language`, { language }),
   /** The family catalog for this child: the child's age group first (curriculum/web/CurriculumController.java). */
   curricula: (childId: string) => apiClient.get<CurriculumChoice[]>(`/children/${childId}/curricula`),
 };

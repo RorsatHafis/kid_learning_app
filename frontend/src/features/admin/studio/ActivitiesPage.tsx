@@ -69,7 +69,7 @@ export function ActivitiesPage() {
           {data && (
             <ListCount
               total={data.total}
-              noun={["lesson", "lessons"]}
+              counted={`${data.total} ${data.total === 1 ? "lesson" : "lessons"}`}
               filtered={filtered}
               onClear={() => update({ q: undefined })}
             />

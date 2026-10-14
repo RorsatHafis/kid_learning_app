@@ -17,17 +17,21 @@ import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { Trouble, Waiting } from "./ChildHome";
 import { QuestionView, type AnswerResult } from "./QuestionView";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { childMessages } from "./messages";
 
-const LOAD_FAILED = "We couldn't get your activity ready. Let's try again!";
-const SAVE_FAILED = "We couldn't save your activity just now. Let's try again!";
+/** Why loading or saving stopped: a key into the child's words, so the line follows the language. */
+type TroubleKey = "loadFailed" | "saveFailed";
+/** A line computed from the path when it is shown (so it is in the language on screen then). */
+type Line = () => string;
 
 type Phase =
   | { kind: "loading" }
   /** Not an error: LearningPathService#getNextItem answers 404 when nothing is
    * PENDING/IN_PROGRESS — the child is simply caught up. */
   | { kind: "caught-up" }
-  | { kind: "error"; message: string }
-  | { kind: "intro"; attemptId: string; itemId: string; activity: ActivityVersionDetail; reason: string | null }
+  | { kind: "error"; message: TroubleKey }
+  | { kind: "intro"; attemptId: string; itemId: string; activity: ActivityVersionDetail; reason: Line | null }
   | {
       kind: "playing";
       attemptId: string;
@@ -80,7 +84,10 @@ export function PlaySession() {
   const { childId = "", enrollmentId = "" } = useParams<{ childId: string; enrollmentId: string }>();
   const child = useAsync(() => childrenApi.get(childId), [childId]);
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
-  useDocumentTitle(phase.kind === "intro" || phase.kind === "playing" ? phase.activity.title : phase.kind === "completed" ? phase.title : "Play");
+  const m = useMessages(childMessages);
+  useDocumentTitle(
+    phase.kind === "intro" || phase.kind === "playing" ? phase.activity.title : phase.kind === "completed" ? phase.title : m.play.documentTitle,
+  );
   // React 18 StrictMode runs effects twice in development; without this guard the
   // start call could fire twice in a row for the same path item.
   const loadInFlight = useRef(false);
@@ -138,7 +145,7 @@ export function PlaySession() {
       } catch {
         // Retry goes through loadNext, which re-reads server state: it resumes at
         // any unanswered question, or moves on if the attempt did complete.
-        setPhase({ kind: "error", message: SAVE_FAILED });
+        setPhase({ kind: "error", message: "saveFailed" });
         return;
       }
       playCue("complete");
@@ -167,7 +174,7 @@ export function PlaySession() {
       try {
         item = await enrollmentApi.nextActivity(enrollmentId);
       } catch (err) {
-        setPhase(err instanceof ApiError && err.status === 404 ? { kind: "caught-up" } : { kind: "error", message: LOAD_FAILED });
+        setPhase(err instanceof ApiError && err.status === 404 ? { kind: "caught-up" } : { kind: "error", message: "loadFailed" });
         return;
       }
 
@@ -205,10 +212,13 @@ export function PlaySession() {
           // The first book of a chapter opens the chapter: the child meets its name here.
           const chapter = ofThis?.chapterId ? overview?.chapters.find((c) => c.id === ofThis.chapterId) : undefined;
           const opensChapter = chapter && chapter.completedSteps === 0 && (overview?.chapterCount ?? 0) > 1;
-          const reason = opensChapter
-            ? `${chapter.position === 1 ? "Your journey begins" : "A new chapter begins"} · Chapter ${chapter.position}: ${chapter.title}`
+          const reason: Line | null = opensChapter
+            ? () => {
+                const words = messagesNow(childMessages).play;
+                return (chapter.position === 1 ? words.journeyBegins : words.chapterBegins)(chapter.position, chapter.title);
+              }
             : ofThis
-              ? childReason(ofThis)
+              ? () => childReason(ofThis)
               : null;
           setPhase({ kind: "intro", attemptId: attempt.id, itemId: item.id, activity: ordered, reason });
           return;
@@ -223,7 +233,7 @@ export function PlaySession() {
           startedAt: Date.now(),
         });
       } catch {
-        setPhase({ kind: "error", message: LOAD_FAILED });
+        setPhase({ kind: "error", message: "loadFailed" });
       }
     } finally {
       loadInFlight.current = false;
@@ -248,23 +258,30 @@ export function PlaySession() {
 
   const journeyHref = `/learn/${childId}?path=${enrollmentId}`;
   const shell = (content: React.ReactNode) => (
-    <ChildSpaceLayout childId={childId} childName={child.data?.displayName} home={journeyHref} firstLight={light} easeLight={lightEases}>
+    <ChildSpaceLayout
+      childId={childId}
+      childName={child.data?.displayName}
+      childLanguage={child.data?.preferredLanguage}
+      home={journeyHref}
+      firstLight={light}
+      easeLight={lightEases}
+    >
       {content}
     </ChildSpaceLayout>
   );
 
   switch (phase.kind) {
     case "loading":
-      return shell(<Waiting line="Getting your next activity ready…" />);
+      return shell(<Waiting line={m.play.gettingNext} />);
     case "completing":
-      return shell(<Waiting line="Saving your work…" />);
+      return shell(<Waiting line={m.play.saving} />);
     case "error":
-      return shell(<Trouble onRetry={loadNext} line={phase.message} />);
+      return shell(<Trouble onRetry={loadNext} line={m.play[phase.message]} />);
     case "caught-up":
       return shell(
         <div className="flex flex-col items-center gap-8 px-6 pt-24 text-center">
           <BuddySays mood="cheer" size={150} tone="night">
-            You lit every book here for now! You can play any of them again from your shelf.
+            {m.play.caughtUp}
           </BuddySays>
           <div className="flex flex-wrap justify-center gap-3">
             <JourneyLink href={`/learn/${childId}/shelf`} solid toShelf />
@@ -317,6 +334,7 @@ export function PlaySession() {
 }
 
 function JourneyLink({ href, solid, toShelf = false }: { href: string; solid?: boolean; toShelf?: boolean }) {
+  const m = useMessages(childMessages);
   return (
     <Link
       to={href}
@@ -325,7 +343,7 @@ function JourneyLink({ href, solid, toShelf = false }: { href: string; solid?: b
         solid ? "bg-white text-tonle-900 hover:bg-tonle-50" : "text-tonle-700 ring-1 ring-tonle-200 hover:bg-tonle-50",
       )}
     >
-      {toShelf ? <Library size={19} aria-hidden /> : <BookOpen size={19} aria-hidden />} {toShelf ? "My shelf" : "My path"}
+      {toShelf ? <Library size={19} aria-hidden /> : <BookOpen size={19} aria-hidden />} {toShelf ? m.myShelf : m.myPath}
     </Link>
   );
 }
@@ -334,7 +352,7 @@ function JourneyLink({ href, solid, toShelf = false }: { href: string; solid?: b
 
 type PracticePhase =
   | { kind: "loading" }
-  | { kind: "error"; message: string; retry: boolean }
+  | { kind: "error"; message: TroubleKey | "startedOnPath" | "cantPlayAgain"; retry: boolean }
   | Extract<Phase, { kind: "intro" | "playing" }>
   | { kind: "completing" }
   | { kind: "done"; title: string; correct: number; total: number };
@@ -348,7 +366,8 @@ export function PracticeSession() {
   const { childId = "", activityVersionId = "" } = useParams<{ childId: string; activityVersionId: string }>();
   const child = useAsync(() => childrenApi.get(childId), [childId]);
   const [phase, setPhase] = useState<PracticePhase>({ kind: "loading" });
-  useDocumentTitle(phase.kind === "intro" || phase.kind === "playing" ? phase.activity.title : "Play again");
+  const m = useMessages(childMessages);
+  useDocumentTitle(phase.kind === "intro" || phase.kind === "playing" ? phase.activity.title : m.play.againTitle);
   const loadInFlight = useRef(false);
   const shelfHref = `/learn/${childId}/shelf`;
 
@@ -357,7 +376,7 @@ export function PracticeSession() {
     try {
       await activityAttemptApi.complete(attemptId);
     } catch {
-      setPhase({ kind: "error", message: SAVE_FAILED, retry: true });
+      setPhase({ kind: "error", message: "saveFailed", retry: true });
       return;
     }
     playCue("complete");
@@ -376,11 +395,11 @@ export function PracticeSession() {
         attempt = await activityAttemptApi.start(childId, { activityVersionId });
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          setPhase({ kind: "error", message: "You've started this book on your path. Finish it there first!", retry: false });
+          setPhase({ kind: "error", message: "startedOnPath", retry: false });
         } else if (err instanceof ApiError && err.status === 404) {
-          setPhase({ kind: "error", message: "This book can't be played again just now.", retry: false });
+          setPhase({ kind: "error", message: "cantPlayAgain", retry: false });
         } else {
-          setPhase({ kind: "error", message: LOAD_FAILED, retry: true });
+          setPhase({ kind: "error", message: "loadFailed", retry: true });
         }
         return;
       }
@@ -395,12 +414,12 @@ export function PracticeSession() {
       if (resumeIndex === -1) {
         await finish(attempt.id, activity.title);
       } else if (resumeIndex === 0) {
-        setPhase({ kind: "intro", attemptId: attempt.id, itemId: "", activity: ordered, reason: "Playing it again" });
+        setPhase({ kind: "intro", attemptId: attempt.id, itemId: "", activity: ordered, reason: () => messagesNow(childMessages).play.playingAgain });
       } else {
         setPhase({ kind: "playing", attemptId: attempt.id, itemId: "", activity: ordered, index: resumeIndex, result: null, startedAt: Date.now() });
       }
     } catch {
-      setPhase({ kind: "error", message: LOAD_FAILED, retry: true });
+      setPhase({ kind: "error", message: "loadFailed", retry: true });
     } finally {
       loadInFlight.current = false;
     }
@@ -411,24 +430,24 @@ export function PracticeSession() {
   }, [load]);
 
   const shell = (content: React.ReactNode) => (
-    <ChildSpaceLayout childId={childId} childName={child.data?.displayName} home={shelfHref}>
+    <ChildSpaceLayout childId={childId} childName={child.data?.displayName} childLanguage={child.data?.preferredLanguage} home={shelfHref}>
       {content}
     </ChildSpaceLayout>
   );
 
   switch (phase.kind) {
     case "loading":
-      return shell(<Waiting line="Getting your book ready…" />);
+      return shell(<Waiting line={m.play.gettingBook} />);
     case "completing":
-      return shell(<Waiting line="Saving your work…" />);
+      return shell(<Waiting line={m.play.saving} />);
     case "error":
       return shell(
         phase.retry ? (
-          <Trouble onRetry={load} line={phase.message} />
+          <Trouble onRetry={load} line={m.play[phase.message]} />
         ) : (
           <div className="flex flex-col items-center gap-8 px-6 pt-24 text-center">
             <BuddySays mood="encourage" size={140} tone="night">
-              {phase.message}
+              {m.play[phase.message]}
             </BuddySays>
             <JourneyLink href={shelfHref} solid toShelf />
           </div>
@@ -471,18 +490,18 @@ export function PracticeSession() {
               <LearningBuddy mood="cheer" size={110} />
             </div>
             <h1 id="practice-done" className="font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
-              {phase.total > 0 && phase.correct === phase.total ? "Perfect again!" : "Practice done!"}
+              {phase.total > 0 && phase.correct === phase.total ? m.play.perfectAgain : m.play.practiceDone}
             </h1>
-            <p className="mt-1 text-lg font-medium text-ink-soft">You played “{phase.title}” again.</p>
+            <p className="mt-1 text-lg font-medium text-ink-soft">{m.play.playedAgain(phase.title)}</p>
             {phase.total > 0 && (
               <p className="mx-auto mt-5 w-fit rounded-pill bg-light-soft px-5 py-2 text-lg font-bold text-light-deep ring-1 ring-light/40">
-                You got {phase.correct} of {phase.total} right
+                {m.play.gotRight(phase.correct, phase.total)}
               </p>
             )}
             <div className="mt-8 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
               <JourneyLink href={`/learn/${childId}`} />
               <Link to={shelfHref} className={goButton}>
-                <Library size={22} aria-hidden /> Back to my shelf
+                <Library size={22} aria-hidden /> {m.play.backToShelf}
               </Link>
             </div>
           </Page>
@@ -519,18 +538,19 @@ function Intro({
   onStart,
 }: {
   activity: ActivityVersionDetail;
-  reason: string | null;
+  reason: Line | null;
   journeyHref: string;
   onStart: () => void;
 }) {
   const startRef = useRef<HTMLButtonElement | null>(null);
+  const m = useMessages(childMessages).play;
   useEffect(() => startRef.current?.focus(), []);
   const n = activity.items.length;
   return (
     <div className="px-4 pb-16 pt-28 sm:pt-24">
       <Page labelledBy="activity-title" className="px-6 pb-10 pt-10 text-center motion-safe:animate-page-in sm:px-14 sm:pb-12">
         <LearningBuddy mood="happy" size={128} className="mx-auto -mt-28 sm:-mt-32" />
-        {reason && <p className="mx-auto mt-3 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-700">{reason}</p>}
+        {reason && <p className="mx-auto mt-3 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-700">{reason()}</p>}
         <h1 id="activity-title" className="mt-4 font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
           {activity.title}
         </h1>
@@ -542,15 +562,13 @@ function Intro({
               <Lantern key={i} state={i === 0 ? "current" : "unlit"} size={n > 8 ? 22 : n > 5 ? 30 : 40} />
             ))}
           </div>
-          <p className="text-base font-semibold text-tonle-100">
-            {n} {n === 1 ? "question" : "questions"} · light {n === 1 ? "the lantern" : n === 2 ? "both lanterns" : `all ${n} lanterns`}
-          </p>
+          <p className="text-base font-semibold text-tonle-100">{m.lanterns(n)}</p>
         </div>
 
         <div className="mt-9 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
           <JourneyLink href={journeyHref} />
           <button ref={startRef} type="button" onClick={onStart} className={goButton}>
-            Let&apos;s go <ArrowRight size={22} aria-hidden />
+            {m.letsGo} <ArrowRight size={22} aria-hidden />
           </button>
         </div>
       </Page>
@@ -559,7 +577,7 @@ function Intro({
 }
 
 // Varied, authored words for a right answer (every one still says so plainly).
-const RIGHT_HEADLINES = ["You got it!", "That's right!", "Great thinking!"];
+const RIGHT_HEADLINES = ["right1", "right2", "right3"] as const;
 
 function Question({
   phase,
@@ -577,7 +595,9 @@ function Question({
   const { attemptId, activity, index, result, startedAt } = phase;
   const item = activity.items[index];
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<"answerDoesntFit" | "answerNotSent" | null>(null);
+  const m = useMessages(childMessages).play;
+  const q = useMessages(childMessages).question;
   // One idempotency key per distinct answer to this question: retrying the same
   // answer after a lost response replays the original result server-side; a
   // different answer gets a fresh key.
@@ -626,11 +646,7 @@ function Question({
         onResync();
         return;
       }
-      setSubmitError(
-        err instanceof ApiError && err.status === 422
-          ? "Hmm, that answer doesn't fit this question. Try again!"
-          : "We couldn't send that answer. Please try again.",
-      );
+      setSubmitError(err instanceof ApiError && err.status === 422 ? "answerDoesntFit" : "answerNotSent");
       setIsSubmitting(false);
     }
   }
@@ -643,12 +659,12 @@ function Question({
       <div className="mx-auto grid w-full max-w-3xl grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-start gap-3">
         <Link
           to={journeyHref}
-          aria-label="Back to my journey (your progress is saved)"
+          aria-label={m.backToJourney}
           className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-950/55 text-tonle-100 ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
         >
           <BookOpen size={19} aria-hidden />
         </Link>
-        <LanternString total={total} lit={index + answeredHere} current={result ? null : index} label={`Question ${index + 1} of ${total}`} />
+        <LanternString total={total} lit={index + answeredHere} current={result ? null : index} label={m.questionOf(index + 1, total)} />
         <span
           className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-950/55 text-sm font-bold tabular-nums text-tonle-100 ring-1 ring-white/15 backdrop-blur-md"
           aria-hidden
@@ -675,7 +691,7 @@ function Question({
           <QuestionView item={item} onAnswer={handleAnswer} disabled={isSubmitting} result={result} />
           {submitError && (
             <p role="alert" className="text-center text-base font-semibold text-brick-deep">
-              {submitError}
+              {m[submitError]}
             </p>
           )}
         </div>
@@ -690,20 +706,22 @@ function Question({
           >
             <div className="flex-1 text-center sm:text-left">
               <p className={cn("font-display text-[1.75rem] font-bold leading-tight", result.correct ? "text-light-deep" : "text-tonle-800")}>
-                {result.correct ? RIGHT_HEADLINES[index % RIGHT_HEADLINES.length] : "Not quite — good try!"}
+                {result.correct ? m[RIGHT_HEADLINES[index % RIGHT_HEADLINES.length]] : m.notQuite}
               </p>
               <p className="mt-1 text-lg font-medium text-ink">
                 {result.correct
-                  ? "Your lantern is lit."
+                  ? m.lanternLit
                   : result.correctAnswer?.matches?.length
-                    ? "Some matches got mixed up — the cards show where each one goes. Let's keep going!"
+                    ? m.matchesMixed
                     : result.correctAnswer?.text
-                      ? `The answer is ${result.correctAnswer.text}. Let's keep going!`
-                      : "Let's keep going!"}
+                      ? m.theAnswerIs(
+                          item.questionType === "TRUE_FALSE" ? (result.correctAnswer.text === "true" ? q.true : q.false) : result.correctAnswer.text,
+                        )
+                      : m.keepGoingLine}
               </p>
             </div>
             <button ref={continueRef} type="button" onClick={onContinue} className={goButton}>
-              {index + 1 < total ? "Next" : "Finish"} <ArrowRight size={22} aria-hidden />
+              {index + 1 < total ? m.next : m.finish} <ArrowRight size={22} aria-hidden />
             </button>
           </div>
         )}
@@ -723,6 +741,7 @@ function Completed({
 }) {
   const { title, correct, total, next, finishedChapter, nextChapter, itemId, chapterSteps, nextId } = phase;
   const allRight = total > 0 && correct === total;
+  const m = useMessages(childMessages).play;
   const keepGoingRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => keepGoingRef.current?.focus(), []);
   // The river shows the next book only while it is in this chapter.
@@ -739,14 +758,14 @@ function Completed({
           </div>
         )}
         <h1 id="done-title" className="font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
-          {finishedChapter ? `Chapter ${finishedChapter.position} complete!` : allRight ? "Perfect!" : "Activity complete!"}
+          {finishedChapter ? m.chapterComplete(finishedChapter.position) : allRight ? m.perfect : m.activityComplete}
         </h1>
         <p className="mt-1 text-lg font-medium text-ink-soft">
-          {finishedChapter ? `You lit every book in “${finishedChapter.title}”.` : `You lit every lantern in “${title}”.`}
+          {finishedChapter ? m.litEveryBook(finishedChapter.title) : m.litEveryLantern(title)}
         </p>
         {total > 0 && (
           <p className="mx-auto mt-5 w-fit rounded-pill bg-light-soft px-5 py-2 text-lg font-bold text-light-deep ring-1 ring-light/40">
-            You got {correct} of {total} right
+            {m.gotRight(correct, total)}
           </p>
         )}
         {chapterSteps.length > 0 && (
@@ -770,11 +789,11 @@ function Completed({
             <Lantern state="current" size={30} className="shrink-0" />
             <div>
               <p className="text-sm font-semibold text-light-glow">
-                {finishedChapter && nextChapter ? `Up next · Chapter ${nextChapter.position}: ${nextChapter.title}` : "Up next"}
+                {finishedChapter && nextChapter ? m.upNextChapter(nextChapter.position, nextChapter.title) : messagesNow(childMessages).home.upNext}
               </p>
               <p className="font-display text-xl font-bold">{next.title}</p>
               <p className="font-medium text-tonle-100">
-                {finishedChapter && next.explanation.reason === "CURRICULUM" ? "A new chapter begins!" : childReason(next)}
+                {finishedChapter && next.explanation.reason === "CURRICULUM" ? m.newChapter : childReason(next)}
               </p>
             </div>
           </div>
@@ -783,7 +802,7 @@ function Completed({
           <JourneyLink href={journeyHref} />
           {next !== null && (
             <button ref={keepGoingRef} type="button" onClick={onKeepGoing} className={goButton}>
-              Keep going <ArrowRight size={22} aria-hidden />
+              {m.keepGoing} <ArrowRight size={22} aria-hidden />
             </button>
           )}
         </div>

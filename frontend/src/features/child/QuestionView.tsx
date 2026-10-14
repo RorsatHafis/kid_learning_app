@@ -7,6 +7,8 @@ import { OrderingQuestion } from "./OrderingQuestion";
 import { SortingQuestion } from "./SortingQuestion";
 import { ListenButton, PromptFrame } from "./PromptMedia";
 import { useReadAloud } from "./speaker";
+import { useMessages } from "@/i18n/catalog";
+import { childMessages } from "./messages";
 
 // Answer contract (backend AnswerScoringService): MULTIPLE_CHOICE submits the chosen
 // option's id — the label is display text only; TRUE_FALSE submits "true"/"false";
@@ -24,10 +26,8 @@ export interface AnswerResult {
 /** A picture choice shows its picture; its label is what a screen reader says. */
 type Choice = { value: string; label: string; image?: MediaRef | null; audio?: MediaRef | null };
 
-const TRUE_FALSE: Choice[] = [
-  { value: "true", label: "True" },
-  { value: "false", label: "False" },
-];
+/** The values TRUE_FALSE submits; their words are the interface's (childMessages.question). */
+const TRUE_FALSE = ["true", "false"] as const;
 
 const promptClass = "font-display font-bold leading-[1.08] tracking-[-0.02em] text-tonle-950";
 const promptStyle = { fontVariationSettings: '"opsz" 72' };
@@ -52,6 +52,7 @@ export function QuestionView({
   autoFocus?: boolean;
 }) {
   const Heading = headingLevel === 1 ? "h1" : "h3";
+  const q = useMessages(childMessages).question;
   const promptId = headingLevel === 1 ? "question-prompt" : undefined;
   // In the child's app the question is read aloud as it appears (unless sound is muted).
   useReadAloud(item.promptAudio?.url, autoFocus);
@@ -85,7 +86,7 @@ export function QuestionView({
         <div className="flex flex-col gap-8">
           {prompt}
           <Choices
-            choices={TRUE_FALSE}
+            choices={TRUE_FALSE.map((value) => ({ value, label: q[value] }))}
             correctValues={result?.correctAnswer?.text ? [result.correctAnswer.text] : []}
             onAnswer={onAnswer}
             disabled={disabled}
@@ -124,8 +125,8 @@ export function QuestionView({
         <div className="flex flex-col gap-6">
           {prompt}
           <div role="status" className="rounded-[20px] border-2 border-dashed border-line bg-tonle-50 px-6 py-8 text-center">
-            <p className="text-lg font-bold">This kind of question isn't ready yet.</p>
-            <p className="mt-1 text-ink-soft">Tap “My path” to go back for now.</p>
+            <p className="text-lg font-bold">{q.notReady}</p>
+            <p className="mt-1 text-ink-soft">{q.goBack}</p>
           </div>
         </div>
       );
@@ -168,6 +169,7 @@ function Choices({
   shortcuts: boolean;
 }) {
   const [picked, setPicked] = useState<string | null>(null);
+  const q = useMessages(childMessages).question;
   const answered = result !== null;
   const locked = disabled || answered;
 
@@ -207,7 +209,7 @@ function Choices({
           ? "grid-cols-2"
           : "sm:grid-cols-2";
   return (
-    <div className={cn("grid gap-3 sm:gap-4", columns)} role="group" aria-label="Answers">
+    <div className={cn("grid gap-3 sm:gap-4", columns)} role="group" aria-label={q.answers}>
       {choices.map((choice, index) => {
         const isPicked = (result?.submitted ?? picked) === choice.value;
         const isCorrect = answered && correctValues.includes(choice.value);
@@ -251,12 +253,12 @@ function Choices({
                 <span>{choice.label}</span>
               )}
               {isCorrect && isPicked && <SparkBurst />}
-              {isCorrect && !isPicked && <span className="sr-only">(the correct answer)</span>}
-              {isPicked && answered && <span className="sr-only">{result!.correct ? "(your answer, correct)" : "(your answer)"}</span>}
+              {isCorrect && !isPicked && <span className="sr-only">{q.theCorrectAnswer}</span>}
+              {isPicked && answered && <span className="sr-only">{result!.correct ? q.yourAnswerCorrect : q.yourAnswer}</span>}
             </button>
             {choice.audio && (
               <span className="absolute right-2 top-2 sm:right-2.5 sm:top-2.5">
-                <ListenButton audio={choice.audio} label={`Hear ${choice.label}`} />
+                <ListenButton audio={choice.audio} label={q.hear(choice.label)} />
               </span>
             )}
           </div>
@@ -296,6 +298,7 @@ function FreeResponse({
   result: AnswerResult | null;
 }) {
   const [value, setValue] = useState("");
+  const q = useMessages(childMessages).question;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const numeric = item.questionType === "NUMERIC";
   const answered = result !== null;
@@ -327,7 +330,7 @@ function FreeResponse({
   const slot = (
     <span className="relative inline-flex align-baseline">
       <label className="sr-only" htmlFor={`answer-${item.questionVersionId}`}>
-        Your answer
+        {q.answerLabel}
       </label>
       <input
         id={`answer-${item.questionVersionId}`}
@@ -341,7 +344,7 @@ function FreeResponse({
         readOnly={answered}
         disabled={disabled && !answered}
         onChange={(e) => setValue(numeric ? e.target.value.replace(/[^0-9.,-]/g, "").slice(0, MAX_DIGITS) : e.target.value)}
-        placeholder={numeric ? "?" : inline ? "?" : "Type your answer"}
+        placeholder={numeric ? "?" : inline ? "?" : q.typeAnswer}
         style={{ width: numeric || inline ? `${Math.max(2.2, shown.length + 1.2)}ch` : undefined }}
         className={cn(
           "h-[1.3em] min-w-[2.2ch] rounded-[0.28em] border-[3px] px-[0.2em] text-center font-display font-bold text-tonle-950 caret-tonle-600 outline-none transition-[border-color,background-color,box-shadow] duration-200",
@@ -389,7 +392,7 @@ function FreeResponse({
           disabled={disabled || !value.trim()}
           className="flex min-h-16 min-w-[12rem] items-center justify-center gap-2 rounded-[22px] bg-tonle-900 px-10 text-xl font-bold text-white shadow-[0_5px_0_#0A1533] transition-[transform,box-shadow,opacity] duration-150 ease-out hover:bg-tonle-800 active:translate-y-1 active:shadow-[0_1px_0_#0A1533] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Check
+          {q.check}
         </button>
       )}
     </form>
@@ -397,18 +400,19 @@ function FreeResponse({
 }
 
 function NumberPad({ onPress, canCheck }: { onPress: (key: string) => void; canCheck: boolean }) {
+  const q = useMessages(childMessages).question;
   const key =
     "flex h-[3.75rem] items-center justify-center rounded-[18px] font-display text-[1.75rem] font-bold transition-[transform,box-shadow,background-color] duration-100 ease-out active:translate-y-[3px] select-none touch-manipulation sm:h-16";
   const digit = cn(key, "bg-white text-tonle-950 shadow-[0_4px_0_#C9D6EF] ring-1 ring-inset ring-tonle-100 hover:bg-tonle-50 active:shadow-[0_1px_0_#C9D6EF]");
   return (
     <div className="w-full max-w-[20rem]">
-      <div role="group" aria-label="Number pad" className="grid grid-cols-3 gap-2.5">
+      <div role="group" aria-label={q.numberPad} className="grid grid-cols-3 gap-2.5">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
           <button key={d} type="button" className={digit} onClick={() => onPress(d)} tabIndex={-1}>
             {d}
           </button>
         ))}
-        <button type="button" aria-label="Delete" className={cn(digit, "text-tonle-600")} onClick={() => onPress("back")} tabIndex={-1}>
+        <button type="button" aria-label={q.delete} className={cn(digit, "text-tonle-600")} onClick={() => onPress("back")} tabIndex={-1}>
           <Delete size={26} aria-hidden />
         </button>
         <button type="button" className={digit} onClick={() => onPress("0")} tabIndex={-1}>
@@ -423,7 +427,7 @@ function NumberPad({ onPress, canCheck }: { onPress: (key: string) => void; canC
             "disabled:cursor-not-allowed disabled:bg-tonle-200 disabled:text-white disabled:shadow-[0_4px_0_#A2B8E3] disabled:active:translate-y-0",
           )}
         >
-          Check
+          {q.check}
         </button>
       </div>
     </div>

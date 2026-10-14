@@ -1,4 +1,7 @@
 import { apiClient } from "./client";
+import { messagesNow } from "@/i18n/catalog";
+import { intlLocale } from "@/i18n/format";
+import { apiMessages } from "./messages";
 
 // ---- subscription/web/SubscriptionDtos.java ----
 
@@ -100,10 +103,11 @@ export interface FamilyAccountSummary {
   plan: FamilyPlan;
 }
 
-export const ENTITLEMENT_LABEL: Record<EntitlementKey, string> = {
-  CHILDREN_MAX: "Children",
-  JOURNEYS_PER_CHILD_MAX: "Journeys per child at a time",
-};
+/** What a plan limit is called, in the interface language: "Children". */
+export function entitlementLabel(key: EntitlementKey, short = false): string {
+  const m = messagesNow(apiMessages);
+  return (short ? m.entitlementShort : m.entitlement)[key];
+}
 
 /** How many decimals a currency's amounts have (USD 2, JPY 0); null for a code that isn't a currency. */
 export function currencyDigits(currency: string): number | null {
@@ -120,11 +124,12 @@ export function currencyDigits(currency: string): number | null {
  */
 export function priceText(price: Price | null): string | null {
   if (!price) return null;
-  const per = price.interval === "MONTH" ? "month" : "year";
+  const m = messagesNow(apiMessages);
+  const per = price.interval === "MONTH" ? m.perMonth : m.perYear;
   const digits = currencyDigits(price.currency);
-  if (digits === null) return `${price.currency} ${price.amountMinor} (minor units) / ${per}`;
-  const format = new Intl.NumberFormat(undefined, { style: "currency", currency: price.currency });
-  return `${format.format(price.amountMinor / 10 ** digits)} / ${per}`;
+  if (digits === null) return per(m.minorUnits(price.currency, price.amountMinor));
+  const format = new Intl.NumberFormat(intlLocale(), { style: "currency", currency: price.currency });
+  return per(format.format(price.amountMinor / 10 ** digits));
 }
 
 export const familyPlanApi = {

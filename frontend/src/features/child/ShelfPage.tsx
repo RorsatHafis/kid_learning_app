@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { Trouble, Waiting } from "./ChildHome";
 import { SHELF_SPINES, milestones, skillShelves, type Shelf } from "./shelf";
+import { useMessages } from "@/i18n/catalog";
+import { childMessages } from "./messages";
 
 /**
  * The child's shelf (X18): everything they have lit, what they can do now and the lanterns they
@@ -30,13 +32,14 @@ export function ShelfPage() {
   }, [childId]);
   const skills = useAsync(() => learningApi.skills(childId), [childId]);
   const name = child.data?.displayName;
-  useDocumentTitle(name ? `${name}'s shelf` : null);
+  const m = useMessages(childMessages);
+  useDocumentTitle(name ? m.shelf.title(name) : null);
 
   const light = shelves.data && shelves.data.length > 0 ? Math.max(...shelves.data.map((s) => journeyLight(s.overview))) : 0;
 
   return (
-    <ChildSpaceLayout childId={childId} childName={name} firstLight={light}>
-      {(shelves.isLoading || child.isLoading) && <Waiting line="Dusting off your shelf…" />}
+    <ChildSpaceLayout childId={childId} childName={name} childLanguage={child.data?.preferredLanguage} firstLight={light}>
+      {(shelves.isLoading || child.isLoading) && <Waiting line={m.shelf.dusting} />}
       {(shelves.error || child.error) && (
         <Trouble
           onRetry={() => {
@@ -67,6 +70,8 @@ function Shelves({
   const lanterns = milestones(shelves);
   const { canDo, growing } = skillShelves(skills);
   const next = shelves.find((s) => s.overview.nextStep !== null);
+  const all = useMessages(childMessages);
+  const m = all.shelf;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-12 px-5 pb-20 pt-8 sm:px-8 sm:pt-12">
@@ -75,17 +80,15 @@ function Shelves({
           to={`/learn/${childId}`}
           className="inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-950/55 px-4 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
         >
-          <ArrowLeft size={16} aria-hidden /> Back to my path
+          <ArrowLeft size={16} aria-hidden /> {m.backToPath}
         </Link>
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-col gap-2">
             <h1 className="font-display text-[2.6rem] font-bold leading-none tracking-[-0.02em] text-white sm:text-[3.25rem]">
-              My shelf
+              {all.myShelf}
             </h1>
             <p className="max-w-md text-lg font-medium text-tonle-100">
-              {lit === 0
-                ? `Every book you finish will shine here, ${name}.`
-                : `${lit === 1 ? "1 book" : `${lit} books`} lit so far. Look how far you've come!`}
+              {lit === 0 ? m.firstBookWillShine(name) : m.litSoFar(lit)}
             </p>
           </div>
           {next && (
@@ -96,7 +99,7 @@ function Shelves({
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-tonle-950 text-light">
                 <Play size={17} fill="currentColor" aria-hidden className="translate-x-px" />
               </span>
-              Play next
+              {m.playNext}
             </Link>
           )}
         </div>
@@ -107,10 +110,10 @@ function Shelves({
         className="flex flex-col gap-5 rounded-[24px] bg-tonle-950/60 p-6 ring-1 ring-white/10 backdrop-blur-md sm:p-7"
       >
         <h2 id="lanterns" className="font-display text-2xl font-bold text-white">
-          My lanterns
+          {m.myLanterns}
         </h2>
         {lanterns.length === 0 ? (
-          <p className="text-tonle-200">Finish your first book and a lantern will light up here.</p>
+          <p className="text-tonle-200">{m.noLanterns}</p>
         ) : (
           <ul className="relative grid grid-cols-2 gap-x-4 gap-y-8 pt-4 sm:grid-cols-3 lg:grid-cols-5">
             {/* the string they hang from */}
@@ -136,18 +139,16 @@ function Shelves({
       {(canDo.length > 0 || growing.length > 0) && (
         <section aria-labelledby="can-do" className="grid gap-6 md:grid-cols-2">
           <h2 id="can-do" className="sr-only">
-            What I can do
+            {m.whatICanDo}
           </h2>
-          {canDo.length > 0 && <SkillCard title="I can…" tone="lit" skills={canDo} note="Your answers show you've got these." />}
-          {growing.length > 0 && (
-            <SkillCard title="Getting stronger" tone="growing" skills={growing} note="Keep playing and these will shine too." />
-          )}
+          {canDo.length > 0 && <SkillCard title={m.iCan} tone="lit" skills={canDo} note={m.iCanNote} />}
+          {growing.length > 0 && <SkillCard title={m.gettingStronger} tone="growing" skills={growing} note={m.gettingStrongerNote} />}
         </section>
       )}
 
       {shelves.length === 0 ? (
         <BuddySays mood="happy" size={110} tone="night">
-          A grown-up will choose your first path soon.
+          {m.noPathYet}
         </BuddySays>
       ) : (
         shelves.map((shelf, i) => (
@@ -205,19 +206,20 @@ function SkillCard({
 /** One path as shelves, a shelf per chapter: lit books first-to-last, then the ones waiting. */
 function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; spine: string }) {
   const { overview, journey } = shelf;
+  const m = useMessages(childMessages).shelf;
   const subject = overview.curriculum.subjectName ?? overview.curriculum.name;
   const groups =
     journey.chapters.length > 0
       ? journey.chapters.map((chapter) => ({
           key: chapter.id,
-          title: `Chapter ${chapter.position} · ${chapter.title}`,
+          title: m.chapter(chapter.position, chapter.title),
           complete: chapter.state === "COMPLETE",
           steps: journey.steps.filter((step) => step.chapterId === chapter.id),
         }))
       : [{ key: "all", title: overview.curriculum.name, complete: false, steps: journey.steps }];
   // Practice and review placed by the platform may sit outside any chapter.
   const placed = journey.chapters.length > 0 ? journey.steps.filter((step) => !step.chapterId) : [];
-  if (placed.length > 0) groups.push({ key: "more", title: "Extra practice", complete: false, steps: placed });
+  if (placed.length > 0) groups.push({ key: "more", title: m.extraPractice, complete: false, steps: placed });
 
   return (
     <section aria-labelledby={`shelf-${overview.enrollmentId}`} className="flex flex-col gap-5">
@@ -228,7 +230,7 @@ function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; s
             {subject}
           </h2>
           <p className="text-sm text-tonle-200">
-            {overview.curriculum.name} · {overview.completedSteps} of {overview.totalSteps} lit
+            {m.pathLit(overview.curriculum.name, overview.completedSteps, overview.totalSteps)}
           </p>
         </div>
       </div>
@@ -240,7 +242,7 @@ function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; s
               {group.title}
               {group.complete && (
                 <span className="inline-flex items-center gap-1 rounded-pill bg-light-soft px-2 py-0.5 text-xs font-bold text-light-deep">
-                  <Check size={12} strokeWidth={3} aria-hidden /> All lit
+                  <Check size={12} strokeWidth={3} aria-hidden /> {m.allLit}
                 </span>
               )}
             </h3>
@@ -279,7 +281,8 @@ function Book({
 }) {
   const lit = step.status === "COMPLETED";
   const tag = stepTag(step);
-  const state = lit ? "lit" : isNext ? "up next" : "waiting";
+  const m = useMessages(childMessages).shelf;
+  const state = lit ? m.litState : isNext ? m.upNextState : m.waitingState;
   return (
     <li
       className={cn(
@@ -291,7 +294,7 @@ function Book({
             : "bg-white/[0.05] text-tonle-200 ring-1 ring-white/10",
       )}
       style={{ animationDelay: `${Math.min(index, 10) * 45}ms` }}
-      aria-label={`${step.title}, ${state}`}
+      aria-label={m.bookState(step.title, state)}
     >
       <span aria-hidden className={cn("w-3 shrink-0", lit ? spine : "bg-white/10", "shadow-[inset_-3px_0_0_rgba(0,0,0,0.15)]")} />
       <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3">
@@ -307,17 +310,17 @@ function Book({
           ) : isNext ? (
             <Play size={12} fill="currentColor" aria-hidden />
           ) : null}
-          {lit ? "Lit" : isNext ? "Up next" : "Waiting"}
+          {lit ? m.lit : isNext ? m.upNext : m.waiting}
           {tag ? ` · ${tag.label}` : ""}
         </span>
         {/* X24: a lit book can be played again - free practice, outside the path. */}
         {lit && (
           <Link
             to={`/learn/${childId}/practice/${step.activityVersionId}`}
-            aria-label={`Play ${step.title} again`}
+            aria-label={m.playAgainLabel(step.title)}
             className="inline-flex min-h-9 w-fit items-center gap-1.5 rounded-pill bg-tonle-950 px-3 text-xs font-bold text-light-glow transition-colors duration-150 hover:bg-tonle-800"
           >
-            <RotateCcw size={12} aria-hidden /> Play again
+            <RotateCcw size={12} aria-hidden /> {m.playAgain}
           </Link>
         )}
       </span>

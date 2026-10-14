@@ -1,4 +1,6 @@
 import type { ApiProblem } from "./types";
+import { messagesNow } from "@/i18n/catalog";
+import { apiMessages } from "./messages";
 
 /**
  * Thrown by `client.ts` for every non-2xx response. Carries the backend's
@@ -44,12 +46,14 @@ export class ApiError extends Error {
 
 /** A server wait (Retry-After seconds) in words, rounded up for people: "45 seconds", "3 minutes". */
 export function waitInWords(seconds: number): string {
-  return seconds < 60 ? `${seconds} second${seconds === 1 ? "" : "s"}` : `${Math.ceil(seconds / 60)} minute${seconds <= 60 ? "" : "s"}`;
+  const m = messagesNow(apiMessages);
+  return seconds < 60 ? m.seconds(seconds) : m.minutes(Math.ceil(seconds / 60));
 }
 
 /** "Too many attempts from this network" copy with the server's wait, rounded up for people. */
 export function rateLimitedMessage(err: ApiError): string {
+  const m = messagesNow(apiMessages);
   const seconds = err.problem?.retryAfterSeconds;
-  if (!seconds) return "Too many attempts from this network. Please wait a moment and try again.";
-  return `Too many attempts from this network. Please try again in ${waitInWords(seconds)}.`;
+  if (!seconds) return m.tooManyWait;
+  return m.tooManyIn(waitInWords(seconds));
 }

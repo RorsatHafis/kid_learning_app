@@ -111,11 +111,11 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
                 </span>
                 <span className="flex items-center gap-3 text-sm text-ink-soft">
                   <EvidenceLine level={now.evidenceLevel} />
-                  {evidenceLabel[now.evidenceLevel]}
+                  {evidenceLabel(now.evidenceLevel)}
                 </span>
               </div>
               <p className="max-w-2xl text-[1.0625rem] leading-relaxed text-ink">{summary(story, childName)}</p>
-              <p className="max-w-2xl text-sm text-ink-soft">{standingHelp[now.standing]}</p>
+              <p className="max-w-2xl text-sm text-ink-soft">{standingHelp(now.standing)}</p>
               {now.inReview && (
                 <p className="flex items-center gap-2 text-sm font-semibold text-light-deep">
                   <RotateCcw size={15} aria-hidden /> In Smart Review
@@ -217,7 +217,7 @@ function MovementStrip({ activities }: { activities: ActivityOnSkill[] }) {
         <div className="relative h-24 text-[0.6875rem] text-ink-faint">
           {(["SECURE", "PROGRESSING", "NEEDS_PRACTICE", "TOO_EARLY_TO_TELL"] as SkillStanding[]).map((s) => (
             <span key={s} className="absolute right-0 -translate-y-1/2 whitespace-nowrap" style={{ top: `${y(s)}%` }}>
-              {standingLabel[s]}
+              {standingLabel(s)}
             </span>
           ))}
         </div>
@@ -272,7 +272,7 @@ function ActivityRow({ activity }: { activity: ActivityOnSkill }) {
           <>
             <span className="sm:sr-only">Then: </span>
             <StandingMark standing={activity.standingAfter} />
-            <span className="font-medium text-ink">{standingLabel[activity.standingAfter]}</span>
+            <span className="font-medium text-ink">{standingLabel(activity.standingAfter)}</span>
           </>
         ) : null}
       </span>

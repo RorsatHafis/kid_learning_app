@@ -7,34 +7,15 @@ import { authApi } from "@/lib/api/endpoints";
 import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { forgetLinkToken, readLinkToken } from "./linkToken";
+import { useMessages } from "@/i18n/catalog";
+import { authMessages } from "./messages";
 
 const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
 
-/** What differs between choosing a password from a reset email and from a school invitation. */
+/** What differs between choosing a password from a reset email and from a school invitation (words: the catalog). */
 const MODES = {
-  reset: {
-    title: "Choose a new password",
-    subtitle: "You'll be signed out everywhere, then log in with the new password.",
-    submit: "Save new password",
-    submitting: "Saving…",
-    send: authApi.resetPassword,
-    done: "Your password has been changed and every device was signed out. Log in with your new password.",
-    unusable: "It may have expired, already been used, or been replaced by a newer link.",
-    incomplete: "The link is incomplete. Open it straight from the email, or ask for a new one.",
-    recovery: { to: "/forgot-password", label: "Send me a new link" },
-  },
-  setup: {
-    title: "Set up your account",
-    subtitle: "Choose a password for your teacher account. You'll use it with your email address to log in.",
-    submit: "Create password",
-    submitting: "Creating…",
-    send: authApi.completeAccountSetup,
-    done: "Your account is ready. Log in to see your school's invitation.",
-    unusable:
-      "It may have expired (invitation links last 7 days), already been used, or been replaced by a newer invitation. Ask the school to invite you again.",
-    incomplete: "The link is incomplete. Open it straight from the invitation email.",
-    recovery: { to: "/forgot-password", label: "I already chose a password — reset it" },
-  },
+  reset: { send: authApi.resetPassword, recoveryTo: "/forgot-password" },
+  setup: { send: authApi.completeAccountSetup, recoveryTo: "/forgot-password" },
 } as const;
 
 /**
@@ -52,7 +33,10 @@ export function SetUpAccountPage() {
 }
 
 function PasswordLinkPage({ mode }: { mode: keyof typeof MODES }) {
-  const copy = MODES[mode];
+  const mode_ = MODES[mode];
+  const m = useMessages(authMessages);
+  const p = m.passwordLink;
+  const copy = p[mode];
   const navigate = useNavigate();
   const { session, logout } = useAuth();
   // Read during render (pure, safe to repeat); the fragment is dropped afterwards.
@@ -69,14 +53,14 @@ function PasswordLinkPage({ mode }: { mode: keyof typeof MODES }) {
     e.preventDefault();
     if (!token) return;
     const local: typeof errors = {};
-    if (password.length < MIN_PASSWORD) local.password = `Use at least ${MIN_PASSWORD} characters.`;
-    if (confirm !== password) local.confirm = "The two passwords don't match.";
+    if (password.length < MIN_PASSWORD) local.password = p.tooShort(MIN_PASSWORD);
+    if (confirm !== password) local.confirm = p.mismatch;
     setErrors(local);
     if (Object.keys(local).length > 0) return;
 
     setIsSubmitting(true);
     try {
-      await copy.send({ token, newPassword: password });
+      await mode_.send({ token, newPassword: password });
       // Every session was ended server-side; forget this browser's too.
       if (session) await logout();
       navigate("/login", {
@@ -87,11 +71,11 @@ function PasswordLinkPage({ mode }: { mode: keyof typeof MODES }) {
       if (err instanceof ApiError && err.status === 400) {
         setLinkUnusable(true);
       } else if (err instanceof ApiError && err.status === 422) {
-        setErrors({ password: err.problem?.detail ?? "Choose a different password." });
+        setErrors({ password: err.problem?.detail ?? p.chooseDifferent });
       } else if (err instanceof ApiError && err.isRateLimited) {
         setErrors({ form: rateLimitedMessage(err) });
       } else {
-        setErrors({ form: "We couldn't change your password just now. Please try again." });
+        setErrors({ form: p.changeFailed });
       }
     } finally {
       setIsSubmitting(false);
@@ -101,18 +85,18 @@ function PasswordLinkPage({ mode }: { mode: keyof typeof MODES }) {
   if (!token || linkUnusable) {
     return (
       <AuthLayout
-        title="This link can't be used"
+        title={m.linkUnusableTitle}
         subtitle={token ? copy.unusable : copy.incomplete}
       >
         <div className="flex flex-col gap-3">
           <Link
-            to={copy.recovery.to}
+            to={mode_.recoveryTo}
             className={buttonClasses("solid", "lg", "w-full")}
           >
-            {copy.recovery.label}
+            {copy.recovery}
           </Link>
           <Link to="/login" className="text-center text-sm font-semibold text-tonle-700">
-            Back to log in
+            {m.backToLogIn}
           </Link>
         </div>
       </AuthLayout>
@@ -123,7 +107,7 @@ function PasswordLinkPage({ mode }: { mode: keyof typeof MODES }) {
     <AuthLayout title={copy.title} subtitle={copy.subtitle}>
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <FormField
-          label={`New password (at least ${MIN_PASSWORD} characters)`}
+          label={p.newPassword(MIN_PASSWORD)}
           type="password"
           autoComplete="new-password"
           required
@@ -132,7 +116,7 @@ function PasswordLinkPage({ mode }: { mode: keyof typeof MODES }) {
           error={errors.password}
         />
         <FormField
-          label="Confirm new password"
+          label={p.confirmPassword}
           type="password"
           autoComplete="new-password"
           required

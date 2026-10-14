@@ -1,4 +1,6 @@
 import type { CurriculumProgress, EnrollmentOverview, Journey, SkillProgress } from "@/lib/api/types";
+import { messagesNow } from "@/i18n/catalog";
+import { childMessages } from "./messages";
 
 /** Book-spine colours for the subject shelf, so each subject keeps its own (home and shelf alike). */
 export const SHELF_SPINES = ["bg-light", "bg-lotus", "bg-palm", "bg-dusk", "bg-tonle-400"];
@@ -13,20 +15,21 @@ export interface Shelf {
 export function milestones(shelves: Shelf[]) {
   const list: { key: string; title: string; detail?: string }[] = [];
   const books = shelves.flatMap((s) => s.journey.steps.filter((step) => step.status === "COMPLETED"));
-  if (books.length > 0) list.push({ key: "first-book", title: "First book lit", detail: books[0].title });
+  const m = messagesNow(childMessages).shelf;
+  if (books.length > 0) list.push({ key: "first-book", title: m.firstBookLit, detail: books[0].title });
   for (const { overview, journey } of shelves) {
     const subject = overview.curriculum.subjectName ?? overview.curriculum.name;
     for (const chapter of journey.chapters) {
       if (chapter.state === "COMPLETE") {
         list.push({
           key: `${overview.enrollmentId}:${chapter.id}`,
-          title: `Chapter ${chapter.position} all lit`,
+          title: m.chapterAllLit(chapter.position),
           detail: chapter.title,
         });
       }
     }
     if (journey.steps.length > 0 && journey.nextStepId === null && journey.steps.every((s) => s.status === "COMPLETED")) {
-      list.push({ key: `${overview.enrollmentId}:path`, title: `${subject} path all lit`, detail: overview.curriculum.name });
+      list.push({ key: `${overview.enrollmentId}:path`, title: m.pathAllLit(subject), detail: overview.curriculum.name });
     }
   }
   return list;

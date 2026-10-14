@@ -3,6 +3,8 @@ import { Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, MediaRef } from "@/lib/api/types";
 import { speak, stopSpeaking, usePlaying } from "./speaker";
+import { useMessages } from "@/i18n/catalog";
+import { childMessages } from "./messages";
 
 /**
  * Hear a recording: the question read aloud, or a word. While it plays the button glows and
@@ -51,6 +53,7 @@ export function ListenButton({
  * reader says, since the picture may be the question ("How many apples?").
  */
 export function PromptFrame({ item, children }: { item: ActivityItem; children: ReactNode }) {
+  const q = useMessages(childMessages).question;
   return (
     <div className="flex flex-col items-center gap-5">
       {item.promptImage && (
@@ -64,7 +67,7 @@ export function PromptFrame({ item, children }: { item: ActivityItem; children: 
       )}
       <div className="flex w-full items-center justify-center gap-3 sm:gap-4">
         <div className="min-w-0">{children}</div>
-        {item.promptAudio && <ListenButton audio={item.promptAudio} label="Listen to the question" size="lg" />}
+        {item.promptAudio && <ListenButton audio={item.promptAudio} label={q.listen} size="lg" />}
       </div>
     </div>
   );

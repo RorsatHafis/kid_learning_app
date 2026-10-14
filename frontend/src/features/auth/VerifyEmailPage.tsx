@@ -9,6 +9,8 @@ import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { accountPath, roleHomePath } from "./roleHomePath";
 import { forgetLinkToken, readLinkToken } from "./linkToken";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { authMessages } from "./messages";
 
 type Outcome = { kind: "confirming" } | { kind: "confirmed" } | { kind: "unusable" } | { kind: "failed"; message: string };
 
@@ -31,6 +33,8 @@ function confirmOnce(token: string) {
  */
 export function VerifyEmailPage() {
   const { session, isLoading } = useAuth();
+  const m = useMessages(authMessages);
+  const v = m.verify;
   const [token] = useState(() => readLinkToken());
   const [outcome, setOutcome] = useState<Outcome>(token ? { kind: "confirming" } : { kind: "unusable" });
   const [attempt, setAttempt] = useState(0);
@@ -47,7 +51,7 @@ export function VerifyEmailPage() {
         if (cancelled) return;
         if (err instanceof ApiError && err.status === 400) setOutcome({ kind: "unusable" });
         else if (err instanceof ApiError && err.isRateLimited) setOutcome({ kind: "failed", message: rateLimitedMessage(err) });
-        else setOutcome({ kind: "failed", message: "We couldn't reach Bookeyond Kid just now." });
+        else setOutcome({ kind: "failed", message: messagesNow(authMessages).unreachable });
       },
     );
     return () => {
@@ -60,32 +64,32 @@ export function VerifyEmailPage() {
       to={roleHomePath(session.platformRole)}
       className={buttonClasses("solid", "lg", "w-full")}
     >
-      Continue
+      {m.continue}
     </Link>
   ) : (
     <Link
       to="/login"
       className={buttonClasses("solid", "lg", "w-full")}
     >
-      Log in
+      {m.logIn}
     </Link>
   );
 
   if (outcome.kind === "confirming") {
     return (
-      <AuthLayout title="Confirming your email" subtitle="This only takes a moment.">
-        <LoadingState label="Confirming your email…" />
+      <AuthLayout title={v.confirmingTitle} subtitle={m.oneMoment}>
+        <LoadingState label={v.confirming} />
       </AuthLayout>
     );
   }
 
   if (outcome.kind === "confirmed") {
     return (
-      <AuthLayout title="Email confirmed" subtitle="If you ever forget your password, we'll send the reset link here.">
+      <AuthLayout title={v.confirmedTitle} subtitle={v.confirmedSubtitle}>
         <div className="flex flex-col gap-4">
           <p role="status" className="flex items-start gap-2 rounded-[12px] bg-palm-soft p-3 text-sm font-semibold text-palm-deep">
             <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden />
-            Thank you — your email address is confirmed.
+            {v.confirmed}
           </p>
           {continueLink}
         </div>
@@ -95,14 +99,14 @@ export function VerifyEmailPage() {
 
   if (outcome.kind === "failed") {
     return (
-      <AuthLayout title="Not confirmed yet" subtitle={outcome.message}>
+      <AuthLayout title={v.notYetTitle} subtitle={outcome.message}>
         <div className="flex flex-col gap-3">
           <button
             type="button"
             onClick={() => setAttempt((n) => n + 1)}
             className={buttonClasses("solid", "lg", "w-full")}
           >
-            Try again
+            {m.tryAgain}
           </button>
         </div>
       </AuthLayout>
@@ -111,25 +115,19 @@ export function VerifyEmailPage() {
 
   return (
     <AuthLayout
-      title="This link can't be used"
-      subtitle={
-        token
-          ? "It may have expired, already been used, or been replaced by a newer link."
-          : "The link is incomplete. Open it straight from the email."
-      }
+      title={m.linkUnusableTitle}
+      subtitle={token ? m.linkUnusable : m.linkIncomplete}
     >
       <div className="flex flex-col gap-3 text-sm text-ink-soft">
         <p>
-          {session
-            ? "You can send a fresh confirmation email from your account page."
-            : "Log in, then send a fresh confirmation email from your account page."}
+          {session ? v.freshSignedIn : v.freshSignedOut}
         </p>
         {session ? (
           <Link
             to={accountPath(session.platformRole) ?? roleHomePath(session.platformRole)}
             className={buttonClasses("solid", "lg", "w-full")}
           >
-            Go to my account
+            {m.goToMyAccount}
           </Link>
         ) : (
           continueLink

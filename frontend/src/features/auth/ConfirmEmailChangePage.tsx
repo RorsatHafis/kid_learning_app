@@ -9,6 +9,8 @@ import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { accountPath, roleHomePath } from "./roleHomePath";
 import { forgetLinkToken, readLinkToken } from "./linkToken";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { authMessages } from "./messages";
 
 type Outcome =
   { kind: "confirming" } | { kind: "changed" } | { kind: "unusable" } | { kind: "taken" } | { kind: "failed"; message: string };
@@ -31,6 +33,8 @@ function confirmOnce(token: string) {
  */
 export function ConfirmEmailChangePage() {
   const { session, isLoading, refreshAccount } = useAuth();
+  const m = useMessages(authMessages);
+  const c = m.emailChange;
   const [token] = useState(() => readLinkToken());
   const [outcome, setOutcome] = useState<Outcome>(token ? { kind: "confirming" } : { kind: "unusable" });
   const [attempt, setAttempt] = useState(0);
@@ -48,7 +52,7 @@ export function ConfirmEmailChangePage() {
         if (err instanceof ApiError && err.status === 400) setOutcome({ kind: "unusable" });
         else if (err instanceof ApiError && err.status === 409) setOutcome({ kind: "taken" });
         else if (err instanceof ApiError && err.isRateLimited) setOutcome({ kind: "failed", message: rateLimitedMessage(err) });
-        else setOutcome({ kind: "failed", message: "We couldn't reach Bookeyond Kid just now." });
+        else setOutcome({ kind: "failed", message: messagesNow(authMessages).unreachable });
       },
     );
     return () => {
@@ -67,32 +71,32 @@ export function ConfirmEmailChangePage() {
       to={accountPath(session.platformRole) ?? roleHomePath(session.platformRole)}
       className={buttonClasses("solid", "lg", "w-full")}
     >
-      Go to my account
+      {m.goToMyAccount}
     </Link>
   ) : (
     <Link to="/login" className={buttonClasses("solid", "lg", "w-full")}>
-      Log in
+      {m.logIn}
     </Link>
   );
 
   if (outcome.kind === "confirming") {
     return (
-      <AuthLayout title="Changing your email" subtitle="This only takes a moment.">
-        <LoadingState label="Changing your sign-in email…" />
+      <AuthLayout title={c.changingTitle} subtitle={m.oneMoment}>
+        <LoadingState label={c.changing} />
       </AuthLayout>
     );
   }
 
   if (outcome.kind === "changed") {
     return (
-      <AuthLayout title="Email changed" subtitle="From now on you sign in with this address, and our emails come here.">
+      <AuthLayout title={c.changedTitle} subtitle={c.changedSubtitle}>
         <div className="flex flex-col gap-4">
           <p
             role="status"
             className="flex items-start gap-2 rounded-[12px] bg-palm-soft p-3 text-sm font-semibold text-palm-deep"
           >
             <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden />
-            Your sign-in email has been changed. We've let your old address know.
+            {c.changed}
           </p>
           {accountLink}
         </div>
@@ -102,9 +106,9 @@ export function ConfirmEmailChangePage() {
 
   if (outcome.kind === "taken") {
     return (
-      <AuthLayout title="Email not changed" subtitle="This address now belongs to another Bookeyond Kid account.">
+      <AuthLayout title={c.takenTitle} subtitle={c.takenSubtitle}>
         <div className="flex flex-col gap-3 text-sm text-ink-soft">
-          <p>You still sign in with your current address. You can choose a different one from your account page.</p>
+          <p>{c.takenBody}</p>
           {accountLink}
         </div>
       </AuthLayout>
@@ -113,9 +117,9 @@ export function ConfirmEmailChangePage() {
 
   if (outcome.kind === "failed") {
     return (
-      <AuthLayout title="Email not changed yet" subtitle={outcome.message}>
+      <AuthLayout title={c.notYetTitle} subtitle={outcome.message}>
         <button type="button" onClick={() => setAttempt((n) => n + 1)} className={buttonClasses("solid", "lg", "w-full")}>
-          Try again
+          {m.tryAgain}
         </button>
       </AuthLayout>
     );
@@ -123,15 +127,11 @@ export function ConfirmEmailChangePage() {
 
   return (
     <AuthLayout
-      title="This link can't be used"
-      subtitle={
-        token
-          ? "It may have expired, already been used, or been replaced by a newer link."
-          : "The link is incomplete. Open it straight from the email."
-      }
+      title={m.linkUnusableTitle}
+      subtitle={token ? m.linkUnusable : m.linkIncomplete}
     >
       <div className="flex flex-col gap-3 text-sm text-ink-soft">
-        <p>Your sign-in email hasn't changed. You can ask for a new link from your account page.</p>
+        <p>{c.unusableBody}</p>
         {accountLink}
       </div>
     </AuthLayout>

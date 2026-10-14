@@ -3,6 +3,7 @@ import { accountApi, authApi } from "../api/endpoints";
 import { SESSION_EXPIRED_EVENT, refreshSession } from "../api/client";
 import { tokenStore } from "../api/tokenStore";
 import type { AuthResponse, PlatformRole } from "../api/types";
+import { currentLocale, setAccountLocale } from "../../i18n/store";
 
 interface Session {
   accountId: string;
@@ -43,7 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const onSessionExpired = () => setSession(null);
+    const onSessionExpired = () => {
+      setSession(null);
+      setAccountLocale(null);
+    };
     window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
   }, []);
@@ -70,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (cancelled) return;
       if (outcome.kind === "refreshed") {
         setSession(toSession(outcome.auth));
+        setAccountLocale(outcome.auth.preferredLanguage);
       } else if (outcome.kind === "rejected") {
         tokenStore.clear();
       }
@@ -99,6 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextSession = toSession(data);
     setSession(nextSession);
     setSessionUnavailable(false);
+    // The account's own language - never the previous user's or this browser's.
+    setAccountLocale(data.preferredLanguage);
     return nextSession;
   }, []);
 
@@ -118,16 +125,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await accountApi.signOutEverywhere();
     tokenStore.clear();
     setSession(null);
+    setAccountLocale(null);
   }, []);
 
   const refreshAccount = useCallback(async () => {
     const me = await accountApi.me();
     setSession((current) => (current && current.accountId === me.id ? { ...current, email: me.email } : current));
+    setAccountLocale(me.preferredLanguage);
   }, []);
 
   const register = useCallback(
     async (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL"; acceptedLegalVersion?: string }) => {
-      const data = await authApi.register(input);
+      // The language the visitor chose before signing up becomes the account's.
+      const data = await authApi.register({ ...input, preferredLanguage: currentLocale() });
       // PRINCIPAL self-registration comes back 202 with no tokens — pending
       // ADMIN approval, per AuthController. Nothing to log in to yet.
       if (!data.accessToken) return "PENDING_APPROVAL" as const;
@@ -139,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       const nextSession = toSession(data);
       setSession(nextSession);
+      setAccountLocale(data.preferredLanguage);
       return nextSession;
     },
     [],
@@ -148,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshToken = tokenStore.getRefreshToken();
     tokenStore.clear();
     setSession(null);
+    setAccountLocale(null);
     if (refreshToken) {
       // Best-effort: session is cleared client-side regardless of whether
       // the server-side revoke call succeeds.

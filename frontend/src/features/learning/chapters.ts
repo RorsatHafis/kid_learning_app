@@ -1,4 +1,6 @@
 import type { Chapter, Journey, JourneyStep } from "@/lib/api/types";
+import { messagesNow } from "@/i18n/catalog";
+import { learningMessages } from "./messages";
 
 /** A stretch of the journey inside one chapter, in play order. */
 export interface ChapterRun {
@@ -42,7 +44,7 @@ export function journeyLight(path: { chapters: Chapter[]; completedSteps: number
 
 /** "Chapter 2 of 4" — only when the journey has more than one chapter ("1 of 1" says nothing). */
 export function chapterOf(chapter: Chapter | null, count: number) {
-  return chapter && count > 1 ? `Chapter ${chapter.position} of ${count}` : null;
+  return chapter && count > 1 ? messagesNow(learningMessages).chapterOf(chapter.position, count) : null;
 }
 
 /**

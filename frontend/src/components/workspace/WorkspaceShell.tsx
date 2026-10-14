@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { cn } from "@/lib/utils/cn";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 export interface WorkspaceNavItem {
   to: string;
@@ -38,6 +40,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const m = useMessages(common);
 
   // A route change closes the phone menu.
   useEffect(() => setOpen(false), [location.pathname]);
@@ -98,7 +101,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
         onClick={onLogout}
         className="flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] font-medium text-tonle-200 transition-colors duration-150 hover:bg-white/[0.05] hover:text-white"
       >
-        <LogOut size={17} aria-hidden className="text-tonle-300" /> Log out
+        <LogOut size={17} aria-hidden className="text-tonle-300" /> {m.logOut}
       </button>
     </div>
   );
@@ -108,7 +111,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
       <SkipLink />
       {/* Desktop rail */}
       <aside className="on-night fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col bg-tonle-950 px-3 pb-4 pt-5 lg:flex">
-        <Link to={home} className="mb-1 w-fit rounded-[10px] px-3 py-1" aria-label="Bookeyond Kid — workspace home">
+        <Link to={home} className="mb-1 w-fit rounded-[10px] px-3 py-1" aria-label={m.workspaceHome}>
           <Logo tone="paper" size="sm" />
         </Link>
         <p className="mb-5 px-3 text-sm text-tonle-300">{workspace}</p>
@@ -121,7 +124,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
       {/* Phone and tablet bar */}
       <header className="on-night sticky top-0 z-30 bg-tonle-950 text-white lg:hidden">
         <div className="flex h-14 items-center gap-3 px-4">
-          <Link to={home} className="flex items-center gap-2.5 rounded-[10px]" aria-label="Bookeyond Kid — workspace home">
+          <Link to={home} className="flex items-center gap-2.5 rounded-[10px]" aria-label={m.workspaceHome}>
             <BrandMark size={30} tone="paper" />
             <span className="text-sm font-semibold text-tonle-100">{workspace}</span>
           </Link>
@@ -130,14 +133,14 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls="workspace-menu"
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? m.closeMenu : m.openMenu}
             className="ml-auto flex h-10 w-10 items-center justify-center rounded-[10px] hover:bg-white/10"
           >
             {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
           </button>
         </div>
         <div id="workspace-menu" hidden={!open} className="border-t border-white/10 px-3 pb-4 pt-3">
-          <nav aria-label={`${workspace} (menu)`}>{links}</nav>
+          <nav aria-label={m.menuOf(workspace)}>{links}</nav>
           <div className="mt-3">{account}</div>
         </div>
       </header>
@@ -219,8 +222,9 @@ export function Panel({
 
 /** Where this page sits: each step back is a link, the page itself is plain text. */
 export function Breadcrumb({ items }: { items: { label: string; to?: string }[] }) {
+  const m = useMessages(common);
   return (
-    <nav aria-label="Breadcrumb">
+    <nav aria-label={m.breadcrumb}>
       <ol className="flex flex-wrap items-center gap-1.5 text-sm">
         {items.map((crumb, i) => (
           <li key={`${crumb.label}-${i}`} className="flex items-center gap-1.5">

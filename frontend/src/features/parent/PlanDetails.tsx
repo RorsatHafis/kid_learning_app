@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Info, Send, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { familyPlanApi } from "@/lib/api/subscriptions";
-import { ENTITLEMENT_LABEL, priceText, type Entitlement, type OwnFamilyPlan, type PlanOffer } from "@/lib/api/subscriptions";
+import { entitlementLabel, priceText, type Entitlement, type OwnFamilyPlan, type PlanOffer } from "@/lib/api/subscriptions";
 
 const DAY = 24 * 60 * 60 * 1000;
 const dateOnly = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
@@ -72,7 +72,7 @@ function OfferLimits({ offer }: { offer: PlanOffer }) {
     <ul className="flex flex-col gap-0.5 text-sm text-ink">
       {offer.entitlements.map((e) => (
         <li key={e.key}>
-          {ENTITLEMENT_LABEL[e.key]}: <span className="font-semibold">{e.limit === null ? "no limit" : e.limit}</span>
+          {entitlementLabel(e.key)}: <span className="font-semibold">{e.limit === null ? "no limit" : e.limit}</span>
         </li>
       ))}
     </ul>
@@ -126,7 +126,7 @@ export function PlanDetails({
       <dl className="grid gap-3 sm:grid-cols-2">
         {plan.entitlements.map((entitlement) => (
           <div key={entitlement.key} className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
-            <dt className="text-sm text-ink-faint">{ENTITLEMENT_LABEL[entitlement.key]}</dt>
+            <dt className="text-sm text-ink-faint">{entitlementLabel(entitlement.key)}</dt>
             <dd className="tabular font-semibold text-ink">{usageText(entitlement)}</dd>
           </div>
         ))}

@@ -24,6 +24,8 @@ import { AccountPage } from "@/features/parent/AccountPage";
 import { ChildHome } from "@/features/child/ChildHome";
 import { PlaySession, PracticeSession } from "@/features/child/PlaySession";
 import { ShelfPage } from "@/features/child/ShelfPage";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 // Staff areas are separate downloads: a family on a phone never loads the Content Studio,
 // the teacher console or the principal console.
@@ -32,25 +34,27 @@ const TeacherArea = lazy(() => import("@/features/teacher/TeacherArea"));
 const PrincipalArea = lazy(() => import("@/features/principal/PrincipalArea"));
 
 function StaffArea({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<LoadingState label="Loading…" />}>{children}</Suspense>;
+  return <Suspense fallback={<LoadingState />}>{children}</Suspense>;
 }
 
 /** An unknown address outside every workspace: home for whoever is signed in, else the public page. */
 function AppNotFound() {
   const { session, isLoading } = useAuth();
-  if (isLoading) return <LoadingState label="Loading…" />;
+  const m = useMessages(common);
+  if (isLoading) return <LoadingState />;
   return (
     <main className="mx-auto max-w-xl px-4 py-16">
       {session ? (
-        <NotFound home={roleHomePath(session.platformRole)} homeLabel="Go to my home page" />
+        <NotFound home={roleHomePath(session.platformRole)} homeLabel={m.goToMyHome} />
       ) : (
-        <NotFound home="/" homeLabel="Go to the home page" />
+        <NotFound home="/" homeLabel={m.goHome} />
       )}
     </main>
   );
 }
 
 export default function App() {
+  const m = useMessages(common);
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -79,7 +83,7 @@ export default function App() {
               <Route path="children/:childId" element={<ChildOverviewPage />} />
               <Route path="children/:childId/skills/:skillId" element={<SkillPage />} />
               <Route path="account" element={<AccountPage />} />
-              <Route path="*" element={<NotFound home="/parent" homeLabel="Go to your family" />} />
+              <Route path="*" element={<NotFound home="/parent" homeLabel={m.goToFamily} />} />
             </Route>
 
             {/* The child's space — deliberately outside ParentLayout's chrome (a child

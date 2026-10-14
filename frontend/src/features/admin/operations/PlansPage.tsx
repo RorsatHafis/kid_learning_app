@@ -5,7 +5,7 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { ApiError } from "@/lib/api/ApiError";
 import {
-  ENTITLEMENT_LABEL,
+  entitlementLabel,
   currencyDigits,
   planRequestsApi,
   plansApi,
@@ -112,7 +112,7 @@ export function PlansPage() {
                       <span className="hidden text-sm text-ink-soft sm:block">
                         {p.entitlements.map((e) => (
                           <span key={e.key} className="block">
-                            {ENTITLEMENT_LABEL[e.key].split(" ")[0]}: {limitText(e.limit)}
+                            {entitlementLabel(e.key, true)}: {limitText(e.limit)}
                           </span>
                         ))}
                       </span>
@@ -418,7 +418,7 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
               {KEYS.map((key) => (
                 <div key={key} className="flex flex-col gap-2 rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <span className="text-sm font-semibold text-ink">{ENTITLEMENT_LABEL[key]}</span>
+                    <span className="text-sm font-semibold text-ink">{entitlementLabel(key)}</span>
                     <label className="flex items-center gap-2 text-sm text-ink">
                       <input
                         type="checkbox"
@@ -432,7 +432,7 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
                   {limits[key] !== null && (
                     <div className="w-32">
                       <FormField
-                        label={`Up to (${ENTITLEMENT_LABEL[key].toLowerCase()})`}
+                        label={`Up to (${entitlementLabel(key).toLowerCase()})`}
                         type="number"
                         min={0}
                         value={String(limits[key])}
@@ -510,7 +510,7 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
             <dl className="grid gap-3 sm:grid-cols-2">
               {plan.entitlements.map((e) => (
                 <div key={e.key} className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
-                  <dt className="text-sm text-ink-faint">{ENTITLEMENT_LABEL[e.key]}</dt>
+                  <dt className="text-sm text-ink-faint">{entitlementLabel(e.key)}</dt>
                   <dd className="font-semibold text-ink">{limitText(e.limit)}</dd>
                 </div>
               ))}
@@ -751,7 +751,7 @@ function FamilyPlanCard({
           <ul className="mt-2 flex flex-col gap-0.5 text-sm text-ink">
             {family.plan.entitlements.map((e) => (
               <li key={e.key}>
-                {ENTITLEMENT_LABEL[e.key]}:{" "}
+                {entitlementLabel(e.key)}:{" "}
                 {e.key === "CHILDREN_MAX"
                   ? e.limit === null
                     ? `${e.used ?? 0} · no limit`

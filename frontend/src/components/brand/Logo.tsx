@@ -1,5 +1,7 @@
 import { useId } from "react";
 import { cn } from "@/lib/utils/cn";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 /**
  * The Bookeyond Kid mark: an open book, a lotus rising from its spine, and a spark of light
@@ -93,6 +95,7 @@ export function Logo({
 }) {
   const s = { sm: { mark: 32, text: "text-[1.15rem]" }, md: { mark: 40, text: "text-[1.4rem]" }, lg: { mark: 56, text: "text-[2rem]" }, xl: { mark: 88, text: "text-[3.2rem]" } }[size];
   const ink = tone === "ink";
+  const m = useMessages(common);
   return (
     <span className={cn("inline-flex items-center gap-[0.45em]", s.text, className)}>
       <BrandMark size={s.mark} tone={ink ? "ink" : "paper"} />
@@ -103,7 +106,7 @@ export function Logo({
         </span>
         {showTagline && (
           <span className={cn("mt-[0.45em] font-sans text-[0.36em] font-medium tracking-[0.02em]", ink ? "text-ink-soft" : "text-tonle-200")}>
-            Learn Today, Build Tomorrow.
+            {m.tagline}
           </span>
         )}
       </span>

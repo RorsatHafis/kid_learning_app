@@ -6,9 +6,12 @@ import { PrincipalHome } from "./PrincipalHome";
 import { PrincipalClassPage } from "./PrincipalClassPage";
 import { PrincipalMemberPage } from "./PrincipalMemberPage";
 import { PrincipalSkillPage } from "./PrincipalSkillPage";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 /** Everything under /principal, loaded only when a principal opens it (App.tsx). */
 export default function PrincipalArea() {
+  const m = useMessages(common);
   return (
     <Routes>
       <Route element={<PrincipalLayout />}>
@@ -17,7 +20,7 @@ export default function PrincipalArea() {
         <Route path="classes/:classId/children/:childId" element={<PrincipalMemberPage />} />
         <Route path="classes/:classId/skills/:skillId" element={<PrincipalSkillPage />} />
         <Route path="account" element={<AccountPage />} />
-        <Route path="*" element={<NotFound home="/principal" homeLabel="Go to your school" />} />
+        <Route path="*" element={<NotFound home="/principal" homeLabel={m.goToSchool} />} />
       </Route>
     </Routes>
   );

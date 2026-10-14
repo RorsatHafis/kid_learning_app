@@ -434,7 +434,7 @@ function ClassSkills({ data, skillHref }: { data: ClassLearning; skillHref: (ski
           {TALLY.map((t) => (
             <li key={t.key} className="inline-flex items-center gap-1.5">
               <span aria-hidden className={cn("inline-block h-2.5 w-2.5 rounded-[2px]", t.bar)} />
-              {standingLabel[t.standing]}
+              {standingLabel(t.standing)}
             </li>
           ))}
         </ul>
@@ -463,7 +463,7 @@ function ClassSkills({ data, skillHref }: { data: ClassLearning; skillHref: (ski
 function SkillTallyRow({ skill, href }: { skill: SkillTally; href: string }) {
   const total = TALLY.reduce((sum, t) => sum + skill[t.key], 0);
   const words = TALLY.filter((t) => skill[t.key] > 0)
-    .map((t) => `${skill[t.key]} ${standingLabel[t.standing].toLowerCase()}`)
+    .map((t) => `${skill[t.key]} ${standingLabel(t.standing).toLowerCase()}`)
     .join(", ");
   return (
     <li>
@@ -614,7 +614,7 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
                           <span className="flex items-center gap-3 text-sm">
                             <span className="inline-flex items-center gap-2 font-semibold text-ink">
                               <StandingMark standing={skill.standing} />
-                              {standingLabel[skill.standing]}
+                              {standingLabel(skill.standing)}
                             </span>
                             {skill.scoredAnswers > 0 && (
                               <span className="tabular text-xs text-ink-soft">

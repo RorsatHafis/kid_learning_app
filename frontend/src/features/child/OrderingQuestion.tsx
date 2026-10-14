@@ -4,12 +4,13 @@ import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, QuestionOption } from "@/lib/api/types";
 import type { AnswerResult } from "./QuestionView";
 import { ListenButton } from "./PromptMedia";
+import { useMessages } from "@/i18n/catalog";
+import { childMessages } from "./messages";
 
 // Answer contract (backend AnswerScoringService, ORDERING): a JSON array of every item's id,
 // each once, in the order the child put them. The items arrive mixed up (never already in
 // order); the server scores on what the items read, so the two "o"s of "book" can go either way.
 
-const ORDINAL = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"];
 
 export function OrderingQuestion({
   item,
@@ -27,6 +28,8 @@ export function OrderingQuestion({
   const [placed, setPlaced] = useState<string[]>([]);
   const [announcement, setAnnouncement] = useState("");
 
+  const m = useMessages(childMessages).ordering;
+  const q = useMessages(childMessages).question;
   const answered = result !== null;
   const locked = disabled || answered;
   const shown = answered ? parseSubmitted(result.submitted).filter((id) => byId.has(id)) : placed;
@@ -44,16 +47,14 @@ export function OrderingQuestion({
     if (locked) return;
     const next = [...placed, id];
     setPlaced(next);
-    setAnnouncement(
-      `${byId.get(id)?.label} is ${ORDINAL[next.length - 1] ?? next.length}.${next.length === items.length ? " All placed: check your order." : ""}`,
-    );
+    setAnnouncement(`${m.placedAt(byId.get(id)?.label ?? "", m.ordinal(next.length))}${next.length === items.length ? m.allPlaced : ""}`);
   }
 
   function takeBack(index: number) {
     if (locked) return;
     const id = placed[index];
     setPlaced(placed.filter((_, i) => i !== index));
-    setAnnouncement(`${byId.get(id)?.label} taken back.`);
+    setAnnouncement(m.takenBack(byId.get(id)?.label ?? ""));
   }
 
   function submit() {
@@ -64,14 +65,10 @@ export function OrderingQuestion({
   return (
     <div className="flex flex-col items-center gap-6">
       <p className="text-center text-base font-bold text-ink-soft">
-        {answered
-          ? result.correct
-            ? "That's the order!"
-            : "Here's your order."
-          : "Tap them in order. Tap one again to take it back."}
+        {answered ? (result.correct ? m.rightOrder : m.yourOrder) : m.howTo}
       </p>
 
-      <ol aria-label="Your order" className="flex flex-wrap items-stretch justify-center gap-2 sm:gap-3">
+      <ol aria-label={m.orderLabel} className="flex flex-wrap items-stretch justify-center gap-2 sm:gap-3">
         {items.map((_, index) => {
           const option = byId.get(shown[index]);
           const verdict = verdictAt(index);
@@ -84,33 +81,33 @@ export function OrderingQuestion({
                   locked={locked}
                   placedAt={index}
                   verdict={verdict}
-                  ariaLabel={`${ORDINAL[index] ?? index + 1}: ${option.label}${
+                  ariaLabel={`${m.placedSlot(m.ordinal(index + 1), option.label)}${
                     verdict === "right"
-                      ? ", right"
+                      ? m.right
                       : verdict === "wrong"
-                        ? `, should be ${correctOrder[index]?.label ?? ""}`
+                        ? m.shouldBe(correctOrder[index]?.label ?? "")
                         : answered
                           ? ""
-                          : ". Tap to take it back"
+                          : m.tapToTakeBack
                   }`}
                 />
               ) : (
                 <span
-                  aria-label={`${ORDINAL[index] ?? index + 1}: empty`}
+                  aria-label={m.empty(m.ordinal(index + 1))}
                   role="img"
                   className="flex h-[4.25rem] min-w-[4.25rem] items-center justify-center rounded-[18px] border-[3px] border-dashed border-tonle-200 bg-white/60 font-display text-xl font-bold text-tonle-300 sm:h-[5.5rem] sm:min-w-[5.5rem]"
                 >
                   {index + 1}
                 </span>
               )}
-              {option?.audio && <ListenButton audio={option.audio} label={`Hear ${option.label}`} />}
+              {option?.audio && <ListenButton audio={option.audio} label={q.hear(option.label)} />}
             </li>
           );
         })}
       </ol>
 
       {!answered && (
-        <ul aria-label="Put these in order" className="flex min-h-[5.5rem] flex-wrap items-start justify-center gap-2 sm:gap-3">
+        <ul aria-label={m.waiting} className="flex min-h-[5.5rem] flex-wrap items-start justify-center gap-2 sm:gap-3">
           {waiting.map((option) => (
             <li key={option.id} className="flex flex-col items-center gap-1.5">
               <Tile
@@ -119,9 +116,9 @@ export function OrderingQuestion({
                 locked={locked}
                 placedAt={null}
                 verdict={null}
-                ariaLabel={`${option.label}: place it next`}
+                ariaLabel={m.placeNext(option.label)}
               />
-              {option.audio && <ListenButton audio={option.audio} label={`Hear ${option.label}`} />}
+              {option.audio && <ListenButton audio={option.audio} label={q.hear(option.label)} />}
             </li>
           ))}
         </ul>
@@ -138,7 +135,7 @@ export function OrderingQuestion({
           disabled={locked || placed.length !== items.length}
           className="flex min-h-16 items-center gap-2 rounded-[22px] bg-tonle-900 px-10 text-xl font-bold text-white shadow-[0_5px_0_#0A1533] transition-[transform,box-shadow,opacity] duration-150 ease-out hover:bg-tonle-800 active:translate-y-1 active:shadow-[0_1px_0_#0A1533] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Check my order
+          {m.check}
         </button>
       )}
     </div>

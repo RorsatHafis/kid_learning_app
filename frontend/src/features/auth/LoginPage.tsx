@@ -6,9 +6,13 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
 import { roleHomePath } from "./roleHomePath";
+import { useMessages } from "@/i18n/catalog";
+import { authMessages } from "./messages";
+import { formatTime } from "@/i18n/format";
 
 export function LoginPage() {
   const { login } = useAuth();
+  const m = useMessages(authMessages);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -36,16 +40,15 @@ export function LoginPage() {
         } else if (err.isRateLimited) {
           setFormError(rateLimitedMessage(err));
         } else if (err.status === 423) {
-          const until = err.problem?.lockedUntil ? new Date(err.problem.lockedUntil).toLocaleTimeString() : null;
-          setFormError(`Too many attempts. Try again ${until ? `after ${until}` : "after a short wait"}.`);
+          setFormError(err.problem?.lockedUntil ? m.login.lockedUntil(formatTime(err.problem.lockedUntil)) : m.login.lockedShort);
         } else {
           // 401 for wrong credentials — GlobalExceptionHandler keeps the
           // detail generic on purpose (no "email not found" vs "wrong
           // password" distinction, to avoid account enumeration).
-          setFormError(err.problem?.detail ?? "Couldn't log you in with those details.");
+          setFormError(err.problem?.detail ?? m.login.failed);
         }
       } else {
-        setFormError("Something went wrong. Please try again.");
+        setFormError(m.somethingWentWrong);
       }
     } finally {
       setIsSubmitting(false);
@@ -53,7 +56,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Log in to continue your child's learning journey.">
+    <AuthLayout title={m.login.title} subtitle={m.login.subtitle}>
       {notice && (
         <p role="status" className="mb-4 rounded-[12px] bg-palm-soft p-3 text-sm font-semibold text-palm-deep">
           {notice}
@@ -61,7 +64,7 @@ export function LoginPage() {
       )}
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField
-          label="Email"
+          label={m.email}
           type="email"
           autoComplete="email"
           required
@@ -70,7 +73,7 @@ export function LoginPage() {
           error={fieldErrors.email}
         />
         <FormField
-          label="Password"
+          label={m.password}
           type="password"
           autoComplete="current-password"
           required
@@ -79,7 +82,7 @@ export function LoginPage() {
           error={fieldErrors.password}
         />
         <Link to="/forgot-password" className="-mt-1 w-fit text-sm font-semibold text-tonle-700">
-          Forgot your password?
+          {m.login.forgot}
         </Link>
         {formError && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
@@ -87,13 +90,13 @@ export function LoginPage() {
           </p>
         )}
         <Button type="submit" size="lg" disabled={isSubmitting} className="mt-2 w-full">
-          {isSubmitting ? "Logging in…" : "Log in"}
+          {isSubmitting ? m.login.submitting : m.logIn}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-ink-soft">
-        New to Bookeyond Kid?{" "}
+        {m.login.newHere}{" "}
         <Link to="/register" className="font-semibold text-tonle-700">
-          Create an account
+          {m.login.createAccount}
         </Link>
       </p>
     </AuthLayout>

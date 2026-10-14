@@ -3,6 +3,8 @@ import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, QuestionOption } from "@/lib/api/types";
 import type { AnswerResult } from "./QuestionView";
+import { useMessages } from "@/i18n/catalog";
+import { childMessages } from "./messages";
 
 // Answer contract (backend AnswerScoringService, MATCHING): a JSON object mapping every
 // left item's id to the id of the right item the child paired it with, each right item
@@ -44,6 +46,7 @@ export function MatchingQuestion({
   const correctMatch = new Map((result?.correctAnswer?.matches ?? []).map((m) => [m.leftOptionId, m.rightOptionId]));
   const leftFor = (rightId: string) => Object.keys(shown).find((leftId) => shown[leftId] === rightId);
   const label = (id: string) => item.options.find((o) => o.id === id)?.label ?? "";
+  const m = useMessages(childMessages).matching;
   const allPaired = lefts.every((l) => shown[l.id]);
 
   function pair(leftId: string, rightId: string) {
@@ -55,7 +58,7 @@ export function MatchingQuestion({
       return next;
     });
     setSelected(null);
-    setAnnouncement(`Matched ${label(leftId)} with ${label(rightId)}.`);
+    setAnnouncement(m.matched(label(leftId), label(rightId)));
   }
 
   function tap(sideTapped: "LEFT" | "RIGHT", id: string) {
@@ -67,7 +70,7 @@ export function MatchingQuestion({
     }
     const same = selected?.side === sideTapped && selected.id === id;
     setSelected(same ? null : { side: sideTapped, id });
-    setAnnouncement(same ? "" : `${label(id)} selected. Now choose its match.`);
+    setAnnouncement(same ? "" : m.selected(label(id)));
   }
 
   function submit() {
@@ -83,10 +86,10 @@ export function MatchingQuestion({
   return (
     <div className="flex flex-col gap-5">
       <p className="text-center text-base font-bold text-ink-soft">
-        {answered ? "Here are your matches." : "Tap one on the left, then its match on the right."}
+        {answered ? m.yourMatches : m.howTo}
       </p>
       <div className="grid grid-cols-2 gap-3 sm:gap-6">
-        <ul className="flex flex-col gap-3" aria-label="Match these">
+        <ul className="flex flex-col gap-3" aria-label={m.left}>
           {lefts.map((l, index) => {
             const rightId = shown[l.id];
             const isSelected = selected?.side === "LEFT" && selected.id === l.id;
@@ -101,18 +104,18 @@ export function MatchingQuestion({
                   verdict={verdict}
                   locked={locked}
                   onTap={() => tap("LEFT", l.id)}
-                  ariaLabel={`${l.label}${rightId ? `, matched with ${label(rightId)}` : ", not matched yet"}${
-                    verdict === "right" ? ", correct" : verdict === "wrong" ? `, the match is ${label(correctMatch.get(l.id) ?? "")}` : ""
+                  ariaLabel={`${l.label}${rightId ? m.matchedWith(label(rightId)) : m.notMatched}${
+                    verdict === "right" ? m.correct : verdict === "wrong" ? m.theMatchIs(label(correctMatch.get(l.id) ?? "")) : ""
                   }`}
                 />
                 {verdict === "wrong" && correctMatch.get(l.id) && (
-                  <p className="mt-1 px-2 text-sm font-bold text-tonle-700">Goes with {label(correctMatch.get(l.id)!)}</p>
+                  <p className="mt-1 px-2 text-sm font-bold text-tonle-700">{m.goesWith(label(correctMatch.get(l.id)!))}</p>
                 )}
               </li>
             );
           })}
         </ul>
-        <ul className="flex flex-col gap-3" aria-label="With these">
+        <ul className="flex flex-col gap-3" aria-label={m.right}>
           {rights.map((r) => {
             const leftId = leftFor(r.id);
             const isSelected = selected?.side === "RIGHT" && selected.id === r.id;
@@ -126,7 +129,7 @@ export function MatchingQuestion({
                   verdict={null}
                   locked={locked}
                   onTap={() => tap("RIGHT", r.id)}
-                  ariaLabel={`${r.label}${leftId ? `, matched with ${label(leftId)}` : ", not matched yet"}`}
+                  ariaLabel={`${r.label}${leftId ? m.matchedWith(label(leftId)) : m.notMatched}`}
                 />
               </li>
             );
@@ -143,7 +146,7 @@ export function MatchingQuestion({
           disabled={locked || !allPaired}
           className="mx-auto flex min-h-16 items-center gap-2 rounded-[22px] bg-tonle-900 px-10 text-xl font-bold text-white shadow-[0_5px_0_#0A1533] transition-[transform,box-shadow,opacity] duration-150 ease-out hover:bg-tonle-800 active:translate-y-1 active:shadow-[0_1px_0_#0A1533] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Check my matches
+          {m.check}
         </button>
       )}
     </div>

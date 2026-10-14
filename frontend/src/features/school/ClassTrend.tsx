@@ -103,7 +103,7 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
           {TALLY.map((t) => (
             <li key={t.key} className="inline-flex items-center gap-1.5">
               <span aria-hidden className={cn("inline-block h-2.5 w-2.5 rounded-[2px]", t.bar)} />
-              {standingLabel[t.standing]}
+              {standingLabel(t.standing)}
             </li>
           ))}
         </ul>
@@ -168,7 +168,7 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
           {plural(shown.children, "child", "children")}
           {total(shown) > 0 &&
             `: ${TALLY.filter((t) => shown[t.key] > 0)
-              .map((t) => `${shown[t.key]} ${standingLabel[t.standing].toLowerCase()}`)
+              .map((t) => `${shown[t.key]} ${standingLabel(t.standing).toLowerCase()}`)
               .join(", ")}`}
           {active === null && <span className="text-ink-faint"> - point at or tap a week to see it.</span>}
         </p>
@@ -216,7 +216,7 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
                 </th>
                 {TALLY.map((t) => (
                   <th key={t.key} scope="col" className="px-2 py-2 text-right">
-                    {standingLabel[t.standing]}
+                    {standingLabel(t.standing)}
                   </th>
                 ))}
                 <th scope="col" className="py-2 pl-2 text-right">

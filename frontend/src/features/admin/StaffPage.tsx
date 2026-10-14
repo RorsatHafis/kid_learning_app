@@ -95,7 +95,7 @@ export function StaffPage() {
             <div className="px-5 pb-3 sm:px-6">
               <ListCount
                 total={data.total}
-                noun={["staff account", "staff accounts"]}
+                counted={`${data.total} ${data.total === 1 ? "staff account" : "staff accounts"}`}
                 filtered={filtered}
                 onClear={() => update({ q: undefined, role: undefined })}
               />

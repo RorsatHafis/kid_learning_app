@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 /**
  * A modal on the browser's own <dialog>: focus moves in and stays in, Escape closes it, the page
@@ -24,6 +26,7 @@ export function Dialog({
   size?: "md" | "lg";
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const m = useMessages(common);
   const titleId = useId();
   const descriptionId = useId();
 
@@ -78,7 +81,7 @@ export function Dialog({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={m.close}
             className="-mr-2 rounded-full p-2 text-ink-soft hover:bg-paper hover:text-ink"
           >
             <X size={18} aria-hidden />

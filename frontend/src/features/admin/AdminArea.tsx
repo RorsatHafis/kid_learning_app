@@ -21,9 +21,12 @@ import { ActivitiesPage } from "./studio/ActivitiesPage";
 import { ActivityEditor } from "./studio/ActivityEditor";
 import { CurriculaPage } from "./studio/CurriculaPage";
 import { CurriculumEditor } from "./studio/CurriculumEditor";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 /** Everything under /admin, loaded only when an administrator opens it (App.tsx). */
 export default function AdminArea() {
+  const m = useMessages(common);
   return (
     <Routes>
       <Route element={<AdminLayout />}>
@@ -52,7 +55,7 @@ export default function AdminArea() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="system" element={<SystemPage />} />
         <Route path="account" element={<AccountPage />} />
-        <Route path="*" element={<NotFound home="/admin" homeLabel="Go to the dashboard" />} />
+        <Route path="*" element={<NotFound home="/admin" homeLabel={m.goToDashboard} />} />
       </Route>
     </Routes>
   );

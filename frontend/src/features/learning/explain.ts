@@ -10,26 +10,31 @@ import type {
 
 // Presentation of server-recorded reasons (LearningJourneyService.PlacementReason,
 // EvidenceStandard). The frontend chooses words only; every claim comes from a field
-// the server derived from persisted learner state — nothing here decides anything.
+// the server derived from persisted learner state — nothing here decides anything. The words are
+// in the interface language (learningMessages), read when called: callers re-render on a change.
+import { messagesNow } from "@/i18n/catalog";
+import { learningMessages } from "./messages";
 
-const skillName = (explanation: Explanation) => explanation.skill?.name ?? "this skill";
+const m = () => messagesNow(learningMessages);
+const skillName = (explanation: Explanation) => explanation.skill?.name ?? m().thisSkill;
 
 /** A short, warm line for the child: why this step is next. */
 export function childReason(step: JourneyStep): string {
   const e = step.explanation;
+  const c = m().child;
   switch (e.reason) {
     case "REINFORCE_PREREQUISITE":
-      return `Let's practise ${e.targetSkill?.name ?? "the basics"} — it helps with ${skillName(e)}!`;
+      return c.prerequisite(e.targetSkill?.name ?? m().theBasics, skillName(e));
     case "REINFORCE_SKILL":
-      return `Let's practise ${skillName(e)} a little more.`;
+      return c.reinforce(skillName(e));
     case "CHALLENGE":
-      return "You're doing so well — ready for a challenge?";
+      return c.challenge;
     case "REVIEW":
-      return `Time to review ${skillName(e)} so it sticks!`;
+      return c.review(skillName(e));
     case "TEACHER_ASSIGNED":
-      return e.skill ? `Your teacher picked this to practise ${e.skill.name}.` : "Your teacher picked this one for you.";
+      return e.skill ? c.teacherSkill(e.skill.name) : c.teacher;
     default:
-      return "Next stop on your journey!";
+      return c.next;
   }
 }
 
@@ -38,44 +43,38 @@ const percent = (score: number | null) => (score === null ? null : `${Math.round
 /** A calm, evidence-grounded sentence for the parent: why this step is on the path. */
 export function parentReason(step: JourneyStep, curriculumName: string, chapter?: Chapter | null): string {
   const e = step.explanation;
-  const after = e.afterActivityTitle
-    ? `Added after “${e.afterActivityTitle}”${percent(e.afterScore) ? ` (${percent(e.afterScore)})` : ""}: `
-    : "";
+  const p = m().parent;
+  const after = e.afterActivityTitle ? p.after(e.afterActivityTitle, percent(e.afterScore)) : "";
   switch (e.reason) {
     case "CURRICULUM":
-      return chapter
-        ? `The next step of chapter ${chapter.position}, “${chapter.title}”, in ${curriculumName}.`
-        : `The next step in ${curriculumName}.`;
+      return chapter ? p.chapterStep(chapter.position, chapter.title, curriculumName) : p.curriculumStep(curriculumName);
     case "REINFORCE_PREREQUISITE":
-      return `${after}answers on ${skillName(e)} were mostly incorrect, so the path first practises the building block “${
-        e.targetSkill?.name ?? "a prerequisite"
-      }”.`;
+      return p.prerequisite(after, skillName(e), e.targetSkill?.name ?? m().aPrerequisite);
     case "REINFORCE_SKILL":
-      return `${after}answers on ${skillName(e)} were mostly incorrect, so the path adds more practice before moving on.`;
+      return p.reinforce(after, skillName(e));
     case "CHALLENGE":
-      return `${after}answers on ${skillName(e)} were consistently correct, so the path steps up the difficulty.`;
+      return p.challenge(after, skillName(e));
     case "REVIEW":
-      return `Smart Review: recent answers on ${skillName(e)} were mostly incorrect, so it is scheduled for review.`;
+      return p.review(skillName(e));
     case "TEACHER_ASSIGNED":
       // Which class asked (X10); practice placed before classes were recorded reads as before.
-      return `${e.skill ? `Practice on ${e.skill.name}, assigned` : "Assigned"} by ${
-        e.assignedBy ? `a teacher of ${e.assignedBy}` : "a teacher"
-      }.`;
+      return p.assigned(e.skill?.name ?? null, e.assignedBy ?? null);
     default:
-      return "Added to the learning path.";
+      return p.added;
   }
 }
 
 /** Short tag for a step's kind, shown on journey nodes. */
 export function stepTag(step: JourneyStep): { label: string; tone: "sun" | "lavender" | "peach" } | null {
+  const t = m().tag;
   switch (step.explanation.reason) {
     case "REVIEW":
-      return { label: "Review", tone: "sun" };
+      return { label: t.review, tone: "sun" };
     case "CHALLENGE":
-      return { label: "Challenge", tone: "lavender" };
+      return { label: t.challenge, tone: "lavender" };
     case "REINFORCE_PREREQUISITE":
     case "REINFORCE_SKILL":
-      return { label: "Practice", tone: "peach" };
+      return { label: t.practice, tone: "peach" };
     default:
       return null;
   }
@@ -90,53 +89,34 @@ export function stepTag(step: JourneyStep): { label: string; tone: "sun" | "lave
 export function parentDecision(activity: CompletedActivity): string | null {
   const d = activity.decision;
   if (!d) return null;
-  const governing = d.governingSkill?.name ?? "this skill";
+  const words = m().decision;
+  const governing = d.governingSkill?.name ?? m().thisSkill;
   switch (d.type) {
     case "REMEDIATE":
       if (d.placedActivityTitle) {
         return d.targetSkill && d.governingSkill && d.targetSkill.id !== d.governingSkill.id
-          ? `Answers on ${governing} were mostly incorrect, so the path added “${d.placedActivityTitle}” to practise ${d.targetSkill.name}, a building block for it.`
-          : `Answers on ${governing} were mostly incorrect, so the path added “${d.placedActivityTitle}” for more practice.`;
+          ? words.remediateBuildingBlock(governing, d.placedActivityTitle, d.targetSkill.name)
+          : words.remediatePlaced(governing, d.placedActivityTitle);
       }
-      return `Answers on ${governing} were mostly incorrect. No extra practice activity is available yet, so the regular path continues.`;
+      return words.remediateNone(governing);
     case "INCREASE_DIFFICULTY":
-      return d.placedActivityTitle
-        ? `Answers on ${governing} were consistently correct, so the path moved on to “${d.placedActivityTitle}”.`
-        : `Answers on ${governing} were consistently correct; the next harder step is already on the path.`;
+      return d.placedActivityTitle ? words.harderPlaced(governing, d.placedActivityTitle) : words.harderAlready(governing);
     case "CONTINUE":
-      return "No change to the path — the regular sequence continues.";
+      return words.continue;
     default:
       return null;
   }
 }
 
-export const standingLabel: Record<SkillStanding, string> = {
-  NOT_STARTED: "Not started",
-  TOO_EARLY_TO_TELL: "Too early to tell",
-  NEEDS_PRACTICE: "Needs practice",
-  PROGRESSING: "Progressing",
-  SECURE: "Secure",
-};
+/** Every skill standing, in the order the key and the lists show them. */
+export const SKILL_STANDINGS: SkillStanding[] = ["NOT_STARTED", "TOO_EARLY_TO_TELL", "NEEDS_PRACTICE", "PROGRESSING", "SECURE"];
 
-export const standingHelp: Record<SkillStanding, string> = {
-  NOT_STARTED: "No answers on this skill yet.",
-  TOO_EARLY_TO_TELL: "A few answers so far — not enough to judge yet.",
-  NEEDS_PRACTICE: "Enough answers to see this skill still needs work.",
-  PROGRESSING: "Enough answers to see steady progress.",
-  SECURE: "Consistently strong across enough answers.",
-};
+export const standingLabel = (standing: SkillStanding): string => m().standing[standing];
 
-export const objectiveStandingLabel: Record<ObjectiveStanding, string> = {
-  NOT_STARTED: "Not started",
-  IN_PROGRESS: "In progress",
-  SECURE: "Secure",
-};
+export const standingHelp = (standing: SkillStanding): string => m().standingHelp[standing];
 
-export const evidenceLabel: Record<EvidenceLevel, string> = {
-  NONE: "No evidence yet",
-  PARTIAL: "Partial evidence",
-  SUFFICIENT: "Sufficient evidence",
-  STRONG: "Strong evidence",
-};
+export const objectiveStandingLabel = (standing: ObjectiveStanding): string => m().objectiveStanding[standing];
+
+export const evidenceLabel = (level: EvidenceLevel): string => m().evidence[level];
 
 export const evidenceDots: Record<EvidenceLevel, number> = { NONE: 0, PARTIAL: 1, SUFFICIENT: 2, STRONG: 3 };

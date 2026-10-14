@@ -37,8 +37,8 @@ function sinceAssigned(child: ChildOnSkill): string {
   const then = child.latestPractice?.standingWhenAssigned;
   if (!then || child.latestPractice?.status !== "COMPLETED") return "";
   return then === child.standing
-    ? ` · still ${standingLabel[then].toLowerCase()}`
-    : ` · ${standingLabel[then].toLowerCase()} then, ${standingLabel[child.standing].toLowerCase()} now`;
+    ? ` · still ${standingLabel(then).toLowerCase()}`
+    : ` · ${standingLabel(then).toLowerCase()} then, ${standingLabel(child.standing).toLowerCase()} now`;
 }
 
 const waiting = (child: ChildOnSkill) =>
@@ -169,7 +169,7 @@ function FollowUp({
             .map((c) => (
               <li key={c.standing} className="inline-flex items-center gap-2">
                 <StandingMark standing={c.standing} />
-                <span className="tabular font-semibold">{c.n}</span> {standingLabel[c.standing].toLowerCase()}
+                <span className="tabular font-semibold">{c.n}</span> {standingLabel(c.standing).toLowerCase()}
               </li>
             ))}
         </ul>
@@ -187,9 +187,9 @@ function FollowUp({
               <section key={standing} aria-labelledby={`group-${standing}`} className="flex flex-col gap-2">
                 <div>
                   <h3 id={`group-${standing}`} className="flex items-center gap-2 text-sm font-semibold text-tonle-950">
-                    <StandingMark standing={standing} /> {standingLabel[standing]} ({group.length})
+                    <StandingMark standing={standing} /> {standingLabel(standing)} ({group.length})
                   </h3>
-                  <p className="text-xs text-ink-soft">{standingHelp[standing]}</p>
+                  <p className="text-xs text-ink-soft">{standingHelp(standing)}</p>
                 </div>
                 <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
                   {group.map((child) => (
@@ -328,7 +328,7 @@ function ChildRow({
                   {child.correctAnswers} of {child.scoredAnswers} correct
                 </span>
                 <EvidenceLine level={child.evidenceLevel} width={56} />
-                <span className="text-xs">{evidenceLabel[child.evidenceLevel]}</span>
+                <span className="text-xs">{evidenceLabel(child.evidenceLevel)}</span>
               </>
             ) : (
               <span>{child.enrolled ? "No answers yet" : "Not on this path"}</span>

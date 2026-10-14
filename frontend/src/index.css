@@ -37,6 +37,13 @@
     font-family: theme("fontFamily.khmer");
     line-height: 1.55;
   }
+  /* Khmer stacks vowels and subscript consonants above and below the line: headings set tight
+     for Latin get room for them, and Latin's negative tracking (which would collide the stacks)
+     is removed. Same faces, same sizes - only the leading and tracking change. */
+  [lang="km"] :is(h1, h2, h3, h4, h5, h6, .font-display) {
+    line-height: 1.4;
+    letter-spacing: 0;
+  }
 
   ::selection {
     background: theme("colors.tonle.200");

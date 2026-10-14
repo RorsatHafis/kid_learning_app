@@ -13,13 +13,14 @@ function respond(status: number, body?: unknown) {
   });
 }
 
-const SOKHA: Child = { id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14", status: "ACTIVE", eraseAfter: null };
+const SOKHA: Child = { id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14", status: "ACTIVE", eraseAfter: null, preferredLanguage: "en" };
 const DARA_PENDING: Child = {
   id: "c2",
   displayName: "Dara",
   dateOfBirth: "2020-01-02",
   status: "DELETION_PENDING",
   eraseAfter: "2026-10-13T08:00:00Z",
+  preferredLanguage: "en",
 };
 
 afterEach(() => vi.unstubAllGlobals());

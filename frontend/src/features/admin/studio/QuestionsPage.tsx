@@ -95,7 +95,7 @@ export function QuestionsPage() {
           {data && (
             <ListCount
               total={data.total}
-              noun={["question", "questions"]}
+              counted={`${data.total} ${data.total === 1 ? "question" : "questions"}`}
               filtered={filtered}
               onClear={() => update({ q: undefined, type: undefined, status: undefined, skill: undefined })}
             />

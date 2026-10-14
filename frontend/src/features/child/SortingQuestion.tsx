@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, QuestionOption } from "@/lib/api/types";
 import type { AnswerResult } from "./QuestionView";
 import { ListenButton } from "./PromptMedia";
+import { useMessages } from "@/i18n/catalog";
+import { childMessages } from "./messages";
 
 // Answer contract (backend AnswerScoringService, SORTING, X23): a JSON object mapping every item's id
 // to the id of the group the child put it in. Which group an item belongs to is never sent; the server
@@ -32,6 +34,8 @@ export function SortingQuestion({
   const [placed, setPlaced] = useState<Record<string, string>>({});
   const [picked, setPicked] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const m = useMessages(childMessages).sorting;
+  const q = useMessages(childMessages).question;
 
   const answered = result !== null;
   const locked = disabled || answered;
@@ -48,7 +52,7 @@ export function SortingQuestion({
       setPlaced(Object.fromEntries(Object.entries(placed).filter(([key]) => key !== id)));
     }
     setPicked(picked === id && !placed[id] ? null : id);
-    setAnnouncement(picked === id && !placed[id] ? `${option?.label} put down.` : `${option?.label} picked up: choose a group.`);
+    setAnnouncement(picked === id && !placed[id] ? m.putDown(option?.label ?? "") : m.pickedUp(option?.label ?? ""));
   }
 
   function drop(groupId: string) {
@@ -57,9 +61,7 @@ export function SortingQuestion({
     setPlaced(next);
     setPicked(null);
     const done = items.every((o) => next[o.id]);
-    setAnnouncement(
-      `${byId.get(picked)?.label} in ${byId.get(groupId)?.label}.${done ? " Everything is sorted: check your groups." : ""}`,
-    );
+    setAnnouncement(`${m.dropped(byId.get(picked)?.label ?? "", byId.get(groupId)?.label ?? "")}${done ? m.allSortedCheck : ""}`);
   }
 
   function submit() {
@@ -70,17 +72,11 @@ export function SortingQuestion({
   return (
     <div className="flex flex-col items-center gap-6">
       <p className="text-center text-base font-bold text-ink-soft">
-        {answered
-          ? result.correct
-            ? "Everything is in the right group!"
-            : "Here's where you put them."
-          : picked
-            ? `Now tap the group for ${byId.get(picked)?.label}.`
-            : "Tap one, then tap the group it belongs in."}
+        {answered ? (result.correct ? m.allRight : m.yourGroups) : picked ? m.tapGroupFor(byId.get(picked)?.label ?? "") : m.howTo}
       </p>
 
       {!answered && (
-        <ul aria-label="Things to sort" className="flex min-h-[5rem] flex-wrap items-start justify-center gap-2 sm:gap-3">
+        <ul aria-label={m.toSort} className="flex min-h-[5rem] flex-wrap items-start justify-center gap-2 sm:gap-3">
           {waiting.map((option) => (
             <li key={option.id} className="flex flex-col items-center gap-1.5">
               <Tile
@@ -89,17 +85,17 @@ export function SortingQuestion({
                 locked={locked}
                 picked={picked === option.id}
                 verdict={null}
-                ariaLabel={`${option.label}${picked === option.id ? ", picked up" : ": pick it up"}`}
+                ariaLabel={`${option.label}${picked === option.id ? m.pickedState : m.pickIt}`}
               />
-              {option.audio && <ListenButton audio={option.audio} label={`Hear ${option.label}`} />}
+              {option.audio && <ListenButton audio={option.audio} label={q.hear(option.label)} />}
             </li>
           ))}
-          {waiting.length === 0 && <li className="self-center text-sm font-semibold text-ink-soft">All sorted!</li>}
+          {waiting.length === 0 && <li className="self-center text-sm font-semibold text-ink-soft">{m.allSorted}</li>}
         </ul>
       )}
 
       <ul
-        aria-label="Groups"
+        aria-label={m.groups}
         className={cn(
           "grid w-full gap-3 sm:gap-4",
           groups.length >= 3 ? "sm:grid-cols-3" : "grid-cols-2",
@@ -115,7 +111,7 @@ export function SortingQuestion({
                 type="button"
                 onClick={() => drop(group.id)}
                 aria-disabled={!target}
-                aria-label={`${group.label}${inside.length ? `: ${inside.map((o) => o.label).join(", ")}` : ": empty"}${target ? ". Put it here" : ""}`}
+                aria-label={`${inside.length ? m.groupWith(group.label, inside.map((o) => o.label).join(", ")) : m.groupEmpty(group.label)}${target ? m.putHere : ""}`}
                 className={cn(
                   "flex items-center justify-center gap-2 rounded-t-[18px] border-[3px] border-b-0 px-3 py-2.5 font-display text-lg font-bold transition-colors duration-150",
                   target
@@ -146,19 +142,19 @@ export function SortingQuestion({
                         locked={locked}
                         picked={false}
                         verdict={verdict}
-                        ariaLabel={`${option.label} in ${group.label}${
+                        ariaLabel={`${m.inGroup(option.label, group.label)}${
                           verdict === "right"
-                            ? ", right"
+                            ? m.right
                             : verdict === "wrong"
-                              ? `, belongs in ${home?.label ?? ""}`
+                              ? m.belongsIn(home?.label ?? "")
                               : answered
                                 ? ""
-                                : ". Tap to take it out"
+                                : m.tapToTakeOut
                         }`}
                       />
                       {verdict === "wrong" && home && (
                         <span aria-hidden className="text-xs font-semibold text-tonle-700">
-                          Goes in {home.label}
+                          {m.goesIn(home.label)}
                         </span>
                       )}
                     </span>
@@ -181,7 +177,7 @@ export function SortingQuestion({
           disabled={locked || !allPlaced}
           className="flex min-h-16 items-center gap-2 rounded-[22px] bg-tonle-900 px-10 text-xl font-bold text-white shadow-[0_5px_0_#0A1533] transition-[transform,box-shadow,opacity] duration-150 ease-out hover:bg-tonle-800 active:translate-y-1 active:shadow-[0_1px_0_#0A1533] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Check my groups
+          {m.check}
         </button>
       )}
     </div>

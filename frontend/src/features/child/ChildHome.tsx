@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { SHELF_SPINES } from "./shelf";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+import { useMessages } from "@/i18n/catalog";
+import { childMessages } from "./messages";
 
 
 /**
@@ -39,12 +41,14 @@ export function ChildHome() {
   }, [enrollments.data, params]);
 
   const name = child.data?.displayName;
-  useDocumentTitle(name ? `${name}'s path` : null);
+  const language = child.data?.preferredLanguage;
+  const m = useMessages(childMessages);
+  useDocumentTitle(name ? m.home.title(name) : null);
 
   if (child.isLoading || enrollments.isLoading) {
     return (
-      <ChildSpaceLayout childId={childId} childName={name}>
-        <Waiting line="Getting your world ready…" />
+      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language}>
+        <Waiting line={m.home.gettingReady} />
       </ChildSpaceLayout>
     );
   }
@@ -52,15 +56,15 @@ export function ChildHome() {
   if (child.error instanceof ApiError && child.error.status === 404) {
     // Not this family's child, or one being deleted: trying again won't change that.
     return (
-      <ChildSpaceLayout childId={childId} childName={name}>
-        <Trouble line="This space isn't open right now. Ask a grown-up for help." />
+      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language}>
+        <Trouble line={m.closed} />
       </ChildSpaceLayout>
     );
   }
 
   if (child.error || enrollments.error) {
     return (
-      <ChildSpaceLayout childId={childId} childName={name}>
+      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language}>
         <Trouble
           onRetry={() => {
             child.refetch();
@@ -73,10 +77,10 @@ export function ChildHome() {
 
   if (!selected) {
     return (
-      <ChildSpaceLayout childId={childId} childName={name}>
+      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language}>
         <div className="flex flex-col items-center gap-6 px-6 pt-24 text-center">
           <BuddySays mood="happy" size={130} tone="night">
-            Hi {name}! A grown-up needs to choose what you&apos;ll learn first.
+            {m.home.noPathYet(name ?? "")}
           </BuddySays>
         </div>
       </ChildSpaceLayout>
@@ -85,7 +89,7 @@ export function ChildHome() {
 
   const paths = enrollments.data ?? [];
   return (
-    <ChildSpaceLayout childId={childId} childName={name} backdrop={false}>
+    <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} backdrop={false}>
       <JourneyStage
         key={selected.enrollmentId}
         childId={childId}
@@ -93,7 +97,7 @@ export function ChildHome() {
         overview={selected}
         switcher={
           paths.length > 1 ? (
-            <nav aria-label="My subjects" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            <nav aria-label={m.home.mySubjects} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
               {paths.map((enrollment, i) => {
                 const active = enrollment.enrollmentId === selected.enrollmentId;
                 const where = chapterOf(enrollment.currentChapter, enrollment.chapterCount);
@@ -120,7 +124,7 @@ export function ChildHome() {
                         {enrollment.curriculum.subjectName ?? enrollment.curriculum.name}
                       </span>
                       <span className={cn("text-xs font-medium", active ? "text-ink-soft" : "text-tonle-200")}>
-                        {enrollment.nextStep === null ? "All lit" : (where ?? `${enrollment.completedSteps} of ${enrollment.totalSteps} lit`)}
+                        {enrollment.nextStep === null ? m.home.allLit : (where ?? m.home.litOf(enrollment.completedSteps, enrollment.totalSteps))}
                       </span>
                     </span>
                   </button>
@@ -146,6 +150,7 @@ function JourneyStage({
   switcher: React.ReactNode;
 }) {
   const journey = useAsync(() => learningApi.journey(overview.enrollmentId), [overview.enrollmentId]);
+  const m = useMessages(childMessages);
   const focus = journey.data ? focusChapter(journey.data) : null;
   const playHref = `/learn/${childId}/play/${overview.enrollmentId}`;
   const next = overview.nextStep;
@@ -169,7 +174,7 @@ function JourneyStage({
           <div className="flex max-w-xl flex-col gap-5">
             {switcher}
             <h1 id="greeting" className="font-display text-display font-bold tracking-[-0.02em] text-white" style={{ fontVariationSettings: '"opsz" 72' }}>
-              Hi, {name}!
+              {m.home.hi(name ?? "")}
             </h1>
             {overview.currentChapter && (
               <p className="-mb-2 flex items-center gap-2 text-sm font-semibold text-light-glow">
@@ -180,7 +185,7 @@ function JourneyStage({
               </p>
             )}
             <p className="max-w-md text-xl font-medium leading-snug text-tonle-100">
-              {next ? childReason(next) : "You lit every book on this path. Amazing work!"}
+              {next ? childReason(next) : m.home.allDone}
             </p>
             {next && (
               <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -191,7 +196,7 @@ function JourneyStage({
                   <span className="flex h-12 w-12 items-center justify-center rounded-full bg-tonle-950 text-light">
                     <Play size={20} fill="currentColor" aria-hidden className="translate-x-px" />
                   </span>
-                  Play
+                  {m.home.play}
                 </Link>
                 <span className="text-sm font-medium text-tonle-200">{next.title}</span>
               </div>
@@ -204,25 +209,25 @@ function JourneyStage({
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-950 text-light">
                   <Library size={20} aria-hidden />
                 </span>
-                See my shelf
+                {m.home.seeShelf}
               </Link>
             )}
             {focus?.chapter ? (
               <BooksLit
                 done={focus.steps.filter(({ step }) => step.status === "COMPLETED").length}
                 total={focus.steps.length}
-                label={`Books lit in chapter ${focus.chapter.position}`}
-                suffix="in this chapter"
+                label={m.home.litInChapter(focus.chapter.position)}
+                suffix={m.home.inThisChapter}
               />
             ) : (
-              <BooksLit done={overview.completedSteps} total={overview.totalSteps} label="Books lit on this path" />
+              <BooksLit done={overview.completedSteps} total={overview.totalSteps} label={m.home.litOnPath} />
             )}
             {next && (
               <Link
                 to={`/learn/${childId}/shelf`}
                 className="-mt-1 inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-950/55 px-4 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
               >
-                <Library size={16} aria-hidden /> My shelf
+                <Library size={16} aria-hidden /> {m.myShelf}
               </Link>
             )}
           </div>
@@ -242,6 +247,7 @@ function JourneyStage({
 
 /** Progress as the books themselves: lit ones and the ones still waiting. */
 function BooksLit({ done, total, label, suffix }: { done: number; total: number; label: string; suffix?: string }) {
+  const m = useMessages(childMessages);
   return (
     <div className="flex items-center gap-3" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={label}>
       <div className="flex flex-wrap gap-1.5" aria-hidden>
@@ -253,7 +259,8 @@ function BooksLit({ done, total, label, suffix }: { done: number; total: number;
         ))}
       </div>
       <span className="text-sm font-semibold text-tonle-100">
-        {done} of {total} lit{suffix ? ` ${suffix}` : ""}
+        {m.home.litOf(done, total)}
+        {suffix ? ` ${suffix}` : ""}
       </span>
     </div>
   );
@@ -271,6 +278,7 @@ function JourneyList({
   mobile?: boolean;
 }) {
   const currentRef = useRef<HTMLLIElement | null>(null);
+  const m = useMessages(childMessages);
   useEffect(() => {
     if (!mobile) currentRef.current?.scrollIntoView({ block: "nearest" });
   }, [journey.data, mobile]);
@@ -279,13 +287,13 @@ function JourneyList({
     <div className="flex flex-col gap-4">
       <div>
         <h2 id={mobile ? "journey-title-m" : "journey-title"} className="font-display text-xl font-bold text-white">
-          My path
+          {m.myPath}
         </h2>
         <p className="text-sm text-tonle-200">{curriculumName}</p>
       </div>
-      {journey.isLoading && <p className="py-6 text-center font-medium text-tonle-200">Laying out your books…</p>}
+      {journey.isLoading && <p className="py-6 text-center font-medium text-tonle-200">{m.home.layingOut}</p>}
       {journey.error && <Trouble onRetry={journey.refetch} compact />}
-      {journey.data && journey.data.steps.length === 0 && <p className="py-4 text-tonle-200">Your path is being prepared.</p>}
+      {journey.data && journey.data.steps.length === 0 && <p className="py-4 text-tonle-200">{m.home.preparing}</p>}
       {journey.data && journey.data.steps.length > 0 && (
         <MyPath journey={journey.data} playHref={playHref} currentRef={currentRef} scroll={!mobile} />
       )}
@@ -309,6 +317,7 @@ function MyPath({
   scroll: boolean;
 }) {
   const focus = focusChapter(journey);
+  const m = useMessages(childMessages);
   const steps = (
     <ol className="flex flex-col gap-1">
       {focus.steps.map(({ step }, i) => {
@@ -325,15 +334,13 @@ function MyPath({
     return <div className={cn(scroll && "max-h-[340px] overflow-y-auto pr-1")}>{steps}</div>;
   }
   return (
-    <ol className={cn("flex flex-col gap-1.5", scroll && "max-h-[380px] overflow-y-auto pr-1")} aria-label="Chapters">
+    <ol className={cn("flex flex-col gap-1.5", scroll && "max-h-[380px] overflow-y-auto pr-1")} aria-label={m.home.chapters}>
       {journey.chapters.map((chapter) =>
         chapter.id === focus.chapter!.id ? (
           <li key={chapter.id} className="rounded-[18px] bg-white/[0.06] p-2 ring-1 ring-white/10">
             <p className="flex items-baseline justify-between gap-3 px-2 pb-2 pt-1">
-              <span className="text-sm font-bold text-white">
-                Chapter {chapter.position} · {chapter.title}
-              </span>
-              <span className="shrink-0 text-xs font-semibold text-light-glow">You are here</span>
+              <span className="text-sm font-bold text-white">{m.home.chapter(chapter.position, chapter.title)}</span>
+              <span className="shrink-0 text-xs font-semibold text-light-glow">{m.home.youAreHere}</span>
             </p>
             {steps}
           </li>
@@ -347,15 +354,24 @@ function MyPath({
   );
 }
 
-const CHAPTER_NOTE: Record<Chapter["state"], (c: Chapter) => string> = {
-  COMPLETE: (c) => (c.totalSteps === 1 ? "Lit" : `All ${c.totalSteps} lit`),
-  CURRENT: (c) => `${c.completedSteps} of ${c.totalSteps} lit`,
-  STARTED: (c) => `${c.completedSteps} of ${c.totalSteps} lit`,
-  UPCOMING: (c) => (c.totalSteps === 1 ? "1 book waiting" : `${c.totalSteps} books waiting`),
-  NOT_READY: () => "Being made",
-};
+function chapterNote(c: Chapter, m: ChildWords): string {
+  switch (c.state) {
+    case "COMPLETE":
+      return c.totalSteps === 1 ? m.home.lit : m.home.allNLit(c.totalSteps);
+    case "CURRENT":
+    case "STARTED":
+      return m.home.litOf(c.completedSteps, c.totalSteps);
+    case "UPCOMING":
+      return m.home.booksWaiting(c.totalSteps);
+    case "NOT_READY":
+      return m.home.beingMade;
+  }
+}
+
+type ChildWords = typeof childMessages.en;
 
 function ChapterRow({ chapter }: { chapter: Chapter }) {
+  const m = useMessages(childMessages);
   const done = chapter.state === "COMPLETE";
   const later = chapter.state === "UPCOMING" || chapter.state === "NOT_READY";
   return (
@@ -371,9 +387,9 @@ function ChapterRow({ chapter }: { chapter: Chapter }) {
       </span>
       <span className="flex min-w-0 flex-col">
         <span className={cn("truncate text-sm font-semibold", later ? "text-tonle-200" : "text-white")}>
-          Chapter {chapter.position} · {chapter.title}
+          {m.home.chapter(chapter.position, chapter.title)}
         </span>
-        <span className="text-xs text-tonle-300">{CHAPTER_NOTE[chapter.state](chapter)}</span>
+        <span className="text-xs text-tonle-300">{chapterNote(chapter, m)}</span>
       </span>
     </div>
   );
@@ -382,7 +398,8 @@ function ChapterRow({ chapter }: { chapter: Chapter }) {
 function StepRow({ step, index, isCurrent, playHref }: { step: JourneyStep; index: number; isCurrent: boolean; playHref: string }) {
   const done = step.status === "COMPLETED";
   const tag = stepTag(step);
-  const status = done ? "finished" : isCurrent ? "up next" : "coming later";
+  const m = useMessages(childMessages).home;
+  const status = done ? m.finished : isCurrent ? m.upNextState : m.later;
   const badge = (
     <span
       className={cn(
@@ -402,7 +419,7 @@ function StepRow({ step, index, isCurrent, playHref }: { step: JourneyStep; inde
       <span className="flex min-w-0 flex-col">
         <span className={cn("truncate text-[0.95rem] font-semibold", done ? "text-tonle-100" : isCurrent ? "text-white" : "text-tonle-200")}>{step.title}</span>
         <span className="text-xs text-tonle-300">
-          {isCurrent ? "Up next" : done ? "Lit" : "Waiting"}
+          {isCurrent ? m.upNext : done ? m.lit : m.waiting}
           {tag ? ` · ${tag.label}` : ""}
         </span>
       </span>
@@ -411,13 +428,13 @@ function StepRow({ step, index, isCurrent, playHref }: { step: JourneyStep; inde
   return isCurrent ? (
     <Link
       to={playHref}
-      aria-label={`Play ${step.title}, ${status}`}
+      aria-label={m.playStep(step.title, status)}
       className="flex items-center gap-3 rounded-[14px] bg-white/10 p-2 ring-1 ring-light/40 transition-colors duration-150 ease-out hover:bg-white/15"
     >
       {body}
     </Link>
   ) : (
-    <div className="flex items-center gap-3 rounded-[14px] p-2" role="img" aria-label={`${step.title}, ${status}`}>
+    <div className="flex items-center gap-3 rounded-[14px] p-2" role="img" aria-label={m.stepState(step.title, status)}>
       {body}
     </div>
   );
@@ -434,17 +451,18 @@ export function Waiting({ line }: { line: string }) {
 
 /** Something went wrong in the child space. Without `onRetry` there is nothing to try again (e.g. a closed space). */
 export function Trouble({ onRetry, compact, line }: { onRetry?: () => void; compact?: boolean; line?: string }) {
+  const m = useMessages(childMessages);
   return (
     <div role="alert" className={cn("flex flex-col items-center gap-4 px-6 text-center", compact ? "py-6" : "pt-28")}>
       <LearningBuddy mood="encourage" size={compact ? 88 : 124} />
-      <p className="max-w-sm text-lg font-semibold text-white">{line ?? "Oops — we couldn't load that. Let's try again!"}</p>
+      <p className="max-w-sm text-lg font-semibold text-white">{line ?? m.trouble}</p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
           className="min-h-14 rounded-pill bg-light px-9 text-lg font-bold text-tonle-950 shadow-[0_5px_0_#B86A1C,0_12px_40px_rgba(243,168,59,0.45)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:bg-light-glow active:translate-y-1 active:shadow-[0_1px_0_#B86A1C]"
         >
-          Try again
+          {m.tryAgain}
         </button>
       )}
     </div>

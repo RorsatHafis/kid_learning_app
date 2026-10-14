@@ -3,6 +3,8 @@
 // guessed) — see the file path noted above each block. Re-verify against
 // the backend before trusting a shape that isn't cited this way.
 
+import type { Locale } from "../../i18n/store";
+
 // ---- identity/entity/PlatformRole.java, identity/web/AuthResponse.java ----
 
 /** No CHILD value — children are accessed through a parent's family
@@ -26,6 +28,8 @@ export interface AuthResponse {
   expiresAt: string | null;
   refreshToken: string | null;
   refreshTokenExpiresAt: string | null;
+  /** The account's interface language, applied as soon as it signs in. */
+  preferredLanguage: Locale;
 }
 
 // ---- identity/web/AccountController.java ----
@@ -53,6 +57,8 @@ export interface AccountProfile {
   eraseAfter: string | null;
   /** The version of the terms and privacy notice the account agreed to (Y15). */
   legalVersionAccepted: string | null;
+  /** The interface language the account chose (en or km). */
+  preferredLanguage: Locale;
 }
 
 // ---- child/entity/ChildStatus.java, child/web/ChildDtos.java ----
@@ -66,6 +72,8 @@ export interface Child {
   dateOfBirth: string; // ISO date (LocalDate)
   status: ChildStatus;
   eraseAfter: string | null;
+  /** The language the child's own space is shown in - the child's, not the parent's. */
+  preferredLanguage: Locale;
 }
 
 // ---- curriculum/web/CurriculumDtos.java ----

@@ -5,6 +5,11 @@ import { BrandMark } from "@/components/brand/Logo";
 import { BlueHour } from "@/features/world/BlueHour";
 import { isMuted, setMuted } from "@/features/buddy/sound";
 import { cn } from "@/lib/utils/cn";
+import { useMessages } from "@/i18n/catalog";
+import { childMessages } from "./messages";
+import { LanguageToggle } from "@/i18n/LanguageSwitcher";
+import { useChildLanguage } from "@/i18n/useLanguage";
+import type { Locale } from "@/i18n/store";
 
 /**
  * The child's space: the child is inside the blue-hour world the whole time, with a few
@@ -20,6 +25,7 @@ import { cn } from "@/lib/utils/cn";
 export function ChildSpaceLayout({
   childId,
   childName,
+  childLanguage,
   children,
   home,
   backdrop = true,
@@ -28,6 +34,8 @@ export function ChildSpaceLayout({
 }: {
   childId: string;
   childName?: string;
+  /** The child's own interface language (undefined until the child has loaded). */
+  childLanguage?: Locale;
   children: ReactNode;
   /** Where the top-left "home" goes: the child's journey. */
   home?: string;
@@ -37,6 +45,8 @@ export function ChildSpaceLayout({
   /** Ease a change of the light in (a change the child caused); otherwise it just appears. */
   easeLight?: boolean;
 }) {
+  // The space speaks the child's language, not the grown-up's (kept on the child).
+  useChildLanguage(childId, childLanguage);
   return (
     <div className="on-night relative min-h-[100dvh] bg-tonle-950 text-white">
       {backdrop && (
@@ -54,6 +64,7 @@ export function ChildSpaceLayout({
         </Link>
         <BrandMark size={34} tone="paper" className="hidden opacity-90 sm:block" title="Bookeyond Kid" />
         <div className="flex items-center gap-2">
+          <LanguageToggle className={cn(chip, "justify-center px-3.5 text-sm font-semibold")} />
           <SoundToggle />
           <GrownUpGate to={`/parent/children/${childId}`} />
         </div>
@@ -69,6 +80,7 @@ const chip =
 
 function SoundToggle() {
   const [muted, setMutedState] = useState(isMuted);
+  const m = useMessages(childMessages).space;
   return (
     <button
       type="button"
@@ -77,7 +89,7 @@ function SoundToggle() {
         setMutedState(!muted);
       }}
       aria-pressed={!muted}
-      aria-label={muted ? "Sound is off. Turn sound on" : "Sound is on. Turn sound off"}
+      aria-label={muted ? m.soundOff : m.soundOn}
       className={cn(chip, "w-11 justify-center active:scale-95")}
     >
       {muted ? <VolumeX size={19} /> : <Volume2 size={19} />}
@@ -94,6 +106,7 @@ const HOLD_MS = 1500;
  */
 function GrownUpGate({ to }: { to: string }) {
   const navigate = useNavigate();
+  const m = useMessages(childMessages).space;
   const [holding, setHolding] = useState(false);
   const timer = useRef<number | null>(null);
 
@@ -132,7 +145,7 @@ function GrownUpGate({ to }: { to: string }) {
       onKeyUp={cancel}
       onBlur={cancel}
       onContextMenu={(e) => e.preventDefault()}
-      aria-label="Grown-ups: press and hold to leave"
+      aria-label={m.grownUpsLabel}
       className={cn(chip, "relative select-none gap-2 overflow-hidden whitespace-nowrap px-3.5 text-sm font-medium text-tonle-100 sm:px-4")}
     >
       <span
@@ -146,7 +159,7 @@ function GrownUpGate({ to }: { to: string }) {
         }}
       />
       <Lock size={15} className="relative" aria-hidden />
-      <span className="relative">{holding ? "Keep holding…" : "Grown-ups"}</span>
+      <span className="relative">{holding ? m.keepHolding : m.grownUps}</span>
     </button>
   );
 }

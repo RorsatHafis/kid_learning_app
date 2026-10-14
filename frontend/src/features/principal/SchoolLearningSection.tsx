@@ -39,7 +39,7 @@ export function SchoolLearningSection({ schoolId }: { schoolId: string }) {
             {TALLY.map((t) => (
               <li key={t.key} className="inline-flex items-center gap-1.5">
                 <span aria-hidden className={cn("inline-block h-2.5 w-2.5 rounded-[2px]", t.bar)} />
-                {standingLabel[t.standing]}
+                {standingLabel(t.standing)}
               </li>
             ))}
           </ul>
@@ -66,7 +66,7 @@ function ClassRow({ row }: { row: SchoolClassLearning }) {
   ].filter(Boolean);
   const silent = row.children > 0 && row.answeringThisWeek === 0;
   const words = TALLY.filter((t) => row.now[t.key] > 0)
-    .map((t) => `${row.now[t.key]} ${standingLabel[t.standing].toLowerCase()}`)
+    .map((t) => `${row.now[t.key]} ${standingLabel(t.standing).toLowerCase()}`)
     .join(", ");
   return (
     <Link

@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 import { ChevronRight, RotateCcw } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { learningApi } from "@/lib/api/endpoints";
-import type { EvidenceLevel, ObjectiveProgress, SkillProgress, SkillStanding } from "@/lib/api/types";
+import type { EvidenceLevel, ObjectiveProgress, SkillProgress } from "@/lib/api/types";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
-import { evidenceDots, evidenceLabel, objectiveStandingLabel, standingHelp, standingLabel } from "@/features/learning/explain";
+import { SKILL_STANDINGS, evidenceDots, evidenceLabel, objectiveStandingLabel, standingHelp } from "@/features/learning/explain";
 import { Standing } from "@/features/learning/Standing";
 import { EvidenceLine } from "@/features/learning/EvidenceLine";
 import { formatDay } from "@/lib/utils/date";
@@ -57,16 +57,16 @@ export function SkillsSection({ childId }: { childId: string }) {
               {(Object.keys(evidenceDots) as EvidenceLevel[]).map((level) => (
                 <li key={level} className="flex items-center gap-3">
                   <EvidenceLine level={level} />
-                  <span>{evidenceLabel[level]}</span>
+                  <span>{evidenceLabel(level)}</span>
                 </li>
               ))}
             </ul>
           </div>
           <ul className="flex flex-col gap-2.5">
-            {(Object.keys(standingLabel) as SkillStanding[]).map((standing) => (
+            {SKILL_STANDINGS.map((standing) => (
               <li key={standing} className="flex flex-col">
                 <Standing standing={standing} />
-                <span className="pl-5">{standingHelp[standing]}</span>
+                <span className="pl-5">{standingHelp(standing)}</span>
               </li>
             ))}
           </ul>
@@ -106,7 +106,7 @@ function ObjectiveTable({ childId, objective, position }: { childId: string; obj
                 : "bg-paper text-ink-soft ring-line",
           )}
         >
-          {objectiveStandingLabel[objective.standing]}
+          {objectiveStandingLabel(objective.standing)}
         </span>
       </header>
       {started ? (
@@ -176,7 +176,7 @@ function SkillRow({ childId, skill }: { childId: string; skill: SkillProgress })
       </div>
       <div role="cell" className="flex items-center gap-3">
         <EvidenceLine level={skill.evidenceLevel} />
-        <span className="text-[0.8125rem] text-ink-soft sm:sr-only">{evidenceLabel[skill.evidenceLevel]}</span>
+        <span className="text-[0.8125rem] text-ink-soft sm:sr-only">{evidenceLabel(skill.evidenceLevel)}</span>
       </div>
       <div role="cell">
         <Standing standing={skill.standing} />

@@ -2,9 +2,12 @@ import type { ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { Button } from "./Button";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 /** Three small books filling with light: the product's loading gesture. */
-export function LoadingState({ label = "Loading…" }: { label?: string }) {
+export function LoadingState({ label }: { label?: string }) {
+  const m = useMessages(common);
   return (
     <div role="status" className="flex flex-col items-center justify-center gap-4 py-16 text-ink-soft motion-safe:animate-fade-in-late">
       <span className="flex items-end gap-1.5" aria-hidden>
@@ -16,7 +19,7 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
           />
         ))}
       </span>
-      <p className="text-sm font-medium">{label}</p>
+      <p className="text-sm font-medium">{label ?? m.loading}</p>
     </div>
   );
 }
@@ -24,15 +27,16 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
 /** `message` overrides the derived text — child-facing screens pass a friendly
  * one instead of surfacing the backend's developer-oriented problem detail. */
 export function ErrorState({ error, onRetry, message: messageOverride }: { error?: Error; onRetry?: () => void; message?: string }) {
-  const message =
-    messageOverride ?? (error instanceof ApiError ? (error.problem?.detail ?? error.message) : "Something went wrong.");
+  const m = useMessages(common);
+  // The server's detail is already in the interface language (the request carried it).
+  const message = messageOverride ?? (error instanceof ApiError && error.problem?.detail ? error.problem.detail : m.somethingWentWrong);
   return (
     <div role="alert" className="flex flex-col items-center justify-center gap-4 rounded-paper bg-white px-6 py-14 text-center ring-1 ring-line">
-      <p className="font-display text-lg font-semibold text-ink">That didn&apos;t load</p>
+      <p className="font-display text-lg font-semibold text-ink">{m.didntLoad}</p>
       <p className="max-w-sm text-sm text-ink-soft">{message}</p>
       {onRetry && (
         <Button variant="outline" onClick={onRetry}>
-          <RotateCcw size={16} aria-hidden /> Try again
+          <RotateCcw size={16} aria-hidden /> {m.tryAgain}
         </Button>
       )}
     </div>

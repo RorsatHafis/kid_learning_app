@@ -2,6 +2,8 @@ import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils/cn";
+import { useMessages } from "@/i18n/catalog";
+import { common } from "@/components/ui/messages";
 
 /**
  * Previous / next through a server-paged list, with where the reader is ("26–50 of 312").
@@ -26,6 +28,7 @@ export function Pager({
   className?: string;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const m = useMessages(common);
   if (total <= size) return null;
 
   function turn(next: number) {
@@ -38,16 +41,16 @@ export function Pager({
   const from = page * size + 1;
   const to = Math.min(total, (page + 1) * size);
   return (
-    <nav ref={ref} aria-label={`${label}, pages`} className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
+    <nav ref={ref} aria-label={m.pagesOf(label)} className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
       <p className="tabular text-sm text-ink-soft" aria-live="polite">
-        {from}–{to} of {total}
+        {m.range(from, to, total)}
       </p>
       <div className="flex gap-2">
         <Button variant="outline" size="sm" disabled={page === 0} onClick={() => turn(page - 1)}>
-          <ChevronLeft size={15} aria-hidden /> Previous
+          <ChevronLeft size={15} aria-hidden /> {m.previous}
         </Button>
         <Button variant="outline" size="sm" disabled={to >= total} onClick={() => turn(page + 1)}>
-          Next <ChevronRight size={15} aria-hidden />
+          {m.next} <ChevronRight size={15} aria-hidden />
         </Button>
       </div>
     </nav>
@@ -56,28 +59,28 @@ export function Pager({
 
 /**
  * How many rows a list has or how many match its filters, and a way to clear the filters.
- * `noun` is [singular, plural]: ["question", "questions"].
+ * `counted` is the count in words, from the caller's catalog: "3 questions".
  */
 export function ListCount({
   total,
-  noun,
+  counted,
   filtered,
   onClear,
 }: {
   total: number;
-  noun: [string, string];
+  counted: string;
   filtered: boolean;
   onClear: () => void;
 }) {
-  const word = total === 1 ? noun[0] : noun[1];
+  const m = useMessages(common);
   return (
     <div className="flex min-h-9 flex-wrap items-center justify-between gap-2">
       <p className="tabular text-sm text-ink-soft" aria-live="polite">
-        {filtered ? `${total} ${word} ${total === 1 ? "matches" : "match"}` : `${total} ${word}`}
+        {filtered ? m.matching(counted, total) : counted}
       </p>
       {filtered && (
         <Button variant="ghost" size="sm" onClick={onClear}>
-          Clear filters
+          {m.clearFilters}
         </Button>
       )}
     </div>
