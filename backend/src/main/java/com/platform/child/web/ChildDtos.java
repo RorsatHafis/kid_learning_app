@@ -33,17 +33,25 @@ public final class ChildDtos {
     ) {
     }
 
+    /** The language of the child's own space: en or km. */
+    public record ChildLanguageChange(
+            @NotBlank @jakarta.validation.constraints.Pattern(regexp = com.platform.identity.UiLanguage.PATTERN) String language
+    ) {
+    }
+
     public record ChildResponse(
             UUID id,
             String displayName,
             LocalDate dateOfBirth,
             ChildStatus status,
             /** When a DELETION_PENDING child will be erased; null otherwise. */
-            Instant eraseAfter
+            Instant eraseAfter,
+            /** The language the child's own space is shown in (en or km). */
+            String preferredLanguage
     ) {
         public static ChildResponse from(Child child) {
             return new ChildResponse(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getStatus(),
-                    child.getEraseAfter());
+                    child.getEraseAfter(), child.getPreferredLanguage());
         }
     }
 

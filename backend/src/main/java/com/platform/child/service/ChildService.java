@@ -100,12 +100,26 @@ public class ChildService {
      * response for that case, not a 500.
      */
     @Transactional
-    public Child createForAccount(UUID accountId, String displayName, LocalDate dateOfBirth) {
+    public Child createForAccount(UUID accountId, String displayName, LocalDate dateOfBirth, String language) {
         UUID familyId = activeFamilyIds(accountId).stream().findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Family for account", accountId));
         entitlementService.requireRoomForChild(familyId);
 
-        return childRepository.save(Child.enroll(familyId, displayName, dateOfBirth));
+        Child child = Child.enroll(familyId, displayName, dateOfBirth);
+        child.changeLanguage(com.platform.identity.UiLanguage.orDefault(language));
+        return childRepository.save(child);
+    }
+
+    /**
+     * Sets the language the child's own space is shown in. The caller has already been checked for
+     * access to this child (FamilyAccessGuard); the parent's own language is left as it is.
+     */
+    @Transactional
+    public Child changeLanguage(UUID childId, String language) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new ResourceNotFoundException("Child", childId));
+        child.changeLanguage(language);
+        return child;
     }
 
     /**

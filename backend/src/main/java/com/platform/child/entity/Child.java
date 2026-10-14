@@ -41,6 +41,10 @@ public class Child extends AuditableEntity {
     /** When a DELETION_PENDING child is erased (V51); null otherwise. */
     @Column(name = "erase_after")
     private Instant eraseAfter;
+
+    /** The language the child's own space is shown in (en or km; V57) - the child's, not the parent's. */
+    @Column(name = "preferred_language", nullable = false, length = 5)
+    private String preferredLanguage = com.platform.identity.UiLanguage.ENGLISH;
  
     protected Child() {
         // JPA
@@ -70,6 +74,16 @@ public class Child extends AuditableEntity {
         Assert.hasText(newDisplayName, "newDisplayName must not be blank");
         this.displayName = newDisplayName;
 
+    }
+
+    /** The interface language of the child's space. Never changes which content the child follows. */
+    public void changeLanguage(String language) {
+        Assert.isTrue(com.platform.identity.UiLanguage.isSupported(language), "unsupported language: " + language);
+        this.preferredLanguage = language;
+    }
+
+    public String getPreferredLanguage() {
+        return preferredLanguage;
     }
 
     /** The family corrects the date of birth (Y12). Same rules as when the child was added. */

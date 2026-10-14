@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
+import static com.platform.child.web.ChildDtos.ChildLanguageChange;
 import static com.platform.child.web.ChildDtos.ChildResponse;
 import static com.platform.child.web.ChildDtos.CreateChildRequest;
 import static com.platform.child.web.ChildDtos.UpdateChildRequest;
@@ -55,6 +57,18 @@ public class ChildController {
         return ResponseEntity.ok(ChildResponse.from(childService.update(childId, request.displayName(), request.dateOfBirth())));
     }
 
+    /**
+     * The language of the child's own space (en or km). Reached from inside the child's space, so it is
+     * not behind the grown-up check there; like every child endpoint, only the child's family may call it.
+     */
+    @PutMapping("/{childId}/language")
+    public ResponseEntity<ChildResponse> changeLanguage(@PathVariable UUID childId,
+                                                        @Valid @RequestBody ChildLanguageChange request,
+                                                        @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return ResponseEntity.ok(ChildResponse.from(childService.changeLanguage(childId, request.language())));
+    }
+
     @GetMapping
     public ResponseEntity<List<ChildResponse>> listMyChildren(@AuthenticationPrincipal UUID accountId) {
         List<ChildResponse> children = childService.listForAccount(accountId).stream()
@@ -67,7 +81,9 @@ public class ChildController {
     @PostMapping
     public ResponseEntity<ChildResponse> addChild(@Valid @RequestBody CreateChildRequest request,
                                                     @AuthenticationPrincipal UUID accountId) {
-        Child child = childService.createForAccount(accountId, request.displayName(), request.dateOfBirth());
+        // A new child starts in the language the parent is using; the child can change it in their own space.
+        Child child = childService.createForAccount(accountId, request.displayName(), request.dateOfBirth(),
+                com.platform.identity.UiLanguage.ofCurrentRequest());
 
         // Separate call, on purpose: createForAccount's own transaction has already
         // committed by the time control returns here (crossing back out through its

@@ -100,6 +100,38 @@ class AccountLanguageIntegrationTests {
         assertThat(invalid.get("errors").get("email").asString()).isEqualTo("ត្រូវតែជាអាសយដ្ឋានអ៊ីមែលត្រឹមត្រូវ");
     }
 
+    /**
+     * A child's space has its own language, kept on the child: it starts as the language the parent is
+     * using, then changes on its own - never the parent's, and only by the child's family.
+     */
+    @Test
+    void aChildHasItsOwnLanguageThatOnlyItsFamilyChanges() throws Exception {
+        JsonNode parent = register();
+        String token = parent.get("accessToken").asString();
+        JsonNode child = json(send(HttpRequest.newBuilder(uri("/api/v1/children")).header("Content-Type", "application/json")
+                .header("Accept-Language", "km").POST(HttpRequest.BodyPublishers.ofString("{\"displayName\":\"Sokha\",\"dateOfBirth\":\""
+                        + java.time.LocalDate.now().minusYears(6) + "\"}")), token), 201);
+        String childId = child.get("id").asString();
+        assertThat(child.get("preferredLanguage").asString()).as("starts in the parent's current language").isEqualTo("km");
+
+        assertThat(json(put("/api/v1/children/" + childId + "/language", "{\"language\":\"en\"}", token), 200)
+                .get("preferredLanguage").asString()).isEqualTo("en");
+        assertThat(json(put("/api/v1/children/" + childId + "/language", "{\"language\":\"km\"}", token), 200)
+                .get("preferredLanguage").asString()).isEqualTo("km");
+        assertThat(languageOf(parent)).as("the parent's own language is untouched").isEqualTo("en");
+        json(put("/api/v1/account/language", "{\"language\":\"en\"}", token), 200);
+        assertThat(json(get("/api/v1/children/" + childId, token), 200).get("preferredLanguage").asString())
+                .as("and the parent's change leaves the child's").isEqualTo("km");
+
+        String stranger = register().get("accessToken").asString();
+        assertThat(put("/api/v1/children/" + childId + "/language", "{\"language\":\"en\"}", stranger).statusCode())
+                .as("another family").isIn(403, 404);
+        assertThat(put("/api/v1/children/" + childId + "/language", "{\"language\":\"fr\"}", token).statusCode()).isEqualTo(400);
+        assertThat(put("/api/v1/children/" + childId + "/language", "{\"language\":\"en\"}", null).statusCode()).isEqualTo(401);
+        assertThat(jdbc.queryForObject("select preferred_language from children where id = ?::uuid", String.class, childId))
+                .isEqualTo("km");
+    }
+
     /** Answers written by the security filters, before any controller, follow the same rule. */
     @Test
     void signedOutAnswersAreSaidInTheRequestsLanguageToo() throws Exception {

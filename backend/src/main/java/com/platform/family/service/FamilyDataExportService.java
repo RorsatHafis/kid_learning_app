@@ -111,10 +111,11 @@ public class FamilyDataExportService {
                          List<ChildData> children) {
     }
 
-    public record AccountData(UUID id, String email, String role, Instant createdAt, Instant emailConfirmedAt) {
+    public record AccountData(UUID id, String email, String role, Instant createdAt, Instant emailConfirmedAt,
+                              String interfaceLanguage) {
     }
 
-    public record ChildData(UUID id, String displayName, LocalDate dateOfBirth, Instant addedAt,
+    public record ChildData(UUID id, String displayName, LocalDate dateOfBirth, Instant addedAt, String interfaceLanguage,
                             List<EnrollmentOverview> learningPaths, List<CurriculumProgress> skills,
                             List<CompletedActivity> completedActivities, List<AnswerData> answers,
                             List<ParentInsightResponse> insightHistory, List<SchoolAccessRecord> schoolAccess) {
@@ -139,7 +140,7 @@ public class FamilyDataExportService {
                 ? subscriptions.familyPlanOf(accountId).map(OwnFamilyPlanResponse::of).orElse(null) : null;
         return new Export(FORMAT, Instant.now(),
                 new AccountData(account.getId(), account.getEmail(), account.getPlatformRole().name(), account.getCreatedAt(),
-                        account.getEmailVerifiedAt()),
+                        account.getEmailVerifiedAt(), account.getPreferredLanguage()),
                 plan, children);
     }
 
@@ -147,7 +148,7 @@ public class FamilyDataExportService {
         // listForAccount already scopes to the caller's families; checked again per child on purpose.
         familyAccessGuard.requireChildRecord(accountId, child.getId());
         return new ChildData(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getCreatedAt(),
-                journeys.enrollmentsFor(child.getId()), skills.progressFor(child.getId()),
+                child.getPreferredLanguage(), journeys.enrollmentsFor(child.getId()), skills.progressFor(child.getId()),
                 journeys.completedActivities(child.getId(), ALL), answersOf(child.getId()),
                 insights.listRecent(child.getId()).stream().map(ParentInsightResponse::from).toList(),
                 schoolAccess.accessHistoryOf(accountId, child.getId()));
