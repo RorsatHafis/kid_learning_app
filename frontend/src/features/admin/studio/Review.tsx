@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { Panel, TextAreaField } from "./shared";
 import { errorText, useStudioScope } from "./studioLogic";
+import { useMessages } from "@/i18n/catalog";
+import { formatDate } from "@/i18n/format";
+import { studioMessages } from "./messages";
 
-const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+const day = (iso: string) => formatDate(iso, { day: "numeric", month: "short", year: "numeric" });
 
 /**
  * Publishing a draft (Y14). Without review switched on, or for a teacher's own content, it is the
@@ -39,6 +42,7 @@ export function PublishControl({
   const [error, setError] = useState<string | null>(null);
   const [noting, setNoting] = useState(false);
   const [note, setNote] = useState("");
+  const m = useMessages(studioMessages).review;
 
   async function act(call: () => Promise<ReviewState>, published = false) {
     setWorking(true);
@@ -52,8 +56,8 @@ export function PublishControl({
     } catch (err) {
       setError(
         err instanceof ApiError && err.status === 422
-          ? "Fix the issues listed under Checks first."
-          : errorText(err, "That didn't work."),
+          ? m.fixFirst
+          : errorText(err, m.failed),
       );
       state.refetch();
     } finally {
@@ -65,14 +69,14 @@ export function PublishControl({
   if (!state.data) {
     return state.error ? (
       <Button size={size} disabled>
-        <Send size={15} aria-hidden /> Publish
+        <Send size={15} aria-hidden /> {m.publish}
       </Button>
     ) : null;
   }
   if (!state.data.required) {
     return (
       <Button size={size} disabled={busy || !canPublish} onClick={onPublish}>
-        <Send size={15} aria-hidden /> Publish
+        <Send size={15} aria-hidden /> {m.publish}
       </Button>
     );
   }
@@ -84,8 +88,8 @@ export function PublishControl({
       {open && open.mine && (
         <>
           <p role="status" className="text-right text-sm text-ink-soft">
-            Review asked on {day(open.requestedAt)}. Another administrator approves and publishes it.
-            {open.changedSince && " The draft changed since: ask again so they review it as it is."}
+            {m.askedMine(day(open.requestedAt))}
+            {open.changedSince && ` ${m.changedMine}`}
           </p>
           <div className="flex flex-wrap justify-end gap-2">
             {open.changedSince && (
@@ -94,11 +98,11 @@ export function PublishControl({
                 disabled={working || busy || !canPublish}
                 onClick={() => act(() => reviewApi.request(kind, versionId))}
               >
-                <Send size={15} aria-hidden /> Ask again
+                <Send size={15} aria-hidden /> {m.askAgain}
               </Button>
             )}
             <Button size={size} variant="ghost" disabled={working} onClick={() => act(() => reviewApi.withdraw(kind, versionId))}>
-              <Undo2 size={15} aria-hidden /> Withdraw the request
+              <Undo2 size={15} aria-hidden /> {m.withdraw}
             </Button>
           </div>
         </>
@@ -106,36 +110,36 @@ export function PublishControl({
       {open && !open.mine && (
         <>
           <p role="status" className="text-right text-sm text-ink-soft">
-            {open.requestedBy} asked for a review on {day(open.requestedAt)}.
-            {open.changedSince && " The draft changed since it was asked: its author asks again."}
+            {m.askedOther(open.requestedBy, day(open.requestedAt))}
+            {open.changedSince && ` ${m.changedOther}`}
           </p>
           {noting ? (
-            <div className="flex w-full flex-col gap-2" role="group" aria-label="Ask for changes">
-              <TextAreaField label="What should change" value={note} maxLength={1000} onChange={(e) => setNote(e.target.value)} />
+            <div className="flex w-full flex-col gap-2" role="group" aria-label={m.askForChanges}>
+              <TextAreaField label={m.whatShouldChange} value={note} maxLength={1000} onChange={(e) => setNote(e.target.value)} />
               <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   size={size}
                   disabled={working || !note.trim()}
                   onClick={() => act(() => reviewApi.requestChanges(open.id, note.trim()))}
                 >
-                  <MessageSquare size={15} aria-hidden /> Send to the author
+                  <MessageSquare size={15} aria-hidden /> {m.send}
                 </Button>
                 <Button size={size} variant="ghost" disabled={working} onClick={() => setNoting(false)}>
-                  Cancel
+                  {m.cancel}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="flex flex-wrap justify-end gap-2">
               <Button size={size} variant="outline" disabled={working} onClick={() => setNoting(true)}>
-                <MessageSquare size={15} aria-hidden /> Ask for changes…
+                <MessageSquare size={15} aria-hidden /> {m.askForChangesMenu}
               </Button>
               <Button
                 size={size}
                 disabled={working || busy || !canPublish || open.changedSince}
                 onClick={() => act(() => reviewApi.approve(open.id), true)}
               >
-                <CheckCircle2 size={15} aria-hidden /> Approve and publish
+                <CheckCircle2 size={15} aria-hidden /> {m.approve}
               </Button>
             </div>
           )}
@@ -145,18 +149,18 @@ export function PublishControl({
         <>
           {review?.status === "CHANGES_REQUESTED" && (
             <p role="status" className="w-full rounded-[10px] bg-light-soft/60 px-3 py-2 text-sm text-ink ring-1 ring-light/40">
-              <span className="font-semibold">{review.decidedBy} asked for changes:</span> {review.note ?? "(no note)"}
+              <span className="font-semibold">{m.changesAsked(review.decidedBy)}</span> {review.note ?? m.noNote}
             </p>
           )}
           <p className="text-right text-sm text-ink-soft">
-            Platform content is published once another administrator approves it.
+            {m.needsApproval}
           </p>
           <Button
             size={size}
             disabled={working || busy || !canPublish}
             onClick={() => act(() => reviewApi.request(kind, versionId))}
           >
-            <Send size={15} aria-hidden /> Ask for review
+            <Send size={15} aria-hidden /> {m.askForReview}
           </Button>
         </>
       )}
@@ -170,38 +174,38 @@ export function PublishControl({
 }
 
 const KIND_PATH: Record<ReviewKind, string> = { QUESTION: "questions", ACTIVITY: "activities", CURRICULUM: "curricula" };
-const KIND_LABEL: Record<ReviewKind, string> = { QUESTION: "Question", ACTIVITY: "Activity", CURRICULUM: "Curriculum" };
 
 /** Drafts waiting for a second administrator's review (shown only while review is switched on). */
 export function ReviewQueue() {
   const { base } = useStudioScope();
   const settings = useAsync(() => reviewApi.settings(), []);
   const queue = useAsync(() => (settings.data?.required ? reviewApi.queue() : Promise.resolve(null)), [settings.data?.required]);
+  const m = useMessages(studioMessages).review;
   if (!settings.data?.required) return null;
   const rows = queue.data?.items ?? [];
   return (
     <div id="reviews">
-      <Panel title="Waiting for review">
-        {queue.isLoading && !queue.data && <LoadingState label="Loading reviews…" />}
+      <Panel title={m.queueTitle}>
+        {queue.isLoading && !queue.data && <LoadingState label={m.loading} />}
         {queue.error && <ErrorState error={queue.error} onRetry={queue.refetch} />}
-        {queue.data && rows.length === 0 && <p className="text-sm text-ink-soft">Nothing is waiting for a review.</p>}
+        {queue.data && rows.length === 0 && <p className="text-sm text-ink-soft">{m.nothing}</p>}
         {rows.length > 0 && (
-          <ul aria-label="Drafts waiting for review" className="flex flex-col divide-y divide-line border-y border-line">
+          <ul aria-label={m.list} className="flex flex-col divide-y divide-line border-y border-line">
             {rows.map((row) => (
               <li key={row.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
                 <span className="min-w-0">
                   <span className="block font-medium text-ink">
-                    {KIND_LABEL[row.kind]}: {row.title}
+                    {m.kinds[row.kind]}: {row.title}
                   </span>
                   <span className="block text-sm text-ink-soft [overflow-wrap:anywhere]">
-                    Asked by {row.requestedBy} on {day(row.requestedAt)}
+                    {m.askedBy(row.requestedBy, day(row.requestedAt))}
                   </span>
                 </span>
                 <Link
                   to={`${base}/studio/${row.subjectId}/${KIND_PATH[row.kind]}/${row.contentId}`}
                   className="text-sm font-semibold text-tonle-700 hover:text-tonle-900"
                 >
-                  Review
+                  {m.open}
                 </Link>
               </li>
             ))}
@@ -209,7 +213,7 @@ export function ReviewQueue() {
         )}
         {queue.data && queue.data.total > rows.length && (
           <p className="mt-2 text-sm text-ink-soft">
-            The {rows.length} oldest of {queue.data.total} are shown.
+            {m.oldest(rows.length, queue.data.total)}
           </p>
         )}
       </Panel>

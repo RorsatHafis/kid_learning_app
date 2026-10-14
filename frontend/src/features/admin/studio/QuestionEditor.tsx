@@ -11,20 +11,23 @@ import { Button } from "@/components/ui/Button";
 import { ChildPreview } from "./ChildPreview";
 import { ArchivedBadge, ManageButton } from "./Lifecycle";
 import { QuestionDraftForm } from "./QuestionDraftForm";
-import { errorText, QUESTION_TYPE_LABEL, reportFromError, useStudio } from "./studioLogic";
+import { errorText, questionTypeLabel, reportFromError, useStudio } from "./studioLogic";
 import { Panel, SkillChips, StatusBadge, ValidationPanel, VersionHistory } from "./shared";
+import { useMessages } from "@/i18n/catalog";
+import { editorMessages } from "./editor.messages";
 
 export function QuestionEditor() {
   const { questionId = "" } = useParams<{ questionId: string }>();
   const loaded = useAsync(() => studioApi.question(questionId), [questionId]);
   const [detail, setDetail] = useState<QuestionDetail | null>(null);
+  const m = useMessages(editorMessages).editor;
 
   useEffect(() => {
     if (loaded.data) setDetail(loaded.data);
   }, [loaded.data]);
 
   if (loaded.error) return <ErrorState error={loaded.error} onRetry={loaded.refetch} />;
-  if (!detail) return <LoadingState label="Loading the question…" />;
+  if (!detail) return <LoadingState label={m.loadingQuestion} />;
   return <Editor detail={detail} onChange={setDetail} onReload={loaded.refetch} />;
 }
 
@@ -41,6 +44,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "error" | "ok"; text: string } | null>(null);
   const [skillToAdd, setSkillToAdd] = useState("");
+  const m = useMessages(editorMessages).editor;
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +69,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
     } catch (err) {
       const refused = reportFromError(err);
       if (refused) setReport(refused);
-      setMessage({ tone: "error", text: refused ? "Not published: fix the issues listed under Checks." : errorText(err) });
+      setMessage({ tone: "error", text: refused ? m.notPublished : errorText(err) });
     } finally {
       setBusy(false);
     }
@@ -77,7 +81,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <Link to=".." relative="path" className="flex w-fit items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink">
-          <ArrowLeft size={16} aria-hidden /> All questions
+          <ArrowLeft size={16} aria-hidden /> {m.allQuestions}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-display text-[1.625rem] font-semibold leading-tight text-tonle-950">{latest.prompt}</h2>
@@ -88,7 +92,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
           </span>
         </div>
         <p className="text-sm text-ink-soft">
-          {QUESTION_TYPE_LABEL[detail.questionType]} · version {latest.versionNumber}
+          {m.typeVersion(questionTypeLabel(detail.questionType), latest.versionNumber)}
         </p>
       </div>
 
@@ -107,7 +111,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
-          <Panel title={isDraft ? `Draft — version ${latest.versionNumber}` : "Content"}>
+          <Panel title={isDraft ? m.draftVersion(latest.versionNumber) : m.content}>
             {isDraft ? (
               <QuestionDraftForm
                 key={latest.id}
@@ -130,32 +134,29 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                     audio: i.audio,
                   })),
                 }}
-                submitLabel="Save draft"
+                submitLabel={m.saveDraft}
                 busy={busy}
-                onSubmit={(draft) => run(() => studioApi.reviseQuestionDraft(latest.id, draft), "Draft saved.")}
+                onSubmit={(draft) => run(() => studioApi.reviseQuestionDraft(latest.id, draft), m.draftSaved)}
               />
             ) : (
               <div className="flex flex-col gap-4">
                 <PublishedSummary detail={detail} />
-                <p className="text-sm text-ink-soft">
-                  Published versions never change: children&apos;s answers point at exactly this wording. To change it, start a new
-                  version — activities pick it up when their next version is published.
-                </p>
+                <p className="text-sm text-ink-soft">{m.questionNeverChanges}</p>
                 <Button
                   variant="outline"
                   className="w-fit"
                   disabled={busy}
                   onClick={() => run(() => studioApi.openQuestionDraft(detail.id))}
                 >
-                  <FilePlus2 size={16} aria-hidden /> Start a new version
+                  <FilePlus2 size={16} aria-hidden /> {m.startNew}
                 </Button>
               </div>
             )}
           </Panel>
 
-          <Panel title={isDraft ? `Skills · version ${latest.versionNumber}` : "Skills"}>
+          <Panel title={isDraft ? m.skillsVersion(latest.versionNumber) : m.skills}>
             <div className="flex flex-col gap-3">
-              <p className="text-sm text-ink-soft">A child&apos;s answer is recorded as evidence for each of these skills.</p>
+              <p className="text-sm text-ink-soft">{m.questionSkillsLead}</p>
               <SkillChips
                 skillIds={detail.skillIds}
                 catalog={catalog}
@@ -163,20 +164,15 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                 onRemove={isDraft ? (skillId) => run(() => studioApi.untagQuestionSkill(detail.id, skillId)) : undefined}
               />
               {isDraft && everPublished && (
-                <p className="text-xs text-ink-soft">
-                  Changes apply to this draft. Answers to the published version keep counting for the skills it was published
-                  with.
-                </p>
+                <p className="text-xs text-ink-soft">{m.questionDraftSkills}</p>
               )}
               {!isDraft && (
-                <p className="text-xs text-ink-soft">
-                  A published version keeps the skills it was published with. To change them, start a new version.
-                </p>
+                <p className="text-xs text-ink-soft">{m.publishedSkills}</p>
               )}
               {isDraft && available.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">
                   <label htmlFor="add-question-skill" className="sr-only">
-                    Add a skill
+                    {m.addSkill}
                   </label>
                   <select
                     id="add-question-skill"
@@ -184,7 +180,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                     onChange={(e) => setSkillToAdd(e.target.value)}
                     className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
                   >
-                    <option value="">Add a skill…</option>
+                    <option value="">{m.addSkillMenu}</option>
                     {available.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -197,7 +193,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                     disabled={!skillToAdd || busy}
                     onClick={() => run(() => studioApi.tagQuestionSkill(detail.id, skillToAdd)).then(() => setSkillToAdd(""))}
                   >
-                    Add
+                    {m.add}
                   </Button>
                 </div>
               )}
@@ -208,19 +204,19 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
         <div className="flex flex-col gap-6">
           {isDraft && (
             <Panel
-              title="Checks"
+              title={m.checks}
               action={
                 <div className="flex flex-wrap gap-2">
                   <Button variant="ghost" className="px-3" disabled={busy} onClick={() => setRevision((r) => r + 1)}>
-                    Check again
+                    {m.checkAgain}
                   </Button>
                   <PublishControl
                     kind="QUESTION"
                     versionId={latest.id}
                     busy={busy}
                     canPublish={!!report && report.errors.length === 0}
-                    onPublish={() => run(() => studioApi.publishQuestionVersion(latest.id), "Published. Children will see this version in new activities.")}
-                    onPublished={() => run(() => studioApi.question(detail.id), "Approved and published.")}
+                    onPublish={() => run(() => studioApi.publishQuestionVersion(latest.id), m.questionPublished)}
+                    onPublished={() => run(() => studioApi.question(detail.id), m.approved)}
                   />
                 </div>
               }
@@ -228,11 +224,11 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
               <ValidationPanel report={report} loading />
             </Panel>
           )}
-          <Panel title="Preview">
-            {preview ? <ChildPreview item={preview} /> : <p className="text-sm text-ink-soft">Loading preview…</p>}
+          <Panel title={m.preview}>
+            {preview ? <ChildPreview item={preview} /> : <p className="text-sm text-ink-soft">{m.loadingPreview}</p>}
           </Panel>
           {liveVersion && <WithdrawalPanel kind="QUESTION" versionId={liveVersion.id} versionNumber={liveVersion.versionNumber} />}
-          <Panel title="Versions">
+          <Panel title={m.versions}>
             <VersionHistory versions={detail.versions} />
           </Panel>
         </div>
@@ -243,21 +239,22 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
 
 function PublishedSummary({ detail }: { detail: QuestionDetail }) {
   const latest = detail.versions[detail.versions.length - 1];
+  const m = useMessages(editorMessages).editor;
   return (
     <dl className="grid gap-3 text-sm">
       <div>
-        <dt className="font-semibold text-ink-soft">Question</dt>
+        <dt className="font-semibold text-ink-soft">{m.question}</dt>
         <dd className="text-ink">{latest.prompt}</dd>
       </div>
       <div>
         <dt className="font-semibold text-ink-soft">
           {detail.questionType === "MATCHING"
-            ? "Pairs"
+            ? m.pairs
             : detail.questionType === "ORDERING"
-              ? "Right order"
+              ? m.rightOrder
               : detail.questionType === "SORTING"
-                ? "Groups"
-                : "Correct answer"}
+                ? m.groups
+                : m.correctAnswer}
         </dt>
         <dd className="text-ink">
           {detail.questionType === "SORTING" ? (
@@ -291,23 +288,23 @@ function PublishedSummary({ detail }: { detail: QuestionDetail }) {
       </div>
       {detail.questionType === "MULTIPLE_CHOICE" && (
         <div>
-          <dt className="font-semibold text-ink-soft">Choices</dt>
+          <dt className="font-semibold text-ink-soft">{m.choices}</dt>
           <dd className="text-ink">{latest.options.map((o) => o.label).join(" · ")}</dd>
         </div>
       )}
       {(latest.promptImage || latest.promptAudio) && (
         <div>
-          <dt className="font-semibold text-ink-soft">With the question</dt>
+          <dt className="font-semibold text-ink-soft">{m.withQuestion}</dt>
           <dd className="text-ink">
-            {[latest.promptImage && `a picture (${latest.promptImageDescription ?? "not described"})`, latest.promptAudio && "a reading"]
+            {[latest.promptImage && m.picture(latest.promptImageDescription), latest.promptAudio && m.reading]
               .filter(Boolean)
-              .join(" and ")}
+              .join(m.and)}
           </dd>
         </div>
       )}
       <div>
-        <dt className="font-semibold text-ink-soft">Difficulty</dt>
-        <dd className="text-ink">{latest.difficultyLevel ?? "Not set"}</dd>
+        <dt className="font-semibold text-ink-soft">{m.difficulty}</dt>
+        <dd className="text-ink">{latest.difficultyLevel ?? m.notSet}</dd>
       </div>
     </dl>
   );

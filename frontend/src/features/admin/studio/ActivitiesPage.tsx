@@ -13,6 +13,8 @@ import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, Panel, SkillChips, StatusBadge } from "./shared";
 import { currentStatus, errorText, useStudio, useComposer, useArchivedView } from "./studioLogic";
 import { ArchivedBadge, ArchivedSwitch, ManageButton } from "./Lifecycle";
+import { useMessages } from "@/i18n/catalog";
+import { editorMessages } from "./editor.messages";
 
 const PAGE_SIZE = 10;
 
@@ -35,16 +37,17 @@ export function ActivitiesPage() {
   const filtered = Boolean(text);
   const composer = useComposer(!archived && data?.total === 0 && !filtered);
   usePageInRange(data, setPage);
+  const m = useMessages(editorMessages).activities;
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-soft">
-          Lessons group activities. An activity is what a learning path places and a child plays.
+          {m.lead}
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <ArchivedSwitch archived={archived} onChange={setArchived} noun="lessons and activities" />
-          {!composer.open && !archived && <NewButton label="New lesson" onClick={composer.show} />}
+          <ArchivedSwitch archived={archived} onChange={setArchived} list="lessons" />
+          {!composer.open && !archived && <NewButton label={m.newLesson} onClick={composer.show} />}
         </div>
       </div>
       {composer.open && (
@@ -58,30 +61,30 @@ export function ActivitiesPage() {
         />
       )}
       {(filtered || (data && data.total > 0)) && (
-        <div role="search" aria-label="Find activities" className="flex flex-col gap-2">
+        <div role="search" aria-label={m.find} className="flex flex-col gap-2">
           <SearchField
-            label="Search lessons and activities"
+            label={m.search}
             value={text}
             onSearch={search}
-            placeholder="Search lessons and activities"
+            placeholder={m.search}
             className="max-w-xl"
           />
           {data && (
             <ListCount
               total={data.total}
-              counted={`${data.total} ${data.total === 1 ? "lesson" : "lessons"}`}
+              counted={m.counted(data.total)}
               filtered={filtered}
               onClear={() => update({ q: undefined })}
             />
           )}
         </div>
       )}
-      {lessons.isLoading && !data && <LoadingState label="Loading activities…" />}
+      {lessons.isLoading && !data && <LoadingState label={m.loading} />}
       {lessons.error && <ErrorState error={lessons.error} onRetry={lessons.refetch} />}
       {data && data.total === 0 && !filtered && !composer.open && (
-        <EmptyState title="No lessons yet" description="Add a lesson, then build activities inside it." />
+        <EmptyState title={m.none} description={m.firstHint} />
       )}
-      {data && data.total === 0 && filtered && <p className="text-sm text-ink-soft">No lesson or activity matches “{text}”.</p>}
+      {data && data.total === 0 && filtered && <p className="text-sm text-ink-soft">{m.noMatch(text)}</p>}
       {data && data.items.length > 0 && (
         <div
           className={cn("flex flex-col gap-5 transition-opacity", lessons.isLoading && "opacity-60")}
@@ -90,7 +93,7 @@ export function ActivitiesPage() {
           {data.items.map((lesson) => (
             <LessonPanel key={lesson.id} lesson={lesson} onChanged={lessons.refetch} />
           ))}
-          <Pager label="Lessons" page={data.page} size={data.size} total={data.total} onPage={setPage} />
+          <Pager label={m.lessons} page={data.page} size={data.size} total={data.total} onPage={setPage} />
         </div>
       )}
     </div>
@@ -100,6 +103,7 @@ export function ActivitiesPage() {
 function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: () => void }) {
   const { catalog } = useStudio();
   const [adding, setAdding] = useState(false);
+  const m = useMessages(editorMessages).activities;
   return (
     <Panel
       title={lesson.title}
@@ -109,17 +113,17 @@ function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: 
           <ManageButton kind="lessons" id={lesson.id} name={lesson.title} archived={lesson.archived} onChanged={onChanged} />
           {!adding && !lesson.archived && (
             <Button variant="outline" size="sm" onClick={() => setAdding(true)} disabled={catalog.skills.length === 0}>
-              <Plus size={15} aria-hidden /> Activity
+              <Plus size={15} aria-hidden /> {m.activity}
             </Button>
           )}
         </span>
       }
     >
       {adding && <NewActivity lessonId={lesson.id} onCancel={() => setAdding(false)} />}
-      {lesson.activityCount === 0 && !adding && <p className="text-sm text-ink-soft">No activities in this lesson yet.</p>}
+      {lesson.activityCount === 0 && !adding && <p className="text-sm text-ink-soft">{m.emptyLesson}</p>}
       {lesson.activities.length < lesson.activityCount && (
         <p className="mb-1 text-xs text-ink-faint">
-          {lesson.activities.length} of {lesson.activityCount} activities in this lesson match.
+          {m.someMatch(lesson.activities.length, lesson.activityCount)}
         </p>
       )}
       <ul className="flex flex-col divide-y divide-line">
@@ -157,6 +161,7 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
   const [skillIds, setSkillIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(editorMessages).activities;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -176,9 +181,9 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
 
   return (
     <form onSubmit={onSubmit} className="mb-4 flex flex-col gap-4 rounded-[12px] bg-tonle-50/60 p-4 ring-1 ring-tonle-100">
-      <FormField label="Activity title" value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
+      <FormField label={m.activityTitle} value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-semibold text-ink">Skills learning paths should choose it for</legend>
+        <legend className="mb-1 text-sm font-semibold text-ink">{m.placedFor}</legend>
         {catalog.skills.map((skill) => (
           <label key={skill.id} className="flex items-center gap-2 text-sm text-ink">
             <input
@@ -198,10 +203,10 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
       )}
       <div className="flex gap-2">
         <Button type="submit" disabled={busy || !title.trim() || skillIds.length === 0}>
-          {busy ? "Creating…" : "Create activity"}
+          {busy ? m.creating : m.create}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
-          Cancel
+          {m.cancel}
         </Button>
       </div>
     </form>
@@ -213,6 +218,7 @@ function NewLesson({ onCreated, onClose, focusOnOpen }: { onCreated: () => void;
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(editorMessages).activities;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -233,16 +239,16 @@ function NewLesson({ onCreated, onClose, focusOnOpen }: { onCreated: () => void;
   }
 
   return (
-    <ComposerPanel title="New lesson" onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-xl">
+    <ComposerPanel title={m.newLesson} onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField label="Lesson title" value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
+        <FormField label={m.lessonTitle} value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
         <Button type="submit" disabled={busy || !title.trim()} className="w-fit">
-          <Plus size={16} aria-hidden /> {busy ? "Adding…" : "Add lesson"}
+          <Plus size={16} aria-hidden /> {busy ? m.adding : m.addLesson}
         </Button>
       </form>
     </ComposerPanel>

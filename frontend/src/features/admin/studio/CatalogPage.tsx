@@ -8,6 +8,8 @@ import { codeFrom, errorText, useArchivedView, useStudio, useStudioScope, useCom
 import { ArchivedSwitch, ManageButton } from "./Lifecycle";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { ErrorState, LoadingState } from "@/components/ui/States";
+import { useMessages } from "@/i18n/catalog";
+import { catalogMessages } from "./catalog.messages";
 
 /**
  * The educational anchor: skills (what evidence is recorded against) and learning
@@ -21,16 +23,14 @@ export function CatalogPage() {
   const objectives = useComposer(catalogAdmin && catalog.objectives.length === 0);
   const [archivedView, setArchived] = useArchivedView();
   const archived = catalogAdmin && archivedView;
+  const m = useMessages(catalogMessages);
 
   return (
     <div className="flex flex-col gap-5">
       {catalogAdmin ? (
-        <ArchivedSwitch archived={archived} onChange={setArchived} noun="skills and objectives" />
+        <ArchivedSwitch archived={archived} onChange={setArchived} list="catalog" />
       ) : (
-        <p className="max-w-3xl text-sm text-ink-soft">
-          These are the platform&apos;s skills and objectives: your questions count as evidence for them, and your curricula are
-          built from them. Only an administrator changes them.
-        </p>
+        <p className="max-w-3xl text-sm text-ink-soft">{m.teacherLead}</p>
       )}
       {archived ? (
         <ArchivedCatalog subjectId={catalog.subject.id} />
@@ -39,13 +39,11 @@ export function CatalogPage() {
           <div className="flex flex-col gap-4">
             {skills.open && <NewSkill onDone={skills.hide} focusOnOpen={skills.requested} />}
             <Panel
-              title={`Skills (${catalog.skills.length})`}
-              action={catalogAdmin && !skills.open && <NewButton label="New skill" onClick={skills.show} />}
+              title={m.skills(catalog.skills.length)}
+              action={catalogAdmin && !skills.open && <NewButton label={m.newSkill} onClick={skills.show} />}
             >
               {catalog.skills.length === 0 ? (
-                <p className="text-sm text-ink-soft">
-                  No skills yet. Skills are what children&apos;s answers count as evidence for.
-                </p>
+                <p className="text-sm text-ink-soft">{m.noSkills}</p>
               ) : (
                 <ul className="flex flex-col divide-y divide-line">
                   {catalog.skills.map((skill) => (
@@ -58,11 +56,11 @@ export function CatalogPage() {
           <div className="flex flex-col gap-4">
             {objectives.open && <NewObjective onDone={objectives.hide} focusOnOpen={objectives.requested} />}
             <Panel
-              title={`Learning objectives (${catalog.objectives.length})`}
-              action={catalogAdmin && !objectives.open && <NewButton label="New objective" onClick={objectives.show} />}
+              title={m.objectives(catalog.objectives.length)}
+              action={catalogAdmin && !objectives.open && <NewButton label={m.newObjective} onClick={objectives.show} />}
             >
               {catalog.objectives.length === 0 ? (
-                <p className="text-sm text-ink-soft">No objectives yet. A curriculum is a sequence of objectives.</p>
+                <p className="text-sm text-ink-soft">{m.noObjectives}</p>
               ) : (
                 <ul className="flex flex-col divide-y divide-line">
                   {catalog.objectives.map((objective) => (
@@ -82,19 +80,20 @@ export function CatalogPage() {
 function ArchivedCatalog({ subjectId }: { subjectId: string }) {
   const { refreshCatalog } = useStudio();
   const archived = useAsync(() => studioApi.catalog(subjectId, true), [subjectId]);
+  const m = useMessages(catalogMessages);
   const changed = () => {
     archived.refetch();
     refreshCatalog();
   };
-  if (archived.isLoading && !archived.data) return <LoadingState label="Loading archived skills and objectives…" />;
+  if (archived.isLoading && !archived.data) return <LoadingState label={m.loadingArchived} />;
   if (archived.error) return <ErrorState error={archived.error} onRetry={archived.refetch} />;
   if (!archived.data) return null;
   const { skills, objectives } = archived.data;
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <Panel title={`Archived skills (${skills.length})`}>
+      <Panel title={m.archivedSkills(skills.length)}>
         {skills.length === 0 ? (
-          <p className="text-sm text-ink-soft">No archived skills.</p>
+          <p className="text-sm text-ink-soft">{m.noArchivedSkills}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-line">
             {skills.map((skill) => (
@@ -110,7 +109,7 @@ function ArchivedCatalog({ subjectId }: { subjectId: string }) {
                   description={skill.description}
                   describable
                   archived
-                  label="Restore…"
+                  wording="restore"
                   onChanged={changed}
                 />
               </li>
@@ -118,9 +117,9 @@ function ArchivedCatalog({ subjectId }: { subjectId: string }) {
           </ul>
         )}
       </Panel>
-      <Panel title={`Archived objectives (${objectives.length})`}>
+      <Panel title={m.archivedObjectives(objectives.length)}>
         {objectives.length === 0 ? (
-          <p className="text-sm text-ink-soft">No archived objectives.</p>
+          <p className="text-sm text-ink-soft">{m.noArchivedObjectives}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-line">
             {objectives.map((objective) => (
@@ -136,7 +135,7 @@ function ArchivedCatalog({ subjectId }: { subjectId: string }) {
                   description={objective.description}
                   describable
                   archived
-                  label="Restore…"
+                  wording="restore"
                   onChanged={changed}
                 />
               </li>
@@ -155,6 +154,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const m = useMessages(catalogMessages);
   const candidates = catalogAdmin
     ? catalog.skills.filter((s) => s.id !== skill.id && !skill.prerequisiteSkillIds.includes(s.id))
     : [];
@@ -168,7 +168,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
       setPicking(false);
       refreshCatalog();
     } catch (err) {
-      setError(errorText(err, "That prerequisite would create a loop."));
+      setError(errorText(err, m.loop));
     } finally {
       setBusy(false);
     }
@@ -195,7 +195,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
       </div>
       {skill.prerequisiteSkillIds.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
-          Builds on <SkillChips skillIds={skill.prerequisiteSkillIds} catalog={catalog} />
+          {m.buildsOn} <SkillChips skillIds={skill.prerequisiteSkillIds} catalog={catalog} />
         </div>
       )}
       {candidates.length > 0 && !picking && (
@@ -204,13 +204,13 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
           onClick={() => setPicking(true)}
           className="flex w-fit items-center gap-1.5 rounded-[8px] px-1.5 py-1 text-sm font-medium text-tonle-700 transition-colors hover:bg-tonle-50"
         >
-          <Plus size={14} aria-hidden /> Prerequisite
+          <Plus size={14} aria-hidden /> {m.prerequisite}
         </button>
       )}
       {candidates.length > 0 && picking && (
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor={`pre-${skill.id}`}>
-            Add a prerequisite for {skill.name}
+            {m.addPrerequisiteFor(skill.name)}
           </label>
           <select
             autoFocus
@@ -219,7 +219,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
             onChange={(e) => setPrerequisite(e.target.value)}
             className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
           >
-            <option value="">Add a prerequisite…</option>
+            <option value="">{m.addPrerequisite}</option>
             {candidates.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -227,10 +227,10 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
             ))}
           </select>
           <Button variant="outline" size="md" className="px-4 py-2" disabled={!prerequisite || busy} onClick={add}>
-            Add
+            {m.add}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setPicking(false)} disabled={busy}>
-            Cancel
+            {m.cancel}
           </Button>
         </div>
       )}
@@ -249,6 +249,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
   const [skill, setSkill] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const m = useMessages(catalogMessages);
   const candidates = catalogAdmin ? catalog.skills.filter((s) => !objective.skillIds.includes(s.id)) : [];
 
   async function add() {
@@ -288,7 +289,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
       {candidates.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor={`obj-${objective.id}`}>
-            Add a skill to {objective.title}
+            {m.addSkillTo(objective.title)}
           </label>
           <select
             id={`obj-${objective.id}`}
@@ -296,7 +297,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
             onChange={(e) => setSkill(e.target.value)}
             className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
           >
-            <option value="">Add a skill…</option>
+            <option value="">{m.addSkill}</option>
             {candidates.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -304,7 +305,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
             ))}
           </select>
           <Button variant="outline" size="md" className="px-4 py-2" disabled={!skill || busy} onClick={add}>
-            Add
+            {m.add}
           </Button>
         </div>
       )}
@@ -349,6 +350,7 @@ function NewSkill({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen: bo
   const form = useNamedCodeForm();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const m = useMessages(catalogMessages);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -364,18 +366,18 @@ function NewSkill({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen: bo
       refreshCatalog();
       onDone();
     } catch (err) {
-      setError(errorText(err, "The skill couldn't be added. Its code may already be in use."));
+      setError(errorText(err, m.skillFailed));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <ComposerPanel title="New skill" onClose={onDone} focusOnOpen={focusOnOpen}>
+    <ComposerPanel title={m.newSkill} onClose={onDone} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField label="Skill name" value={form.name} maxLength={160} required onChange={(e) => form.onName(e.target.value)} />
+        <FormField label={m.skillName} value={form.name} maxLength={160} required onChange={(e) => form.onName(e.target.value)} />
         <FormField
-          label="Code (unique on the platform)"
+          label={m.code}
           value={form.code}
           maxLength={60}
           pattern="[A-Z0-9_]+"
@@ -383,7 +385,7 @@ function NewSkill({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen: bo
           onChange={(e) => form.onCode(e.target.value)}
         />
         <TextAreaField
-          label="What a child can do when they have this skill"
+          label={m.canDo}
           value={form.description}
           maxLength={2000}
           onChange={(e) => form.setDescription(e.target.value)}
@@ -394,7 +396,7 @@ function NewSkill({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen: bo
           </p>
         )}
         <Button type="submit" disabled={saving || !form.name.trim() || !form.code} className="w-fit">
-          <Plus size={16} aria-hidden /> {saving ? "Adding…" : "Add skill"}
+          <Plus size={16} aria-hidden /> {saving ? m.adding : m.addSkillButton}
         </Button>
       </form>
     </ComposerPanel>
@@ -406,6 +408,7 @@ function NewObjective({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen
   const form = useNamedCodeForm();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const m = useMessages(catalogMessages);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -421,24 +424,24 @@ function NewObjective({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen
       refreshCatalog();
       onDone();
     } catch (err) {
-      setError(errorText(err, "The objective couldn't be added. Its code may already be in use."));
+      setError(errorText(err, m.objectiveFailed));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <ComposerPanel title="New learning objective" onClose={onDone} focusOnOpen={focusOnOpen}>
+    <ComposerPanel title={m.newLearningObjective} onClose={onDone} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField
-          label="Objective title"
+          label={m.objectiveTitle}
           value={form.name}
           maxLength={200}
           required
           onChange={(e) => form.onName(e.target.value)}
         />
         <FormField
-          label="Code (unique on the platform)"
+          label={m.code}
           value={form.code}
           maxLength={60}
           pattern="[A-Z0-9_]+"
@@ -446,7 +449,7 @@ function NewObjective({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen
           onChange={(e) => form.onCode(e.target.value)}
         />
         <TextAreaField
-          label="Description (optional)"
+          label={m.description}
           value={form.description}
           maxLength={2000}
           onChange={(e) => form.setDescription(e.target.value)}
@@ -457,7 +460,7 @@ function NewObjective({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen
           </p>
         )}
         <Button type="submit" disabled={saving || !form.name.trim() || !form.code} className="w-fit">
-          <Plus size={16} aria-hidden /> {saving ? "Adding…" : "Add objective"}
+          <Plus size={16} aria-hidden /> {saving ? m.adding : m.addObjective}
         </Button>
       </form>
     </ComposerPanel>

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Eye } from "lucide-react";
 import type { ActivityItem } from "@/lib/api/types";
 import { QuestionView } from "@/features/child/QuestionView";
+import { useMessages } from "@/i18n/catalog";
+import { studioMessages } from "./messages";
 
 /**
  * A question exactly as the child's app renders it, from exactly what the server
@@ -9,16 +11,15 @@ import { QuestionView } from "@/features/child/QuestionView";
  */
 export function ChildPreview({ item, index, total }: { item: ActivityItem; index?: number; total?: number }) {
   const [tried, setTried] = useState(false);
+  const m = useMessages(studioMessages).preview;
   return (
     <figure className="flex flex-col gap-4 rounded-[20px] bg-[#FFFBF3] p-4 ring-1 ring-[#EADFCB] sm:p-6">
       <figcaption className="flex items-center justify-between gap-2 text-[0.8125rem] font-medium text-ink-soft">
         <span className="flex items-center gap-1.5">
-          <Eye size={14} aria-hidden /> Child&apos;s view
+          <Eye size={14} aria-hidden /> {m.childsView}
         </span>
         {index !== undefined && total !== undefined && (
-          <span>
-            Question {index + 1} of {total}
-          </span>
+          <span>{m.questionOf(index + 1, total)}</span>
         )}
       </figcaption>
       {/* The child's exact layout at 70%: an editor needs to see it, not to scroll past it. */}
@@ -27,7 +28,7 @@ export function ChildPreview({ item, index, total }: { item: ActivityItem; index
       </div>
       {tried && (
         <p role="status" className="text-sm text-ink-soft">
-          Preview only — in the app the server checks the answer and records it as evidence.
+          {m.previewOnly}
         </p>
       )}
     </figure>

@@ -36,7 +36,7 @@ describe("ManageButton", () => {
       new ApiError(409, { title: "Conflict", status: 409, detail: "Its lesson is archived. Restore the lesson first." }),
     );
     const user = userEvent.setup();
-    render(<ManageButton kind="activities" id="a1" name="Count the stars" archived label="Restore…" onChanged={vi.fn()} />);
+    render(<ManageButton kind="activities" id="a1" name="Count the stars" archived wording="restore" onChanged={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Restore activity: Count the stars" }));
     await user.click(screen.getByRole("button", { name: "Restore" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Restore the lesson first");
@@ -55,7 +55,7 @@ describe("ArchivedSwitch", () => {
   it("switches between what is in use and what is archived", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(<ArchivedSwitch archived={false} onChange={onChange} noun="curricula" />);
+    render(<ArchivedSwitch archived={false} onChange={onChange} list="curricula" />);
     expect(screen.getByRole("button", { name: "In use" })).toHaveAttribute("aria-pressed", "true");
     await user.click(screen.getByRole("button", { name: "Archived" }));
     expect(onChange).toHaveBeenCalledWith(true);

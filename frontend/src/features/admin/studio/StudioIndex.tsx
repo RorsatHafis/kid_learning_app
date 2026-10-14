@@ -11,6 +11,8 @@ import { PageHeader } from "@/components/workspace/WorkspaceShell";
 import { codeFrom, errorText, useArchivedView, useComposer, useStudioScope } from "./studioLogic";
 import { ArchivedSwitch, ManageButton } from "./Lifecycle";
 import { ReviewQueue } from "./Review";
+import { useMessages } from "@/i18n/catalog";
+import { studioMessages } from "./messages";
 
 /** Where authoring starts: pick the subject to work in, or add a new one. */
 export function StudioIndex() {
@@ -19,23 +21,21 @@ export function StudioIndex() {
   const archived = catalogAdmin && archivedView;
   const subjects = useAsync(() => studioApi.subjects(archived), [archived]);
   const composer = useComposer(catalogAdmin && !archived && subjects.data?.length === 0);
+  const all = useMessages(studioMessages);
+  const m = all.index;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        breadcrumb={[{ label: "Content Studio" }]}
-        title="Subjects"
-        description={
-          catalogAdmin
-            ? "Content is built subject by subject: skills and objectives first, then questions and activities, then the curriculum that places them on children's learning paths. Nothing reaches a child until it is published, and publishing checks that a child can actually play it."
-            : "Build your own questions, activities and curricula on the platform's subjects and skills. Nothing reaches a child until it is published; your curricula reach children when you assign them to your class, and your activities can then be placed as practice."
-        }
+        breadcrumb={[{ label: all.layout.studio }]}
+        title={m.title}
+        description={catalogAdmin ? m.leadAdmin : m.leadTeacher}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Link to={`${base}/media`} className={buttonClasses("outline")}>
-              <Images size={16} aria-hidden /> Media library
+              <Images size={16} aria-hidden /> {m.media}
             </Link>
-            {catalogAdmin && !composer.open && <NewButton label="New subject" onClick={composer.show} />}
+            {catalogAdmin && !composer.open && <NewButton label={m.newSubject} onClick={composer.show} />}
           </div>
         }
       />
@@ -51,18 +51,18 @@ export function StudioIndex() {
         />
       )}
 
-      {catalogAdmin && <ArchivedSwitch archived={archived} onChange={setArchived} noun="subjects" />}
+      {catalogAdmin && <ArchivedSwitch archived={archived} onChange={setArchived} list="subjects" />}
 
-      {subjects.isLoading && !subjects.data && <LoadingState label="Loading subjects…" />}
+      {subjects.isLoading && !subjects.data && <LoadingState label={m.loading} />}
       {subjects.error && <ErrorState error={subjects.error} onRetry={subjects.refetch} />}
       {subjects.data && subjects.data.length === 0 && (
         <EmptyState
-          title={archived ? "No archived subjects" : "No subjects yet"}
-          description={archived ? "Subjects you archive appear here, to restore." : "Add the first subject to start building content."}
+          title={archived ? m.noArchived : m.none}
+          description={archived ? m.archivedHint : m.firstHint}
         />
       )}
       {archived && subjects.data && subjects.data.length > 0 && (
-        <ul aria-label="Archived subjects" className="divide-y divide-line overflow-hidden rounded-[16px] bg-white ring-1 ring-line">
+        <ul aria-label={m.archivedList} className="divide-y divide-line overflow-hidden rounded-[16px] bg-white ring-1 ring-line">
           {subjects.data.map((subject) => (
             <li key={subject.id} className="flex items-center justify-between gap-4 px-5 py-4">
               <span className="min-w-0">
@@ -76,7 +76,7 @@ export function StudioIndex() {
                 description={subject.description}
                 describable
                 archived
-                label="Restore…"
+                wording="restore"
                 onChanged={subjects.refetch}
               />
             </li>
@@ -116,6 +116,7 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const m = useMessages(studioMessages).index;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -130,17 +131,17 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
       onCreated();
       navigate(`/admin/studio/${subject.id}/catalog`); // only an administrator creates subjects
     } catch (err) {
-      setError(errorText(err, "The subject couldn't be created. Its code may already be in use."));
+      setError(errorText(err, m.createFailed));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <ComposerPanel title="New subject" onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-2xl">
+    <ComposerPanel title={m.newSubject} onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-2xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField
-          label="Name"
+          label={m.name}
           value={name}
           maxLength={120}
           required
@@ -150,7 +151,7 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
           }}
         />
         <FormField
-          label="Code (capital letters, numbers and _)"
+          label={m.code}
           value={code}
           maxLength={50}
           pattern="[A-Z0-9_]+"
@@ -161,7 +162,7 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
           }}
         />
         <TextAreaField
-          label="Description (optional)"
+          label={m.description}
           value={description}
           maxLength={2000}
           onChange={(e) => setDescription(e.target.value)}
@@ -172,7 +173,7 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
           </p>
         )}
         <Button type="submit" disabled={saving || !name.trim() || !code} className="w-fit">
-          <Plus size={16} aria-hidden /> {saving ? "Adding…" : "Add subject"}
+          <Plus size={16} aria-hidden /> {saving ? m.adding : m.add}
         </Button>
       </form>
     </ComposerPanel>

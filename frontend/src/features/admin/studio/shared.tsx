@@ -3,6 +3,10 @@ import { AlertTriangle, CheckCircle2, CircleAlert, Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/Button";
 import type { Catalog, PublicationStatus, ValidationReport, VersionSummary } from "@/lib/api/studio";
 import { cn } from "@/lib/utils/cn";
+import { useMessages } from "@/i18n/catalog";
+import { formatDate } from "@/i18n/format";
+import { studioMessages } from "./messages";
+import { issueText } from "./studioLogic";
 
 const statusStyle: Record<PublicationStatus, string> = {
   DRAFT: "bg-light-soft text-light-deep ring-light/40",
@@ -16,13 +20,8 @@ const statusDot: Record<PublicationStatus, string> = {
   RETIRED: "bg-ink-faint",
 };
 
-const statusLabel: Record<PublicationStatus, string> = {
-  DRAFT: "Draft",
-  PUBLISHED: "Published",
-  RETIRED: "Superseded",
-};
-
 export function StatusBadge({ status }: { status: PublicationStatus }) {
+  const statusLabel = useMessages(studioMessages).statuses;
   return (
     <span
       className={cn(
@@ -37,13 +36,14 @@ export function StatusBadge({ status }: { status: PublicationStatus }) {
 }
 
 export function VersionHistory({ versions }: { versions: VersionSummary[] }) {
+  const m = useMessages(studioMessages);
   return (
-    <ol className="flex flex-col gap-2" aria-label="Version history">
+    <ol className="flex flex-col gap-2" aria-label={m.versionHistory}>
       {[...versions].reverse().map((v) => (
         <li key={v.id} className="flex items-center justify-between gap-3 text-sm">
-          <span className="font-semibold text-ink">Version {v.versionNumber}</span>
+          <span className="font-semibold text-ink">{m.versionN(v.versionNumber)}</span>
           <span className="flex items-center gap-2 text-ink-soft">
-            {v.publishedAt && <span>{new Date(v.publishedAt).toLocaleDateString()}</span>}
+            {v.publishedAt && <span>{formatDate(v.publishedAt)}</span>}
             <StatusBadge status={v.status} />
           </span>
         </li>
@@ -57,36 +57,36 @@ export function VersionHistory({ versions }: { versions: VersionSummary[] }) {
  * Errors block publishing; warnings are the author's call.
  */
 export function ValidationPanel({ report, loading }: { report: ValidationReport | null; loading?: boolean }) {
-  if (loading && !report) return <p className="text-sm text-ink-soft">Checking…</p>;
+  const m = useMessages(studioMessages);
+  if (loading && !report) return <p className="text-sm text-ink-soft">{m.checking}</p>;
   if (!report) return null;
   const ready = report.errors.length === 0;
   return (
     <div className="flex flex-col gap-3" role="status" aria-live="polite">
       {ready ? (
         <p className="flex items-center gap-2 text-sm font-semibold text-palm-deep">
-          <CheckCircle2 size={18} aria-hidden /> Ready to publish
+          <CheckCircle2 size={18} aria-hidden /> {m.ready}
         </p>
       ) : (
         <p className="flex items-center gap-2 text-sm font-semibold text-brick-deep">
-          <CircleAlert size={18} aria-hidden /> {report.errors.length} {report.errors.length === 1 ? "issue" : "issues"} to fix
-          before publishing
+          <CircleAlert size={18} aria-hidden /> {m.toFix(report.errors.length)}
         </p>
       )}
       {report.errors.length > 0 && (
         <ul className="flex flex-col gap-2">
           {report.errors.map((issue, i) => (
             <li key={`e${i}`} className="rounded-[10px] bg-brick-soft px-3 py-2 text-sm text-brick-deep">
-              {issue.message}
+              {issueText(issue)}
             </li>
           ))}
         </ul>
       )}
       {report.warnings.length > 0 && (
-        <ul className="flex flex-col gap-2" aria-label="Warnings">
+        <ul className="flex flex-col gap-2" aria-label={m.warnings}>
           {report.warnings.map((issue, i) => (
             <li key={`w${i}`} className="flex gap-2 rounded-[10px] bg-light-soft px-3 py-2 text-sm text-light-deep">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden />
-              {issue.message}
+              {issueText(issue)}
             </li>
           ))}
         </ul>
@@ -141,8 +141,9 @@ export function SkillChips({
   onRemove?: (skillId: string) => void;
   disabled?: boolean;
 }) {
-  if (skillIds.length === 0) return <p className="text-sm text-ink-soft">No skills yet.</p>;
-  const name = (id: string) => catalog.skills.find((s) => s.id === id)?.name ?? "Skill from another subject";
+  const m = useMessages(studioMessages);
+  if (skillIds.length === 0) return <p className="text-sm text-ink-soft">{m.noSkills}</p>;
+  const name = (id: string) => catalog.skills.find((s) => s.id === id)?.name ?? m.otherSubjectSkill;
   return (
     <ul className="flex flex-wrap gap-2">
       {skillIds.map((id) => (
@@ -156,7 +157,7 @@ export function SkillChips({
               type="button"
               onClick={() => onRemove(id)}
               disabled={disabled}
-              aria-label={`Remove ${name(id)}`}
+              aria-label={m.remove(name(id))}
               className="rounded-[6px] p-1 text-tonle-600 hover:bg-white disabled:opacity-50"
             >
               <X size={14} aria-hidden />
@@ -276,6 +277,7 @@ export function ComposerPanel({
 }) {
   const id = useId();
   const ref = useRef<HTMLElement | null>(null);
+  const m = useMessages(studioMessages);
   useEffect(() => {
     if (focusOnOpen)
       ref.current
@@ -305,7 +307,7 @@ export function ComposerPanel({
           <button
             type="button"
             onClick={onClose}
-            aria-label={`Close: ${title}`}
+            aria-label={m.close(title)}
             className="rounded-[8px] p-1.5 text-ink-soft transition-colors hover:bg-white hover:text-tonle-900"
           >
             <X size={16} aria-hidden />

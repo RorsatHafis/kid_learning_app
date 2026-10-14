@@ -54,7 +54,17 @@ public class JourneyBuilderService {
 
     public enum Severity { WARNING, TIP }
 
-    public record JourneyIssue(String code, Severity severity, String message, UUID skillId) {
+    /** As {@code ValidationReport.Issue}: {@code values} are what {@code message} names, for clients that word it themselves. */
+    public record JourneyIssue(String code, Severity severity, String message, UUID skillId, Map<String, Object> values) {
+
+        public JourneyIssue {
+            values = Map.copyOf(values);
+        }
+
+        JourneyIssue(String code, Severity severity, String message, UUID skillId) {
+            this(code, severity, message, skillId, Map.of());
+        }
+
     }
 
     public record StepPlan(UUID activityId, UUID activityVersionId, String title, int versionNumber, Integer difficulty,
@@ -209,7 +219,7 @@ public class JourneyBuilderService {
                     // Its activities were placed where it was first taught; nothing else to say about it here.
                     issues.add(new JourneyIssue("SKILL_REPEATED", Severity.TIP,
                             "\"%s\" is already taught in chapter %d, where its activities were placed.".formatted(skill.getName(), firstTaught),
-                            skillId));
+                            skillId, Map.of("skill", skill.getName(), "chapter", firstTaught)));
                     continue;
                 }
                 issues.addAll(skillIssues(skill, c, position, prereqs));
@@ -258,28 +268,30 @@ public class JourneyBuilderService {
         List<JourneyIssue> issues = new ArrayList<>();
         String name = skill.getName();
         if (skill.getStatus() != CatalogStatus.ACTIVE) {
-            issues.add(new JourneyIssue("SKILL_ARCHIVED", Severity.WARNING, "\"%s\" is archived.".formatted(name), skill.getId()));
+            issues.add(new JourneyIssue("SKILL_ARCHIVED", Severity.WARNING, "\"%s\" is archived.".formatted(name), skill.getId(),
+                    Map.of("skill", name)));
         }
         if (c.published == 0) {
             issues.add(new JourneyIssue("SKILL_NO_ACTIVITY", Severity.WARNING,
                     "No published activity practises \"%s\" yet%s, so children won't practise it.".formatted(name,
-                            c.draftOnly > 0 ? " (%d in draft)".formatted(c.draftOnly) : ""), skill.getId()));
+                            c.draftOnly > 0 ? " (%d in draft)".formatted(c.draftOnly) : ""), skill.getId(),
+                    Map.of("skill", name, "drafts", c.draftOnly)));
         } else {
             if (c.evidenceQuestions == 0) {
                 issues.add(new JourneyIssue("SKILL_NO_EVIDENCE", Severity.WARNING,
                         "Children practise \"%s\", but no question in its activities is tagged with it, so their answers never count as evidence for it and its standing can't change."
-                                .formatted(name), skill.getId()));
+                                .formatted(name), skill.getId(), Map.of("skill", name)));
             }
             boolean harderExists = c.minDifficulty != null && c.maxDifficulty != null && c.maxDifficulty > c.minDifficulty;
             if (c.published == 1) {
                 issues.add(new JourneyIssue("SKILL_ONE_ACTIVITY", Severity.TIP, (prereqs.isEmpty()
                         ? "Only one activity practises \"%s\": a child who struggles can't be given different practice, and a child doing well can't be moved on to something harder."
                         : "Only one activity practises \"%s\": a child doing well can't be moved on to something harder.").formatted(name),
-                        skill.getId()));
+                        skill.getId(), Map.of("skill", name, "prerequisites", !prereqs.isEmpty())));
             } else if (!harderExists) {
                 issues.add(new JourneyIssue("SKILL_NO_HARDER_STEP", Severity.TIP,
                         "\"%s\"'s activities all have the same difficulty (or none set), so a child doing well can't be moved on to something harder."
-                                .formatted(name), skill.getId()));
+                                .formatted(name), skill.getId(), Map.of("skill", name)));
             }
         }
         for (int i = 0; i < prereqs.size(); i++) {
@@ -287,13 +299,13 @@ public class JourneyBuilderService {
             if (prereq.chapter() != null && prereq.chapter() > position) {
                 issues.add(new JourneyIssue("PREREQUISITE_LATER", Severity.WARNING,
                         "\"%s\" builds on \"%s\", which comes later, in chapter %d.".formatted(name, prereq.name(), prereq.chapter()),
-                        skill.getId()));
+                        skill.getId(), Map.of("skill", name, "prerequisite", prereq.name(), "chapter", prereq.chapter())));
             }
             // Reinforcement goes to the first prerequisite recorded (AdaptiveEngine).
             if (i == 0 && !prereq.hasActivity()) {
                 issues.add(new JourneyIssue("PREREQUISITE_NO_ACTIVITY", Severity.WARNING,
                         "When a child struggles with \"%s\", the platform reinforces \"%s\" first, which has no published activity, so no practice can be placed."
-                                .formatted(name, prereq.name()), skill.getId()));
+                                .formatted(name, prereq.name()), skill.getId(), Map.of("skill", name, "prerequisite", prereq.name())));
             }
         }
         return issues;

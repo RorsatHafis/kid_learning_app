@@ -8,6 +8,7 @@ import com.platform.content.validation.ValidationReport.Issue;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,11 +37,11 @@ public final class QuestionCompleteness {
                 long correctCount = options.stream().filter(QuestionOption::isCorrect).count();
                 if (options.size() < 2) {
                     yield new Issue("CHOICES_TOO_FEW", "A multiple-choice question needs at least 2 answer choices (it has %d)."
-                            .formatted(options.size()));
+                            .formatted(options.size()), Map.of("min", 2, "count", options.size()));
                 }
                 yield correctCount != 1
                         ? new Issue("CHOICES_CORRECT_COUNT", "Exactly one answer choice must be marked correct (%d are)."
-                                .formatted(correctCount))
+                                .formatted(correctCount), Map.of("count", correctCount))
                         : null;
             }
             case MATCHING -> matchingProblem(options);
@@ -74,7 +75,7 @@ public final class QuestionCompleteness {
         List<QuestionOption> rights = options.stream().filter(o -> o.getMatchSide() == MatchSide.RIGHT).toList();
         if (lefts.size() < MIN_PAIRS || lefts.size() > MAX_PAIRS) {
             return new Issue("MATCHING_PAIR_COUNT", "A matching question needs %d to %d pairs (it has %d)."
-                    .formatted(MIN_PAIRS, MAX_PAIRS, lefts.size()));
+                    .formatted(MIN_PAIRS, MAX_PAIRS, lefts.size()), Map.of("min", MIN_PAIRS, "max", MAX_PAIRS, "count", lefts.size()));
         }
         Set<Integer> leftPairs = lefts.stream().map(QuestionOption::getMatchPair).collect(Collectors.toSet());
         Set<Integer> rightPairs = rights.stream().map(QuestionOption::getMatchPair).collect(Collectors.toSet());
@@ -92,7 +93,8 @@ public final class QuestionCompleteness {
     private static Issue orderingProblem(List<QuestionOption> items) {
         if (items.size() < OrderingItems.MIN_ITEMS || items.size() > OrderingItems.MAX_ITEMS) {
             return new Issue("ORDERING_ITEM_COUNT", "An ordering question needs %d to %d items (it has %d)."
-                    .formatted(OrderingItems.MIN_ITEMS, OrderingItems.MAX_ITEMS, items.size()));
+                    .formatted(OrderingItems.MIN_ITEMS, OrderingItems.MAX_ITEMS, items.size()),
+                    Map.of("min", OrderingItems.MIN_ITEMS, "max", OrderingItems.MAX_ITEMS, "count", items.size()));
         }
         if (items.stream().anyMatch(o -> o.getMatchSide() != null)) {
             return new Issue("ORDERING_NOT_ITEMS", "Every item of an ordering question must be one of the things to put in order.");
@@ -121,11 +123,12 @@ public final class QuestionCompleteness {
         List<QuestionOption> items = options.stream().filter(o -> o.getSortRole() == com.platform.content.entity.SortRole.ITEM).toList();
         if (groups.size() < MIN_GROUPS || groups.size() > MAX_GROUPS) {
             return new Issue("SORTING_GROUP_COUNT", "A sorting question needs %d to %d groups (it has %d)."
-                    .formatted(MIN_GROUPS, MAX_GROUPS, groups.size()));
+                    .formatted(MIN_GROUPS, MAX_GROUPS, groups.size()), Map.of("min", MIN_GROUPS, "max", MAX_GROUPS, "count", groups.size()));
         }
         if (items.size() < MIN_SORT_ITEMS || items.size() > MAX_SORT_ITEMS) {
             return new Issue("SORTING_ITEM_COUNT", "A sorting question needs %d to %d items (it has %d)."
-                    .formatted(MIN_SORT_ITEMS, MAX_SORT_ITEMS, items.size()));
+                    .formatted(MIN_SORT_ITEMS, MAX_SORT_ITEMS, items.size()),
+                    Map.of("min", MIN_SORT_ITEMS, "max", MAX_SORT_ITEMS, "count", items.size()));
         }
         Set<Integer> numbers = groups.stream().map(QuestionOption::getSortGroup).collect(Collectors.toSet());
         if (items.stream().anyMatch(item -> !numbers.contains(item.getSortGroup()))) {

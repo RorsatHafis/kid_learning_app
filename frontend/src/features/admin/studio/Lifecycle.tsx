@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Archive, Pencil, RotateCcw } from "lucide-react";
 import { studioApi, type ManagedKind } from "@/lib/api/studio";
+import { useMessages } from "@/i18n/catalog";
+import { studioMessages, type SwitchList } from "./messages";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -8,28 +10,8 @@ import { FormField } from "@/features/auth/FormField";
 import { cn } from "@/lib/utils/cn";
 import { TextAreaField } from "./shared";
 
-/** What archiving means for each kind of thing, said where the author decides (X14). */
-const CONSEQUENCE: Record<ManagedKind, string> = {
-  subjects: "It leaves the Studio's subject list. Children keep everything they have in it. (Archive its curricula first.)",
-  skills:
-    "It can't be chosen for new questions or activities. Content already tagged with it, and children's evidence on it, stay.",
-  objectives: "It can't be added to curricula again. Curricula that include it, and children following them, keep it.",
-  curricula: "Families are no longer offered it and classes can't newly assign it. Children already on it keep their journey.",
-  lessons: "It leaves the Studio's lists. (Archive its activities first.)",
-  activities:
-    "It is no longer placed on new paths, by the adaptive engine, by Smart Review or by a class's practice. Children who already have it keep it.",
-  questions: "It leaves the question bank and can't be added to activities. Activities that already use it keep it.",
-};
-
-const NOUN: Record<ManagedKind, string> = {
-  subjects: "subject",
-  skills: "skill",
-  objectives: "objective",
-  curricula: "curriculum",
-  lessons: "lesson",
-  activities: "activity",
-  questions: "question",
-};
+/** The button's wording: "Manage…", "Manage subject…" (on the subject's own page) or "Restore…" (in an archived list). */
+export type ManageLabel = "manage" | "manageSubject" | "restore";
 
 /**
  * "Manage…": change what something is called and archive or restore it, in one place. Archiving never
@@ -45,7 +27,7 @@ export function ManageButton({
   archived = false,
   renamable = true,
   onChanged,
-  label = "Manage…",
+  wording = "manage",
 }: {
   kind: ManagedKind;
   id: string;
@@ -57,20 +39,24 @@ export function ManageButton({
   /** Questions are worded in their versions, not renamed. */
   renamable?: boolean;
   onChanged: (change: "updated" | "archived" | "restored") => void;
-  label?: string;
+  wording?: ManageLabel;
 }) {
   const [open, setOpen] = useState(false);
+  const all = useMessages(studioMessages);
+  const m = all.lifecycle;
+  const text = wording === "restore" ? m.restoreMenu : wording === "manageSubject" ? all.layout.manageSubject : m.manage;
+  const action = wording === "restore" ? m.restoreTitle[kind] : m.manageTitle[kind];
   return (
     <>
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setOpen(true)}
-        aria-label={`${label.replace("…", "")} ${NOUN[kind]}: ${name}`}
+        aria-label={m.named(action, name)}
       >
-        <Pencil size={14} aria-hidden /> {label}
+        <Pencil size={14} aria-hidden /> {text}
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={`Manage ${NOUN[kind]}`} description={name}>
+      <Dialog open={open} onClose={() => setOpen(false)} title={m.manageTitle[kind]} description={name}>
         <LifecyclePanel
           kind={kind}
           id={id}
@@ -113,6 +99,8 @@ function LifecyclePanel({
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const all = useMessages(studioMessages);
+  const m = all.lifecycle;
 
   async function run(action: () => Promise<unknown>, done: string, change: "updated" | "archived" | "restored") {
     setBusy(true);
@@ -122,7 +110,7 @@ function LifecyclePanel({
       setMessage({ ok: true, text: done });
       onChanged(change);
     } catch (err) {
-      setMessage({ ok: false, text: problemMessage(err, "That didn't work. Please try again.") });
+      setMessage({ ok: false, text: problemMessage(err, all.failed) });
     } finally {
       setBusy(false);
       setConfirming(false);
@@ -138,7 +126,7 @@ function LifecyclePanel({
           name: name.trim(),
           description: describable ? description.trim() || null : undefined,
         }),
-      "Saved.",
+      m.saved,
       "updated",
     );
   }
@@ -148,7 +136,7 @@ function LifecyclePanel({
       {renamable && kind !== "questions" && (
         <form onSubmit={save} className="flex flex-col gap-3">
           <FormField
-            label={kind === "objectives" || kind === "lessons" || kind === "activities" ? "Title" : "Name"}
+            label={kind === "objectives" || kind === "lessons" || kind === "activities" ? m.title : m.name}
             value={name}
             maxLength={200}
             required
@@ -156,14 +144,14 @@ function LifecyclePanel({
           />
           {describable && (
             <TextAreaField
-              label="Description"
+              label={m.description}
               value={description}
               maxLength={2000}
               onChange={(e) => setDescription(e.target.value)}
             />
           )}
           <Button type="submit" variant="outline" disabled={busy || !name.trim()} className="w-fit">
-            Save
+            {m.save}
           </Button>
         </form>
       )}
@@ -173,32 +161,32 @@ function LifecyclePanel({
         className={cn("flex flex-col gap-3", renamable && "border-t border-line pt-5")}
       >
         <h3 id={`lifecycle-${id}`} className="text-sm font-semibold text-tonle-950">
-          {archived ? "Archived" : "Archive"}
+          {archived ? m.archived : m.archive}
         </h3>
         <p className="text-sm text-ink-soft">
-          {archived ? `Restoring brings the ${NOUN[kind]} back into use.` : CONSEQUENCE[kind]} Nothing is deleted.
+          {archived ? m.restoring[kind] : m.consequence[kind]} {m.nothingDeleted}
         </p>
         {archived ? (
           <Button
             variant="outline"
             disabled={busy}
             className="w-fit"
-            onClick={() => void run(() => studioApi.restore(kind, id), "Restored.", "restored")}
+            onClick={() => void run(() => studioApi.restore(kind, id), m.restored, "restored")}
           >
-            <RotateCcw size={15} aria-hidden /> Restore
+            <RotateCcw size={15} aria-hidden /> {m.restore}
           </Button>
         ) : confirming ? (
           <div className="flex flex-wrap gap-2">
-            <Button disabled={busy} onClick={() => void run(() => studioApi.archive(kind, id), "Archived.", "archived")}>
-              <Archive size={15} aria-hidden /> Archive the {NOUN[kind]}
+            <Button disabled={busy} onClick={() => void run(() => studioApi.archive(kind, id), m.archivedDone, "archived")}>
+              <Archive size={15} aria-hidden /> {m.archiveThe[kind]}
             </Button>
             <Button variant="ghost" onClick={() => setConfirming(false)}>
-              Keep it
+              {m.keep}
             </Button>
           </div>
         ) : (
           <Button variant="outline" disabled={busy} className="w-fit" onClick={() => setConfirming(true)}>
-            <Archive size={15} aria-hidden /> Archive…
+            <Archive size={15} aria-hidden /> {m.archiveMenu}
           </Button>
         )}
       </section>
@@ -219,14 +207,15 @@ function LifecyclePanel({
 export function ArchivedSwitch({
   archived,
   onChange,
-  noun,
+  list,
 }: {
   archived: boolean;
   onChange: (archived: boolean) => void;
-  noun: string;
+  list: SwitchList;
 }) {
+  const m = useMessages(studioMessages).lifecycle;
   return (
-    <div role="group" aria-label={`Which ${noun}`} className="inline-flex w-fit rounded-pill bg-paper p-1 ring-1 ring-line">
+    <div role="group" aria-label={m.which[list]} className="inline-flex w-fit rounded-pill bg-paper p-1 ring-1 ring-line">
       {[false, true].map((value) => (
         <button
           key={String(value)}
@@ -238,7 +227,7 @@ export function ArchivedSwitch({
             archived === value ? "bg-white text-tonle-950 shadow-tight" : "text-ink-soft hover:text-ink",
           )}
         >
-          {value ? "Archived" : "In use"}
+          {value ? m.archived : m.inUse}
         </button>
       ))}
     </div>
@@ -247,9 +236,10 @@ export function ArchivedSwitch({
 
 /** Marks something archived where it is shown: out of new use; nothing a child has changed. */
 export function ArchivedBadge() {
+  const m = useMessages(studioMessages).lifecycle;
   return (
     <span className="inline-flex items-center gap-1 rounded-pill bg-tonle-950/80 px-2.5 py-0.5 text-xs font-semibold text-white">
-      <Archive size={12} aria-hidden /> Archived
+      <Archive size={12} aria-hidden /> {m.archived}
     </span>
   );
 }

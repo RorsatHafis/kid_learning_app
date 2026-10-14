@@ -1,11 +1,14 @@
 import type { JourneyChapter, JourneyIssue } from "@/lib/api/studio";
+import { messagesNow } from "@/i18n/catalog";
+import { studioMessages } from "./messages";
 
 /** "about 6 min" from the steps' estimated durations; null when none is known. */
 export function durationText(seconds: number, withoutDuration: number, steps: number): string | null {
   if (steps === 0 || withoutDuration === steps) return null;
   const minutes = Math.round(seconds / 60);
-  const time = minutes < 1 ? "under a minute" : `about ${minutes} min`;
-  return withoutDuration > 0 ? `${time} (+${withoutDuration} untimed)` : time;
+  const m = messagesNow(studioMessages);
+  const time = minutes < 1 ? m.underMinute : m.aboutMinutes(minutes);
+  return withoutDuration > 0 ? m.untimed(time, withoutDuration) : time;
 }
 
 /**
@@ -27,17 +30,18 @@ export function warningsOf(chapter: JourneyChapter) {
 
 /** Where to fix an issue, as a path relative to the curriculum page, or null when the fix is here (order, removal). */
 export function issueAction(issue: JourneyIssue): { label: string; to: string } | null {
+  const m = messagesNow(studioMessages);
   switch (issue.code) {
     case "SKILL_NO_ACTIVITY":
     case "SKILL_ONE_ACTIVITY":
     case "SKILL_NO_HARDER_STEP":
     case "PREREQUISITE_NO_ACTIVITY":
-      return { label: "Open activities", to: "../../activities" };
+      return { label: m.openActivities, to: "../../activities" };
     case "SKILL_NO_EVIDENCE":
-      return issue.skillId ? { label: "Questions for this skill", to: `../../questions?skill=${issue.skillId}` } : null;
+      return issue.skillId ? { label: m.questionsForSkill, to: `../../questions?skill=${issue.skillId}` } : null;
     case "CHAPTER_NO_SKILLS":
     case "SKILL_ARCHIVED":
-      return { label: "Skills & objectives", to: "../../catalog" };
+      return { label: m.skillsAndObjectives, to: "../../catalog" };
     default:
       return null;
   }

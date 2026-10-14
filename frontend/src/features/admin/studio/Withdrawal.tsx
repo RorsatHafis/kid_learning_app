@@ -5,8 +5,11 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { Button } from "@/components/ui/Button";
 import { Panel, TextAreaField } from "./shared";
 import { errorText } from "./studioLogic";
+import { useMessages } from "@/i18n/catalog";
+import { formatDate } from "@/i18n/format";
+import { studioMessages } from "./messages";
 
-const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+const day = (iso: string) => formatDate(iso, { day: "numeric", month: "short", year: "numeric" });
 
 /**
  * Taking a published version down (Y16): for a version found to be wrong or unsuitable - a wrong
@@ -26,6 +29,7 @@ export function WithdrawalPanel({
   const [reason, setReason] = useState("");
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(studioMessages).withdrawal;
 
   async function act(call: () => Promise<unknown>) {
     setWorking(true);
@@ -36,7 +40,7 @@ export function WithdrawalPanel({
       setReason("");
       state.refetch();
     } catch (err) {
-      setError(errorText(err, "That didn't work. Please try again."));
+      setError(errorText(err));
     } finally {
       setWorking(false);
     }
@@ -44,18 +48,17 @@ export function WithdrawalPanel({
 
   if (!state.data) return null;
   const withdrawal = state.data.withdrawal;
-  const noun = kind === "QUESTION" ? "question" : "activity";
 
   return (
-    <Panel title={`Take version ${versionNumber} down`}>
+    <Panel title={m.title(versionNumber)}>
       <div className="flex flex-col gap-3 text-sm">
         {withdrawal ? (
           <>
             <p role="status" className="rounded-[10px] bg-brick-soft px-3 py-2 font-medium text-brick-deep">
-              Taken down on {day(withdrawal.withdrawnAt)} by {withdrawal.withdrawnBy}: {withdrawal.reason}
+              {m.takenDown(day(withdrawal.withdrawnAt), withdrawal.withdrawnBy, withdrawal.reason)}
             </p>
             <p className="text-ink-soft">
-              Children aren&apos;t given it. Restoring lets it be chosen again; steps already skipped stay skipped.
+              {m.notGiven}
             </p>
             <Button
               size="sm"
@@ -64,22 +67,18 @@ export function WithdrawalPanel({
               disabled={working}
               onClick={() => act(() => withdrawalApi.restore(kind, versionId))}
             >
-              <Undo2 size={15} aria-hidden /> Restore it
+              <Undo2 size={15} aria-hidden /> {m.restore}
             </Button>
           </>
         ) : state.data.viaQuestion ? (
           <p role="status" className="rounded-[10px] bg-brick-soft px-3 py-2 font-medium text-brick-deep">
-            A question in this version has been taken down, so children aren&apos;t given this activity.
+            {m.viaQuestion}
           </p>
         ) : open ? (
-          <div className="flex flex-col gap-3" role="group" aria-label={`Take this ${noun} down`}>
-            <p className="text-ink">
-              Children stop being given this version at once: steps waiting for it are skipped and anything started on it is
-              closed. Answers already given stay. Use it for something wrong or unsuitable; to change content, publish a new
-              version instead.
-            </p>
+          <div className="flex flex-col gap-3" role="group" aria-label={m.group[kind]}>
+            <p className="text-ink">{m.explain}</p>
             <TextAreaField
-              label="Why it is taken down"
+              label={m.why}
               value={reason}
               maxLength={500}
               onChange={(e) => setReason(e.target.value)}
@@ -90,20 +89,20 @@ export function WithdrawalPanel({
                 disabled={working || !reason.trim()}
                 onClick={() => act(() => withdrawalApi.withdraw(kind, versionId, reason.trim()))}
               >
-                <ShieldAlert size={15} aria-hidden /> {working ? "Taking it down…" : "Take it down now"}
+                <ShieldAlert size={15} aria-hidden /> {working ? m.takingDown : m.takeDownNow}
               </Button>
               <Button size="sm" variant="ghost" disabled={working} onClick={() => setOpen(false)}>
-                Cancel
+                {m.cancel}
               </Button>
             </div>
           </div>
         ) : (
           <>
             <p className="text-ink-soft">
-              If this version turns out to be wrong or unsuitable, take it down so no child is given it.
+              {m.ifWrong}
             </p>
             <Button size="sm" variant="outline" className="w-fit" onClick={() => setOpen(true)}>
-              <ShieldAlert size={15} aria-hidden /> Take it down…
+              <ShieldAlert size={15} aria-hidden /> {m.takeDown}
             </Button>
           </>
         )}

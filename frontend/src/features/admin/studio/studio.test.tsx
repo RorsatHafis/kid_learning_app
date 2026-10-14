@@ -59,13 +59,13 @@ describe("ValidationPanel", () => {
     render(
       <ValidationPanel
         report={{
-          errors: [{ code: "QUESTION_NO_SKILL", message: "Tag at least one skill." }],
-          warnings: [{ code: "NO_DIFFICULTY", message: "No difficulty is set." }],
+          errors: [{ code: "QUESTION_NO_SKILL", message: "Tag at least one skill.", values: {} }],
+          warnings: [{ code: "NO_DIFFICULTY", message: "No difficulty is set.", values: {} }],
         }}
       />,
     );
     expect(screen.getByText(/1 issue to fix before publishing/)).toBeInTheDocument();
-    expect(screen.getByText("Tag at least one skill.")).toBeInTheDocument();
+    expect(screen.getByText(/^Tag at least one skill: answers are recorded as evidence/)).toBeInTheDocument();
     expect(within(screen.getByRole("list", { name: "Warnings" })).getByText("No difficulty is set.")).toBeInTheDocument();
   });
 
@@ -174,12 +174,12 @@ describe("QuestionEditor", () => {
   it("keeps Publish unavailable while the server reports blocking issues", async () => {
     api.question.mockResolvedValue(draftQuestion([]));
     api.validateQuestionVersion.mockResolvedValue({
-      errors: [{ code: "QUESTION_NO_SKILL", message: "Tag at least one skill." }],
+      errors: [{ code: "QUESTION_NO_SKILL", message: "Tag at least one skill.", values: {} }],
       warnings: [],
     });
     renderEditor();
 
-    expect(await screen.findByText("Tag at least one skill.")).toBeInTheDocument();
+    expect(await screen.findByText(/^Tag at least one skill:/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Publish" })).toBeDisabled();
     // The child's view renders from the learner-safe preview.
     expect(screen.getByText("Child's view")).toBeInTheDocument();
@@ -205,7 +205,10 @@ describe("QuestionEditor", () => {
         title: "Not Ready To Publish",
         status: 409,
         detail: "",
-        validation: { errors: [{ code: "SKILL_ARCHIVED", message: "\"Count to 5\" is archived." }], warnings: [] },
+        validation: {
+          errors: [{ code: "SKILL_ARCHIVED", message: "\"Count to 5\" is archived.", values: { skill: "Count to 5" } }],
+          warnings: [],
+        },
       } as never),
     );
     renderEditor();

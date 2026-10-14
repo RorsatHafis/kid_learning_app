@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -134,7 +135,8 @@ public class ContentValidator {
             for (QuestionOption option : options) {
                 if (!seen.add(option.getLabel().strip().toLowerCase(Locale.ROOT))) {
                     errors.add(new Issue("CHOICES_DUPLICATE",
-                            "Two answer choices read \"%s\"; a child couldn't tell them apart.".formatted(option.getLabel().strip())));
+                            "Two answer choices read \"%s\"; a child couldn't tell them apart.".formatted(option.getLabel().strip()),
+                            Map.of("choice", option.getLabel().strip())));
                     break;
                 }
             }
@@ -184,22 +186,28 @@ public class ContentValidator {
             QuestionVersion questionVersion = questionVersions.findById(item.getQuestionVersionId()).orElse(null);
             Question question = questionVersion == null ? null : questions.findById(questionVersion.getQuestionId()).orElse(null);
             if (questionVersion == null || question == null) {
-                errors.add(new Issue("QUESTION_MISSING", "Question %d no longer exists.".formatted(position(items, item))));
+                errors.add(new Issue("QUESTION_MISSING", "Question %d no longer exists.".formatted(position(items, item)),
+                        Map.of("question", position(items, item))));
                 continue;
             }
-            String label = "Question %d".formatted(position(items, item));
+            int number = position(items, item);
+            String label = "Question %d".formatted(number);
             if (questionVersion.getStatus() != PublicationStatus.PUBLISHED) {
-                errors.add(new Issue("QUESTION_NOT_PUBLISHED", label + (questionVersion.getStatus() == PublicationStatus.DRAFT
+                boolean draft = questionVersion.getStatus() == PublicationStatus.DRAFT;
+                errors.add(new Issue("QUESTION_NOT_PUBLISHED", label + (draft
                         ? " is still a draft; publish it first."
-                        : " uses a superseded version; use the question's current published version.")));
+                        : " uses a superseded version; use the question's current published version."),
+                        Map.of("question", number, "state", draft ? "DRAFT" : "SUPERSEDED")));
             }
             if (!ContentOwnership.usableBy(question.getOwnerAccountId(), owner)) {
-                errors.add(new Issue("QUESTION_OUT_OF_SCOPE", label + " belongs to another author and can't be used here."));
+                errors.add(new Issue("QUESTION_OUT_OF_SCOPE", label + " belongs to another author and can't be used here.",
+                        Map.of("question", number)));
             }
             List<UUID> questionSkillIds = questionSkills.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(questionVersion.getId()).stream()
                     .map(QuestionVersionSkill::getSkillId).toList();
             if (questionSkillIds.isEmpty()) {
-                errors.add(new Issue("QUESTION_NO_SKILL", label + " has no skill, so answering it records no evidence."));
+                errors.add(new Issue("QUESTION_NO_SKILL", label + " has no skill, so answering it records no evidence.",
+                        Map.of("question", number)));
             }
             evidenced.addAll(questionSkillIds);
         }
@@ -208,7 +216,8 @@ public class ContentValidator {
             if (!items.isEmpty() && !evidenced.contains(skill.getId())) {
                 errors.add(new Issue("SKILL_WITHOUT_EVIDENCE",
                         "The activity is placed for \"%s\", but none of its questions records evidence for it, so playing it "
-                                .formatted(skill.getName()) + "could never change that skill's progress."));
+                                .formatted(skill.getName()) + "could never change that skill's progress.",
+                        Map.of("skill", skill.getName())));
             }
         }
         Set<UUID> placedIds = new HashSet<>(placedFor.stream().map(Skill::getId).toList());
@@ -216,7 +225,8 @@ public class ContentValidator {
             if (!placedIds.contains(skill.getId())) {
                 warnings.add(new Issue("EVIDENCE_OUTSIDE_ACTIVITY",
                         "A question records evidence for \"%s\", which this activity isn't tagged with; learning paths won't "
-                                .formatted(skill.getName()) + "choose this activity to practise it."));
+                                .formatted(skill.getName()) + "choose this activity to practise it.",
+                        Map.of("skill", skill.getName())));
             }
         }
         if (!placedFor.isEmpty() && placedFor.stream().noneMatch(skill -> onAPublishedPath(skill.getId(), owner))) {
@@ -225,7 +235,8 @@ public class ContentValidator {
                             + "given it until one is."));
         }
         if (version.getDifficultyLevel() == null) {
-            warnings.add(new Issue("NO_DIFFICULTY", "No difficulty is set; challenge and reinforcement choices use it."));
+            warnings.add(new Issue("NO_DIFFICULTY", "No difficulty is set; challenge and reinforcement choices use it.",
+                    Map.of("of", "ACTIVITY")));
         }
         if (version.getEstimatedDurationSeconds() == null) {
             warnings.add(new Issue("NO_DURATION", "No estimated duration is set."));
@@ -257,13 +268,14 @@ public class ContentValidator {
             }
             String title = objective.get().getTitle();
             if (!Objects.equals(objective.get().getSubjectId(), curriculum.getSubjectId())) {
-                errors.add(new Issue("OBJECTIVE_OTHER_SUBJECT", "\"%s\" belongs to a different subject.".formatted(title)));
+                errors.add(new Issue("OBJECTIVE_OTHER_SUBJECT", "\"%s\" belongs to a different subject.".formatted(title),
+                        Map.of("objective", title)));
             }
             List<UUID> skillIds = objectiveSkills.findByLearningObjectiveId(objective.get().getId()).stream()
                     .map(LearningObjectiveSkill::getSkillId).toList();
             if (skillIds.isEmpty()) {
                 errors.add(new Issue("OBJECTIVE_NO_SKILL",
-                        "\"%s\" has no skills, so it adds nothing to a child's path.".formatted(title)));
+                        "\"%s\" has no skills, so it adds nothing to a child's path.".formatted(title), Map.of("objective", title)));
             }
             curriculumSkillIds.addAll(skillIds);
         }
@@ -281,7 +293,8 @@ public class ContentValidator {
         } else {
             for (Skill skill : withoutActivity) {
                 warnings.add(new Issue("SKILL_NO_ACTIVITY",
-                        "\"%s\" has no published activity yet; children won't practise it.".formatted(skill.getName())));
+                        "\"%s\" has no published activity yet; children won't practise it.".formatted(skill.getName()),
+                        Map.of("skill", skill.getName())));
             }
         }
         return new ValidationReport(errors, warnings);
@@ -292,10 +305,11 @@ public class ContentValidator {
     private void checkSkills(List<Skill> tagged, UUID subjectId, List<Issue> errors) {
         for (Skill skill : tagged) {
             if (skill.getStatus() != CatalogStatus.ACTIVE) {
-                errors.add(new Issue("SKILL_ARCHIVED", "\"%s\" is archived.".formatted(skill.getName())));
+                errors.add(new Issue("SKILL_ARCHIVED", "\"%s\" is archived.".formatted(skill.getName()), Map.of("skill", skill.getName())));
             }
             if (!Objects.equals(skill.getSubjectId(), subjectId)) {
-                errors.add(new Issue("SKILL_OTHER_SUBJECT", "\"%s\" belongs to a different subject.".formatted(skill.getName())));
+                errors.add(new Issue("SKILL_OTHER_SUBJECT", "\"%s\" belongs to a different subject.".formatted(skill.getName()),
+                        Map.of("skill", skill.getName())));
             }
         }
     }

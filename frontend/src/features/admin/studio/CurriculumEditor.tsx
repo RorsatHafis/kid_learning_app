@@ -17,9 +17,11 @@ import { ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import { IconButton, Panel, StatusBadge, ValidationPanel, VersionHistory } from "./shared";
-import { errorText, reportFromError, useStudio } from "./studioLogic";
+import { errorText, journeyIssueText, reportFromError, useStudio } from "./studioLogic";
 import { chapterChanges, durationText, issueAction, warningsOf } from "./journeyLogic";
 import { ArchivedBadge, ManageButton } from "./Lifecycle";
+import { useMessages } from "@/i18n/catalog";
+import { journeyMessages } from "./journey.messages";
 
 /**
  * The journey builder (PLATFORM-EXPANSION.md §5): a curriculum version as the journey a child will
@@ -31,13 +33,14 @@ export function CurriculumEditor() {
   const { curriculumId = "" } = useParams<{ curriculumId: string }>();
   const loaded = useAsync(() => studioApi.curriculum(curriculumId), [curriculumId]);
   const [detail, setDetail] = useState<CurriculumDetail | null>(null);
+  const m = useMessages(journeyMessages);
 
   useEffect(() => {
     if (loaded.data) setDetail(loaded.data);
   }, [loaded.data]);
 
   if (loaded.error) return <ErrorState error={loaded.error} onRetry={loaded.refetch} />;
-  if (!detail) return <LoadingState label="Loading the curriculum…" />;
+  if (!detail) return <LoadingState label={m.loading} />;
   return <JourneyBuilder detail={detail} onChange={setDetail} onReload={loaded.refetch} />;
 }
 
@@ -63,6 +66,7 @@ function JourneyBuilder({
   const [message, setMessage] = useState<{ tone: "error" | "ok"; text: string } | null>(null);
   const [onlyAttention, setOnlyAttention] = useState(false);
   const [expanded, setExpanded] = useState<Set<string> | null>(null);
+  const m = useMessages(journeyMessages);
 
   useEffect(() => {
     setObjectiveIds(latest.objectiveIds);
@@ -134,7 +138,7 @@ function JourneyBuilder({
     } catch (err) {
       const refused = reportFromError(err);
       if (refused) setReport(refused);
-      setMessage({ tone: "error", text: refused ? "Not published: fix the issues listed under Checks." : errorText(err) });
+      setMessage({ tone: "error", text: refused ? m.notPublished : errorText(err) });
     } finally {
       setBusy(false);
     }
@@ -169,7 +173,7 @@ function JourneyBuilder({
 
   const available = catalog.objectives.filter((o) => !objectiveIds.includes(o.id));
   const changes = published && isDraft ? chapterChanges(published.objectiveIds, objectiveIds) : null;
-  const titleOf = (id: string) => catalog.objectives.find((o) => o.id === id)?.title ?? "A chapter from another subject";
+  const titleOf = (id: string) => catalog.objectives.find((o) => o.id === id)?.title ?? m.otherChapter;
   const shown = useMemo(
     () => (map ? map.chapters.filter((c) => !onlyAttention || warningsOf(c).length > 0) : []),
     [map, onlyAttention],
@@ -183,7 +187,7 @@ function JourneyBuilder({
           relative="path"
           className="flex w-fit items-center gap-1 text-sm font-semibold text-ink-soft hover:text-ink"
         >
-          <ArrowLeft size={16} aria-hidden /> All curricula
+          <ArrowLeft size={16} aria-hidden /> {m.allCurricula}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-display text-[1.625rem] font-semibold leading-tight text-tonle-950">{detail.name}</h2>
@@ -194,8 +198,8 @@ function JourneyBuilder({
           </span>
         </div>
         <p className="text-sm text-ink-soft">
-          Version {latest.versionNumber}
-          {isDraft && published ? ` · children now start version ${published.versionNumber}` : ""}
+          {m.version(latest.versionNumber)}
+          {isDraft && published ? m.childrenStart(published.versionNumber) : ""}
         </p>
       </div>
 
@@ -223,17 +227,15 @@ function JourneyBuilder({
               className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] bg-light-soft px-4 py-3 ring-1 ring-light/40"
             >
               <p className="text-sm font-medium text-light-deep">
-                {previewError
-                  ? "Couldn't preview this order. Save it or discard the change."
-                  : "Unsaved order: the journey below is a preview of it."}
+                {previewError ? m.previewFailed : m.unsaved}
               </p>
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   disabled={busy}
-                  onClick={() => run(() => studioApi.replaceCurriculumObjectives(latest.id, objectiveIds), "Chapters saved.")}
+                  onClick={() => run(() => studioApi.replaceCurriculumObjectives(latest.id, objectiveIds), m.saved)}
                 >
-                  Save order
+                  {m.saveOrder}
                 </Button>
                 <Button
                   size="sm"
@@ -244,23 +246,23 @@ function JourneyBuilder({
                     setDirty(false);
                   }}
                 >
-                  Discard
+                  {m.discard}
                 </Button>
               </div>
             </div>
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-base font-semibold text-tonle-950">Chapters</h3>
+            <h3 className="text-base font-semibold text-tonle-950">{m.chapters}</h3>
             {map && map.chapters.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
-                <div role="group" aria-label="Show" className="flex rounded-[10px] bg-paper p-0.5 ring-1 ring-line">
+                <div role="group" aria-label={m.show} className="flex rounded-[10px] bg-paper p-0.5 ring-1 ring-line">
                   {[
-                    { value: false, label: "All" },
-                    { value: true, label: "Needs attention" },
+                    { value: false, label: m.all },
+                    { value: true, label: m.needsAttention },
                   ].map((option) => (
                     <button
-                      key={option.label}
+                      key={String(option.value)}
                       type="button"
                       aria-pressed={onlyAttention === option.value}
                       onClick={() => setOnlyAttention(option.value)}
@@ -284,22 +286,22 @@ function JourneyBuilder({
                     )
                   }
                 >
-                  {expanded && expanded.size === map.chapters.length ? "Collapse all" : "Expand all"}
+                  {expanded && expanded.size === map.chapters.length ? m.collapseAll : m.expandAll}
                 </Button>
               </div>
             )}
           </div>
 
-          {!map && !saved.error && <LoadingState label="Laying out the journey…" />}
+          {!map && !saved.error && <LoadingState label={m.layingOut} />}
           {map && map.chapters.length === 0 && (
             <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-6 text-sm text-ink-soft">
-              No chapters yet. Each chapter is a learning objective; add the first one below.
+              {m.noChapters}
             </p>
           )}
           {map && onlyAttention && shown.length === 0 && map.chapters.length > 0 && (
-            <p className="text-sm text-ink-soft">No chapter needs attention.</p>
+            <p className="text-sm text-ink-soft">{m.noneNeedAttention}</p>
           )}
-          <ol aria-label="Chapters in order" className={cn("flex flex-col gap-3 transition-opacity", stale && "opacity-60")}>
+          <ol aria-label={m.inOrder} className={cn("flex flex-col gap-3 transition-opacity", stale && "opacity-60")}>
             {shown.map((chapter) => {
               const index = objectiveIds.indexOf(chapter.objectiveId);
               return (
@@ -312,21 +314,21 @@ function JourneyBuilder({
                     isDraft && index >= 0 ? (
                       <span className="flex shrink-0 gap-0.5">
                         <IconButton
-                          label={`Move chapter ${chapter.position} up`}
+                          label={m.moveUp(chapter.position)}
                           disabled={index === 0 || busy}
                           onClick={() => move(index, -1)}
                         >
                           <ArrowUp size={16} aria-hidden />
                         </IconButton>
                         <IconButton
-                          label={`Move chapter ${chapter.position} down`}
+                          label={m.moveDown(chapter.position)}
                           disabled={index === objectiveIds.length - 1 || busy}
                           onClick={() => move(index, 1)}
                         >
                           <ArrowDown size={16} aria-hidden />
                         </IconButton>
                         <IconButton
-                          label={`Remove chapter ${chapter.position}`}
+                          label={m.remove(chapter.position)}
                           disabled={busy}
                           onClick={() => edit(objectiveIds.filter((id) => id !== chapter.objectiveId))}
                         >
@@ -343,17 +345,17 @@ function JourneyBuilder({
           {isDraft && available.length > 0 && (
             <div className="flex flex-wrap items-end gap-2 rounded-[14px] border border-dashed border-line-strong p-4">
               <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm font-semibold text-ink sm:max-w-md">
-                Add a chapter
+                {m.addChapter}
                 <select
                   value={toAdd}
                   onChange={(e) => setToAdd(e.target.value)}
                   className="h-11 rounded-[10px] border border-line-strong bg-white px-3 text-sm font-normal text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
                 >
-                  <option value="">Choose a learning objective…</option>
+                  <option value="">{m.chooseObjective}</option>
                   {available.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.title}
-                      {o.skillIds.length === 0 ? " (no skills yet)" : ""}
+                      {o.skillIds.length === 0 ? m.noSkillsYet : ""}
                     </option>
                   ))}
                 </select>
@@ -366,23 +368,20 @@ function JourneyBuilder({
                   setToAdd("");
                 }}
               >
-                <Plus size={16} aria-hidden /> Add at the end
+                <Plus size={16} aria-hidden /> {m.addAtEnd}
               </Button>
             </div>
           )}
           {!isDraft && (
             <div className="flex flex-col gap-3 rounded-[14px] bg-paper p-4 ring-1 ring-line">
-              <p className="text-sm text-ink-soft">
-                This version is published. Children already enrolled keep the version they started with; a new version applies to
-                new enrolments.
-              </p>
+              <p className="text-sm text-ink-soft">{m.publishedNote}</p>
               <Button
                 variant="outline"
                 className="w-fit"
                 disabled={busy}
                 onClick={() => run(() => studioApi.openCurriculumDraft(detail.id))}
               >
-                <FilePlus2 size={16} aria-hidden /> Start a new version
+                <FilePlus2 size={16} aria-hidden /> {m.startNew}
               </Button>
             </div>
           )}
@@ -391,11 +390,11 @@ function JourneyBuilder({
         <div className="flex flex-col gap-6">
           {isDraft && (
             <Panel
-              title="Checks"
+              title={m.checks}
               action={
                 <div className="flex flex-wrap gap-2">
                   <Button variant="ghost" size="sm" disabled={busy} onClick={() => setRevision((r) => r + 1)}>
-                    Check again
+                    {m.checkAgain}
                   </Button>
                   <PublishControl
                     kind="CURRICULUM"
@@ -404,44 +403,42 @@ function JourneyBuilder({
                     busy={busy}
                     canPublish={!dirty && !!report && report.errors.length === 0}
                     onPublish={() =>
-                      run(() => studioApi.publishCurriculumVersion(latest.id), "Published. New enrolments start this journey.")
+                      run(() => studioApi.publishCurriculumVersion(latest.id), m.published)
                     }
-                    onPublished={() => run(() => studioApi.curriculum(detail.id), "Approved and published.")}
+                    onPublished={() => run(() => studioApi.curriculum(detail.id), m.approved)}
                   />
                 </div>
               }
             >
               <p className="mb-3 text-sm text-ink-soft">
-                {dirty
-                  ? "Save the order to check this version."
-                  : "These decide publishing. The journey's warnings and tips are yours to weigh."}
+                {dirty ? m.saveToCheck : m.decide}
               </p>
               <ValidationPanel report={report} loading />
             </Panel>
           )}
           {changes && changes.any && (
-            <Panel title={`Changes from version ${published?.versionNumber}`}>
+            <Panel title={m.changesFrom(published?.versionNumber ?? 0)}>
               <ul className="flex flex-col gap-1.5 text-sm">
                 {changes.added.map((id) => (
                   <li key={`a${id}`} className="text-ink">
-                    <span className="font-semibold text-palm-deep">Added</span> {titleOf(id)}
+                    <span className="font-semibold text-palm-deep">{m.added}</span> {titleOf(id)}
                   </li>
                 ))}
                 {changes.removed.map((id) => (
                   <li key={`r${id}`} className="text-ink">
-                    <span className="font-semibold text-brick-deep">Removed</span> {titleOf(id)}
+                    <span className="font-semibold text-brick-deep">{m.removed}</span> {titleOf(id)}
                   </li>
                 ))}
                 {changes.moved.map((id) => (
                   <li key={`m${id}`} className="text-ink">
-                    <span className="font-semibold text-tonle-700">Moved</span> {titleOf(id)}
+                    <span className="font-semibold text-tonle-700">{m.moved}</span> {titleOf(id)}
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-ink-soft">Children already on version {published?.versionNumber} keep it.</p>
+              <p className="mt-3 text-xs text-ink-soft">{m.keepIt(published?.versionNumber ?? 0)}</p>
             </Panel>
           )}
-          <Panel title="Versions">
+          <Panel title={m.versions}>
             <VersionHistory versions={detail.versions} />
           </Panel>
         </div>
@@ -453,16 +450,12 @@ function JourneyBuilder({
 // ------------------------------------------------------------------ overview
 
 function JourneyOverview({ map, onChapter }: { map: JourneyMap; onChapter: (objectiveId: string) => void }) {
+  const m = useMessages(journeyMessages);
   const t = map.totals;
   const time = durationText(t.estimatedSeconds, t.stepsWithoutDuration, t.steps);
-  const facts = [
-    `${t.chapters} ${t.chapters === 1 ? "chapter" : "chapters"}`,
-    `${t.steps} ${t.steps === 1 ? "step" : "steps"}`,
-    `${t.skills} ${t.skills === 1 ? "skill" : "skills"}`,
-    ...(time ? [time] : []),
-  ];
+  const facts = [m.chaptersCount(t.chapters), m.steps(t.steps), m.skills(t.skills), ...(time ? [time] : [])];
   return (
-    <section aria-label="Journey at a glance" className="flex flex-col gap-3 rounded-[16px] bg-white p-5 ring-1 ring-line sm:p-6">
+    <section aria-label={m.atAGlance} className="flex flex-col gap-3 rounded-[16px] bg-white p-5 ring-1 ring-line sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <p className="tabular text-[0.9375rem] font-semibold text-tonle-950">{facts.join(" · ")}</p>
         <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -473,17 +466,17 @@ function JourneyOverview({ map, onChapter }: { map: JourneyMap; onChapter: (obje
             )}
           >
             <AlertTriangle size={15} aria-hidden />{" "}
-            {t.warnings === 0 ? "No warnings" : `${t.warnings} ${t.warnings === 1 ? "warning" : "warnings"}`}
+            {t.warnings === 0 ? m.noWarnings : m.warnings(t.warnings)}
           </span>
           {t.tips > 0 && (
             <span className="inline-flex items-center gap-1.5 text-ink-soft">
-              <Lightbulb size={15} aria-hidden /> {t.tips} {t.tips === 1 ? "tip" : "tips"}
+              <Lightbulb size={15} aria-hidden /> {m.tips(t.tips)}
             </span>
           )}
         </p>
       </div>
       {map.chapters.length > 0 && (
-        <ol aria-label="Journey overview" className="flex gap-1">
+        <ol aria-label={m.overview} className="flex gap-1">
           {map.chapters.map((c) => {
             const warnings = warningsOf(c).length;
             const empty = c.steps.length === 0;
@@ -492,9 +485,7 @@ function JourneyOverview({ map, onChapter }: { map: JourneyMap; onChapter: (obje
                 <button
                   type="button"
                   onClick={() => onChapter(c.objectiveId)}
-                  aria-label={`Chapter ${c.position}, ${c.title}: ${c.steps.length} ${c.steps.length === 1 ? "step" : "steps"}${
-                    warnings ? `, ${warnings} ${warnings === 1 ? "warning" : "warnings"}` : ""
-                  }`}
+                  aria-label={m.chapterLabel(c.position, c.title, c.steps.length, warnings)}
                   title={`${c.position}. ${c.title}`}
                   className="group flex w-full flex-col gap-1 rounded-[6px] py-1 text-left"
                 >
@@ -522,10 +513,7 @@ function JourneyOverview({ map, onChapter }: { map: JourneyMap; onChapter: (obje
           })}
         </ol>
       )}
-      <p className="text-xs text-ink-soft">
-        Width shows how many steps each chapter gives a child; amber marks warnings, a dashed chapter has no steps. These are the
-        steps a child starts with; practice and review are added as they learn.
-      </p>
+      <p className="text-xs text-ink-soft">{m.legend}</p>
     </section>
   );
 }
@@ -543,15 +531,12 @@ function ChapterCard({
   onToggle: () => void;
   controls: ReactNode;
 }) {
+  const m = useMessages(journeyMessages);
   const warnings = warningsOf(chapter);
   const tips = chapter.issues.filter((i) => i.severity === "TIP");
   const time = durationText(chapter.estimatedSeconds, chapter.stepsWithoutDuration, chapter.steps.length);
   const bodyId = `chapter-body-${chapter.objectiveId}`;
-  const meta = [
-    `${chapter.steps.length} ${chapter.steps.length === 1 ? "step" : "steps"}`,
-    `${chapter.skills.length} ${chapter.skills.length === 1 ? "skill" : "skills"}`,
-    ...(time ? [time] : []),
-  ].join(" · ");
+  const meta = [m.steps(chapter.steps.length), m.skills(chapter.skills.length), ...(time ? [time] : [])].join(" · ");
 
   return (
     <li id={`chapter-${chapter.objectiveId}`} className="scroll-mt-24 rounded-[16px] bg-white ring-1 ring-line">
@@ -578,7 +563,7 @@ function ChapterCard({
         >
           <span className="flex items-start justify-between gap-2">
             <span className="font-semibold text-tonle-950 group-hover:underline group-hover:underline-offset-4">
-              <span className="sr-only">Chapter {chapter.position}: </span>
+              <span className="sr-only">{m.chapterN(chapter.position)}</span>
               {chapter.title}
             </span>
             <ChevronDown
@@ -591,12 +576,12 @@ function ChapterCard({
             <span className="tabular">{meta}</span>
             {warnings.length > 0 && (
               <span className="inline-flex items-center gap-1 font-semibold text-light-deep">
-                <AlertTriangle size={14} aria-hidden /> {warnings.length} {warnings.length === 1 ? "warning" : "warnings"}
+                <AlertTriangle size={14} aria-hidden /> {m.warnings(warnings.length)}
               </span>
             )}
             {tips.length > 0 && (
               <span className="inline-flex items-center gap-1">
-                <Lightbulb size={14} aria-hidden /> {tips.length} {tips.length === 1 ? "tip" : "tips"}
+                <Lightbulb size={14} aria-hidden /> {m.tips(tips.length)}
               </span>
             )}
           </span>
@@ -608,7 +593,7 @@ function ChapterCard({
         <div id={bodyId} className="flex flex-col gap-5 border-t border-line px-4 py-4 sm:px-5 sm:pb-5">
           {chapter.description && <p className="text-sm text-ink-soft">{chapter.description}</p>}
           {chapter.issues.length > 0 && (
-            <ul aria-label="What to look at" className="flex flex-col gap-2">
+            <ul aria-label={m.lookAt} className="flex flex-col gap-2">
               {[...warnings, ...tips].map((issue, i) => (
                 <IssueRow key={`${issue.code}-${issue.skillId ?? "chapter"}-${i}`} issue={issue} />
               ))}
@@ -616,9 +601,9 @@ function ChapterCard({
           )}
 
           <div className="flex flex-col gap-2">
-            <h4 className="text-sm font-semibold text-ink">What it teaches</h4>
+            <h4 className="text-sm font-semibold text-ink">{m.teaches}</h4>
             {chapter.skills.length === 0 ? (
-              <p className="text-sm text-ink-soft">No skills linked yet.</p>
+              <p className="text-sm text-ink-soft">{m.noSkillsLinked}</p>
             ) : (
               <ul className="flex flex-col divide-y divide-line rounded-[12px] ring-1 ring-line">
                 {chapter.skills.map((skill) => (
@@ -629,9 +614,9 @@ function ChapterCard({
           </div>
 
           <div className="flex flex-col gap-2">
-            <h4 className="text-sm font-semibold text-ink">Steps a child gets here</h4>
+            <h4 className="text-sm font-semibold text-ink">{m.stepsHere}</h4>
             {chapter.steps.length === 0 ? (
-              <p className="text-sm text-ink-soft">None.</p>
+              <p className="text-sm text-ink-soft">{m.none}</p>
             ) : (
               <ol className="flex flex-col gap-1.5">
                 {chapter.steps.map((step, i) => (
@@ -648,11 +633,9 @@ function ChapterCard({
                       <span className="tabular text-xs text-ink-soft">
                         {[
                           `v${step.versionNumber}`,
-                          step.difficulty != null ? `difficulty ${step.difficulty}` : "no difficulty",
-                          `${step.questions} ${step.questions === 1 ? "question" : "questions"}`,
-                          ...(step.estimatedSeconds != null
-                            ? [`${Math.max(1, Math.round(step.estimatedSeconds / 60))} min`]
-                            : []),
+                          step.difficulty != null ? m.difficulty(step.difficulty) : m.noDifficulty,
+                          m.questions(step.questions),
+                          ...(step.estimatedSeconds != null ? [m.minutes(Math.max(1, Math.round(step.estimatedSeconds / 60)))] : []),
                         ].join(" · ")}
                       </span>
                     </Link>
@@ -668,6 +651,7 @@ function ChapterCard({
 }
 
 function IssueRow({ issue }: { issue: JourneyIssue }) {
+  const m = useMessages(journeyMessages);
   const action = issueAction(issue);
   const warning = issue.severity === "WARNING";
   return (
@@ -683,8 +667,8 @@ function IssueRow({ issue }: { issue: JourneyIssue }) {
         <Lightbulb size={16} className="mt-0.5 shrink-0" aria-hidden />
       )}
       <span className="min-w-0 flex-1">
-        <span className="sr-only">{warning ? "Warning: " : "Tip: "}</span>
-        {issue.message}
+        <span className="sr-only">{warning ? m.warning : m.tip}</span>
+        {journeyIssueText(issue)}
       </span>
       {action && (
         <Link to={action.to} relative="path" className="shrink-0 font-semibold text-tonle-700 underline underline-offset-4">
@@ -696,36 +680,33 @@ function IssueRow({ issue }: { issue: JourneyIssue }) {
 }
 
 function SkillRow({ skill, position }: { skill: JourneySkill; position: number }) {
+  const m = useMessages(journeyMessages);
   const repeated = skill.firstTaughtInChapter != null && skill.firstTaughtInChapter < position;
   const difficulty =
     skill.minDifficulty == null
       ? null
       : skill.minDifficulty === skill.maxDifficulty
-        ? `difficulty ${skill.minDifficulty}`
-        : `difficulty ${skill.minDifficulty}–${skill.maxDifficulty}`;
+        ? m.difficulty(skill.minDifficulty)
+        : m.difficultyRange(skill.minDifficulty, skill.maxDifficulty ?? skill.minDifficulty);
   const facts = repeated
-    ? [`taught in chapter ${skill.firstTaughtInChapter}`]
+    ? [m.taughtIn(skill.firstTaughtInChapter ?? 0)]
     : [
-        `${skill.publishedActivities} ${skill.publishedActivities === 1 ? "activity" : "activities"}${
-          skill.draftOnlyActivities > 0 ? ` (+${skill.draftOnlyActivities} draft)` : ""
-        }`,
-        `${skill.evidenceQuestions} ${skill.evidenceQuestions === 1 ? "question records" : "questions record"} evidence`,
+        m.activities(skill.publishedActivities, skill.draftOnlyActivities),
+        m.evidence(skill.evidenceQuestions),
         ...(difficulty ? [difficulty] : []),
       ];
   return (
     <li className="flex flex-col gap-1 px-3 py-2.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
       <span className="text-sm font-medium text-ink">
         {skill.name}
-        {skill.archived && <span className="ml-2 text-xs font-semibold text-light-deep">archived</span>}
+        {skill.archived && <span className="ml-2 text-xs font-semibold text-light-deep">{m.archived}</span>}
       </span>
       <span className="flex flex-col gap-0.5 text-xs text-ink-soft sm:items-end sm:text-right">
         <span className="tabular">{facts.join(" · ")}</span>
         {skill.prerequisites.length > 0 && (
           <span>
-            Builds on{" "}
-            {skill.prerequisites
-              .map((p) => `${p.name} (${p.chapter != null ? `chapter ${p.chapter}` : "not in this journey"})`)
-              .join(", ")}
+            {m.buildsOn}{" "}
+            {skill.prerequisites.map((p) => m.prerequisite(p.name, p.chapter)).join(", ")}
           </span>
         )}
       </span>

@@ -36,33 +36,6 @@ const ALLOWED_TEXT = new Set([
   "ខ្មែរ", // a language named in itself (LanguageSwitcher)
 ]);
 
-/**
- * Screens not moved to the catalogs yet - this list only shrinks, and is empty when the migration is
- * done. A file on it is still checked once it is removed from it.
- */
-const NOT_YET_MIGRATED = new Set<string>([
-  "features/admin/studio/ActivitiesPage.tsx",
-  "features/admin/studio/ActivityEditor.tsx",
-  "features/admin/studio/CatalogPage.tsx",
-  "features/admin/studio/ChildPreview.tsx",
-  "features/admin/studio/CurriculaPage.tsx",
-  "features/admin/studio/CurriculumEditor.tsx",
-  "features/admin/studio/Lifecycle.tsx",
-  "features/admin/studio/MediaLibrary.tsx",
-  "features/admin/studio/MediaSlot.tsx",
-  "features/admin/studio/QuestionDraftForm.tsx",
-  "features/admin/studio/QuestionEditor.tsx",
-  "features/admin/studio/QuestionsPage.tsx",
-  "features/admin/studio/Review.tsx",
-  "features/admin/studio/StudioIndex.tsx",
-  "features/admin/studio/StudioLayout.tsx",
-  "features/admin/studio/Withdrawal.tsx",
-  "features/admin/studio/journeyLogic.ts",
-  "features/admin/studio/mediaText.ts",
-  "features/admin/studio/shared.tsx",
-  "features/admin/studio/studioLogic.ts",
-]);
-
 /** Attributes whose text is read or heard by people. */
 const READ_ATTRIBUTES = new Set([
   "aria-label",
@@ -158,9 +131,7 @@ function findings(path: string): string[] {
 
 describe("interface text", () => {
   it("comes from the message catalogs, not from the screens", () => {
-    const all = files(ROOT)
-      .filter((path) => !NOT_YET_MIGRATED.has(relative(ROOT, path).split(sep).join("/")))
-      .flatMap(findings);
+    const all = files(ROOT).flatMap(findings);
     expect(all).toEqual([]);
   });
 });

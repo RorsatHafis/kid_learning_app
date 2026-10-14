@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils/cn";
 import { useStudioScope, type StudioContext } from "./studioLogic";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
 import { ManageButton } from "./Lifecycle";
+import { useMessages } from "@/i18n/catalog";
+import { studioMessages } from "./messages";
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -25,13 +27,15 @@ export function StudioLayout() {
   const subjects = useAsync(() => studioApi.subjects(), []);
   const catalog = useAsync(() => studioApi.catalog(subjectId), [subjectId]);
 
+  const all = useMessages(studioMessages);
+  const m = all.layout;
   const context: StudioContext | null = catalog.data ? { catalog: catalog.data, refreshCatalog: catalog.refetch } : null;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        breadcrumb={[{ label: "Content Studio", to: `${base}/studio` }, { label: catalog.data?.subject.name ?? "…" }]}
-        title={catalog.data?.subject.name ?? "Loading…"}
+        breadcrumb={[{ label: m.studio, to: `${base}/studio` }, { label: catalog.data?.subject.name ?? "…" }]}
+        title={catalog.data?.subject.name ?? m.loading}
         actions={
           <div className="flex flex-wrap items-center gap-3">
             {catalogAdmin && catalog.data && (
@@ -41,14 +45,14 @@ export function StudioLayout() {
                 name={catalog.data.subject.name}
                 description={catalog.data.subject.description}
                 describable
-                label="Manage subject…"
+                wording="manageSubject"
                 onChanged={(change) => (change === "archived" ? navigate(`${base}/studio`) : (catalog.refetch(), subjects.refetch()))}
               />
             )}
           {subjects.data &&
           subjects.data.length > 1 && (
             <label className="flex items-center gap-2 text-sm font-medium text-ink-soft">
-              Subject
+              {m.subject}
               <select
                 value={subjectId}
                 onChange={(e) => navigate(`${base}/studio/${e.target.value}/${catalogAdmin ? "catalog" : "questions"}`)}
@@ -66,24 +70,24 @@ export function StudioLayout() {
         }
       />
 
-      <nav aria-label="Studio sections" className="-mx-4 -mt-3 overflow-x-auto border-b border-line pl-4 pr-16 [mask-image:linear-gradient(to_right,black_82%,transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
+      <nav aria-label={m.sections} className="-mx-4 -mt-3 overflow-x-auto border-b border-line pl-4 pr-16 [mask-image:linear-gradient(to_right,black_82%,transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
         <div className="flex gap-7">
           <NavLink to={`${base}/studio/${subjectId}/catalog`} className={tabClass}>
-            Skills &amp; objectives
+            {all.skillsAndObjectives}
           </NavLink>
           <NavLink to={`${base}/studio/${subjectId}/questions`} className={tabClass}>
-            Questions
+            {m.questions}
           </NavLink>
           <NavLink to={`${base}/studio/${subjectId}/activities`} className={tabClass}>
-            Activities
+            {m.activities}
           </NavLink>
           <NavLink to={`${base}/studio/${subjectId}/curricula`} className={tabClass}>
-            Curricula
+            {m.curricula}
           </NavLink>
         </div>
       </nav>
 
-      {catalog.isLoading && !catalog.data && <LoadingState label="Loading the subject…" />}
+      {catalog.isLoading && !catalog.data && <LoadingState label={m.loadingSubject} />}
       {catalog.error && <ErrorState error={catalog.error} onRetry={catalog.refetch} />}
       {context && <Outlet context={context} />}
     </div>

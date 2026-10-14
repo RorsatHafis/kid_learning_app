@@ -96,8 +96,11 @@ export type JourneyIssueCode =
 export interface JourneyIssue {
   code: JourneyIssueCode;
   severity: "WARNING" | "TIP";
+  /** The server's English sentence; the Studio words the issue from `code` and `values`. */
   message: string;
   skillId: string | null;
+  /** What the sentence names: a skill, a prerequisite, a chapter, a count of drafts. */
+  values?: Record<string, string | number | boolean>;
 }
 
 export interface JourneyStep {
@@ -305,7 +308,10 @@ export interface QuestionDetail {
 // ---- content/validation/ValidationReport.java ----
 export interface ValidationIssue {
   code: string;
+  /** The server's English sentence; the Studio words the issue from `code` and `values`. */
   message: string;
+  /** What the sentence names: a skill, a question's position, a count. */
+  values?: Record<string, string | number | boolean>;
 }
 
 export interface ValidationReport {

@@ -10,6 +10,8 @@ import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, Panel, SelectField, StatusBadge } from "./shared";
 import { currentStatus, errorText, useStudio, useComposer, useArchivedView } from "./studioLogic";
 import { ArchivedSwitch } from "./Lifecycle";
+import { useMessages } from "@/i18n/catalog";
+import { studioMessages } from "./messages";
 
 /**
  * A curriculum is the sequence of objectives a child's learning path is built from.
@@ -23,24 +25,25 @@ export function CurriculaPage() {
   const mine = (curricula.data ?? []).filter((c) => c.subjectId === catalog.subject.id);
   const hubName = (id: string) => ageHubs.data?.find((h) => h.id === id)?.name ?? "";
   const composer = useComposer(!archived && !!curricula.data && mine.length === 0);
+  const m = useMessages(studioMessages).curricula;
 
   return (
     <div className={cn("grid grid-cols-1 gap-6", composer.open && "lg:grid-cols-[minmax(0,1fr)_360px]")}>
       <Panel
-        title={archived ? "Archived curricula" : "Curricula"}
+        title={archived ? m.archivedTitle : m.title}
         action={
           <span className="flex flex-wrap items-center gap-3">
-            <ArchivedSwitch archived={archived} onChange={setArchived} noun="curricula" />
-            {!composer.open && !archived && <NewButton label="New curriculum" onClick={composer.show} />}
+            <ArchivedSwitch archived={archived} onChange={setArchived} list="curricula" />
+            {!composer.open && !archived && <NewButton label={m.newCurriculum} onClick={composer.show} />}
           </span>
         }
       >
-        {curricula.isLoading && !curricula.data && <LoadingState label="Loading curricula…" />}
+        {curricula.isLoading && !curricula.data && <LoadingState label={m.loading} />}
         {curricula.error && <ErrorState error={curricula.error} onRetry={curricula.refetch} />}
         {curricula.data && mine.length === 0 && (
           <EmptyState
-            title={archived ? "No archived curricula" : "No curricula yet"}
-            description={archived ? "Curricula you archive appear here, to restore." : "Create one once you have objectives and activities to put in it."}
+            title={archived ? m.noArchived : m.none}
+            description={archived ? m.archivedHint : m.firstHint}
           />
         )}
         <ul className="flex flex-col divide-y divide-line">
@@ -97,6 +100,7 @@ function NewCurriculum({
   const [ageHubId, setAgeHubId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(studioMessages).curricula;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -116,21 +120,20 @@ function NewCurriculum({
   }
 
   return (
-    <ComposerPanel title="New curriculum" onClose={onClose} focusOnOpen={focusOnOpen}>
+    <ComposerPanel title={m.newCurriculum} onClose={onClose} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField
-          label="Name families will see"
+          label={m.nameFamilies}
           value={name}
           maxLength={160}
           required
           onChange={(e) => setName(e.target.value)}
         />
-        <SelectField label="Age group" value={ageHubId} required onChange={(e) => setAgeHubId(e.target.value)}>
-          <option value="">Choose…</option>
+        <SelectField label={m.ageGroup} value={ageHubId} required onChange={(e) => setAgeHubId(e.target.value)}>
+          <option value="">{m.choose}</option>
           {ageHubs.map((hub) => (
             <option key={hub.id} value={hub.id}>
-              {hub.name} ({hub.minAge}
-              {hub.maxAge ? `–${hub.maxAge}` : "+"} years)
+              {hub.name} ({m.ages(hub.minAge, hub.maxAge)})
             </option>
           ))}
         </SelectField>
@@ -140,7 +143,7 @@ function NewCurriculum({
           </p>
         )}
         <Button type="submit" disabled={busy || !name.trim() || !ageHubId} className="w-fit">
-          <Plus size={16} aria-hidden /> {busy ? "Creating…" : "Create draft"}
+          <Plus size={16} aria-hidden /> {busy ? m.creating : m.createDraft}
         </Button>
       </form>
     </ComposerPanel>

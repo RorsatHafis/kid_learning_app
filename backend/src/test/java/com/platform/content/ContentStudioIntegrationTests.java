@@ -156,8 +156,12 @@ class ContentStudioIntegrationTests {
                 + "\"pairs\":[{\"left\":\"1\",\"right\":\"•\"}],\"skillIds\":[\"" + catalog.skillId() + "\"]}", admin), 201);
         String questionId = question.get("id").asString();
         String versionId = firstVersion(question);
-        assertThat(codes(json(get("/api/v1/studio/question-versions/" + versionId + "/validation", admin), 200).get("errors")))
-                .containsExactly("MATCHING_PAIR_COUNT");
+        JsonNode onePair = json(get("/api/v1/studio/question-versions/" + versionId + "/validation", admin), 200).get("errors");
+        assertThat(codes(onePair)).containsExactly("MATCHING_PAIR_COUNT");
+        // What the sentence names travels with the code, so the Studio can say it in the author's language.
+        assertThat(onePair.get(0).get("values").get("min").asInt()).isEqualTo(2);
+        assertThat(onePair.get(0).get("values").get("max").asInt()).isEqualTo(6);
+        assertThat(onePair.get(0).get("values").get("count").asInt()).isEqualTo(1);
         json(put("/api/v1/studio/question-versions/" + versionId, "{\"prompt\":\"Match each number to its dots\","
                 + "\"pairs\":[{\"left\":\"1\",\"right\":\"•\"},{\"left\":\"2\",\"right\":\"•\"}]}", admin), 200);
         assertThat(codes(json(get("/api/v1/studio/question-versions/" + versionId + "/validation", admin), 200).get("errors")))
@@ -515,11 +519,15 @@ class ContentStudioIntegrationTests {
         assertThat(chapters.get(1).get("steps")).isEmpty();
         assertThat(codes(chapters.get(1).get("issues"))).containsExactly("SKILL_NO_ACTIVITY");
         assertThat(chapters.get(1).get("issues").get(0).get("message").asString()).contains("(1 in draft)");
+        assertThat(chapters.get(1).get("issues").get(0).get("values").get("drafts").asInt()).isEqualTo(1);
+        assertThat(chapters.get(1).get("issues").get(0).get("values").get("skill").asString()).isNotBlank();
         assertThat(chapters.get(2).get("steps")).isEmpty();
         // Empty because nothing is published yet: said once, by the skill (the chapter adds nothing to it).
         assertThat(codes(chapters.get(2).get("issues"))).containsExactly("SKILL_NO_ACTIVITY", "PREREQUISITE_NO_ACTIVITY");
         assertThat(chapters.get(2).get("issues").get(0).get("message").asString()).contains("(1 in draft)");
         assertThat(codes(chapters.get(3).get("issues"))).containsExactly("CHAPTER_NO_STEPS", "SKILL_REPEATED");
+        assertThat(chapters.get(3).get("issues").get(0).get("values")).isEmpty();
+        assertThat(chapters.get(3).get("issues").get(1).get("values").get("chapter").asInt()).isEqualTo(1);
         assertThat(chapters.get(3).get("issues").get(0).get("message").asString()).contains("earlier chapter");
 
         // An unsaved order is previewed, not saved: taught before what it builds on, adding is flagged.

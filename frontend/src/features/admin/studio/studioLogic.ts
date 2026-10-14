@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import { ApiError } from "@/lib/api/ApiError";
-import type { Catalog, PublicationStatus, ValidationReport, VersionSummary } from "@/lib/api/studio";
+import type { Catalog, JourneyIssue, PublicationStatus, ValidationIssue, ValidationReport, VersionSummary } from "@/lib/api/studio";
 import type { QuestionType } from "@/lib/api/types";
+import { messagesNow } from "@/i18n/catalog";
+import { studioMessages, type IssueValues } from "./messages";
 
 /** What StudioLayout hands every Studio page: the chosen subject's skills and objectives. */
 export interface StudioContext {
@@ -36,12 +38,13 @@ export function currentStatus(versions: VersionSummary[]): {
   label: string;
   status: PublicationStatus | null;
 } {
-  if (versions.length === 0) return { label: "No versions", status: null };
+  const m = messagesNow(studioMessages);
+  if (versions.length === 0) return { label: m.noVersions, status: null };
   const latest = versions[versions.length - 1];
   const live = versions.find((v) => v.status === "PUBLISHED");
   if (latest.status === "DRAFT" && live)
     return {
-      label: `v${live.versionNumber} live · v${latest.versionNumber} draft`,
+      label: m.liveAndDraft(live.versionNumber, latest.versionNumber),
       status: "DRAFT",
     };
   return { label: `v${latest.versionNumber}`, status: latest.status };
@@ -57,14 +60,36 @@ export function reportFromError(err: unknown): ValidationReport | null {
 }
 
 /** Author-facing text for a failed Studio call. */
-export function errorText(err: unknown, fallback = "That didn't work. Please try again."): string {
+export function errorText(err: unknown, fallback?: string): string {
+  const m = messagesNow(studioMessages);
+  const otherwise = fallback ?? m.failed;
   if (err instanceof ApiError) {
-    if (err.status === 403) return "You don't have permission to change this.";
-    if (err.status === 404) return "That item no longer exists or isn't available to you.";
+    if (err.status === 403) return m.forbidden;
+    if (err.status === 404) return m.gone;
     if (err.validationErrors) return Object.values(err.validationErrors).join(" ");
-    return err.problem?.detail ?? fallback;
+    return err.problem?.detail ?? otherwise;
   }
-  return fallback;
+  return otherwise;
+}
+
+/**
+ * A pre-publication check in the author's language, worded from its stable code and the values it
+ * names. A code this client doesn't know yet, or a check that arrives without a value its sentence
+ * needs, is shown as the server's own sentence - never dropped, never with a blank in it.
+ */
+export function issueText(issue: ValidationIssue): string {
+  return worded(messagesNow(studioMessages).checks[issue.code], issue);
+}
+
+/** A journey builder warning or tip, worded as `issueText` words a check. */
+export function journeyIssueText(issue: JourneyIssue): string {
+  return worded(messagesNow(studioMessages).journeyIssues[issue.code], issue);
+}
+
+function worded(say: ((values: IssueValues) => string) | undefined, issue: ValidationIssue | JourneyIssue): string {
+  if (!say) return issue.message;
+  const text = say(issue.values ?? {});
+  return /\bundefined\b/.test(text) ? issue.message : text;
 }
 
 /** A catalog code (CODE_LIKE_THIS) suggested from a name; the author can still edit it. */
@@ -79,15 +104,10 @@ export function codeFrom(text: string): string {
 
 export const DIFFICULTIES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-export const QUESTION_TYPE_LABEL: Record<QuestionType, string> = {
-  MULTIPLE_CHOICE: "Multiple choice",
-  TRUE_FALSE: "True or false",
-  NUMERIC: "Number answer",
-  SHORT_ANSWER: "Short answer",
-  MATCHING: "Matching",
-  ORDERING: "Put in order",
-  SORTING: "Sort into groups",
-};
+/** A question type's name, as authors know it. */
+export function questionTypeLabel(type: QuestionType): string {
+  return messagesNow(studioMessages).types[type];
+}
 
 export const AUTHORABLE_TYPES: QuestionType[] = [
   "MULTIPLE_CHOICE",

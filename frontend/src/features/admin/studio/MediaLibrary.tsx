@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Archive, AudioLines, Play, RotateCcw, Square, Trash2, Upload } from "lucide-react";
-import { studioApi, type MediaDetail, type MediaItem, type MediaUseField } from "@/lib/api/studio";
+import { studioApi, type MediaDetail, type MediaItem } from "@/lib/api/studio";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { usePageInRange, useUrlFilters } from "@/lib/hooks/useUrlFilters";
@@ -17,23 +17,27 @@ import { cn } from "@/lib/utils/cn";
 import { StatusBadge, TextAreaField } from "./shared";
 import { uploadError } from "./mediaText";
 import { useStudioScope } from "./studioLogic";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { formatDate, formatNumber } from "@/i18n/format";
+import { mediaMessages } from "./media.messages";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav,audio/x-wav";
-
-const FIELD_LABEL: Record<MediaUseField, string> = {
-  PROMPT_IMAGE: "Question picture",
-  PROMPT_AUDIO: "Question read aloud",
-  ANSWER_IMAGE: "Answer picture",
-  ANSWER_AUDIO: "Answer recording",
-};
 
 type Kind = "" | "IMAGE" | "AUDIO";
 type Show = "" | "unused" | "archived";
 
-const bytes = (n: number) =>
-  n >= 1024 * 1024 ? `${(n / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
-const usedText = (n: number) => (n === 0 ? "Not used yet" : `Used in ${n} ${n === 1 ? "question" : "questions"}`);
-const nameOf = (item: MediaItem) => item.title ?? (item.type === "IMAGE" ? "Untitled picture" : "Untitled recording");
+const bytes = (n: number) => {
+  const m = messagesNow(mediaMessages);
+  return n >= 1024 * 1024 ? m.megabytes(formatNumber(n / (1024 * 1024), { maximumFractionDigits: 1, minimumFractionDigits: 1 })) : m.kilobytes(Math.max(1, Math.round(n / 1024)));
+};
+const usedText = (n: number) => {
+  const m = messagesNow(mediaMessages);
+  return n === 0 ? m.notUsed : m.usedIn(n);
+};
+const nameOf = (item: MediaItem) => {
+  const m = messagesNow(mediaMessages);
+  return item.title ?? (item.type === "IMAGE" ? m.untitledPicture : m.untitledRecording);
+};
 
 // ------------------------------------------------------------------ the library page
 
@@ -60,63 +64,60 @@ export function MediaLibraryPage() {
   );
   usePageInRange(list.data, setPage);
   const [openId, setOpenId] = useState<string | null>(null);
+  const m = useMessages(mediaMessages);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Media library"
-        description="Pictures and recordings for questions. Upload a file once and use it in any question; describe it once and that description is offered wherever it goes. A file in use can't be deleted — archive it to take it out of the library."
+        title={m.title}
+        description={m.lead}
         actions={<UploadButton onUploaded={list.refetch} />}
       />
 
       <div className="flex flex-col gap-3 rounded-[16px] bg-white p-4 ring-1 ring-line sm:flex-row sm:flex-wrap sm:items-center">
         <SearchField
-          label="Search media"
-          placeholder="Search by title or description"
+          label={m.search}
+          placeholder={m.searchHint}
           value={text}
           onSearch={(q) => update({ q: q || undefined })}
           className="sm:min-w-[16rem] sm:flex-1"
         />
         <Segmented
-          label="Kind"
+          label={m.kind}
           value={kind}
           options={[
-            { value: "", label: "All" },
-            { value: "IMAGE", label: "Pictures" },
-            { value: "AUDIO", label: "Recordings" },
+            { value: "", label: m.all },
+            { value: "IMAGE", label: m.pictures },
+            { value: "AUDIO", label: m.recordings },
           ]}
           onChange={(value) => update({ type: value || undefined })}
         />
         <label className="flex items-center gap-2 text-sm text-ink">
-          <span className="font-semibold">Show</span>
+          <span className="font-semibold">{m.show}</span>
           <select
             value={show}
             onChange={(e) => update({ show: e.target.value || undefined })}
             className="rounded-[10px] border border-line-strong bg-white px-3 py-2 text-sm focus:border-tonle-600 focus:outline-none focus:ring-2 focus:ring-tonle-600/15"
           >
-            <option value="">In the library</option>
-            <option value="unused">Not used anywhere</option>
-            <option value="archived">Archived</option>
+            <option value="">{m.inLibrary}</option>
+            <option value="unused">{m.unused}</option>
+            <option value="archived">{m.archived}</option>
           </select>
         </label>
       </div>
 
-      {list.isLoading && !list.data && <LoadingState label="Loading media…" />}
+      {list.isLoading && !list.data && <LoadingState label={m.loading} />}
       {list.error && <ErrorState error={list.error} onRetry={list.refetch} />}
       {list.data && list.data.items.length === 0 && (
         <EmptyState
-          title={text || kind || show ? "Nothing matches" : "No media yet"}
-          description={
-            text || kind || show
-              ? "Try another search or filter."
-              : "Upload pictures and recordings here, or add them while writing a question — they all land in this library."
-          }
+          title={text || kind || show ? m.nothingMatches : m.none}
+          description={text || kind || show ? m.tryAnother : m.firstHint}
         />
       )}
       {list.data && list.data.items.length > 0 && (
-        <section aria-label="Media" className={cn("flex flex-col gap-4", list.isLoading && "opacity-60")}>
+        <section aria-label={m.media} className={cn("flex flex-col gap-4", list.isLoading && "opacity-60")}>
           <MediaGrid items={list.data.items} onOpen={(item) => setOpenId(item.id)} />
-          <Pager page={list.data.page} size={list.data.size} total={list.data.total} onPage={setPage} label="Media" />
+          <Pager page={list.data.page} size={list.data.size} total={list.data.total} onPage={setPage} label={m.media} />
         </section>
       )}
 
@@ -129,13 +130,14 @@ function UploadButton({ onUploaded }: { onUploaded: () => void }) {
   const input = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const m = useMessages(mediaMessages);
 
   async function upload(files: FileList | null) {
     if (!files || files.length === 0) return;
     const all = [...files];
     const failed: string[] = [];
     for (const [index, file] of all.entries()) {
-      setStatus(all.length > 1 ? `Uploading ${index + 1} of ${all.length}…` : "Uploading…");
+      setStatus(all.length > 1 ? m.uploadingOf(index + 1, all.length) : m.uploading);
       try {
         await studioApi.uploadMedia(file);
       } catch (err) {
@@ -161,7 +163,7 @@ function UploadButton({ onUploaded }: { onUploaded: () => void }) {
         onChange={(e) => void upload(e.target.files)}
       />
       <Button onClick={() => input.current?.click()} disabled={status !== null}>
-        <Upload size={16} aria-hidden /> {status ?? "Upload files"}
+        <Upload size={16} aria-hidden /> {status ?? m.upload}
       </Button>
       {errors.length > 0 && (
         <ul role="alert" className="max-w-sm text-right text-xs font-medium text-brick-deep">
@@ -210,12 +212,13 @@ function Segmented<T extends string>({
 export function MediaGrid({
   items,
   onOpen,
-  actionLabel = "Open",
+  actionLabel,
 }: {
   items: MediaItem[];
   onOpen: (item: MediaItem) => void;
   actionLabel?: string;
 }) {
+  const m = useMessages(mediaMessages);
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
       {items.map((item) => (
@@ -223,7 +226,7 @@ export function MediaGrid({
           <button
             type="button"
             onClick={() => onOpen(item)}
-            aria-label={`${actionLabel}: ${nameOf(item)}, ${item.type === "IMAGE" ? "picture" : "recording"}, ${usedText(item.usedBy).toLowerCase()}`}
+            aria-label={m.itemLabel(actionLabel ?? m.open, nameOf(item), item.type === "IMAGE" ? m.picture : m.recording, usedText(item.usedBy).toLowerCase())}
             className="group flex h-full w-full flex-col overflow-hidden rounded-[14px] bg-white text-left ring-1 ring-line transition-[box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:shadow-paper hover:ring-tonle-300 focus-visible:ring-2 focus-visible:ring-tonle-600"
           >
             <MediaThumb item={item} />
@@ -231,7 +234,7 @@ export function MediaGrid({
               <span className="truncate text-sm font-semibold text-ink">{nameOf(item)}</span>
               <span className="truncate text-xs text-ink-soft">
                 {usedText(item.usedBy)}
-                {!item.editable && " · Platform"}
+                {!item.editable && ` · ${m.platform}`}
               </span>
             </span>
           </button>
@@ -242,6 +245,7 @@ export function MediaGrid({
 }
 
 function MediaThumb({ item }: { item: MediaItem }) {
+  const m = useMessages(mediaMessages);
   return (
     <span className="relative flex aspect-[4/3] items-center justify-center bg-paper">
       {item.type === "IMAGE" ? (
@@ -249,12 +253,12 @@ function MediaThumb({ item }: { item: MediaItem }) {
       ) : (
         <span aria-hidden className="flex flex-col items-center gap-1.5 text-tonle-600">
           <AudioLines size={34} strokeWidth={1.75} />
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">Recording</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">{m.recordingTag}</span>
         </span>
       )}
       {item.archived && (
         <span className="absolute left-2 top-2 rounded-pill bg-tonle-950/80 px-2 py-0.5 text-[11px] font-semibold text-white">
-          Archived
+          {m.archived}
         </span>
       )}
     </span>
@@ -266,9 +270,10 @@ function MediaThumb({ item }: { item: MediaItem }) {
 function MediaDetailDialog({ id, onClose, onChanged }: { id: string | null; onClose: () => void; onChanged: () => void }) {
   const detail = useAsync(() => (id ? studioApi.mediaDetail(id) : Promise.resolve(null)), [id]);
   const data = detail.data;
+  const m = useMessages(mediaMessages);
   return (
-    <Dialog open={id !== null} onClose={onClose} title={data ? nameOf(data.item) : "Media"} size="lg">
-      {detail.isLoading && !data && <LoadingState label="Loading…" />}
+    <Dialog open={id !== null} onClose={onClose} title={data ? nameOf(data.item) : m.media} size="lg">
+      {detail.isLoading && !data && <LoadingState label={m.loadingOne} />}
       {detail.error && <ErrorState error={detail.error} onRetry={detail.refetch} />}
       {data && (
         <MediaDetailBody
@@ -304,6 +309,7 @@ function MediaDetailBody({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const m = useMessages(mediaMessages);
 
   async function act(run: () => Promise<unknown>, done: string, after = onChanged) {
     setBusy(true);
@@ -313,7 +319,7 @@ function MediaDetailBody({
       setMessage({ ok: true, text: done });
       after();
     } catch (err) {
-      setMessage({ ok: false, text: problemMessage(err, "That didn't work. Please try again.") });
+      setMessage({ ok: false, text: problemMessage(err, m.failed) });
     } finally {
       setBusy(false);
     }
@@ -323,7 +329,7 @@ function MediaDetailBody({
     e.preventDefault();
     void act(
       () => studioApi.describeMedia(item.id, { title: title.trim() || null, description: description.trim() || null }),
-      "Saved.",
+      m.saved,
     );
   }
 
@@ -338,25 +344,23 @@ function MediaDetailBody({
           )}
         </div>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          <dt className="text-ink-soft">Kind</dt>
+          <dt className="text-ink-soft">{m.kind}</dt>
           <dd className="text-ink">
-            {item.type === "IMAGE" ? "Picture" : "Recording"} · {item.mimeType.split("/")[1]?.toUpperCase()}
+            {item.type === "IMAGE" ? m.pictureKind : m.recordingKind} · {item.mimeType.split("/")[1]?.toUpperCase()}
           </dd>
-          <dt className="text-ink-soft">Size</dt>
+          <dt className="text-ink-soft">{m.size}</dt>
           <dd className="text-ink">
             {bytes(item.sizeBytes)}
             {item.width && item.height ? ` · ${item.width} × ${item.height} px` : ""}
           </dd>
           {item.createdAt && (
             <>
-              <dt className="text-ink-soft">Added</dt>
-              <dd className="text-ink">
-                {new Date(item.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
-              </dd>
+              <dt className="text-ink-soft">{m.added}</dt>
+              <dd className="text-ink">{formatDate(item.createdAt, { day: "numeric", month: "short", year: "numeric" })}</dd>
             </>
           )}
-          <dt className="text-ink-soft">Owner</dt>
-          <dd className="text-ink">{item.editable ? "You can change it" : "Platform media (administrators manage it)"}</dd>
+          <dt className="text-ink-soft">{m.owner}</dt>
+          <dd className="text-ink">{item.editable ? m.yours : m.platformMedia}</dd>
         </dl>
       </div>
 
@@ -364,20 +368,20 @@ function MediaDetailBody({
         {item.editable ? (
           <form onSubmit={save} className="flex flex-col gap-3">
             <FormField
-              label="Title"
+              label={m.titleField}
               value={title}
               maxLength={200}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="How you'll find it"
+              placeholder={m.titleHint}
             />
             <TextAreaField
-              label={item.type === "IMAGE" ? "What it shows (read to children who use a screen reader)" : "What is said"}
+              label={item.type === "IMAGE" ? m.showsField : m.saidField}
               value={description}
               maxLength={500}
               onChange={(e) => setDescription(e.target.value)}
             />
             <Button type="submit" variant="outline" disabled={busy} className="w-fit">
-              Save details
+              {m.saveDetails}
             </Button>
           </form>
         ) : (
@@ -386,9 +390,7 @@ function MediaDetailBody({
 
         <section aria-labelledby="media-uses" className="flex flex-col gap-2">
           <h3 id="media-uses" className="text-sm font-semibold text-tonle-950">
-            {uses.length === 0
-              ? "Not used by any question"
-              : `Used by ${uses.length} question ${uses.length === 1 ? "version" : "versions"}`}
+            {uses.length === 0 ? m.noUses : m.uses(uses.length)}
           </h3>
           {uses.length > 0 && (
             <ul className="flex max-h-56 flex-col divide-y divide-line overflow-y-auto rounded-[12px] ring-1 ring-line">
@@ -400,7 +402,7 @@ function MediaDetailBody({
                   >
                     <span className="line-clamp-2 font-medium text-ink">{use.prompt}</span>
                     <span className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
-                      {FIELD_LABEL[use.field]} · version {use.versionNumber} <StatusBadge status={use.status} />
+                      {m.useLine(m.fields[use.field] ?? use.field, use.versionNumber)} <StatusBadge status={use.status} />
                     </span>
                   </Link>
                 </li>
@@ -408,9 +410,7 @@ function MediaDetailBody({
             </ul>
           )}
           {uses.some((u) => u.status !== "DRAFT") && (
-            <p className="text-xs text-ink-soft">
-              Published questions keep exactly this file. To use a different one, start a new version of the question.
-            </p>
+            <p className="text-xs text-ink-soft">{m.publishedKeep}</p>
           )}
         </section>
 
@@ -420,19 +420,19 @@ function MediaDetailBody({
               <Button
                 variant="outline"
                 disabled={busy}
-                onClick={() => void act(() => studioApi.restoreMedia(item.id), "Back in the library.")}
+                onClick={() => void act(() => studioApi.restoreMedia(item.id), m.backInLibrary)}
               >
-                <RotateCcw size={15} aria-hidden /> Restore
+                <RotateCcw size={15} aria-hidden /> {m.restore}
               </Button>
             ) : (
               <Button
                 variant="outline"
                 disabled={busy}
                 onClick={() =>
-                  void act(() => studioApi.archiveMedia(item.id), "Archived: out of the library; questions using it keep it.")
+                  void act(() => studioApi.archiveMedia(item.id), m.archivedDone)
                 }
               >
-                <Archive size={15} aria-hidden /> Archive
+                <Archive size={15} aria-hidden /> {m.archive}
               </Button>
             )}
             {uses.length === 0 &&
@@ -441,17 +441,17 @@ function MediaDetailBody({
                   <Button
                     disabled={busy}
                     className="bg-brick-deep hover:bg-brick"
-                    onClick={() => void act(() => studioApi.deleteMedia(item.id), "Deleted.", onDeleted)}
+                    onClick={() => void act(() => studioApi.deleteMedia(item.id), m.deleted, onDeleted)}
                   >
-                    <Trash2 size={15} aria-hidden /> Delete for good
+                    <Trash2 size={15} aria-hidden /> {m.deleteForGood}
                   </Button>
                   <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
-                    Keep it
+                    {m.keep}
                   </Button>
                 </>
               ) : (
                 <Button variant="ghost" disabled={busy} onClick={() => setConfirmDelete(true)}>
-                  <Trash2 size={15} aria-hidden /> Delete…
+                  <Trash2 size={15} aria-hidden /> {m.delete}
                 </Button>
               ))}
           </div>
@@ -471,6 +471,7 @@ function MediaDetailBody({
 
 function AudioPreview({ item }: { item: MediaItem }) {
   const playing = usePlaying(item.url);
+  const m = useMessages(mediaMessages);
   return (
     <button
       type="button"
@@ -478,7 +479,7 @@ function AudioPreview({ item }: { item: MediaItem }) {
       className="flex items-center gap-3 rounded-pill bg-white px-5 py-3 font-semibold text-tonle-700 shadow-tight ring-1 ring-line hover:bg-tonle-50"
     >
       {playing ? <Square size={16} aria-hidden /> : <Play size={16} aria-hidden />}
-      {playing ? "Stop" : "Play recording"}
+      {playing ? m.stop : m.playRecording}
     </button>
   );
 }
@@ -497,7 +498,7 @@ export function MediaPicker({
   open: boolean;
   onClose: () => void;
   onPick: (item: MediaItem) => void;
-  /** What it's for: "the picture for choice 1". */
+  /** What it's for: "picture for choice 1". */
   purpose: string;
 }) {
   const [text, setText] = useState("");
@@ -506,45 +507,46 @@ export function MediaPicker({
     () => (open ? studioApi.mediaLibrary({ type: kind, text: text || undefined, page, size: 12 }) : Promise.resolve(null)),
     [open, kind, text, page],
   );
-  const noun = kind === "IMAGE" ? "picture" : "recording";
+  const m = useMessages(mediaMessages);
+  const image = kind === "IMAGE";
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title={`Choose ${kind === "IMAGE" ? "a picture" : "a recording"}`}
-      description={`For ${purpose}.`}
+      title={image ? m.choosePicture : m.chooseRecording}
+      description={m.forPurpose(purpose)}
       size="lg"
     >
       <div className="flex flex-col gap-4">
         <SearchField
-          label={`Search ${noun}s`}
-          placeholder="Search by title or description"
+          label={image ? m.searchPictures : m.searchRecordings}
+          placeholder={m.searchHint}
           value={text}
           onSearch={(q) => {
             setText(q);
             setPage(0);
           }}
         />
-        {list.isLoading && !list.data && <LoadingState label="Loading…" />}
+        {list.isLoading && !list.data && <LoadingState label={m.loadingOne} />}
         {list.error && <ErrorState error={list.error} onRetry={list.refetch} />}
         {list.data && list.data.items.length === 0 && (
           <EmptyState
-            title={text ? "Nothing matches" : `No ${noun}s in the library yet`}
-            description={text ? "Try another search." : `Close this and use "Add a ${noun}" to upload one.`}
+            title={text ? m.nothingMatches : image ? m.noPictures : m.noRecordings}
+            description={text ? m.tryAnotherSearch : image ? m.uploadPictureHint : m.uploadRecordingHint}
           />
         )}
         {list.data && list.data.items.length > 0 && (
           <>
             <MediaGrid
               items={list.data.items}
-              actionLabel="Use"
+              actionLabel={m.use}
               onOpen={(item) => {
                 onPick(item);
                 onClose();
               }}
             />
-            <Pager page={list.data.page} size={list.data.size} total={list.data.total} onPage={setPage} label={`${noun}s`} />
+            <Pager page={list.data.page} size={list.data.size} total={list.data.total} onPage={setPage} label={image ? m.pictures : m.recordings} />
           </>
         )}
       </div>

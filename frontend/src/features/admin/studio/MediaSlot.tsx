@@ -7,6 +7,8 @@ import { speak, stopSpeaking, usePlaying } from "@/features/child/speaker";
 import type { MediaItem } from "@/lib/api/studio";
 import { uploadError } from "./mediaText";
 import { MediaPicker } from "./MediaLibrary";
+import { useMessages } from "@/i18n/catalog";
+import { mediaMessages } from "./media.messages";
 
 const ACCEPT = {
   IMAGE: "image/png,image/jpeg,image/webp",
@@ -38,6 +40,7 @@ export function MediaSlot({
   const [error, setError] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const playing = usePlaying(value?.url);
+  const m = useMessages(mediaMessages).slot;
 
   async function upload(file: File | undefined) {
     if (!file) return;
@@ -46,7 +49,7 @@ export function MediaSlot({
     try {
       const media = await studioApi.uploadMedia(file);
       if (media.type !== kind) {
-        setError(kind === "IMAGE" ? "That file is a recording, not a picture." : "That file is a picture, not a recording.");
+        setError(kind === "IMAGE" ? m.notPicture : m.notRecording);
         return;
       }
       onChange(media, media);
@@ -61,7 +64,6 @@ export function MediaSlot({
   const iconButton =
     "flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-ink-soft ring-1 ring-inset ring-line hover:bg-tonle-50 hover:text-ink disabled:opacity-50";
   const Icon = kind === "IMAGE" ? ImagePlus : Mic;
-  const noun = kind === "IMAGE" ? "picture" : "recording";
 
   return (
     <div className={cn("flex flex-col gap-1", !compact && "items-start")}>
@@ -80,8 +82,8 @@ export function MediaSlot({
             type="button"
             disabled={busy}
             onClick={() => input.current?.click()}
-            aria-label={compact ? `Add a ${name}` : undefined}
-            title={compact ? `Add a ${name}` : undefined}
+            aria-label={compact ? m.add(name) : undefined}
+            title={compact ? m.add(name) : undefined}
             className={
               compact
                 ? cn(iconButton, busy && "animate-pulse")
@@ -89,14 +91,14 @@ export function MediaSlot({
             }
           >
             <Icon size={compact ? 18 : 16} aria-hidden />
-            {!compact && (busy ? "Uploading…" : `Add a ${noun}`)}
+            {!compact && (busy ? m.uploading : kind === "IMAGE" ? m.addPicture : m.addRecording)}
           </button>
           <button
             type="button"
             disabled={busy}
             onClick={() => setPicking(true)}
-            aria-label={`Choose a ${name} from the library`}
-            title={compact ? `Choose a ${name} from the library` : undefined}
+            aria-label={m.choose(name)}
+            title={compact ? m.choose(name) : undefined}
             className={
               compact
                 ? iconButton
@@ -104,7 +106,7 @@ export function MediaSlot({
             }
           >
             <Library size={compact ? 18 : 16} aria-hidden />
-            {!compact && "From the library"}
+            {!compact && m.fromLibrary}
           </button>
         </div>
       )}
@@ -115,8 +117,8 @@ export function MediaSlot({
               type="button"
               onClick={() => input.current?.click()}
               disabled={busy}
-              aria-label={`Replace the ${name}`}
-              title={`Replace the ${name}`}
+              aria-label={m.replace(name)}
+              title={m.replace(name)}
               className="overflow-hidden rounded-[10px] ring-1 ring-line hover:ring-tonle-400"
             >
               <img src={value.url} alt="" className={cn("object-cover", compact ? "h-10 w-10" : "h-20 w-20")} />
@@ -125,8 +127,8 @@ export function MediaSlot({
             <button
               type="button"
               onClick={() => (playing ? stopSpeaking() : void speak(value.url))}
-              aria-label={`${playing ? "Stop" : "Play"} the ${name}`}
-              title={`${playing ? "Stop" : "Play"} the ${name}`}
+              aria-label={playing ? m.stop(name) : m.play(name)}
+              title={playing ? m.stop(name) : m.play(name)}
               className={cn(iconButton, "text-tonle-700", playing && "bg-tonle-50")}
             >
               {playing ? <Square size={15} aria-hidden /> : <Play size={16} aria-hidden />}
@@ -139,14 +141,14 @@ export function MediaSlot({
               disabled={busy}
               className="rounded-[10px] px-2.5 py-2 text-sm font-semibold text-tonle-700 hover:bg-tonle-50"
             >
-              Replace
+              {m.replaceButton}
             </button>
           )}
           <button
             type="button"
             onClick={() => onChange(null)}
-            aria-label={`Remove the ${name}`}
-            title={`Remove the ${name}`}
+            aria-label={m.remove(name)}
+            title={m.remove(name)}
             className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft hover:bg-tonle-50 hover:text-ink"
           >
             <X size={15} aria-hidden />
@@ -157,7 +159,7 @@ export function MediaSlot({
         kind={kind}
         open={picking}
         onClose={() => setPicking(false)}
-        purpose={`the ${name}`}
+        purpose={name}
         onPick={(item) => {
           setError(null);
           onChange(item, item);
