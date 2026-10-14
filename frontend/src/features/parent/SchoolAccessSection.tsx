@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/Button";
 import { fieldClasses } from "@/features/auth/FormField";
 import { formatDay } from "@/lib/utils/date";
 import { SectionTitle } from "./SectionTitle";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
+import { accountApi } from "@/lib/api/endpoints";
 
 /**
  * Which schools can see this child's school-assigned learning, joining a class with the code a
@@ -28,10 +31,11 @@ export function SchoolAccessSection({
   const schools = useAsync(() => familySchoolsApi.list(childId), [childId]);
   const [joining, setJoining] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const m = useMessages(familyMessages).school;
 
   return (
     <section aria-labelledby="school" className="flex flex-col gap-5">
-      <SectionTitle id="school" title="School" subtitle={`Classes ${childName} is in, and what each school can see.`}>
+      <SectionTitle id="school" title={m.title} subtitle={m.subtitle(childName)}>
         {!joining && (
           <Button
             variant="outline"
@@ -41,7 +45,7 @@ export function SchoolAccessSection({
               setJoining(true);
             }}
           >
-            Join a class
+            {m.join}
           </Button>
         )}
       </SectionTitle>
@@ -59,20 +63,17 @@ export function SchoolAccessSection({
           onCancel={() => setJoining(false)}
           onJoined={(joined) => {
             setJoining(false);
-            setNotice(`${childName} joined ${joined.className} at ${joined.schoolName}.`);
+            setNotice(m.joined(childName, joined.className, joined.schoolName));
             schools.refetch();
             onJoined();
           }}
         />
       )}
 
-      {schools.isLoading && !schools.data && <LoadingState label="Loading schools…" />}
+      {schools.isLoading && !schools.data && <LoadingState label={m.loading} />}
       {schools.error && <ErrorState error={schools.error} onRetry={schools.refetch} />}
       {schools.data && schools.data.length === 0 && !joining && (
-        <p className="max-w-2xl text-[0.9375rem] leading-relaxed text-ink-soft">
-          No school can see {childName}&apos;s learning. If {childName}&apos;s teacher uses Bookeyond Kid, they&apos;ll give you a
-          class code; you choose whether to join.
-        </p>
+        <p className="max-w-2xl text-[0.9375rem] leading-relaxed text-ink-soft">{m.none(childName)}</p>
       )}
       {schools.data && schools.data.length > 0 && (
         <ul className="flex flex-col gap-3">
@@ -83,7 +84,7 @@ export function SchoolAccessSection({
               childName={childName}
               school={school}
               onEnded={() => {
-                setNotice(`${school.schoolName} can no longer see ${childName}'s learning.`);
+                setNotice(m.ended(school.schoolName, childName));
                 schools.refetch();
               }}
             />
@@ -109,6 +110,7 @@ function SchoolRow({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const classes = school.classNames.length > 0 ? school.classNames.join(", ") : null;
+  const m = useMessages(familyMessages).school;
 
   return (
     <li className="rounded-paper bg-white px-5 py-4 shadow-paper ring-1 ring-line/70">
@@ -123,23 +125,19 @@ function SchoolRow({
           <div className="min-w-0">
             <p className="font-semibold text-ink">{school.schoolName}</p>
             <p className="text-sm text-ink-soft">
-              {classes ? `In ${classes}` : "Not in a class there now"} · access since {formatDay(school.grantedAt)}
+              {classes ? m.inClasses(classes) : m.noClass} · {m.since(formatDay(school.grantedAt))}
             </p>
           </div>
         </div>
         {!confirming && (
           <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
-            End access…
+            {m.endAccess}
           </Button>
         )}
       </div>
       {confirming && (
         <div className="mt-4 flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line">
-          <p className="text-sm leading-relaxed text-ink">
-            {school.schoolName} will stop seeing {childName}&apos;s learning straight away, and {childName} will leave
-            {classes ? ` ${classes}` : " their classes there"}. {childName} keeps everything they have learned, including the
-            subjects the class started.
-          </p>
+          <p className="text-sm leading-relaxed text-ink">{m.endExplain(school.schoolName, childName, classes)}</p>
           {error && (
             <p role="alert" className="text-sm font-medium text-brick-deep">
               {error}
@@ -156,15 +154,15 @@ function SchoolRow({
                   await familySchoolsApi.revoke(childId, school.schoolId);
                   onEnded();
                 } catch {
-                  setError("Couldn't end the school's access. Please try again.");
+                  setError(m.endFailed);
                   setBusy(false);
                 }
               }}
             >
-              {busy ? "Ending…" : "End access"}
+              {busy ? m.ending : m.endConfirm}
             </Button>
             <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>
-              Keep access
+              {m.keepAccess}
             </Button>
           </div>
         </div>
@@ -191,6 +189,7 @@ function JoinClass({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ text: string; confirmEmail?: boolean } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const m = useMessages(familyMessages).school;
   // Opened by "Join a class": the code field is the next thing to fill in.
   useEffect(() => inputRef.current?.focus(), []);
 
@@ -201,7 +200,7 @@ function JoinClass({
     try {
       setPreview(await familySchoolsApi.preview(childId, code));
     } catch (err) {
-      setError(joinError(err));
+      setError(await joinError(err));
       inputRef.current?.focus();
     } finally {
       setBusy(false);
@@ -214,7 +213,7 @@ function JoinClass({
     try {
       onJoined(await familySchoolsApi.join(childId, code));
     } catch (err) {
-      setError(joinError(err));
+      setError(await joinError(err));
       setBusy(false);
     }
   }
@@ -224,10 +223,10 @@ function JoinClass({
       {!preview ? (
         <form onSubmit={lookUp} className="flex flex-col gap-3" noValidate>
           <label htmlFor={inputId} className="text-sm font-semibold text-ink">
-            Class code
+            {m.code}
           </label>
           <p id={hintId} className="-mt-1 text-sm text-ink-soft">
-            The 8 characters {childName}&apos;s school gave you. Looking it up changes nothing.
+            {m.codeHint(childName)}
           </p>
           <div className="flex flex-wrap gap-2">
             <input
@@ -244,10 +243,10 @@ function JoinClass({
               className={`${fieldClasses} w-44 font-mono text-base tracking-[0.2em]`}
             />
             <Button type="submit" disabled={busy || code.replace(/[\s-]/g, "").length !== 8}>
-              {busy ? "Looking up…" : "Look up"}
+              {busy ? m.lookingUp : m.lookUp}
             </Button>
             <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
-              Cancel
+              {m.cancel}
             </Button>
           </div>
           {error && <JoinErrorText error={error} />}
@@ -259,38 +258,35 @@ function JoinClass({
             <p className="font-display text-xl font-semibold text-tonle-950">{preview.className}</p>
           </div>
           {preview.alreadyInClass ? (
-            <p className="text-[0.9375rem] text-ink">{childName} is already in this class.</p>
+            <p className="text-[0.9375rem] text-ink">{m.already(childName)}</p>
           ) : (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-[12px] bg-tonle-50/70 p-4">
-                  <p className="text-sm font-semibold text-ink">{preview.schoolName} will see</p>
+                  <p className="text-sm font-semibold text-ink">{m.willSee(preview.schoolName)}</p>
                   <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm leading-relaxed text-ink">
-                    <li>{childName}&apos;s name</li>
+                    <li>{m.childsName(childName)}</li>
                     {preview.assignedCurricula.length > 0 ? (
-                      <li>
-                        Progress and skills in {preview.assignedCurricula.join(", ")}, including earlier work in{" "}
-                        {preview.assignedCurricula.length === 1 ? "it" : "them"}
-                      </li>
+                      <li>{m.progressIn(preview.assignedCurricula.join(", "), preview.assignedCurricula.length)}</li>
                     ) : (
-                      <li>Progress and skills in what this class assigns (nothing yet)</li>
+                      <li>{m.progressNothingYet}</li>
                     )}
                   </ul>
                 </div>
                 <div className="rounded-[12px] bg-paper p-4 ring-1 ring-line">
-                  <p className="text-sm font-semibold text-ink">It won&apos;t see</p>
+                  <p className="text-sm font-semibold text-ink">{m.wontSee}</p>
                   <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm leading-relaxed text-ink-soft">
-                    <li>Other subjects you chose at home</li>
-                    <li>Your insights or {childName}&apos;s activity history</li>
-                    <li>{childName}&apos;s age or your family&apos;s details</li>
+                    <li>{m.otherSubjects}</li>
+                    <li>{m.insightsHistory(childName)}</li>
+                    <li>{m.ageDetails(childName)}</li>
                   </ul>
                 </div>
               </div>
               <p className="text-sm leading-relaxed text-ink-soft">
                 {preview.assignedCurricula.length > 0
-                  ? `Joining adds ${preview.assignedCurricula.join(", ")} to ${childName}'s learning, unless ${childName} already follows ${preview.assignedCurricula.length === 1 ? "it" : "them"}. `
+                  ? m.joiningAdds(preview.assignedCurricula.join(", "), childName, preview.assignedCurricula.length)
                   : ""}
-                You can end the school&apos;s access at any time; {childName} keeps everything they learn.
+                {m.endAnyTime(childName)}
               </p>
             </>
           )}
@@ -298,11 +294,11 @@ function JoinClass({
           <div className="flex flex-wrap gap-2">
             {!preview.alreadyInClass && (
               <Button onClick={join} disabled={busy}>
-                {busy ? "Joining…" : `Join ${preview.className}`}
+                {busy ? m.joining : m.joinClass(preview.className)}
               </Button>
             )}
             <Button variant="ghost" onClick={onCancel} disabled={busy}>
-              {preview.alreadyInClass ? "Close" : "Cancel"}
+              {preview.alreadyInClass ? m.close : m.cancel}
             </Button>
           </div>
         </div>
@@ -312,31 +308,39 @@ function JoinClass({
 }
 
 function JoinErrorText({ error }: { error: { text: string; confirmEmail?: boolean } }) {
+  const m = useMessages(familyMessages).school;
   return (
     <p role="alert" className="text-sm font-medium text-brick-deep">
       {error.text}{" "}
       {error.confirmEmail && (
         <Link to="/parent/account" className="font-semibold text-tonle-700 underline underline-offset-4">
-          Confirm your email
+          {m.confirmEmail}
         </Link>
       )}
     </p>
   );
 }
 
-function joinError(err: unknown): { text: string; confirmEmail?: boolean } {
+/**
+ * Words for a refused look-up or join. A 409 may be the account's unconfirmed email (PD-22): that is
+ * read from the account itself - not from the server's sentence, which is in the reader's language.
+ */
+async function joinError(err: unknown): Promise<{ text: string; confirmEmail?: boolean }> {
+  const m = messagesNow(familyMessages).school;
   if (err instanceof ApiError) {
-    if (err.status === 404) return { text: "No class uses that code. Check it with the school; codes last 14 days." };
+    if (err.status === 404) return { text: m.noClassCode };
     if (err.isRateLimited) {
       const seconds = err.problem?.retryAfterSeconds;
-      return { text: `Too many codes tried. Please try again in ${seconds ? waitInWords(seconds) : "a little while"}.` };
+      return { text: m.tooManyCodes(seconds ? waitInWords(seconds) : null) };
     }
-    if (err.status === 409)
-      return {
-        text: err.problem?.detail ?? "That didn't work.",
-        confirmEmail: /confirm your email/i.test(err.problem?.detail ?? ""),
-      };
-    if (err.status === 400) return { text: "Enter the 8-character code from the school." };
+    if (err.status === 409) {
+      const unconfirmed = await accountApi
+        .me()
+        .then((me) => me.emailVerifiedAt === null)
+        .catch(() => false);
+      return { text: err.problem?.detail ?? m.didntWork, confirmEmail: unconfirmed };
+    }
+    if (err.status === 400) return { text: m.enterCode };
   }
-  return { text: "Something went wrong. Please try again." };
+  return { text: m.somethingWrong };
 }

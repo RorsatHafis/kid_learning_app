@@ -10,6 +10,8 @@ import { EvidenceLine } from "@/features/learning/EvidenceLine";
 import { formatDay } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
 import { SectionTitle } from "./SectionTitle";
+import { useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
 /**
  * What the evidence says, skill by skill (directive §13.3). Evidence strength and
@@ -19,15 +21,16 @@ import { SectionTitle } from "./SectionTitle";
  */
 export function SkillsSection({ childId }: { childId: string }) {
   const { data, error, isLoading, refetch } = useAsync(() => learningApi.skills(childId), [childId]);
+  const m = useMessages(familyMessages).skills;
 
   return (
     <section aria-labelledby="skills" className="flex flex-col gap-5">
-      <SectionTitle id="skills" title="Skills & evidence" subtitle="What your child's answers show so far, skill by skill." />
+      <SectionTitle id="skills" title={m.title} subtitle={m.subtitle} />
 
-      {isLoading && !data && <LoadingState label="Loading skills…" />}
+      {isLoading && !data && <LoadingState label={m.loading} />}
       {error && <ErrorState error={error} onRetry={refetch} />}
       {data && data.length === 0 && (
-        <EmptyState title="No skills yet" description="Choose a learning path to see the skills it builds." />
+        <EmptyState title={m.none} description={m.noneLead} />
       )}
       {data?.map((curriculum) => (
         <div key={curriculum.enrollmentId} className="flex flex-col gap-4">
@@ -41,7 +44,7 @@ export function SkillsSection({ childId }: { childId: string }) {
       <details className="group rounded-paper bg-white px-6 py-4 ring-1 ring-line/70 open:pb-6">
         <summary className="cursor-pointer list-none text-sm font-semibold text-tonle-700 marker:hidden">
           <span className="inline-flex items-center gap-2">
-            How we describe progress
+            {m.howWeDescribe}
             <span aria-hidden className="text-ink-faint transition-transform duration-200 group-open:rotate-90">
               ›
             </span>
@@ -50,8 +53,8 @@ export function SkillsSection({ childId }: { childId: string }) {
         <div className="mt-4 grid gap-6 text-sm text-ink-soft sm:grid-cols-2">
           <div className="flex flex-col gap-3">
             <p>
-              Every answer is evidence. We only describe how a skill is going once there are at least three scored answers on it —
-              before that it is <strong className="text-ink">too early to tell</strong>, not weak.
+              {m.everyAnswer} <strong className="text-ink">{m.tooEarly}</strong>
+              {m.notWeak}
             </p>
             <ul className="flex flex-col gap-2">
               {(Object.keys(evidenceDots) as EvidenceLevel[]).map((level) => (
@@ -82,18 +85,18 @@ export function SkillsSection({ childId }: { childId: string }) {
  */
 function ObjectiveTable({ childId, objective, position }: { childId: string; objective: ObjectiveProgress; position: number }) {
   const started = objective.skillsPractised > 0;
+  const m = useMessages(familyMessages).skills;
   return (
     <article className="overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
       <header className="flex flex-wrap items-start justify-between gap-4 px-6 pb-5 pt-6 sm:px-8">
         <div className="max-w-xl">
           <h4 className="font-display text-lg font-semibold text-tonle-950">
-            <span className="tabular text-ink-faint">Chapter {position} · </span>
+            <span className="tabular text-ink-faint">{m.chapter(position)}</span>
             {objective.title}
           </h4>
           {objective.description && <p className="mt-1 text-sm text-ink-soft">{objective.description}</p>}
           <p className="mt-2 tabular text-sm text-ink-faint">
-            {objective.skillsPractised} of {objective.skillsMapped} skills practised · {objective.skillsWithSufficientEvidence}{" "}
-            with enough evidence to judge
+            {m.practised(objective.skillsPractised, objective.skillsMapped, objective.skillsWithSufficientEvidence)}
           </p>
         </div>
         <span
@@ -117,7 +120,7 @@ function ObjectiveTable({ childId, objective, position }: { childId: string; obj
             <span aria-hidden className="text-ink-faint transition-transform duration-200 group-open:rotate-90">
               ›
             </span>
-            {objective.skills.length === 1 ? "Show its skill" : `Show its ${objective.skills.length} skills`}
+            {m.showIts(objective.skills.length)}
           </summary>
           <SkillTable childId={childId} objective={objective} />
         </details>
@@ -127,15 +130,16 @@ function ObjectiveTable({ childId, objective, position }: { childId: string; obj
 }
 
 function SkillTable({ childId, objective }: { childId: string; objective: ObjectiveProgress }) {
+  const m = useMessages(familyMessages).skills;
   return (
-    <div role="table" aria-label={`Skills in ${objective.title}`}>
+    <div role="table" aria-label={m.skillsIn(objective.title)}>
       <div
         role="row"
         className="hidden grid-cols-[minmax(0,1fr)_150px_150px] gap-4 border-y border-line bg-paper px-8 py-2.5 text-[0.8125rem] font-semibold text-ink-faint sm:grid"
       >
-        <span role="columnheader">Skill</span>
-        <span role="columnheader">Evidence</span>
-        <span role="columnheader">What it shows</span>
+        <span role="columnheader">{m.skill}</span>
+        <span role="columnheader">{m.evidence}</span>
+        <span role="columnheader">{m.shows}</span>
       </div>
       <div role="rowgroup" className="divide-y divide-line border-t border-line sm:border-t-0">
         {objective.skills.map((skill) => (
@@ -147,6 +151,7 @@ function SkillTable({ childId, objective }: { childId: string; objective: Object
 }
 
 function SkillRow({ childId, skill }: { childId: string; skill: SkillProgress }) {
+  const m = useMessages(familyMessages).skills;
   return (
     <div role="row" className="grid gap-3 px-6 py-4 sm:grid-cols-[minmax(0,1fr)_150px_150px] sm:items-center sm:gap-4 sm:px-8">
       <div role="cell">
@@ -164,13 +169,13 @@ function SkillRow({ childId, skill }: { childId: string; skill: SkillProgress })
         </Link>
         <p className="tabular text-sm text-ink-soft">
           {skill.scoredAnswers > 0
-            ? `${skill.correctAnswers} of ${skill.scoredAnswers} answers correct${skill.lastPracticedAt ? ` · last practised ${formatDay(skill.lastPracticedAt)}` : ""}`
-            : "No answers yet"}
+            ? m.answersCorrect(skill.correctAnswers, skill.scoredAnswers, skill.lastPracticedAt ? formatDay(skill.lastPracticedAt) : null)
+            : m.noAnswers}
         </p>
         {skill.inReview && (
           <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-light-deep">
-            <RotateCcw size={14} aria-hidden /> In Smart Review
-            {skill.reviewDueAt ? ` · due ${formatDay(skill.reviewDueAt)}` : ""}
+            <RotateCcw size={14} aria-hidden /> {m.inReview}
+            {skill.reviewDueAt ? m.due(formatDay(skill.reviewDueAt)) : ""}
           </p>
         )}
       </div>

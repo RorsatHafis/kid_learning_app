@@ -13,6 +13,8 @@ import { ChooseCurriculumPanel } from "./ChooseCurriculumPanel";
 import { SectionTitle } from "./SectionTitle";
 import { ChapterTrack } from "./ui";
 import { chapterRuns } from "@/features/learning/chapters";
+import { useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
 type AsyncList = {
   data: EnrollmentOverview[] | null;
@@ -45,18 +47,19 @@ export function LearningNowSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const list = enrollments.data ?? [];
+  const m = useMessages(familyMessages).learningNow;
 
   return (
     <section ref={section} aria-labelledby="learning-now" className="flex flex-col gap-4">
-      <SectionTitle id="learning-now" title="Learning now" subtitle={`The paths ${childName} is on, and what comes next.`}>
+      <SectionTitle id="learning-now" title={m.title} subtitle={m.subtitle(childName)}>
         {list.length > 0 && !adding && (
           <Button variant="outline" size="md" onClick={() => setAdding(true)}>
-            <Plus size={16} aria-hidden /> Add a subject
+            <Plus size={16} aria-hidden /> {m.addSubject}
           </Button>
         )}
       </SectionTitle>
 
-      {enrollments.isLoading && !enrollments.data && <LoadingState label="Loading learning paths…" />}
+      {enrollments.isLoading && !enrollments.data && <LoadingState label={m.loading} />}
       {enrollments.error && <ErrorState error={enrollments.error} onRetry={enrollments.refetch} />}
 
       {enrollments.data && (list.length === 0 || adding) && (
@@ -95,6 +98,8 @@ function EnrollmentCard({
 }) {
   const [open, setOpen] = useState(false);
   const { curriculum, completedSteps, totalSteps, nextStep } = enrollment;
+  const m = useMessages(familyMessages).learningNow;
+  const ch = useMessages(familyMessages).chapters;
 
   return (
     <article className="rounded-paper bg-white shadow-paper ring-1 ring-line/70">
@@ -105,32 +110,32 @@ function EnrollmentCard({
             <p className="mt-0.5 text-sm text-ink-faint">{[curriculum.subjectName, curriculum.ageHubName].filter(Boolean).join(" · ")}</p>
           </div>
           <p className="tabular text-sm font-semibold text-ink">
-            {completedSteps} of {totalSteps} steps completed
+            {m.completed(completedSteps, totalSteps)}
           </p>
         </div>
 
-        <ChapterTrack chapters={enrollment.chapters} label={`${curriculum.name}: chapters`} />
+        <ChapterTrack chapters={enrollment.chapters} label={ch.label(curriculum.name)} />
 
         {nextStep ? (
           <div className="grid gap-4 border-t border-line pt-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-8">
             <div>
-              <p className="text-sm font-semibold text-tonle-600">Up next</p>
+              <p className="text-sm font-semibold text-tonle-600">{m.upNext}</p>
               <p className="mt-1 font-display text-lg font-semibold text-tonle-950">{nextStep.title}</p>
             </div>
             <p className="flex gap-3 text-[0.9375rem] leading-relaxed text-ink">
               <Sparkle />
               <span>
-                <span className="font-semibold">Why this next? </span>
+                <span className="font-semibold">{m.whyNext} </span>
                 {parentReason(nextStep, curriculum.name, enrollment.currentChapter)}
               </span>
             </p>
           </div>
         ) : (
           <p className="border-t border-line pt-6 text-[0.9375rem] text-ink-soft">
-            All steps on this path are done for now. New steps appear here when the platform schedules practice or review.
+            {m.allDone}
           </p>
         )}
-        <p className="text-[0.8125rem] text-ink-faint">Steps completed show activity, not mastery — Skills & evidence says what the answers show.</p>
+        <p className="text-[0.8125rem] text-ink-faint">{m.notMastery}</p>
         <StopPath enrollment={enrollment} childName={childName} onStopped={onStopped} />
       </div>
 
@@ -140,7 +145,7 @@ function EnrollmentCard({
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-2 border-t border-line px-6 py-4 text-sm font-semibold text-tonle-700 transition-colors hover:bg-paper sm:px-8"
       >
-        {open ? "Hide the full path" : "Show the full path"}
+        {open ? m.hidePath : m.showPath}
         <ChevronDown size={16} className={cn("transition-transform duration-200 ease-out", open && "rotate-180")} aria-hidden />
       </button>
       {open && (
@@ -169,6 +174,7 @@ function StopPath({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const name = enrollment.curriculum.name;
+  const m = useMessages(familyMessages).learningNow;
 
   async function stop() {
     setBusy(true);
@@ -177,7 +183,7 @@ function StopPath({
       await enrollmentApi.stop(enrollment.enrollmentId);
       onStopped();
     } catch (err) {
-      setError(problemMessage(err, "That didn't work. Please try again."));
+      setError(problemMessage(err, m.stopFailed));
       setBusy(false);
     }
   }
@@ -185,19 +191,17 @@ function StopPath({
   if (!confirming) {
     return (
       <Button variant="ghost" size="sm" className="-ml-2.5 w-fit" onClick={() => setConfirming(true)}>
-        Stop this path…<span className="sr-only">: {name}</span>
+        {m.stop}
+        <span className="sr-only">: {name}</span>
       </Button>
     );
   }
   return (
-    <div role="group" aria-label={`Stop ${name}`} className="flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line">
-      <p className="text-sm text-ink">
-        {childName} won&apos;t be given {name} any more, and it stops counting towards your plan. Nothing is deleted: what{" "}
-        {childName} has learned stays, and choosing it again later carries on where they stopped.
-      </p>
+    <div role="group" aria-label={m.stopLabel(name)} className="flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line">
+      <p className="text-sm text-ink">{m.stopExplain(childName, name)}</p>
       <div className="flex flex-wrap gap-2">
         <Button size="sm" disabled={busy} onClick={() => void stop()}>
-          {busy ? "Stopping…" : "Stop the path"}
+          {busy ? m.stopping : m.stopConfirm}
         </Button>
         <Button
           size="sm"
@@ -208,7 +212,7 @@ function StopPath({
             setError(null);
           }}
         >
-          Keep it
+          {m.keep}
         </Button>
       </div>
       {error && (
@@ -231,20 +235,20 @@ function Sparkle() {
 
 function FullPath({ enrollmentId, curriculumName }: { enrollmentId: string; curriculumName: string }) {
   const { data, error, isLoading, refetch } = useAsync(() => learningApi.journey(enrollmentId), [enrollmentId]);
-  if (isLoading) return <LoadingState label="Loading the path…" />;
+  const m = useMessages(familyMessages).learningNow;
+  const ch = useMessages(familyMessages).chapters;
+  if (isLoading) return <LoadingState label={m.loadingPath} />;
   if (error) return <ErrorState error={error} onRetry={refetch} />;
   if (!data) return null;
   return (
     <div className="flex flex-col gap-2 pt-2">
       {chapterRuns(data).map((run, r) => (
-        <section key={`${run.chapter?.id ?? "extra"}-${r}`} aria-label={run.chapter ? `Chapter ${run.chapter.position}: ${run.chapter.title}` : "Extra practice"}>
+        <section key={`${run.chapter?.id ?? "extra"}-${r}`} aria-label={run.chapter ? ch.titleOf(run.chapter.position, run.chapter.title) : ch.extraPractice}>
           {run.chapter && (
             <h4 className="flex flex-wrap items-baseline justify-between gap-x-3 pt-4 text-sm font-semibold text-tonle-950">
-              <span>
-                Chapter {run.chapter.position} · {run.chapter.title}
-              </span>
+              <span>{ch.run(run.chapter.position, run.chapter.title)}</span>
               <span className="tabular text-[0.8125rem] font-medium text-ink-faint">
-                {run.chapter.completedSteps} of {run.chapter.totalSteps} steps done
+                {ch.runDone(run.chapter.completedSteps, run.chapter.totalSteps)}
               </span>
             </h4>
           )}
@@ -281,6 +285,7 @@ function PathRow({
 }) {
   const tag = stepTag(step);
   const done = step.status === "COMPLETED";
+  const m = useMessages(familyMessages).learningNow;
   return (
     <li className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b border-line py-4 last:border-b-0">
       <span
@@ -288,7 +293,7 @@ function PathRow({
           "mt-0.5 flex h-7 w-7 items-center justify-center rounded-[7px] text-xs font-bold tabular",
           done ? "bg-light text-tonle-950" : isNext ? "bg-white text-tonle-800 ring-2 ring-light" : "bg-tonle-50 text-ink-faint",
         )}
-        aria-label={done ? "Completed" : isNext ? "Up next" : "Not started"}
+        aria-label={done ? m.completedStep : isNext ? m.upNext : m.notStarted}
       >
         {index + 1}
       </span>
@@ -296,7 +301,7 @@ function PathRow({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className={cn("font-semibold", done || isNext ? "text-ink" : "text-ink-soft")}>{step.title}</span>
           {tag && <span className="text-[0.8125rem] font-semibold text-dusk-deep">{tag.label}</span>}
-          {done && step.score !== null && <span className="tabular text-sm text-ink-faint">Score {Math.round(step.score)}%</span>}
+          {done && step.score !== null && <span className="tabular text-sm text-ink-faint">{m.score(Math.round(step.score))}</span>}
         </div>
         {step.explanation.reason !== "CURRICULUM" && <p className="mt-0.5 text-sm text-ink-soft">{parentReason(step, curriculumName, chapter)}</p>}
       </div>

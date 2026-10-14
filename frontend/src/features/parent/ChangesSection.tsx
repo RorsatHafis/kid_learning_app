@@ -9,23 +9,16 @@ import { Standing } from "@/features/learning/Standing";
 import { formatDay } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
 import { SectionTitle } from "./SectionTitle";
+import { useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
 const WINDOWS = [
-  { days: 7, label: "This week", phrase: "this week" },
-  { days: 28, label: "4 weeks", phrase: "in the last 4 weeks" },
+  { days: 7, label: "week", phrase: "weekPhrase" },
+  { days: 28, label: "fourWeeks", phrase: "fourWeeksPhrase" },
 ] as const;
 
-/** Plain words for each kind of move, in the order the server lists them. */
-const changeHeading: Record<ChangeKind, string> = {
-  BECAME_SECURE: "Now secure",
-  MOVED_UP: "Moving up",
-  FIRST_READING: "Enough answers to see where it stands",
-  STARTED: "Just started",
-  PRACTISED: "Practised, same standing",
-  MOVED_DOWN: "Needs more practice again",
-};
-
-const answers = (n: number) => `${n} ${n === 1 ? "answer" : "answers"}`;
+/** The kinds of move, in the order the server lists them (words: familyMessages.changes.heading). */
+const CHANGE_KINDS: ChangeKind[] = ["BECAME_SECURE", "MOVED_UP", "FIRST_READING", "STARTED", "PRACTISED", "MOVED_DOWN"];
 
 /**
  * What changed (X12): for every skill the child answered on in the window, where it stood at the
@@ -36,18 +29,18 @@ export function ChangesSection({ childId, childName }: { childId: string; childN
   const [days, setDays] = useState<number>(28);
   const { data, error, isLoading, refetch } = useAsync(() => learningApi.changes(childId, days), [childId, days]);
   const window = WINDOWS.find((w) => w.days === days) ?? WINDOWS[1];
-  const groups = data
-    ? (Object.keys(changeHeading) as ChangeKind[]).map((kind) => ({ kind, items: data.changes.filter((c) => c.kind === kind) }))
-    : [];
+  const m = useMessages(familyMessages).changes;
+  const phrase = m[window.phrase];
+  const groups = data ? CHANGE_KINDS.map((kind) => ({ kind, items: data.changes.filter((c) => c.kind === kind) })) : [];
 
   return (
     <section aria-labelledby="changes" className="flex flex-col gap-5">
       <SectionTitle
         id="changes"
-        title="What changed"
-        subtitle={`Where ${childName}'s skills stood before, and where they stand now.`}
+        title={m.title}
+        subtitle={m.subtitle(childName)}
       >
-        <div role="group" aria-label="Over" className="inline-flex rounded-pill bg-tonle-50 p-1 ring-1 ring-tonle-100">
+        <div role="group" aria-label={m.over} className="inline-flex rounded-pill bg-tonle-50 p-1 ring-1 ring-tonle-100">
           {WINDOWS.map((w) => (
             <button
               key={w.days}
@@ -59,28 +52,25 @@ export function ChangesSection({ childId, childName }: { childId: string; childN
                 days === w.days ? "bg-white text-tonle-950 shadow-tight" : "text-ink-soft hover:text-ink",
               )}
             >
-              {w.label}
+              {m[w.label]}
             </button>
           ))}
         </div>
       </SectionTitle>
 
-      {isLoading && !data && <LoadingState label="Loading what changed…" />}
+      {isLoading && !data && <LoadingState label={m.loading} />}
       {error && <ErrorState error={error} onRetry={refetch} />}
       {data && data.changes.length === 0 && (
         <div className="rounded-paper bg-tonle-50 px-6 py-6 ring-1 ring-tonle-100">
-          <p className="font-display text-lg font-semibold text-tonle-950">No answers {window.phrase}</p>
-          <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-            Skills only move with answers, so nothing has changed {window.phrase}. What {childName} has shown before is still
-            below.
-          </p>
+          <p className="font-display text-lg font-semibold text-tonle-950">{m.noAnswers(phrase)}</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">{m.noAnswersLead(phrase, childName)}</p>
         </div>
       )}
       {data && data.changes.length > 0 && (
         <div className={cn("flex flex-col gap-4", isLoading && "opacity-60")} aria-busy={isLoading}>
           <p className="text-[0.9375rem] text-ink">
-            <span className="font-semibold">{answers(data.answersSince)}</span> on {data.changes.length}{" "}
-            {data.changes.length === 1 ? "skill" : "skills"} {window.phrase}.
+            <span className="font-semibold">{m.answers(data.answersSince)}</span>
+            {m.onSkills(data.changes.length, phrase)}
           </p>
           <div className="flex flex-col divide-y divide-line overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
             {groups
@@ -98,7 +88,7 @@ export function ChangesSection({ childId, childName }: { childId: string; childN
                           : "text-tonle-700",
                     )}
                   >
-                    {changeHeading[group.kind]}
+                    {m.heading[group.kind]}
                   </h3>
                   <ul className="flex flex-col gap-3">
                     {group.items.map((change) => (
@@ -116,6 +106,7 @@ export function ChangesSection({ childId, childName }: { childId: string; childN
 
 function ChangeRow({ childId, change }: { childId: string; change: SkillChange }) {
   const moved = change.then !== change.now;
+  const m = useMessages(familyMessages).changes;
   return (
     <li className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <Link
@@ -128,9 +119,9 @@ function ChangeRow({ childId, change }: { childId: string; change: SkillChange }
         <span className="flex flex-wrap items-center gap-2">
           {moved ? (
             <>
-              <span className="sr-only">From</span>
+              <span className="sr-only">{m.from}</span>
               <Standing standing={change.then} />
-              <ArrowRight size={14} aria-label="to" className="text-ink-faint" />
+              <ArrowRight size={14} aria-label={m.to} className="text-ink-faint" />
               <Standing standing={change.now} />
             </>
           ) : (
@@ -139,8 +130,8 @@ function ChangeRow({ childId, change }: { childId: string; change: SkillChange }
         </span>
         <span className="text-ink-faint">
           <span className="hidden sm:inline">· </span>
-          {answers(change.answersSince)}
-          {change.lastPracticedAt && `, last ${formatDay(change.lastPracticedAt)}`}
+          {m.answers(change.answersSince)}
+          {change.lastPracticedAt && m.last(formatDay(change.lastPracticedAt))}
         </span>
       </span>
     </li>

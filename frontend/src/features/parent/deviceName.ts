@@ -1,10 +1,13 @@
+import { messagesNow } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 /**
  * A plain name for the browser a sign-in came from ("Chrome on Windows"), from the
  * User-Agent the device sent when it signed in. A best effort, for recognising one's
  * own devices — never used to decide anything.
  */
 export function deviceName(userAgent: string | null | undefined): string {
-  if (!userAgent) return "Unknown device";
+  const m = messagesNow(familyMessages);
+  if (!userAgent) return m.unknownDevice;
   const ua = userAgent;
   const browser = /Edg\//.test(ua)
     ? "Edge"
@@ -34,6 +37,6 @@ export function deviceName(userAgent: string | null | undefined): string {
               : /Linux/.test(ua)
                 ? "Linux"
                 : null;
-  if (browser && system) return `${browser} on ${system}`;
-  return browser ?? system ?? "Unknown device";
+  if (browser && system) return m.browserOn(browser, system);
+  return browser ?? system ?? m.unknownDevice;
 }

@@ -21,8 +21,9 @@ export function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // e.g. "You've been signed out on every device." from the account page.
-  const notice = (location.state as { notice?: string } | null)?.notice;
+  // A note handed over by the page that sent the person here (e.g. after signing out everywhere).
+  const noticeKey = (location.state as { notice?: keyof typeof m.notices } | null)?.notice;
+  const notice = noticeKey && noticeKey in m.notices ? m.notices[noticeKey] : null;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

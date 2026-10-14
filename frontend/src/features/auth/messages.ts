@@ -21,6 +21,11 @@ export const authMessages = defineMessages(
     linkUnusable: "It may have expired, already been used, or been replaced by a newer link.",
     linkIncomplete: "The link is incomplete. Open it straight from the email.",
     oneMoment: "This only takes a moment.",
+    notices: {
+      signedOutEverywhere: "You've been signed out on every device.",
+      passwordReset: "Your password has been changed and every device was signed out. Log in with your new password.",
+      accountReady: "Your account is ready. Log in to see your school's invitation.",
+    },
     login: {
       title: "Welcome back",
       subtitle: "Log in to continue your child's learning journey.",
@@ -80,7 +85,6 @@ export const authMessages = defineMessages(
         subtitle: "You'll be signed out everywhere, then log in with the new password.",
         submit: "Save new password",
         submitting: "Saving…",
-        done: "Your password has been changed and every device was signed out. Log in with your new password.",
         unusable: "It may have expired, already been used, or been replaced by a newer link.",
         incomplete: "The link is incomplete. Open it straight from the email, or ask for a new one.",
         recovery: "Send me a new link",
@@ -90,7 +94,6 @@ export const authMessages = defineMessages(
         subtitle: "Choose a password for your teacher account. You'll use it with your email address to log in.",
         submit: "Create password",
         submitting: "Creating…",
-        done: "Your account is ready. Log in to see your school's invitation.",
         unusable:
           "It may have expired (invitation links last 7 days), already been used, or been replaced by a newer invitation. Ask the school to invite you again.",
         incomplete: "The link is incomplete. Open it straight from the invitation email.",
@@ -139,6 +142,11 @@ export const authMessages = defineMessages(
     linkUnusable: "វាប្រហែលជាផុតកំណត់ ត្រូវបានប្រើរួចហើយ ឬត្រូវបានជំនួសដោយតំណថ្មីជាងនេះ។",
     linkIncomplete: "តំណនេះមិនពេញលេញទេ។ សូមបើកវាដោយផ្ទាល់ពីអ៊ីមែល។",
     oneMoment: "ការនេះចំណាយពេលតែបន្តិចប៉ុណ្ណោះ។",
+    notices: {
+      signedOutEverywhere: "អ្នកត្រូវបានចាកចេញពីគ្រប់ឧបករណ៍ហើយ។",
+      passwordReset: "ពាក្យសម្ងាត់របស់អ្នកត្រូវបានប្ដូរ ហើយឧបករណ៍ទាំងអស់ត្រូវបានចាកចេញ។ សូមចូលគណនីដោយប្រើពាក្យសម្ងាត់ថ្មីរបស់អ្នក។",
+      accountReady: "គណនីរបស់អ្នករួចរាល់ហើយ។ សូមចូលគណនី ដើម្បីមើលការអញ្ជើញពីសាលារបស់អ្នក។",
+    },
     login: {
       title: "សូមស្វាគមន៍ការត្រឡប់មកវិញ",
       subtitle: "ចូលគណនី ដើម្បីបន្តដំណើររៀនរបស់កូនអ្នក។",
@@ -198,7 +206,6 @@ export const authMessages = defineMessages(
         subtitle: "អ្នកនឹងត្រូវចាកចេញពីគ្រប់ឧបករណ៍ បន្ទាប់មកចូលគណនីដោយប្រើពាក្យសម្ងាត់ថ្មី។",
         submit: "រក្សាទុកពាក្យសម្ងាត់ថ្មី",
         submitting: "កំពុងរក្សាទុក…",
-        done: "ពាក្យសម្ងាត់របស់អ្នកត្រូវបានប្ដូរ ហើយឧបករណ៍ទាំងអស់ត្រូវបានចាកចេញ។ សូមចូលគណនីដោយប្រើពាក្យសម្ងាត់ថ្មីរបស់អ្នក។",
         unusable: "វាប្រហែលជាផុតកំណត់ ត្រូវបានប្រើរួចហើយ ឬត្រូវបានជំនួសដោយតំណថ្មីជាងនេះ។",
         incomplete: "តំណនេះមិនពេញលេញទេ។ សូមបើកវាដោយផ្ទាល់ពីអ៊ីមែល ឬស្នើសុំតំណថ្មី។",
         recovery: "ផ្ញើតំណថ្មីមកខ្ញុំ",
@@ -208,7 +215,6 @@ export const authMessages = defineMessages(
         subtitle: "សូមជ្រើសរើសពាក្យសម្ងាត់សម្រាប់គណនីគ្រូរបស់អ្នក។ អ្នកនឹងប្រើវាជាមួយអាសយដ្ឋានអ៊ីមែលរបស់អ្នក ដើម្បីចូលគណនី។",
         submit: "បង្កើតពាក្យសម្ងាត់",
         submitting: "កំពុងបង្កើត…",
-        done: "គណនីរបស់អ្នករួចរាល់ហើយ។ សូមចូលគណនី ដើម្បីមើលការអញ្ជើញពីសាលារបស់អ្នក។",
         unusable:
           "វាប្រហែលជាផុតកំណត់ (តំណអញ្ជើញប្រើបាន 7 ថ្ងៃ) ត្រូវបានប្រើរួចហើយ ឬត្រូវបានជំនួសដោយការអញ្ជើញថ្មីជាងនេះ។ សូមស្នើឱ្យសាលាអញ្ជើញអ្នកម្ដងទៀត។",
         incomplete: "តំណនេះមិនពេញលេញទេ។ សូមបើកវាដោយផ្ទាល់ពីអ៊ីមែលអញ្ជើញ។",

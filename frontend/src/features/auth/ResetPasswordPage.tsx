@@ -65,7 +65,7 @@ function PasswordLinkPage({ mode }: { mode: keyof typeof MODES }) {
       if (session) await logout();
       navigate("/login", {
         replace: true,
-        state: { notice: copy.done },
+        state: { notice: mode === "reset" ? "passwordReset" : "accountReady" },
       });
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {

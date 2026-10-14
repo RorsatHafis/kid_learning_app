@@ -7,8 +7,10 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { ApiError } from "@/lib/api/ApiError";
 import { PlanLimitNote } from "./PlanLimitNote";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
-const ages = (c: CurriculumChoice) => (c.maxAge === null ? `Ages ${c.minAge}+` : `Ages ${c.minAge}–${c.maxAge}`);
+const ages = (c: CurriculumChoice) => messagesNow(familyMessages).choose.ages(c.minAge, c.maxAge);
 
 /** Curricula grouped by subject, in the server's order. */
 function bySubject(list: CurriculumChoice[]) {
@@ -40,6 +42,7 @@ export function ChooseCurriculumPanel({
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [enrollError, setEnrollError] = useState<string | null>(null);
   const [planLimited, setPlanLimited] = useState(false);
+  const m = useMessages(familyMessages).choose;
   const curricula = data?.filter((curriculum) => !excludeCurriculumIds.includes(curriculum.id));
   const forAge = curricula?.filter((c) => c.forChildAge) ?? [];
   const otherAges = curricula?.filter((c) => !c.forChildAge) ?? [];
@@ -52,40 +55,40 @@ export function ChooseCurriculumPanel({
       const enrollment = await enrollmentApi.enroll(childId, curriculumId);
       onEnrolled(enrollment.id);
     } catch (err) {
-      setEnrollError(err instanceof ApiError ? (err.problem?.detail ?? "Couldn't start that curriculum.") : "Something went wrong.");
+      setEnrollError(err instanceof ApiError ? (err.problem?.detail ?? m.startFailed) : m.somethingWrong);
       setPlanLimited(err instanceof ApiError && err.isPlanLimit);
     } finally {
       setEnrollingId(null);
     }
   }
 
-  if (isLoading) return <LoadingState label="Finding learning paths…" />;
+  if (isLoading) return <LoadingState label={m.finding} />;
   if (error) return <ErrorState error={error} onRetry={refetch} />;
 
   return (
     <div className="flex flex-col gap-5 rounded-paper bg-white p-6 shadow-paper ring-1 ring-line/70 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-display text-lg font-semibold text-tonle-950">Choose a learning path</p>
-          <p className="mt-0.5 max-w-lg text-sm text-ink-soft">Each path follows a curriculum; the platform adapts it to your child as they learn.</p>
+          <p className="font-display text-lg font-semibold text-tonle-950">{m.title}</p>
+          <p className="mt-0.5 max-w-lg text-sm text-ink-soft">{m.lead}</p>
         </div>
         {onCancel && (
           <Button variant="ghost" size="md" onClick={onCancel}>
-            Cancel
+            {m.cancel}
           </Button>
         )}
       </div>
       {curricula && curricula.length === 0 ? (
         <EmptyState
-          title={excludeCurriculumIds.length > 0 ? "No other paths available yet" : "No learning paths published yet"}
-          description="New subjects appear here as soon as they are published."
+          title={excludeCurriculumIds.length > 0 ? m.noOther : m.nonePublished}
+          description={m.appear}
         />
       ) : (
         curricula && (
           <>
             {forAge.length > 0 && (
               <ChoiceGroups
-                title={`For ${childName}'s age`}
+                title={m.forAge(childName)}
                 list={forAge}
                 enrollingId={enrollingId}
                 onChoose={onChoose}
@@ -95,16 +98,16 @@ export function ChooseCurriculumPanel({
               (forAge.length > 0 ? (
                 <details className="group rounded-[12px] ring-1 ring-line">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-tonle-700 [&::-webkit-details-marker]:hidden">
-                    Paths for other ages ({otherAges.length})
+                    {m.otherAges(otherAges.length)}
                     <ChevronDown size={16} aria-hidden className="transition-transform group-open:rotate-180" />
                   </summary>
                   <div className="px-4 pb-2">
-                    <ChoiceGroups list={otherAges} regionSuffix=", other ages" enrollingId={enrollingId} onChoose={onChoose} />
+                    <ChoiceGroups list={otherAges} regionSuffix={m.otherAgesSuffix} enrollingId={enrollingId} onChoose={onChoose} />
                   </div>
                 </details>
               ) : (
                 <ChoiceGroups
-                  title={`No path is for ${childName}'s age yet. These are for other ages:`}
+                  title={m.noneForAge(childName)}
                   list={otherAges}
                   enrollingId={enrollingId}
                   onChoose={onChoose}
@@ -139,6 +142,7 @@ function ChoiceGroups({
 }) {
   // A subject offering several paths gets its own headed list; subjects with one path each run
   // together in one list (the subject named in each row), so the page has no stack of one-row lists.
+  const m = useMessages(familyMessages).choose;
   const segments: { subject: string | null; items: CurriculumChoice[] }[] = [];
   for (const [subject, items] of bySubject(list)) {
     const last = segments[segments.length - 1];
@@ -155,7 +159,7 @@ function ChoiceGroups({
         </p>
       </div>
       <Button size="md" onClick={() => onChoose(curriculum.id)} disabled={enrollingId !== null}>
-        {enrollingId === curriculum.id ? "Starting…" : "Start this path"}
+        {enrollingId === curriculum.id ? m.starting : m.start}
         <span className="sr-only">: {curriculum.name}</span>
       </Button>
     </li>

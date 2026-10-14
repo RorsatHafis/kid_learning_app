@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import type { Chapter } from "@/lib/api/types";
 import { BlueHour } from "@/features/world/BlueHour";
 import { cn } from "@/lib/utils/cn";
+import { useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
 /** Each child keeps one colour across the parent space, chosen from their id so it never shifts. */
 const SEALS = [
@@ -48,13 +50,6 @@ export function SceneBand({ children, className }: { children: ReactNode; classN
   );
 }
 
-const CHAPTER_WORD: Record<Chapter["state"], string> = {
-  COMPLETE: "steps done",
-  CURRENT: "in progress",
-  STARTED: "started",
-  UPCOMING: "not started",
-  NOT_READY: "no activity published yet",
-};
 
 /**
  * A journey's chapters as a track: each chapter a segment, filled as its steps are done, the
@@ -62,6 +57,7 @@ const CHAPTER_WORD: Record<Chapter["state"], string> = {
  */
 export function ChapterTrack({ chapters, label }: { chapters: Chapter[]; label: string }) {
   // A one-chapter journey has nothing to track between chapters; its steps say it all.
+  const m = useMessages(familyMessages).chapters;
   if (chapters.length < 2) return null;
   const done = chapters.filter((c) => c.state === "COMPLETE").length;
   const current = chapters.find((c) => c.state === "CURRENT");
@@ -71,10 +67,10 @@ export function ChapterTrack({ chapters, label }: { chapters: Chapter[]; label: 
         {chapters.map((chapter) => {
           const share = chapter.totalSteps > 0 ? chapter.completedSteps / chapter.totalSteps : 0;
           return (
-            <li key={chapter.id} title={`Chapter ${chapter.position}: ${chapter.title}`}>
+            <li key={chapter.id} title={m.titleOf(chapter.position, chapter.title)}>
               <span className="sr-only">
-                Chapter {chapter.position}, {chapter.title}: {CHAPTER_WORD[chapter.state]}
-                {chapter.totalSteps > 0 ? ` (${chapter.completedSteps} of ${chapter.totalSteps} steps)` : ""}
+                {m.srState(chapter.position, chapter.title, m.word[chapter.state])}
+                {chapter.totalSteps > 0 ? m.srSteps(chapter.completedSteps, chapter.totalSteps) : ""}
               </span>
               <span
                 aria-hidden
@@ -93,17 +89,12 @@ export function ChapterTrack({ chapters, label }: { chapters: Chapter[]; label: 
       <p className="text-sm text-ink-soft">
         {current ? (
           <>
-            <span className="font-semibold text-ink">
-              Chapter {current.position} of {chapters.length}
-            </span>{" "}
-            · {current.title}
+            <span className="font-semibold text-ink">{m.chapterOf(current.position, chapters.length)}</span> · {current.title}
           </>
         ) : done === chapters.length ? (
-          <>All {chapters.length} chapters&apos; steps done</>
+          m.allDone(chapters.length)
         ) : (
-          <>
-            {done} of {chapters.length} chapters&apos; steps done
-          </>
+          m.someDone(done, chapters.length)
         )}
       </p>
     </div>

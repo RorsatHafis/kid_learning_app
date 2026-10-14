@@ -1,5 +1,6 @@
 package com.platform.parent.web;
 
+import com.platform.identity.UiLanguage;
 import com.platform.family.service.FamilyAccessGuard;
 import com.platform.parent.entity.ParentInsight;
 import com.platform.parent.service.ParentInsightService;
@@ -38,7 +39,7 @@ public class ParentInsightController {
 
         List<ParentInsight> insights = parentInsightService.generateInsights(childId);
 
-        return ResponseEntity.ok(insights.stream().map(ParentInsightResponse::from).toList());
+        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest())).toList());
     }
 
     /**
@@ -55,7 +56,7 @@ public class ParentInsightController {
 
         List<ParentInsight> insights = parentInsightService.currentInsights(childId);
 
-        return ResponseEntity.ok(insights.stream().map(ParentInsightResponse::from).toList());
+        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest())).toList());
     }
 
     /** Every recorded snapshot, most recent first - historical events, not the child's current state. */
@@ -66,7 +67,7 @@ public class ParentInsightController {
 
         List<ParentInsight> insights = parentInsightService.listRecent(childId);
 
-        return ResponseEntity.ok(insights.stream().map(ParentInsightResponse::from).toList());
+        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest())).toList());
     }
 
 }

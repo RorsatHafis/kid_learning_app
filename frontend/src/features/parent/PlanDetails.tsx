@@ -3,9 +3,13 @@ import { Info, Send, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { familyPlanApi } from "@/lib/api/subscriptions";
 import { entitlementLabel, priceText, type Entitlement, type OwnFamilyPlan, type PlanOffer } from "@/lib/api/subscriptions";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { formatDate } from "@/i18n/format";
+import { familyMessages } from "./messages";
 
 const DAY = 24 * 60 * 60 * 1000;
-const dateOnly = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+const dateOnly = (iso: string) => formatDate(iso, { day: "numeric", month: "long", year: "numeric" });
+const words = () => messagesNow(familyMessages).plan;
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 
@@ -13,8 +17,9 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 function soon(iso: string, now: Date): string | null {
   const days = Math.round((startOfDay(new Date(iso)) - startOfDay(now)) / DAY);
   if (days > 14 || days < 0) return null;
-  if (days === 0) return "ends today";
-  return days === 1 ? "ends tomorrow" : `ends in ${days} days`;
+  const m = words();
+  if (days === 0) return m.endsToday;
+  return days === 1 ? m.endsTomorrow : m.endsIn(days);
 }
 
 /**
@@ -24,55 +29,52 @@ function soon(iso: string, now: Date): string | null {
  */
 function periodText(plan: OwnFamilyPlan, now: Date): { main: string | null; note: string | null } {
   const sub = plan.subscription;
+  const m = words();
   if (!sub) return { main: null, note: null };
   if (!sub.grantsAccess) {
-    return { main: null, note: sub.currentPeriodEnd ? `An earlier plan ended on ${dateOnly(sub.currentPeriodEnd)}.` : null };
+    return { main: null, note: sub.currentPeriodEnd ? m.earlierEnded(dateOnly(sub.currentPeriodEnd)) : null };
   }
   const end = sub.currentPeriodEnd;
   const closing = end ? soon(end, now) : null;
   const withSoon = (text: string) => (closing ? `${text} · ${closing}` : text);
   switch (sub.status) {
     case "TRIALING":
-      return { main: end ? withSoon(`Trial until ${dateOnly(end)}`) : "Trial", note: null };
+      return { main: end ? withSoon(m.trialUntil(dateOnly(end))) : m.trial, note: null };
     case "PAST_DUE":
-      return {
-        main: end ? `Until ${dateOnly(end)}` : null,
-        note: "A payment didn't go through. Your plan continues while it's retried.",
-      };
+      return { main: end ? m.until(dateOnly(end)) : null, note: m.paymentFailed };
     case "CANCELED":
-      return { main: end ? withSoon(`Won't renew · ends ${dateOnly(end)}`) : null, note: null };
+      return { main: end ? withSoon(m.wontRenew(dateOnly(end))) : null, note: null };
     default:
       return {
-        main: end ? withSoon(`Until ${dateOnly(end)}`) : "Ongoing",
-        note: sub.source === "ADMIN_GRANT" ? "Given to your family by Bookeyond Kid." : null,
+        main: end ? withSoon(m.until(dateOnly(end))) : m.ongoing,
+        note: sub.source === "ADMIN_GRANT" ? m.given : null,
       };
   }
 }
 
 function usageText(e: Entitlement) {
+  const m = words();
   if (e.key === "CHILDREN_MAX") {
     const used = e.used ?? 0;
-    return e.limit === null ? `${used} added · no limit` : `${used} of ${e.limit}`;
+    return e.limit === null ? m.addedNoLimit(used) : m.usedOf(used, e.limit);
   }
-  return e.limit === null ? "No limit" : `Up to ${e.limit}`;
+  return e.limit === null ? m.noLimit : m.upTo(e.limit);
 }
 
 /** What having more than a plan includes means: nothing is taken away; only adding more is paused. */
 function overText(e: Entitlement, used: number) {
-  if (e.key === "CHILDREN_MAX") {
-    return `Your family has ${used} children and this plan includes ${e.limit}. Every child keeps learning; you can't add another child on this plan.`;
-  }
-  return `One of your children follows ${used} journeys at once and this plan includes ${e.limit}. They all continue; that child can't start another one for now.`;
+  return e.key === "CHILDREN_MAX" ? words().overChildren(used, e.limit) : words().overJourneys(used, e.limit);
 }
 
 const over = (limit: number | null, used: number | null) => limit !== null && used !== null && used > limit;
 
 function OfferLimits({ offer }: { offer: PlanOffer }) {
+  const m = useMessages(familyMessages).plan;
   return (
     <ul className="flex flex-col gap-0.5 text-sm text-ink">
       {offer.entitlements.map((e) => (
         <li key={e.key}>
-          {entitlementLabel(e.key)}: <span className="font-semibold">{e.limit === null ? "no limit" : e.limit}</span>
+          {entitlementLabel(e.key)}: <span className="font-semibold">{e.limit === null ? m.noLimitLower : e.limit}</span>
         </li>
       ))}
     </ul>
@@ -95,13 +97,14 @@ export function PlanDetails({
 }) {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(familyMessages).plan;
   async function act(call: () => Promise<OwnFamilyPlan>) {
     setWorking(true);
     setError(null);
     try {
       onChanged?.(await call());
     } catch {
-      setError("That didn't work just now. Please try again.");
+      setError(m.failed);
     } finally {
       setWorking(false);
     }
@@ -145,12 +148,12 @@ export function PlanDetails({
       {plan.afterwards && end && (
         <section aria-labelledby="plan-afterwards" className="flex flex-col gap-2 border-t border-line pt-4">
           <h3 id="plan-afterwards" className="text-sm font-semibold text-ink">
-            After {dateOnly(end)}
+            {m.after(dateOnly(end))}
           </h3>
           <p className="text-sm leading-relaxed text-ink-soft">
-            Your family moves to <span className="font-semibold text-ink">{plan.afterwards.plan.name}</span>. Nothing your
-            children have done is removed.
-            {tighterAfter && " It includes less than your family has now: you keep everything, but can't add more beyond it."}
+            {m.movesTo} <span className="font-semibold text-ink">{plan.afterwards.plan.name}</span>
+            {m.nothingRemoved}
+            {tighterAfter && m.tighter}
           </p>
           <OfferLimits offer={plan.afterwards} />
         </section>
@@ -160,11 +163,9 @@ export function PlanDetails({
         <section aria-labelledby="plan-choices" className="flex flex-col gap-3 border-t border-line pt-4">
           <div>
             <h3 id="plan-choices" className="text-sm font-semibold text-ink">
-              Other plans
+              {m.otherPlans}
             </h3>
-            <p className="text-sm text-ink-soft">
-              Plans can&apos;t be bought online yet. Ask for one, and Bookeyond Kid replies by email; nothing changes until then.
-            </p>
+            <p className="text-sm text-ink-soft">{m.cantBuy}</p>
           </div>
           <ul className="grid gap-3 sm:grid-cols-2">
             {plan.choices.map((offer) => (
@@ -178,10 +179,10 @@ export function PlanDetails({
                 {onChanged && plan.request?.planId === offer.plan.id && (
                   <div className="flex flex-col items-start gap-2">
                     <p role="status" className="text-sm font-semibold text-palm-deep">
-                      You asked for this plan on {dateOnly(plan.request.requestedAt)}.
+                      {m.askedOn(dateOnly(plan.request.requestedAt))}
                     </p>
                     <Button size="sm" variant="ghost" onClick={() => act(familyPlanApi.withdraw)} disabled={working}>
-                      <Undo2 size={15} aria-hidden /> Withdraw the request
+                      <Undo2 size={15} aria-hidden /> {m.withdraw}
                     </Button>
                   </div>
                 )}
@@ -193,14 +194,14 @@ export function PlanDetails({
                     onClick={() => act(() => familyPlanApi.request(offer.plan.id))}
                     disabled={working}
                   >
-                    <Send size={15} aria-hidden /> Ask for {offer.plan.name}
+                    <Send size={15} aria-hidden /> {m.askFor(offer.plan.name)}
                   </Button>
                 )}
               </li>
             ))}
           </ul>
           {plan.request && !plan.choices.some((offer) => offer.plan.id === plan.request?.planId) && (
-            <p className="text-sm text-ink-soft">You asked for the {plan.request.planName} plan on {dateOnly(plan.request.requestedAt)}.</p>
+            <p className="text-sm text-ink-soft">{m.askedOther(plan.request.planName, dateOnly(plan.request.requestedAt))}</p>
           )}
           {error && (
             <p role="alert" className="text-sm font-medium text-brick-deep">

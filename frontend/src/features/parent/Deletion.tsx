@@ -8,12 +8,14 @@ import { FormField } from "@/features/auth/FormField";
 import { ChildSeal } from "./ui";
 import type { Child } from "@/lib/api/types";
 import { deletionDay } from "./familyText";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
 function passwordProblem(err: unknown): string {
-  if (err instanceof ApiError && err.status === 422) return "That isn't your current password.";
-  if (err instanceof ApiError && err.status === 423)
-    return "Too many incorrect attempts. For your security the account is locked for a while.";
-  return "We couldn't do that just now. Please try again.";
+  const m = messagesNow(familyMessages).deletion;
+  if (err instanceof ApiError && err.status === 422) return m.wrongPassword;
+  if (err instanceof ApiError && err.status === 423) return m.locked;
+  return m.failed;
 }
 
 /**
@@ -23,6 +25,7 @@ function passwordProblem(err: unknown): string {
  */
 export function DeleteChildSection({ child }: { child: Child }) {
   const navigate = useNavigate();
+  const m = useMessages(familyMessages).deletion;
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -44,17 +47,13 @@ export function DeleteChildSection({ child }: { child: Child }) {
   return (
     <section aria-labelledby="delete-child" className="flex flex-col gap-3 border-t border-line pt-8">
       <h2 id="delete-child" className="font-display text-lg font-semibold text-tonle-950">
-        Delete {child.displayName}
+        {m.deleteChild(child.displayName)}
       </h2>
-      <p className="max-w-2xl text-sm leading-relaxed text-ink-soft">
-        Deleting erases {child.displayName}&apos;s profile and everything about their learning — journeys, answers, skills and
-        insights. {child.displayName} stops learning and any school&apos;s access ends straight away; we wait a few days before
-        erasing, in case you change your mind. You can download your family&apos;s data from your account page first.
-      </p>
+      <p className="max-w-2xl text-sm leading-relaxed text-ink-soft">{m.deleteChildExplain(child.displayName)}</p>
       {open ? (
-        <form onSubmit={onSubmit} noValidate aria-label={`Delete ${child.displayName}`} className="flex max-w-md flex-col gap-4">
+        <form onSubmit={onSubmit} noValidate aria-label={m.deleteChild(child.displayName)} className="flex max-w-md flex-col gap-4">
           <FormField
-            label="Your password"
+            label={m.yourPassword}
             type="password"
             autoComplete="current-password"
             required
@@ -64,16 +63,16 @@ export function DeleteChildSection({ child }: { child: Child }) {
           />
           <div className="flex flex-wrap gap-3">
             <Button type="submit" size="md" disabled={working || !password}>
-              <Trash2 size={16} aria-hidden /> {working ? "Deleting…" : `Delete ${child.displayName}`}
+              <Trash2 size={16} aria-hidden /> {working ? m.deleting : m.deleteChild(child.displayName)}
             </Button>
             <Button type="button" size="md" variant="ghost" onClick={() => setOpen(false)} disabled={working}>
-              Cancel
+              {m.cancel}
             </Button>
           </div>
         </form>
       ) : (
         <Button size="md" variant="outline" onClick={() => setOpen(true)} className="w-fit">
-          <Trash2 size={16} aria-hidden /> Delete {child.displayName}…
+          <Trash2 size={16} aria-hidden /> {m.deleteChildOpen(child.displayName)}
         </Button>
       )}
     </section>
@@ -82,6 +81,7 @@ export function DeleteChildSection({ child }: { child: Child }) {
 
 /** A child whose deletion is scheduled, as the family page shows them: the date, and a way to keep them. */
 export function PendingChildChapter({ child, onKept }: { child: Child; onKept: () => void }) {
+  const m = useMessages(familyMessages).deletion;
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,9 +93,7 @@ export function PendingChildChapter({ child, onKept }: { child: Child; onKept: (
       onKept();
     } catch (err) {
       setError(
-        err instanceof ApiError && err.isPlanLimit
-          ? `Your plan has no room for another child right now, so ${child.displayName} can't be kept.`
-          : `We couldn't keep ${child.displayName} just now. Please try again.`,
+        err instanceof ApiError && err.isPlanLimit ? m.noRoom(child.displayName) : m.keepFailed(child.displayName),
       );
       setWorking(false);
     }
@@ -106,10 +104,7 @@ export function PendingChildChapter({ child, onKept }: { child: Child; onKept: (
       <ChildSeal id={child.id} name={child.displayName} />
       <div className="min-w-0 flex-1">
         <h2 className="font-display text-xl font-semibold text-tonle-950">{child.displayName}</h2>
-        <p className="text-sm text-ink-soft">
-          Will be deleted on {child.eraseAfter ? deletionDay(child.eraseAfter) : "a date soon"}. Until then you can keep{" "}
-          {child.displayName}.
-        </p>
+        <p className="text-sm text-ink-soft">{m.willBeDeleted(child.eraseAfter ? deletionDay(child.eraseAfter) : null, child.displayName)}</p>
         {error && (
           <p role="alert" className="mt-1 text-sm font-medium text-brick-deep">
             {error}
@@ -117,7 +112,7 @@ export function PendingChildChapter({ child, onKept }: { child: Child; onKept: (
         )}
       </div>
       <Button size="md" variant="outline" onClick={keep} disabled={working}>
-        <Undo2 size={16} aria-hidden /> {working ? "Keeping…" : `Keep ${child.displayName}`}
+        <Undo2 size={16} aria-hidden /> {working ? m.keeping : m.keepChild(child.displayName)}
       </Button>
     </article>
   );
@@ -128,6 +123,7 @@ export function PendingChildChapter({ child, onKept }: { child: Child; onKept: (
  * parent can sign in and keep the account until then.
  */
 export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | null; onChanged: () => void }) {
+  const m = useMessages(familyMessages).deletion;
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -156,7 +152,7 @@ export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | 
       await accountApi.keep();
       onChanged();
     } catch {
-      setError("We couldn't keep your account just now. Please try again.");
+      setError(m.keepAccountFailed);
     } finally {
       setWorking(false);
     }
@@ -166,8 +162,7 @@ export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | 
     return (
       <div className="flex flex-col items-start gap-3">
         <p role="status" className="rounded-[12px] bg-brick-soft p-3 text-sm font-semibold text-brick-deep">
-          Your account and your family&apos;s data will be erased on {deletionDay(eraseAfter)}. Everything keeps working until
-          then.
+          {m.accountScheduled(deletionDay(eraseAfter))}
         </p>
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
@@ -175,7 +170,7 @@ export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | 
           </p>
         )}
         <Button size="md" onClick={keep} disabled={working}>
-          <Undo2 size={16} aria-hidden /> {working ? "Keeping…" : "Keep my account"}
+          <Undo2 size={16} aria-hidden /> {working ? m.keeping : m.keepAccount}
         </Button>
       </div>
     );
@@ -183,14 +178,11 @@ export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | 
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-ink-soft">
-        Deleting your account erases it with your family: every child&apos;s profile and learning, your plan and your sign-in.
-        Everything keeps working for a few days in case you change your mind; then it is erased and can&apos;t be undone.
-      </p>
+      <p className="text-sm text-ink-soft">{m.accountExplain}</p>
       {open ? (
-        <form onSubmit={onSubmit} noValidate aria-label="Delete my account" className="flex flex-col gap-4">
+        <form onSubmit={onSubmit} noValidate aria-label={m.deleteAccount} className="flex flex-col gap-4">
           <FormField
-            label="Your password"
+            label={m.yourPassword}
             type="password"
             autoComplete="current-password"
             required
@@ -200,16 +192,16 @@ export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | 
           />
           <div className="flex flex-wrap gap-3">
             <Button type="submit" size="md" disabled={working || !password}>
-              <Trash2 size={16} aria-hidden /> {working ? "Deleting…" : "Delete my account"}
+              <Trash2 size={16} aria-hidden /> {working ? m.deleting : m.deleteAccount}
             </Button>
             <Button type="button" size="md" variant="ghost" onClick={() => setOpen(false)} disabled={working}>
-              Cancel
+              {m.cancel}
             </Button>
           </div>
         </form>
       ) : (
         <Button size="md" variant="outline" onClick={() => setOpen(true)} className="w-fit">
-          <Trash2 size={16} aria-hidden /> Delete my account…
+          <Trash2 size={16} aria-hidden /> {m.deleteAccountOpen}
         </Button>
       )}
     </div>

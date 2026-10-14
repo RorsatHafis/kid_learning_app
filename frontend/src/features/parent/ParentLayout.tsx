@@ -6,6 +6,9 @@ import { cn } from "@/lib/utils/cn";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { UnconfirmedEmailNotice } from "./UnconfirmedEmailNotice";
 import { SkipLink } from "@/components/ui/SkipLink";
+import { useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
+import { common } from "@/components/ui/messages";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -17,6 +20,8 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 /** The grown-ups' space: calm paper, navy ink, a quiet bar that never competes with the child's work. */
 export function ParentLayout() {
   const { session, logout } = useAuth();
+  const m = useMessages(familyMessages).layout;
+  const c = useMessages(common);
   const navigate = useNavigate();
 
   async function onLogout() {
@@ -29,7 +34,7 @@ export function ParentLayout() {
       <SkipLink />
       <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
         <div className="mx-auto flex h-16 max-w-[1180px] items-center gap-6 px-4 sm:px-8">
-          <Link to="/parent" className="flex shrink-0 items-center" aria-label="Bookeyond Kid — home">
+          <Link to="/parent" className="flex shrink-0 items-center" aria-label={c.home}>
             <span className="sm:hidden">
               <BrandMark size={34} />
             </span>
@@ -37,12 +42,12 @@ export function ParentLayout() {
               <Logo size="sm" />
             </span>
           </Link>
-          <nav aria-label="Parent" className="flex items-center gap-6 sm:ml-6">
+          <nav aria-label={m.nav} className="flex items-center gap-6 sm:ml-6">
             <NavLink to="/parent" end className={navClass}>
-              Family
+              {m.family}
             </NavLink>
             <NavLink to="/parent/account" className={navClass}>
-              Account
+              {m.account}
             </NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-4">
@@ -51,9 +56,9 @@ export function ParentLayout() {
               type="button"
               onClick={onLogout}
               className="flex h-10 items-center gap-2 rounded-[10px] px-3 text-sm font-semibold text-ink-soft transition-colors duration-150 hover:bg-paper hover:text-tonle-900"
-              aria-label="Log out"
+              aria-label={m.logOut}
             >
-              <LogOut size={16} aria-hidden /> <span className="hidden sm:inline">Log out</span>
+              <LogOut size={16} aria-hidden /> <span className="hidden sm:inline">{m.logOut}</span>
             </button>
           </div>
         </div>

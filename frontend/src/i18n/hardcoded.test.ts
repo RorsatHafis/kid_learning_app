@@ -30,6 +30,7 @@ const ALLOWED_TEXT = new Set([
   "Bookeyond Kid", // the product's name
   "Bookeyond", // the product's name (wordmark)
   "Kid", // the product's name, second word of the wordmark
+  "Samsung Internet", // a browser's product name (deviceName)
   "English", // a language named in itself (LanguageSwitcher)
   "ខ្មែរ", // a language named in itself (LanguageSwitcher)
 ]);
@@ -69,26 +70,6 @@ const NOT_YET_MIGRATED = new Set<string>([
   "features/admin/studio/mediaText.ts",
   "features/admin/studio/shared.tsx",
   "features/admin/studio/studioLogic.ts",
-  "features/parent/AccountPage.tsx",
-  "features/parent/AddChildForm.tsx",
-  "features/parent/ChangesSection.tsx",
-  "features/parent/ChildOverviewPage.tsx",
-  "features/parent/ChooseCurriculumPanel.tsx",
-  "features/parent/Deletion.tsx",
-  "features/parent/InsightsSection.tsx",
-  "features/parent/LearningNowSection.tsx",
-  "features/parent/ParentHome.tsx",
-  "features/parent/ParentLayout.tsx",
-  "features/parent/PlanDetails.tsx",
-  "features/parent/PlanLimitNote.tsx",
-  "features/parent/RecentActivitySection.tsx",
-  "features/parent/SchoolAccessSection.tsx",
-  "features/parent/SkillPage.tsx",
-  "features/parent/SkillsSection.tsx",
-  "features/parent/UnconfirmedEmailNotice.tsx",
-  "features/parent/deviceName.ts",
-  "features/parent/familyText.ts",
-  "features/parent/ui.tsx",
   "features/principal/PrincipalClassPage.tsx",
   "features/principal/PrincipalHome.tsx",
   "features/principal/PrincipalMemberPage.tsx",

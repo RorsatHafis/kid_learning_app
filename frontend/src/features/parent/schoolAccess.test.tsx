@@ -99,6 +99,8 @@ describe("SchoolAccessSection", () => {
           status: 409,
           detail: "Confirm your email address before giving a school access to your child's learning",
         }),
+      // Whether the address is confirmed is read from the account, not from the server's sentence.
+      "GET /account": () => respond(200, { id: "a1", email: "parent@example.com", emailVerifiedAt: null, preferredLanguage: "en" }),
     });
     const user = userEvent.setup();
     renderSection();

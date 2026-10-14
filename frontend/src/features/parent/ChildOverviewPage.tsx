@@ -18,6 +18,8 @@ import { InsightsSection } from "./InsightsSection";
 import { SchoolAccessSection } from "./SchoolAccessSection";
 import { DeleteChildSection } from "./Deletion";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+import { useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
 export function ChildOverviewPage() {
   // key={childId} forces a full remount when switching children, so no state from
@@ -36,9 +38,10 @@ export function ChildOverviewPage() {
 function ChildOverview({ childId }: { childId: string }) {
   const child = useAsync(() => childrenApi.get(childId), [childId]);
   const enrollments = useAsync(() => learningApi.enrollments(childId), [childId]);
+  const m = useMessages(familyMessages).overview;
   useDocumentTitle(child.data?.displayName);
 
-  if (child.isLoading) return <LoadingState label="Loading…" />;
+  if (child.isLoading) return <LoadingState />;
   if (child.error) {
     return (
       <div className="flex flex-col gap-6">
@@ -47,7 +50,7 @@ function ChildOverview({ childId }: { childId: string }) {
           error={child.error}
           message={
             child.error instanceof ApiError && child.error.status === 404
-              ? "We couldn't find this child in your family. They may have been removed, or the link is from another account."
+              ? m.notFound
               : undefined
           }
           onRetry={child.refetch}
@@ -93,12 +96,13 @@ function ChildOverview({ childId }: { childId: string }) {
 }
 
 function BackLink({ name }: { name?: string }) {
+  const m = useMessages(familyMessages).overview;
   return (
-    <nav aria-label="Breadcrumb">
+    <nav aria-label={m.breadcrumb}>
       <ol className="flex items-center gap-1.5 text-sm">
         <li>
           <Link to="/parent" className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
-            Your family
+            {m.yourFamily}
           </Link>
         </li>
         {name && (
@@ -120,6 +124,7 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
   const [birth, setBirth] = useState(child.dateOfBirth);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const m = useMessages(familyMessages).overview;
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -135,10 +140,10 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
     } catch (err) {
       setError(
         err instanceof ApiError && err.validationErrors?.displayName
-          ? "Please enter a name (up to 80 characters)."
+          ? m.saveNameFailed
           : err instanceof ApiError && (err.validationErrors?.dateOfBirth || err.status === 400)
-            ? "Please enter the child's real date of birth (not in the future)."
-            : "Couldn't save the changes. Please try again.",
+            ? m.saveBirthFailed
+            : m.saveFailed,
       );
     } finally {
       setSaving(false);
@@ -153,7 +158,7 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
           {editing ? (
             <form onSubmit={save} className="flex flex-col gap-2">
               <label htmlFor="child-name" className="text-sm font-semibold text-ink">
-                Child&apos;s name
+                {m.childName}
               </label>
               <div className="flex flex-wrap gap-2">
                 <input
@@ -167,7 +172,7 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
                 />
               </div>
               <label htmlFor="child-birth" className="text-sm font-semibold text-ink">
-                Date of birth
+                {m.dateOfBirth}
               </label>
               <div className="flex flex-wrap gap-2">
                 <input
@@ -181,7 +186,7 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
                   aria-describedby={error ? "child-name-error" : undefined}
                 />
                 <Button type="submit" disabled={saving || !name.trim() || !birth}>
-                  {saving ? "Saving…" : "Save"}
+                  {saving ? m.saving : m.save}
                 </Button>
                 <Button
                   type="button"
@@ -193,7 +198,7 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
                     setError(null);
                   }}
                 >
-                  Cancel
+                  {m.cancel}
                 </Button>
               </div>
               {error && (
@@ -211,18 +216,18 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
-                  aria-label={`Edit ${child.displayName}'s name or date of birth`}
+                  aria-label={m.edit(child.displayName)}
                   className="rounded-[10px] p-2 text-ink-faint transition-colors hover:bg-white hover:text-tonle-800"
                 >
                   <Pencil size={16} aria-hidden />
                 </button>
               </div>
-              <p className="text-[0.9375rem] text-ink-soft">Age {ageFromDateOfBirth(child.dateOfBirth)}</p>
+              <p className="text-[0.9375rem] text-ink-soft">{m.age(ageFromDateOfBirth(child.dateOfBirth))}</p>
             </div>
           )}
         </div>
         <Link to={`/learn/${child.id}`} className={buttonClasses("solid", "lg", "w-full sm:w-auto")}>
-          <Play size={18} aria-hidden /> Start {child.displayName}&apos;s session
+          <Play size={18} aria-hidden /> {m.startSession(child.displayName)}
         </Link>
       </header>
     </SceneBand>

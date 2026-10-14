@@ -14,6 +14,10 @@ import { familyPlanApi } from "@/lib/api/subscriptions";
 import { PlanDetails } from "./PlanDetails";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { downloadFile } from "@/lib/utils/download";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { accountMessages } from "./account.messages";
+import { formatDate, formatTime } from "@/i18n/format";
+import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 
 const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
 
@@ -24,31 +28,32 @@ const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
  */
 export function AccountPage() {
   const profile = useAsync(() => accountApi.me(), []);
+  const m = useMessages(accountMessages);
   const { hash } = useLocation();
   // A link like /parent/account#plan lands on that section once the page has drawn it.
   useEffect(() => {
     if (!hash || !profile.data) return;
     document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" });
   }, [hash, profile.data]);
-  useDocumentTitle("Account");
+  useDocumentTitle(m.title);
 
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-1">
         <h1 className="font-display text-headline font-semibold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
-          Account
+          {m.title}
         </h1>
-        <p className="text-[1.0625rem] text-ink-soft">Your sign-in details, security and data.</p>
+        <p className="text-[1.0625rem] text-ink-soft">{m.lead}</p>
       </header>
 
       <div className="divide-y divide-line overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
-        <SettingsRow id="profile" title="Your details" subtitle="The address you sign in with.">
-          {profile.isLoading && !profile.data && <LoadingState label="Loading your account…" />}
+        <SettingsRow id="profile" title={m.details} subtitle={m.detailsSub}>
+          {profile.isLoading && !profile.data && <LoadingState label={m.loadingAccount} />}
           {profile.error && <ErrorState error={profile.error} onRetry={profile.refetch} />}
           {profile.data && (
             <dl className="grid gap-5 sm:grid-cols-2">
               <div>
-                <dt className="text-sm text-ink-faint">Email</dt>
+                <dt className="text-sm text-ink-faint">{m.email}</dt>
                 <dd className="break-all font-semibold text-ink">{profile.data.email}</dd>
                 <dd className="mt-2">
                   <EmailConfirmation confirmed={profile.data.emailVerifiedAt !== null} onAlreadyConfirmed={profile.refetch} />
@@ -58,20 +63,25 @@ export function AccountPage() {
                 </dd>
               </div>
               <div>
-                <dt className="text-sm text-ink-faint">Member since</dt>
-                <dd className="font-semibold text-ink">
-                  {new Date(profile.data.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}
-                </dd>
+                <dt className="text-sm text-ink-faint">{m.memberSince}</dt>
+                <dd className="font-semibold text-ink">{formatDate(profile.data.createdAt, { day: "numeric", month: "long", year: "numeric" })}</dd>
               </div>
             </dl>
           )}
+        </SettingsRow>
+        <SettingsRow id="language" title={m.language.title} subtitle={m.language.subtitle}>
+          <LanguageSwitcher />
+          <p className="text-sm leading-relaxed text-ink-soft">
+            {m.language.note}
+            {profile.data?.platformRole === "PARENT" && ` ${m.language.childNote}`}
+          </p>
         </SettingsRow>
         <ChangePassword />
         <SignOutEverywhere />
         {profile.data?.platformRole === "PARENT" && <YourPlan />}
         {profile.data?.platformRole === "PARENT" && <YourData />}
         {profile.data?.platformRole === "PARENT" && (
-          <SettingsRow id="delete-account" title="Delete account" subtitle="Your family's data, erased for good.">
+          <SettingsRow id="delete-account" title={m.deletion.title} subtitle={m.deletion.subtitle}>
             <DeleteAccount eraseAfter={profile.data.eraseAfter} onChanged={profile.refetch} />
           </SettingsRow>
         )}
@@ -102,11 +112,12 @@ function SettingsRow({ id, title, subtitle, children }: { id: string; title: str
  */
 function EmailConfirmation({ confirmed, onAlreadyConfirmed }: { confirmed: boolean; onAlreadyConfirmed: () => void }) {
   const [state, setState] = useState<{ kind: "idle" | "sending" | "sent" } | { kind: "error"; message: string }>({ kind: "idle" });
+  const m = useMessages(accountMessages).confirmation;
 
   if (confirmed) {
     return (
       <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-palm-deep">
-        <CheckCircle2 size={16} aria-hidden /> Confirmed
+        <CheckCircle2 size={16} aria-hidden /> {m.confirmed}
       </span>
     );
   }
@@ -121,28 +132,24 @@ function EmailConfirmation({ confirmed, onAlreadyConfirmed }: { confirmed: boole
         onAlreadyConfirmed();
       } else if (err instanceof ApiError && err.isRateLimited) {
         const seconds = err.problem?.retryAfterSeconds;
-        setState({
-          kind: "error",
-          message: `We sent one recently — check your inbox and spam folder.${seconds ? ` You can send another in ${waitInWords(seconds)}.` : ""}`,
-        });
+        setState({ kind: "error", message: m.recentlySent(seconds ? waitInWords(seconds) : null) });
       } else {
-        setState({ kind: "error", message: "We couldn't send the email just now. Please try again." });
+        setState({ kind: "error", message: m.sendFailed });
       }
     }
   }
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <span className="text-sm font-semibold text-light-deep">Not confirmed yet</span>
-      <span className="text-sm text-ink-soft">If you ever forget your password, the reset link comes to this address.</span>
+      <span className="text-sm font-semibold text-light-deep">{m.notYet}</span>
+      <span className="text-sm text-ink-soft">{m.why}</span>
       {state.kind === "sent" ? (
         <p role="status" className="flex items-start gap-2 text-sm font-semibold text-palm-deep">
-          <MailCheck size={16} className="mt-0.5 shrink-0" aria-hidden /> Sent. Open the link in the email — it works for
-          24 hours.
+          <MailCheck size={16} className="mt-0.5 shrink-0" aria-hidden /> {m.sent}
         </p>
       ) : (
         <Button size="md" variant="outline" onClick={send} disabled={state.kind === "sending"} className="w-fit">
-          <MailCheck size={16} aria-hidden /> {state.kind === "sending" ? "Sending…" : "Send confirmation email"}
+          <MailCheck size={16} aria-hidden /> {state.kind === "sending" ? m.sending : m.send}
         </Button>
       )}
       {state.kind === "error" && (
@@ -165,6 +172,7 @@ function ChangeEmail({ currentEmail }: { currentEmail: string }) {
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
   const [saving, setSaving] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const m = useMessages(accountMessages).changeEmail;
 
   function close() {
     setOpen(false);
@@ -177,11 +185,11 @@ function ChangeEmail({ currentEmail }: { currentEmail: string }) {
     e.preventDefault();
     const wanted = newEmail.trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(wanted)) {
-      setErrors({ email: "Enter an email address like name@example.com." });
+      setErrors({ email: m.invalid });
       return;
     }
     if (wanted.toLowerCase() === currentEmail.toLowerCase()) {
-      setErrors({ email: "That's already your sign-in email." });
+      setErrors({ email: m.same });
       return;
     }
     setErrors({});
@@ -192,18 +200,18 @@ function ChangeEmail({ currentEmail }: { currentEmail: string }) {
       close();
     } catch (err) {
       if (err instanceof ApiError && err.status === 422) {
-        setErrors({ password: "That isn't your current password." });
+        setErrors({ password: m.wrongPassword });
       } else if (err instanceof ApiError && err.status === 409) {
-        setErrors({ email: "That's already your sign-in email." });
+        setErrors({ email: m.same });
       } else if (err instanceof ApiError && err.status === 423) {
-        setErrors({ form: "Too many incorrect attempts. For your security the account is locked for a while." });
+        setErrors({ form: m.locked });
       } else if (err instanceof ApiError && err.isRateLimited) {
         const seconds = err.problem?.retryAfterSeconds;
-        setErrors({ form: `We sent a link recently.${seconds ? ` You can ask for another in ${waitInWords(seconds)}.` : ""}` });
+        setErrors({ form: m.recentlySent(seconds ? waitInWords(seconds) : null) });
       } else if (err instanceof ApiError && err.status === 400) {
-        setErrors({ email: "Enter an email address like name@example.com." });
+        setErrors({ email: m.invalid });
       } else {
-        setErrors({ form: "We couldn't send the link just now. Please try again." });
+        setErrors({ form: m.failed });
       }
     } finally {
       setSaving(false);
@@ -217,22 +225,21 @@ function ChangeEmail({ currentEmail }: { currentEmail: string }) {
           <p role="status" className="flex items-start gap-2 text-sm font-semibold text-palm-deep">
             <MailCheck size={16} className="mt-0.5 shrink-0" aria-hidden />
             <span>
-              We sent a link to <span className="break-all">{sentTo}</span>. Open it within 24 hours to finish — until then you
-              sign in with your current address.
+              {m.sentBefore} <span className="break-all">{sentTo}</span>. {m.sentAfter}
             </span>
           </p>
         )}
         <Button size="md" variant="outline" onClick={() => setOpen(true)} className="w-fit">
-          <AtSign size={16} aria-hidden /> Change email
+          <AtSign size={16} aria-hidden /> {m.open}
         </Button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate aria-label="Change email" className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} noValidate aria-label={m.form} className="flex flex-col gap-4">
       <FormField
-        label="New email address"
+        label={m.newEmail}
         type="email"
         autoComplete="email"
         required
@@ -241,7 +248,7 @@ function ChangeEmail({ currentEmail }: { currentEmail: string }) {
         error={errors.email}
       />
       <FormField
-        label="Current password"
+        label={m.currentPassword}
         type="password"
         autoComplete="current-password"
         required
@@ -249,7 +256,7 @@ function ChangeEmail({ currentEmail }: { currentEmail: string }) {
         onChange={(e) => setPassword(e.target.value)}
         error={errors.password}
       />
-      <p className="text-sm text-ink-soft">We'll send a link to the new address. Your email changes when you open it.</p>
+      <p className="text-sm text-ink-soft">{m.explain}</p>
       {errors.form && (
         <p role="alert" className="text-sm font-medium text-brick-deep">
           {errors.form}
@@ -257,10 +264,10 @@ function ChangeEmail({ currentEmail }: { currentEmail: string }) {
       )}
       <div className="flex flex-wrap gap-3">
         <Button type="submit" size="md" disabled={saving || !newEmail || !password}>
-          <MailCheck size={16} aria-hidden /> {saving ? "Sending…" : "Send link"}
+          <MailCheck size={16} aria-hidden /> {saving ? m.sending : m.send}
         </Button>
         <Button type="button" size="md" variant="ghost" onClick={close} disabled={saving}>
-          Cancel
+          {m.cancel}
         </Button>
       </div>
     </form>
@@ -275,13 +282,14 @@ function ChangePassword() {
   const [errors, setErrors] = useState<{ current?: string; next?: string; confirm?: string; form?: string }>({});
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const m = useMessages(accountMessages).password;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setDone(false);
     const local: typeof errors = {};
-    if (next.length < MIN_PASSWORD) local.next = `Use at least ${MIN_PASSWORD} characters.`;
-    if (confirm !== next) local.confirm = "The two new passwords don't match.";
+    if (next.length < MIN_PASSWORD) local.next = m.tooShort(MIN_PASSWORD);
+    if (confirm !== next) local.confirm = m.mismatch;
     setErrors(local);
     if (Object.keys(local).length > 0) return;
 
@@ -294,18 +302,15 @@ function ChangePassword() {
       setDone(true);
     } catch (err) {
       if (err instanceof ApiError && err.status === 422 && err.validationErrors?.currentPassword) {
-        setErrors({ current: "That isn't your current password." });
+        setErrors({ current: m.wrongCurrent });
       } else if (err instanceof ApiError && err.status === 422) {
-        setErrors({ next: err.problem?.detail ?? "Choose a different password." });
+        setErrors({ next: err.problem?.detail ?? m.chooseDifferent });
       } else if (err instanceof ApiError && err.status === 423) {
-        const until = err.problem?.lockedUntil ? new Date(err.problem.lockedUntil).toLocaleTimeString() : null;
-        setErrors({
-          form: `Too many incorrect attempts. For your security the account is locked${until ? ` until ${until}` : " for a while"}.`,
-        });
+        setErrors({ form: err.problem?.lockedUntil ? m.lockedUntil(formatTime(err.problem.lockedUntil)) : m.locked });
       } else if (err instanceof ApiError && err.status === 400) {
-        setErrors({ form: "Please fill in every field." });
+        setErrors({ form: m.fillEvery });
       } else {
-        setErrors({ form: "We couldn't change your password. Please try again." });
+        setErrors({ form: m.failed });
       }
     } finally {
       setSaving(false);
@@ -313,10 +318,10 @@ function ChangePassword() {
   }
 
   return (
-    <SettingsRow id="password" title="Change password" subtitle="You'll stay signed in here; every other device is signed out.">
+    <SettingsRow id="password" title={m.title} subtitle={m.subtitle}>
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <FormField
-          label="Current password"
+          label={m.current}
           type="password"
           autoComplete="current-password"
           required
@@ -325,7 +330,7 @@ function ChangePassword() {
           error={errors.current}
         />
         <FormField
-          label={`New password (at least ${MIN_PASSWORD} characters)`}
+          label={m.new(MIN_PASSWORD)}
           type="password"
           autoComplete="new-password"
           required
@@ -334,7 +339,7 @@ function ChangePassword() {
           error={errors.next}
         />
         <FormField
-          label="Confirm new password"
+          label={m.confirm}
           type="password"
           autoComplete="new-password"
           required
@@ -350,12 +355,11 @@ function ChangePassword() {
         {done && (
           <p role="status" className="flex items-start gap-2 rounded-[12px] bg-palm-soft p-3 text-sm font-semibold text-palm-deep">
             <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden />
-            Password changed. Your other devices have been signed out; a screen still open elsewhere stops working
-            straight away.
+            {m.done}
           </p>
         )}
         <Button type="submit" size="md" disabled={saving || !current || !next || !confirm} className="w-fit">
-          <ShieldCheck size={16} aria-hidden /> {saving ? "Changing…" : "Change password"}
+          <ShieldCheck size={16} aria-hidden /> {saving ? m.changing : m.change}
         </Button>
       </form>
     </SettingsRow>
@@ -368,45 +372,43 @@ function SignOutEverywhere() {
   const [confirming, setConfirming] = useState(false);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(accountMessages).devices;
 
   async function onConfirm() {
     setWorking(true);
     setError(null);
     try {
       await signOutEverywhere();
-      navigate("/login", { replace: true, state: { notice: "You've been signed out on every device." } });
+      navigate("/login", { replace: true, state: { notice: "signedOutEverywhere" } });
     } catch {
-      setError("We couldn't sign you out everywhere. Please try again.");
+      setError(m.failed);
       setWorking(false);
     }
   }
 
   return (
-    <SettingsRow id="devices" title="Devices" subtitle="Lost a phone or signed in on a shared computer?">
+    <SettingsRow id="devices" title={m.title} subtitle={m.subtitle}>
       <div className="flex flex-col gap-4">
         <DeviceList />
-        <p className="text-sm text-ink-soft">
-          Signing out everywhere ends every session on every device, including this one. You'll need your password to sign
-          back in.
-        </p>
+        <p className="text-sm text-ink-soft">{m.explain}</p>
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
         {confirming ? (
-          <div className="flex flex-wrap items-center gap-3" role="group" aria-label="Confirm signing out everywhere">
-            <span className="text-sm font-semibold text-ink">Sign out on every device now?</span>
+          <div className="flex flex-wrap items-center gap-3" role="group" aria-label={m.confirmGroup}>
+            <span className="text-sm font-semibold text-ink">{m.confirmQuestion}</span>
             <Button size="md" onClick={onConfirm} disabled={working}>
-              <LogOut size={16} aria-hidden /> {working ? "Signing out…" : "Yes, sign out everywhere"}
+              <LogOut size={16} aria-hidden /> {working ? m.signingOut : m.yes}
             </Button>
             <Button size="md" variant="ghost" onClick={() => setConfirming(false)} disabled={working}>
-              Cancel
+              {m.cancel}
             </Button>
           </div>
         ) : (
           <Button size="md" variant="outline" onClick={() => setConfirming(true)} className="w-fit">
-            <LogOut size={16} aria-hidden /> Sign out everywhere
+            <LogOut size={16} aria-hidden /> {m.everywhere}
           </Button>
         )}
       </div>
@@ -419,17 +421,18 @@ function DeviceList() {
   const devices = useAsync(() => accountApi.devices(), []);
   const [working, setWorking] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "done" | "error"; text: string } | null>(null);
+  const m = useMessages(accountMessages).devices;
 
   async function signOut(id: string, name: string) {
     setWorking(id);
     setNotice(null);
     try {
       await accountApi.signOutDevice(id);
-      setNotice({ kind: "done", text: `${name} has been signed out. A screen still open there stops working straight away.` });
+      setNotice({ kind: "done", text: m.signedOut(name) });
     } catch (err) {
       // Already gone (signed out elsewhere, or expired): the refreshed list says so.
       if (!(err instanceof ApiError && err.status === 404)) {
-        setNotice({ kind: "error", text: `We couldn't sign ${name} out. Please try again.` });
+        setNotice({ kind: "error", text: m.signOutFailed(name) });
       }
     } finally {
       setWorking(null);
@@ -437,13 +440,13 @@ function DeviceList() {
     }
   }
 
-  if (devices.isLoading && !devices.data) return <LoadingState label="Loading your devices…" />;
+  if (devices.isLoading && !devices.data) return <LoadingState label={m.loading} />;
   if (devices.error) return <ErrorState error={devices.error} onRetry={devices.refetch} />;
   const list = devices.data ?? [];
 
   return (
     <div className="flex flex-col gap-3">
-      <ul aria-label="Signed-in devices" className="flex flex-col divide-y divide-line rounded-[12px] ring-1 ring-line">
+      <ul aria-label={m.list} className="flex flex-col divide-y divide-line rounded-[12px] ring-1 ring-line">
         {list.map((device) => {
           const name = deviceName(device.userAgent);
           return (
@@ -453,11 +456,11 @@ function DeviceList() {
                 <p className="font-semibold text-ink">
                   {name}
                   {device.current && (
-                    <span className="ml-2 rounded-full bg-palm-soft px-2 py-0.5 text-xs font-semibold text-palm-deep">This device</span>
+                    <span className="ml-2 rounded-full bg-palm-soft px-2 py-0.5 text-xs font-semibold text-palm-deep">{m.thisDevice}</span>
                   )}
                 </p>
                 <p className="text-sm text-ink-soft">
-                  Signed in {formatDay(device.signedInAt)} · last active {formatDay(device.lastActiveAt)}
+                  {m.when(formatDay(device.signedInAt), formatDay(device.lastActiveAt))}
                 </p>
               </div>
               {!device.current && (
@@ -466,15 +469,15 @@ function DeviceList() {
                   variant="outline"
                   onClick={() => signOut(device.id, name)}
                   disabled={working !== null}
-                  aria-label={`Sign out ${name}, signed in ${formatDay(device.signedInAt)}`}
+                  aria-label={m.signOutLabel(name, formatDay(device.signedInAt))}
                 >
-                  {working === device.id ? "Signing out…" : "Sign out"}
+                  {working === device.id ? m.signingOut : m.signOut}
                 </Button>
               )}
             </li>
           );
         })}
-        {list.length === 0 && <li className="px-4 py-3 text-sm text-ink-soft">No other devices are signed in.</li>}
+        {list.length === 0 && <li className="px-4 py-3 text-sm text-ink-soft">{m.none}</li>}
       </ul>
       {notice && (
         <p role={notice.kind === "error" ? "alert" : "status"} className={notice.kind === "error" ? "text-sm font-medium text-brick-deep" : "text-sm font-semibold text-palm-deep"}>
@@ -486,12 +489,10 @@ function DeviceList() {
 }
 
 function formatDay(iso: string) {
-  const date = new Date(iso);
-  const today = new Date();
-  if (date.toDateString() === today.toDateString()) {
-    return `today at ${date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+  if (new Date(iso).toDateString() === new Date().toDateString()) {
+    return messagesNow(accountMessages).devices.todayAt(formatTime(iso, { hour: "numeric", minute: "2-digit" }));
   }
-  return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return formatDate(iso, { day: "numeric", month: "short", year: "numeric" });
 }
 
 /**
@@ -502,6 +503,7 @@ function YourData() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const m = useMessages(accountMessages).data;
 
   async function download() {
     setWorking(true);
@@ -516,21 +518,16 @@ function YourData() {
       );
       setDone(true);
     } catch {
-      setError("We couldn't prepare your file. Please try again.");
+      setError(m.failed);
     } finally {
       setWorking(false);
     }
   }
 
   return (
-    <SettingsRow id="your-data" title="Your data" subtitle="Your family's learning belongs to your family.">
+    <SettingsRow id="your-data" title={m.title} subtitle={m.subtitle}>
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-ink-soft">
-          Download a copy of everything Bookeyond Kid holds about you and your children: your account, each child&apos;s
-          profile, learning paths, skills and the evidence behind them, every activity and answer, the insights
-          you&apos;ve been shown, the schools you gave access to, and your family&apos;s plan. It&apos;s a JSON file, a
-          standard format that other services and data tools can read.
-        </p>
+        <p className="text-sm text-ink-soft">{m.explain}</p>
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
@@ -538,11 +535,11 @@ function YourData() {
         )}
         {done && (
           <p role="status" className="text-sm font-medium text-palm-deep">
-            Your file has been downloaded.
+            {m.done}
           </p>
         )}
         <Button size="md" variant="outline" onClick={download} disabled={working} className="w-fit">
-          <Download size={16} aria-hidden /> {working ? "Preparing…" : "Download my family's data"}
+          <Download size={16} aria-hidden /> {working ? m.preparing : m.download}
         </Button>
       </div>
     </SettingsRow>
@@ -552,9 +549,10 @@ function YourData() {
 /** The family's plan, read-only (see PlanDetails). */
 function YourPlan() {
   const plan = useAsync(() => familyPlanApi.get(), []);
+  const m = useMessages(accountMessages).plan;
   return (
-    <SettingsRow id="plan" title="Your plan" subtitle="What your family's plan includes.">
-      {plan.isLoading && !plan.data && <LoadingState label="Loading your plan…" />}
+    <SettingsRow id="plan" title={m.title} subtitle={m.subtitle}>
+      {plan.isLoading && !plan.data && <LoadingState label={m.loading} />}
       {plan.error && <ErrorState error={plan.error} onRetry={plan.refetch} />}
       {plan.data && <PlanDetails plan={plan.data} onChanged={plan.refetch} />}
     </SettingsRow>

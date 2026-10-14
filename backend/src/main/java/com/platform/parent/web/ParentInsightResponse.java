@@ -15,8 +15,15 @@ public record ParentInsightResponse(
         Map<String, Object> supportingData,
         Instant occurredAt
 ) {
+    /** As recorded (English): the family's data export keeps the record itself. */
     public static ParentInsightResponse from(ParentInsight insight) {
-        return new ParentInsightResponse(insight.getId(), insight.getInsightType(), insight.getHeadline(),
-                insight.getDetail(), insight.getSupportingData(), insight.getOccurredAt());
+        return from(insight, null);
+    }
+
+    /** For reading on screen: the sentence in the reader's interface language (InsightText). */
+    public static ParentInsightResponse from(ParentInsight insight, String language) {
+        return new ParentInsightResponse(insight.getId(), insight.getInsightType(),
+                InsightText.translate(insight.getHeadline(), language), InsightText.translate(insight.getDetail(), language),
+                insight.getSupportingData(), insight.getOccurredAt());
     }
 }

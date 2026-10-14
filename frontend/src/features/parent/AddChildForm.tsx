@@ -5,8 +5,11 @@ import { ApiError } from "@/lib/api/ApiError";
 import { childrenApi } from "@/lib/api/endpoints";
 import type { Child } from "@/lib/api/types";
 import { PlanLimitNote } from "./PlanLimitNote";
+import { useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
 export function AddChildForm({ onCreated, onCancel }: { onCreated: (child: Child) => void; onCancel: () => void }) {
+  const m = useMessages(familyMessages).addChild;
   const [displayName, setDisplayName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -27,10 +30,10 @@ export function AddChildForm({ onCreated, onCancel }: { onCreated: (child: Child
       if (err instanceof ApiError && err.validationErrors) {
         setFieldErrors(err.validationErrors);
       } else if (err instanceof ApiError) {
-        setFormError(err.problem?.detail ?? "Couldn't add your child.");
+        setFormError(err.problem?.detail ?? m.failed);
         setPlanLimited(err.isPlanLimit);
       } else {
-        setFormError("Something went wrong. Please try again.");
+        setFormError(m.somethingWrong);
       }
     } finally {
       setIsSubmitting(false);
@@ -41,14 +44,14 @@ export function AddChildForm({ onCreated, onCancel }: { onCreated: (child: Child
     <form onSubmit={onSubmit} className="flex flex-col gap-5" aria-labelledby="add-child-title">
       <div>
         <p id="add-child-title" className="font-display text-xl font-semibold text-tonle-950">
-          Add a child
+          {m.title}
         </p>
-        <p className="mt-1 text-sm text-ink-soft">Their age decides which paths suit them. Only you and your family can see this.</p>
+        <p className="mt-1 text-sm text-ink-soft">{m.lead}</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
-        <FormField label="Name" required value={displayName} onChange={(e) => setDisplayName(e.target.value)} error={fieldErrors.displayName} />
+        <FormField label={m.name} required value={displayName} onChange={(e) => setDisplayName(e.target.value)} error={fieldErrors.displayName} />
         <FormField
-          label="Date of birth"
+          label={m.dateOfBirth}
           type="date"
           required
           value={dateOfBirth}
@@ -65,10 +68,10 @@ export function AddChildForm({ onCreated, onCancel }: { onCreated: (child: Child
         {planLimited && <PlanLimitNote />}
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Adding…" : "Add child"}
+          {isSubmitting ? m.adding : m.add}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
+          {m.cancel}
         </Button>
       </div>
     </form>

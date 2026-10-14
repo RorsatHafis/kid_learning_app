@@ -3,13 +3,9 @@ import { parentInsightApi } from "@/lib/api/endpoints";
 import type { ParentInsight, ParentInsightType } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { SectionTitle } from "./SectionTitle";
+import { messagesNow, useLocale, useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
-const kindLabel: Record<ParentInsightType, string> = {
-  PROGRESS: "Progress",
-  STRENGTH: "Strength",
-  WEAKNESS: "Needs support",
-  RECOMMENDATION: "Suggestion",
-};
 
 const kindTone: Record<ParentInsightType, string> = {
   PROGRESS: "text-tonle-600",
@@ -24,16 +20,19 @@ const kindTone: Record<ParentInsightType, string> = {
  * "generate". Each claim shows the evidence it rests on.
  */
 export function InsightsSection({ childId }: { childId: string }) {
-  const { data, error, isLoading, refetch } = useAsync(() => parentInsightApi.list(childId), [childId]);
+  // The sentences come from the server, in the language this request asked for: read again on a change.
+  const locale = useLocale();
+  const { data, error, isLoading, refetch } = useAsync(() => parentInsightApi.list(childId), [childId, locale]);
+  const m = useMessages(familyMessages).insights;
   return (
     <section aria-labelledby="insights" className="flex flex-col gap-5">
-      <SectionTitle id="insights" title="Insights" subtitle="What we can say with confidence right now." />
-      {isLoading && !data && <LoadingState label="Loading insights…" />}
+      <SectionTitle id="insights" title={m.title} subtitle={m.subtitle} />
+      {isLoading && !data && <LoadingState label={m.loading} />}
       {error && <ErrorState error={error} onRetry={refetch} />}
       {data && data.length === 0 && (
         <div className="rounded-paper bg-tonle-50 px-6 py-6 ring-1 ring-tonle-100">
-          <p className="font-display text-lg font-semibold text-tonle-950">Not enough evidence yet</p>
-          <p className="mt-1 text-sm leading-relaxed text-ink-soft">Insights appear once there are enough answers to say something truthful — we never guess.</p>
+          <p className="font-display text-lg font-semibold text-tonle-950">{m.notEnough}</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft">{m.notEnoughLead}</p>
         </div>
       )}
       {data && data.length > 0 && (
@@ -51,13 +50,14 @@ export function InsightsSection({ childId }: { childId: string }) {
 
 function InsightStatement({ insight }: { insight: ParentInsight }) {
   const basis = evidenceBasis(insight.supportingData);
+  const m = useMessages(familyMessages).insights;
   return (
     <li className="flex flex-col gap-2 px-6 py-6">
       <p className="font-display text-[1.1875rem] font-semibold leading-snug text-tonle-950">{insight.headline}</p>
       {insight.detail && <p className="text-sm leading-relaxed text-ink-soft">{insight.detail}</p>}
       <p className="mt-1 flex flex-wrap gap-x-2 border-t border-dashed border-line pt-2 text-[0.8125rem] text-ink-faint">
-        <span className={`font-semibold ${kindTone[insight.insightType]}`}>{kindLabel[insight.insightType]}</span>
-        {basis && <span>Based on: {basis}</span>}
+        <span className={`font-semibold ${kindTone[insight.insightType]}`}>{m.kind[insight.insightType]}</span>
+        {basis && <span>{m.basedOn(basis)}</span>}
       </p>
     </li>
   );
@@ -69,7 +69,8 @@ function evidenceBasis(data: Record<string, unknown>): string | null {
   const observed = data.skillsWithEvidence;
   const sufficient = data.skillsWithSufficientEvidence;
   if (typeof mapped !== "number" || typeof observed !== "number") return null;
-  const parts = [`${observed} of ${mapped} skills practised`];
-  if (typeof sufficient === "number") parts.push(`${sufficient} with enough answers to judge`);
+  const m = messagesNow(familyMessages).insights;
+  const parts = [m.practised(observed, mapped)];
+  if (typeof sufficient === "number") parts.push(m.enough(sufficient));
   return parts.join(", ");
 }

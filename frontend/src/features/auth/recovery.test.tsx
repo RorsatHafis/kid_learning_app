@@ -8,6 +8,8 @@ import { AuthProvider } from "@/lib/auth/AuthContext";
 import { VerifyEmailPage } from "./VerifyEmailPage";
 import { ResetPasswordPage, SetUpAccountPage } from "./ResetPasswordPage";
 import { ForgotPasswordPage } from "./ForgotPasswordPage";
+import { messagesNow } from "@/i18n/catalog";
+import { authMessages } from "./messages";
 
 function respond(status: number, body?: unknown) {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -16,9 +18,10 @@ function respond(status: number, body?: unknown) {
   });
 }
 
+/** The log-in page's note, as the real page shows it: the sending page hands over which note, by key. */
 function LoginStub() {
-  const notice = (useLocation().state as { notice?: string } | null)?.notice;
-  return <p>Log in page. {notice}</p>;
+  const notice = (useLocation().state as { notice?: keyof typeof authMessages.en.notices } | null)?.notice;
+  return <p>Log in page. {notice ? messagesNow(authMessages).notices[notice] : null}</p>;
 }
 
 /** Opens `path` as if from an emailed link: the token is in the real address bar's fragment. */

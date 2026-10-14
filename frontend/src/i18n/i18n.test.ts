@@ -124,6 +124,20 @@ describe("the API client", () => {
   });
 });
 
+describe("dates", () => {
+  it("read in Khmer with Khmer month names, also where the browser has no Khmer date data", async () => {
+    const store = await freshStore(["en"]);
+    vi.spyOn(Intl.DateTimeFormat, "supportedLocalesOf").mockReturnValue([]);
+    const { formatDate, formatDateTime } = await import("./format");
+    store.setVisitorLocale("km");
+    expect(formatDate("2026-10-14T09:05:00", { day: "numeric", month: "long", year: "numeric" })).toBe("14 តុលា 2026");
+    expect(formatDate("2026-10-14T09:05:00", { day: "numeric", month: "short" })).toBe("14 តុលា");
+    expect(formatDateTime("2026-10-14T09:05:00")).toBe("14 តុលា 2026 09:05");
+    store.setVisitorLocale("en");
+    expect(formatDate("2026-10-14T09:05:00", { day: "numeric", month: "long", year: "numeric" })).toMatch(/October/);
+  });
+});
+
 describe("catalog words", () => {
   it("fill in values and choose English plurals, in the current language", async () => {
     const store = await freshStore(["en"]);

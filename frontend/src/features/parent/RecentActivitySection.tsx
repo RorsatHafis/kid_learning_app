@@ -7,6 +7,8 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { parentDecision } from "@/features/learning/explain";
 import { formatDay } from "@/lib/utils/date";
 import { SectionTitle } from "./SectionTitle";
+import { useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
 const PAGE = 10;
 
@@ -19,6 +21,7 @@ export function RecentActivitySection({ childId }: { childId: string }) {
   const [earlier, setEarlier] = useState<{ childId: string; items: CompletedActivity[]; more: boolean } | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreError, setMoreError] = useState<string | null>(null);
+  const m = useMessages(familyMessages).recent;
 
   const ownEarlier = earlier?.childId === childId ? earlier : null;
   const data = firstPage ? [...firstPage.slice(0, PAGE), ...(ownEarlier?.items ?? [])] : null;
@@ -32,7 +35,7 @@ export function RecentActivitySection({ childId }: { childId: string }) {
       const page = await learningApi.history(childId, PAGE + 1, data[data.length - 1]);
       setEarlier({ childId, items: [...(ownEarlier?.items ?? []), ...page.slice(0, PAGE)], more: page.length > PAGE });
     } catch {
-      setMoreError("Couldn't load earlier activity. Please try again.");
+      setMoreError(m.moreFailed);
     } finally {
       setLoadingMore(false);
     }
@@ -40,10 +43,10 @@ export function RecentActivitySection({ childId }: { childId: string }) {
 
   return (
     <section aria-labelledby="recent" className="flex flex-col gap-5">
-      <SectionTitle id="recent" title="Recent activity" subtitle="Each finished activity, and how the path adapted afterwards." />
-      {isLoading && !data && <LoadingState label="Loading activity…" />}
+      <SectionTitle id="recent" title={m.title} subtitle={m.subtitle} />
+      {isLoading && !data && <LoadingState label={m.loading} />}
       {error && <ErrorState error={error} onRetry={refetch} />}
-      {data && data.length === 0 && <EmptyState title="Nothing finished yet" description="Finished activities appear here with what they showed." />}
+      {data && data.length === 0 && <EmptyState title={m.none} description={m.noneLead} />}
       {data && data.length > 0 && (
         <ol className="relative flex flex-col">
           <span aria-hidden className="absolute bottom-3 left-[6rem] top-3 hidden w-px bg-line sm:block" />
@@ -56,10 +59,10 @@ export function RecentActivitySection({ childId }: { childId: string }) {
         <div className="flex flex-col items-start gap-2 sm:pl-[7.5rem]">
           {hasMore ? (
             <Button variant="outline" size="sm" onClick={showEarlier} disabled={loadingMore}>
-              {loadingMore ? "Loading…" : "Show earlier"}
+              {loadingMore ? m.loadingMore : m.showEarlier}
             </Button>
           ) : (
-            <p className="text-sm text-ink-faint">That&apos;s every activity finished so far.</p>
+            <p className="text-sm text-ink-faint">{m.everything}</p>
           )}
           {moreError && (
             <p role="alert" className="text-sm font-medium text-brick-deep">
@@ -67,7 +70,7 @@ export function RecentActivitySection({ childId }: { childId: string }) {
             </p>
           )}
           <p className="sr-only" aria-live="polite">
-            {ownEarlier ? `${data.length} activities shown` : ""}
+            {ownEarlier ? m.shown(data.length) : ""}
           </p>
         </div>
       )}
@@ -77,6 +80,7 @@ export function RecentActivitySection({ childId }: { childId: string }) {
 
 function ActivityRow({ activity }: { activity: CompletedActivity }) {
   const decision = parentDecision(activity);
+  const m = useMessages(familyMessages).recent;
   const minutes = Math.max(1, Math.round((new Date(activity.completedAt).getTime() - new Date(activity.startedAt).getTime()) / 60_000));
   return (
     <li className="relative grid gap-1 py-4 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-8">
@@ -85,7 +89,7 @@ function ActivityRow({ activity }: { activity: CompletedActivity }) {
       <div className="flex flex-col gap-1.5">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <p className="font-semibold text-ink">{activity.title}</p>
-          <p className="text-sm text-ink-faint">about {minutes} min</p>
+          <p className="text-sm text-ink-faint">{m.minutes(minutes)}</p>
         </div>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink">
           <span className="inline-flex items-center gap-2">
@@ -94,13 +98,11 @@ function ActivityRow({ activity }: { activity: CompletedActivity }) {
                 <span key={i} className={i < activity.correctAnswers ? "h-2.5 w-2.5 rounded-[2px] bg-light" : "h-2.5 w-2.5 rounded-[2px] bg-tonle-100"} />
               ))}
             </span>
-            <span className="tabular">
-              {activity.correctAnswers} of {activity.totalAnswers} answers correct
-            </span>
+            <span className="tabular">{m.correct(activity.correctAnswers, activity.totalAnswers)}</span>
           </span>
           {activity.skills.length > 0 && <span className="text-ink-soft">{activity.skills.map((s) => s.name).join(", ")}</span>}
-          {activity.source === "REVIEW" && <span className="font-semibold text-light-deep">Smart Review</span>}
-          {activity.source === null && <span className="text-ink-soft">free practice</span>}
+          {activity.source === "REVIEW" && <span className="font-semibold text-light-deep">{m.smartReview}</span>}
+          {activity.source === null && <span className="text-ink-soft">{m.freePractice}</span>}
         </p>
         {decision && <p className="text-sm leading-relaxed text-ink-soft">{decision}</p>}
       </div>

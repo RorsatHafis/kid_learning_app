@@ -3,7 +3,7 @@ import { ChevronRight, RotateCcw } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
-import type { ActivityOnSkill, LearningPathItemSource, SkillStanding, SkillStory } from "@/lib/api/types";
+import type { ActivityOnSkill, SkillStanding, SkillStory } from "@/lib/api/types";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { evidenceLabel, standingHelp, standingLabel } from "@/features/learning/explain";
 import { Standing, StandingMark } from "@/features/learning/Standing";
@@ -12,15 +12,9 @@ import { formatDay } from "@/lib/utils/date";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils/cn";
 import { SectionTitle } from "./SectionTitle";
-import { plural } from "./familyText";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { familyMessages } from "./messages";
 
-/** Who put a waiting step on the path, in a parent's words. */
-const SOURCE: Record<LearningPathItemSource, string> = {
-  CURRICULUM: "Next in the learning path",
-  ADAPTIVE: "Added by Bookeyond after an earlier activity",
-  REVIEW: "Smart Review: practising it again",
-  TEACHER_ASSIGNED: "Assigned by a teacher",
-};
 
 /** Where each standing sits on the ladder the movement strip draws (higher is further along). */
 const RUNG: Record<SkillStanding, number> = {
@@ -42,21 +36,23 @@ export function SkillPage() {
   const child = useAsync(() => childrenApi.get(childId), [childId]);
   const story = useAsync(() => learningApi.skill(childId, skillId), [childId, skillId]);
   const name = child.data?.displayName;
+  const all = useMessages(familyMessages);
+  const m = all.skill;
   useDocumentTitle(story.data ? `${story.data.name}${name ? ` · ${name}` : ""}` : null);
 
   return (
     <div className="flex flex-col gap-10">
-      <nav aria-label="Breadcrumb">
+      <nav aria-label={all.overview.breadcrumb}>
         <ol className="flex flex-wrap items-center gap-1.5 text-sm">
           <li>
             <Link to="/parent" className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
-              Your family
+              {all.overview.yourFamily}
             </Link>
           </li>
           <ChevronRight size={14} className="text-ink-faint" aria-hidden />
           <li>
             <Link to={`/parent/children/${childId}`} className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
-              {name ?? "Your child"}
+              {name ?? m.yourChild}
             </Link>
           </li>
           {story.data && (
@@ -69,25 +65,26 @@ export function SkillPage() {
           )}
         </ol>
       </nav>
-      {story.isLoading && !story.data && <LoadingState label="Loading the skill…" />}
+      {story.isLoading && !story.data && <LoadingState label={m.loading} />}
       {story.error && (
         <ErrorState
           error={story.error}
           onRetry={story.refetch}
           message={
             story.error instanceof ApiError && story.error.status === 404
-              ? "This skill isn't part of your child's learning paths, or the link is from another account."
+              ? m.notFound
               : undefined
           }
         />
       )}
-      {story.data && <Story story={story.data} childName={name ?? "your child"} />}
+      {story.data && <Story story={story.data} childName={name ?? m.yourChildLower} />}
     </div>
   );
 }
 
 function Story({ story, childName }: { story: SkillStory; childName: string }) {
   const now = story.now;
+  const m = useMessages(familyMessages).skill;
   return (
     <>
       <header className="flex max-w-3xl flex-col gap-2">
@@ -103,7 +100,7 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-x-14">
         <div className="flex min-w-0 flex-col gap-12">
           <section aria-labelledby="stands" className="flex flex-col gap-5">
-            <SectionTitle id="stands" title="Where it stands" />
+            <SectionTitle id="stands" title={m.whereItStands} />
             <div className="flex flex-col gap-4 rounded-paper bg-white p-6 shadow-paper ring-1 ring-line/70 sm:p-8">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <span className="text-lg">
@@ -118,8 +115,8 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
               <p className="max-w-2xl text-sm text-ink-soft">{standingHelp(now.standing)}</p>
               {now.inReview && (
                 <p className="flex items-center gap-2 text-sm font-semibold text-light-deep">
-                  <RotateCcw size={15} aria-hidden /> In Smart Review
-                  {now.reviewDueAt ? ` · due ${formatDay(now.reviewDueAt)}` : ""}
+                  <RotateCcw size={15} aria-hidden /> {m.inReview}
+                  {now.reviewDueAt ? m.due(formatDay(now.reviewDueAt)) : ""}
                 </p>
               )}
             </div>
@@ -128,12 +125,12 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
           <section aria-labelledby="got-here" className="flex flex-col gap-5">
             <SectionTitle
               id="got-here"
-              title="How it got here"
-              subtitle="Each activity with answers on this skill, and where the skill stood afterwards."
+              title={m.howItGotHere}
+              subtitle={m.howItGotHereSub}
             />
             {story.activities.length === 0 ? (
               <p className="rounded-paper bg-white px-6 py-5 text-[0.9375rem] text-ink-soft ring-1 ring-line/70">
-                No answers on this skill yet. It starts counting from {childName}&apos;s first activity that practises it.
+                {m.noAnswers(childName)}
               </p>
             ) : (
               <>
@@ -145,7 +142,7 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
                 </ol>
                 {story.activitiesInAll > story.activities.length && (
                   <p className="text-sm text-ink-soft">
-                    Showing the latest {story.activities.length} of {story.activitiesInAll} activities.
+                    {m.showingLatest(story.activities.length, story.activitiesInAll)}
                   </p>
                 )}
               </>
@@ -154,7 +151,7 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
         </div>
 
         <aside aria-labelledby="next" className="flex flex-col gap-5 lg:sticky lg:top-24 lg:self-start">
-          <SectionTitle id="next" title="What happens next" />
+          <SectionTitle id="next" title={m.whatNext} />
           <div className="flex flex-col gap-4 rounded-paper bg-tonle-50/70 p-6 ring-1 ring-tonle-100">
             {story.waiting.length > 0 ? (
               <ul className="flex flex-col gap-4">
@@ -162,8 +159,8 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
                   <li key={step.learningPathItemId} className="flex flex-col gap-0.5">
                     <span className="font-semibold text-tonle-950">{step.activityTitle}</span>
                     <span className="text-sm text-ink-soft">
-                      {step.status === "IN_PROGRESS" ? "Started, not finished · " : ""}
-                      {SOURCE[step.source]}
+                      {step.status === "IN_PROGRESS" ? m.startedNotFinished : ""}
+                      {m.source[step.source]}
                     </span>
                   </li>
                 ))}
@@ -171,10 +168,7 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
             ) : (
               <p className="text-[0.9375rem] leading-relaxed text-ink">{nothingWaiting(now.standing, childName)}</p>
             )}
-            <p className="border-t border-tonle-100 pt-4 text-sm text-ink-soft">
-              Bookeyond decides each next step from {childName}&apos;s answers: more practice when answers show it&apos;s needed,
-              a harder activity when a skill is secure, and Smart Review when it slips.
-            </p>
+            <p className="border-t border-tonle-100 pt-4 text-sm text-ink-soft">{m.decides(childName)}</p>
           </div>
         </aside>
       </div>
@@ -184,23 +178,25 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
 
 /** One sentence in words, from the numbers the standing rests on. */
 function summary(story: SkillStory, childName: string) {
+  const m = messagesNow(familyMessages).skill;
   const now = story.now;
-  if (now.scoredAnswers === 0) return `${childName} hasn't answered on this skill yet.`;
-  const across = story.activitiesInAll > 0 ? ` across ${plural(story.activitiesInAll, "activity", "activities")}` : "";
-  const right = `${now.correctAnswers} of ${now.scoredAnswers} answers right${across}`;
-  if (now.standing === "TOO_EARLY_TO_TELL") return `${right} — not enough yet to say how it's going.`;
-  return `${right}${now.lastPracticedAt ? `, last on ${formatDay(now.lastPracticedAt)}` : ""}.`;
+  if (now.scoredAnswers === 0) return m.notAnswered(childName);
+  const across = story.activitiesInAll > 0 ? m.acrossActivities(story.activitiesInAll) : "";
+  const right = m.answersRight(now.correctAnswers, now.scoredAnswers, across);
+  if (now.standing === "TOO_EARLY_TO_TELL") return m.notEnoughYet(right);
+  return m.lastOn(right, now.lastPracticedAt ? formatDay(now.lastPracticedAt) : null);
 }
 
 function nothingWaiting(standing: SkillStanding, childName: string) {
+  const m = messagesNow(familyMessages).skill;
   switch (standing) {
     case "SECURE":
-      return "Nothing more is planned for this skill: it's secure. If later answers slip, Smart Review brings it back.";
+      return m.nothingSecure;
     case "TOO_EARLY_TO_TELL":
     case "NOT_STARTED":
-      return `Nothing on ${childName}'s path practises this skill right now. A few more answers are needed before we can say how it's going.`;
+      return m.nothingTooEarly(childName);
     default:
-      return `Nothing on ${childName}'s path practises this skill right now.`;
+      return m.nothingPlanned(childName);
   }
 }
 
@@ -253,6 +249,7 @@ function MovementStrip({ activities }: { activities: ActivityOnSkill[] }) {
 }
 
 function ActivityRow({ activity }: { activity: ActivityOnSkill }) {
+  const m = useMessages(familyMessages).skill;
   return (
     <li className="grid gap-2 px-6 py-4 sm:grid-cols-[6rem_minmax(0,1fr)_11rem] sm:items-center sm:gap-5 sm:px-8">
       <span className="tabular text-sm text-ink-faint">{formatDay(activity.at)}</span>
@@ -264,13 +261,13 @@ function ActivityRow({ activity }: { activity: ActivityOnSkill }) {
               <span key={i} className={cn("h-2.5 w-2.5 rounded-[3px]", i < activity.correct ? "bg-light" : "bg-line")} />
             ))}
           </span>
-          {activity.correct} of {plural(activity.answers, "answer", "answers")} right
+          {m.ofAnswersRight(activity.correct, activity.answers)}
         </span>
       </span>
       <span className="flex items-center gap-2 text-sm text-ink-soft">
         {activity.standingAfter ? (
           <>
-            <span className="sm:sr-only">Then: </span>
+            <span className="sm:sr-only">{m.then}</span>
             <StandingMark standing={activity.standingAfter} />
             <span className="font-medium text-ink">{standingLabel(activity.standingAfter)}</span>
           </>
