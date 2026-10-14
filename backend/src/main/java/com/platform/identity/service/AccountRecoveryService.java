@@ -5,6 +5,7 @@ import com.platform.audit.entity.AuditActorType;
 import com.platform.audit.service.AuditService;
 import com.platform.common.idempotency.service.RequestFingerprint;
 import com.platform.common.web.ResourceNotFoundException;
+import com.platform.identity.UiLanguage;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.AccountActionPurpose;
 import com.platform.identity.entity.AccountActionToken;
@@ -47,6 +48,10 @@ import java.util.UUID;
  * anything. Per account, emails of one purpose are at least a minute apart and at most
  * five an hour, so the feature cannot be used to flood someone's inbox; per network,
  * the requests themselves are budgeted by {@code AuthRateLimitFilter}.
+ *
+ * <p>Every email is written in its recipient's interface language (the account's
+ * {@code preferredLanguage}: English or Khmer). Only the words change: the link, its token
+ * and its expiry are the same in both.
  *
  * <p>Confirming an address records when it was proven and nothing else: it never
  * changes the account's status (a principal awaiting approval stays waiting). A
@@ -136,7 +141,19 @@ public class AccountRecoveryService {
 
     private void sendVerification(Account account, String requestedIp, Instant now) {
         String raw = issue(account.getId(), AccountActionPurpose.EMAIL_VERIFICATION, VERIFICATION_LINK_TTL, requestedIp, now);
-        events.publishEvent(new EmailMessage(account.getEmail(), "Confirm your email for Bookeyond Kid", """
+        events.publishEvent(UiLanguage.isKhmer(account.getPreferredLanguage())
+                ? new EmailMessage(account.getEmail(), "បញ្ជាក់អ៊ីមែលរបស់អ្នកសម្រាប់ Bookeyond Kid", """
+                សួស្ដី,
+
+                សូមបញ្ជាក់ថា នេះជាអាសយដ្ឋានអ៊ីមែលរបស់អ្នក ដើម្បីឱ្យអ្នកអាចចូលគណនី Bookeyond Kid របស់អ្នកវិញបានជានិច្ច៖
+
+                %s
+
+                តំណនេះប្រើបានតែម្ដងប៉ុណ្ណោះ ហើយផុតកំណត់ក្នុងរយៈពេល 24 ម៉ោង។
+
+                ប្រសិនបើអ្នកមិនបានបង្កើតគណនី Bookeyond Kid ទេ អ្នកអាចមិនអើពើនឹងអ៊ីមែលនេះបាន។
+                """.formatted(mail.link("/verify-email", raw)))
+                : new EmailMessage(account.getEmail(), "Confirm your email for Bookeyond Kid", """
                 Hello,
 
                 Please confirm that this is your email address, so you can always get back \
@@ -171,7 +188,8 @@ public class AccountRecoveryService {
         waitBeforeNextEmail(account.getId(), AccountActionPurpose.EMAIL_CHANGE, now).ifPresent(wait -> {
             throw new TooManyEmailsException(wait);
         });
-        if (accounts.findByNormalizedEmail(Account.normalize(wanted)).isPresent()) {
+        Optional<Account> holder = accounts.findByNormalizedEmail(Account.normalize(wanted));
+        if (holder.isPresent()) {
             // Counts against the limit like a real link, so the timing and the limits look the same.
             tokens.findByAccountIdAndPurposeAndConsumedAtIsNullAndInvalidatedAtIsNull(account.getId(),
                     AccountActionPurpose.EMAIL_CHANGE).forEach(open -> open.invalidate(now));
@@ -180,7 +198,20 @@ public class AccountRecoveryService {
             placeholder.invalidate(now);
             tokens.save(placeholder);
             audit(account, "ACCOUNT_EMAIL_CHANGE_REQUESTED", Map.of());
-            events.publishEvent(new EmailMessage(wanted, "Someone tried to use this address on Bookeyond Kid", """
+            // Told in the language of the account that owns this address - its owner, not the asker.
+            events.publishEvent(UiLanguage.isKhmer(holder.get().getPreferredLanguage())
+                    ? new EmailMessage(wanted, "មាននរណាម្នាក់បានព្យាយាមប្រើអាសយដ្ឋាននេះនៅលើ Bookeyond Kid", """
+                    សួស្ដី,
+
+                    មាននរណាម្នាក់ដែលបានចូលគណនី Bookeyond Kid មួយ បានស្នើសុំប្ដូរគណនីនោះមកប្រើអាសយដ្ឋានអ៊ីមែលនេះ។ អាសយដ្ឋាននេះមានគណនី Bookeyond Kid ផ្ទាល់ខ្លួនរួចហើយ ដូច្នេះគ្មានអ្វីត្រូវបានផ្លាស់ប្ដូរទេ។
+
+                    ប្រសិនបើអ្នកភ្លេចពាក្យសម្ងាត់ អ្នកអាចកំណត់វាឡើងវិញនៅ៖
+
+                    %s/forgot-password
+
+                    ប្រសិនបើអ្នកមិនដឹងថានេះជារឿងអ្វីទេ អ្នកអាចមិនអើពើនឹងអ៊ីមែលនេះបាន។
+                    """.formatted(mail.publicUrl()))
+                    : new EmailMessage(wanted, "Someone tried to use this address on Bookeyond Kid", """
                     Hello,
 
                     Someone signed in to a Bookeyond Kid account asked to move it to this email \
@@ -199,7 +230,19 @@ public class AccountRecoveryService {
         tokens.save(AccountActionToken.issueEmailChange(account.getId(), wanted, RequestFingerprint.sha256Hex(raw), now,
                 now.plus(EMAIL_CHANGE_LINK_TTL), requestedIp));
         audit(account, "ACCOUNT_EMAIL_CHANGE_REQUESTED", Map.of());
-        events.publishEvent(new EmailMessage(wanted, "Confirm your new email for Bookeyond Kid", """
+        events.publishEvent(UiLanguage.isKhmer(account.getPreferredLanguage())
+                ? new EmailMessage(wanted, "បញ្ជាក់អ៊ីមែលថ្មីរបស់អ្នកសម្រាប់ Bookeyond Kid", """
+                សួស្ដី,
+
+                អ្នកបានស្នើសុំចូល Bookeyond Kid ដោយប្រើអាសយដ្ឋានអ៊ីមែលនេះ ចាប់ពីពេលនេះតទៅ។ ដើម្បីធ្វើការផ្លាស់ប្ដូរនេះ សូមបើកតំណនេះ៖
+
+                %s
+
+                តំណនេះប្រើបានតែម្ដងប៉ុណ្ណោះ ហើយផុតកំណត់ក្នុងរយៈពេល 24 ម៉ោង។ រហូតដល់អ្នកបើកវា អ្នកនៅតែចូលដោយប្រើអាសយដ្ឋានបច្ចុប្បន្នរបស់អ្នក។
+
+                ប្រសិនបើអ្នកមិនបានស្នើសុំការនេះទេ អ្នកអាចមិនអើពើនឹងអ៊ីមែលនេះបាន។
+                """.formatted(mail.link("/confirm-email-change", raw)))
+                : new EmailMessage(wanted, "Confirm your new email for Bookeyond Kid", """
                 Hello,
 
                 You asked to sign in to Bookeyond Kid with this email address from now on. \
@@ -240,7 +283,17 @@ public class AccountRecoveryService {
         account.changeEmail(newEmail, now);
         accounts.flush();
         audit(account, "ACCOUNT_EMAIL_CHANGED", Map.of());
-        events.publishEvent(new EmailMessage(oldEmail, "Your Bookeyond Kid sign-in email was changed", """
+        events.publishEvent(UiLanguage.isKhmer(account.getPreferredLanguage())
+                ? new EmailMessage(oldEmail, "អ៊ីមែលសម្រាប់ចូល Bookeyond Kid របស់អ្នកត្រូវបានផ្លាស់ប្ដូរ", """
+                សួស្ដី,
+
+                គណនី Bookeyond Kid ដែលធ្លាប់ប្រើអាសយដ្ឋាននេះ ឥឡូវចូលដោយប្រើ %s ។ អ៊ីមែលអំពីគណនីនេះ រួមទាំងការកំណត់ពាក្យសម្ងាត់ឡើងវិញ នឹងផ្ញើទៅទីនោះ ចាប់ពីពេលនេះតទៅ។
+
+                ប្រសិនបើនេះជាអ្នក មិនចាំបាច់ធ្វើអ្វីទៀតទេ។
+
+                ប្រសិនបើមិនមែនជាអ្នកទេ ប្រហែលជាមាននរណាម្នាក់ដឹងពាក្យសម្ងាត់របស់អ្នក៖ សូមទាក់ទងអ្នកដែលគ្រប់គ្រង Bookeyond Kid សម្រាប់គ្រួសារ ឬសាលារបស់អ្នកភ្លាមៗ។
+                """.formatted(masked(newEmail)))
+                : new EmailMessage(oldEmail, "Your Bookeyond Kid sign-in email was changed", """
                 Hello,
 
                 The Bookeyond Kid account that used this address now signs in with %s. \
@@ -283,7 +336,19 @@ public class AccountRecoveryService {
         }
         String raw = issue(account.getId(), AccountActionPurpose.PASSWORD_RESET, RESET_LINK_TTL, requestedIp, now);
         audit(account, "ACCOUNT_PASSWORD_RESET_REQUESTED", Map.of());
-        events.publishEvent(new EmailMessage(account.getEmail(), "Reset your Bookeyond Kid password", """
+        events.publishEvent(UiLanguage.isKhmer(account.getPreferredLanguage())
+                ? new EmailMessage(account.getEmail(), "កំណត់ពាក្យសម្ងាត់ Bookeyond Kid របស់អ្នកឡើងវិញ", """
+                សួស្ដី,
+
+                យើងបានទទួលសំណើកំណត់ពាក្យសម្ងាត់ឡើងវិញ សម្រាប់គណនី Bookeyond Kid របស់អ្នក។ ដើម្បីជ្រើសរើសពាក្យសម្ងាត់ថ្មី សូមបើកតំណនេះ៖
+
+                %s
+
+                តំណនេះប្រើបានតែម្ដងប៉ុណ្ណោះ ហើយផុតកំណត់ក្នុងរយៈពេល 30 នាទី។
+
+                ប្រសិនបើអ្នកមិនបានស្នើសុំការនេះទេ អ្នកអាចមិនអើពើនឹងអ៊ីមែលនេះបាន - ពាក្យសម្ងាត់របស់អ្នកមិនបានផ្លាស់ប្ដូរទេ។
+                """.formatted(mail.link("/reset-password", raw)))
+                : new EmailMessage(account.getEmail(), "Reset your Bookeyond Kid password", """
                 Hello,
 
                 We received a request to reset the password for your Bookeyond Kid account. \
@@ -310,7 +375,21 @@ public class AccountRecoveryService {
         Account account = setPasswordWithLink(rawToken, AccountActionPurpose.PASSWORD_RESET, newPassword,
                 "ACCOUNT_PASSWORD_RESET");
 
-        events.publishEvent(new EmailMessage(account.getEmail(), "Your Bookeyond Kid password was changed", """
+        events.publishEvent(UiLanguage.isKhmer(account.getPreferredLanguage())
+                ? new EmailMessage(account.getEmail(), "ពាក្យសម្ងាត់ Bookeyond Kid របស់អ្នកត្រូវបានផ្លាស់ប្ដូរ", """
+                សួស្ដី,
+
+                ពាក្យសម្ងាត់សម្រាប់គណនី Bookeyond Kid របស់អ្នក ទើបតែត្រូវបានផ្លាស់ប្ដូរ ដោយប្រើតំណកំណត់ឡើងវិញ ហើយឧបករណ៍ទាំងអស់ត្រូវបានចាកចេញពីគណនី។
+
+                ប្រសិនបើនេះជាអ្នក មិនចាំបាច់ធ្វើអ្វីទៀតទេ។
+
+                ប្រសិនបើមិនមែនជាអ្នកទេ សូមកំណត់ពាក្យសម្ងាត់របស់អ្នកឡើងវិញភ្លាមៗនៅ៖
+
+                %s/forgot-password
+
+                ហើយពិនិត្យមើលថា តើនរណាខ្លះអាចអានប្រអប់សំបុត្រនេះបាន។
+                """.formatted(mail.publicUrl()))
+                : new EmailMessage(account.getEmail(), "Your Bookeyond Kid password was changed", """
                 Hello,
 
                 The password for your Bookeyond Kid account was just changed using a reset \
@@ -328,7 +407,8 @@ public class AccountRecoveryService {
     /**
      * Who created an account and why, for the email carrying its setup link:
      * {@code subject}, the {@code reason} sentence that opens the email, and what to do
-     * after signing in ({@code afterSignIn}, may be empty).
+     * after signing in ({@code afterSignIn}, may be empty) - written in the account's
+     * interface language, which the rest of the email is in too.
      */
     public record SetupInvitation(String subject, String reason, String afterSignIn) {
     }
@@ -346,7 +426,20 @@ public class AccountRecoveryService {
             throw new TooManyEmailsException(wait);
         });
         String raw = issue(account.getId(), AccountActionPurpose.ACCOUNT_SETUP, SETUP_LINK_TTL, requestedIp, now);
-        events.publishEvent(new EmailMessage(account.getEmail(), invitation.subject(), """
+        events.publishEvent(UiLanguage.isKhmer(account.getPreferredLanguage())
+                ? new EmailMessage(account.getEmail(), invitation.subject(), """
+                សួស្ដី,
+
+                %s ដើម្បីចាប់ផ្ដើម សូមជ្រើសរើសពាក្យសម្ងាត់សម្រាប់គណនីរបស់អ្នក៖
+
+                %s
+
+                តំណនេះប្រើបានតែម្ដងប៉ុណ្ណោះ ហើយផុតកំណត់ក្នុងរយៈពេល 7 ថ្ងៃ។ ប្រសិនបើវាផុតកំណត់ហើយ សូមប្រើ "ភ្លេចពាក្យសម្ងាត់?" នៅលើទំព័រចូល ដើម្បីទទួលបានតំណថ្មី។%s
+
+                ប្រសិនបើអ្នកមិនបានរំពឹងថានឹងទទួលអ៊ីមែលនេះទេ អ្នកអាចមិនអើពើនឹងវាបាន។
+                """.formatted(invitation.reason(), mail.link("/set-up-account", raw),
+                invitation.afterSignIn().isBlank() ? "" : "\n\n" + invitation.afterSignIn()))
+                : new EmailMessage(account.getEmail(), invitation.subject(), """
                 Hello,
 
                 %s To get started, choose a password for your account:

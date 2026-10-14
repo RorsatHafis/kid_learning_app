@@ -21,12 +21,26 @@ import java.util.regex.Pattern;
  */
 public final class ServerText {
 
+    /** The details the security filters write themselves (no controller, so no GlobalExceptionHandler). */
+    public static final String FILTER_UNAUTHENTICATED = "Authentication is required";
+    public static final String FILTER_TOKEN_REJECTED = "The access token is invalid or expired";
+    public static final String FILTER_RATE_LIMITED = "Too many requests from this network. Please wait and try again.";
+
     private ServerText() {
     }
 
     /** {@code english} as the current request's language would say it. */
     public static String forCurrentRequest(String english, int status) {
         return translate(english, UiLanguage.ofCurrentRequest(), status);
+    }
+
+    /**
+     * {@code english} in {@code request}'s language, for filters that answer before Spring MVC has
+     * resolved the request's locale (the same resolution: Accept-Language narrowed to en/km).
+     */
+    public static String forRequest(jakarta.servlet.http.HttpServletRequest request, String english, int status) {
+        boolean khmer = UiLanguage.KHMER.equals(UiLocaleConfig.RESOLVER.resolveLocale(request).getLanguage());
+        return translate(english, khmer ? UiLanguage.KHMER : UiLanguage.ENGLISH, status);
     }
 
     public static String translate(String english, String language, int status) {
@@ -131,6 +145,10 @@ public final class ServerText {
             Map.entry("A file can be at most 5 MB (a picture at most 2 MB).", "ឯកសារមួយអាចមានទំហំយ៉ាងច្រើន 5 MB (រូបភាពយ៉ាងច្រើន 2 MB)។"),
             Map.entry("This draft can't be published yet: fix the listed issues first.",
                     "សេចក្ដីព្រាងនេះមិនទាន់អាចផ្សព្វផ្សាយបានទេ៖ សូមកែបញ្ហាដែលបានរាយខាងក្រោមជាមុនសិន។"),
+            // Written by the security filters, before a controller is reached
+            Map.entry(FILTER_UNAUTHENTICATED, "សូមចូលគណនីជាមុនសិន"),
+            Map.entry(FILTER_TOKEN_REJECTED, "វគ្គចូលរបស់អ្នកផុតកំណត់ហើយ។ សូមចូលម្ដងទៀត"),
+            Map.entry(FILTER_RATE_LIMITED, "មានសំណើច្រើនពេកពីបណ្ដាញនេះ។ សូមរង់ចាំបន្តិច ហើយព្យាយាមម្ដងទៀត។"),
             // Exception defaults
             Map.entry("Account is temporarily locked", "គណនីត្រូវបានចាក់សោបណ្ដោះអាសន្ន"),
             Map.entry("The current password is incorrect", "ពាក្យសម្ងាត់បច្ចុប្បន្នមិនត្រឹមត្រូវទេ"),

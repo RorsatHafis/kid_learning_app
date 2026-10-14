@@ -4,6 +4,7 @@ import com.platform.audit.dto.RecordAuditEvent;
 import com.platform.audit.entity.AuditActorType;
 import com.platform.audit.service.AuditService;
 import com.platform.common.web.ResourceNotFoundException;
+import com.platform.identity.UiLanguage;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.AccountStatus;
 import com.platform.identity.entity.PlatformRole;
@@ -116,8 +117,11 @@ public class SchoolStaffService {
         if (newAccount) {
             byte[] secret = new byte[32];
             random.nextBytes(secret);
-            account = accounts.saveAndFlush(Account.register(email.strip(),
-                    passwordEncoder.encode(Base64.getEncoder().encodeToString(secret)), PlatformRole.TEACHER));
+            Account invited = Account.register(email.strip(),
+                    passwordEncoder.encode(Base64.getEncoder().encodeToString(secret)), PlatformRole.TEACHER);
+            // No preference of their own yet: they start in the language the inviter is using.
+            invited.changeLanguage(UiLanguage.ofCurrentRequest());
+            account = accounts.saveAndFlush(invited);
             audit(invitedBy, "ACCOUNT_CREATED_BY_INVITATION", "ACCOUNT", account.getId(),
                     Map.of("schoolId", schoolId.toString(), "platformRole", PlatformRole.TEACHER.name()));
         } else if (account.getPlatformRole() != PlatformRole.TEACHER || account.getStatus() != AccountStatus.ACTIVE) {
@@ -138,13 +142,32 @@ public class SchoolStaffService {
             membership.reinvite(invitedBy, now);
         }
 
+        boolean khmer = UiLanguage.isKhmer(account.getPreferredLanguage());
         if (newAccount || recovery.awaitingAccountSetup(account.getId())) {
-            recovery.sendAccountSetup(account, new AccountRecoveryService.SetupInvitation(
+            recovery.sendAccountSetup(account, khmer ? new AccountRecoveryService.SetupInvitation(
+                    "អ្នកត្រូវបានអញ្ជើញឱ្យបង្រៀននៅ " + school.getName() + " លើ Bookeyond Kid",
+                    school.getName() + " បានអញ្ជើញអ្នកឱ្យចូលរួមជាគ្រូរបស់សាលានៅលើ Bookeyond Kid។",
+                    "បន្ទាប់ពីចូលគណនី អ្នកនឹងឃើញការអញ្ជើញនេះ ហើយអាចទទួលយកវាបាន។")
+                    : new AccountRecoveryService.SetupInvitation(
                     "You're invited to teach at " + school.getName() + " on Bookeyond Kid",
                     school.getName() + " has invited you to join its teachers on Bookeyond Kid.",
                     "After signing in you'll see the invitation and can accept it."), requestedIp);
         } else {
-            events.publishEvent(new EmailMessage(account.getEmail(),
+            events.publishEvent(khmer ? new EmailMessage(account.getEmail(),
+                    "អ្នកត្រូវបានអញ្ជើញឱ្យបង្រៀននៅ " + school.getName() + " លើ Bookeyond Kid", """
+                    សួស្ដី,
+
+                    %s បានអញ្ជើញអ្នកឱ្យចូលរួមជាគ្រូរបស់សាលានៅលើ Bookeyond Kid។
+
+                    សូមចូលគណនីនៅ៖
+
+                    %s/login
+
+                    ដើម្បីទទួលយក ឬបដិសេធការអញ្ជើញនេះ។
+
+                    ប្រសិនបើអ្នកមិនបានរំពឹងការនេះទេ អ្នកអាចបដិសេធវា ឬមិនអើពើនឹងអ៊ីមែលនេះបាន។
+                    """.formatted(school.getName(), mail.publicUrl()))
+                    : new EmailMessage(account.getEmail(),
                     "You're invited to teach at " + school.getName() + " on Bookeyond Kid", """
                     Hello,
 

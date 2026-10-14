@@ -9,6 +9,7 @@ import com.platform.family.entity.Membership;
 import com.platform.family.entity.MembershipStatus;
 import com.platform.family.repository.FamilyRepository;
 import com.platform.family.repository.MembershipRepository;
+import com.platform.identity.UiLanguage;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.repository.AccountRepository;
@@ -106,7 +107,18 @@ public class PlanRequestService {
         });
         PlanRequest request = requests.save(PlanRequest.open(familyId, planId, accountId, now));
         record(accountId, AuditActorType.PARENT, "PLAN_REQUESTED", request.getId(), Map.of("plan", plan.getCode()));
-        events.publishEvent(new EmailMessage(parent.getEmail(), "Your request for the " + plan.getName() + " plan", """
+        // The plan's name is the administrator's own wording, so it is quoted as it is in both languages.
+        events.publishEvent(UiLanguage.isKhmer(parent.getPreferredLanguage())
+                ? new EmailMessage(parent.getEmail(), "សំណើរបស់អ្នកសម្រាប់កញ្ចប់ " + plan.getName(), """
+                សួស្ដី,
+
+                យើងបានទទួលសំណើរបស់គ្រួសារអ្នក សម្រាប់កញ្ចប់ %s ហើយ។ កញ្ចប់មិនទាន់អាចទិញតាមអ៊ីនធឺណិតបាននៅឡើយទេ៖ នរណាម្នាក់នៅ Bookeyond Kid នឹងឆ្លើយតបមកអាសយដ្ឋាននេះ។
+
+                គ្មានអ្វីផ្លាស់ប្ដូរទេ រហូតដល់ពេលនោះ ហើយអ្នកអាចដកសំណើនេះវិញ ពីទំព័រគណនីរបស់អ្នកនៅ៖
+
+                %s/parent/account
+                """.formatted(plan.getName(), mail.publicUrl()))
+                : new EmailMessage(parent.getEmail(), "Your request for the " + plan.getName() + " plan", """
                 Hello,
 
                 We've received your family's request for the %s plan. Plans can't be bought \
@@ -162,10 +174,20 @@ public class PlanRequestService {
         PlanRequest request = requests.findByIdForUpdate(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Plan request", requestId));
         request.resolve(PlanRequest.Status.DECLINED, adminId, message, Instant.now());
-        String planName = plans.findById(request.getPlanId()).map(SubscriptionPlan::getName).orElse("requested");
+        Optional<String> named = plans.findById(request.getPlanId()).map(SubscriptionPlan::getName);
+        String planName = named.orElse("requested");
         record(adminId, AuditActorType.ADMIN, "PLAN_REQUEST_DECLINED", requestId, Map.of());
+        // The administrator's message is quoted as they wrote it, whatever the email's language.
         accounts.findById(request.getRequestedByAccountId()).ifPresent(parent ->
-                events.publishEvent(new EmailMessage(parent.getEmail(), "About your request for the " + planName + " plan", """
+                events.publishEvent(UiLanguage.isKhmer(parent.getPreferredLanguage())
+                        ? new EmailMessage(parent.getEmail(), "អំពីសំណើរបស់អ្នកសម្រាប់កញ្ចប់ " + named.orElse("ដែលបានស្នើ"), """
+                        សួស្ដី,
+
+                        យើងមិនអាចប្ដូរគ្រួសាររបស់អ្នកទៅកញ្ចប់ %s នៅពេលនេះបានទេ។%s
+
+                        គ្រួសាររបស់អ្នកនៅតែប្រើកញ្ចប់បច្ចុប្បន្នរបស់ខ្លួន ហើយអ្វីដែលកូនៗរបស់អ្នកបានធ្វើ មិនផ្លាស់ប្ដូរទេ។
+                        """.formatted(named.orElse("ដែលបានស្នើ"), message == null || message.isBlank() ? "" : "\n\n" + message.strip()))
+                        : new EmailMessage(parent.getEmail(), "About your request for the " + planName + " plan", """
                         Hello,
 
                         We couldn't move your family to the %s plan just now.%s
@@ -183,9 +205,18 @@ public class PlanRequestService {
         requests.findOpenForUpdate(familyId).filter(request -> request.getPlanId().equals(planId)).ifPresent(request -> {
             request.resolve(PlanRequest.Status.GRANTED, adminId, null, Instant.now());
             record(adminId, AuditActorType.ADMIN, "PLAN_REQUEST_GRANTED", request.getId(), Map.of());
-            String planName = plans.findById(planId).map(SubscriptionPlan::getName).orElse("requested");
+            Optional<String> named = plans.findById(planId).map(SubscriptionPlan::getName);
+            String planName = named.orElse("requested");
             accounts.findById(request.getRequestedByAccountId()).ifPresent(parent ->
-                    events.publishEvent(new EmailMessage(parent.getEmail(), "Your family is on the " + planName + " plan", """
+                    events.publishEvent(UiLanguage.isKhmer(parent.getPreferredLanguage())
+                            ? new EmailMessage(parent.getEmail(), "គ្រួសាររបស់អ្នកឥឡូវប្រើកញ្ចប់ " + named.orElse("ដែលបានស្នើ"), """
+                            សួស្ដី,
+
+                            តាមការស្នើសុំរបស់អ្នក គ្រួសាររបស់អ្នកឥឡូវប្រើកញ្ចប់ %s ហើយ។ អ្នកអាចមើលអ្វីដែលកញ្ចប់នេះរួមបញ្ចូល នៅលើទំព័រគណនីរបស់អ្នកនៅ៖
+
+                            %s/parent/account
+                            """.formatted(named.orElse("ដែលបានស្នើ"), mail.publicUrl()))
+                            : new EmailMessage(parent.getEmail(), "Your family is on the " + planName + " plan", """
                             Hello,
 
                             As you asked, your family is now on the %s plan. You can see what it \

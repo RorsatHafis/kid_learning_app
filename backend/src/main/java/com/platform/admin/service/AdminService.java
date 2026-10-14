@@ -6,6 +6,7 @@ import com.platform.audit.service.AuditService;
 import com.platform.common.web.PageResponse;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.common.web.SearchText;
+import com.platform.identity.UiLanguage;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.entity.AccountStatus;
@@ -59,11 +60,26 @@ public class AdminService {
         }
         byte[] secret = new byte[32];
         random.nextBytes(secret);
-        Account account = accounts.saveAndFlush(Account.register(email.strip(),
-                passwordEncoder.encode(Base64.getEncoder().encodeToString(secret)), role));
+        Account provisioned = Account.register(email.strip(),
+                passwordEncoder.encode(Base64.getEncoder().encodeToString(secret)), role);
+        // No preference of their own yet: they start in the language the administrator is using.
+        provisioned.changeLanguage(UiLanguage.ofCurrentRequest());
+        Account account = accounts.saveAndFlush(provisioned);
         auditService.record(new RecordAuditEvent(
                 null, adminId, AuditActorType.ADMIN, "ACCOUNT_PROVISIONED", "ACCOUNT",
                 account.getId(), java.util.Map.of("platformRole", role.name())));
+        if (UiLanguage.isKhmer(account.getPreferredLanguage())) {
+            String roleName = switch (role) {
+                case PRINCIPAL -> "នាយកសាលា";
+                case ADMIN -> "អ្នកគ្រប់គ្រង";
+                default -> "គ្រូ";
+            };
+            recovery.sendAccountSetup(account, new AccountRecoveryService.SetupInvitation(
+                    "គណនី Bookeyond Kid របស់អ្នករួចរាល់សម្រាប់ការរៀបចំហើយ",
+                    "អ្នកគ្រប់គ្រង Bookeyond Kid ម្នាក់បានបង្កើតគណនី" + roleName + "សម្រាប់អ្នក។",
+                    ""), requestedIp);
+            return account;
+        }
         String roleName = switch (role) {
             case PRINCIPAL -> "a principal";
             case ADMIN -> "an administrator";

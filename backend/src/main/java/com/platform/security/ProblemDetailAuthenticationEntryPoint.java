@@ -12,6 +12,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
 import com.platform.common.web.CorrelationIdFilter;
+import com.platform.common.web.ServerText;
 import com.platform.security.jwt.JwtAuthenticationFilter;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,8 +43,9 @@ public class ProblemDetailAuthenticationEntryPoint implements AuthenticationEntr
                 ? "Bearer error=\"invalid_token\", error_description=\"The access token is invalid or expired\""
                 : "Bearer");
 
-        String detail = tokenRejected ? "The access token is invalid or expired" : "Authentication is required";
-        // Every value below is fixed text, a timestamp, or a correlation id that
+        String detail = ServerText.forRequest(request,
+                tokenRejected ? ServerText.FILTER_TOKEN_REJECTED : ServerText.FILTER_UNAUTHENTICATED, 401);
+        // Every value below is fixed text (ServerText's, without quotes or backslashes), a timestamp, or a correlation id that
         // CorrelationIdFilter has already constrained to [A-Za-z0-9._-] (or a UUID) -
         // nothing caller-controlled reaches the body unescaped.
         String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);

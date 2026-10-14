@@ -100,6 +100,20 @@ class AccountLanguageIntegrationTests {
         assertThat(invalid.get("errors").get("email").asString()).isEqualTo("ត្រូវតែជាអាសយដ្ឋានអ៊ីមែលត្រឹមត្រូវ");
     }
 
+    /** Answers written by the security filters, before any controller, follow the same rule. */
+    @Test
+    void signedOutAnswersAreSaidInTheRequestsLanguageToo() throws Exception {
+        JsonNode khmer = json(send(HttpRequest.newBuilder(uri("/api/v1/account")).header("Accept-Language", "km").GET(), null), 401);
+        assertThat(khmer.get("detail").asString()).isEqualTo("សូមចូលគណនីជាមុនសិន");
+        JsonNode expired = json(send(HttpRequest.newBuilder(uri("/api/v1/account")).header("Accept-Language", "km").GET(),
+                "not-a-real-token"), 401);
+        assertThat(expired.get("detail").asString()).isEqualTo("វគ្គចូលរបស់អ្នកផុតកំណត់ហើយ។ សូមចូលម្ដងទៀត");
+        // Another language, or none: English, whatever the server machine's own locale is.
+        JsonNode other = json(send(HttpRequest.newBuilder(uri("/api/v1/account")).header("Accept-Language", "fr-FR").GET(), null), 401);
+        assertThat(other.get("detail").asString()).isEqualTo("Authentication is required");
+        assertThat(json(get("/api/v1/account", null), 401).get("detail").asString()).isEqualTo("Authentication is required");
+    }
+
     private String languageOf(JsonNode session) {
         return jdbc.queryForObject("select preferred_language from accounts where id = ?::uuid", String.class,
                 session.get("accountId").asString());

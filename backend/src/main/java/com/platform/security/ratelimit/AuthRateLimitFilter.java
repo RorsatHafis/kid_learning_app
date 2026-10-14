@@ -1,6 +1,7 @@
 package com.platform.security.ratelimit;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.LongSupplier;
@@ -16,6 +17,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.platform.common.web.ServerText;
 
 /**
  * Refuses a client address that exceeds its budget on an unauthenticated identity
@@ -89,10 +92,12 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(retryAfterSeconds));
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.getWriter().write("""
                 {"type":"about:blank","title":"Too Many Requests","status":429,\
-                "detail":"Too many requests from this network. Please wait and try again.",\
-                "instance":"%s","retryAfterSeconds":%d}""".formatted(path, retryAfterSeconds));
+                "detail":"%s",\
+                "instance":"%s","retryAfterSeconds":%d}""".formatted(
+                ServerText.forRequest(request, ServerText.FILTER_RATE_LIMITED, 429), path, retryAfterSeconds));
     }
 
 }

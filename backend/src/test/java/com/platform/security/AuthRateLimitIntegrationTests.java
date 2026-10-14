@@ -96,6 +96,17 @@ class AuthRateLimitIntegrationTests {
 
         assertThat(refused.statusCode()).isEqualTo(429);
         assertThat(Long.parseLong(refused.headers().firstValue("Retry-After").orElseThrow())).isGreaterThan(60);
+        assertThat(JSON.readTree(refused.body()).get("detail").asString())
+                .isEqualTo("Too many requests from this network. Please wait and try again.");
+
+        // Said in the request's language, like every other answer.
+        HttpResponse<String> khmer = http.send(HttpRequest.newBuilder(uri("/api/v1/auth/password-reset"))
+                .header("Content-Type", "application/json").header("Accept-Language", "km-KH,km;q=0.9")
+                .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"reset-" + UUID.randomUUID() + "@example.com\"}")).build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertThat(khmer.statusCode()).isEqualTo(429);
+        assertThat(JSON.readTree(khmer.body()).get("detail").asString())
+                .isEqualTo("មានសំណើច្រើនពេកពីបណ្ដាញនេះ។ សូមរង់ចាំបន្តិច ហើយព្យាយាមម្ដងទៀត។");
     }
 
     @Test

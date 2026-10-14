@@ -11,6 +11,7 @@ import com.platform.family.entity.Membership;
 import com.platform.family.entity.MembershipStatus;
 import com.platform.family.repository.MembershipRepository;
 import com.platform.family.service.FamilyAccessGuard;
+import com.platform.identity.UiLanguage;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.exception.AccountLockedException;
@@ -67,6 +68,9 @@ public class FamilyErasureService {
 
     private static final Logger log = LoggerFactory.getLogger(FamilyErasureService.class);
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)
+            .withZone(ZoneOffset.UTC);
+    /** The same day for a Khmer email: "14 តុលា 2026" (Khmer month names, the digits the app shows). */
+    static final DateTimeFormatter KHMER_DAY = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("km"))
             .withZone(ZoneOffset.UTC);
 
     private static final String ATTEMPTS = "(select id from activity_attempts where child_id = :c)";
@@ -190,7 +194,18 @@ public class FamilyErasureService {
         child.scheduleErasure(at);
         record(parent.getId(), AuditActorType.PARENT, "CHILD_ERASURE_SCHEDULED", "CHILD", childId,
                 Map.of("eraseAfter", at.toString(), "schoolAccessEnded", schoolsEnded));
-        events.publishEvent(new EmailMessage(parent.getEmail(), child.getDisplayName() + " will be deleted from Bookeyond Kid", """
+        events.publishEvent(UiLanguage.isKhmer(parent.getPreferredLanguage())
+                ? new EmailMessage(parent.getEmail(), child.getDisplayName() + " នឹងត្រូវបានលុបចេញពី Bookeyond Kid", """
+                សួស្ដី,
+
+                អ្នកបានស្នើសុំលុប %s ចេញពី Bookeyond Kid។ នៅថ្ងៃទី %s យើងនឹងលុបប្រវត្តិរូបរបស់ %s និងអ្វីៗទាំងអស់អំពីការរៀនរបស់គាត់៖ ដំណើររៀន ចម្លើយ ជំនាញ និងការយល់ដឹងពីការរៀន។
+
+                រហូតដល់ពេលនោះ អ្នកនៅតែអាចប្ដូរចិត្តបាន៖ សូមបើកទំព័រគ្រួសាររបស់អ្នក ហើយជ្រើសរើស "រក្សា %s"។ ការចូលប្រើរបស់សាលាណាមួយ បានបញ្ចប់នៅថ្ងៃនេះ។
+
+                ប្រសិនបើអ្នកមិនបានស្នើសុំការនេះទេ សូមចូលគណនី ហើយរក្សា %s ទុក បន្ទាប់មកប្ដូរពាក្យសម្ងាត់របស់អ្នក។
+                """.formatted(child.getDisplayName(), KHMER_DAY.format(at), child.getDisplayName(), child.getDisplayName(),
+                child.getDisplayName()))
+                : new EmailMessage(parent.getEmail(), child.getDisplayName() + " will be deleted from Bookeyond Kid", """
                 Hello,
 
                 You asked to delete %s from Bookeyond Kid. On %s we will erase %s's profile \
@@ -246,7 +261,21 @@ public class FamilyErasureService {
         account.scheduleErasure(at);
         record(accountId, AuditActorType.PARENT, "ACCOUNT_ERASURE_SCHEDULED", "ACCOUNT", accountId,
                 Map.of("eraseAfter", at.toString()));
-        events.publishEvent(new EmailMessage(account.getEmail(), "Your Bookeyond Kid account will be deleted", """
+        events.publishEvent(UiLanguage.isKhmer(account.getPreferredLanguage())
+                ? new EmailMessage(account.getEmail(), "គណនី Bookeyond Kid របស់អ្នកនឹងត្រូវបានលុប", """
+                សួស្ដី,
+
+                អ្នកបានស្នើសុំលុបគណនី Bookeyond Kid របស់អ្នក។ នៅថ្ងៃទី %s យើងនឹងលុបវា រួមជាមួយគ្រួសាររបស់អ្នក៖ ប្រវត្តិរូប និងការរៀនរបស់កូនៗទាំងអស់ កញ្ចប់របស់អ្នក និងព័ត៌មានចូលគណនីរបស់អ្នក។
+
+                រហូតដល់ពេលនោះ អ្វីៗទាំងអស់នៅតែដំណើរការ ហើយអ្នកនៅតែអាចប្ដូរចិត្តបាន៖ សូមចូលគណនីនៅ៖
+
+                %s
+
+                ហើយជ្រើសរើស "រក្សាគណនីរបស់ខ្ញុំ" នៅលើទំព័រគណនីរបស់អ្នក។
+
+                ប្រសិនបើអ្នកមិនបានស្នើសុំការនេះទេ សូមចូលគណនី រក្សាគណនីរបស់អ្នកទុក ហើយប្ដូរពាក្យសម្ងាត់របស់អ្នក។
+                """.formatted(KHMER_DAY.format(at), mail.publicUrl()))
+                : new EmailMessage(account.getEmail(), "Your Bookeyond Kid account will be deleted", """
                 Hello,
 
                 You asked to delete your Bookeyond Kid account. On %s we will erase it with \
@@ -385,12 +414,19 @@ public class FamilyErasureService {
             return false; // kept by the family meanwhile, or another instance has it
         }
         String name = (String) due.getFirst().get("display_name");
-        List<String> parents = parentEmails((UUID) due.getFirst().get("family_id"));
+        List<Account> parents = parentAccounts((UUID) due.getFirst().get("family_id"));
         allowErasure();
         Map<String, Integer> erased = eraseChildRows(childId);
         record(null, AuditActorType.SYSTEM, "CHILD_ERASED", "CHILD", childId, Map.of("rowsErased", total(erased)));
-        for (String to : parents) {
-            events.publishEvent(new EmailMessage(to, name + " has been deleted from Bookeyond Kid", """
+        for (Account parent : parents) {
+            String to = parent.getEmail();
+            events.publishEvent(UiLanguage.isKhmer(parent.getPreferredLanguage())
+                    ? new EmailMessage(to, name + " ត្រូវបានលុបចេញពី Bookeyond Kid ហើយ", """
+                    សួស្ដី,
+
+                    តាមការស្នើសុំរបស់អ្នក ប្រវត្តិរូបរបស់ %s និងអ្វីៗទាំងអស់អំពីការរៀនរបស់គាត់ ត្រូវបានលុបចេញពី Bookeyond Kid ហើយ។ ការនេះមិនអាចត្រឡប់វិញបានទេ។
+                    """.formatted(name))
+                    : new EmailMessage(to, name + " has been deleted from Bookeyond Kid", """
                     Hello,
 
                     As you asked, %s's profile and everything about their learning have been \
@@ -401,17 +437,26 @@ public class FamilyErasureService {
     }
 
     private boolean eraseAccountIfDue(UUID accountId) {
-        List<Map<String, Object>> due = jdbc.queryForList("select email from accounts where id = :a and erase_after <= now() "
-                + "for update skip locked", Map.of("a", accountId));
+        List<Map<String, Object>> due = jdbc.queryForList("select email, preferred_language from accounts where id = :a "
+                + "and erase_after <= now() for update skip locked", Map.of("a", accountId));
         if (due.isEmpty()) {
             return false;
         }
         String email = (String) due.getFirst().get("email");
+        boolean khmer = UiLanguage.isKhmer((String) due.getFirst().get("preferred_language"));
         allowErasure();
         int[] erased = eraseAccountRows(accountId);
         record(null, AuditActorType.SYSTEM, "ACCOUNT_ERASED", "ACCOUNT", accountId,
                 Map.of("childrenErased", erased[1], "rowsErased", erased[0]));
-        events.publishEvent(new EmailMessage(email, "Your Bookeyond Kid account has been deleted", """
+        events.publishEvent(khmer
+                ? new EmailMessage(email, "គណនី Bookeyond Kid របស់អ្នកត្រូវបានលុបហើយ", """
+                សួស្ដី,
+
+                តាមការស្នើសុំរបស់អ្នក គណនី Bookeyond Kid របស់អ្នកត្រូវបានលុបហើយ រួមជាមួយគ្រួសាររបស់អ្នក និងអ្វីៗទាំងអស់អំពីការរៀនរបស់កូនៗអ្នក។ ការនេះមិនអាចត្រឡប់វិញបានទេ។
+
+                សូមអរគុណដែលបានរៀនជាមួយយើង។
+                """)
+                : new EmailMessage(email, "Your Bookeyond Kid account has been deleted", """
                 Hello,
 
                 As you asked, your Bookeyond Kid account has been erased, with your family \
@@ -474,12 +519,12 @@ public class FamilyErasureService {
                 .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE).toList();
     }
 
-    private List<String> parentEmails(UUID familyId) {
+    private List<Account> parentAccounts(UUID familyId) {
         return memberships.findByFamilyId(familyId).stream()
                 .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
                 .map(membership -> accounts.findById(membership.getAccountId()))
                 .flatMap(java.util.Optional::stream)
-                .map(Account::getEmail).toList();
+                .toList();
     }
 
     private void record(UUID actorId, AuditActorType actorType, String action, String resourceType, UUID resourceId,
