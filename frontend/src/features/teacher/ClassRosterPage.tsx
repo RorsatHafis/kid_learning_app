@@ -7,23 +7,26 @@ import { LoadingState, ErrorState } from "@/components/ui/States";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { ClassCurriculaPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
 import { ArchivedClassNotice } from "@/features/school/ClassLifecycle";
+import { useMessages } from "@/i18n/catalog";
+import { staffMessages } from "@/features/school/staff.messages";
 
 /** A teacher's class: its children's learning in what it assigns, what it assigns, and its code for families (PD-01). */
 export function ClassRosterPage() {
   const { classId = "" } = useParams<{ classId: string }>();
   const schoolClass = useAsync(() => schoolApi.schoolClass(classId), [classId]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const m = useMessages(staffMessages);
   useDocumentTitle(schoolClass.data?.name);
 
   if (!classId) return null;
 
   return (
     <div className="flex flex-col gap-8">
-      <Breadcrumb items={[{ label: "Classes", to: "/teacher" }, { label: schoolClass.data?.name ?? "Class" }]} />
+      <Breadcrumb items={[{ label: m.crumbs.classes, to: "/teacher" }, { label: schoolClass.data?.name ?? m.crumbs.class }]} />
 
-      {schoolClass.isLoading && !schoolClass.data && <LoadingState label="Loading class…" />}
+      {schoolClass.isLoading && !schoolClass.data && <LoadingState label={m.loadingClass} />}
       {schoolClass.error && (
-        <ErrorState error={schoolClass.error} message="This class isn't available to you. You may no longer be assigned to it." />
+        <ErrorState error={schoolClass.error} message={m.teacher.unavailable} />
       )}
 
       {schoolClass.data && (

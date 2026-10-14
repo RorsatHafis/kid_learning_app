@@ -10,6 +10,8 @@ import { problemMessage } from "@/lib/api/problemMessage";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { ClassCurriculaPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
 import { ArchivedClassNotice, ManageClassButton } from "@/features/school/ClassLifecycle";
+import { useMessages } from "@/i18n/catalog";
+import { staffMessages } from "@/features/school/staff.messages";
 
 /**
  * One class: who teaches it (assign from the school's own active teachers, or unassign), its
@@ -25,6 +27,8 @@ export function PrincipalClassPage() {
   const [selected, setSelected] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const all = useMessages(staffMessages);
+  const m = all.principal;
 
   const assigned = new Set(schoolClass.data?.teachers.map((t) => t.accountId));
   const assignable = (staff.data ?? []).filter((m) => m.status === "ACTIVE" && !assigned.has(m.accountId));
@@ -45,9 +49,9 @@ export function PrincipalClassPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <Breadcrumb items={[{ label: "School", to: "/principal" }, { label: schoolClass.data?.name ?? "Class" }]} />
+      <Breadcrumb items={[{ label: all.crumbs.school, to: "/principal" }, { label: schoolClass.data?.name ?? all.crumbs.class }]} />
 
-      {schoolClass.isLoading && !schoolClass.data && <LoadingState label="Loading class…" />}
+      {schoolClass.isLoading && !schoolClass.data && <LoadingState label={all.loadingClass} />}
       {schoolClass.error && <ErrorState error={schoolClass.error} onRetry={schoolClass.refetch} />}
 
       {schoolClass.data && (
@@ -70,11 +74,11 @@ export function PrincipalClassPage() {
 
           <section aria-labelledby="class-teachers" className="flex flex-col gap-3">
             <h2 id="class-teachers" className="text-base font-semibold text-tonle-950">
-              Teachers
+              {m.classTeachers}
             </h2>
             {schoolClass.data.teachers.length === 0 ? (
               <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">
-                No teacher assigned to this class yet.
+                {m.noClassTeacher}
               </p>
             ) : (
               <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
@@ -85,10 +89,10 @@ export function PrincipalClassPage() {
                       size="md"
                       variant="ghost"
                       disabled={busy}
-                      aria-label={`Unassign ${t.email}`}
-                      onClick={() => run(() => schoolApi.unassignTeacher(classId, t.accountId), "We couldn't unassign them.")}
+                      aria-label={m.unassignLabel(t.email)}
+                      onClick={() => run(() => schoolApi.unassignTeacher(classId, t.accountId), m.unassignFailed)}
                     >
-                      <X size={16} aria-hidden /> Unassign
+                      <X size={16} aria-hidden /> {m.unassign}
                     </Button>
                   </li>
                 ))}
@@ -98,13 +102,13 @@ export function PrincipalClassPage() {
             {!schoolClass.data.archived && staff.data && assignable.length > 0 && (
               <div className="flex flex-wrap items-end gap-3">
                 <label className="flex min-w-[14rem] flex-1 flex-col gap-1.5 text-sm font-semibold text-ink">
-                  Assign a teacher
+                  {m.assignTeacher}
                   <select
                     value={selected}
                     onChange={(e) => setSelected(e.target.value)}
                     className="rounded-[10px] border border-line-strong px-4 py-3 text-sm font-normal text-ink focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
                   >
-                    <option value="">Choose one of your teachers…</option>
+                    <option value="">{m.chooseTeacher}</option>
                     {assignable.map((m) => (
                       <option key={m.accountId} value={m.accountId}>
                         {m.email}
@@ -115,17 +119,17 @@ export function PrincipalClassPage() {
                 <Button
                   variant="outline"
                   disabled={busy || !selected}
-                  onClick={() => run(() => schoolApi.assignTeacher(classId, selected), "We couldn't assign them.")}
+                  onClick={() => run(() => schoolApi.assignTeacher(classId, selected), m.assignFailed)}
                 >
-                  <UserPlus size={16} aria-hidden /> Assign
+                  <UserPlus size={16} aria-hidden /> {m.assign}
                 </Button>
               </div>
             )}
             {!schoolClass.data.archived && staff.data && assignable.length === 0 && (
               <p className="text-sm text-ink-soft">
-                Only teachers who have accepted your invitation can be assigned.{" "}
+                {m.onlyAccepted}{" "}
                 <Link to="/principal" className="font-semibold text-tonle-700">
-                  Invite teachers
+                  {m.inviteTeachers}
                 </Link>
               </p>
             )}

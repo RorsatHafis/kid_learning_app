@@ -5,6 +5,8 @@ import { schoolApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
 import { Button } from "@/components/ui/Button";
 import type { SchoolInvitation } from "@/lib/api/types";
+import { useMessages } from "@/i18n/catalog";
+import { staffMessages } from "@/features/school/staff.messages";
 
 /**
  * Schools that have invited this teacher. Accepting puts them on the school's staff (the
@@ -14,12 +16,13 @@ import type { SchoolInvitation } from "@/lib/api/types";
 export function SchoolInvitations({ onAccepted }: { onAccepted: () => void }) {
   const invitations = useAsync(() => schoolApi.myInvitations(), []);
   const [joined, setJoined] = useState<string | null>(null);
+  const m = useMessages(staffMessages).teacher;
 
   if (joined && (!invitations.data || invitations.data.length === 0)) {
     return (
       <p role="status" className="flex items-start gap-2 rounded-[10px] bg-palm-soft px-5 py-4 text-sm font-semibold text-palm-deep">
         <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden />
-        You've joined {joined}. Your classes will appear here once the principal assigns you to them.
+        {m.joined(joined)}
       </p>
     );
   }
@@ -28,7 +31,7 @@ export function SchoolInvitations({ onAccepted }: { onAccepted: () => void }) {
   return (
     <section aria-labelledby="invitations-heading" className="flex flex-col gap-3">
       <h2 id="invitations-heading" className="text-base font-semibold text-tonle-950">
-        Invitations
+        {m.invitations}
       </h2>
       <ul className="flex flex-col gap-3">
         {invitations.data.map((invitation) => (
@@ -52,6 +55,7 @@ export function SchoolInvitations({ onAccepted }: { onAccepted: () => void }) {
 function Invitation({ invitation, onAnswered }: { invitation: SchoolInvitation; onAnswered: (accepted: boolean) => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(staffMessages).teacher;
 
   async function answer(accept: boolean) {
     setBusy(true);
@@ -64,7 +68,7 @@ function Invitation({ invitation, onAnswered }: { invitation: SchoolInvitation; 
       setError(
         err instanceof ApiError && err.status === 409 && err.problem?.detail
           ? err.problem.detail
-          : "We couldn't record your answer. The invitation may have been withdrawn — refresh to check.",
+          : m.answerFailed,
       );
       setBusy(false);
     }
@@ -75,15 +79,15 @@ function Invitation({ invitation, onAnswered }: { invitation: SchoolInvitation; 
       <div className="flex items-start gap-3">
         <School size={18} className="mt-0.5 shrink-0 text-tonle-700" aria-hidden />
         <p className="text-sm text-ink">
-          <strong>{invitation.schoolName}</strong> invited you to join its teachers.
+          <strong>{invitation.schoolName}</strong> {m.invitedYou}
         </p>
       </div>
       <div className="flex items-center gap-2">
         <Button size="md" disabled={busy} onClick={() => answer(true)}>
-          Accept
+          {m.accept}
         </Button>
         <Button size="md" variant="ghost" disabled={busy} onClick={() => answer(false)}>
-          Decline
+          {m.decline}
         </Button>
       </div>
       {error && (

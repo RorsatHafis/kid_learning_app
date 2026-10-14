@@ -70,21 +70,6 @@ const NOT_YET_MIGRATED = new Set<string>([
   "features/admin/studio/mediaText.ts",
   "features/admin/studio/shared.tsx",
   "features/admin/studio/studioLogic.ts",
-  "features/principal/PrincipalClassPage.tsx",
-  "features/principal/PrincipalHome.tsx",
-  "features/principal/PrincipalMemberPage.tsx",
-  "features/principal/SchoolLearningSection.tsx",
-  "features/school/ClassLifecycle.tsx",
-  "features/school/ClassSummary.tsx",
-  "features/school/ClassTrend.tsx",
-  "features/school/ClassWorkspace.tsx",
-  "features/school/SkillFollowUp.tsx",
-  "features/school/classLines.ts",
-  "features/teacher/ClassRosterPage.tsx",
-  "features/teacher/SchoolInvitations.tsx",
-  "features/teacher/StudentDetailPage.tsx",
-  "features/teacher/TeacherHome.tsx",
-  "features/teacher/YourSchools.tsx",
 ]);
 
 /** Attributes whose text is read or heard by people. */

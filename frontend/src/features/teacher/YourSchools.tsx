@@ -5,6 +5,8 @@ import { schoolApi } from "@/lib/api/endpoints";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { Button } from "@/components/ui/Button";
 import type { SchoolMembership } from "@/lib/api/types";
+import { useMessages } from "@/i18n/catalog";
+import { staffMessages } from "@/features/school/staff.messages";
 
 /**
  * The schools whose staff this teacher is on (Y21), and a way to leave one: their classes there are
@@ -14,15 +16,16 @@ import type { SchoolMembership } from "@/lib/api/types";
 export function YourSchools({ onLeft }: { onLeft: () => void }) {
   const { data, refetch } = useAsync(() => schoolApi.myMemberships(), []);
   const [left, setLeft] = useState<string | null>(null);
+  const m = useMessages(staffMessages).teacher;
   if (!data || (data.length === 0 && !left)) return null;
   return (
     <section aria-labelledby="your-schools" className="flex flex-col gap-3">
       <h2 id="your-schools" className="text-sm font-semibold text-ink-soft">
-        Your schools
+        {m.yourSchools}
       </h2>
       {left && (
         <p role="status" className="text-sm font-medium text-palm-deep">
-          You have left {left}.
+          {m.left(left)}
         </p>
       )}
       {data.length > 0 && (
@@ -48,6 +51,7 @@ function Membership({ membership, onLeft }: { membership: SchoolMembership; onLe
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(staffMessages).teacher;
 
   async function leave() {
     setBusy(true);
@@ -56,7 +60,7 @@ function Membership({ membership, onLeft }: { membership: SchoolMembership; onLe
       await schoolApi.leaveSchool(membership.id);
       onLeft();
     } catch (err) {
-      setError(problemMessage(err, "That didn't work. Please try again."));
+      setError(problemMessage(err, m.didntWork));
       setBusy(false);
     }
   }
@@ -69,22 +73,20 @@ function Membership({ membership, onLeft }: { membership: SchoolMembership; onLe
         </span>
         {!confirming && (
           <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
-            <LogOut size={15} aria-hidden /> Leave…<span className="sr-only"> {membership.schoolName}</span>
+            <LogOut size={15} aria-hidden /> {m.leave}
+            <span className="sr-only"> {membership.schoolName}</span>
           </Button>
         )}
       </div>
       {confirming && (
-        <div role="group" aria-label={`Leave ${membership.schoolName}`} className="flex flex-col gap-3">
-          <p className="text-sm text-ink">
-            You stop teaching its classes at once and no longer see their learning. Nothing the children have changes, and its
-            principal can invite you again.
-          </p>
+        <div role="group" aria-label={m.leaveLabel(membership.schoolName)} className="flex flex-col gap-3">
+          <p className="text-sm text-ink">{m.leaveExplain}</p>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" disabled={busy} onClick={() => void leave()}>
-              {busy ? "Leaving…" : "Leave the school"}
+              {busy ? m.leaving : m.leaveConfirm}
             </Button>
             <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>
-              Stay
+              {m.stay}
             </Button>
           </div>
         </div>

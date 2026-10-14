@@ -3,7 +3,9 @@ import { ChevronRight } from "lucide-react";
 import type { ClassOverview } from "@/lib/api/schoolAccess";
 import { StandingMark } from "@/features/learning/Standing";
 import { cn } from "@/lib/utils/cn";
-import { classLines, plural } from "./classLines";
+import { classLines } from "./classLines";
+import { useMessages } from "@/i18n/catalog";
+import { schoolMessages } from "./messages";
 
 /** One class on a staff home: what it is, who is in it, and what needs attention. */
 export function ClassSummary({
@@ -18,13 +20,12 @@ export function ClassSummary({
   /** The principal's view names the teachers; a teacher's view doesn't need to. */
   teachers?: string[];
 }) {
-  const lines = overview.archived
-    ? [{ tone: "calm" as const, text: "Archived: no one can join; its children keep their learning." }]
-    : classLines(overview);
+  const m = useMessages(schoolMessages).summary;
+  const lines = overview.archived ? [{ tone: "calm" as const, text: m.archived }] : classLines(overview);
   const facts = [
-    plural(overview.children, "child", "children"),
+    m.children(overview.children),
     overview.curricula.map((curriculum) => curriculum.name).join(", ") || null,
-    teachers === undefined ? null : teachers.length === 0 ? "No teacher yet" : teachers.join(", "),
+    teachers === undefined ? null : teachers.length === 0 ? m.noTeacher : teachers.join(", "),
   ].filter((fact): fact is string => fact !== null);
 
   return (
@@ -37,7 +38,7 @@ export function ClassSummary({
           <span className="font-semibold text-ink">{overview.className}</span>
           {overview.archived && (
             <span className="rounded-full bg-paper px-2 py-0.5 text-xs font-semibold text-ink-soft ring-1 ring-line-strong">
-              Archived
+              {m.archivedBadge}
             </span>
           )}
           {showSchool && <span className="text-sm text-ink-faint">{overview.schoolName}</span>}

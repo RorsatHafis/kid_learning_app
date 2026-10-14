@@ -5,6 +5,8 @@ import { ClassSummary } from "@/features/school/ClassSummary";
 import { SchoolInvitations } from "./SchoolInvitations";
 import { YourSchools } from "./YourSchools";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+import { useMessages } from "@/i18n/catalog";
+import { staffMessages } from "@/features/school/staff.messages";
 
 /** Classes grouped by school, in the server's order (school, then class name). */
 function bySchool(classes: ClassOverview[]) {
@@ -23,28 +25,27 @@ function bySchool(classes: ClassOverview[]) {
  */
 export function TeacherHome() {
   const { data, error, isLoading, refetch } = useAsync(() => staffOverviewApi.get(), []);
-  useDocumentTitle("Your classes");
+  const m = useMessages(staffMessages).teacher;
+  useDocumentTitle(m.title);
   const groups = data ? bySchool(data.classes) : [];
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
-          Your classes
+          {m.title}
         </h1>
-        <p className="mt-1.5 max-w-2xl text-[0.9375rem] text-ink-soft">
-          Who is in each class you teach, and where children need practice, from their answers in what the class learns.
-        </p>
+        <p className="mt-1.5 max-w-2xl text-[0.9375rem] text-ink-soft">{m.lead}</p>
       </div>
       <SchoolInvitations onAccepted={refetch} />
 
-      {isLoading && !data && <LoadingState label="Loading your classes…" />}
+      {isLoading && !data && <LoadingState label={m.loading} />}
       {error && <ErrorState error={error} onRetry={refetch} />}
 
       {data && data.classes.length === 0 && (
         <EmptyState
-          title="No classes assigned yet"
-          description="Once your school's principal assigns you to a class, it will show up here."
+          title={m.none}
+          description={m.noneLead}
         />
       )}
 

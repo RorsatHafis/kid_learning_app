@@ -1,5 +1,8 @@
 import type { ClassOverview } from "@/lib/api/schoolAccess";
 import type { SkillStanding } from "@/lib/api/types";
+import { messagesNow } from "@/i18n/catalog";
+import { formatDate } from "@/i18n/format";
+import { schoolMessages } from "./messages";
 
 /** The standings a class tally counts, in reading order, with the fill each is drawn in (never colour alone). */
 export const TALLY: {
@@ -14,8 +17,7 @@ export const TALLY: {
   { key: "notStarted", standing: "NOT_STARTED", bar: "bg-line" },
 ];
 
-const shortDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
-export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const shortDate = (iso: string) => formatDate(iso, { day: "numeric", month: "short" });
 
 export interface Line {
   tone: "attention" | "calm" | "setup";
@@ -28,17 +30,15 @@ export interface Line {
  * plain "no skill needs practice". Never a ranking, never a child's name.
  */
 export function classLines(c: ClassOverview): Line[] {
+  const m = messagesNow(schoolMessages).summary;
   if (c.curricula.length === 0) {
-    return [{ tone: "setup", text: "Nothing assigned yet: choose what the class learns." }];
+    return [{ tone: "setup", text: m.nothingAssigned }];
   }
   if (c.children === 0) {
     return [
       {
         tone: "setup",
-        text:
-          c.joinCode.open && c.joinCode.expiresAt
-            ? `No children yet. The class code works until ${shortDate(c.joinCode.expiresAt)}.`
-            : "No children yet. Create a class code for families to join with.",
+        text: c.joinCode.open && c.joinCode.expiresAt ? m.noChildrenCode(shortDate(c.joinCode.expiresAt)) : m.noChildrenNoCode,
       },
     ];
   }
@@ -47,12 +47,12 @@ export function classLines(c: ClassOverview): Line[] {
   if (a.childrenNeedingPractice > 0) {
     lines.push({
       tone: "attention",
-      text: `${plural(a.childrenNeedingPractice, "child needs", "children need")} practice on ${plural(a.skillsNeedingPractice, "skill", "skills")}`,
+      text: m.needPractice(a.childrenNeedingPractice, a.skillsNeedingPractice),
     });
   }
   if (a.childrenNotStarted > 0) {
-    lines.push({ tone: "calm", text: `${plural(a.childrenNotStarted, "child hasn't", "children haven't")} started yet` });
+    lines.push({ tone: "calm", text: m.notStarted(a.childrenNotStarted) });
   }
-  if (lines.length === 0) lines.push({ tone: "calm", text: "No skill needs practice right now" });
+  if (lines.length === 0) lines.push({ tone: "calm", text: m.allFine });
   return lines;
 }

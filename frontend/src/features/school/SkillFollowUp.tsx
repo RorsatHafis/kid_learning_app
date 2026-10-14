@@ -13,22 +13,27 @@ import { EvidenceLine } from "@/features/learning/EvidenceLine";
 import { evidenceLabel, standingHelp, standingLabel } from "@/features/learning/explain";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils/cn";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { formatDate } from "@/i18n/format";
+import { schoolMessages } from "./messages";
 
-const shortDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+const shortDate = (iso: string) => formatDate(iso, { day: "numeric", month: "short" });
+const words = () => messagesNow(schoolMessages).followUp;
 
 /** The order a teacher acts in (the server's order too): who needs it most first. */
 const GROUPS: SkillStanding[] = ["NEEDS_PRACTICE", "TOO_EARLY_TO_TELL", "PROGRESSING", "NOT_STARTED", "SECURE"];
 
 function practiceText(practice: PlacedPractice): string {
+  const m = words();
   switch (practice.status) {
     case "PENDING":
-      return `Practice assigned ${shortDate(practice.assignedAt)} · waiting`;
+      return m.assignedOn(shortDate(practice.assignedAt));
     case "IN_PROGRESS":
-      return `Practice assigned ${shortDate(practice.assignedAt)} · started`;
+      return m.startedOn(shortDate(practice.assignedAt));
     case "COMPLETED":
-      return `Practice done ${practice.completedAt ? shortDate(practice.completedAt) : ""}`.trim();
+      return m.done(practice.completedAt ? shortDate(practice.completedAt) : null);
     case "SKIPPED":
-      return "Practice withdrawn (the class's access ended)";
+      return m.withdrawn;
   }
 }
 
@@ -37,8 +42,8 @@ function sinceAssigned(child: ChildOnSkill): string {
   const then = child.latestPractice?.standingWhenAssigned;
   if (!then || child.latestPractice?.status !== "COMPLETED") return "";
   return then === child.standing
-    ? ` · still ${standingLabel(then).toLowerCase()}`
-    : ` · ${standingLabel(then).toLowerCase()} then, ${standingLabel(child.standing).toLowerCase()} now`;
+    ? words().still(standingLabel(then).toLowerCase())
+    : words().thenNow(standingLabel(then).toLowerCase(), standingLabel(child.standing).toLowerCase());
 }
 
 const waiting = (child: ChildOnSkill) =>
@@ -63,17 +68,18 @@ export function SkillFollowUpView({
   onName?: (name: string) => void;
 }) {
   const view = useAsync(() => classAccessApi.skill(classId, skillId), [classId, skillId]);
+  const m = useMessages(schoolMessages).followUp;
   useDocumentTitle(view.data?.skillName);
   useEffect(() => {
     if (view.data) onName?.(view.data.skillName);
   }, [view.data, onName]);
 
-  if (view.isLoading && !view.data) return <LoadingState label="Loading the skill…" />;
+  if (view.isLoading && !view.data) return <LoadingState label={m.loading} />;
   if (view.error)
     return (
       <ErrorState
         error={view.error}
-        message="This skill isn't part of what the class learns now, or the class isn't yours to see."
+        message={m.notInClass}
         onRetry={view.refetch}
       />
     );
@@ -105,10 +111,11 @@ function FollowUp({
   }, [data.practice, activityId]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const m = useMessages(schoolMessages).followUp;
 
   const counts = GROUPS.map((standing) => ({ standing, n: data.children.filter((c) => c.standing === standing).length }));
   const activityTitle = data.practice.find((p) => p.activityId === activityId)?.title ?? "";
-  const nameOf = (id: string) => data.children.find((c) => c.childId === id)?.displayName ?? "a child";
+  const nameOf = (id: string) => data.children.find((c) => c.childId === id)?.displayName ?? m.aChild;
 
   function toggle(childId: string) {
     setChosen((current) => {
@@ -126,11 +133,11 @@ function FollowUp({
       const result = await classAccessApi.assignPractice(classId, data.skillId, activityId, [...chosen]);
       const parts = [
         result.assigned.length > 0 &&
-          `Assigned to ${result.assigned.length === 1 ? nameOf(result.assigned[0]) : `${result.assigned.length} children`}.`,
+          m.assignedTo(result.assigned.length === 1 ? nameOf(result.assigned[0]) : m.nChildren(result.assigned.length)),
         result.alreadyWaiting.length > 0 &&
-          `${result.alreadyWaiting.map(nameOf).join(", ")} already ${result.alreadyWaiting.length === 1 ? "has" : "have"} it waiting.`,
+          m.alreadyWaiting(result.alreadyWaiting.map(nameOf).join(", "), result.alreadyWaiting.length),
         result.notOnThisPath.length > 0 &&
-          `${result.notOnThisPath.map(nameOf).join(", ")} ${result.notOnThisPath.length === 1 ? "isn't" : "aren't"} on ${data.curriculumName}.`,
+          m.notOnPath(result.notOnThisPath.map(nameOf).join(", "), result.notOnThisPath.length, data.curriculumName),
       ].filter(Boolean);
       setMessage({ ok: result.assigned.length > 0, text: parts.join(" ") });
       setChosen(new Set());
@@ -140,11 +147,11 @@ function FollowUp({
       // the skill. Say which, and re-read so the choices are the server's again.
       const stale =
         err instanceof ApiError && err.status === 404
-          ? "Someone you chose is no longer in the class. The list has been refreshed; nothing was assigned."
+          ? m.someoneLeft
           : err instanceof ApiError && err.status === 400
-            ? "That activity can't be assigned for this skill any more. The list has been refreshed; nothing was assigned."
+            ? m.activityGone
             : null;
-      setMessage({ ok: false, text: stale ?? problemMessage(err, "The practice couldn't be assigned. Please try again.") });
+      setMessage({ ok: false, text: stale ?? problemMessage(err, m.assignFailed) });
       if (stale) {
         setChosen(new Set());
         onChanged();
@@ -163,7 +170,7 @@ function FollowUp({
         <p className="text-[0.9375rem] text-ink-soft">
           {data.objectiveTitle} · {data.curriculumName}
         </p>
-        <ul aria-label="Where the class stands" className="mt-1 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-ink">
+        <ul aria-label={m.whereClassStands} className="mt-1 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-ink">
           {counts
             .filter((c) => c.n > 0)
             .map((c) => (
@@ -178,7 +185,7 @@ function FollowUp({
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <section aria-labelledby="skill-children" className="flex min-w-0 flex-col gap-5">
           <h2 id="skill-children" className="sr-only">
-            Children on this skill
+            {m.childrenOnSkill}
           </h2>
           {GROUPS.map((standing) => {
             const group = data.children.filter((c) => c.standing === standing);
@@ -187,7 +194,7 @@ function FollowUp({
               <section key={standing} aria-labelledby={`group-${standing}`} className="flex flex-col gap-2">
                 <div>
                   <h3 id={`group-${standing}`} className="flex items-center gap-2 text-sm font-semibold text-tonle-950">
-                    <StandingMark standing={standing} /> {standingLabel(standing)} ({group.length})
+                    <StandingMark standing={standing} /> {m.groupTitle(standingLabel(standing), group.length)}
                   </h3>
                   <p className="text-xs text-ink-soft">{standingHelp(standing)}</p>
                 </div>
@@ -214,21 +221,18 @@ function FollowUp({
         >
           <div>
             <h2 id="assign-practice" className="text-base font-semibold text-tonle-950">
-              Assign practice
+              {m.assignTitle}
             </h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              It comes first on each chosen child&apos;s path in {data.curriculumName}, before their next step. Their family sees
-              it was assigned by this class.
-            </p>
+            <p className="mt-1 text-sm text-ink-soft">{m.assignLead(data.curriculumName)}</p>
           </div>
           {data.practice.length === 0 ? (
             <p className="rounded-[12px] bg-paper px-4 py-3 text-sm text-ink-soft ring-1 ring-line">
-              No published activity practises this skill in a way this curriculum can use yet.
+              {m.noActivity}
             </p>
           ) : (
             <>
               <fieldset id="practice-activity" className="flex scroll-mt-6 flex-col gap-2">
-                <legend className="mb-1 text-sm font-semibold text-ink">Activity</legend>
+                <legend className="mb-1 text-sm font-semibold text-ink">{m.activity}</legend>
                 {data.practice.map((option) => (
                   <label
                     key={option.activityId}
@@ -247,8 +251,8 @@ function FollowUp({
                     <span className="flex flex-col">
                       <span className="text-sm font-medium text-ink">{option.title}</span>
                       <span className="text-xs text-ink-soft">
-                        {option.questionCount} {option.questionCount === 1 ? "question" : "questions"}
-                        {option.difficultyLevel !== null && ` · difficulty ${option.difficultyLevel}`}
+                        {m.questions(option.questionCount)}
+                        {option.difficultyLevel !== null && m.difficulty(option.difficultyLevel)}
                       </span>
                     </span>
                   </label>
@@ -260,12 +264,12 @@ function FollowUp({
                 <div className="flex items-baseline justify-between gap-3 text-sm text-ink">
                   <p className="min-w-0">
                     {chosen.size === 0 ? (
-                      "Choose children from the list."
+                      m.chooseChildren
                     ) : (
                       <>
-                        For{" "}
+                        {m.for}{" "}
                         <span className="font-semibold">
-                          {chosen.size === 1 ? nameOf([...chosen][0]) : `${chosen.size} children`}
+                          {chosen.size === 1 ? nameOf([...chosen][0]) : m.nChildren(chosen.size)}
                         </span>
                         <span className="lg:hidden"> · {activityTitle}</span>
                       </>
@@ -273,12 +277,12 @@ function FollowUp({
                   </p>
                   {data.practice.length > 1 && (
                     <a href="#practice-activity" className="shrink-0 font-semibold text-tonle-700 lg:hidden">
-                      Change activity
+                      {m.changeActivity}
                     </a>
                   )}
                 </div>
                 <Button onClick={assign} disabled={busy || chosen.size === 0 || !activityId} className="w-full">
-                  <Send size={16} aria-hidden /> {busy ? "Assigning…" : "Assign practice"}
+                  <Send size={16} aria-hidden /> {busy ? m.assigning : m.assign}
                 </Button>
                 {message && <Outcome message={message} />}
               </div>
@@ -303,6 +307,7 @@ function ChildRow({
   canChoose: boolean;
   onToggle: () => void;
 }) {
+  const m = useMessages(schoolMessages).followUp;
   return (
     <li className="flex items-center gap-4 px-4 py-3">
       {canChoose ? (
@@ -311,7 +316,7 @@ function ChildRow({
           className="h-5 w-5 shrink-0 accent-tonle-700"
           checked={chosen}
           onChange={onToggle}
-          aria-label={`Choose ${child.displayName}`}
+          aria-label={m.choose(child.displayName)}
         />
       ) : (
         <span aria-hidden className="h-5 w-5 shrink-0" />
@@ -324,14 +329,12 @@ function ChildRow({
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-soft">
             {child.scoredAnswers > 0 ? (
               <>
-                <span className="tabular">
-                  {child.correctAnswers} of {child.scoredAnswers} correct
-                </span>
+                <span className="tabular">{m.correct(child.correctAnswers, child.scoredAnswers)}</span>
                 <EvidenceLine level={child.evidenceLevel} width={56} />
                 <span className="text-xs">{evidenceLabel(child.evidenceLevel)}</span>
               </>
             ) : (
-              <span>{child.enrolled ? "No answers yet" : "Not on this path"}</span>
+              <span>{child.enrolled ? m.noAnswers : m.notOnThisPath}</span>
             )}
           </span>
           {child.latestPractice && (

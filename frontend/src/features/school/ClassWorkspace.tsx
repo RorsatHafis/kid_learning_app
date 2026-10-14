@@ -21,12 +21,15 @@ import { standingLabel } from "@/features/learning/explain";
 import { cn } from "@/lib/utils/cn";
 import { TALLY } from "./classLines";
 import { ClassTrendSection } from "./ClassTrend";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { formatDate } from "@/i18n/format";
+import { schoolMessages } from "./messages";
 
 // A class's workspace, shared by its teachers (/teacher) and its school's principal (/principal):
 // the join code families enter, the curricula the class assigns, and its members' learning in those
 // curricula only (PD-01, PLATFORM-EXPANSION.md §4). The server decides who may see any of it.
 
-const longDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+const longDate = (iso: string) => formatDate(iso, { day: "numeric", month: "long", year: "numeric" });
 
 export function WorkspaceSection({
   id,
@@ -70,6 +73,8 @@ export function JoinCodePanel({ classId, className }: { classId: string; classNa
   const [confirmNew, setConfirmNew] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const s = useMessages(schoolMessages);
+  const m = s.code;
 
   async function run(action: () => Promise<unknown>, done: string) {
     setBusy(true);
@@ -81,7 +86,7 @@ export function JoinCodePanel({ classId, className }: { classId: string; classNa
       setMessage(done);
       code.refetch();
     } catch (err) {
-      setError(problemMessage(err, "That didn't work. Please try again."));
+      setError(problemMessage(err, s.didntWork));
     } finally {
       setBusy(false);
     }
@@ -94,42 +99,37 @@ export function JoinCodePanel({ classId, className }: { classId: string; classNa
   return (
     <WorkspaceSection
       id="class-code"
-      title="Class code"
-      description="Families enter the code on their child's page. It only finds this class: each family sees exactly what the class will see and decides whether to join."
+      title={m.title}
+      description={m.lead}
     >
       <div className={cn(card, "flex flex-col gap-4 p-5")}>
-        {code.isLoading && !code.data && <LoadingState label="Loading the code…" />}
+        {code.isLoading && !code.data && <LoadingState label={m.loading} />}
         {code.error && <ErrorState error={code.error} onRetry={code.refetch} />}
         {!code.isLoading && !code.error && (
           <>
             {open ? (
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <p className="font-mono text-[1.75rem] font-semibold tracking-[0.18em] text-tonle-950">{spaced(open.code)}</p>
-                <p className="text-sm text-ink-soft">Works until {longDate(open.expiresAt)}</p>
+                <p className="text-sm text-ink-soft">{m.worksUntil(longDate(open.expiresAt))}</p>
               </div>
             ) : current ? (
-              <p className="text-sm text-ink-soft">
-                The code {spaced(current.code)} expired on {longDate(current.expiresAt)}. Make a new one to invite more families.
-              </p>
+              <p className="text-sm text-ink-soft">{m.expired(spaced(current.code), longDate(current.expiresAt))}</p>
             ) : (
-              <p className="text-sm text-ink-soft">No code yet. Make one to invite families to {className}; it lasts 14 days.</p>
+              <p className="text-sm text-ink-soft">{m.none(className)}</p>
             )}
             {confirmNew && (
               <div className="flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line">
-                <p className="text-sm text-ink">
-                  Families who haven&apos;t joined yet will need the new code; {spaced(current?.code ?? "")} stops working.
-                  Children already in the class stay.
-                </p>
+                <p className="text-sm text-ink">{m.replaceWarning(spaced(current?.code ?? ""))}</p>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     disabled={busy}
-                    onClick={() => run(() => classAccessApi.issueCode(classId), "New code made.")}
+                    onClick={() => run(() => classAccessApi.issueCode(classId), m.newMade)}
                   >
-                    Make a new code
+                    {m.makeNew}
                   </Button>
                   <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirmNew(false)}>
-                    Keep this code
+                    {m.keep}
                   </Button>
                 </div>
               </div>
@@ -144,29 +144,29 @@ export function JoinCodePanel({ classId, className }: { classId: string; classNa
                       onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(open.code);
-                          setMessage("Code copied.");
+                          setMessage(m.copied);
                         } catch {
-                          setMessage("Copying isn't available here; the code is shown above.");
+                          setMessage(m.copyUnavailable);
                         }
                       }}
                     >
-                      <Copy size={15} aria-hidden /> Copy
+                      <Copy size={15} aria-hidden /> {m.copy}
                     </Button>
                     <Button size="sm" variant="outline" disabled={busy} onClick={() => setConfirmNew(true)}>
-                      <KeyRound size={15} aria-hidden /> New code
+                      <KeyRound size={15} aria-hidden /> {m.newCode}
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       disabled={busy}
-                      onClick={() => run(() => classAccessApi.revokeCode(classId), "The code no longer works.")}
+                      onClick={() => run(() => classAccessApi.revokeCode(classId), m.stopped)}
                     >
-                      Stop this code
+                      {m.stop}
                     </Button>
                   </>
                 ) : (
-                  <Button size="sm" disabled={busy} onClick={() => run(() => classAccessApi.issueCode(classId), "Code made.")}>
-                    <KeyRound size={15} aria-hidden /> Make a code
+                  <Button size="sm" disabled={busy} onClick={() => run(() => classAccessApi.issueCode(classId), m.made)}>
+                    <KeyRound size={15} aria-hidden /> {m.make}
                   </Button>
                 )}
               </div>
@@ -208,6 +208,8 @@ export function ClassCurriculaPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const s = useMessages(schoolMessages);
+  const m = s.curricula;
   const assignedIds = new Set((assigned.data ?? []).map((c) => c.curriculumId));
   const available = (catalog.data ?? []).filter((c) => !assignedIds.has(c.id));
 
@@ -223,22 +225,18 @@ export function ClassCurriculaPanel({
       assigned.refetch();
       onChanged();
     } catch (err) {
-      setError(problemMessage(err, "That didn't work. Please try again."));
+      setError(problemMessage(err, s.didntWork));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <WorkspaceSection
-      id="class-curricula"
-      title="What the class learns"
-      description="Every child in the class starts these, and so does each child who joins. This is all of a child's learning the class can see."
-    >
+    <WorkspaceSection id="class-curricula" title={m.title} description={m.lead}>
       <div className={cn(card, "flex flex-col gap-4 p-5")}>
-        {assigned.isLoading && !assigned.data && <LoadingState label="Loading…" />}
+        {assigned.isLoading && !assigned.data && <LoadingState />}
         {assigned.error && <ErrorState error={assigned.error} onRetry={assigned.refetch} />}
-        {assigned.data && assigned.data.length === 0 && <p className="text-sm text-ink-soft">Nothing assigned yet.</p>}
+        {assigned.data && assigned.data.length === 0 && <p className="text-sm text-ink-soft">{m.nothing}</p>}
         {assigned.data && assigned.data.length > 0 && (
           <ul className="flex flex-col divide-y divide-line">
             {assigned.data.map((c) => (
@@ -253,7 +251,7 @@ export function ClassCurriculaPanel({
                   disabled={busy}
                   onClick={() => setConfirm({ kind: "unassign", curriculumId: c.curriculumId, name: c.name })}
                 >
-                  Stop assigning…
+                  {m.stopAssigning}
                 </Button>
               </li>
             ))}
@@ -262,9 +260,7 @@ export function ClassCurriculaPanel({
         {confirm ? (
           <div className="flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line">
             <p className="text-sm text-ink">
-              {confirm.kind === "assign"
-                ? `Every child in the class starts ${confirm.name} now, and children who join later start it too.`
-                : `The class will no longer see progress in ${confirm.name}, and children who join won't start it. Children who started it keep their journey.`}
+              {confirm.kind === "assign" ? m.assignExplain(confirm.name) : m.unassignExplain(confirm.name)}
             </p>
             {error && (
               <p role="alert" className="text-sm font-medium text-brick-deep">
@@ -273,10 +269,10 @@ export function ClassCurriculaPanel({
             )}
             <div className="flex flex-wrap gap-2">
               <Button size="sm" disabled={busy} onClick={run}>
-                {confirm.kind === "assign" ? `Assign ${confirm.name}` : "Stop assigning"}
+                {confirm.kind === "assign" ? m.assignConfirm(confirm.name) : m.stopConfirm}
               </Button>
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirm(null)}>
-                Cancel
+                {s.cancel}
               </Button>
             </div>
           </div>
@@ -285,16 +281,16 @@ export function ClassCurriculaPanel({
           available.length > 0 && (
             <div className="flex flex-wrap items-end gap-2 border-t border-line pt-4">
               <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm font-semibold text-ink sm:max-w-sm">
-                Assign a curriculum
+                {m.assignLabel}
                 <select
                   value={selected}
                   onChange={(e) => setSelected(e.target.value)}
                   className="h-11 rounded-[10px] border border-line-strong bg-white px-3 text-sm font-normal text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
                 >
-                  <option value="">Choose…</option>
+                  <option value="">{m.choose}</option>
                   {available.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} ({[c.own ? "yours" : null, c.subjectName, c.ageHubName].filter(Boolean).join(", ")})
+                      {c.name} ({[c.own ? m.yours : null, c.subjectName, c.ageHubName].filter(Boolean).join(", ")})
                     </option>
                   ))}
                 </select>
@@ -307,7 +303,7 @@ export function ClassCurriculaPanel({
                   if (chosen) setConfirm({ kind: "assign", curriculumId: chosen.id, name: chosen.name });
                 }}
               >
-                Assign…
+                {m.assign}
               </Button>
             </div>
           )
@@ -324,11 +320,11 @@ const asChapters = (chapters: SchoolChapter[]): Chapter[] =>
   chapters.map((c) => ({ ...c, id: String(c.position), description: null }));
 
 function journeyLine(journey: SchoolJourney): string {
-  if (!journey.started) return "Not started";
-  const steps = `${journey.completedSteps} of ${journey.totalSteps} steps`;
-  if (journey.chapterCount > 1 && journey.currentChapter)
-    return `${steps} · Chapter ${journey.currentChapter.position} of ${journey.chapterCount}`;
-  if (journey.totalSteps > 0 && journey.completedSteps === journey.totalSteps) return `${steps} · all done for now`;
+  const m = messagesNow(schoolMessages).learning;
+  if (!journey.started) return m.notStarted;
+  const steps = m.steps(journey.completedSteps, journey.totalSteps);
+  if (journey.chapterCount > 1 && journey.currentChapter) return m.withChapter(steps, journey.currentChapter.position, journey.chapterCount);
+  if (journey.totalSteps > 0 && journey.completedSteps === journey.totalSteps) return m.allDone(steps);
   return steps;
 }
 
@@ -349,24 +345,17 @@ export function ClassLearningPanel({
 }) {
   const learning = useAsync(() => classAccessApi.learning(classId), [classId, refreshKey]);
   const data = learning.data;
+  const m = useMessages(schoolMessages).learning;
 
   return (
     <>
-      <WorkspaceSection
-        id="class-children"
-        title={data ? `Children (${data.members.length})` : "Children"}
-        description="Children whose family joined with the class code. Each family can end the school's access at any time."
-      >
-        {learning.isLoading && !data && <LoadingState label="Loading children…" />}
+      <WorkspaceSection id="class-children" title={data ? m.childrenCount(data.members.length) : m.children} description={m.childrenLead}>
+        {learning.isLoading && !data && <LoadingState label={m.loadingChildren} />}
         {learning.error && <ErrorState error={learning.error} onRetry={learning.refetch} />}
         {data && data.members.length === 0 && (
           <EmptyState
-            title="No children in this class yet"
-            description={
-              archived
-                ? "The class is archived, so no family can join it."
-                : "Share the class code with families. A child joins when their family enters the code and agrees to what the class will see."
-            }
+            title={m.noChildren}
+            description={archived ? m.noChildrenArchived : m.noChildrenLead}
           />
         )}
         {data && data.members.length > 0 && <MembersTable data={data} memberHref={memberHref} />}
@@ -382,8 +371,9 @@ export function ClassLearningPanel({
 }
 
 function MembersTable({ data, memberHref }: { data: ClassLearning; memberHref: (childId: string) => string }) {
+  const m = useMessages(schoolMessages).learning;
   return (
-    <ul aria-label="Children in this class" className={cn(card, "flex flex-col divide-y divide-line overflow-hidden")}>
+    <ul aria-label={m.childrenList} className={cn(card, "flex flex-col divide-y divide-line overflow-hidden")}>
       {data.members.map((member) => (
         <li key={member.childId}>
           <Link
@@ -401,7 +391,7 @@ function MembersTable({ data, memberHref }: { data: ClassLearning; memberHref: (
                 {member.displayName}
               </span>
               {member.journeys.length === 0 ? (
-                <span className="text-sm text-ink-faint">Nothing assigned yet</span>
+                <span className="text-sm text-ink-faint">{m.nothingAssigned}</span>
               ) : (
                 <span className="flex min-w-0 flex-col gap-0.5 text-sm text-ink-soft">
                   {member.journeys.map((journey) => (
@@ -423,14 +413,11 @@ function MembersTable({ data, memberHref }: { data: ClassLearning; memberHref: (
 
 /** Where the class stands on each skill: counts of children, never a score or a ranking. */
 function ClassSkills({ data, skillHref }: { data: ClassLearning; skillHref: (skillId: string) => string }) {
+  const m = useMessages(schoolMessages).learning;
   return (
-    <WorkspaceSection
-      id="class-skills"
-      title="The class's skills"
-      description="How many children stand where on each skill, from their answers. A standing needs enough answers; until then it's too early to tell. Open a skill to see who needs practice and to assign it."
-    >
+    <WorkspaceSection id="class-skills" title={m.skillsTitle} description={m.skillsLead}>
       <div className={cn(card, "flex flex-col gap-6 p-5")}>
-        <ul aria-label="Key" className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-soft">
+        <ul aria-label={m.key} className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-soft">
           {TALLY.map((t) => (
             <li key={t.key} className="inline-flex items-center gap-1.5">
               <span aria-hidden className={cn("inline-block h-2.5 w-2.5 rounded-[2px]", t.bar)} />
@@ -462,8 +449,9 @@ function ClassSkills({ data, skillHref }: { data: ClassLearning; skillHref: (ski
 
 function SkillTallyRow({ skill, href }: { skill: SkillTally; href: string }) {
   const total = TALLY.reduce((sum, t) => sum + skill[t.key], 0);
+  const m = useMessages(schoolMessages).learning;
   const words = TALLY.filter((t) => skill[t.key] > 0)
-    .map((t) => `${skill[t.key]} ${standingLabel(t.standing).toLowerCase()}`)
+    .map((t) => m.tally(skill[t.key], standingLabel(t.standing).toLowerCase()))
     .join(", ");
   return (
     <li>
@@ -498,15 +486,11 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const s = useMessages(schoolMessages);
+  const w = s.member;
 
-  if (member.isLoading && !member.data) return <LoadingState label="Loading…" />;
-  if (member.error)
-    return (
-      <ErrorState
-        error={member.error}
-        message="This child isn't in the class now. Their family may have ended the school's access, or they left the class."
-      />
-    );
+  if (member.isLoading && !member.data) return <LoadingState />;
+  if (member.error) return <ErrorState error={member.error} message={w.notInClass} />;
   if (!member.data) return null;
   const m = member.data;
 
@@ -524,21 +508,18 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
             <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
               {m.displayName}
             </h1>
-            <p className="text-sm text-ink-soft">In the class since {longDate(m.joinedAt)}</p>
+            <p className="text-sm text-ink-soft">{w.since(longDate(m.joinedAt))}</p>
           </div>
         </div>
         {!confirming && (
           <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
-            <Users size={15} aria-hidden /> Remove from class…
+            <Users size={15} aria-hidden /> {w.remove}
           </Button>
         )}
       </div>
       {confirming && (
         <div className="flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line">
-          <p className="text-sm text-ink">
-            {m.displayName} leaves the class, and the class stops seeing their learning. Their family&apos;s choices and{" "}
-            {m.displayName}&apos;s learning are not changed.
-          </p>
+          <p className="text-sm text-ink">{w.removeExplain(m.displayName)}</p>
           {error && (
             <p role="alert" className="text-sm font-medium text-brick-deep">
               {error}
@@ -555,23 +536,23 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
                   await classAccessApi.removeMember(classId, childId);
                   onRemoved();
                 } catch (err) {
-                  setError(problemMessage(err, "Couldn't remove them. Please try again."));
+                  setError(problemMessage(err, w.removeFailed));
                   setBusy(false);
                 }
               }}
             >
-              Remove from class
+              {w.removeConfirm}
             </Button>
             <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>
-              Cancel
+              {s.cancel}
             </Button>
           </div>
         </div>
       )}
 
-      <WorkspaceSection id="member-journeys" title="Learning in this class" description="Only the curricula the class assigns.">
+      <WorkspaceSection id="member-journeys" title={w.learningTitle} description={w.learningLead}>
         {m.journeys.length === 0 ? (
-          <p className="text-sm text-ink-soft">The class doesn&apos;t assign anything yet.</p>
+          <p className="text-sm text-ink-soft">{w.nothingYet}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {m.journeys.map((journey) => (
@@ -583,7 +564,7 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
                   </p>
                 </div>
                 {journey.started && (
-                  <ChapterTrack chapters={asChapters(journey.chapters)} label={`${journey.curriculumName} chapters`} />
+                  <ChapterTrack chapters={asChapters(journey.chapters)} label={w.chapters(journey.curriculumName)} />
                 )}
               </li>
             ))}
@@ -594,8 +575,8 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
       {m.skills.length > 0 && (
         <WorkspaceSection
           id="member-skills"
-          title="Skills"
-          description="From their answers. A standing appears once there are enough answers to judge."
+          title={w.skillsTitle}
+          description={w.skillsLead}
         >
           <div className={cn(card, "flex flex-col gap-5 p-5")}>
             {m.skills.map((curriculum) => (
@@ -617,9 +598,7 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
                               {standingLabel(skill.standing)}
                             </span>
                             {skill.scoredAnswers > 0 && (
-                              <span className="tabular text-xs text-ink-soft">
-                                {skill.correctAnswers} of {skill.scoredAnswers} correct
-                              </span>
+                              <span className="tabular text-xs text-ink-soft">{w.correct(skill.correctAnswers, skill.scoredAnswers)}</span>
                             )}
                           </span>
                         </li>

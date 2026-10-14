@@ -14,14 +14,18 @@ import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { formatDate } from "@/i18n/format";
+import { staffMessages } from "@/features/school/staff.messages";
 
 export function PrincipalHome() {
   const schools = useAsync(() => schoolApi.mySchools(), []);
   const overview = useAsync(() => staffOverviewApi.get(), []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  useDocumentTitle((schools.data?.find((s) => s.id === selectedId) ?? schools.data?.[0])?.name ?? (schools.data ? "Set up your school" : null));
+  const m = useMessages(staffMessages).principal;
+  useDocumentTitle((schools.data?.find((s) => s.id === selectedId) ?? schools.data?.[0])?.name ?? (schools.data ? m.setUpTitle : null));
 
-  if (schools.isLoading && !schools.data) return <LoadingState label="Loading your school…" />;
+  if (schools.isLoading && !schools.data) return <LoadingState label={m.loading} />;
   if (schools.error) return <ErrorState error={schools.error} onRetry={schools.refetch} />;
   if (!schools.data || schools.data.length === 0) return <SetUpSchool onCreated={schools.refetch} />;
 
@@ -34,13 +38,13 @@ export function PrincipalHome() {
             {school.name}
           </h1>
           <p className="mt-1.5 text-[0.9375rem] text-ink-soft">
-            Who your school reaches, what is still to set up, and each class.
+            {m.lead}
           </p>
           <ManageSchoolButton schoolId={school.id} name={school.name} archived={school.archived} onChanged={schools.refetch} />
         </div>
         {schools.data.length > 1 && (
           <label className="flex items-center gap-2 text-sm text-ink-soft">
-            School
+            {m.schoolPicker}
             <select
               value={school.id}
               onChange={(e) => setSelectedId(e.target.value)}
@@ -71,6 +75,7 @@ function SetUpSchool({ onCreated }: { onCreated: () => void }) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const m = useMessages(staffMessages).principal;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -80,7 +85,7 @@ function SetUpSchool({ onCreated }: { onCreated: () => void }) {
       await schoolApi.createSchool(name.trim());
       onCreated();
     } catch (err) {
-      setError(problemMessage(err, "We couldn't create the school. Please try again."));
+      setError(problemMessage(err, m.createFailed));
       setSaving(false);
     }
   }
@@ -91,20 +96,18 @@ function SetUpSchool({ onCreated }: { onCreated: () => void }) {
         <SchoolIcon size={22} aria-hidden />
       </div>
       <div>
-        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">Set up your school</h1>
-        <p className="mt-1 text-sm text-ink-soft">
-          Name your school. You can then add classes and invite your teachers by email.
-        </p>
+        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{m.setUpTitle}</h1>
+        <p className="mt-1 text-sm text-ink-soft">{m.setUpLead}</p>
       </div>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField label="School name" required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} />
+        <FormField label={m.schoolName} required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} />
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
         <Button type="submit" disabled={saving || !name.trim()} className="w-fit">
-          {saving ? "Creating…" : "Create school"}
+          {saving ? m.creating : m.create}
         </Button>
       </form>
     </div>
@@ -116,14 +119,12 @@ function SetUpSchool({ onCreated }: { onCreated: () => void }) {
  * stops a class from working yet. Counts only - the children themselves are in each class.
  */
 function AtAGlance({ school }: { school: SchoolOverview | undefined }) {
+  const m = useMessages(staffMessages).principal;
   if (!school) return null;
   const todo = [
-    school.classesWithoutTeacher > 0 &&
-      `${school.classesWithoutTeacher} ${school.classesWithoutTeacher === 1 ? "class needs" : "classes need"} a teacher`,
-    school.classesWithoutCurriculum > 0 &&
-      `${school.classesWithoutCurriculum} ${school.classesWithoutCurriculum === 1 ? "class has" : "classes have"} nothing to learn assigned`,
-    school.classesWithoutOpenCode > 0 &&
-      `${school.classesWithoutOpenCode} ${school.classesWithoutOpenCode === 1 ? "class has" : "classes have"} no working class code`,
+    school.classesWithoutTeacher > 0 && m.needTeacher(school.classesWithoutTeacher),
+    school.classesWithoutCurriculum > 0 && m.nothingAssigned(school.classesWithoutCurriculum),
+    school.classesWithoutOpenCode > 0 && m.noCode(school.classesWithoutOpenCode),
   ].filter((item): item is string => Boolean(item));
 
   return (
@@ -132,27 +133,27 @@ function AtAGlance({ school }: { school: SchoolOverview | undefined }) {
       className="grid grid-cols-2 gap-6 rounded-[14px] border border-line bg-white px-5 py-5 sm:grid-cols-[auto_auto_minmax(0,1fr)] sm:gap-10 sm:px-6"
     >
       <h2 id="glance-heading" className="sr-only">
-        At a glance
+        {m.atAGlance}
       </h2>
       <div>
         <p className="tabular font-display text-[2rem] font-semibold leading-none text-tonle-950">{school.childrenWithAccess}</p>
-        <p className="mt-1.5 text-sm text-ink-soft">{school.childrenWithAccess === 1 ? "child" : "children"} with access</p>
+        <p className="mt-1.5 text-sm text-ink-soft">{m.withAccess(school.childrenWithAccess)}</p>
       </div>
       <div>
         <p className="tabular font-display text-[2rem] font-semibold leading-none text-tonle-950">{school.classes}</p>
-        <p className="mt-1.5 text-sm text-ink-soft">{school.classes === 1 ? "class" : "classes"}</p>
+        <p className="mt-1.5 text-sm text-ink-soft">{m.classes(school.classes)}</p>
       </div>
       <div className="col-span-2 border-t border-line pt-4 sm:col-span-1 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
         {school.classes === 0 ? (
-          <p className="text-sm text-ink-soft">Add your first class below, then invite its teacher.</p>
+          <p className="text-sm text-ink-soft">{m.addFirst}</p>
         ) : todo.length === 0 ? (
           <p className="flex items-start gap-2 text-sm text-palm-deep">
             <CheckCircle2 size={16} aria-hidden className="mt-0.5 shrink-0" />
-            Every class has a teacher, something to learn and a working class code.
+            {m.allSet}
           </p>
         ) : (
           <>
-            <p className="text-sm font-semibold text-ink">Still to set up</p>
+            <p className="text-sm font-semibold text-ink">{m.stillToSetUp}</p>
             <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-5 text-sm text-light-deep marker:text-light">
               {todo.map((item) => (
                 <li key={item}>{item}</li>
@@ -179,6 +180,7 @@ function Classes({
   const [name, setName] = useState("");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useMessages(staffMessages).principal;
 
   const active = (classes.data ?? []).filter((c) => !c.archived);
   const archived = (classes.data ?? []).filter((c) => c.archived);
@@ -193,7 +195,7 @@ function Classes({
       classes.refetch();
       onChanged();
     } catch (err) {
-      setError(problemMessage(err, "We couldn't add the class. Please try again."));
+      setError(problemMessage(err, m.addClassFailed));
     } finally {
       setAdding(false);
     }
@@ -203,35 +205,35 @@ function Classes({
     <section aria-labelledby="classes-heading" className="flex min-w-0 flex-col gap-3">
       <div>
         <h2 id="classes-heading" className="text-lg font-semibold text-tonle-950">
-          Classes
+          {m.classesTitle}
         </h2>
-        <p className="text-sm text-ink-soft">Open a class to assign its teacher, what it learns and its code.</p>
+        <p className="text-sm text-ink-soft">{m.classesLead}</p>
       </div>
-      {classes.isLoading && !classes.data && <LoadingState label="Loading classes…" />}
+      {classes.isLoading && !classes.data && <LoadingState label={m.loadingClasses} />}
       {classes.error && <ErrorState error={classes.error} onRetry={classes.refetch} />}
       {classes.data && active.length === 0 && (
         <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">
-          No classes yet. Add your first class below.
+          {m.noClasses}
         </p>
       )}
       {active.length > 0 && <ClassList classes={active} byId={byId} />}
       {archived.length > 0 && (
         <details className="group">
           <summary className="w-fit cursor-pointer text-sm font-semibold text-tonle-700 hover:text-tonle-900">
-            Archived classes ({archived.length})
+            {m.archivedClasses(archived.length)}
           </summary>
           <p className="mb-2 mt-1 text-sm text-ink-soft">
-            No one can join these; their children keep their learning. Open one to restore it.
+            {m.archivedLead}
           </p>
           <ClassList classes={archived} byId={byId} />
         </details>
       )}
       <form onSubmit={onAdd} className="flex flex-wrap items-end gap-3">
         <div className="min-w-[14rem] flex-1">
-          <FormField label="New class" placeholder="e.g. Grade 1A" maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
+          <FormField label={m.newClass} placeholder={m.newClassExample} maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <Button type="submit" variant="outline" disabled={adding || !name.trim()}>
-          <Plus size={16} aria-hidden /> {adding ? "Adding…" : "Add class"}
+          <Plus size={16} aria-hidden /> {adding ? m.adding : m.addClass}
         </Button>
       </form>
       {error && (
@@ -244,6 +246,7 @@ function Classes({
 }
 
 function ClassList({ classes, byId }: { classes: SchoolClassWithTeachers[]; byId: Map<string, ClassOverview> }) {
+  const m = useMessages(staffMessages).principal;
   return (
     <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
       {classes.map((c) => {
@@ -261,7 +264,7 @@ function ClassList({ classes, byId }: { classes: SchoolClassWithTeachers[]; byId
               <div className="min-w-0">
                 <p className="font-semibold text-ink">{c.name}</p>
                 <p className="truncate text-sm text-ink-soft">
-                  {c.teachers.length === 0 ? "No teacher assigned yet" : c.teachers.map((t) => t.email).join(", ")}
+                  {c.teachers.length === 0 ? m.noTeacherAssigned : c.teachers.map((t) => t.email).join(", ")}
                 </p>
               </div>
               <ChevronRight size={18} className="shrink-0 text-ink-soft" aria-hidden />
@@ -273,15 +276,15 @@ function ClassList({ classes, byId }: { classes: SchoolClassWithTeachers[]; byId
   );
 }
 
+const words = () => messagesNow(staffMessages).principal;
 const STATUS: Record<SchoolStaffMember["status"], { label: (m: SchoolStaffMember) => string; className: string }> = {
-  ACTIVE: { label: () => "Teaching here", className: "text-palm-deep" },
+  ACTIVE: { label: () => words().teachingHere, className: "text-palm-deep" },
   INVITED: {
-    label: (m) =>
-      `Invited ${new Date(m.invitedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })} · waiting for them to accept`,
+    label: (m) => words().invitedWaiting(formatDate(m.invitedAt, { day: "numeric", month: "short" })),
     className: "text-light-deep",
   },
-  DECLINED: { label: () => "Declined the invitation", className: "text-ink-soft" },
-  REMOVED: { label: () => "Removed", className: "text-ink-soft" },
+  DECLINED: { label: () => words().declined, className: "text-ink-soft" },
+  REMOVED: { label: () => words().removed, className: "text-ink-soft" },
 };
 
 function Teachers({ school }: { school: SchoolSummary }) {
@@ -290,17 +293,18 @@ function Teachers({ school }: { school: SchoolSummary }) {
   const [inviting, setInviting] = useState(false);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [confirmingRemove, setConfirmingRemove] = useState<string | null>(null);
+  const w = useMessages(staffMessages).principal;
 
   async function invite(address: string) {
     setInviting(true);
     setNotice(null);
     try {
       await schoolApi.inviteTeacher(school.id, address);
-      setNotice({ kind: "ok", text: `Invitation sent to ${address}.` });
+      setNotice({ kind: "ok", text: w.invitationSent(address) });
       setEmail("");
       staff.refetch();
     } catch (err) {
-      setNotice({ kind: "error", text: problemMessage(err, "We couldn't send the invitation. Please try again.") });
+      setNotice({ kind: "error", text: problemMessage(err, w.inviteFailed) });
     } finally {
       setInviting(false);
     }
@@ -313,7 +317,7 @@ function Teachers({ school }: { school: SchoolSummary }) {
       setConfirmingRemove(null);
       staff.refetch();
     } catch (err) {
-      setNotice({ kind: "error", text: problemMessage(err, "We couldn't remove them. Please try again.") });
+      setNotice({ kind: "error", text: problemMessage(err, w.removeFailed) });
     }
   }
 
@@ -323,17 +327,14 @@ function Teachers({ school }: { school: SchoolSummary }) {
     <section aria-labelledby="teachers-heading" className="flex min-w-0 flex-col gap-3">
       <div>
         <h2 id="teachers-heading" className="text-lg font-semibold text-tonle-950">
-          Teachers
+          {w.teachersTitle}
         </h2>
-        <p className="text-sm text-ink-soft">
-          Invite teachers by email. New teachers choose their own password from the email; once they accept, you can assign them
-          to classes.
-        </p>
+        <p className="text-sm text-ink-soft">{w.teachersLead}</p>
       </div>
-      {staff.isLoading && !staff.data && <LoadingState label="Loading teachers…" />}
+      {staff.isLoading && !staff.data && <LoadingState label={w.loadingTeachers} />}
       {staff.error && <ErrorState error={staff.error} onRetry={staff.refetch} />}
       {staff.data && visible.length === 0 && (
-        <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">No teachers yet.</p>
+        <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">{w.noTeachers}</p>
       )}
       {visible.length > 0 && (
         <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
@@ -344,27 +345,27 @@ function Teachers({ school }: { school: SchoolSummary }) {
                 <p className={`text-sm font-medium ${STATUS[m.status].className}`}>{STATUS[m.status].label(m)}</p>
               </div>
               {confirmingRemove === m.id ? (
-                <div className="flex flex-wrap items-center gap-2" role="group" aria-label={`Confirm removing ${m.email}`}>
+                <div className="flex flex-wrap items-center gap-2" role="group" aria-label={w.confirmRemoving(m.email)}>
                   <span className="text-sm text-ink">
-                    {m.status === "ACTIVE" ? "Remove from the school and all its classes?" : "Withdraw the invitation?"}
+                    {m.status === "ACTIVE" ? w.removeQuestion : w.withdrawQuestion}
                   </span>
                   <Button size="md" onClick={() => remove(m)}>
-                    Yes
+                    {w.yes}
                   </Button>
                   <Button size="md" variant="ghost" onClick={() => setConfirmingRemove(null)}>
-                    Cancel
+                    {w.cancel}
                   </Button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   {(m.status === "INVITED" || m.status === "DECLINED") && (
                     <Button size="md" variant="ghost" disabled={inviting} onClick={() => invite(m.email)}>
-                      {m.status === "INVITED" ? "Send again" : "Invite again"}
+                      {m.status === "INVITED" ? w.sendAgain : w.inviteAgain}
                     </Button>
                   )}
                   {(m.status === "ACTIVE" || m.status === "INVITED") && (
-                    <Button size="md" variant="ghost" onClick={() => setConfirmingRemove(m.id)} aria-label={`Remove ${m.email}`}>
-                      <UserMinus size={16} aria-hidden /> {m.status === "ACTIVE" ? "Remove" : "Withdraw"}
+                    <Button size="md" variant="ghost" onClick={() => setConfirmingRemove(m.id)} aria-label={w.removeLabel(m.email)}>
+                      <UserMinus size={16} aria-hidden /> {m.status === "ACTIVE" ? w.remove : w.withdraw}
                     </Button>
                   )}
                 </div>
@@ -382,7 +383,7 @@ function Teachers({ school }: { school: SchoolSummary }) {
       >
         <div className="min-w-[14rem] flex-1">
           <FormField
-            label="Teacher's email"
+            label={w.teacherEmail}
             type="email"
             autoComplete="off"
             value={email}
@@ -390,7 +391,7 @@ function Teachers({ school }: { school: SchoolSummary }) {
           />
         </div>
         <Button type="submit" variant="outline" disabled={inviting || !email.trim()}>
-          <MailPlus size={16} aria-hidden /> {inviting ? "Sending…" : "Invite"}
+          <MailPlus size={16} aria-hidden /> {inviting ? w.sending : w.invite}
         </Button>
       </form>
       {notice && (

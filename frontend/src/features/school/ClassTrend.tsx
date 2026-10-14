@@ -6,12 +6,15 @@ import { classAccessApi, type ClassTrend, type ClassTrendPoint } from "@/lib/api
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { standingLabel } from "@/features/learning/explain";
 import { cn } from "@/lib/utils/cn";
-import { TALLY, plural } from "./classLines";
+import { TALLY } from "./classLines";
 import { WorkspaceSection } from "./ClassWorkspace";
+import { useMessages, messagesNow } from "@/i18n/catalog";
+import { formatDate } from "@/i18n/format";
+import { schoolMessages } from "./messages";
 
 const PERIODS = [4, 8, 12] as const;
 const card = "rounded-[16px] bg-white ring-1 ring-line";
-const dayMonth = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+const dayMonth = (iso: string) => formatDate(iso, { day: "numeric", month: "short" });
 
 /**
  * The class over time (X16): where the class stood at the end of each week, from the same evidence
@@ -29,15 +32,12 @@ export function ClassTrendSection({
 }) {
   const [weeks, setWeeks] = useState<(typeof PERIODS)[number]>(8);
   const trend = useAsync(() => classAccessApi.trend(classId, weeks), [classId, weeks, refreshKey]);
+  const m = useMessages(schoolMessages).trend;
 
   return (
-    <WorkspaceSection
-      id="class-trend"
-      title="The class over time"
-      description="Where the class stood at the end of each week on its skills, worked out from the answers given by then - the same rule as the standings above. A child counts from the day they joined the class."
-    >
+    <WorkspaceSection id="class-trend" title={m.title} description={m.lead}>
       <div className={cn(card, "flex flex-col gap-6 p-5")}>
-        <div role="group" aria-label="Period" className="flex w-fit gap-1 rounded-[12px] bg-paper p-1">
+        <div role="group" aria-label={m.period} className="flex w-fit gap-1 rounded-[12px] bg-paper p-1">
           {PERIODS.map((p) => (
             <button
               key={p}
@@ -51,11 +51,11 @@ export function ClassTrendSection({
                   : "text-ink-soft hover:text-ink",
               )}
             >
-              {p} weeks
+              {m.weeks(p)}
             </button>
           ))}
         </div>
-        {trend.isLoading && !trend.data && <LoadingState label="Loading the class over time…" />}
+        {trend.isLoading && !trend.data && <LoadingState label={m.loading} />}
         {trend.error && <ErrorState error={trend.error} onRetry={trend.refetch} />}
         {trend.data && <Trend data={trend.data} skillHref={skillHref} />}
       </div>
@@ -64,6 +64,7 @@ export function ClassTrendSection({
 }
 
 const total = (p: ClassTrendPoint) => TALLY.reduce((sum, t) => sum + p[t.key], 0);
+const tally = (n: number, standing: string) => messagesNow(schoolMessages).learning.tally(n, standing);
 
 function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: string) => string }) {
   const [active, setActive] = useState<number | null>(null);
@@ -71,12 +72,13 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
   const shown = data.points[active ?? last];
   const answers = data.answers.reduce((sum, w) => sum + w.answers, 0);
   const maxAnswers = Math.max(1, ...data.answers.map((w) => w.answers));
+  const w = useMessages(schoolMessages).trend;
   const m = data.movement;
   const moved = [
-    m.becameSecure > 0 && `${plural(m.becameSecure, "standing", "standings")} became secure`,
-    m.movedUp > 0 && `${m.movedUp} moved up`,
-    m.firstReading > 0 && `${m.firstReading} got a first reading`,
-    m.movedDown > 0 && `${m.movedDown} moved down`,
+    m.becameSecure > 0 && w.becameSecure(m.becameSecure),
+    m.movedUp > 0 && w.movedUp(m.movedUp),
+    m.firstReading > 0 && w.firstReading(m.firstReading),
+    m.movedDown > 0 && w.movedDown(m.movedDown),
   ].filter(Boolean);
   const up = data.bySkill.filter((s) => s.becameSecure + s.movedUp > 0).slice(0, 5);
   const down = data.bySkill
@@ -86,20 +88,17 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
 
   const firstWithChildren = data.points.findIndex((p) => p.children > 0);
   if (firstWithChildren === -1) {
-    return <p className="text-sm text-ink-soft">No child was in the class during these weeks.</p>;
+    return <p className="text-sm text-ink-soft">{w.noChildren}</p>;
   }
 
   return (
     <div className="flex flex-col gap-6">
       <p className="text-[0.9375rem] leading-relaxed text-ink">
-        Over the last {data.weeks} weeks: {moved.length > 0 ? `${moved.join(", ")}.` : "no standing changed."}{" "}
-        <span className="text-ink-soft">
-          {plural(answers, "answer", "answers")} given in the class. Each standing is one child on one skill.
-        </span>
+        {w.over(data.weeks, moved.length > 0 ? moved.join(", ") : null)} <span className="text-ink-soft">{w.answersGiven(answers)}</span>
       </p>
 
       <div className="flex flex-col gap-3">
-        <ul aria-label="Key" className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-soft">
+        <ul aria-label={w.key} className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-soft">
           {TALLY.map((t) => (
             <li key={t.key} className="inline-flex items-center gap-1.5">
               <span aria-hidden className={cn("inline-block h-2.5 w-2.5 rounded-[2px]", t.bar)} />
@@ -153,34 +152,32 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
           </div>
           <div className="flex justify-between text-[0.6875rem] text-ink-faint">
             <span>{dayMonth(data.points[0].at)}</span>
-            <span>Answers each week</span>
-            <span>Now</span>
+            <span>{w.answersEachWeek}</span>
+            <span>{w.now}</span>
           </div>
         </div>
         {firstWithChildren > 0 && (
-          <p className="text-xs text-ink-soft">
-            The weeks before {dayMonth(data.points[firstWithChildren].at)} are empty: no child had joined the class yet.
-          </p>
+          <p className="text-xs text-ink-soft">{w.emptyBefore(dayMonth(data.points[firstWithChildren].at))}</p>
         )}
         <p className="min-h-[2.5rem] text-xs leading-relaxed text-ink">
-          <span className="font-semibold">{(active ?? last) === last ? "Now" : `Week ending ${dayMonth(shown.at)}`}</span>
+          <span className="font-semibold">{(active ?? last) === last ? w.now : w.weekEnding(dayMonth(shown.at))}</span>
           {" · "}
-          {plural(shown.children, "child", "children")}
+          {w.children(shown.children)}
           {total(shown) > 0 &&
             `: ${TALLY.filter((t) => shown[t.key] > 0)
-              .map((t) => `${shown[t.key]} ${standingLabel(t.standing).toLowerCase()}`)
+              .map((t) => tally(shown[t.key], standingLabel(t.standing).toLowerCase()))
               .join(", ")}`}
-          {active === null && <span className="text-ink-faint"> - point at or tap a week to see it.</span>}
+          {active === null && <span className="text-ink-faint">{w.pointAt}</span>}
         </p>
       </div>
 
       {(up.length > 0 || down.length > 0) && (
         <div className="grid gap-5 sm:grid-cols-2">
           {up.length > 0 && (
-            <SkillList title="Skills that moved forward" icon={<ArrowUpRight size={15} aria-hidden className="text-palm-deep" />}>
+            <SkillList title={w.forward} icon={<ArrowUpRight size={15} aria-hidden className="text-palm-deep" />}>
               {up.map((s) => (
                 <SkillLink key={s.skillId} href={skillHref(s.skillId)} name={s.name}>
-                  {[s.becameSecure > 0 && `${s.becameSecure} became secure`, s.movedUp > 0 && `${s.movedUp} moved up`]
+                  {[s.becameSecure > 0 && w.becameSecure(s.becameSecure), s.movedUp > 0 && w.movedUp(s.movedUp)]
                     .filter(Boolean)
                     .join(", ")}
                 </SkillLink>
@@ -188,10 +185,10 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
             </SkillList>
           )}
           {down.length > 0 && (
-            <SkillList title="Skills that slipped" icon={<ArrowDownRight size={15} aria-hidden className="text-light-deep" />}>
+            <SkillList title={w.slipped} icon={<ArrowDownRight size={15} aria-hidden className="text-light-deep" />}>
               {down.map((s) => (
                 <SkillLink key={s.skillId} href={skillHref(s.skillId)} name={s.name}>
-                  {s.movedDown} moved down
+                  {w.movedDown(s.movedDown)}
                 </SkillLink>
               ))}
             </SkillList>
@@ -201,18 +198,18 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
 
       <details className="group">
         <summary className="w-fit cursor-pointer text-sm font-semibold text-tonle-700 hover:text-tonle-900">
-          Show as a table
+          {w.asTable}
         </summary>
-        <div className="mt-3 overflow-x-auto" tabIndex={0} role="region" aria-label="The class week by week, as a table">
+        <div className="mt-3 overflow-x-auto" tabIndex={0} role="region" aria-label={w.tableRegion}>
           <table className="w-full min-w-[36rem] text-sm">
-            <caption className="sr-only">Where the class stood at the end of each week, and its answers that week</caption>
+            <caption className="sr-only">{w.tableCaption}</caption>
             <thead>
               <tr className="border-b border-line text-left text-xs font-semibold text-ink-soft">
                 <th scope="col" className="py-2 pr-3">
-                  Week ending
+                  {w.weekEndingHeader}
                 </th>
                 <th scope="col" className="px-2 py-2 text-right">
-                  Children
+                  {w.childrenHeader}
                 </th>
                 {TALLY.map((t) => (
                   <th key={t.key} scope="col" className="px-2 py-2 text-right">
@@ -220,7 +217,7 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
                   </th>
                 ))}
                 <th scope="col" className="py-2 pl-2 text-right">
-                  Answers
+                  {w.answersHeader}
                 </th>
               </tr>
             </thead>
@@ -228,7 +225,7 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
               {data.points.map((point, i) => (
                 <tr key={point.at}>
                   <th scope="row" className="py-2 pr-3 text-left font-medium text-ink">
-                    {i === last ? "Now" : dayMonth(point.at)}
+                    {i === last ? w.now : dayMonth(point.at)}
                   </th>
                   <td className="tabular px-2 py-2 text-right">{point.children}</td>
                   {TALLY.map((t) => (

@@ -5,17 +5,19 @@ import { problemMessage } from "@/lib/api/problemMessage";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { FormField } from "@/features/auth/FormField";
+import { messagesNow, useMessages } from "@/i18n/catalog";
+import { schoolMessages } from "./messages";
 
 // Renaming a school or class, and archiving or restoring either (X17, Y17) - the principal's. Archive means
 // no new uses (PD-25): nothing a child has changes and nothing is deleted. The server decides who may.
 
 /** Said on an archived class's page, for its principal and its teachers. */
 export function ArchivedClassNotice({ principal = false }: { principal?: boolean }) {
+  const m = useMessages(schoolMessages).lifecycle;
   return (
     <p role="status" className="rounded-[14px] bg-paper px-5 py-4 text-sm leading-relaxed text-ink ring-1 ring-line-strong">
-      <span className="font-semibold">This class is archived.</span> Families can't join it, and no curriculum, teacher or
-      practice can be added. Its children keep everything they have, and their learning here can still be read.
-      {principal ? " Restore it from Manage class to use it again." : " Its principal can restore it."}
+      <span className="font-semibold">{m.classArchived}</span> {m.classArchivedBody}
+      {principal ? m.restoreFromManage : m.principalCanRestore}
     </p>
   );
 }
@@ -30,7 +32,7 @@ function useAction(onDone: (message: string) => void) {
       await action();
       onDone(done);
     } catch (err) {
-      setError(problemMessage(err, "That didn't work. Please try again."));
+      setError(problemMessage(err, messagesNow(schoolMessages).didntWork));
     } finally {
       setBusy(false);
     }
@@ -54,6 +56,7 @@ export function ManageClassButton({
   const [draft, setDraft] = useState(name);
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const m = useMessages(schoolMessages).lifecycle;
   const { busy, error, run } = useAction((message) => {
     setDone(message);
     setConfirming(false);
@@ -62,7 +65,7 @@ export function ManageClassButton({
 
   function save(e: FormEvent) {
     e.preventDefault();
-    void run(() => schoolApi.renameClass(classId, draft.trim()), "Saved.");
+    void run(() => schoolApi.renameClass(classId, draft.trim()), m.saved);
   }
 
   return (
@@ -76,47 +79,44 @@ export function ManageClassButton({
           setOpen(true);
         }}
       >
-        <Pencil size={15} aria-hidden /> Manage class…
+        <Pencil size={15} aria-hidden /> {m.manageClass}
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Manage class" description={name}>
+      <Dialog open={open} onClose={() => setOpen(false)} title={m.manageClassTitle} description={name}>
         <div className="flex flex-col gap-6">
           <form onSubmit={save} className="flex flex-col gap-3">
-            <FormField label="Class name" value={draft} maxLength={120} required onChange={(e) => setDraft(e.target.value)} />
+            <FormField label={m.className} value={draft} maxLength={120} required onChange={(e) => setDraft(e.target.value)} />
             <Button type="submit" variant="outline" disabled={busy || !draft.trim() || draft.trim() === name} className="w-fit">
-              Save
+              {m.save}
             </Button>
           </form>
           <section aria-labelledby="class-archive" className="flex flex-col gap-3 border-t border-line pt-5">
             <h3 id="class-archive" className="text-sm font-semibold text-tonle-950">
-              {archived ? "Archived" : "Archive"}
+              {archived ? m.archived : m.archive}
             </h3>
             <p className="text-sm text-ink-soft">
-              {archived
-                ? "Restoring lets families join again (with a new code) and lets you add curricula, teachers and practice."
-                : "Its code stops working, and no family can join or curriculum, teacher or practice be added. Children in it keep everything they have, and the family's access to the school is theirs to end."}{" "}
-              Nothing is deleted.
+              {archived ? m.classRestoreExplain : m.classArchiveExplain} {m.nothingDeleted}
             </p>
             {archived ? (
               <Button
                 variant="outline"
                 disabled={busy}
                 className="w-fit"
-                onClick={() => void run(() => schoolApi.restoreClass(classId), "Restored.")}
+                onClick={() => void run(() => schoolApi.restoreClass(classId), m.restored)}
               >
-                <RotateCcw size={15} aria-hidden /> Restore the class
+                <RotateCcw size={15} aria-hidden /> {m.restoreClass}
               </Button>
             ) : confirming ? (
               <div className="flex flex-wrap gap-2">
-                <Button disabled={busy} onClick={() => void run(() => schoolApi.archiveClass(classId), "Archived.")}>
-                  <Archive size={15} aria-hidden /> Archive the class
+                <Button disabled={busy} onClick={() => void run(() => schoolApi.archiveClass(classId), m.archivedDone)}>
+                  <Archive size={15} aria-hidden /> {m.archiveClass}
                 </Button>
                 <Button variant="ghost" onClick={() => setConfirming(false)}>
-                  Keep it
+                  {m.keepIt}
                 </Button>
               </div>
             ) : (
               <Button variant="outline" disabled={busy} className="w-fit" onClick={() => setConfirming(true)}>
-                <Archive size={15} aria-hidden /> Archive…
+                <Archive size={15} aria-hidden /> {m.archiveOpen}
               </Button>
             )}
           </section>
@@ -138,11 +138,10 @@ export function ManageClassButton({
 
 /** Said on an archived school's home (PD-26, Y17). */
 export function ArchivedSchoolNotice() {
+  const m = useMessages(schoolMessages).lifecycle;
   return (
     <p role="status" className="rounded-[14px] bg-paper px-5 py-4 text-sm leading-relaxed text-ink ring-1 ring-line-strong">
-      <span className="font-semibold">This school is archived.</span> It takes nothing new: no classes, codes, families joining or
-      staff invitations, and its classes are archived. Families keep the access they gave until they end it, and children keep
-      everything. Restore it from Manage school to start again.
+      <span className="font-semibold">{m.schoolArchived}</span> {m.schoolArchivedBody}
     </p>
   );
 }
@@ -163,6 +162,7 @@ export function ManageSchoolButton({
   const [draft, setDraft] = useState(name);
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const m = useMessages(schoolMessages).lifecycle;
   const { busy, error, run } = useAction((message) => {
     setDone(message);
     setConfirming(false);
@@ -181,54 +181,51 @@ export function ManageSchoolButton({
           setOpen(true);
         }}
       >
-        <Pencil size={14} aria-hidden /> Manage school…
+        <Pencil size={14} aria-hidden /> {m.manageSchool}
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Manage school" description={name}>
+      <Dialog open={open} onClose={() => setOpen(false)} title={m.manageSchoolTitle} description={name}>
         <div className="flex flex-col gap-6">
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              void run(() => schoolApi.renameSchool(schoolId, draft.trim()), "Saved.");
+              void run(() => schoolApi.renameSchool(schoolId, draft.trim()), m.saved);
             }}
             className="flex flex-col gap-3"
           >
-            <FormField label="School name" value={draft} maxLength={120} required onChange={(e) => setDraft(e.target.value)} />
-            <p className="text-xs text-ink-soft">Families see this name when they join a class.</p>
+            <FormField label={m.schoolName} value={draft} maxLength={120} required onChange={(e) => setDraft(e.target.value)} />
+            <p className="text-xs text-ink-soft">{m.schoolNameHint}</p>
             <Button type="submit" variant="outline" disabled={busy || !draft.trim() || draft.trim() === name} className="w-fit">
-              Save
+              {m.save}
             </Button>
           </form>
           <section aria-labelledby="school-archive" className="flex flex-col gap-3 border-t border-line pt-5">
             <h3 id="school-archive" className="text-sm font-semibold text-tonle-950">
-              {archived ? "Archived" : "Archive the school"}
+              {archived ? m.archived : m.archiveSchool}
             </h3>
             <p className="text-sm text-ink-soft">
-              {archived
-                ? "Restoring lets the school add classes and invite staff again. Its classes stay archived until you restore each one."
-                : "For a school that stops using Bookeyond Kid. Every class is archived and its code stops working; no class, family or staff member can be added. Families keep the access they gave until they end it, and children keep everything."}{" "}
-              Nothing is deleted.
+              {archived ? m.schoolRestoreExplain : m.schoolArchiveExplain} {m.nothingDeleted}
             </p>
             {archived ? (
               <Button
                 variant="outline"
                 disabled={busy}
                 className="w-fit"
-                onClick={() => void run(() => schoolApi.restoreSchool(schoolId), "Restored.")}
+                onClick={() => void run(() => schoolApi.restoreSchool(schoolId), m.restored)}
               >
-                <RotateCcw size={15} aria-hidden /> Restore the school
+                <RotateCcw size={15} aria-hidden /> {m.restoreSchool}
               </Button>
             ) : confirming ? (
               <div className="flex flex-wrap gap-2">
-                <Button disabled={busy} onClick={() => void run(() => schoolApi.archiveSchool(schoolId), "Archived.")}>
-                  <Archive size={15} aria-hidden /> Archive the school
+                <Button disabled={busy} onClick={() => void run(() => schoolApi.archiveSchool(schoolId), m.archivedDone)}>
+                  <Archive size={15} aria-hidden /> {m.archiveSchool}
                 </Button>
                 <Button variant="ghost" onClick={() => setConfirming(false)}>
-                  Keep it
+                  {m.keepIt}
                 </Button>
               </div>
             ) : (
               <Button variant="outline" disabled={busy} className="w-fit" onClick={() => setConfirming(true)}>
-                <Archive size={15} aria-hidden /> Archive…
+                <Archive size={15} aria-hidden /> {m.archiveOpen}
               </Button>
             )}
           </section>
