@@ -102,7 +102,7 @@ export function Logo({
       <span className="flex flex-col leading-none">
         <span className="font-display font-[750] tracking-[-0.012em]" style={{ fontVariationSettings: '"opsz" 48' }}>
           <span className={ink ? "text-tonle-900" : "text-white"}>Bookeyond</span>
-          <span className={cn("font-[420] tracking-[-0.008em]", ink ? "text-tonle-500" : "text-tonle-200")}> Kid</span>
+          <span className={cn("font-[420] tracking-[-0.008em]", ink ? "text-tonle-600" : "text-tonle-200")}> Kid</span>
         </span>
         {showTagline && (
           <span className={cn("mt-[0.45em] font-sans text-[0.36em] font-medium tracking-[0.02em]", ink ? "text-ink-soft" : "text-tonle-200")}>

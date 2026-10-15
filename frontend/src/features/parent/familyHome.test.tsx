@@ -48,8 +48,10 @@ describe("family home (X8)", () => {
     family({
       "/children/c1/enrollments": [enrollment({})],
       "/children/c1/activity-history": [{ attemptId: "t1", completedAt: new Date().toISOString() }],
+      "/children/c1/skills": [],
       "/children/c2/enrollments": [],
       "/children/c2/activity-history": [],
+      "/children/c2/skills": [],
       "/children": [
         { id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14" },
         { id: "c2", displayName: "Dara", dateOfBirth: "2020-01-02" },
@@ -73,6 +75,7 @@ describe("family home (X8)", () => {
     family({
       "/children/c1/enrollments": [enrollment({ completedSteps: 6, nextStep: null, currentChapter: null })],
       "/children/c1/activity-history": [{ attemptId: "t1", completedAt: "2026-09-28T09:00:00Z" }],
+      "/children/c1/skills": [],
       "/children": [{ id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14" }],
     });
     render(
@@ -87,6 +90,51 @@ describe("family home (X8)", () => {
       "href",
       "/parent/children/c1?add=subject",
     );
+  });
+
+  it("counts skills by the server's standing, once each, leaving out skills not started", async () => {
+    const skill = (skillId: string, standing: string) => ({ skillId, name: skillId, standing });
+    family({
+      "/children/c1/enrollments": [enrollment({})],
+      "/children/c1/activity-history": [{ attemptId: "t1", completedAt: new Date().toISOString() }],
+      "/children/c1/skills": [
+        {
+          enrollmentId: "e1",
+          objectives: [
+            { objectiveId: "o1", skills: [skill("s1", "SECURE"), skill("s2", "TOO_EARLY_TO_TELL"), skill("s3", "NOT_STARTED")] },
+            // The same skill under a second objective is still one skill.
+            { objectiveId: "o2", skills: [skill("s1", "SECURE"), skill("s4", "TOO_EARLY_TO_TELL")] },
+          ],
+        },
+      ],
+      "/children": [{ id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14" }],
+    });
+    render(
+      <MemoryRouter>
+        <ParentHome />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("What the answers show so far")).toBeInTheDocument();
+    expect(screen.getByText("1 Secure")).toBeInTheDocument();
+    expect(screen.getByText("2 Too early to tell")).toBeInTheDocument();
+    expect(screen.queryByText(/Not started/)).not.toBeInTheDocument();
+  });
+
+  it("says nothing is shown yet when no skill has answers", async () => {
+    family({
+      "/children/c1/enrollments": [enrollment({})],
+      "/children/c1/activity-history": [],
+      "/children/c1/skills": [{ enrollmentId: "e1", objectives: [{ objectiveId: "o1", skills: [{ skillId: "s1", standing: "NOT_STARTED" }] }] }],
+      "/children": [{ id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14" }],
+    });
+    render(
+      <MemoryRouter>
+        <ParentHome />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("No answers yet - this fills in as they play.")).toBeInTheDocument();
   });
 });
 

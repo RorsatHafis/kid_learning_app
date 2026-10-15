@@ -30,8 +30,9 @@ export default {
     extend: {
       colors: {
         tonle,
-        // Text: river ink, never pure black. soft 6.8:1, faint 4.5:1 on paper (4.9:1 on white).
-        ink: { DEFAULT: "#172B2E", soft: "#46595B", faint: "#637476" },
+        // Text: river ink, never pure black. soft 6.8:1 on paper; faint 5.1:1 on paper, 4.7:1 on the
+        // darkest light ground (paper-sunk), so it is legible on every light surface.
+        ink: { DEFAULT: "#172B2E", soft: "#46595B", faint: "#5B6C6E" },
         // Rice paper with a breath of celadon; white sheets; a sunk well for inputs and code.
         paper: { DEFAULT: "#F4F6F1", raised: "#FFFFFF", sunk: "#E8EEE6" },
         line: { DEFAULT: "#DCE4DA", strong: "#C2CEC0" },

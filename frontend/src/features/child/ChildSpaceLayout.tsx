@@ -67,20 +67,20 @@ export function ChildSpaceLayout({
             <SoundToggle />
           </header>
         ) : (
-          <header className="relative z-20 mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
+          <header className="relative z-20 mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
             <div className="flex items-center gap-2">
               <Link to={home ?? `/learn/${childId}`} className={cn(chip, "gap-2.5 py-1.5 pl-1.5 pr-4")}>
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-light text-base font-bold text-light-deep">
                   {childName?.charAt(0).toUpperCase() ?? "•"}
                 </span>
-                <span className="max-w-[6.5rem] truncate text-sm font-semibold sm:max-w-[9rem]">{childName ?? "…"}</span>
+                <span className="max-w-[5.5rem] truncate text-sm font-semibold sm:max-w-[9rem]">{childName ?? "…"}</span>
               </Link>
               <Link to={`/learn/${childId}/buddy`} aria-label={b.chip(b.names[kind])} title={b.chip(b.names[kind])} className={cn(chip, "w-11 justify-center overflow-hidden")}>
                 <LearningBuddy mood="idle" size={40} className="!animate-none translate-y-1" />
               </Link>
             </div>
             <BrandMark size={34} className="hidden sm:block" title="Bookeyond Kid" />
-            <div className="flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-2">
               <LanguageToggle className={cn(chip, "justify-center px-3.5 text-sm font-semibold")} />
               <SoundToggle />
               <GrownUpGate to={`/parent/children/${childId}`} />
@@ -161,7 +161,7 @@ function GrownUpGate({ to }: { to: string }) {
       onBlur={cancel}
       onContextMenu={(e) => e.preventDefault()}
       aria-label={m.grownUpsLabel}
-      className={cn(chip, "relative select-none gap-2 overflow-hidden whitespace-nowrap px-3.5 text-sm font-medium text-ink-soft sm:px-4")}
+      className={cn(chip, "relative w-11 select-none justify-center gap-2 overflow-hidden whitespace-nowrap text-sm font-medium text-ink-soft sm:w-auto sm:px-4")}
     >
       <span
         aria-hidden
@@ -174,7 +174,7 @@ function GrownUpGate({ to }: { to: string }) {
         }}
       />
       <Lock size={15} className="relative" aria-hidden />
-      <span className="relative">{holding ? m.keepHolding : m.grownUps}</span>
+      <span className="relative hidden sm:inline">{holding ? m.keepHolding : m.grownUps}</span>
     </button>
   );
 }

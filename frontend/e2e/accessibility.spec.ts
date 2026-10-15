@@ -114,7 +114,7 @@ test.describe("accessibility @phone", () => {
     await expectNoViolations(page, "parent account");
   });
 
-  test("keyboard: skip link, page titles, visible focus on night surfaces", async ({ page }) => {
+  test("keyboard: skip link, page titles, visible focus on the workspace rail", async ({ page }) => {
     test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
     await page.goto("/login");
     await expect(page).toHaveTitle("Welcome back · Bookeyond Kid");
@@ -130,8 +130,8 @@ test.describe("accessibility @phone", () => {
     await page.keyboard.press("Enter");
     await expect(page.locator("#main")).toBeFocused();
 
-    // The next stop is on the night-blue rail (or phone bar): its focus ring must be the warm
-    // light, which contrasts with navy, not the blue ring used on paper.
+    // The next stop is on the rail (or phone bar), which is paper: its focus ring must be the river
+    // ring made for paper (6.3:1), not the warm light kept for night surfaces.
     await page.reload();
     await expect(page.getByRole("heading", { name: "Staff", level: 1 })).toBeVisible();
     await page.keyboard.press("Tab");
@@ -148,7 +148,7 @@ test.describe("accessibility @phone", () => {
           };
         }),
       )
-      .toEqual({ color: "rgb(255, 210, 122)", style: "solid", onNight: true });
+      .toEqual({ color: "rgb(34, 99, 110)", style: "solid", onNight: false });
   });
 
   test("admin console", async ({ page }) => {
