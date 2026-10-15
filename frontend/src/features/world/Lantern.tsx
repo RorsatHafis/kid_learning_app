@@ -4,9 +4,8 @@ import { cn } from "@/lib/utils/cn";
 export type LanternState = "unlit" | "current" | "lit";
 
 /**
- * A paper lantern from the river at dusk. In an activity each question is a lantern:
- * it lights when the question is answered, so a child can see how far they have come
- * and how much is left — the activity's own progress, drawn in the world's language.
+ * A paper lantern, the kind hung under a stilt house for a festival: the child's keepsakes on their
+ * shelf. Unlit lanterns are pale paper waiting; a lit one glows marigold.
  */
 export function Lantern({ state, size, className }: { state: LanternState; size?: number; className?: string }) {
   const uid = useId().replace(/:/g, "");
@@ -32,25 +31,25 @@ export function Lantern({ state, size, className }: { state: LanternState; size?
         </linearGradient>
       </defs>
       {lit && <circle cx="20" cy="30" r="30" fill={`url(#${uid}-glow)`} />}
-      <line x1="20" y1="-6" x2="20" y2="9" stroke={lit ? "#E9D3AC" : "#6E8FD0"} strokeWidth="1.2" strokeOpacity={lit ? 0.9 : 0.6} />
-      <rect x="13.5" y="8.5" width="13" height="4.5" rx="1.5" fill={lit ? "#8A4A0B" : "#0A1533"} />
+      <line x1="20" y1="-6" x2="20" y2="9" stroke={lit ? "#C99A5E" : "#8DBDC2"} strokeWidth="1.2" strokeOpacity="0.9" />
+      <rect x="13.5" y="8.5" width="13" height="4.5" rx="1.5" fill={lit ? "#8A4A0B" : "#3E7479"} />
       <path
         d="M20 12.5 C36.5 12.5 36.5 48 20 48 C3.5 48 3.5 12.5 20 12.5 Z"
-        fill={lit ? `url(#${uid}-body)` : state === "current" ? "#2E4F9E" : "#223D85"}
-        stroke={lit ? "#E0782F" : state === "current" ? "#FFD27A" : "#4468B8"}
+        fill={lit ? `url(#${uid}-body)` : state === "current" ? "#FCEED3" : "#E3EEEC"}
+        stroke={lit ? "#E0782F" : state === "current" ? "#F2A93B" : "#8DBDC2"}
         strokeOpacity={lit ? 0.55 : state === "current" ? 0.9 : 0.55}
         strokeWidth={state === "current" ? 1.6 : 1}
       />
-      <g stroke={lit ? "#E0782F" : "#4468B8"} strokeOpacity={lit ? 0.45 : 0.5} strokeWidth="1" fill="none">
+      <g stroke={lit ? "#E0782F" : "#8DBDC2"} strokeOpacity={lit ? 0.45 : 0.7} strokeWidth="1" fill="none">
         <path d="M20 13 L20 47.5" />
         <path d="M13 14 C8.5 22 8.5 38.5 13 46.5" />
         <path d="M27 14 C31.5 22 31.5 38.5 27 46.5" />
         <path d="M8 24 C16 26 24 26 32 24" />
         <path d="M8 36.5 C16 34.5 24 34.5 32 36.5" />
       </g>
-      <rect x="14.5" y="47.5" width="11" height="4" rx="1.5" fill={lit ? "#8A4A0B" : "#0A1533"} />
-      <path d="M20 51.5 L20 58" stroke={lit ? "#E0782F" : "#4468B8"} strokeWidth="1.4" />
-      <path d="M17.5 58 L22.5 58 L21.5 63 L18.5 63 Z" fill={lit ? "#E0782F" : "#2E4F9E"} />
+      <rect x="14.5" y="47.5" width="11" height="4" rx="1.5" fill={lit ? "#8A4A0B" : "#3E7479"} />
+      <path d="M20 51.5 L20 58" stroke={lit ? "#E0782F" : "#8DBDC2"} strokeWidth="1.4" />
+      <path d="M17.5 58 L22.5 58 L21.5 63 L18.5 63 Z" fill={lit ? "#E0782F" : "#C8643B"} />
     </svg>
   );
 }
@@ -66,7 +65,7 @@ export function LanternString({ total, lit, current, label }: { total: number; l
     <div role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={lit} aria-label={label} className="flex justify-center">
       <div className="relative flex items-start gap-3 px-4 sm:gap-5">
         <svg aria-hidden className="absolute -top-2.5 left-0 h-6 w-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 10">
-          <path d="M0 0 Q50 13 100 0" stroke="#C9D6EF" strokeOpacity="0.5" strokeWidth="1" fill="none" vectorEffect="non-scaling-stroke" />
+          <path d="M0 0 Q50 13 100 0" stroke="#8DBDC2" strokeOpacity="0.7" strokeWidth="1" fill="none" vectorEffect="non-scaling-stroke" />
         </svg>
         {Array.from({ length: total }, (_, i) => {
           // Hang along the curve of the string: lower in the middle, higher at the ends.

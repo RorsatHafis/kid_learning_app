@@ -29,7 +29,7 @@ type Choice = { value: string; label: string; image?: MediaRef | null; audio?: M
 /** The values TRUE_FALSE submits; their words are the interface's (childMessages.question). */
 const TRUE_FALSE = ["true", "false"] as const;
 
-const promptClass = "font-display font-bold leading-[1.08] tracking-[-0.02em] text-tonle-950";
+const promptClass = "font-display font-bold leading-[1.08] tracking-[-0.008em] text-tonle-950";
 const promptStyle = { fontVariationSettings: '"opsz" 72' };
 
 /** The question itself, with the interaction its type calls for. */
@@ -390,7 +390,7 @@ function FreeResponse({
         <button
           type="submit"
           disabled={disabled || !value.trim()}
-          className="flex min-h-16 min-w-[12rem] items-center justify-center gap-2 rounded-[22px] bg-tonle-900 px-10 text-xl font-bold text-white shadow-[0_5px_0_#0A1533] transition-[transform,box-shadow,opacity] duration-150 ease-out hover:bg-tonle-800 active:translate-y-1 active:shadow-[0_1px_0_#0A1533] disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex min-h-16 min-w-[12rem] items-center justify-center gap-2 rounded-[22px] bg-tonle-900 px-10 text-xl font-bold text-white shadow-[0_5px_0_#0A2127] transition-[transform,box-shadow,opacity] duration-150 ease-out hover:bg-tonle-800 active:translate-y-1 active:shadow-[0_1px_0_#0A2127] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {q.check}
         </button>
@@ -423,8 +423,8 @@ function NumberPad({ onPress, canCheck }: { onPress: (key: string) => void; canC
           disabled={!canCheck}
           className={cn(
             key,
-            "bg-tonle-900 text-lg text-white shadow-[0_4px_0_#0A1533] hover:bg-tonle-800 active:shadow-[0_1px_0_#0A1533]",
-            "disabled:cursor-not-allowed disabled:bg-tonle-200 disabled:text-white disabled:shadow-[0_4px_0_#A2B8E3] disabled:active:translate-y-0",
+            "bg-tonle-900 text-lg text-white shadow-[0_4px_0_#0A2127] hover:bg-tonle-800 active:shadow-[0_1px_0_#0A2127]",
+            "disabled:cursor-not-allowed disabled:bg-tonle-200 disabled:text-white disabled:shadow-[0_4px_0_#8DBDC2] disabled:active:translate-y-0",
           )}
         >
           {q.check}

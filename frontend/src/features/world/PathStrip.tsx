@@ -8,9 +8,9 @@ const SCALE = 0.56;
 const SLOTS = 6; // books the river shows at most
 
 /**
- * The child's chapter as a short stretch of river: its books in play order on the water. Drawn on
+ * The child's chapter as a short stretch of the village path: its books in play order. Drawn on
  * the completion page so finishing an activity happens *on the path*: the book just finished takes
- * the light where it sits, and the firefly crosses to the next one. When the activity closed the
+ * the light where it sits, and the buddy walks on to the next one. When the activity closed the
  * chapter (`chapterDone`), the whole row takes the light in turn. It shows only what the server's
  * path says (each step's status, the next step); decorative — the page says the same in words.
  */
@@ -54,22 +54,16 @@ export function PathStrip({
           <stop offset="0.5" stopColor="#FFD27A" stopOpacity="0.28" />
           <stop offset="1" stopColor="#FFD27A" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="strip-water" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#2B4C9A" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#2B4C9A" stopOpacity="0" />
+        <linearGradient id="strip-path" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#E9D6AA" />
+          <stop offset="1" stopColor="#E0C995" />
         </linearGradient>
       </defs>
-      {/* the water the books rest on, running on past the books to the panel's edges (it clips),
-          and the faint wake joining them */}
-      <rect x={-width * 3} y={WATER_Y - 6} width={width * 7} height="52" fill="url(#strip-water)" />
-      <path
-        d={`M${-width * 3} ${WATER_Y + 14} H${width * 4}`}
-        stroke="#A2B8E3"
-        strokeWidth="2"
-        strokeDasharray="2 14"
-        strokeLinecap="round"
-        opacity="0.45"
-      />
+      {/* the path the books rest on, running on past them to the panel's edges (it clips),
+          with grass along its edges */}
+      <rect x={-width * 3} y={WATER_Y - 14} width={width * 7} height="44" rx="22" fill="url(#strip-path)" />
+      <path d={`M${-width * 3} ${WATER_Y - 14} H${width * 4}`} stroke="#93BD5A" strokeWidth="4" opacity="0.7" />
+      <path d={`M${-width * 3} ${WATER_Y + 30} H${width * 4}`} stroke="#93BD5A" strokeWidth="4" opacity="0.7" />
 
       {shown.map(({ step, index }, i) => {
         const state: BookState = step.status === "COMPLETED" ? "done" : index === next ? "current" : "later";
@@ -101,7 +95,7 @@ export function PathStrip({
       })}
 
       {fireflyIndex !== null && (
-        <g transform={`translate(${xOf(fireflyIndex) - 34} ${WATER_Y - 108})`}>
+        <g transform={`translate(${xOf(fireflyIndex) + 14} ${WATER_Y - 96})`}>
           <g
             className={hopFrom !== null ? "motion-safe:animate-hop" : undefined}
             style={
@@ -110,7 +104,7 @@ export function PathStrip({
                 : undefined
             }
           >
-            <LearningBuddy mood={next >= 0 ? "happy" : "cheer"} size={68} />
+            <LearningBuddy mood={next >= 0 ? "happy" : "cheer"} size={84} />
           </g>
         </g>
       )}

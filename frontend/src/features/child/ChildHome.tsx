@@ -8,10 +8,11 @@ import type { Chapter, EnrollmentOverview, Journey, JourneyStep } from "@/lib/ap
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { childReason, stepTag } from "@/features/learning/explain";
 import { chapterOf, focusChapter, journeyLight } from "@/features/learning/chapters";
-import { BlueHour } from "@/features/world/BlueHour";
+import { RiverGarden } from "@/features/world/RiverGarden";
 import { PathOfBooks, khmerNumber } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
+import { goButton } from "./chips";
 import { SHELF_SPINES } from "./shelf";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
@@ -19,9 +20,9 @@ import { childMessages } from "./messages";
 
 
 /**
- * The child's home: the blue-hour world with their journey laid across the river as books.
- * Finished books are lit, the current one glows with the firefly above it, and one warm
- * "Play" lantern starts it (directive §12.1–12.2). The journey is exactly the server's
+ * The child's home: River Garden with their journey laid along the village path as books.
+ * Finished books are lit, the current one glows with the child's buddy beside it, and one warm
+ * "Play" button starts it (directive §12.1–12.2). Lotuses open in the pond as chapters finish. The journey is exactly the server's
  * learning path; the child can only start the current step — the platform decides what
  * comes next. The scene is decorative; the list beside it is the readable journey.
  */
@@ -42,12 +43,13 @@ export function ChildHome() {
 
   const name = child.data?.displayName;
   const language = child.data?.preferredLanguage;
+  const buddy = child.data?.learningBuddy;
   const m = useMessages(childMessages);
   useDocumentTitle(name ? m.home.title(name) : null);
 
   if (child.isLoading || enrollments.isLoading) {
     return (
-      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language}>
+      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} buddy={buddy}>
         <Waiting line={m.home.gettingReady} />
       </ChildSpaceLayout>
     );
@@ -56,7 +58,7 @@ export function ChildHome() {
   if (child.error instanceof ApiError && child.error.status === 404) {
     // Not this family's child, or one being deleted: trying again won't change that.
     return (
-      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language}>
+      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} buddy={buddy}>
         <Trouble line={m.closed} />
       </ChildSpaceLayout>
     );
@@ -64,7 +66,7 @@ export function ChildHome() {
 
   if (child.error || enrollments.error) {
     return (
-      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language}>
+      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} buddy={buddy}>
         <Trouble
           onRetry={() => {
             child.refetch();
@@ -77,9 +79,9 @@ export function ChildHome() {
 
   if (!selected) {
     return (
-      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language}>
+      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} buddy={buddy}>
         <div className="flex flex-col items-center gap-6 px-6 pt-24 text-center">
-          <BuddySays mood="happy" size={130} tone="night">
+          <BuddySays mood="happy" size={130}>
             {m.home.noPathYet(name ?? "")}
           </BuddySays>
         </div>
@@ -89,7 +91,7 @@ export function ChildHome() {
 
   const paths = enrollments.data ?? [];
   return (
-    <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} backdrop={false}>
+    <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} buddy={buddy} backdrop={false}>
       <JourneyStage
         key={selected.enrollmentId}
         childId={childId}
@@ -109,7 +111,7 @@ export function ChildHome() {
                     onClick={() => setParams({ path: enrollment.enrollmentId }, { replace: true })}
                     className={cn(
                       "group flex min-h-14 shrink-0 items-center gap-3 rounded-[16px] py-2 pl-2 pr-4 text-left ring-1 transition-colors duration-150 ease-out",
-                      active ? "bg-white text-tonle-950 ring-white" : "bg-tonle-950/55 text-white ring-white/20 backdrop-blur-md hover:bg-tonle-950/75",
+                      active ? "bg-tonle-900 text-white ring-tonle-900" : "bg-paper text-tonle-950 ring-line hover:bg-tonle-50",
                     )}
                   >
                     <span
@@ -123,7 +125,7 @@ export function ChildHome() {
                       <span className="text-[0.95rem] font-bold leading-tight">
                         {enrollment.curriculum.subjectName ?? enrollment.curriculum.name}
                       </span>
-                      <span className={cn("text-xs font-medium", active ? "text-ink-soft" : "text-tonle-200")}>
+                      <span className={cn("text-xs font-medium", active ? "text-tonle-100" : "text-ink-soft")}>
                         {enrollment.nextStep === null ? m.home.allLit : (where ?? m.home.litOf(enrollment.completedSteps, enrollment.totalSteps))}
                       </span>
                     </span>
@@ -157,56 +159,45 @@ function JourneyStage({
 
   return (
     <>
-      <section aria-labelledby="greeting" className="relative -mt-[76px] sm:-mt-[88px] lg:flex lg:h-[100dvh] lg:max-h-[980px] lg:min-h-[680px] lg:flex-col">
+      <section aria-labelledby="greeting" className="relative -mt-[76px] sm:-mt-[88px] lg:flex lg:h-[100dvh] lg:max-h-[980px] lg:min-h-[700px] lg:flex-col">
         {/* The world. On a phone it is a tall window with the whole path in it; on a large
-            screen it fills the stage and the words sit on it. */}
-        <div aria-hidden className="relative h-[64svh] min-h-[430px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
-          <BlueHour crop="bottom" firstLight={journeyLight(overview)}>
+            screen it fills the stage and the page of words sits on it. */}
+        <div aria-hidden className="relative h-[60svh] min-h-[420px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
+          <RiverGarden crop="bottom" bloom={journeyLight(overview)}>
             {focus && <PathOfBooks steps={focus.steps.map(({ step }) => step)} currentId={journey.data!.nextStepId} />}
-          </BlueHour>
-          {/* scrims behind the words only, so the lit path keeps its light */}
-          <div className="absolute inset-0 hidden bg-[radial-gradient(90%_70%_at_0%_100%,rgba(10,21,51,0.92)_0%,rgba(10,21,51,0.55)_45%,rgba(10,21,51,0)_75%)] lg:block" />
-          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-tonle-950 to-transparent lg:hidden" />
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-tonle-950/50 to-transparent" />
+          </RiverGarden>
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#E7F1EC] via-[#E7F1EC]/60 to-transparent lg:hidden" />
         </div>
 
-        <div className="relative mx-auto -mt-2 grid w-full max-w-6xl gap-8 px-5 pb-8 sm:px-8 lg:mt-auto lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end lg:pb-14">
-          <div className="flex max-w-xl flex-col gap-5">
+        <div className="relative mx-auto -mt-6 w-full max-w-6xl px-4 pb-8 sm:px-8 lg:mt-auto lg:pb-10">
+          <div className="flex max-w-[30rem] flex-col gap-4 rounded-[28px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 backdrop-blur-sm sm:p-7">
             {switcher}
-            <h1 id="greeting" className="font-display text-display font-bold tracking-[-0.02em] text-white" style={{ fontVariationSettings: '"opsz" 72' }}>
+            <h1 id="greeting" className="font-display text-[clamp(2.5rem,1.9rem+2.2vw,3.6rem)] font-bold leading-[1.02] text-tonle-950">
               {m.home.hi(name ?? "")}
             </h1>
             {overview.currentChapter && (
-              <p className="-mb-2 flex items-center gap-2 text-sm font-semibold text-light-glow">
+              <p className="-mb-2 flex items-center gap-2 text-sm font-semibold text-clay-deep">
                 <BookOpen size={16} aria-hidden />
                 <span>
                   {[chapterOf(overview.currentChapter, overview.chapterCount), overview.currentChapter.title].filter(Boolean).join(" · ")}
                 </span>
               </p>
             )}
-            <p className="max-w-md text-xl font-medium leading-snug text-tonle-100">
-              {next ? childReason(next) : m.home.allDone}
-            </p>
+            <p className="max-w-md text-lg font-medium leading-snug text-ink-soft">{next ? childReason(next) : m.home.allDone}</p>
             {next && (
               <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-                <Link
-                  to={playHref}
-                  className="group relative inline-flex min-h-[4.25rem] items-center gap-3 rounded-pill bg-light pl-3 pr-9 text-2xl font-bold text-tonle-950 shadow-glow transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.97] motion-safe:animate-pulse-ring"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-tonle-950 text-light">
+                <Link to={playHref} className={cn(goButton, "min-h-[4.25rem] pl-3 pr-9 text-2xl")}>
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-tonle-900 text-light">
                     <Play size={20} fill="currentColor" aria-hidden className="translate-x-px" />
                   </span>
                   {m.home.play}
                 </Link>
-                <span className="text-sm font-medium text-tonle-200">{next.title}</span>
+                <span className="text-sm font-semibold text-ink-soft">{next.title}</span>
               </div>
             )}
             {!next && (
-              <Link
-                to={`/learn/${childId}/shelf`}
-                className="inline-flex min-h-[3.75rem] w-fit items-center gap-3 rounded-pill bg-light pl-2.5 pr-7 text-xl font-bold text-tonle-950 shadow-glow transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.97]"
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-950 text-light">
+              <Link to={`/learn/${childId}/shelf`} className={cn(goButton, "w-fit pl-2.5 pr-7")}>
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
                   <Library size={20} aria-hidden />
                 </span>
                 {m.home.seeShelf}
@@ -225,21 +216,19 @@ function JourneyStage({
             {next && (
               <Link
                 to={`/learn/${childId}/shelf`}
-                className="-mt-1 inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-950/55 px-4 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
+                className="-mt-1 inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
               >
                 <Library size={16} aria-hidden /> {m.myShelf}
               </Link>
             )}
           </div>
-
-          <section aria-labelledby="journey-title" className="hidden rounded-[26px] bg-tonle-950/60 p-5 ring-1 ring-white/10 backdrop-blur-md lg:block">
-            <JourneyList journey={journey} playHref={playHref} curriculumName={overview.curriculum.name} />
-          </section>
         </div>
       </section>
 
-      <section aria-labelledby="journey-title-m" className="mx-auto max-w-2xl px-5 pb-16 lg:hidden">
-        <JourneyList journey={journey} playHref={playHref} curriculumName={overview.curriculum.name} mobile />
+      <section aria-labelledby="journey-title-m" className="mx-auto max-w-3xl px-4 pb-16 pt-2 sm:px-8 lg:pt-10">
+        <div className="rounded-[26px] bg-white p-5 shadow-paper ring-1 ring-tonle-950/5 sm:p-7">
+          <JourneyList journey={journey} playHref={playHref} curriculumName={overview.curriculum.name} mobile />
+        </div>
       </section>
     </>
   );
@@ -254,11 +243,11 @@ function BooksLit({ done, total, label, suffix }: { done: number; total: number;
         {Array.from({ length: total }, (_, i) => (
           <span
             key={i}
-            className={cn("h-2.5 w-6 rounded-[3px]", i < done ? "bg-light shadow-[0_0_12px_rgba(255,210,122,0.6)]" : "bg-white/15")}
+            className={cn("h-2.5 w-6 rounded-[3px]", i < done ? "bg-light" : "bg-tonle-100")}
           />
         ))}
       </div>
-      <span className="text-sm font-semibold text-tonle-100">
+      <span className="text-sm font-semibold text-ink-soft">
         {m.home.litOf(done, total)}
         {suffix ? ` ${suffix}` : ""}
       </span>
@@ -286,14 +275,14 @@ function JourneyList({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 id={mobile ? "journey-title-m" : "journey-title"} className="font-display text-xl font-bold text-white">
+        <h2 id={mobile ? "journey-title-m" : "journey-title"} className="font-display text-xl font-bold text-tonle-950">
           {m.myPath}
         </h2>
-        <p className="text-sm text-tonle-200">{curriculumName}</p>
+        <p className="text-sm text-ink-soft">{curriculumName}</p>
       </div>
-      {journey.isLoading && <p className="py-6 text-center font-medium text-tonle-200">{m.home.layingOut}</p>}
+      {journey.isLoading && <p className="py-6 text-center font-medium text-ink-soft">{m.home.layingOut}</p>}
       {journey.error && <Trouble onRetry={journey.refetch} compact />}
-      {journey.data && journey.data.steps.length === 0 && <p className="py-4 text-tonle-200">{m.home.preparing}</p>}
+      {journey.data && journey.data.steps.length === 0 && <p className="py-4 text-ink-soft">{m.home.preparing}</p>}
       {journey.data && journey.data.steps.length > 0 && (
         <MyPath journey={journey.data} playHref={playHref} currentRef={currentRef} scroll={!mobile} />
       )}
@@ -337,10 +326,10 @@ function MyPath({
     <ol className={cn("flex flex-col gap-1.5", scroll && "max-h-[380px] overflow-y-auto pr-1")} aria-label={m.home.chapters}>
       {journey.chapters.map((chapter) =>
         chapter.id === focus.chapter!.id ? (
-          <li key={chapter.id} className="rounded-[18px] bg-white/[0.06] p-2 ring-1 ring-white/10">
+          <li key={chapter.id} className="rounded-[18px] bg-paper p-2 ring-1 ring-line">
             <p className="flex items-baseline justify-between gap-3 px-2 pb-2 pt-1">
-              <span className="text-sm font-bold text-white">{m.home.chapter(chapter.position, chapter.title)}</span>
-              <span className="shrink-0 text-xs font-semibold text-light-glow">{m.home.youAreHere}</span>
+              <span className="text-sm font-bold text-tonle-950">{m.home.chapter(chapter.position, chapter.title)}</span>
+              <span className="shrink-0 text-xs font-semibold text-clay-deep">{m.home.youAreHere}</span>
             </p>
             {steps}
           </li>
@@ -380,16 +369,16 @@ function ChapterRow({ chapter }: { chapter: Chapter }) {
         aria-hidden
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
-          done ? "bg-light-soft text-light-deep" : later ? "bg-white/[0.06] text-tonle-300" : "bg-white/10 text-light-glow",
+          done ? "bg-light-soft text-light-deep" : later ? "bg-paper text-ink-faint" : "bg-tonle-50 text-tonle-700",
         )}
       >
         {done ? <Check size={17} strokeWidth={3} /> : <BookOpen size={16} />}
       </span>
       <span className="flex min-w-0 flex-col">
-        <span className={cn("truncate text-sm font-semibold", later ? "text-tonle-200" : "text-white")}>
+        <span className={cn("truncate text-sm font-semibold", later ? "text-ink-soft" : "text-tonle-950")}>
           {m.home.chapter(chapter.position, chapter.title)}
         </span>
-        <span className="text-xs text-tonle-300">{chapterNote(chapter, m)}</span>
+        <span className="text-xs text-ink-faint">{chapterNote(chapter, m)}</span>
       </span>
     </div>
   );
@@ -405,8 +394,8 @@ function StepRow({ step, index, isCurrent, playHref }: { step: JourneyStep; inde
       className={cn(
         "flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-sm font-bold",
         done && "bg-light-soft text-light-deep",
-        isCurrent && "bg-light text-tonle-950 shadow-glow",
-        !done && !isCurrent && "bg-white/10 text-tonle-200",
+        isCurrent && "bg-light text-tonle-950",
+        !done && !isCurrent && "bg-paper text-ink-soft ring-1 ring-line",
       )}
       aria-hidden
     >
@@ -417,8 +406,8 @@ function StepRow({ step, index, isCurrent, playHref }: { step: JourneyStep; inde
     <>
       {badge}
       <span className="flex min-w-0 flex-col">
-        <span className={cn("truncate text-[0.95rem] font-semibold", done ? "text-tonle-100" : isCurrent ? "text-white" : "text-tonle-200")}>{step.title}</span>
-        <span className="text-xs text-tonle-300">
+        <span className={cn("truncate text-[0.95rem] font-semibold", isCurrent ? "text-tonle-950" : "text-ink-soft")}>{step.title}</span>
+        <span className="text-xs text-ink-faint">
           {isCurrent ? m.upNext : done ? m.lit : m.waiting}
           {tag ? ` · ${tag.label}` : ""}
         </span>
@@ -429,7 +418,7 @@ function StepRow({ step, index, isCurrent, playHref }: { step: JourneyStep; inde
     <Link
       to={playHref}
       aria-label={m.playStep(step.title, status)}
-      className="flex items-center gap-3 rounded-[14px] bg-white/10 p-2 ring-1 ring-light/40 transition-colors duration-150 ease-out hover:bg-white/15"
+      className="flex items-center gap-3 rounded-[14px] bg-light-soft p-2 ring-1 ring-light/50 transition-colors duration-150 ease-out hover:bg-light-soft/70"
     >
       {body}
     </Link>
@@ -444,7 +433,7 @@ export function Waiting({ line }: { line: string }) {
   return (
     <div role="status" className="flex flex-col items-center gap-4 px-6 pt-28 text-center motion-safe:animate-fade-in-late">
       <LearningBuddy mood="thinking" size={132} />
-      <p className="text-lg font-semibold text-tonle-100">{line}</p>
+      <p className="rounded-pill bg-white/90 px-5 py-2 text-lg font-semibold text-tonle-900 shadow-tight">{line}</p>
     </div>
   );
 }
@@ -455,13 +444,9 @@ export function Trouble({ onRetry, compact, line }: { onRetry?: () => void; comp
   return (
     <div role="alert" className={cn("flex flex-col items-center gap-4 px-6 text-center", compact ? "py-6" : "pt-28")}>
       <LearningBuddy mood="encourage" size={compact ? 88 : 124} />
-      <p className="max-w-sm text-lg font-semibold text-white">{line ?? m.trouble}</p>
+      <p className="max-w-sm rounded-[20px] bg-white/95 px-5 py-3 text-lg font-semibold text-tonle-950 shadow-tight">{line ?? m.trouble}</p>
       {onRetry && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="min-h-14 rounded-pill bg-light px-9 text-lg font-bold text-tonle-950 shadow-[0_5px_0_#B86A1C,0_12px_40px_rgba(243,168,59,0.45)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:bg-light-glow active:translate-y-1 active:shadow-[0_1px_0_#B86A1C]"
-        >
+        <button type="button" onClick={onRetry} className={cn(goButton, "min-h-14 px-9 text-lg")}>
           {m.tryAgain}
         </button>
       )}

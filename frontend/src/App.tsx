@@ -24,6 +24,7 @@ import { AccountPage } from "@/features/parent/AccountPage";
 import { ChildHome } from "@/features/child/ChildHome";
 import { PlaySession, PracticeSession } from "@/features/child/PlaySession";
 import { ShelfPage } from "@/features/child/ShelfPage";
+import { BuddyPage } from "@/features/child/BuddyPage";
 import { useMessages } from "@/i18n/catalog";
 import { common } from "@/components/ui/messages";
 
@@ -105,6 +106,16 @@ export default function App() {
                 <RequireAuth>
                   <RequireRole roles={["PARENT"]}>
                     <ShelfPage />
+                  </RequireRole>
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/learn/:childId/buddy"
+              element={
+                <RequireAuth>
+                  <RequireRole roles={["PARENT"]}>
+                    <BuddyPage />
                   </RequireRole>
                 </RequireAuth>
               }

@@ -1,25 +1,25 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Bookeyond Kid — "Blue hour on the Mekong".
+ * Bookeyond Kid — "River Garden".
  *
- * Blue is the identity: the Tonle scale runs from night ink to morning mist and carries
- * structure, text and primary action. Warm colour is reserved for *light* (the current step,
- * success, focus, the buddy's glow) so it always means something. Lotus, palm and dusk are
- * quiet nature accents. Every text pairing noted below meets WCAG AA on its intended ground.
+ * A Cambodian village morning drawn as a storybook. Tonle (Khmer for river) is the deep teal of the
+ * Mekong by day: it carries structure, text and the adult primary action. Marigold *light* is the one
+ * warm voice and always means something - now, next, done well. Rice green, clay tile, lotus and
+ * palm wood are the world's materials. Every text pairing noted below meets WCAG AA on its ground.
  */
 const tonle = {
-  50: "#F2F5FB",
-  100: "#E3EAF7",
-  200: "#C9D6EF",
-  300: "#A2B8E3",
-  400: "#6E8FD0",
-  500: "#4468B8",
-  600: "#2E4F9E", // links on paper (6.9:1)
-  700: "#223D85", // primary action fill, white text 9.6:1
-  800: "#182E66",
-  900: "#11214D",
-  950: "#0A1533", // night ink
+  50: "#EFF6F6",
+  100: "#DCEBEC",
+  200: "#BCD8DA",
+  300: "#8DBDC2",
+  400: "#5A9AA2",
+  500: "#357B85",
+  600: "#22636E", // links and focus on paper (6.3:1)
+  700: "#1A515B", // primary action fill, white text 8.8:1
+  800: "#154049",
+  900: "#10323A",
+  950: "#0A2127", // deepest ink
 };
 
 export default {
@@ -30,33 +30,37 @@ export default {
     extend: {
       colors: {
         tonle,
-        // Text: navy ink, never pure black. soft 7.4:1, faint 4.9:1 on paper.
-        ink: { DEFAULT: "#0E1B3A", soft: "#46526E", faint: "#636E88" },
-        paper: { DEFAULT: "#F6F7FB", raised: "#FFFFFF", sunk: "#EDF0F7" },
-        line: { DEFAULT: "#DCE2EE", strong: "#C3CCDD" },
+        // Text: river ink, never pure black. soft 6.8:1, faint 4.5:1 on paper (4.9:1 on white).
+        ink: { DEFAULT: "#172B2E", soft: "#46595B", faint: "#637476" },
+        // Rice paper with a breath of celadon; white sheets; a sunk well for inputs and code.
+        paper: { DEFAULT: "#F4F6F1", raised: "#FFFFFF", sunk: "#E8EEE6" },
+        line: { DEFAULT: "#DCE4DA", strong: "#C2CEC0" },
         // The one warm voice: light. Fill only; text on it uses light.deep (ink on fill 8.9:1).
-        light: { DEFAULT: "#F3A83B", soft: "#FCEBD0", glow: "#FFD27A", deep: "#8A4A0B", ember: "#E0782F" },
+        light: { DEFAULT: "#F2A93B", soft: "#FCEED3", glow: "#FFD27A", deep: "#8A4A0B", ember: "#E0782F" },
         lotus: { DEFAULT: "#E48BA0", soft: "#FBE6EB", deep: "#9C3656" },
-        palm: { DEFAULT: "#2E7A5A", soft: "#E3F1EA", deep: "#1E5A41" },
+        palm: { DEFAULT: "#2E7A5A", soft: "#E2F0E6", deep: "#1E5A41" },
+        // The world's materials: rice in the paddies, clay roof tiles.
+        rice: { DEFAULT: "#8DB45A", soft: "#EEF4E1", deep: "#4E6B2A" },
+        clay: { DEFAULT: "#C8643B", soft: "#F8E4D8", deep: "#8F3F1F" },
         dusk: { DEFAULT: "#6D5BA8", soft: "#ECE9F6", deep: "#4A3B86" },
         brick: { DEFAULT: "#C2412F", soft: "#FBE8E4", deep: "#9E2F20" },
 
         // Legacy names, remapped onto the new system while screens are rebuilt.
-        muted: "#46526E",
-        hairline: "#DCE2EE",
-        surface: { cream: "#F6F7FB", mist: "#F2F5FB", sand: "#EDF0F7" },
+        muted: "#46595B",
+        hairline: "#DCE4DA",
+        surface: { cream: "#F4F6F1", mist: "#EFF6F6", sand: "#E8EEE6" },
         brand: {
           blue: tonle[500],
           blueStrong: tonle[700],
           blueTint: tonle[100],
           green: "#2E7A5A",
-          greenTint: "#E3F1EA",
+          greenTint: "#E2F0E6",
           greenStrong: "#1E5A41",
           purple: "#6D5BA8",
           purpleTint: "#ECE9F6",
           purpleStrong: "#4A3B86",
-          amber: "#F3A83B",
-          amberTint: "#FCEBD0",
+          amber: "#F2A93B",
+          amberTint: "#FCEED3",
           amberStrong: "#8A4A0B",
           red: "#C2412F",
           redTint: "#FBE8E4",
@@ -65,46 +69,47 @@ export default {
         kid: {
           cream: tonle[50],
           paper: "#FFFFFF",
-          mint: "#E3F1EA",
+          mint: "#E2F0E6",
           mintDeep: "#1E5A41",
           lavender: "#ECE9F6",
           lavenderDeep: "#4A3B86",
           sky: tonle[100],
           skyDeep: tonle[700],
-          peach: "#FCEBD0",
+          peach: "#FCEED3",
           peachDeep: "#8A4A0B",
-          sun: "#FCEBD0",
+          sun: "#FCEED3",
           sunDeep: "#8A4A0B",
           coral: "#FBE8E4",
           coralDeep: "#9E2F20",
         },
       },
       fontFamily: {
-        // Display: Bricolage Grotesque (optical sizes). Text/UI: Kantumruy Pro, a Cambodian
-        // design that sets Khmer and Latin in one rhythm. Both self-hosted (main.tsx).
-        display: ['"Bricolage Grotesque Variable"', '"Kantumruy Pro Variable"', "system-ui", "sans-serif"],
+        // Display: Alegreya, a calligraphic book serif - the voice of a storybook. Text/UI: Kantumruy
+        // Pro, a Cambodian design that sets Khmer and Latin in one rhythm (and carries Khmer headings).
+        // Both self-hosted (main.tsx).
+        display: ['"Alegreya Variable"', '"Kantumruy Pro Variable"', "Georgia", "serif"],
         sans: ['"Kantumruy Pro Variable"', "system-ui", "sans-serif"],
         khmer: ['"Kantumruy Pro Variable"', "system-ui", "sans-serif"],
       },
       fontSize: {
         // A deliberate scale: small UI steps, generous display steps.
         "2xs": ["0.6875rem", { lineHeight: "1rem", letterSpacing: "0.01em" }],
-        display: ["clamp(2.5rem, 1.6rem + 3.6vw, 4.75rem)", { lineHeight: "1.02", letterSpacing: "-0.035em" }],
-        headline: ["clamp(1.875rem, 1.4rem + 1.9vw, 2.75rem)", { lineHeight: "1.08", letterSpacing: "-0.025em" }],
-        title: ["clamp(1.375rem, 1.2rem + 0.7vw, 1.75rem)", { lineHeight: "1.2", letterSpacing: "-0.015em" }],
+        display: ["clamp(2.5rem, 1.6rem + 3.6vw, 4.75rem)", { lineHeight: "1.04", letterSpacing: "-0.012em" }],
+        headline: ["clamp(1.875rem, 1.4rem + 1.9vw, 2.75rem)", { lineHeight: "1.1", letterSpacing: "-0.008em" }],
+        title: ["clamp(1.375rem, 1.2rem + 0.7vw, 1.75rem)", { lineHeight: "1.22", letterSpacing: "-0.004em" }],
       },
       borderRadius: {
         pill: "999px",
         paper: "22px",
       },
       boxShadow: {
-        // Depth is paper on paper: small offset, soft blur, tinted with night ink.
-        soft: "0 1px 2px rgba(10,21,51,0.06), 0 8px 24px -12px rgba(10,21,51,0.18)",
-        nav: "0 1px 0 rgba(10,21,51,0.06)",
-        tight: "0 1px 2px rgba(10,21,51,0.08)",
-        paper: "0 1px 1px rgba(10,21,51,0.05), 0 12px 32px -18px rgba(10,21,51,0.35)",
-        lift: "0 2px 4px rgba(10,21,51,0.08), 0 24px 48px -24px rgba(10,21,51,0.45)",
-        glow: "0 0 0 1px rgba(243,168,59,0.45), 0 0 32px 4px rgba(255,210,122,0.55)",
+        // Depth is paper on paper in morning light: small offset, soft blur, tinted with river ink.
+        soft: "0 1px 2px rgba(16,50,58,0.06), 0 8px 24px -12px rgba(16,50,58,0.18)",
+        nav: "0 1px 0 rgba(16,50,58,0.06)",
+        tight: "0 1px 2px rgba(16,50,58,0.08)",
+        paper: "0 1px 1px rgba(16,50,58,0.05), 0 12px 32px -18px rgba(16,50,58,0.32)",
+        lift: "0 2px 4px rgba(16,50,58,0.08), 0 24px 48px -24px rgba(16,50,58,0.40)",
+        glow: "0 0 0 1px rgba(242,169,59,0.45), 0 0 32px 4px rgba(255,210,122,0.55)",
       },
       transitionTimingFunction: {
         // Emil-style curves: fast out, gentle settle. Never ease-in for entrances.

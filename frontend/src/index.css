@@ -26,6 +26,10 @@
     font-family: theme("fontFamily.display");
     font-optical-sizing: auto;
     text-wrap: balance;
+    /* Alegreya's default figures are old-style (a 0 that reads like an o): children counting need
+       lining figures, and so does every number set in the display face. */
+    font-variant-numeric: lining-nums;
+    font-feature-settings: "lnum" 1, "kern" 1;
   }
 
   p {
@@ -46,7 +50,7 @@
   }
 
   ::selection {
-    background: theme("colors.tonle.200");
+    background: theme("colors.light.soft");
     color: theme("colors.tonle.950");
   }
 
@@ -85,7 +89,7 @@
 }
 
 @layer components {
-  /* The firefly buddy blinks now and then — a sign of life while it waits. */
+  /* The buddy blinks now and then — a sign of life while it waits. */
   .buddy-blink {
     animation: buddy-blink 5.5s infinite;
   }

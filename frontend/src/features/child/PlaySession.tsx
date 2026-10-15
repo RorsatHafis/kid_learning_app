@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowRight, BookOpen, Library } from "lucide-react";
-import { Lantern, LanternString } from "@/features/world/Lantern";
+import { ArrowRight, BookOpen, Library, X } from "lucide-react";
+import { ProgressBuds, Bud } from "@/features/world/ProgressBuds";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -10,6 +10,7 @@ import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { play as playCue } from "@/features/buddy/sound";
 import { childReason } from "@/features/learning/explain";
 import { chapterRuns, focusChapter, journeyLight } from "@/features/learning/chapters";
+import { goButton, quietButton } from "./chips";
 import { PathStrip } from "@/features/world/PathStrip";
 import type { PathStep } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
@@ -91,11 +92,6 @@ export function PlaySession() {
   // React 18 StrictMode runs effects twice in development; without this guard the
   // start call could fire twice in a row for the same path item.
   const loadInFlight = useRef(false);
-
-  // How far the child's path has brought the dawn: the sky behind every play screen (journeyLight).
-  const [light, setLight] = useState(0);
-  // Only a change the child caused (finishing an activity) eases in; arriving values just appear.
-  const [lightEases, setLightEases] = useState(false);
 
   const overviewOfPath = useCallback(async (): Promise<EnrollmentOverview | null | undefined> => {
     try {
@@ -190,10 +186,6 @@ export function PlaySession() {
           activityAttemptApi.listAnswers(attempt.id),
           overviewOfPath(),
         ]);
-        if (overview) {
-          setLightEases(false);
-          setLight(journeyLight(overview));
-        }
         const next = overview?.nextStep ?? null;
 
         const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
@@ -240,31 +232,19 @@ export function PlaySession() {
     }
   }, [childId, enrollmentId, finishAttempt, overviewOfPath]);
 
-  // After a completion the sky moves to where the path now is — a finished chapter brings the
-  // dawn a step nearer while the child is looking (the scene eases it; reduced motion jumps).
-  const lightAfter = phase.kind === "completed" ? phase.lightAfter : null;
-  useEffect(() => {
-    if (lightAfter === null) return;
-    const timer = window.setTimeout(() => {
-      setLightEases(true);
-      setLight(lightAfter);
-    }, 600);
-    return () => window.clearTimeout(timer);
-  }, [lightAfter]);
-
   useEffect(() => {
     void loadNext();
   }, [loadNext]);
 
   const journeyHref = `/learn/${childId}?path=${enrollmentId}`;
-  const shell = (content: React.ReactNode) => (
+  const shell = (content: React.ReactNode, focus = false) => (
     <ChildSpaceLayout
       childId={childId}
       childName={child.data?.displayName}
       childLanguage={child.data?.preferredLanguage}
+      buddy={child.data?.learningBuddy}
       home={journeyHref}
-      firstLight={light}
-      easeLight={lightEases}
+      focus={focus}
     >
       {content}
     </ChildSpaceLayout>
@@ -280,7 +260,7 @@ export function PlaySession() {
     case "caught-up":
       return shell(
         <div className="flex flex-col items-center gap-8 px-6 pt-24 text-center">
-          <BuddySays mood="cheer" size={150} tone="night">
+          <BuddySays mood="cheer" size={150}>
             {m.play.caughtUp}
           </BuddySays>
           <div className="flex flex-wrap justify-center gap-3">
@@ -329,6 +309,7 @@ export function PlaySession() {
             void finishAttempt(phase.attemptId, phase.activity.title, phase.itemId);
           }}
         />,
+        true,
       );
   }
 }
@@ -336,13 +317,7 @@ export function PlaySession() {
 function JourneyLink({ href, solid, toShelf = false }: { href: string; solid?: boolean; toShelf?: boolean }) {
   const m = useMessages(childMessages);
   return (
-    <Link
-      to={href}
-      className={cn(
-        "flex min-h-14 items-center justify-center gap-2 rounded-pill px-7 text-base font-semibold transition-colors duration-150 ease-out",
-        solid ? "bg-white text-tonle-900 hover:bg-tonle-50" : "text-tonle-700 ring-1 ring-tonle-200 hover:bg-tonle-50",
-      )}
-    >
+    <Link to={href} className={cn(quietButton, solid && "bg-tonle-50 ring-tonle-200")}>
       {toShelf ? <Library size={19} aria-hidden /> : <BookOpen size={19} aria-hidden />} {toShelf ? m.myShelf : m.myPath}
     </Link>
   );
@@ -430,7 +405,14 @@ export function PracticeSession() {
   }, [load]);
 
   const shell = (content: React.ReactNode) => (
-    <ChildSpaceLayout childId={childId} childName={child.data?.displayName} childLanguage={child.data?.preferredLanguage} home={shelfHref}>
+    <ChildSpaceLayout
+      childId={childId}
+      childName={child.data?.displayName}
+      childLanguage={child.data?.preferredLanguage}
+      buddy={child.data?.learningBuddy}
+      home={shelfHref}
+      focus={phase.kind === "playing"}
+    >
       {content}
     </ChildSpaceLayout>
   );
@@ -446,7 +428,7 @@ export function PracticeSession() {
           <Trouble onRetry={load} line={m.play[phase.message]} />
         ) : (
           <div className="flex flex-col items-center gap-8 px-6 pt-24 text-center">
-            <BuddySays mood="encourage" size={140} tone="night">
+            <BuddySays mood="encourage" size={140}>
               {m.play[phase.message]}
             </BuddySays>
             <JourneyLink href={shelfHref} solid toShelf />
@@ -486,10 +468,8 @@ export function PracticeSession() {
       return shell(
         <div className="px-4 pb-16 pt-24 sm:pt-28">
           <Page labelledBy="practice-done" className="px-6 pb-10 pt-12 text-center motion-safe:animate-pop-in sm:px-14 sm:pb-12">
-            <div aria-hidden className="absolute -top-[4.5rem] right-4 sm:-top-20 sm:right-10">
-              <LearningBuddy mood="cheer" size={110} />
-            </div>
-            <h1 id="practice-done" className="font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+            <LearningBuddy mood="cheer" size={132} className="mx-auto -mt-24 sm:-mt-28" />
+            <h1 id="practice-done" className="mt-2 font-display text-headline font-bold text-tonle-950">
               {phase.total > 0 && phase.correct === phase.total ? m.play.perfectAgain : m.play.practiceDone}
             </h1>
             <p className="mt-1 text-lg font-medium text-ink-soft">{m.play.playedAgain(phase.title)}</p>
@@ -510,21 +490,12 @@ export function PracticeSession() {
   }
 }
 
-/** The big warm button that moves the child forward: pressed like a real key. */
-const goButton =
-  "flex min-h-16 items-center justify-center gap-2 rounded-pill bg-light px-10 text-xl font-bold text-tonle-950 shadow-[0_5px_0_#B86A1C,0_12px_40px_rgba(243,168,59,0.45)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:bg-light-glow active:translate-y-1 active:shadow-[0_1px_0_#B86A1C,0_6px_20px_rgba(243,168,59,0.35)]";
-
-/** The page the child reads from: warm book paper floating over the dimmed world. */
+/** The page the child reads from: one clean sheet over the quiet field. */
 function Page({ children, className, labelledBy }: { children: React.ReactNode; className?: string; labelledBy: string }) {
   return (
     <section
       aria-labelledby={labelledBy}
-      className={cn(
-        "on-paper relative mx-auto w-full max-w-3xl rounded-[32px] bg-[#FFFBF3] text-ink shadow-lift ring-1 ring-[#EADFCB]",
-        // the page's gutter, where it is sewn into the book
-        "before:pointer-events-none before:absolute before:inset-y-8 before:left-0 before:w-3 before:rounded-r-full before:bg-gradient-to-r before:from-[#E7D9BF] before:to-transparent",
-        className,
-      )}
+      className={cn("relative mx-auto w-full max-w-3xl rounded-[32px] bg-[#FFFDF8] text-ink shadow-lift ring-1 ring-tonle-950/5", className)}
     >
       {children}
     </section>
@@ -547,22 +518,22 @@ function Intro({
   useEffect(() => startRef.current?.focus(), []);
   const n = activity.items.length;
   return (
-    <div className="px-4 pb-16 pt-28 sm:pt-24">
+    <div className="px-4 pb-16 pt-28 sm:pt-32">
       <Page labelledBy="activity-title" className="px-6 pb-10 pt-10 text-center motion-safe:animate-page-in sm:px-14 sm:pb-12">
-        <LearningBuddy mood="happy" size={128} className="mx-auto -mt-28 sm:-mt-32" />
-        {reason && <p className="mx-auto mt-3 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-700">{reason()}</p>}
-        <h1 id="activity-title" className="mt-4 font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+        <LearningBuddy mood="happy" size={140} className="mx-auto -mt-32 sm:-mt-36" />
+        {reason && <p className="mx-auto mt-2 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-800">{reason()}</p>}
+        <h1 id="activity-title" className="mt-4 font-display text-headline font-bold text-tonle-950">
           {activity.title}
         </h1>
         {activity.instructions && <p className="mx-auto mt-3 max-w-lg text-lg font-medium leading-relaxed text-ink-soft">{activity.instructions}</p>}
 
-        <div className="mx-auto mt-8 flex w-fit flex-col items-center gap-3 rounded-[24px] bg-tonle-950 px-8 pb-5 pt-6 shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)]">
-          <div className="flex items-start gap-3" aria-hidden>
+        <div className="mx-auto mt-7 flex w-fit flex-col items-center gap-2">
+          <div className="flex flex-wrap justify-center gap-1.5" aria-hidden>
             {Array.from({ length: n }, (_, i) => (
-              <Lantern key={i} state={i === 0 ? "current" : "unlit"} size={n > 8 ? 22 : n > 5 ? 30 : 40} />
+              <Bud key={i} state={i === 0 ? "current" : "waiting"} size={n > 10 ? 26 : 38} />
             ))}
           </div>
-          <p className="text-base font-semibold text-tonle-100">{m.lanterns(n)}</p>
+          <p className="text-base font-semibold text-ink-soft">{m.lanterns(n)}</p>
         </div>
 
         <div className="mt-9 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
@@ -579,6 +550,11 @@ function Intro({
 // Varied, authored words for a right answer (every one still says so plainly).
 const RIGHT_HEADLINES = ["right1", "right2", "right3"] as const;
 
+/**
+ * One question, and nothing else competing with it: a way back to the path, a quiet row of buds,
+ * the question on a clean page, the buddy small at its corner, and - once answered - one clear
+ * next step. Everything about the answer (scoring, the recorded result, resuming) is the server's.
+ */
 function Question({
   phase,
   journeyHref,
@@ -653,41 +629,35 @@ function Question({
 
   const total = activity.items.length;
   const answeredHere = result ? 1 : 0;
-  const mood = result ? (result.correct ? "cheer" : "encourage") : isSubmitting ? "thinking" : "happy";
+  const mood = result ? (result.correct ? "cheer" : "encourage") : isSubmitting ? "thinking" : "idle";
   return (
-    <div className="flex flex-col gap-4 px-4 pb-16 pt-4 sm:gap-6 sm:pt-6">
-      <div className="mx-auto grid w-full max-w-3xl grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-start gap-3">
+    <div className="flex flex-col gap-5 px-4 pb-16 pt-1 sm:gap-7">
+      <div className="mx-auto grid w-full max-w-3xl grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-3">
         <Link
           to={journeyHref}
           aria-label={m.backToJourney}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-950/55 text-tonle-100 ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-tonle-900 shadow-tight ring-1 ring-tonle-950/10 transition-colors duration-150 ease-out hover:bg-white"
         >
-          <BookOpen size={19} aria-hidden />
+          <X size={20} aria-hidden />
         </Link>
-        <LanternString total={total} lit={index + answeredHere} current={result ? null : index} label={m.questionOf(index + 1, total)} />
-        <span
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-950/55 text-sm font-bold tabular-nums text-tonle-100 ring-1 ring-white/15 backdrop-blur-md"
-          aria-hidden
-        >
-          {index + 1}/{total}
-        </span>
+        <ProgressBuds total={total} done={index + answeredHere} current={result ? null : index} label={m.questionOf(index + 1, total)} />
+        <span aria-hidden />
       </div>
 
       <Page
         labelledBy="question-prompt"
         className={cn(
-          "mt-10 transition-shadow duration-500 motion-safe:animate-page-in sm:mt-12",
-          result?.correct && "shadow-[0_0_0_1px_#F3A83B,0_30px_80px_-10px_rgba(243,168,59,0.45)]",
+          "mt-6 transition-shadow duration-500 motion-safe:animate-page-in sm:mt-8",
+          result?.correct && "shadow-[0_0_0_2px_#F2A93B,0_30px_70px_-20px_rgba(199,122,30,0.45)]",
         )}
       >
-        {/* The firefly keeps the child company on the page and reacts to their answer. */}
-        <div aria-hidden className="absolute -top-[4.5rem] right-4 sm:-top-20 sm:right-10">
-          <LearningBuddy mood={mood} size={96} className="sm:hidden" />
-          <LearningBuddy mood={mood} size={118} className="hidden sm:block" />
+        {/* The buddy keeps the child company at the page's corner and reacts to the answer. */}
+        <div aria-hidden className="pointer-events-none absolute -top-14 right-3 sm:-top-16 sm:right-8">
+          <LearningBuddy mood={mood} size={78} className="sm:hidden" />
+          <LearningBuddy mood={mood} size={96} className="hidden sm:block" />
         </div>
 
-        <div className="flex flex-col gap-8 px-5 pb-9 pt-9 sm:px-12 sm:pb-11 sm:pt-11">
-          <p className="pr-20 text-sm font-semibold text-ink-faint sm:pr-28">{activity.title}</p>
+        <div className="flex flex-col gap-8 px-5 pb-9 pt-10 sm:px-12 sm:pb-11 sm:pt-12">
           <QuestionView item={item} onAnswer={handleAnswer} disabled={isSubmitting} result={result} />
           {submitError && (
             <p role="alert" className="text-center text-base font-semibold text-brick-deep">
@@ -700,12 +670,12 @@ function Question({
           <div
             role="status"
             className={cn(
-              "flex flex-col items-center gap-5 rounded-b-[32px] border-t border-dashed px-6 pb-7 pt-6 motion-safe:animate-rise-in sm:flex-row sm:px-12",
-              result.correct ? "border-light/50 bg-light-soft/70" : "border-tonle-200 bg-tonle-50",
+              "flex flex-col items-center gap-5 rounded-b-[32px] px-6 pb-7 pt-6 motion-safe:animate-rise-in sm:flex-row sm:px-12",
+              result.correct ? "bg-light-soft" : "bg-tonle-50",
             )}
           >
             <div className="flex-1 text-center sm:text-left">
-              <p className={cn("font-display text-[1.75rem] font-bold leading-tight", result.correct ? "text-light-deep" : "text-tonle-800")}>
+              <p className={cn("font-display text-[1.875rem] font-bold leading-tight", result.correct ? "text-light-deep" : "text-tonle-800")}>
                 {result.correct ? m[RIGHT_HEADLINES[index % RIGHT_HEADLINES.length]] : m.notQuite}
               </p>
               <p className="mt-1 text-lg font-medium text-ink">
@@ -744,20 +714,15 @@ function Completed({
   const m = useMessages(childMessages).play;
   const keepGoingRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => keepGoingRef.current?.focus(), []);
-  // The river shows the next book only while it is in this chapter.
+  // The path shows the next book only while it is in this chapter.
   const nextHere = nextId !== null && chapterSteps.some((s) => s.learningPathItemId === nextId) ? nextId : null;
 
   return (
-    <div className="px-4 pb-16 pt-24 sm:pt-28">
-      <Page labelledBy="done-title" className="px-6 pb-10 pt-12 text-center motion-safe:animate-pop-in sm:px-14 sm:pb-12">
-        {/* One firefly: on the river when the path is shown, otherwise at the page's corner. */}
-        {chapterSteps.length === 0 && (
-          <div aria-hidden className="absolute -top-[4.5rem] right-4 sm:-top-20 sm:right-10">
-            <LearningBuddy mood="cheer" size={96} className="sm:hidden" />
-            <LearningBuddy mood="cheer" size={118} className="hidden sm:block" />
-          </div>
-        )}
-        <h1 id="done-title" className="font-display text-headline font-bold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+    <div className="px-4 pb-16 pt-28 sm:pt-32">
+      <Page labelledBy="done-title" className="px-6 pb-10 pt-10 text-center motion-safe:animate-pop-in sm:px-14 sm:pb-12">
+        {/* One buddy: on the path when the path is shown, otherwise standing over the page. */}
+        {chapterSteps.length === 0 && <LearningBuddy mood="cheer" size={140} className="mx-auto -mt-32 sm:-mt-36" />}
+        <h1 id="done-title" className="font-display text-headline font-bold text-tonle-950">
           {finishedChapter ? m.chapterComplete(finishedChapter.position) : allRight ? m.perfect : m.activityComplete}
         </h1>
         <p className="mt-1 text-lg font-medium text-ink-soft">
@@ -769,30 +734,20 @@ function Completed({
           </p>
         )}
         {chapterSteps.length > 0 && (
-          // The child's stretch of river: the book just finished takes the light where it sits.
-          <div
-            className={cn(
-              "mt-8 overflow-hidden bg-tonle-950 px-4 pt-3 shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)]",
-              next ? "rounded-t-[22px]" : "rounded-[22px] pb-3",
-            )}
-          >
+          // The child's stretch of the path: the book just finished takes the light where it sits.
+          <div className={cn("mt-8 overflow-hidden bg-[#EAF3E4] px-4 pt-3", next ? "rounded-t-[22px]" : "rounded-[22px] pb-3")}>
             <PathStrip steps={chapterSteps} justLitId={itemId} nextId={nextHere} chapterDone={finishedChapter !== null} />
           </div>
         )}
         {next && (
-          <div
-            className={cn(
-              "flex items-center gap-4 bg-tonle-950 p-5 text-left text-white shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)]",
-              chapterSteps.length > 0 ? "rounded-b-[22px] pt-1" : "mt-8 rounded-[22px]",
-            )}
-          >
-            <Lantern state="current" size={30} className="shrink-0" />
+          <div className={cn("flex items-center gap-4 bg-tonle-50 p-5 text-left", chapterSteps.length > 0 ? "rounded-b-[22px]" : "mt-8 rounded-[22px]")}>
+            <Bud state="current" size={40} className="shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-light-glow">
+              <p className="text-sm font-semibold text-clay-deep">
                 {finishedChapter && nextChapter ? m.upNextChapter(nextChapter.position, nextChapter.title) : messagesNow(childMessages).home.upNext}
               </p>
-              <p className="font-display text-xl font-bold">{next.title}</p>
-              <p className="font-medium text-tonle-100">
+              <p className="font-display text-xl font-bold text-tonle-950">{next.title}</p>
+              <p className="font-medium text-ink-soft">
                 {finishedChapter && next.explanation.reason === "CURRICULUM" ? m.newChapter : childReason(next)}
               </p>
             </div>

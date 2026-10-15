@@ -123,6 +123,18 @@ public class ChildService {
     }
 
     /**
+     * Sets the Learning Buddy shown in the child's own space. The caller has already been checked for
+     * access to this child (FamilyAccessGuard).
+     */
+    @Transactional
+    public Child chooseBuddy(UUID childId, com.platform.child.entity.LearningBuddy buddy) {
+        Child child = childRepository.findById(childId)
+                .orElseThrow(() -> new ResourceNotFoundException("Child", childId));
+        child.chooseBuddy(buddy);
+        return child;
+    }
+
+    /**
      * See {@link EnrollmentService#autoEnrollIfUnambiguous} for the resolution
      * rules. Deliberately a separate call from {@link #createForAccount} - not
      * invoked from inside it - and deliberately not itself {@code @Transactional}:

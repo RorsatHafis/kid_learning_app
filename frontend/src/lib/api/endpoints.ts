@@ -14,6 +14,7 @@ import type {
   Enrollment,
   EnrollmentOverview,
   Journey,
+  LearningBuddyKind,
   LearningPathItem,
   ParentInsight,
   ProgressSince,
@@ -105,6 +106,7 @@ export const childrenApi = {
   keep: (childId: string) => apiClient.delete<Child>(`/children/${childId}/deletion`),
   // The language of the child's own space - the child's, never the parent's.
   changeLanguage: (childId: string, language: Locale) => apiClient.put<Child>(`/children/${childId}/language`, { language }),
+  chooseBuddy: (childId: string, buddy: LearningBuddyKind) => apiClient.put<Child>(`/children/${childId}/buddy`, { buddy }),
   /** The family catalog for this child: the child's age group first (curriculum/web/CurriculumController.java). */
   curricula: (childId: string) => apiClient.get<CurriculumChoice[]>(`/children/${childId}/curricula`),
 };

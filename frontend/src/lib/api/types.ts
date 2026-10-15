@@ -74,7 +74,12 @@ export interface Child {
   eraseAfter: string | null;
   /** The language the child's own space is shown in - the child's, not the parent's. */
   preferredLanguage: Locale;
+  /** The Learning Buddy the child chose (child/web/ChildDtos.java); Momo the otter until they choose. */
+  learningBuddy: LearningBuddyKind;
 }
+
+/** child/entity/LearningBuddy.java */
+export type LearningBuddyKind = "OTTER" | "ELEPHANT" | "BUFFALO" | "GIBBON" | "FROG";
 
 // ---- curriculum/web/CurriculumDtos.java ----
 

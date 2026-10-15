@@ -31,7 +31,7 @@ export function ListenButton({
         "relative flex shrink-0 items-center justify-center rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-out active:translate-y-[2px]",
         size === "lg" ? "h-14 w-14 sm:h-16 sm:w-16" : "h-11 w-11",
         playing
-          ? "bg-tonle-700 text-white shadow-[0_3px_0_#0A1533]"
+          ? "bg-tonle-700 text-white shadow-[0_3px_0_#0A2127]"
           : "bg-white text-tonle-700 shadow-[0_4px_0_#C9D6EF] ring-1 ring-inset ring-tonle-100 hover:bg-tonle-50",
         className,
       )}

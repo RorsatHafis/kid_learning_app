@@ -14,12 +14,12 @@ import { common } from "@/components/ui/messages";
 export type MarkTone = "ink" | "paper" | "night";
 
 const TONES: Record<MarkTone, { outer: string; inner: string; pages: string; spark: string; water: string }> = {
-  // On light grounds.
-  ink: { outer: "#182E66", inner: "#2E4F9E", pages: "#F6F7FB", spark: "#F3A83B", water: "#6E8FD0" },
+  // On light grounds: a river-teal book, a lotus in bloom, a marigold spark.
+  ink: { outer: "#154049", inner: "#D9667F", pages: "#F4F6F1", spark: "#F2A93B", water: "#F0A7B7" },
   // On dark / photographic grounds.
-  paper: { outer: "#FFFFFF", inner: "#C9D6EF", pages: "#182E66", spark: "#FFD27A", water: "#A2B8E3" },
-  // App icon: paper petals on night.
-  night: { outer: "#F6F7FB", inner: "#A2B8E3", pages: "#11214D", spark: "#FFD27A", water: "#6E8FD0" },
+  paper: { outer: "#FFFFFF", inner: "#F0A7B7", pages: "#154049", spark: "#FFD27A", water: "#FBD3DC" },
+  // App icon: paper book on deep river.
+  night: { outer: "#F4F6F1", inner: "#F0A7B7", pages: "#10323A", spark: "#FFD27A", water: "#FBD3DC" },
 };
 
 export function BrandMark({
@@ -100,9 +100,9 @@ export function Logo({
     <span className={cn("inline-flex items-center gap-[0.45em]", s.text, className)}>
       <BrandMark size={s.mark} tone={ink ? "ink" : "paper"} />
       <span className="flex flex-col leading-none">
-        <span className="font-display font-[750] tracking-[-0.035em]" style={{ fontVariationSettings: '"opsz" 48' }}>
+        <span className="font-display font-[750] tracking-[-0.012em]" style={{ fontVariationSettings: '"opsz" 48' }}>
           <span className={ink ? "text-tonle-900" : "text-white"}>Bookeyond</span>
-          <span className={cn("font-[420] tracking-[-0.02em]", ink ? "text-tonle-500" : "text-tonle-200")}> Kid</span>
+          <span className={cn("font-[420] tracking-[-0.008em]", ink ? "text-tonle-500" : "text-tonle-200")}> Kid</span>
         </span>
         {showTagline && (
           <span className={cn("mt-[0.45em] font-sans text-[0.36em] font-medium tracking-[0.02em]", ink ? "text-ink-soft" : "text-tonle-200")}>

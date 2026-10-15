@@ -39,6 +39,10 @@ public final class ChildDtos {
     ) {
     }
 
+    /** The Learning Buddy a child chose: OTTER, ELEPHANT, BUFFALO, GIBBON or FROG. */
+    public record ChildBuddyChange(@jakarta.validation.constraints.NotNull com.platform.child.entity.LearningBuddy buddy) {
+    }
+
     public record ChildResponse(
             UUID id,
             String displayName,
@@ -47,11 +51,13 @@ public final class ChildDtos {
             /** When a DELETION_PENDING child will be erased; null otherwise. */
             Instant eraseAfter,
             /** The language the child's own space is shown in (en or km). */
-            String preferredLanguage
+            String preferredLanguage,
+            /** The Learning Buddy the child chose. */
+            com.platform.child.entity.LearningBuddy learningBuddy
     ) {
         public static ChildResponse from(Child child) {
             return new ChildResponse(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getStatus(),
-                    child.getEraseAfter(), child.getPreferredLanguage());
+                    child.getEraseAfter(), child.getPreferredLanguage(), child.getLearningBuddy());
         }
     }
 

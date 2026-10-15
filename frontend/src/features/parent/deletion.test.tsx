@@ -13,7 +13,7 @@ function respond(status: number, body?: unknown) {
   });
 }
 
-const SOKHA: Child = { id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14", status: "ACTIVE", eraseAfter: null, preferredLanguage: "en" };
+const SOKHA: Child = { id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14", status: "ACTIVE", eraseAfter: null, preferredLanguage: "en", learningBuddy: "OTTER" };
 const DARA_PENDING: Child = {
   id: "c2",
   displayName: "Dara",
@@ -21,6 +21,7 @@ const DARA_PENDING: Child = {
   status: "DELETION_PENDING",
   eraseAfter: "2026-10-13T08:00:00Z",
   preferredLanguage: "en",
+  learningBuddy: "OTTER",
 };
 
 afterEach(() => vi.unstubAllGlobals());

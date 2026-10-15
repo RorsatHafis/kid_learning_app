@@ -3,7 +3,7 @@ import { messagesNow } from "@/i18n/catalog";
 import { childMessages } from "./messages";
 
 /** Book-spine colours for the subject shelf, so each subject keeps its own (home and shelf alike). */
-export const SHELF_SPINES = ["bg-light", "bg-lotus", "bg-palm", "bg-dusk", "bg-tonle-400"];
+export const SHELF_SPINES = ["bg-clay", "bg-lotus", "bg-palm", "bg-light", "bg-tonle-500"];
 
 /** One of the child's paths, with its journey. */
 export interface Shelf {

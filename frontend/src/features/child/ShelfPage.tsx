@@ -5,11 +5,11 @@ import { childrenApi, learningApi } from "@/lib/api/endpoints";
 import type { CurriculumProgress, JourneyStep, SkillProgress } from "@/lib/api/types";
 import { BuddySays } from "@/features/buddy/LearningBuddy";
 import { stepTag } from "@/features/learning/explain";
-import { journeyLight } from "@/features/learning/chapters";
 import { Lantern } from "@/features/world/Lantern";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
+import { goButton, quietButton } from "./chips";
 import { Trouble, Waiting } from "./ChildHome";
 import { SHELF_SPINES, milestones, skillShelves, type Shelf } from "./shelf";
 import { useMessages } from "@/i18n/catalog";
@@ -35,10 +35,8 @@ export function ShelfPage() {
   const m = useMessages(childMessages);
   useDocumentTitle(name ? m.shelf.title(name) : null);
 
-  const light = shelves.data && shelves.data.length > 0 ? Math.max(...shelves.data.map((s) => journeyLight(s.overview))) : 0;
-
   return (
-    <ChildSpaceLayout childId={childId} childName={name} childLanguage={child.data?.preferredLanguage} firstLight={light}>
+    <ChildSpaceLayout childId={childId} childName={name} childLanguage={child.data?.preferredLanguage} buddy={child.data?.learningBuddy}>
       {(shelves.isLoading || child.isLoading) && <Waiting line={m.shelf.dusting} />}
       {(shelves.error || child.error) && (
         <Trouble
@@ -76,27 +74,24 @@ function Shelves({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-12 px-5 pb-20 pt-8 sm:px-8 sm:pt-12">
       <div className="flex flex-col gap-6">
-        <Link
-          to={`/learn/${childId}`}
-          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-950/55 px-4 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur-md transition-colors duration-150 ease-out hover:bg-tonle-950/75"
-        >
+        <Link to={`/learn/${childId}`} className={cn(quietButton, "min-h-11 w-fit px-4 text-sm")}>
           <ArrowLeft size={16} aria-hidden /> {m.backToPath}
         </Link>
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-5 rounded-[28px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 sm:flex-row sm:items-end sm:justify-between sm:p-8">
           <div className="flex flex-col gap-2">
-            <h1 className="font-display text-[2.6rem] font-bold leading-none tracking-[-0.02em] text-white sm:text-[3.25rem]">
+            <h1 className="font-display text-[2.6rem] font-bold leading-none tracking-[-0.008em] text-tonle-950 sm:text-[3.25rem]">
               {all.myShelf}
             </h1>
-            <p className="max-w-md text-lg font-medium text-tonle-100">
+            <p className="max-w-md text-lg font-medium text-ink-soft">
               {lit === 0 ? m.firstBookWillShine(name) : m.litSoFar(lit)}
             </p>
           </div>
           {next && (
             <Link
               to={`/learn/${childId}/play/${next.overview.enrollmentId}`}
-              className="inline-flex min-h-14 w-fit items-center gap-3 rounded-pill bg-light pl-2.5 pr-7 text-lg font-bold text-tonle-950 shadow-glow transition-transform duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.97]"
+              className={cn(goButton, "min-h-14 w-fit pl-2.5 pr-7 text-lg")}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-tonle-950 text-light">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-tonle-900 text-light">
                 <Play size={17} fill="currentColor" aria-hidden className="translate-x-px" />
               </span>
               {m.playNext}
@@ -107,20 +102,17 @@ function Shelves({
 
       <section
         aria-labelledby="lanterns"
-        className="flex flex-col gap-5 rounded-[24px] bg-tonle-950/60 p-6 ring-1 ring-white/10 backdrop-blur-md sm:p-7"
+        className="flex flex-col gap-5 rounded-[24px] bg-white/95 p-6 shadow-paper ring-1 ring-tonle-950/5 sm:p-7"
       >
-        <h2 id="lanterns" className="font-display text-2xl font-bold text-white">
+        <h2 id="lanterns" className="font-display text-2xl font-bold text-tonle-950">
           {m.myLanterns}
         </h2>
         {lanterns.length === 0 ? (
-          <p className="text-tonle-200">{m.noLanterns}</p>
+          <p className="text-ink-soft">{m.noLanterns}</p>
         ) : (
           <ul className="relative grid grid-cols-2 gap-x-4 gap-y-8 pt-4 sm:grid-cols-3 lg:grid-cols-5">
-            {/* the string they hang from */}
-            <span
-              aria-hidden
-              className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-tonle-200/40 to-transparent"
-            />
+            {/* the eave beam they hang from */}
+            <span aria-hidden className="absolute inset-x-0 -top-1 h-2 rounded-full bg-gradient-to-b from-[#C9975E] to-[#7E5229]" />
             {lanterns.map((m, i) => (
               <li
                 key={m.key}
@@ -128,8 +120,8 @@ function Shelves({
                 style={{ animationDelay: `${Math.min(i, 8) * 70}ms` }}
               >
                 <Lantern state="lit" size={34} />
-                <span className="text-sm font-semibold leading-snug text-white">{m.title}</span>
-                {m.detail && <span className="text-xs leading-snug text-tonle-200">{m.detail}</span>}
+                <span className="text-sm font-semibold leading-snug text-tonle-950">{m.title}</span>
+                {m.detail && <span className="text-xs leading-snug text-ink-soft">{m.detail}</span>}
               </li>
             ))}
           </ul>
@@ -147,7 +139,7 @@ function Shelves({
       )}
 
       {shelves.length === 0 ? (
-        <BuddySays mood="happy" size={110} tone="night">
+        <BuddySays mood="happy" size={110}>
           {m.noPathYet}
         </BuddySays>
       ) : (
@@ -176,10 +168,10 @@ function SkillCard({
   note: string;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-[24px] bg-tonle-950/60 p-6 ring-1 ring-white/10 backdrop-blur-md">
+    <div className="flex flex-col gap-4 rounded-[24px] bg-white/95 p-6 shadow-paper ring-1 ring-tonle-950/5">
       <div>
-        <h3 className="font-display text-xl font-bold text-white">{title}</h3>
-        <p className="text-sm text-tonle-200">{note}</p>
+        <h3 className="font-display text-xl font-bold text-tonle-950">{title}</h3>
+        <p className="text-sm text-ink-soft">{note}</p>
       </div>
       <ul className="flex flex-col gap-2">
         {skills.map((skill) => (
@@ -189,13 +181,13 @@ function SkillCard({
               className={cn(
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                 tone === "lit"
-                  ? "bg-light text-tonle-950 shadow-[0_0_16px_rgba(255,210,122,0.55)]"
-                  : "bg-white/10 text-light-glow ring-1 ring-light/40",
+                  ? "bg-light text-tonle-950"
+                  : "bg-light-soft text-light-deep ring-1 ring-light/50",
               )}
             >
-              {tone === "lit" ? <Check size={16} strokeWidth={3} /> : <span className="h-2.5 w-2.5 rounded-full bg-light-glow" />}
+              {tone === "lit" ? <Check size={16} strokeWidth={3} /> : <span className="h-2.5 w-2.5 rounded-full bg-light" />}
             </span>
-            <span className="text-[1.05rem] font-semibold text-white">{skill.name}</span>
+            <span className="text-[1.05rem] font-semibold text-tonle-950">{skill.name}</span>
           </li>
         ))}
       </ul>
@@ -222,14 +214,14 @@ function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; s
   if (placed.length > 0) groups.push({ key: "more", title: m.extraPractice, complete: false, steps: placed });
 
   return (
-    <section aria-labelledby={`shelf-${overview.enrollmentId}`} className="flex flex-col gap-5">
+    <section aria-labelledby={`shelf-${overview.enrollmentId}`} className="flex flex-col gap-5 rounded-[24px] bg-white/95 p-6 shadow-paper ring-1 ring-tonle-950/5 sm:p-7">
       <div className="flex items-center gap-3">
         <span aria-hidden className={cn("h-9 w-6 rounded-[4px] shadow-[inset_4px_0_0_rgba(0,0,0,0.18)]", spine)} />
         <div>
-          <h2 id={`shelf-${overview.enrollmentId}`} className="font-display text-2xl font-bold text-white">
+          <h2 id={`shelf-${overview.enrollmentId}`} className="font-display text-2xl font-bold text-tonle-950">
             {subject}
           </h2>
-          <p className="text-sm text-tonle-200">
+          <p className="text-sm text-ink-soft">
             {m.pathLit(overview.curriculum.name, overview.completedSteps, overview.totalSteps)}
           </p>
         </div>
@@ -238,7 +230,7 @@ function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; s
         .filter((g) => g.steps.length > 0)
         .map((group) => (
           <div key={group.key} className="flex flex-col gap-3">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-tonle-100">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-tonle-900">
               {group.title}
               {group.complete && (
                 <span className="inline-flex items-center gap-1 rounded-pill bg-light-soft px-2 py-0.5 text-xs font-bold text-light-deep">
@@ -259,7 +251,7 @@ function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; s
               ))}
             </ul>
             {/* the shelf itself */}
-            <span aria-hidden className="-mt-1 h-2 rounded-full bg-gradient-to-b from-tonle-300/30 to-tonle-950/0" />
+            <span aria-hidden className="-mt-1 h-2.5 rounded-full bg-gradient-to-b from-[#C9975E] to-[#9C6A3A] shadow-[0_3px_6px_-2px_rgba(126,82,41,0.5)]" />
           </div>
         ))}
     </section>
@@ -288,21 +280,21 @@ function Book({
       className={cn(
         "relative flex min-h-[7.5rem] overflow-hidden rounded-[8px_14px_14px_8px] motion-safe:animate-rise-in",
         lit
-          ? "bg-[linear-gradient(160deg,#FFF6E3_0%,#FCEBD0_100%)] text-tonle-950 shadow-[0_0_28px_rgba(255,210,122,0.28)]"
+          ? "bg-[linear-gradient(160deg,#FFF6E3_0%,#FCEED3_100%)] text-tonle-950 shadow-tight ring-1 ring-light/40"
           : isNext
-            ? "bg-white/[0.1] text-white ring-1 ring-light/50"
-            : "bg-white/[0.05] text-tonle-200 ring-1 ring-white/10",
+            ? "bg-white text-tonle-950 ring-2 ring-light"
+            : "bg-paper text-ink-soft ring-1 ring-line",
       )}
       style={{ animationDelay: `${Math.min(index, 10) * 45}ms` }}
       aria-label={m.bookState(step.title, state)}
     >
-      <span aria-hidden className={cn("w-3 shrink-0", lit ? spine : "bg-white/10", "shadow-[inset_-3px_0_0_rgba(0,0,0,0.15)]")} />
+      <span aria-hidden className={cn("w-3 shrink-0", lit ? spine : "bg-tonle-100", "shadow-[inset_-3px_0_0_rgba(0,0,0,0.12)]")} />
       <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3">
         <span className="text-[0.95rem] font-bold leading-snug">{step.title}</span>
         <span
           className={cn(
             "flex items-center gap-1.5 text-xs font-semibold",
-            lit ? "text-light-deep" : isNext ? "text-light-glow" : "text-tonle-300",
+            lit ? "text-light-deep" : isNext ? "text-clay-deep" : "text-ink-faint",
           )}
         >
           {lit ? (
@@ -318,7 +310,7 @@ function Book({
           <Link
             to={`/learn/${childId}/practice/${step.activityVersionId}`}
             aria-label={m.playAgainLabel(step.title)}
-            className="inline-flex min-h-9 w-fit items-center gap-1.5 rounded-pill bg-tonle-950 px-3 text-xs font-bold text-light-glow transition-colors duration-150 hover:bg-tonle-800"
+            className="inline-flex min-h-9 w-fit items-center gap-1.5 rounded-pill bg-tonle-900 px-3 text-xs font-bold text-white transition-colors duration-150 hover:bg-tonle-800"
           >
             <RotateCcw size={12} aria-hidden /> {m.playAgain}
           </Link>

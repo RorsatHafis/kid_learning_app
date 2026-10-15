@@ -114,7 +114,7 @@ export function Panel({
     <section
       aria-labelledby={id}
       className={cn(
-        "overflow-hidden rounded-[16px] bg-white shadow-[0_1px_2px_rgba(14,27,58,0.04)] ring-1 ring-line",
+        "overflow-hidden rounded-[16px] bg-white shadow-[0_1px_2px_rgba(16,50,58,0.04)] ring-1 ring-line",
         flush ? "pt-5 sm:pt-6" : "p-5 sm:p-6",
         className,
       )}
@@ -295,7 +295,7 @@ export function ComposerPanel({
         }
       }}
       className={cn(
-        "self-start overflow-hidden rounded-[16px] bg-white shadow-[0_12px_32px_-18px_rgba(10,21,51,0.35)] ring-1 ring-tonle-200 motion-safe:animate-rise-in",
+        "self-start overflow-hidden rounded-[16px] bg-white shadow-[0_12px_32px_-18px_rgba(16,50,58,0.35)] ring-1 ring-tonle-200 motion-safe:animate-rise-in",
         className,
       )}
     >

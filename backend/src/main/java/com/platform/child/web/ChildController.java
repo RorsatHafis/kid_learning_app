@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
+import static com.platform.child.web.ChildDtos.ChildBuddyChange;
 import static com.platform.child.web.ChildDtos.ChildLanguageChange;
 import static com.platform.child.web.ChildDtos.ChildResponse;
 import static com.platform.child.web.ChildDtos.CreateChildRequest;
@@ -67,6 +68,18 @@ public class ChildController {
                                                         @AuthenticationPrincipal UUID accountId) {
         familyAccessGuard.requireChildAccess(accountId, childId);
         return ResponseEntity.ok(ChildResponse.from(childService.changeLanguage(childId, request.language())));
+    }
+
+    /**
+     * The Learning Buddy the child walks their path with. Chosen inside the child's space, so, like the
+     * language, it is not behind the grown-up check there; only the child's family may call it.
+     */
+    @PutMapping("/{childId}/buddy")
+    public ResponseEntity<ChildResponse> chooseBuddy(@PathVariable UUID childId,
+                                                     @Valid @RequestBody ChildBuddyChange request,
+                                                     @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return ResponseEntity.ok(ChildResponse.from(childService.chooseBuddy(childId, request.buddy())));
     }
 
     @GetMapping

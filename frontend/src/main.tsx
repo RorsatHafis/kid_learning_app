@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 // Fonts are served from this app, never a third party: loading them from Google would send
 // every visitor's address (children's included) to Google on each page view.
-import "@fontsource-variable/bricolage-grotesque/opsz.css";
+import "@fontsource-variable/alegreya/index.css";
 import "@fontsource-variable/kantumruy-pro/index.css";
 import "./index.css";
 

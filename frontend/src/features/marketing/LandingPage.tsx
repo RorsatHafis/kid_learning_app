@@ -78,7 +78,7 @@ function Hero() {
           <p lang={other} className={cn("text-xl font-medium leading-[1.6] text-tonle-200 sm:text-2xl", other === "km" && "font-khmer")}>
             {messagesIn(marketingMessages, other).hero.title}
           </p>
-          <h1 className="font-display text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.02em] sm:text-[3.5rem] lg:text-[4.25rem]" style={{ fontVariationSettings: '"opsz" 72' }}>
+          <h1 className="font-display text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.008em] sm:text-[3.5rem] lg:text-[4.25rem]" style={{ fontVariationSettings: '"opsz" 72' }}>
             {m.hero.title}
           </h1>
           <p className="max-w-[30rem] text-lg leading-relaxed text-tonle-100">{m.hero.lead}</p>

@@ -31,9 +31,9 @@ function groupBySection(nav: WorkspaceNavItem[]) {
 }
 
 /**
- * The staff workspace — teachers, principals and platform administrators. A night-blue
- * rail holds the brand, whose workspace this is, and where things are; the work itself
- * sits on quiet paper beside it. Same identity as the family space, different density.
+ * The staff workspace — teachers, principals and platform administrators. A light paper rail
+ * holds the brand, whose workspace this is, and where things are; the work sits on rice paper
+ * beside it. Same identity as the family space, a working density: the brand lives in details.
  */
 export function WorkspaceShell({ home, workspace, nav }: { home: string; workspace: string; nav: WorkspaceNavItem[] }) {
   const { session, logout } = useAuth();
@@ -57,14 +57,14 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
         end={end}
         className={({ isActive }) =>
           cn(
-            "group flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] font-medium transition-colors duration-150 lg:h-9",
-            isActive ? "bg-white/[0.09] text-white" : "text-tonle-200 hover:bg-white/[0.05] hover:text-white",
+            "group flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] transition-colors duration-150 lg:h-9",
+            isActive ? "bg-tonle-100/80 font-semibold text-tonle-950" : "font-medium text-ink-soft hover:bg-paper hover:text-ink",
           )
         }
       >
         {({ isActive }) => (
           <>
-            <Icon size={17} aria-hidden className={isActive ? "text-light" : "text-tonle-300 group-hover:text-tonle-100"} />
+            <Icon size={17} aria-hidden className={isActive ? "text-tonle-700" : "text-ink-faint group-hover:text-tonle-700"} />
             {label}
           </>
         )}
@@ -77,7 +77,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
       {groupBySection(nav).map((group, index) =>
         group.section ? (
           <div key={group.section} role="group" aria-label={group.section}>
-            <p aria-hidden className="mb-1 px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-tonle-400">
+            <p aria-hidden className="mb-1 px-3 text-[0.75rem] font-semibold text-ink-faint">
               {group.section}
             </p>
             <ul className="flex flex-col gap-0.5">{group.items.map(link)}</ul>
@@ -92,16 +92,16 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
   );
 
   const account = (
-    <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
-      <p className="truncate px-3 text-sm text-tonle-300" title={session?.email}>
+    <div className="flex flex-col gap-1 border-t border-line pt-4">
+      <p className="truncate px-3 text-sm text-ink-faint" title={session?.email}>
         {session?.email}
       </p>
       <button
         type="button"
         onClick={onLogout}
-        className="flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] font-medium text-tonle-200 transition-colors duration-150 hover:bg-white/[0.05] hover:text-white"
+        className="flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] font-medium text-ink-soft transition-colors duration-150 hover:bg-paper hover:text-ink"
       >
-        <LogOut size={17} aria-hidden className="text-tonle-300" /> {m.logOut}
+        <LogOut size={17} aria-hidden className="text-ink-faint" /> {m.logOut}
       </button>
     </div>
   );
@@ -110,11 +110,11 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
     <div className="min-h-screen bg-paper">
       <SkipLink />
       {/* Desktop rail */}
-      <aside className="on-night fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col bg-tonle-950 px-3 pb-4 pt-5 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-line bg-white px-3 pb-4 pt-5 lg:flex">
         <Link to={home} className="mb-1 w-fit rounded-[10px] px-3 py-1" aria-label={m.workspaceHome}>
-          <Logo tone="paper" size="sm" />
+          <Logo size="sm" />
         </Link>
-        <p className="mb-5 px-3 text-sm text-tonle-300">{workspace}</p>
+        <p className="mb-6 px-3 text-sm font-medium text-ink-faint">{workspace}</p>
         <nav aria-label={workspace} className="flex-1 overflow-y-auto">
           {links}
         </nav>
@@ -122,11 +122,11 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
       </aside>
 
       {/* Phone and tablet bar */}
-      <header className="on-night sticky top-0 z-30 bg-tonle-950 text-white lg:hidden">
+      <header className="sticky top-0 z-30 border-b border-line bg-white/95 text-ink backdrop-blur-sm lg:hidden">
         <div className="flex h-14 items-center gap-3 px-4">
           <Link to={home} className="flex items-center gap-2.5 rounded-[10px]" aria-label={m.workspaceHome}>
-            <BrandMark size={30} tone="paper" />
-            <span className="text-sm font-semibold text-tonle-100">{workspace}</span>
+            <BrandMark size={30} />
+            <span className="text-sm font-semibold text-tonle-950">{workspace}</span>
           </Link>
           <button
             type="button"
@@ -134,12 +134,12 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
             aria-expanded={open}
             aria-controls="workspace-menu"
             aria-label={open ? m.closeMenu : m.openMenu}
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-[10px] hover:bg-white/10"
+            className="ml-auto flex h-10 w-10 items-center justify-center rounded-[10px] text-tonle-900 hover:bg-paper"
           >
             {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
           </button>
         </div>
-        <div id="workspace-menu" hidden={!open} className="border-t border-white/10 px-3 pb-4 pt-3">
+        <div id="workspace-menu" hidden={!open} className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-line px-3 pb-4 pt-3">
           <nav aria-label={m.menuOf(workspace)}>{links}</nav>
           <div className="mt-3">{account}</div>
         </div>
@@ -201,7 +201,7 @@ export function Panel({
   id?: string;
 }) {
   return (
-    <section aria-labelledby={title && id ? id : undefined} className={cn("overflow-hidden rounded-[16px] bg-white ring-1 ring-line shadow-[0_1px_2px_rgba(14,27,58,0.04)]", className)}>
+    <section aria-labelledby={title && id ? id : undefined} className={cn("overflow-hidden rounded-[16px] bg-white ring-1 ring-line shadow-[0_1px_2px_rgba(16,50,58,0.04)]", className)}>
       {(title || actions) && (
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div className="min-w-0">

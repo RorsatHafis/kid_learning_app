@@ -45,6 +45,11 @@ public class Child extends AuditableEntity {
     /** The language the child's own space is shown in (en or km; V57) - the child's, not the parent's. */
     @Column(name = "preferred_language", nullable = false, length = 5)
     private String preferredLanguage = com.platform.identity.UiLanguage.ENGLISH;
+
+    /** The Learning Buddy the child chose (V58); Momo the otter until they choose. */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "learning_buddy", nullable = false, length = 20)
+    private LearningBuddy learningBuddy = LearningBuddy.OTTER;
  
     protected Child() {
         // JPA
@@ -84,6 +89,16 @@ public class Child extends AuditableEntity {
 
     public String getPreferredLanguage() {
         return preferredLanguage;
+    }
+
+    /** The buddy shown in the child's space. Never changes learning, scoring or what a parent is told. */
+    public void chooseBuddy(LearningBuddy buddy) {
+        Assert.notNull(buddy, "buddy must not be null");
+        this.learningBuddy = buddy;
+    }
+
+    public LearningBuddy getLearningBuddy() {
+        return learningBuddy;
     }
 
     /** The family corrects the date of birth (Y12). Same rules as when the child was added. */
