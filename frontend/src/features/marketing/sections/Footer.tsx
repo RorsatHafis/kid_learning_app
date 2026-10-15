@@ -11,7 +11,7 @@ export function Footer() {
   const m = useMessages(marketingMessages).nav;
   const c = useMessages(common);
   return (
-    <footer className="on-night bg-tonle-950 px-4 pb-10 pt-14 text-tonle-100 sm:px-8">
+    <footer className="on-night bg-tonle-900 px-4 pb-10 pt-14 text-tonle-100 sm:px-8">
       <div className="mx-auto flex max-w-[1240px] flex-col gap-12">
         <div className="flex flex-col justify-between gap-10 sm:flex-row">
           <div className="flex flex-col gap-4">
@@ -30,7 +30,7 @@ export function Footer() {
             </Link>
           </nav>
         </div>
-        <p className="border-t border-white/10 pt-6 text-sm text-tonle-300">{m.rights(new Date().getFullYear())}</p>
+        <p className="border-t border-white/10 pt-6 text-sm text-tonle-200">{m.rights(new Date().getFullYear())}</p>
       </div>
     </footer>
   );

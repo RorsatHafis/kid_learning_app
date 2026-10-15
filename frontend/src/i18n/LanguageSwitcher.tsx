@@ -92,7 +92,7 @@ export function LanguageToggle({ className }: { className?: string }) {
         aria-label={m.switchTo(LANGUAGE_NAMES[next])}
         className={cn(
           className ??
-            "flex h-11 items-center justify-center rounded-[10px] px-3 text-[0.9375rem] font-semibold text-white ring-1 ring-inset ring-white/25 transition-colors duration-150 hover:bg-white/10",
+            "flex h-11 items-center justify-center rounded-[10px] px-3 text-[0.9375rem] font-semibold text-tonle-900 ring-1 ring-inset ring-tonle-950/15 transition-colors duration-150 hover:bg-tonle-50",
           "disabled:cursor-wait disabled:opacity-70",
         )}
       >
@@ -101,7 +101,7 @@ export function LanguageToggle({ className }: { className?: string }) {
       {failed && (
         <p
           role="alert"
-          className="absolute right-0 top-full z-30 mt-2 w-56 rounded-[12px] bg-tonle-950 p-3 text-[0.8125rem] leading-snug text-light ring-1 ring-white/15"
+          className="absolute right-0 top-full z-30 mt-2 w-56 rounded-[12px] bg-white p-3 text-[0.8125rem] font-medium leading-snug text-brick-deep shadow-paper ring-1 ring-line"
         >
           {m.failed}
         </p>

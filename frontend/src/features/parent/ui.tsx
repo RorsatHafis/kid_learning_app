@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import type { Chapter } from "@/lib/api/types";
-import { BlueHour } from "@/features/world/BlueHour";
+import type { Chapter, LearningBuddyKind } from "@/lib/api/types";
+import { LearningBuddy } from "@/features/buddy/LearningBuddy";
+import { RiverGarden } from "@/features/world/RiverGarden";
 import { cn } from "@/lib/utils/cn";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
@@ -11,7 +12,7 @@ const SEALS = [
   "bg-dusk-deep text-white",
   "bg-palm-deep text-white",
   "bg-lotus-deep text-white",
-  "bg-tonle-950 text-light",
+  "bg-clay-deep text-white",
 ];
 
 export function sealFor(id: string) {
@@ -37,12 +38,22 @@ export function ChildSeal({ id, name, size = "md" }: { id: string; name: string;
   );
 }
 
+/** The child's own buddy in a soft frame: the world they play in, seen from the parent's pages. */
+export function ChildPortrait({ buddy, size = "md" }: { buddy: LearningBuddyKind; size?: "md" | "lg" }) {
+  const box = size === "lg" ? "h-20 w-20 rounded-[24px]" : "h-16 w-16 rounded-[20px]";
+  return (
+    <span aria-hidden className={cn("flex shrink-0 items-end justify-center overflow-hidden bg-[#E7F1EC] ring-1 ring-tonle-950/5", box)}>
+      <LearningBuddy kind={buddy} mood="idle" size={size === "lg" ? 88 : 70} className="!animate-none -mb-1.5" />
+    </span>
+  );
+}
+
 /** A page opening: the same place the child learns in, seen in calm daylight. */
 export function SceneBand({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <section className={cn("relative overflow-hidden rounded-[28px] bg-tonle-50 ring-1 ring-line/60", className)}>
       <div aria-hidden className="absolute inset-0">
-        <BlueHour time="morning" crop="center" frame={false} fireflies={false} className="absolute inset-x-0 top-0 h-[62%] w-full sm:inset-y-0 sm:left-auto sm:right-0 sm:h-full sm:w-[72%]" />
+        <RiverGarden variant="band" crop="center" frame={false} className="absolute inset-x-0 top-0 h-[62%] w-full sm:inset-y-0 sm:left-auto sm:right-0 sm:h-full sm:w-[72%]" />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#fff_0%,#fff_34%,rgba(255,255,255,0.72)_52%,rgba(255,255,255,0)_78%)] max-sm:bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0)_28%,rgba(255,255,255,0.9)_62%,#fff_100%)]" />
       </div>
       <div className="relative">{children}</div>

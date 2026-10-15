@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/api/ApiError";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { fieldClasses } from "@/features/auth/FormField";
-import { ChildSeal, SceneBand } from "./ui";
+import { ChildPortrait, SceneBand } from "./ui";
 import { ageFromDateOfBirth } from "@/lib/utils/date";
 import type { Child } from "@/lib/api/types";
 import { LearningNowSection } from "./LearningNowSection";
@@ -152,9 +152,9 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
 
   return (
     <SceneBand>
-      <header className="flex flex-col gap-6 px-6 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-10 sm:py-10">
+      <header className="flex flex-col items-start gap-6 px-6 py-8 sm:px-10 sm:py-10">
         <div className="flex items-end gap-5">
-          <ChildSeal id={child.id} name={child.displayName} size="lg" />
+          <ChildPortrait buddy={child.learningBuddy} size="lg" />
           {editing ? (
             <form onSubmit={save} className="flex flex-col gap-2">
               <label htmlFor="child-name" className="text-sm font-semibold text-ink">

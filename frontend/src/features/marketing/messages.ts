@@ -69,9 +69,9 @@ export const marketingMessages = defineMessages(
     },
     children: {
       title: "A world of their own.",
-      lead: "A river at dusk, a path of books that light up as they learn, and a small firefly who keeps them company.",
+      lead: "A Cambodian village in the morning, a path of books that light up as they learn, and an animal friend they choose to walk it with.",
       point1: "Short activities made for small hands, with sound they can switch off.",
-      point2: "The firefly is a character we wrote — not a chatbot.",
+      point2: "Their buddy is a character we wrote — not a chatbot.",
       point3: "No points to chase, no streaks to lose, no leaderboards.",
       point4: "No ads, no chat, no strangers. Grown-ups hold a button to leave.",
     },
@@ -172,9 +172,9 @@ export const marketingMessages = defineMessages(
     },
     children: {
       title: "ពិភពផ្ទាល់ខ្លួនរបស់ពួកគេ។",
-      lead: "ទន្លេមួយនៅពេលព្រលប់ ផ្លូវសៀវភៅដែលភ្លឺឡើងនៅពេលពួកគេរៀន និងអំពិលអំពែកតូចមួយដែលនៅជាមួយពួកគេ។",
+      lead: "ភូមិខ្មែរមួយនៅពេលព្រឹក ផ្លូវសៀវភៅដែលភ្លឺឡើងនៅពេលពួកគេរៀន និងមិត្តសត្វម្នាក់ដែលពួកគេជ្រើសរើស ដើម្បីដើរតាមផ្លូវនោះជាមួយគ្នា។",
       point1: "សកម្មភាពខ្លីៗ ដែលធ្វើឡើងសម្រាប់ដៃតូចៗ ជាមួយសំឡេងដែលពួកគេអាចបិទបាន។",
-      point2: "អំពិលអំពែកគឺជាតួអង្គដែលយើងបានសរសេរ — មិនមែនជាកម្មវិធីជជែកទេ។",
+      point2: "មិត្តរបស់ពួកគេគឺជាតួអង្គដែលយើងបានសរសេរ — មិនមែនជាកម្មវិធីជជែកទេ។",
       point3: "គ្មានពិន្ទុត្រូវដេញតាម គ្មានការរាប់ថ្ងៃជាប់ៗដែលអាចបាត់បង់ គ្មានតារាងចំណាត់ថ្នាក់ទេ។",
       point4: "គ្មានការផ្សាយពាណិជ្ជកម្ម គ្មានការជជែក គ្មានមនុស្សចម្លែក។ មនុស្សពេញវ័យចុចសង្កត់ប៊ូតុងដើម្បីចាកចេញ។",
     },

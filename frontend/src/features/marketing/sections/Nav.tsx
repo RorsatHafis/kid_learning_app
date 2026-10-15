@@ -16,7 +16,7 @@ export const sectionLinks = [
   { key: "schools", href: "#schools" },
 ] as const;
 
-/** A dusk-coloured bar that belongs to the scene beneath it. */
+/** A light paper bar over the morning scene: the brand, where to go, and one way in. */
 export function Nav() {
   const [open, setOpen] = useState(false);
   const m = useMessages(marketingMessages).nav;
@@ -30,32 +30,32 @@ export function Nav() {
   }, [open]);
 
   return (
-    <header className="on-night sticky top-0 z-50 border-b border-white/10 bg-tonle-950 text-white">
+    <header className="sticky top-0 z-50 border-b border-tonle-950/10 bg-[#F4F6F1]/90 text-ink backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-8 px-4 sm:h-[4.5rem] sm:px-8">
         <Link to="/" className="shrink-0 rounded-[10px]" aria-label={c.home}>
-          <Logo tone="paper" size="sm" />
+          <Logo size="sm" />
         </Link>
         <nav
           aria-label={m.sections}
-          className="hidden items-center gap-6 whitespace-nowrap text-[0.9375rem] font-medium text-tonle-100 lg:flex xl:gap-7"
+          className="hidden items-center gap-6 whitespace-nowrap text-[0.9375rem] font-medium text-ink-soft lg:flex xl:gap-7"
         >
           {sectionLinks.map((link) => (
-            <a key={link.href} href={link.href} className="rounded-[6px] transition-colors duration-150 hover:text-white">
+            <a key={link.href} href={link.href} className="rounded-[6px] transition-colors duration-150 hover:text-tonle-950">
               {m[link.key]}
             </a>
           ))}
         </nav>
         <div className="ml-auto hidden items-center gap-2 whitespace-nowrap lg:flex">
-          <LanguageSwitcher tone="night" size="sm" className="mr-2" />
+          <LanguageSwitcher size="sm" className="mr-2" />
           <Link
             to="/login"
-            className="flex h-10 items-center rounded-[10px] px-4 text-[0.9375rem] font-semibold text-white transition-colors hover:bg-white/10"
+            className="flex h-10 items-center rounded-[10px] px-4 text-[0.9375rem] font-semibold text-tonle-900 transition-colors hover:bg-tonle-50"
           >
             {m.logIn}
           </Link>
           <Link
             to="/register"
-            className="flex h-10 items-center rounded-[10px] bg-light px-4 text-[0.9375rem] font-semibold text-tonle-950 transition-colors duration-150 hover:bg-light-glow"
+            className="flex h-10 items-center rounded-[10px] bg-tonle-800 px-4 text-[0.9375rem] font-semibold text-white transition-colors duration-150 hover:bg-tonle-900"
           >
             {m.getStarted}
           </Link>
@@ -64,7 +64,7 @@ export function Nav() {
           <LanguageToggle />
           <button
             type="button"
-            className="flex h-11 w-11 items-center justify-center rounded-[10px] text-white hover:bg-white/10"
+            className="flex h-11 w-11 items-center justify-center rounded-[10px] text-tonle-900 hover:bg-tonle-50"
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? c.closeMenu : c.openMenu}
             aria-expanded={open}
@@ -77,7 +77,7 @@ export function Nav() {
       <div
         id="site-menu"
         hidden={!open}
-        className={cn("border-t border-white/10 px-4 pb-5 pt-2 lg:hidden", open && "animate-rise-in")}
+        className={cn("border-t border-tonle-950/10 px-4 pb-5 pt-2 lg:hidden", open && "animate-rise-in")}
       >
         <nav aria-label={m.sectionsMenu} className="flex flex-col">
           {sectionLinks.map((link) => (
@@ -85,7 +85,7 @@ export function Nav() {
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="border-b border-white/10 py-3.5 text-base font-medium text-tonle-100 hover:text-white"
+              className="border-b border-tonle-950/10 py-3.5 text-base font-medium text-ink hover:text-tonle-700"
             >
               {m[link.key]}
             </a>
@@ -94,13 +94,13 @@ export function Nav() {
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Link
             to="/login"
-            className="flex h-12 items-center justify-center rounded-[12px] font-semibold text-white ring-1 ring-inset ring-white/25"
+            className="flex h-12 items-center justify-center rounded-[12px] font-semibold text-tonle-900 ring-1 ring-inset ring-tonle-950/15"
           >
             {m.logIn}
           </Link>
           <Link
             to="/register"
-            className="flex h-12 items-center justify-center rounded-[12px] bg-light font-semibold text-tonle-950"
+            className="flex h-12 items-center justify-center rounded-[12px] bg-tonle-800 font-semibold text-white"
           >
             {m.getStarted}
           </Link>

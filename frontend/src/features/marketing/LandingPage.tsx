@@ -1,9 +1,11 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { BlueHour } from "@/features/world/BlueHour";
+import { RiverGarden } from "@/features/world/RiverGarden";
 import { PathOfBooks, khmerNumber, type PathStep } from "@/features/world/PathOfBooks";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
+import { BUDDY_KINDS } from "@/features/buddy/kinds";
+import { buddyMessages } from "@/features/buddy/buddy.messages";
 import { EvidenceLine } from "@/features/learning/EvidenceLine";
 import { buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
@@ -11,14 +13,15 @@ import type { EvidenceLevel } from "@/lib/api/types";
 import { Nav } from "./sections/Nav";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { Footer } from "./sections/Footer";
+import { Place, type PlaceKind } from "./Places";
 import { messagesIn, useLocale, useMessages } from "@/i18n/catalog";
 import { marketingMessages } from "./messages";
 import { common } from "@/components/ui/messages";
 
 /**
- * The public front door. It shows the product as it is — early maths today, Khmer and
- * English in preparation — using the same world, evidence language and decisions the
- * app itself uses, so nothing here promises more than a family will find inside.
+ * The public front door. It shows the product as it is — early maths today, Khmer and English in
+ * preparation — in the same River Garden world, evidence language and decisions the app itself
+ * uses, so nothing here promises more than a family will find inside.
  */
 export function LandingPage() {
   const m = useMessages(marketingMessages);
@@ -50,47 +53,45 @@ const ILLUSTRATIVE_PATH: PathStep[] = Array.from({ length: 8 }, (_, i) => ({
   status: i < 3 ? "COMPLETED" : "PENDING",
 }));
 
-const lightButton =
-  "inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-[14px] bg-light px-7 text-base font-semibold text-tonle-950 shadow-glow transition-[background-color,transform] duration-150 ease-out hover:bg-light-glow active:scale-[0.98]";
-const nightGhostButton =
-  "inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-[14px] px-6 text-base font-semibold text-white ring-1 ring-inset ring-white/30 transition-colors duration-150 hover:bg-white/10";
+const goButton =
+  "inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-[14px] bg-light px-7 text-base font-semibold text-tonle-950 shadow-[0_3px_0_#C77A1E] transition-[background-color,transform,box-shadow] duration-150 ease-out hover:bg-light-glow active:translate-y-0.5 active:shadow-[0_1px_0_#C77A1E]";
+const quietButton =
+  "inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-[14px] bg-white/85 px-6 text-base font-semibold text-tonle-900 ring-1 ring-inset ring-tonle-950/10 backdrop-blur-sm transition-colors duration-150 hover:bg-white";
 
 function Hero() {
   const m = useMessages(marketingMessages);
   const locale = useLocale();
   const other = locale === "km" ? "en" : "km";
   return (
-    <section className="on-night relative bg-tonle-950 text-white">
-      <div className="relative h-[56svh] min-h-[340px] lg:absolute lg:inset-0 lg:h-auto">
-        <BlueHour time="dusk" crop="bottom" frame={false} className="absolute inset-0">
+    <section className="relative bg-[#DCEDEC]">
+      <div className="relative h-[52svh] min-h-[340px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto">
+        <RiverGarden crop="bottom" bloom={0.6} className="absolute inset-0">
           <PathOfBooks steps={ILLUSTRATIVE_PATH} currentId="illustration-3" />
-        </BlueHour>
+        </RiverGarden>
+        {/* a morning haze behind the words, so they read on the sky */}
         <div
           aria-hidden
           className="absolute inset-0 hidden lg:block"
-          style={{ background: "radial-gradient(ellipse 60% 75% at 12% 55%, rgba(10,21,51,0.88) 0%, rgba(10,21,51,0.55) 45%, rgba(10,21,51,0) 75%)" }}
+          style={{ background: "radial-gradient(ellipse 52% 62% at 18% 34%, rgba(244,246,241,0.94) 0%, rgba(244,246,241,0.7) 45%, rgba(244,246,241,0) 78%)" }}
         />
-        <div aria-hidden className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-tonle-950 to-transparent lg:hidden" />
       </div>
-      <div className="relative mx-auto flex max-w-[1240px] flex-col px-4 pb-14 sm:px-8 lg:min-h-[min(calc(100svh-4.5rem),860px)] lg:justify-center lg:py-24">
-        <div className="flex max-w-[34rem] flex-col gap-6 animate-rise-in">
+      <div className="relative mx-auto flex max-w-[1240px] flex-col px-4 pb-14 pt-8 sm:px-8 lg:min-h-[min(calc(100svh-4.5rem),880px)] lg:pb-48 lg:pt-20">
+        <div className="flex max-w-[34rem] flex-col gap-6 motion-safe:animate-rise-in">
           {/* The promise in the other language too: the site speaks to Cambodian families in both. */}
-          <p lang={other} className={cn("text-xl font-medium leading-[1.6] text-tonle-200 sm:text-2xl", other === "km" && "font-khmer")}>
+          <p lang={other} className={cn("text-lg font-semibold leading-[1.6] text-clay-deep sm:text-xl", other === "km" && "font-khmer")}>
             {messagesIn(marketingMessages, other).hero.title}
           </p>
-          <h1 className="font-display text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.008em] sm:text-[3.5rem] lg:text-[4.25rem]" style={{ fontVariationSettings: '"opsz" 72' }}>
-            {m.hero.title}
-          </h1>
-          <p className="max-w-[30rem] text-lg leading-relaxed text-tonle-100">{m.hero.lead}</p>
+          <h1 className="font-display text-[2.6rem] font-bold leading-[1.02] text-tonle-950 sm:text-[3.6rem] lg:text-[4.4rem]">{m.hero.title}</h1>
+          <p className="max-w-[30rem] text-lg leading-relaxed text-ink-soft">{m.hero.lead}</p>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link to="/register" className={lightButton}>
+            <Link to="/register" className={goButton}>
               {m.nav.getStarted}
             </Link>
-            <a href="#how-it-works" className={nightGhostButton}>
+            <a href="#how-it-works" className={quietButton}>
               {m.hero.seeHow}
             </a>
           </div>
-          <p className="text-sm text-tonle-300">{m.hero.status}</p>
+          <p className="text-sm font-medium text-ink-soft">{m.hero.status}</p>
         </div>
       </div>
     </section>
@@ -105,17 +106,13 @@ function Section({ id, className, children }: { id?: string; className?: string;
   );
 }
 
-function Heading({ id, title, lead, tone = "ink" }: { id?: string; title: string; lead?: string; tone?: "ink" | "night" }) {
+function Heading({ id, title, lead }: { id?: string; title: string; lead?: string }) {
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <h2
-        id={id}
-        className={cn("font-display text-[2rem] font-semibold leading-[1.08] tracking-[-0.015em] sm:text-[2.75rem]", tone === "ink" ? "text-tonle-950" : "text-white")}
-        style={{ fontVariationSettings: '"opsz" 60' }}
-      >
+      <h2 id={id} className="font-display text-[2.1rem] font-bold leading-[1.08] text-tonle-950 sm:text-[2.9rem]">
         {title}
       </h2>
-      {lead && <p className={cn("text-lg leading-relaxed", tone === "ink" ? "text-ink-soft" : "text-tonle-100")}>{lead}</p>}
+      {lead && <p className="text-lg leading-relaxed text-ink-soft">{lead}</p>}
     </div>
   );
 }
@@ -129,15 +126,18 @@ function HowItWorks() {
 
       <div className="mt-14 grid items-stretch gap-6 lg:grid-cols-2 lg:gap-8">
         <figure className="flex flex-col gap-3">
-          <div className="flex flex-1 flex-col justify-center gap-7 rounded-[28px] bg-[#FFFBF3] px-7 py-9 shadow-lift ring-1 ring-light-soft sm:px-10">
-            <p className="font-display text-[2.75rem] font-semibold leading-none text-tonle-950">4 + 3 = ?</p>
+          <div className="relative flex flex-1 flex-col justify-center gap-7 overflow-visible rounded-[28px] bg-[#FFFDF8] px-7 py-9 shadow-lift ring-1 ring-tonle-950/5 sm:px-10">
+            <div aria-hidden className="absolute -top-12 right-6">
+              <LearningBuddy mood="cheer" size={92} />
+            </div>
+            <p className="font-display text-[2.75rem] font-bold leading-none text-tonle-950">4 + 3 = ?</p>
             <div className="grid grid-cols-3 gap-3" aria-hidden>
               {["6", "7", "8"].map((n) => (
                 <span
                   key={n}
                   className={cn(
-                    "flex h-16 items-center justify-center rounded-[18px] font-display text-2xl font-semibold",
-                    n === "7" ? "border-2 border-light bg-light-soft text-tonle-950 shadow-glow" : "border-2 border-tonle-100 bg-white text-tonle-800",
+                    "flex h-16 items-center justify-center rounded-[18px] font-display text-2xl font-bold",
+                    n === "7" ? "bg-light-soft text-tonle-950 ring-2 ring-light" : "bg-white text-tonle-800 ring-2 ring-tonle-100",
                   )}
                 >
                   {n}
@@ -146,7 +146,7 @@ function HowItWorks() {
             </div>
             <p className="text-base font-semibold text-light-deep">{m.thatsRight}</p>
           </div>
-          <figcaption className="px-2 text-sm text-ink-faint">{m.childSees}</figcaption>
+          <figcaption className="px-2 text-sm text-ink-soft">{m.childSees}</figcaption>
         </figure>
 
         <figure className="flex flex-col gap-3">
@@ -168,15 +168,15 @@ function HowItWorks() {
               {m.whyNextBody}
             </p>
           </div>
-          <figcaption className="px-2 text-sm text-ink-faint">{m.parentSees}</figcaption>
+          <figcaption className="px-2 text-sm text-ink-soft">{m.parentSees}</figcaption>
         </figure>
       </div>
 
       <ol className="mt-16 grid gap-x-8 gap-y-8 border-t border-line pt-10 sm:grid-cols-2 lg:grid-cols-5">
         {loop.map((text, i) => (
           <li key={text} className="flex flex-col gap-3">
-            <span className="flex items-baseline gap-2 font-display text-tonle-600">
-              <span lang="km" className="font-khmer text-2xl">
+            <span className="flex items-baseline gap-2 text-clay-deep">
+              <span lang="km" className="font-khmer text-2xl font-semibold">
                 {khmerNumber(i + 1)}
               </span>
               <span className="text-sm text-ink-faint">{i + 1}</span>
@@ -220,7 +220,7 @@ function ForParents() {
 
         <div className="flex flex-col gap-8 lg:pt-3">
           <div className="flex flex-col gap-3">
-            <h3 className="font-display text-2xl font-semibold text-tonle-950">{m.nextTitle}</h3>
+            <h3 className="font-display text-[1.75rem] font-bold text-tonle-950">{m.nextTitle}</h3>
             <p className="leading-relaxed text-ink-soft">{m.nextBody}</p>
           </div>
           <dl className="flex flex-col gap-3">
@@ -232,7 +232,7 @@ function ForParents() {
               </div>
             ))}
           </dl>
-          <p className="text-sm leading-relaxed text-ink-faint">{m.dataNote}</p>
+          <p className="text-sm leading-relaxed text-ink-soft">{m.dataNote}</p>
         </div>
       </div>
     </Section>
@@ -241,69 +241,81 @@ function ForParents() {
 
 function ForChildren() {
   const m = useMessages(marketingMessages).children;
+  const b = useMessages(buddyMessages);
   return (
-    <section id="for-children" className="on-night relative scroll-mt-16 overflow-hidden bg-tonle-950 text-white">
-      <div aria-hidden className="absolute inset-0">
-        <BlueHour time="dusk" crop="center" frame={false} className="absolute inset-0 opacity-90" />
-        <div className="absolute inset-0 bg-gradient-to-r from-tonle-950 via-tonle-950/80 to-tonle-950/10" />
-      </div>
-      <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-4 py-24 sm:px-8 sm:py-32 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <div className="flex flex-col gap-8">
-          <Heading tone="night" title={m.title} lead={m.lead} />
-          <ul className="grid gap-x-8 gap-y-4 text-[0.9375rem] text-tonle-100 sm:grid-cols-2">
+    <section id="for-children" className="relative scroll-mt-16 overflow-hidden bg-[#E7F1EC]">
+      <div className="relative mx-auto max-w-[1240px] px-4 pb-0 pt-20 sm:px-8 sm:pt-28">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+          <Heading title={m.title} lead={m.lead} />
+          <ul className="grid gap-x-8 gap-y-4 text-[0.9375rem] text-ink sm:grid-cols-2">
             {[m.point1, m.point2, m.point3, m.point4].map((point) => (
-              <li key={point} className="border-t border-white/15 pt-4">
+              <li key={point} className="border-t border-tonle-950/15 pt-4">
                 {point}
               </li>
             ))}
           </ul>
         </div>
-        <div aria-hidden className="flex justify-center lg:justify-end">
-          <LearningBuddy mood="happy" size={220} />
-        </div>
+        {/* The buddy family, standing on the field: the child chooses one. */}
+        <ul className="relative mt-16 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
+          {BUDDY_KINDS.map((kind, i) => (
+            <li key={kind} className="flex flex-col items-center text-center">
+              <LearningBuddy kind={kind} mood={i === 0 ? "happy" : "idle"} size={150} />
+              <p className="mt-1 font-display text-xl font-bold text-tonle-950">{b.names[kind]}</p>
+              <p className="max-w-[14rem] text-sm leading-snug text-ink-soft">{b.characters[kind]}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div aria-hidden className="mt-6 h-40 overflow-hidden sm:h-56">
+        <RiverGarden variant="band" crop="center" frame={false} />
       </div>
     </section>
   );
 }
 
-const SUBJECTS = [
-  { key: "maths", ready: true },
-  { key: "khmer", ready: false },
-  { key: "english", ready: false },
-] as const;
+const SUBJECTS: { key: "maths" | "khmer" | "english"; ready: boolean; place: PlaceKind }[] = [
+  { key: "maths", ready: true, place: "bridge" },
+  { key: "khmer", ready: false, place: "pavilion" },
+  { key: "english", ready: false, place: "treehouse" },
+];
 
 function Subjects() {
   const m = useMessages(marketingMessages).subjects;
   const locale = useLocale();
   const other = locale === "km" ? "en" : "km";
   const inOther = messagesIn(marketingMessages, other).subjects;
-  const subjects = SUBJECTS.map(({ key, ready }) => ({ key, ready, name: m[key], other: inOther[key], text: m[`${key}Text`] }));
+  const subjects = SUBJECTS.map(({ key, ready, place }) => ({ key, ready, place, name: m[key], other: inOther[key], text: m[`${key}Text`] }));
   return (
     <Section id="subjects">
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
-        <Heading title={m.title} lead={m.lead} />
-        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[24px] bg-white shadow-paper ring-1 ring-line/70">
-          {subjects.map((s) => (
-            <li key={s.key} className="grid gap-2 px-6 py-6 sm:grid-cols-[150px_minmax(0,1fr)_auto] sm:items-center sm:gap-6 sm:px-8">
-              <div>
-                <p className="font-display text-xl font-semibold text-tonle-950">{s.name}</p>
-                <p lang={other} className={cn("text-sm text-ink-faint", other === "km" && "font-khmer")}>
-                  {s.other}
-                </p>
+      <Heading title={m.title} lead={m.lead} />
+      <ul className="mt-12 grid gap-6 md:grid-cols-3">
+        {subjects.map((s) => (
+          <li key={s.key} className={cn("flex flex-col overflow-hidden rounded-[24px] bg-white shadow-paper ring-1 ring-line/70", !s.ready && "bg-white/80")}>
+            <div className={cn("flex h-44 items-end justify-center", s.ready ? "bg-[#EAF3E4]" : "bg-paper")}>
+              <Place kind={s.place} className={cn("h-40 w-auto", !s.ready && "opacity-75 saturate-[0.7]")} />
+            </div>
+            <div className="flex flex-1 flex-col gap-2 p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-display text-2xl font-bold text-tonle-950">{s.name}</p>
+                  <p lang={other} className={cn("text-sm text-ink-soft", other === "km" && "font-khmer")}>
+                    {s.other}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    "w-fit shrink-0 rounded-[8px] px-2.5 py-1 text-[0.8125rem] font-semibold ring-1 ring-inset",
+                    s.ready ? "bg-palm-soft text-palm-deep ring-palm/30" : "bg-paper text-ink-soft ring-line",
+                  )}
+                >
+                  {s.ready ? m.availableNow : m.inPreparation}
+                </span>
               </div>
-              <p className={cn("text-[0.9375rem] leading-relaxed", s.ready ? "text-ink" : "text-ink-soft")}>{s.text}</p>
-              <span
-                className={cn(
-                  "w-fit rounded-[8px] px-2.5 py-1 text-[0.8125rem] font-semibold ring-1 ring-inset",
-                  s.ready ? "bg-palm-soft text-palm-deep ring-palm/30" : "bg-paper text-ink-soft ring-line",
-                )}
-              >
-                {s.ready ? m.availableNow : m.inPreparation}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+              <p className="text-[0.9375rem] leading-relaxed text-ink-soft">{s.text}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }
@@ -322,12 +334,9 @@ function Schools() {
         <ol className="flex flex-col gap-0 border-l border-line">
           {[m.step1, m.step2, m.step3].map((text) => (
             <li key={text} className="relative flex flex-col gap-1 pb-8 pl-8 last:pb-0">
-              <span
-                aria-hidden
-                className="absolute -left-[7px] top-1.5 h-3.5 w-3.5 rounded-full bg-tonle-700 ring-4 ring-white"
-              />
+              <span aria-hidden className="absolute -left-[7px] top-1.5 h-3.5 w-3.5 rounded-full bg-tonle-700 ring-4 ring-white" />
               <p className="text-lg font-semibold text-ink">{text}</p>
-              <p className="text-sm text-ink-faint">{m.earlyAccess}</p>
+              <p className="text-sm text-ink-soft">{m.earlyAccess}</p>
             </li>
           ))}
         </ol>
@@ -354,24 +363,22 @@ function Closing() {
           <dl className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
             {promises.map(([title, text]) => (
               <div key={title} className="flex flex-col gap-2 border-t-2 border-tonle-900 pt-4">
-                <dt className="font-display text-lg font-semibold text-tonle-950">{title}</dt>
+                <dt className="font-display text-xl font-bold text-tonle-950">{title}</dt>
                 <dd className="leading-relaxed text-ink-soft">{text}</dd>
               </div>
             ))}
           </dl>
         </div>
       </Section>
-      <section className="on-night relative overflow-hidden bg-tonle-950 text-white">
+      <section className="relative overflow-hidden bg-[#DCEDEC]">
         <div aria-hidden className="absolute inset-0">
-          <BlueHour time="dusk" crop="top" frame={false} className="absolute inset-0" />
-          <div className="absolute inset-0 bg-tonle-950/55" />
+          <RiverGarden crop="center" frame={false} bloom={1} />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#F4F6F1]/95 via-[#F4F6F1]/70 to-transparent" />
         </div>
-        <div className="relative mx-auto flex max-w-[1240px] flex-col items-start gap-6 px-4 py-24 sm:px-8 sm:py-28">
-          <p className="font-display text-[2.25rem] font-semibold leading-[1.05] sm:text-[3.25rem]" style={{ fontVariationSettings: '"opsz" 72' }}>
-            {c.tagline}
-          </p>
-          <p className="max-w-md text-lg text-tonle-100">{m.closingLead}</p>
-          <Link to="/register" className={lightButton}>
+        <div className="relative mx-auto flex max-w-[1240px] flex-col items-start gap-6 px-4 py-24 sm:px-8 sm:py-32">
+          <p className="max-w-xl font-display text-[2.4rem] font-bold leading-[1.05] text-tonle-950 sm:text-[3.4rem]">{c.tagline}</p>
+          <p className="max-w-md text-lg text-ink-soft">{m.closingLead}</p>
+          <Link to="/register" className={goButton}>
             {all.nav.getStarted}
           </Link>
         </div>

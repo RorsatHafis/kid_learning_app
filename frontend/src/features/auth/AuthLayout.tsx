@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { LegalLinks } from "@/features/legal/Legal";
 import { Link } from "react-router-dom";
 import { Logo } from "@/components/brand/Logo";
-import { BlueHour } from "@/features/world/BlueHour";
+import { RiverGarden } from "@/features/world/RiverGarden";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
@@ -11,9 +11,8 @@ import { common } from "@/components/ui/messages";
 import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 
 /**
- * Signing in happens at the edge of the child's world: the river at dusk on one side,
- * a quiet sheet of paper for the form on the other. On a phone the scene becomes a
- * short band above the form.
+ * Signing in happens at the edge of the child's world: River Garden on one side, a quiet sheet of
+ * paper for the form on the other. On a phone the scene becomes a short band above the form.
  */
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   useDocumentTitle(title);
@@ -21,12 +20,11 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
   const c = useMessages(common);
   return (
     <div className="min-h-screen bg-paper lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(480px,1fr)]">
-      <aside aria-hidden className="relative h-44 overflow-hidden bg-tonle-950 sm:h-56 lg:sticky lg:top-0 lg:h-screen">
-        <BlueHour time="dusk" crop="bottom" frame={false} className="absolute inset-0 -scale-x-100" />
-        <div className="absolute inset-0 bg-gradient-to-t from-tonle-950/70 via-transparent to-transparent" />
-        <div className="absolute bottom-10 left-12 hidden max-w-sm flex-col gap-4 lg:flex">
-          <LearningBuddy mood="happy" size={88} />
-          <p className="font-display text-[2rem] font-semibold leading-[1.1] text-white" style={{ fontVariationSettings: '"opsz" 60' }}>
+      <aside aria-hidden className="relative h-44 overflow-hidden bg-[#DCEDEC] sm:h-56 lg:sticky lg:top-0 lg:h-screen">
+        <RiverGarden crop="bottom" bloom={0.4} className="absolute inset-0" />
+        <div className="absolute bottom-10 left-10 hidden max-w-sm items-end gap-3 lg:flex">
+          <LearningBuddy mood="happy" size={112} className="-mb-2 shrink-0" />
+          <p className="rounded-[22px] bg-white/92 px-6 py-4 font-display text-[1.9rem] font-bold leading-[1.1] text-tonle-950 shadow-lift">
             {m.motto}
             <br />
             {m.motto2}
@@ -42,7 +40,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
           <LanguageSwitcher size="sm" />
         </div>
         <div className="mx-auto flex w-full max-w-[26rem] flex-1 flex-col justify-center py-10">
-          <h1 className="font-display text-[2.25rem] font-semibold leading-tight text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+          <h1 className="font-display text-[2.4rem] font-bold leading-tight text-tonle-950">
             {title}
           </h1>
           <p className="mt-2 text-[1.0625rem] leading-relaxed text-ink-soft">{subtitle}</p>

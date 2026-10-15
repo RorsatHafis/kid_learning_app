@@ -1,4 +1,4 @@
-import { BlueHour } from "@/features/world/BlueHour";
+import { RiverGarden } from "@/features/world/RiverGarden";
 import { QuestionView, type AnswerResult } from "@/features/child/QuestionView";
 import type { ActivityItem, MediaRef } from "@/lib/api/types";
 
@@ -203,10 +203,9 @@ const items: { item: ActivityItem; results: (AnswerResult | null)[] }[] = [
 
 export function PlayGallery() {
   return (
-    <div className="relative min-h-screen bg-tonle-950">
+    <div className="relative min-h-screen bg-[#E7F1EC]">
       <div aria-hidden className="fixed inset-0">
-        <BlueHour time="dusk" crop="bottom" frame={false} className="absolute inset-0" />
-        <div className="absolute inset-0 bg-tonle-950/40" />
+        <RiverGarden variant="quiet" crop="bottom" frame={false} className="absolute inset-0" />
       </div>
       <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-2">
         {items.flatMap(({ item, results }) =>

@@ -74,7 +74,7 @@ export function BuddyPage() {
           <div className="flex flex-col gap-2 rounded-[28px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 sm:p-8">
             <h1 className="font-display text-headline font-bold text-tonle-950">{b.title}</h1>
             <p className="text-lg font-medium text-ink-soft">{b.lead}</p>
-            <p role="status" className="min-h-7 text-lg font-bold text-palm-deep">
+            <p role="status" className="text-lg font-bold text-palm-deep">
               {justChose ? b.chosen(b.names[current]) : ""}
             </p>
             {failed && (
@@ -83,7 +83,7 @@ export function BuddyPage() {
               </p>
             )}
           </div>
-          <div role="radiogroup" aria-label={b.list} className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div role="radiogroup" aria-label={b.list} className="flex flex-wrap justify-center gap-5">
             {BUDDY_KINDS.map((kind) => {
               const mine = kind === current;
               const name = b.names[kind];
@@ -97,12 +97,11 @@ export function BuddyPage() {
                   disabled={saving !== null}
                   onClick={() => void choose(kind)}
                   className={cn(
-                    "group relative flex flex-col overflow-hidden rounded-[28px] bg-white text-left shadow-paper ring-1 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-lift disabled:cursor-wait",
+                    "group relative flex w-full flex-col overflow-hidden rounded-[28px] bg-white text-left shadow-paper ring-1 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-lift disabled:cursor-wait sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.84rem)]",
                     mine ? "ring-4 ring-light" : "ring-tonle-950/5",
                   )}
                 >
                   <span className={cn("relative flex h-48 items-end justify-center", STAGE[kind])}>
-                    <span aria-hidden className="absolute inset-x-6 bottom-5 h-3 rounded-full bg-tonle-950/10 blur-[2px]" />
                     <LearningBuddy kind={kind} mood={mine && justChose ? "cheer" : mine ? "happy" : "idle"} size={176} className="relative -mb-2" />
                     {mine && (
                       <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-pill bg-light px-3 py-1 text-sm font-bold text-tonle-950">
