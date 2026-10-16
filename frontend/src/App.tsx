@@ -4,8 +4,6 @@ import { NotFound } from "@/components/ui/NotFound";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState } from "@/components/ui/States";
-import { BrandSheet } from "@/features/brand/BrandSheet";
-import { PlayGallery } from "@/features/brand/PlayGallery";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
 import { LandingPage } from "@/features/marketing/LandingPage";
@@ -16,26 +14,33 @@ import { ResetPasswordPage, SetUpAccountPage } from "@/features/auth/ResetPasswo
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
 import { roleHomePath } from "@/features/auth/roleHomePath";
 import { ConfirmEmailChangePage } from "@/features/auth/ConfirmEmailChangePage";
-import { ParentLayout } from "@/features/parent/ParentLayout";
-import { ParentHome } from "@/features/parent/ParentHome";
-import { ChildOverviewPage } from "@/features/parent/ChildOverviewPage";
-import { SkillPage } from "@/features/parent/SkillPage";
-import { AccountPage } from "@/features/parent/AccountPage";
-import { ChildHome } from "@/features/child/ChildHome";
-import { PlaySession, PracticeSession } from "@/features/child/PlaySession";
-import { ShelfPage } from "@/features/child/ShelfPage";
-import { BuddyPage } from "@/features/child/BuddyPage";
+import { loadChildArea, loadParentArea } from "@/routes/areas";
 import { useMessages } from "@/i18n/catalog";
 import { common } from "@/components/ui/messages";
 
-// Staff areas are separate downloads: a family on a phone never loads the Content Studio,
-// the teacher console or the principal console.
+// Each area is a separate download: a visitor reading the landing page loads neither the family
+// pages nor the child's space, a family on a phone never loads the Content Studio, the teacher
+// console or the principal console, and a teacher never loads the child's space.
+const ParentArea = lazy(loadParentArea);
+const ChildArea = lazy(loadChildArea);
 const AdminArea = lazy(() => import("@/features/admin/AdminArea"));
+// Design tools for development only: in a production build these imports are dead code and dropped.
+const BrandSheet = import.meta.env.DEV ? lazy(() => import("@/features/brand/BrandSheet").then((m) => ({ default: m.BrandSheet }))) : null;
+const PlayGallery = import.meta.env.DEV ? lazy(() => import("@/features/brand/PlayGallery").then((m) => ({ default: m.PlayGallery }))) : null;
 const TeacherArea = lazy(() => import("@/features/teacher/TeacherArea"));
 const PrincipalArea = lazy(() => import("@/features/principal/PrincipalArea"));
 
-function StaffArea({ children }: { children: ReactNode }) {
+function AreaLoading({ children }: { children: ReactNode }) {
   return <Suspense fallback={<LoadingState />}>{children}</Suspense>;
+}
+
+/** While the child's space downloads: its own ground, so nothing flashes in another colour. */
+function ChildSpaceLoading() {
+  return (
+    <div className="min-h-screen bg-[#E7F1EC]">
+      <LoadingState />
+    </div>
+  );
 }
 
 /** An unknown address outside every workspace: home for whoever is signed in, else the public page. */
@@ -55,7 +60,6 @@ function AppNotFound() {
 }
 
 export default function App() {
-  const m = useMessages(common);
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -71,71 +75,29 @@ export default function App() {
             <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
 
             <Route
-              path="/parent"
+              path="/parent/*"
               element={
                 <RequireAuth>
                   <RequireRole roles={["PARENT"]}>
-                    <ParentLayout />
+                    <AreaLoading>
+                      <ParentArea />
+                    </AreaLoading>
                   </RequireRole>
                 </RequireAuth>
               }
-            >
-              <Route index element={<ParentHome />} />
-              <Route path="children/:childId" element={<ChildOverviewPage />} />
-              <Route path="children/:childId/skills/:skillId" element={<SkillPage />} />
-              <Route path="account" element={<AccountPage />} />
-              <Route path="*" element={<NotFound home="/parent" homeLabel={m.goToFamily} />} />
-            </Route>
+            />
 
             {/* The child's space — deliberately outside ParentLayout's chrome (a child
               surface must not look like a parent dashboard), but gated by the same
               auth/role guards: there is no child login (see PlatformRole). */}
             <Route
-              path="/learn/:childId"
+              path="/learn/*"
               element={
                 <RequireAuth>
                   <RequireRole roles={["PARENT"]}>
-                    <ChildHome />
-                  </RequireRole>
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/learn/:childId/shelf"
-              element={
-                <RequireAuth>
-                  <RequireRole roles={["PARENT"]}>
-                    <ShelfPage />
-                  </RequireRole>
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/learn/:childId/buddy"
-              element={
-                <RequireAuth>
-                  <RequireRole roles={["PARENT"]}>
-                    <BuddyPage />
-                  </RequireRole>
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/learn/:childId/practice/:activityVersionId"
-              element={
-                <RequireAuth>
-                  <RequireRole roles={["PARENT"]}>
-                    <PracticeSession />
-                  </RequireRole>
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/learn/:childId/play/:enrollmentId"
-              element={
-                <RequireAuth>
-                  <RequireRole roles={["PARENT"]}>
-                    <PlaySession />
+                    <Suspense fallback={<ChildSpaceLoading />}>
+                      <ChildArea />
+                    </Suspense>
                   </RequireRole>
                 </RequireAuth>
               }
@@ -148,9 +110,9 @@ export default function App() {
               element={
                 <RequireAuth>
                   <RequireRole roles={["TEACHER"]}>
-                    <StaffArea>
+                    <AreaLoading>
                       <TeacherArea />
-                    </StaffArea>
+                    </AreaLoading>
                   </RequireRole>
                 </RequireAuth>
               }
@@ -160,9 +122,9 @@ export default function App() {
               element={
                 <RequireAuth>
                   <RequireRole roles={["PRINCIPAL"]}>
-                    <StaffArea>
+                    <AreaLoading>
                       <PrincipalArea />
-                    </StaffArea>
+                    </AreaLoading>
                   </RequireRole>
                 </RequireAuth>
               }
@@ -172,16 +134,16 @@ export default function App() {
               element={
                 <RequireAuth>
                   <RequireRole roles={["ADMIN"]}>
-                    <StaffArea>
+                    <AreaLoading>
                       <AdminArea />
-                    </StaffArea>
+                    </AreaLoading>
                   </RequireRole>
                 </RequireAuth>
               }
             />
 
-            {import.meta.env.DEV && <Route path="/__brand" element={<BrandSheet />} />}
-            {import.meta.env.DEV && <Route path="/__play" element={<PlayGallery />} />}
+            {BrandSheet && <Route path="/__brand" element={<AreaLoading><BrandSheet /></AreaLoading>} />}
+            {PlayGallery && <Route path="/__play" element={<AreaLoading><PlayGallery /></AreaLoading>} />}
             <Route path="*" element={<AppNotFound />} />
           </Routes>
         </AppErrorBoundary>

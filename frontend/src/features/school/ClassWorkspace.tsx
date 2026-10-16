@@ -372,10 +372,16 @@ export function ClassLearningPanel({
 
 function MembersTable({ data, memberHref }: { data: ClassLearning; memberHref: (childId: string) => string }) {
   const m = useMessages(schoolMessages).learning;
+  // A full class (35-50 children) on a wide screen reads in two columns, top to bottom and then the
+  // next, so the alphabetical order still scans down; the skills below stay a short scroll away.
+  const columns = data.members.length > 8;
   return (
-    <ul aria-label={m.childrenList} className={cn(card, "flex flex-col divide-y divide-line overflow-hidden")}>
+    <ul
+      aria-label={m.childrenList}
+      className={cn(card, "overflow-hidden", columns ? "xl:columns-2 xl:gap-0 xl:[column-rule:1px_solid_theme(colors.line.DEFAULT)]" : "flex flex-col")}
+    >
       {data.members.map((member) => (
-        <li key={member.childId}>
+        <li key={member.childId} className="break-inside-avoid border-b border-line [&:last-child]:border-b-0">
           <Link
             to={memberHref(member.childId)}
             className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-tonle-50/60 focus-visible:bg-tonle-50/60"

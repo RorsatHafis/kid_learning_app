@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { LegalUpdateNotice } from "@/features/legal/Legal";
 import { LogOut } from "lucide-react";
@@ -9,6 +10,7 @@ import { SkipLink } from "@/components/ui/SkipLink";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
 import { common } from "@/components/ui/messages";
+import { loadChildArea } from "@/routes/areas";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -17,12 +19,18 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "text-tonle-900 after:bg-tonle-700" : "text-ink-soft after:bg-transparent hover:text-tonle-900",
   );
 
-/** The grown-ups' space: calm paper, navy ink, a quiet bar that never competes with the child's work. */
+/** The grown-ups' space: calm paper, river ink, a quiet bar that never competes with the child's work. */
 export function ParentLayout() {
   const { session, logout } = useAuth();
   const m = useMessages(familyMessages).layout;
   const c = useMessages(common);
   const navigate = useNavigate();
+
+  // A parent's next step is usually handing over to a child: fetch the child's space while they read.
+  // A failure here is not shown; opening the space fetches it again and reports it there.
+  useEffect(() => {
+    loadChildArea().catch(() => undefined);
+  }, []);
 
   async function onLogout() {
     await logout();
