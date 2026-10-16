@@ -97,3 +97,5 @@ Before Khmer is offered to real families, a native-speaking editor reviews, in t
 4. staff tools: `features/admin`, including the Studio.
 
 Corrections go into the catalogs. The keys stay the same, so nothing else changes.
+
+The text added or changed by the River Garden redesign (Y33: Learning Buddies, the activity's end, the parent's skill tally, the landing's children section) is listed with its context and intended meaning in KHMER-REVIEW-Y33.md, for a single review pass.

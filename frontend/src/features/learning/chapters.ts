@@ -29,9 +29,9 @@ export function chapterRuns(journey: Journey): ChapterRun[] {
 }
 
 /**
- * How far the child's path has come, as the world shows it: 0 at the start of the blue hour, 1
- * at first light. With chapters it moves only when a chapter is finished (the server's COMPLETE
- * state), so the sky changes at the moments that mean something; a path without chapters moves
+ * How far the child's path has come, as the world shows it: 0 with every lotus on the pond
+ * closed, 1 with all of them open. With chapters it moves only when a chapter is finished (the
+ * server's COMPLETE state), so the pond changes at the moments that mean something; a path without chapters moves
  * step by step. Read from the server's path, never kept separately — when the platform adds
  * review or practice to a chapter, the light follows that too.
  */

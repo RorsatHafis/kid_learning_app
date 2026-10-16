@@ -23,7 +23,7 @@ export function PathStrip({
   steps: PathStep[];
   /** The step this activity finished: drawn lighting up. */
   justLitId: string | null;
-  /** Where the firefly goes next; null when nothing waits in this chapter. */
+  /** Where the buddy goes next; null when nothing waits in this chapter. */
   nextId: string | null;
   chapterDone?: boolean;
 }) {
@@ -37,9 +37,9 @@ export function PathStrip({
   const xOf = (index: number) => first + shown.findIndex((s) => s.index === index) * GAP;
 
   const at = (i: number) => ({ x: first + i * GAP, y: WATER_Y });
-  const fireflyIndex = next >= 0 && shown.some((s) => s.index === next) ? next : lit >= 0 ? lit : null;
+  const buddyIndex = next >= 0 && shown.some((s) => s.index === next) ? next : lit >= 0 ? lit : null;
   const hopFrom =
-    lit >= 0 && fireflyIndex !== null && fireflyIndex !== lit && shown.some((s) => s.index === lit) ? xOf(lit) : null;
+    lit >= 0 && buddyIndex !== null && buddyIndex !== lit && shown.some((s) => s.index === lit) ? xOf(lit) : null;
 
   return (
     <svg
@@ -94,13 +94,13 @@ export function PathStrip({
         );
       })}
 
-      {fireflyIndex !== null && (
-        <g transform={`translate(${xOf(fireflyIndex) + 14} ${WATER_Y - 96})`}>
+      {buddyIndex !== null && (
+        <g transform={`translate(${xOf(buddyIndex) + 14} ${WATER_Y - 96})`}>
           <g
             className={hopFrom !== null ? "motion-safe:animate-hop" : undefined}
             style={
               hopFrom !== null
-                ? { ["--hop-x" as string]: `${hopFrom - xOf(fireflyIndex)}px`, animationDelay: "650ms" }
+                ? { ["--hop-x" as string]: `${hopFrom - xOf(buddyIndex)}px`, animationDelay: "650ms" }
                 : undefined
             }
           >
