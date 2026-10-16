@@ -238,7 +238,7 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
 
 ### Cards / Containers
 - **Family sheet:** white, 22px, paper shadow, line/70 ring. Rows divide with 1px lines instead of nesting cards.
-- **Workspace panel:** white, 16px, 1px line ring, with a header row and a hairline under it. Tables run edge to edge (`flush`) and become stacked lists on phones.
+- **Workspace panel:** white, 16px, 1px line ring, with a header row and a hairline under it. Tables run edge to edge (`flush`) and become stacked lists on phones. A class roster of more than 8 children reads in two columns from `xl`, top to bottom and then the next, with a hairline between.
 - **Composer:** a creation form opens from a "New …" action in its list header as a titled, closable panel (Escape closes it too). The first field takes focus.
 
 ### Page frame
