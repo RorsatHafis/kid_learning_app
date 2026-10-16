@@ -5,11 +5,13 @@ import { useLocale } from "@/i18n/catalog";
 
 /** A quiet marker per standing — always next to its words, never colour alone. */
 const standingMark: Record<SkillStanding, { mark: string; text: string }> = {
+  // Fills from the shared standing palette (tailwind.config.ts); "too early" is hollow, so it never
+  // reads as a weaker "progressing".
   NOT_STARTED: { mark: "border border-line-strong bg-white", text: "text-ink-faint" },
-  TOO_EARLY_TO_TELL: { mark: "border-2 border-tonle-300 bg-white", text: "text-tonle-700" },
-  NEEDS_PRACTICE: { mark: "bg-light", text: "text-light-deep" },
-  PROGRESSING: { mark: "bg-tonle-600", text: "text-tonle-700" },
-  SECURE: { mark: "bg-palm", text: "text-palm-deep" },
+  TOO_EARLY_TO_TELL: { mark: "border-2 border-standing-early bg-white", text: "text-sky-deep" },
+  NEEDS_PRACTICE: { mark: "bg-standing-practice", text: "text-light-deep" },
+  PROGRESSING: { mark: "bg-standing-progressing", text: "text-sky-deep" },
+  SECURE: { mark: "bg-standing-secure", text: "text-palm-deep" },
 };
 
 /** A skill's standing (parent and school views share it). */

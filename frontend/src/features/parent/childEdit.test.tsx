@@ -40,7 +40,7 @@ function renderPage() {
   render(
     <MemoryRouter initialEntries={["/parent/children/c1"]}>
       <Routes>
-        <Route path="/parent/children/:childId" element={<ChildOverviewPage />} />
+        <Route path="/parent/children/:childId/*" element={<ChildOverviewPage />} />
       </Routes>
     </MemoryRouter>,
   );

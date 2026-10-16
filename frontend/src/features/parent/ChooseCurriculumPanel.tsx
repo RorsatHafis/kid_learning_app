@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api/ApiError";
 import { PlanLimitNote } from "./PlanLimitNote";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
+import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
 
 const ages = (c: CurriculumChoice) => messagesNow(familyMessages).choose.ages(c.minAge, c.maxAge);
 
@@ -152,11 +153,14 @@ function ChoiceGroups({
   }
   const row = (curriculum: CurriculumChoice, showSubject: boolean) => (
     <li key={curriculum.id} className="flex flex-wrap items-center justify-between gap-4 py-3.5">
-      <div>
+      <div className="flex items-center gap-3">
+        <SubjectEmblem code={curriculum.subjectCode} name={curriculum.subjectName} size={48} />
+        <div>
         <p className="font-semibold text-ink">{curriculum.name}</p>
         <p className="mt-0.5 text-sm text-ink-faint">
           {[showSubject ? curriculum.subjectName : null, curriculum.ageHubName, ages(curriculum)].filter(Boolean).join(" · ")}
         </p>
+        </div>
       </div>
       <Button size="md" onClick={() => onChoose(curriculum.id)} disabled={enrollingId !== null}>
         {enrollingId === curriculum.id ? m.starting : m.start}
@@ -170,7 +174,7 @@ function ChoiceGroups({
       {segments.map((segment, i) =>
         segment.subject ? (
           <section key={segment.subject} aria-label={segment.subject + regionSuffix} className="flex flex-col">
-            <h3 className="pb-1 text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-ink-faint">{segment.subject}</h3>
+            <h3 className="pb-1 text-sm font-semibold text-ink-soft">{segment.subject}</h3>
             <ul className="flex flex-col divide-y divide-line border-y border-line">{segment.items.map((c) => row(c, false))}</ul>
           </section>
         ) : (

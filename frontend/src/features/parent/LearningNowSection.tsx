@@ -15,6 +15,8 @@ import { ChapterTrack } from "./ui";
 import { chapterRuns } from "@/features/learning/chapters";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
+import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
+import { subjectTheme } from "@/features/learning/subjectTheme";
 
 type AsyncList = {
   data: EnrollmentOverview[] | null;
@@ -102,12 +104,16 @@ function EnrollmentCard({
   const ch = useMessages(familyMessages).chapters;
 
   return (
-    <article className="rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+    <article className="overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+      <span aria-hidden className={cn("block h-1.5", subjectTheme(curriculum.subjectCode, curriculum.subjectName).solid)} />
       <div className="flex flex-col gap-6 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h3 className="font-display text-xl font-semibold text-tonle-950">{curriculum.name}</h3>
-            <p className="mt-0.5 text-sm text-ink-faint">{[curriculum.subjectName, curriculum.ageHubName].filter(Boolean).join(" · ")}</p>
+          <div className="flex items-center gap-4">
+            <SubjectEmblem code={curriculum.subjectCode} name={curriculum.subjectName} size={56} />
+            <div>
+              <h3 className="font-display text-xl font-bold text-tonle-950">{curriculum.name}</h3>
+              <p className="mt-0.5 text-sm text-ink-faint">{[curriculum.subjectName, curriculum.ageHubName].filter(Boolean).join(" · ")}</p>
+            </div>
           </div>
           <p className="tabular text-sm font-semibold text-ink">
             {m.completed(completedSteps, totalSteps)}

@@ -94,7 +94,9 @@ export const accountApi = {
 export const childrenApi = {
   list: () => apiClient.get<Child[]>("/children"),
   get: (childId: string) => apiClient.get<Child>(`/children/${childId}`),
-  create: (input: { displayName: string; dateOfBirth: string }) => apiClient.post<Child>("/children", input),
+  /** familyChoosesSubjects: the family picks the subjects (setup flow), so none is started for the child. */
+  create: (input: { displayName: string; dateOfBirth: string; familyChoosesSubjects?: boolean }) =>
+    apiClient.post<Child>("/children", input),
   rename: (childId: string, displayName: string) => apiClient.patch<Child>(`/children/${childId}`, { displayName }),
   // Name and/or a corrected date of birth (Y12); 400 with field errors when either is invalid.
   update: (childId: string, changes: { displayName?: string; dateOfBirth?: string }) =>

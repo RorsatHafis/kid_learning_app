@@ -102,7 +102,10 @@ public class ChildController {
         // committed by the time control returns here (crossing back out through its
         // @Transactional proxy boundary), so the child row is now visible to the
         // fresh transaction this starts - see ChildService#completeAutoEnrollment.
-        childService.completeAutoEnrollment(child);
+        // A family that chooses the subjects itself gets none chosen for it.
+        if (!request.startsWithFamilyChoice()) {
+            childService.completeAutoEnrollment(child);
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ChildResponse.from(child));
     }

@@ -45,6 +45,25 @@ export default {
         clay: { DEFAULT: "#C8643B", soft: "#F8E4D8", deep: "#8F3F1F" },
         dusk: { DEFAULT: "#6D5BA8", soft: "#ECE9F6", deep: "#4A3B86" },
         brick: { DEFAULT: "#C2412F", soft: "#FBE8E4", deep: "#9E2F20" },
+        // Iteration 2: a controlled set of accents beside the river teal. Sky is the open morning
+        // and "progressing"; coral is the lotus at its brightest and the Maths subject. Coral and
+        // sky are accents and soft grounds - text on them uses their deep tone (coral.deep 6.7:1
+        // on white, 5.7:1 on coral.soft; sky.deep 7.0:1 / 6.0:1); ink on a coral fill is not
+        // legible enough (4.1:1) and is never used.
+        sky: { DEFAULT: "#3B82C4", soft: "#E4F0FA", deep: "#1F5C93", pale: "#94BEDF" },
+        coral: { DEFAULT: "#E2674A", soft: "#FDE8E1", deep: "#A03A24" },
+        // Warm cream: the family's ground (ink 13.7:1, ink-faint 5.1:1); cream.deep for bands.
+        cream: { DEFAULT: "#FBF6EC", deep: "#F4EBDA" },
+        // A skill's standing, one palette everywhere (parent, teacher, principal, charts). Checked in
+        // OKLab under protan/deutan/tritan simulation: every neighbouring pair >= 8.3 (normal >= 15.7).
+        // Always beside its words or a mark shape - never colour alone.
+        standing: {
+          secure: "#2E7A5A",
+          progressing: "#3B82C4",
+          practice: "#EBA13A",
+          early: "#94BEDF",
+          none: "#E3E7DF",
+        },
 
         // Legacy names, remapped onto the new system while screens are rebuilt.
         muted: "#46595B",

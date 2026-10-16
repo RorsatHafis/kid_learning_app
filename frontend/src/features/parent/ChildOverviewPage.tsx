@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ChevronRight, Pencil, Play } from "lucide-react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { Link, NavLink, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { ChevronRight, ExternalLink, Pencil, Play } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
@@ -20,6 +20,12 @@ import { DeleteChildSection } from "./Deletion";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
+import { setupMessages } from "./setup.messages";
+import { NotFound } from "@/components/ui/NotFound";
+import { cn } from "@/lib/utils/cn";
+import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
+import { buddyMessages } from "@/features/buddy/buddy.messages";
+import type { EnrollmentOverview } from "@/lib/api/types";
 
 export function ChildOverviewPage() {
   // key={childId} forces a full remount when switching children, so no state from
@@ -59,39 +65,120 @@ function ChildOverview({ childId }: { childId: string }) {
     );
   }
   if (!child.data) return null;
-
+  const data = child.data;
+  const base = `/parent/children/${childId}`;
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
-        <BackLink name={child.data.displayName} />
-        <Header child={child.data} onRenamed={child.refetch} />
+        <BackLink name={data.displayName} />
+        <Header child={data} onRenamed={child.refetch} enrollments={enrollments.data} />
       </div>
-      {/* Phone: insights right after the current path — the parent's first question.
-          Desktop: insights ride along in a sticky column beside the detail. */}
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-x-14 lg:gap-y-14">
-        <div className="min-w-0 lg:col-start-1">
-          <LearningNowSection childId={childId} childName={child.data.displayName} enrollments={enrollments} />
-        </div>
-        {/* "What is improving?": change over time, right after what is happening now. */}
-        <div className="min-w-0 lg:col-start-1">
-          <ChangesSection childId={childId} childName={child.data.displayName} />
-        </div>
-        <aside className="lg:sticky lg:top-24 lg:col-start-2 lg:row-span-5 lg:row-start-1 lg:self-start">
-          <InsightsSection childId={childId} />
-        </aside>
-        {/* Next to the learning a class adds: where a parent with a class code looks. */}
-        <div className="min-w-0 lg:col-start-1">
-          <SchoolAccessSection childId={childId} childName={child.data.displayName} onJoined={enrollments.refetch} />
-        </div>
-        <div className="min-w-0 lg:col-start-1">
-          <SkillsSection childId={childId} />
-        </div>
-        <div className="min-w-0 lg:col-start-1">
-          <RecentActivitySection childId={childId} />
-        </div>
-      </div>
-      <DeleteChildSection child={child.data} />
+      <ChildTabs base={base} />
+      <Routes>
+        <Route
+          index
+          element={
+            // Phone: insights right after the plan - the parent's first question. Desktop: insights
+            // ride along in a sticky column beside it.
+            <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-x-14">
+              <div className="flex min-w-0 flex-col gap-12">
+                <PlanAnchor>
+                  <LearningNowSection childId={childId} childName={data.displayName} enrollments={enrollments} />
+                </PlanAnchor>
+                {/* "What is improving?": change over time, right after what is happening now. */}
+                <ChangesSection childId={childId} childName={data.displayName} />
+              </div>
+              <aside className="lg:sticky lg:top-24 lg:self-start">
+                <InsightsSection childId={childId} />
+              </aside>
+            </div>
+          }
+        />
+        <Route
+          path="progress"
+          element={
+            <div className="flex flex-col gap-12">
+              <SkillsSection childId={childId} />
+              <RecentActivitySection childId={childId} />
+            </div>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <div className="flex flex-col gap-12">
+              {/* Where a parent with a class code looks: it adds the learning a class assigns. */}
+              <SchoolAccessSection childId={childId} childName={data.displayName} onJoined={enrollments.refetch} />
+              <OwnSpace child={data} />
+              <DeleteChildSection child={data} />
+            </div>
+          }
+        />
+        <Route path="*" element={<NotFound home={base} homeLabel={data.displayName} />} />
+      </Routes>
     </div>
+  );
+}
+
+/** The child page's sections, as tabs that are links (each section has its own address). */
+function ChildTabs({ base }: { base: string }) {
+  const m = useMessages(setupMessages).child;
+  const tab = ({ isActive }: { isActive: boolean }) =>
+    cn(
+      "inline-flex h-11 shrink-0 items-center rounded-pill px-5 text-[0.9375rem] font-semibold transition-colors duration-150",
+      isActive ? "bg-tonle-900 text-white" : "text-ink-soft hover:bg-white hover:text-tonle-900",
+    );
+  return (
+    <nav aria-label={m.tabs} className="-mx-1 flex gap-1 overflow-x-auto rounded-pill bg-cream-deep/70 p-1 sm:mx-0 sm:w-fit">
+      <NavLink to={base} end className={tab}>
+        {m.overview}
+      </NavLink>
+      <NavLink to={`${base}/progress`} className={tab}>
+        {m.progress}
+      </NavLink>
+      <NavLink to={`${base}/settings`} className={tab}>
+        {m.settings}
+      </NavLink>
+    </nav>
+  );
+}
+
+/** "#plan" (the family home's "Manage subjects") brings the learning plan into view. */
+function PlanAnchor({ children }: { children: ReactNode }) {
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === "#plan") document.getElementById("plan")?.scrollIntoView?.({ block: "start" });
+  }, [hash]);
+  return (
+    <div id="plan" className="scroll-mt-24">
+      {children}
+    </div>
+  );
+}
+
+/** What belongs to the child, not the parent: their buddy and the language of their space. */
+function OwnSpace({ child }: { child: Child }) {
+  const m = useMessages(setupMessages).child;
+  const b = useMessages(buddyMessages);
+  return (
+    <section aria-labelledby="own-space" className="flex flex-col gap-4 rounded-[24px] bg-white p-6 shadow-paper ring-1 ring-line/70 sm:p-8">
+      <div className="flex items-center gap-4">
+        <ChildPortrait buddy={child.learningBuddy} />
+        <div>
+          <h2 id="own-space" className="font-display text-title font-bold text-tonle-950">
+            {m.space}
+          </h2>
+          <p className="text-[0.9375rem] text-ink-soft">{m.spaceLead(child.displayName)}</p>
+        </div>
+      </div>
+      <ul className="flex flex-wrap gap-2 text-sm font-medium text-ink">
+        <li className="rounded-pill bg-paper px-3.5 py-1.5">{m.buddy(b.names[child.learningBuddy])}</li>
+        <li className="rounded-pill bg-paper px-3.5 py-1.5">{m.language(child.preferredLanguage === "km" ? "ខ្មែរ" : "English")}</li>
+      </ul>
+      <Link to={`/learn/${child.id}`} className={buttonClasses("outline", "md", "w-fit")}>
+        <ExternalLink size={16} aria-hidden /> {m.openSpace(child.displayName)}
+      </Link>
+    </section>
   );
 }
 
@@ -118,7 +205,7 @@ function BackLink({ name }: { name?: string }) {
   );
 }
 
-function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
+function Header({ child, onRenamed, enrollments }: { child: Child; onRenamed: () => void; enrollments: EnrollmentOverview[] | null }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(child.displayName);
   const [birth, setBirth] = useState(child.dateOfBirth);
@@ -210,7 +297,7 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
           ) : (
             <div>
               <div className="flex items-center gap-1">
-                <h1 className="font-display text-headline font-semibold text-tonle-950" style={{ fontVariationSettings: '"opsz" 60' }}>
+                <h1 className="font-display text-headline font-bold text-tonle-950">
                   {child.displayName}
                 </h1>
                 <button
@@ -226,6 +313,16 @@ function Header({ child, onRenamed }: { child: Child; onRenamed: () => void }) {
             </div>
           )}
         </div>
+        {enrollments && enrollments.length > 0 && (
+          <ul className="flex flex-wrap gap-2">
+            {enrollments.map((e) => (
+              <li key={e.enrollmentId} className="inline-flex items-center gap-2 rounded-pill bg-white/90 py-1 pl-1 pr-3.5 text-sm font-semibold text-tonle-950 ring-1 ring-line/70">
+                <SubjectEmblem code={e.curriculum.subjectCode} name={e.curriculum.subjectName} size={28} />
+                {e.curriculum.subjectName ?? e.curriculum.name}
+              </li>
+            ))}
+          </ul>
+        )}
         <Link to={`/learn/${child.id}`} className={buttonClasses("solid", "lg", "w-full sm:w-auto")}>
           <Play size={18} aria-hidden /> {m.startSession(child.displayName)}
         </Link>

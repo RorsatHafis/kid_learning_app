@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { BookOpen, Check, Library, Play } from "lucide-react";
+import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Play } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
@@ -13,10 +13,12 @@ import { PathOfBooks, khmerNumber } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { goButton } from "./chips";
-import { SHELF_SPINES } from "./shelf";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
+import { entranceMessages } from "./entrance.messages";
+import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
+import { subjectTheme } from "@/features/learning/subjectTheme";
 
 
 /**
@@ -28,7 +30,7 @@ import { childMessages } from "./messages";
  */
 export function ChildHome() {
   const { childId = "" } = useParams<{ childId: string }>();
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const child = useAsync(() => childrenApi.get(childId), [childId]);
   // X25: a review that fell due after the last step is placed first, so it is there to play. Never blocks the home.
   const enrollments = useAsync(async () => {
@@ -36,9 +38,11 @@ export function ChildHome() {
     return learningApi.enrollments(childId);
   }, [childId]);
 
+  // The home is an entrance: the child's subjects first. A subject's journey opens with ?path= (from a
+  // subject card, or back from an activity); nothing is chosen for the child.
   const selected: EnrollmentOverview | null = useMemo(() => {
     const list = enrollments.data ?? [];
-    return list.find((e) => e.enrollmentId === params.get("path")) ?? list.find((e) => e.nextStep !== null) ?? list[0] ?? null;
+    return list.find((e) => e.enrollmentId === params.get("path")) ?? null;
   }, [enrollments.data, params]);
 
   const name = child.data?.displayName;
@@ -77,6 +81,15 @@ export function ChildHome() {
     );
   }
 
+  const paths = enrollments.data ?? [];
+  if (paths.length > 0 && !selected) {
+    return (
+      <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} buddy={buddy} backdrop={false}>
+        <Entrance childId={childId} name={name} paths={paths} />
+      </ChildSpaceLayout>
+    );
+  }
+
   if (!selected) {
     return (
       <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} buddy={buddy}>
@@ -89,54 +102,116 @@ export function ChildHome() {
     );
   }
 
-  const paths = enrollments.data ?? [];
   return (
     <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} buddy={buddy} backdrop={false}>
-      <JourneyStage
-        key={selected.enrollmentId}
-        childId={childId}
-        name={name}
-        overview={selected}
-        switcher={
-          paths.length > 1 ? (
-            <nav aria-label={m.home.mySubjects} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-              {paths.map((enrollment, i) => {
-                const active = enrollment.enrollmentId === selected.enrollmentId;
-                const where = chapterOf(enrollment.currentChapter, enrollment.chapterCount);
-                return (
-                  <button
-                    key={enrollment.enrollmentId}
-                    type="button"
-                    aria-current={active ? "true" : undefined}
-                    onClick={() => setParams({ path: enrollment.enrollmentId }, { replace: true })}
-                    className={cn(
-                      "group flex min-h-14 shrink-0 items-center gap-3 rounded-[16px] py-2 pl-2 pr-4 text-left ring-1 transition-colors duration-150 ease-out",
-                      active ? "bg-tonle-900 text-white ring-tonle-900" : "bg-paper text-tonle-950 ring-line hover:bg-tonle-50",
-                    )}
-                  >
-                    <span
-                      aria-hidden
-                      className={cn(
-                        "h-10 w-7 shrink-0 rounded-[5px] shadow-[inset_5px_0_0_rgba(0,0,0,0.18)]",
-                        SHELF_SPINES[i % SHELF_SPINES.length],
-                      )}
-                    />
-                    <span className="flex flex-col">
-                      <span className="text-[0.95rem] font-bold leading-tight">
-                        {enrollment.curriculum.subjectName ?? enrollment.curriculum.name}
-                      </span>
-                      <span className={cn("text-xs font-medium", active ? "text-tonle-100" : "text-ink-soft")}>
-                        {enrollment.nextStep === null ? m.home.allLit : (where ?? m.home.litOf(enrollment.completedSteps, enrollment.totalSteps))}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-          ) : null
-        }
-      />
+      <JourneyStage key={selected.enrollmentId} childId={childId} name={name} overview={selected} switcher={<BackToSubjects childId={childId} />} />
     </ChildSpaceLayout>
+  );
+}
+
+/** From a subject's journey back to the entrance, where every subject is. */
+function BackToSubjects({ childId }: { childId: string }) {
+  const e = useMessages(entranceMessages);
+  return (
+    <Link
+      to={`/learn/${childId}`}
+      className="-mt-1 inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
+    >
+      <LayoutGrid size={16} aria-hidden /> {e.allSubjects}
+    </Link>
+  );
+}
+
+/**
+ * The entrance: who this space is for, the subjects the family chose (exactly the child's paths),
+ * how far each has come, and - when an activity was left part-way - a way straight back into it.
+ * The world behind is the child's: its lotuses open with every chapter they finish.
+ */
+function Entrance({ childId, name, paths }: { childId: string; name?: string; paths: EnrollmentOverview[] }) {
+  const m = useMessages(childMessages);
+  const e = useMessages(entranceMessages);
+  const unfinished = paths.find((p) => p.nextStep?.status === "IN_PROGRESS");
+  const bloom = paths.reduce((sum, p) => sum + journeyLight(p), 0) / paths.length;
+  return (
+    <section aria-labelledby="greeting" className="relative -mt-[76px] sm:-mt-[88px]">
+      <div aria-hidden className="relative h-[46svh] min-h-[320px] overflow-hidden lg:h-[56vh] lg:max-h-[620px]">
+        <RiverGarden crop="bottom" bloom={bloom} />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#E7F1EC] via-[#E7F1EC]/70 to-transparent" />
+      </div>
+      <div className="relative mx-auto -mt-28 w-full max-w-5xl px-4 pb-16 sm:-mt-36 sm:px-8">
+        <div className="flex flex-col gap-6 rounded-[32px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 backdrop-blur-sm sm:p-9">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h1 id="greeting" className="font-display text-[clamp(2.5rem,1.9rem+2.2vw,3.6rem)] font-bold leading-[1.02] text-tonle-950">
+                {m.home.hi(name ?? "")}
+              </h1>
+              <p className="mt-2 text-xl font-semibold text-ink-soft">{paths.length > 1 ? e.ask : e.askOne}</p>
+            </div>
+            {unfinished?.nextStep && (
+              <Link to={`/learn/${childId}/play/${unfinished.enrollmentId}`} className={cn(goButton, "pl-2.5 pr-7 text-lg")}>
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
+                  <Play size={19} fill="currentColor" aria-hidden className="translate-x-px" />
+                </span>
+                <span className="flex flex-col items-start leading-tight">
+                  {e.keepGoingShort}
+                  <span className="max-w-[14rem] truncate text-sm font-semibold opacity-80">{unfinished.nextStep.title}</span>
+                </span>
+              </Link>
+            )}
+          </div>
+          <ul aria-label={e.subjects} className={cn("grid gap-4", paths.length > 1 && "sm:grid-cols-2", paths.length > 2 && "lg:grid-cols-3")}>
+            {paths.map((path) => (
+              <SubjectDoor key={path.enrollmentId} childId={childId} path={path} wide={paths.length === 1} />
+            ))}
+          </ul>
+          <Link
+            to={`/learn/${childId}/shelf`}
+            className="inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
+          >
+            <Library size={16} aria-hidden /> {m.myShelf}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** One subject, as a big door into its journey: its emblem, its name, how far, and what's next. */
+function SubjectDoor({ childId, path, wide }: { childId: string; path: EnrollmentOverview; wide: boolean }) {
+  const e = useMessages(entranceMessages);
+  const t = subjectTheme(path.curriculum.subjectCode, path.curriculum.subjectName);
+  const subject = path.curriculum.subjectName ?? path.curriculum.name;
+  const where = path.currentChapter ? [chapterOf(path.currentChapter, path.chapterCount), path.currentChapter.title].filter(Boolean).join(" · ") : null;
+  const state = path.nextStep === null ? e.allDone : path.completedSteps === 0 ? e.start : (where ?? e.booksLit(path.completedSteps, path.totalSteps));
+  const total = Math.min(path.totalSteps, 12);
+  const done = path.totalSteps > 0 ? Math.round((path.completedSteps / path.totalSteps) * total) : 0;
+  return (
+    <li>
+      <Link
+        to={`/learn/${childId}?path=${path.enrollmentId}`}
+        aria-label={e.open(subject, state)}
+        className={cn(
+          "group flex h-full items-center gap-5 rounded-[26px] p-5 ring-2 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-lift active:translate-y-0",
+          t.soft,
+          t.ring,
+          wide && "sm:p-6",
+        )}
+      >
+        <SubjectEmblem code={path.curriculum.subjectCode} name={path.curriculum.subjectName} size={wide ? 112 : 92} className="transition-transform duration-300 ease-out group-hover:-rotate-3 group-hover:scale-105" />
+        <span className="flex min-w-0 flex-1 flex-col gap-2">
+          <span className="font-display text-[1.75rem] font-bold leading-tight text-tonle-950">{subject}</span>
+          <span className={cn("text-base font-semibold", t.deep)}>{state}</span>
+          <span aria-hidden className="flex flex-wrap gap-1">
+            {Array.from({ length: total }, (_, i) => (
+              <span key={i} className={cn("h-2.5 w-5 rounded-[3px]", i < done ? t.solid : "bg-white/80 ring-1 ring-tonle-950/10")} />
+            ))}
+          </span>
+        </span>
+        <span aria-hidden className={cn("hidden h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-tight sm:flex", t.deep)}>
+          <ArrowRight size={22} />
+        </span>
+      </Link>
+    </li>
   );
 }
 

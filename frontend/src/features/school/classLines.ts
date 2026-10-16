@@ -10,11 +10,11 @@ export const TALLY: {
   standing: SkillStanding;
   bar: string;
 }[] = [
-  { key: "secure", standing: "SECURE", bar: "bg-palm" },
-  { key: "progressing", standing: "PROGRESSING", bar: "bg-tonle-600" },
-  { key: "needsPractice", standing: "NEEDS_PRACTICE", bar: "bg-light" },
-  { key: "tooEarlyToTell", standing: "TOO_EARLY_TO_TELL", bar: "bg-tonle-200" },
-  { key: "notStarted", standing: "NOT_STARTED", bar: "bg-line" },
+  { key: "secure", standing: "SECURE", bar: "bg-standing-secure" },
+  { key: "progressing", standing: "PROGRESSING", bar: "bg-standing-progressing" },
+  { key: "needsPractice", standing: "NEEDS_PRACTICE", bar: "bg-standing-practice" },
+  { key: "tooEarlyToTell", standing: "TOO_EARLY_TO_TELL", bar: "bg-standing-early" },
+  { key: "notStarted", standing: "NOT_STARTED", bar: "bg-standing-none" },
 ];
 
 const shortDate = (iso: string) => formatDate(iso, { day: "numeric", month: "short" });

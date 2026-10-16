@@ -16,10 +16,20 @@ public final class ChildDtos {
     private ChildDtos() {
     }
 
+    /**
+     * {@code familyChoosesSubjects}: true when the family will choose the child's subjects itself
+     * (the parent's setup flow does, then enrols each one it chose). The child is then created with
+     * no learning path, rather than started on the single curriculum for its age (Battle 2B), which
+     * remains what happens when the field is absent or false.
+     */
     public record CreateChildRequest(
             @NotBlank @Size(max = 80) String displayName,
-            @NotNull @PastOrPresent LocalDate dateOfBirth
+            @NotNull @PastOrPresent LocalDate dateOfBirth,
+            Boolean familyChoosesSubjects
     ) {
+        public boolean startsWithFamilyChoice() {
+            return Boolean.TRUE.equals(familyChoosesSubjects);
+        }
     }
 
     /**

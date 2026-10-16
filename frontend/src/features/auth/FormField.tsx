@@ -11,13 +11,16 @@ export const fieldClasses =
 export function FormField({
   label,
   error,
+  hint,
   id,
   className,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string; hint?: string }) {
   const generated = useId();
   const inputId = id ?? generated;
   const errorId = `${inputId}-error`;
+  const hintId = `${inputId}-hint`;
+  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined;
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={inputId} className="text-sm font-semibold text-ink">
@@ -26,10 +29,15 @@ export function FormField({
       <input
         id={inputId}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={describedBy}
         className={cn(fieldClasses, "h-12", className)}
         {...props}
       />
+      {hint && !error && (
+        <span id={hintId} className="text-[0.8125rem] text-ink-soft">
+          {hint}
+        </span>
+      )}
       {error && (
         <span id={errorId} className="flex items-start gap-1.5 text-[0.8125rem] font-medium text-brick-deep">
           <AlertCircle size={15} className="mt-px shrink-0" aria-hidden />

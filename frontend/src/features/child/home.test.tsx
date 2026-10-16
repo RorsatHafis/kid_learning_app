@@ -56,9 +56,9 @@ function server(placeDue: () => Response) {
   return calls;
 }
 
-function renderHome() {
+function renderHome(at = "/learn/c1") {
   render(
-    <MemoryRouter initialEntries={["/learn/c1"]}>
+    <MemoryRouter initialEntries={[at]}>
       <Routes>
         <Route path="/learn/:childId" element={<ChildHome />} />
       </Routes>
@@ -75,8 +75,26 @@ describe("ChildHome (X25)", () => {
     expect(await screen.findByRole("heading", { name: "Hi, Sokha!" })).toBeInTheDocument();
     expect(calls.indexOf("POST /children/c1/reviews/place-due")).toBeGreaterThanOrEqual(0);
     expect(calls.indexOf("POST /children/c1/reviews/place-due")).toBeLessThan(calls.indexOf("GET /children/c1/enrollments"));
-    // All lit, nothing due: the shelf is what's offered.
+    expect(screen.getByRole("link", { name: /My shelf/ })).toHaveAttribute("href", "/learn/c1/shelf");
+  });
+
+  it("opens on the child's subjects and chooses none for them (iteration 2)", async () => {
+    server(() => respond(200, { placed: 0 }));
+    renderHome();
+    expect(await screen.findByRole("heading", { name: "Hi, Sokha!" })).toBeInTheDocument();
+    const subjects = screen.getByRole("list", { name: "My subjects" });
+    expect(subjects).toBeInTheDocument();
+    // The subject is a door into its journey; nothing is played from the entrance itself.
+    expect(screen.getByRole("link", { name: "Maths: All done for now" })).toHaveAttribute("href", "/learn/c1?path=e1");
+    expect(screen.queryByRole("link", { name: "Play" })).not.toBeInTheDocument();
+  });
+
+  it("in a subject's journey, all lit and nothing due, offers the shelf - and a way back to every subject", async () => {
+    server(() => respond(200, { placed: 0 }));
+    renderHome("/learn/c1?path=e1");
+    expect(await screen.findByRole("heading", { name: "Hi, Sokha!" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /See my shelf/ })).toHaveAttribute("href", "/learn/c1/shelf");
+    expect(screen.getByRole("link", { name: /All my subjects/ })).toHaveAttribute("href", "/learn/c1");
   });
 
   it("still opens when placing reviews fails", async () => {

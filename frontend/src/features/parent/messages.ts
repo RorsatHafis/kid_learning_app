@@ -98,8 +98,8 @@ export const familyMessages = defineMessages(
       startSession: (name: string) => `Start ${name}'s session`,
     },
     learningNow: {
-      title: "Learning now",
-      subtitle: (name: string) => `The paths ${name} is on, and what comes next.`,
+      title: "Learning plan",
+      subtitle: (name: string) => `The subjects ${name} learns, what comes next, and why.`,
       addSubject: "Add a subject",
       loading: "Loading learning paths…",
       completed: (done: number, total: number) => `${done} of ${total} steps completed`,
@@ -456,8 +456,8 @@ export const familyMessages = defineMessages(
       startSession: (name: string) => `ចាប់ផ្ដើមវគ្គរៀនរបស់ ${name}`,
     },
     learningNow: {
-      title: "កំពុងរៀនឥឡូវនេះ",
-      subtitle: (name: string) => `ផ្លូវរៀនដែល ${name} កំពុងដើរ និងអ្វីដែលនឹងមកបន្ទាប់។`,
+      title: "ផែនការរៀន",
+      subtitle: (name: string) => `មុខវិជ្ជាដែល ${name} រៀន អ្វីដែលនឹងមកបន្ទាប់ និងហេតុអ្វី។`,
       addSubject: "បន្ថែមមុខវិជ្ជា",
       loading: "កំពុងផ្ទុកផ្លូវរៀន…",
       completed: (done: number, total: number) => `បានបញ្ចប់ ${done} ក្នុងចំណោម ${total} ជំហាន`,
