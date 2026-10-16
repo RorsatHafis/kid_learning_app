@@ -24,6 +24,7 @@ import { ClassTrendSection } from "./ClassTrend";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { formatDate } from "@/i18n/format";
 import { schoolMessages } from "./messages";
+import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
 
 // A class's workspace, shared by its teachers (/teacher) and its school's principal (/principal):
 // the join code families enter, the curricula the class assigns, and its members' learning in those
@@ -241,9 +242,12 @@ export function ClassCurriculaPanel({
           <ul className="flex flex-col divide-y divide-line">
             {assigned.data.map((c) => (
               <li key={c.curriculumId} className="flex flex-wrap items-center justify-between gap-2 py-2.5 first:pt-0">
-                <span>
-                  <span className="font-medium text-ink">{c.name}</span>
-                  {c.subjectName && c.subjectName !== c.name && <span className="text-sm text-ink-soft"> · {c.subjectName}</span>}
+                <span className="flex items-center gap-3">
+                  <SubjectEmblem code={null} name={c.subjectName ?? c.name} size={36} />
+                  <span>
+                    <span className="font-medium text-ink">{c.name}</span>
+                    {c.subjectName && c.subjectName !== c.name && <span className="text-sm text-ink-soft"> · {c.subjectName}</span>}
+                  </span>
                 </span>
                 <Button
                   size="sm"

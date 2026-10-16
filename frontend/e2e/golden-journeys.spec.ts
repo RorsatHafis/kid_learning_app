@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail, workspaceLink } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, addChild, expectNoViolations, linkIn, logIn, openSubject, uniqueEmail, waitForEmail, workspaceLink } from "./support";
 
 /** "3 + 4 = ?" → "7". The seeded Maths path asks sums; anything else gets a plain guess. */
 function answerFor(prompt: string): string {
@@ -33,24 +33,16 @@ test.describe("golden journeys", () => {
     await expect(again.getByText(/can.t be used|no longer|already/i).first()).toBeVisible();
     await again.close();
 
-    await page.goto("/parent");
-    await page.getByRole("button", { name: /add your first child/i }).click();
-    await page.getByLabel("Name").fill("Sokha");
-    await page.getByLabel("Date of birth").fill("2019-03-14");
-    await page.getByRole("button", { name: "Add child" }).click();
-    await page.getByRole("link", { name: /Sokha/ }).first().click();
-    // A child of this age is enrolled in the published path for their age group automatically;
-    // otherwise the parent chooses one.
-    const choose = page.getByRole("listitem").filter({ hasText: "Maths - Junior" }).getByRole("button", { name: "Start this path" });
+    // The family chooses what the child learns as they add them (iteration 2).
+    await addChild(page, "Sokha", "2019-03-14", /Maths - Junior/);
     const upNext = page.getByText("Up next").first();
-    await expect(choose.or(upNext)).toBeVisible();
-    if (await choose.isVisible()) await choose.click();
     await expect(upNext).toBeVisible();
     await expect(page.getByText("Why this next?").first()).toBeVisible();
 
     // The child's space.
     await page.getByRole("link", { name: "Start Sokha's session" }).click();
     await expect(page.getByText(/Hi, Sokha/)).toBeVisible();
+    await openSubject(page, "Maths");
     await page.getByRole("link", { name: "Play", exact: true }).click();
     await page.getByRole("button", { name: "Let's go" }).click();
 
@@ -75,6 +67,8 @@ test.describe("golden journeys", () => {
     // Back in the grown-up space the parent sees evidence, not just a completion.
     await page.goto("/parent");
     await page.getByRole("link", { name: /Sokha/ }).first().click();
+    // The evidence lives in the child page's "Skills & progress" section.
+    await page.getByRole("link", { name: "Skills & progress" }).click();
     await expect(page.getByRole("heading", { name: /recent activity/i })).toBeVisible();
     await expect(page.getByText("Addition Recognition Practice").first()).toBeVisible();
     await expect(page.getByText(new RegExp(`${answered - 1} of ${answered}|${answered - 1}/${answered}`)).first()).toBeVisible();
@@ -193,11 +187,7 @@ test.describe("golden journeys", () => {
     page,
   }) => {
     await registerParent(page, uniqueEmail("deleter"));
-    await page.getByRole("button", { name: /add your first child/i }).click();
-    await page.getByLabel("Name").fill("Mealea");
-    await page.getByLabel("Date of birth").fill("2019-03-14");
-    await page.getByRole("button", { name: "Add child" }).click();
-    await page.getByRole("link", { name: /Mealea/ }).first().click();
+    await addChild(page, "Mealea", "2019-03-14", /Maths - Junior/);
     const childUrl = page.url();
 
     // Y12: a mistyped date of birth is corrected on the child's page.
@@ -209,6 +199,7 @@ test.describe("golden journeys", () => {
     await expect(page.getByRole("button", { name: "Edit Mealea's name or date of birth" })).toBeVisible();
     await expect(page.getByText(/^Age \d+$/).first()).not.toHaveText(ageBefore);
 
+    await page.getByRole("link", { name: "School & settings" }).click();
     await page.getByRole("button", { name: "Delete Mealea…" }).click();
     await page.getByLabel("Your password").fill("not-my-password");
     await page.getByRole("button", { name: "Delete Mealea", exact: true }).click();
@@ -281,12 +272,8 @@ test.describe("golden journeys", () => {
     const otherFamily = await browser.newContext();
     const other = await otherFamily.newPage();
     await registerParent(other, uniqueEmail("other-family"));
-    await other.getByRole("button", { name: /add your first child/i }).click();
-    await other.getByLabel("Name").fill("Private Child");
-    await other.getByLabel("Date of birth").fill("2019-02-02");
-    await other.getByRole("button", { name: "Add child" }).click();
-    await other.getByRole("link", { name: /Private Child/ }).first().click();
-    await expect(other.getByRole("heading", { name: "Learning now" })).toBeVisible();
+    await addChild(other, "Private Child", "2019-02-02", /Maths - Junior/);
+    await expect(other.getByRole("heading", { name: "Learning plan" })).toBeVisible();
     const foreignChildUrl = new URL(other.url()).pathname;
     await otherFamily.close();
 

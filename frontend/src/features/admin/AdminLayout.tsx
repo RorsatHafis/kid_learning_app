@@ -25,6 +25,7 @@ export function AdminLayout() {
   const m = useMessages(opsMessages).nav;
   return (
     <WorkspaceShell
+      accent="river"
       home="/admin"
       workspace={m.workspace}
       nav={[

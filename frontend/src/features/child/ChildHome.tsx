@@ -9,6 +9,7 @@ import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { childReason, stepTag } from "@/features/learning/explain";
 import { chapterOf, focusChapter, journeyLight } from "@/features/learning/chapters";
 import { RiverGarden } from "@/features/world/RiverGarden";
+import { onPath } from "@/features/world/villagePath";
 import { PathOfBooks, khmerNumber } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
@@ -133,13 +134,19 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
   const unfinished = paths.find((p) => p.nextStep?.status === "IN_PROGRESS");
   const bloom = paths.reduce((sum, p) => sum + journeyLight(p), 0) / paths.length;
   return (
-    <section aria-labelledby="greeting" className="relative -mt-[76px] sm:-mt-[88px]">
-      <div aria-hidden className="relative h-[46svh] min-h-[320px] overflow-hidden lg:h-[56vh] lg:max-h-[620px]">
-        <RiverGarden crop="bottom" bloom={bloom} />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#E7F1EC] via-[#E7F1EC]/70 to-transparent" />
+    <section aria-labelledby="greeting" className="relative -mt-[76px] sm:-mt-[88px] lg:flex lg:min-h-[100dvh] lg:flex-col">
+      {/* The world, with the child's buddy waiting on the village path. On a phone it is a tall window
+          above the words; on a large screen it fills the stage and the card sits on it. */}
+      <div aria-hidden className="relative h-[52svh] min-h-[360px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
+        <RiverGarden crop="bottom" bloom={bloom}>
+          <g transform={`translate(${onPath(0.5).x - 40} ${onPath(0.5).y - 150})`}>
+            <LearningBuddy mood="happy" size={150} />
+          </g>
+        </RiverGarden>
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#E7F1EC] via-[#E7F1EC]/60 to-transparent lg:hidden" />
       </div>
-      <div className="relative mx-auto -mt-28 w-full max-w-5xl px-4 pb-16 sm:-mt-36 sm:px-8">
-        <div className="flex flex-col gap-6 rounded-[32px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 backdrop-blur-sm sm:p-9">
+      <div className="relative mx-auto -mt-8 w-full max-w-6xl px-4 pb-12 sm:px-8 lg:mt-auto lg:pb-10 lg:pt-40">
+        <div className="flex max-w-[36rem] flex-col gap-6 rounded-[32px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 backdrop-blur-sm sm:p-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 id="greeting" className="font-display text-[clamp(2.5rem,1.9rem+2.2vw,3.6rem)] font-bold leading-[1.02] text-tonle-950">
@@ -159,7 +166,7 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
               </Link>
             )}
           </div>
-          <ul aria-label={e.subjects} className={cn("grid gap-4", paths.length > 1 && "sm:grid-cols-2", paths.length > 2 && "lg:grid-cols-3")}>
+          <ul aria-label={e.subjects} className={cn("grid gap-3", paths.length > 1 && "sm:grid-cols-2 lg:grid-cols-1")}>
             {paths.map((path) => (
               <SubjectDoor key={path.enrollmentId} childId={childId} path={path} wide={paths.length === 1} />
             ))}

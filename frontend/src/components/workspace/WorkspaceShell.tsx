@@ -31,11 +31,34 @@ function groupBySection(nav: WorkspaceNavItem[]) {
 }
 
 /**
+ * Each workspace's own accent (iteration 2): teaching is sky, the school is leaf, platform
+ * operations are river. It marks whose workspace this is - the rail's top band, the workspace's
+ * name and the item you are on - and nothing else: data keeps the shared standing palette.
+ */
+export type WorkspaceAccent = "sky" | "leaf" | "river";
+const ACCENT: Record<WorkspaceAccent, { band: string; chip: string; dot: string; active: string; icon: string }> = {
+  sky: { band: "bg-sky", chip: "bg-sky-soft text-sky-deep", dot: "bg-sky", active: "bg-sky-soft text-tonle-950 shadow-[inset_3px_0_0_#3B82C4]", icon: "text-sky-deep" },
+  leaf: { band: "bg-palm", chip: "bg-palm-soft text-palm-deep", dot: "bg-palm", active: "bg-palm-soft text-tonle-950 shadow-[inset_3px_0_0_#2E7A5A]", icon: "text-palm-deep" },
+  river: { band: "bg-tonle-700", chip: "bg-tonle-100 text-tonle-800", dot: "bg-tonle-700", active: "bg-tonle-100/80 text-tonle-950 shadow-[inset_3px_0_0_#1A515B]", icon: "text-tonle-700" },
+};
+
+/**
  * The staff workspace — teachers, principals and platform administrators. A light paper rail
  * holds the brand, whose workspace this is, and where things are; the work sits on rice paper
  * beside it. Same identity as the family space, a working density: the brand lives in details.
  */
-export function WorkspaceShell({ home, workspace, nav }: { home: string; workspace: string; nav: WorkspaceNavItem[] }) {
+export function WorkspaceShell({
+  home,
+  workspace,
+  nav,
+  accent = "river",
+}: {
+  home: string;
+  workspace: string;
+  nav: WorkspaceNavItem[];
+  accent?: WorkspaceAccent;
+}) {
+  const a = ACCENT[accent];
   const { session, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,13 +81,13 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
         className={({ isActive }) =>
           cn(
             "group flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] transition-colors duration-150 lg:h-9",
-            isActive ? "bg-tonle-100/80 font-semibold text-tonle-950" : "font-medium text-ink-soft hover:bg-paper hover:text-ink",
+            isActive ? cn(a.active, "font-semibold") : "font-medium text-ink-soft hover:bg-paper hover:text-ink",
           )
         }
       >
         {({ isActive }) => (
           <>
-            <Icon size={17} aria-hidden className={isActive ? "text-tonle-700" : "text-ink-faint group-hover:text-tonle-700"} />
+            <Icon size={17} aria-hidden className={isActive ? a.icon : "text-ink-faint group-hover:text-tonle-700"} />
             {label}
           </>
         )}
@@ -111,10 +134,14 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
       <SkipLink />
       {/* Desktop rail */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-line bg-white px-3 pb-4 pt-5 lg:flex">
-        <Link to={home} className="mb-1 w-fit rounded-[10px] px-3 py-1" aria-label={m.workspaceHome}>
+        <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1", a.band)} />
+        <Link to={home} className="mb-2 w-fit rounded-[10px] px-3 py-1" aria-label={m.workspaceHome}>
           <Logo size="sm" />
         </Link>
-        <p className="mb-6 px-3 text-sm font-medium text-ink-faint">{workspace}</p>
+        <p className={cn("mx-3 mb-6 inline-flex w-fit items-center gap-2 rounded-pill px-3 py-1 text-[0.8125rem] font-semibold", a.chip)}>
+          <span aria-hidden className={cn("h-2 w-2 rounded-full", a.dot)} />
+          {workspace}
+        </p>
         <nav aria-label={workspace} className="flex-1 overflow-y-auto">
           {links}
         </nav>
@@ -123,6 +150,7 @@ export function WorkspaceShell({ home, workspace, nav }: { home: string; workspa
 
       {/* Phone and tablet bar */}
       <header className="sticky top-0 z-30 border-b border-line bg-white/95 text-ink backdrop-blur-sm lg:hidden">
+        <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1", a.band)} />
         <div className="flex h-14 items-center gap-3 px-4">
           <Link to={home} className="flex items-center gap-2.5 rounded-[10px]" aria-label={m.workspaceHome}>
             <BrandMark size={30} />

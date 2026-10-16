@@ -40,6 +40,19 @@ colors:
   brick: "#C2412F"
   brick-soft: "#FBE8E4"
   brick-deep: "#9E2F20"
+  sky: "#3B82C4"
+  sky-soft: "#E4F0FA"
+  sky-deep: "#1F5C93"
+  coral: "#E2674A"
+  coral-soft: "#FDE8E1"
+  coral-deep: "#A03A24"
+  cream: "#FBF6EC"
+  cream-deep: "#F4EBDA"
+  standing-secure: "#2E7A5A"
+  standing-progressing: "#3B82C4"
+  standing-practice: "#EBA13A"
+  standing-early: "#94BEDF"
+  standing-none: "#E3E7DF"
 typography:
   display:
     fontFamily: "Alegreya Variable, Kantumruy Pro Variable, Georgia, serif"
@@ -148,7 +161,10 @@ The same garden is seen three ways.
 
 ## Colors
 
-A river-teal scale, rice-paper neutrals, the village's materials, and one warm voice.
+A river-teal scale, rice-paper and cream neutrals, the village's materials, one warm voice - and, since
+iteration 2, colours with jobs: each subject has its own accent, each standing its own colour, each
+workspace its own mark. Teal is the structure and the adult action; it is no longer every card, chart
+and heading.
 
 ### Primary
 - **Deep River** (#154049, tonle-800): the solid adult button. Hover: tonle-900.
@@ -172,7 +188,17 @@ A river-teal scale, rice-paper neutrals, the village's materials, and one warm v
 - **Rice Paper** (#F4F6F1) is the page ground. **Raised** (#FFFFFF) is for sheets and panels. **Sunk** (#E8EEE6) is for wells. **Child Ground** (#E7F1EC) sits behind the scene.
 - **Line** (#DCE4DA) divides; **Line Strong** (#C2CEC0) strokes fields.
 
+### Roles (iteration 2)
+- **Sky** (#3B82C4 / soft #E4F0FA / deep #1F5C93): the open morning; "progressing"; English; the teaching workspace.
+- **Coral** (#E2674A / soft #FDE8E1 / deep #A03A24): the lotus at its brightest; Maths; adding a child. An accent and a soft ground only: ink on a coral fill is 4.1:1, so text on coral uses coral.deep (6.7:1 on white, 5.7:1 on coral.soft).
+- **Cream** (#FBF6EC / deep #F4EBDA): the family's ground (ink 13.7:1, ink-faint 5.1:1); cream.deep for tab tracks and bands.
+- **Standing** (one palette everywhere - parent, teacher, principal, charts): secure #2E7A5A, progressing #3B82C4, needs practice #EBA13A, too early to tell #94BEDF (drawn hollow), not started #E3E7DF. Checked in OKLab under protan/deutan/tritan simulation: every neighbouring pair at least 8.3 apart (normal vision at least 15.7). The old progressing (tonle-600) sat 9.0 from secure for normal vision - too close.
+- **Subjects** (`features/learning/subjectTheme.ts`, by subject code, else steadily by code): Maths coral, Khmer marigold, English sky, the world around us leaf, arts lotus; each with an emblem (`SubjectEmblem`) and always beside its name.
+- **Workspaces** (`WorkspaceShell` `accent`): teaching sky, school leaf, platform operations river - the rail's top band, the workspace's name and the current item only.
+
 ### Named Rules
+**The Colour Has A Job Rule.** A colour on a page means one of: brand (teal), a subject, a standing, a workspace, an action, or the world. If it means none of them, it is not there.
+
 **The Light Means Something Rule.** Marigold appears only where something is current, next or achieved. It is never decoration, never a wash, and never a hover colour in adult space.
 
 **The Never Colour Alone Rule.** Every standing, status or match colour sits beside words or a number (a standing's mark plus its name; a pair colour plus its number).
@@ -251,16 +277,20 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
 - **Error:** "That didn't load", the reason, and "Try again". The child space uses the buddy (encourage mood) and a pressable retry.
 
 ### Navigation
-- **Family:** a white sticky bar with text links and a 2px underline indicator.
-- **Staff:** a white rail with the Logo, the workspace name, sentence-case section labels and nav items (10px radius; the active item is tonle-100 with tonle-950 text). Account and log out sit at the foot. Sub-pages carry a slash breadcrumb ("Classes / Grade 1 A").
+- **Family:** a white sticky bar with text links and a 2px underline indicator, on a cream ground. A child's page has sections as link tabs on a cream track: Overview (learning plan, what changed, insights), Skills & progress (skills, recent activity), School & settings (class codes, the child's own space, deletion).
+- **Staff:** a white rail with a 4px band and a name chip in the workspace's accent, sentence-case section labels and nav items (10px radius; the active item is the accent's soft ground with a 3px inset bar). Account and log out sit at the foot. Sub-pages carry a slash breadcrumb ("Classes / Grade 1 A").
 - **Landing:** a light paper bar with a Deep River "Get started" button, and a deep-teal footer.
 
 ### Signature Components
+- **Child setup** (`/parent/add-child`): three steps - about, subjects (one card per subject from the server's catalog for the child's age, with its emblem), review. Resumable (`?child=`).
+- **Subject door** (the child's entrance): a large card per subject the family chose - emblem, name, what's next, books done in the subject's colour - opening that subject's journey.
+- **Child summary** (family home): a cream header with the child's buddy portrait and actions; subjects with progress in their colour; a standing bar; skills flagged for practice.
 - **River Garden** (`features/world/RiverGarden.tsx`): the scene, in three variants.
   - `home`: house, path, pond and temple.
   - `band`: a calm strip for parent pages and the landing.
   - `quiet`: sky, hills and fields only, behind activities.
   - `bloom` (0–1) opens the pond's five lotuses as the child's chapters finish.
+  - Art direction (iteration 2): one low sun at the upper left; volumes lighter on the left, shadows to the right; the air thickens with distance (far ridges and the temple pale and blue, colour warming and sharpening towards the front); each layer a little more detailed than the one behind; the world has life in it (egrets, a buffalo, a boat, a krama drying, a spirit house) but never a crowd of symbols.
 - **Path of Books:** the child's path as books along the village path. Lit means done, glowing means current (the buddy stands there), plain means later. Each is labelled "៥ · 5".
 - **Progress Buds:** an activity's questions as a row of buds that open as they are answered. They replace a percentage bar.
 - **Evidence Line:** evidence strength as line weight, with a text label always beside it.
@@ -270,6 +300,7 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
   - 5.5px: strong.
 - **Learning Buddies** (`features/buddy`): Momo the otter, Domrey the elephant, Krobey the water buffalo, Toch the gibbon and Kongkep the frog.
   - They share one pose system (arms, eyes, mouth, cheeks) with the moods idle, happy, thinking, cheer and encourage.
+  - Rendering (iteration 2): one key light from the upper left; gradient volumes, the head's shadow on the body and a rim of light on the far edge; limbs are shaped tubes ending in paws, hands, hooves or webbed feet (never single strokes); a few strokes of texture; no outlines.
   - Authored, never conversational.
   - The child chooses one on `/learn/:childId/buddy`; parents see it as the child's portrait.
   - The names are proposals pending product review (PD-13).

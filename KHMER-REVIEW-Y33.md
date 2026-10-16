@@ -106,3 +106,151 @@ reads better.
 - The landing hero deliberately shows the line in the other language above the heading (tagged
   with its `lang`).
 - "Smart Review" stays in Latin script as a product name (Y32).
+
+---
+
+# Iteration 2 additions (design iteration 2, 2026-10-16)
+
+Also drafted by Claude, not reviewed by a native speaker (PD-14). Generated from the shipped catalogs, so
+the Khmer below is exactly what the interface shows. `{name}`, `{n}` and similar are filled in by the app;
+where an entry has a singular and a plural English form they are separated by " / ".
+
+## 1. The child's home: choosing a subject - `frontend/src/features/child/entrance.messages.ts`
+
+Seen by the child on /learn/:childId, the entrance with one door per subject. The child is addressed as ប្អូន.
+
+| Key | English | Khmer |
+|---|---|---|
+| `ask` | What shall we learn today? | ថ្ងៃនេះ យើងរៀនអ្វី? |
+| `askOne` | Your learning is ready. | ការរៀនរបស់ប្អូនរួចរាល់ហើយ។ |
+| `subjects` | My subjects | មុខវិជ្ជារបស់ខ្ញុំ |
+| `keepGoing` | Keep going: {title} | បន្តទៀត៖ {title} |
+| `keepGoingShort` | Keep going | បន្តទៀត |
+| `start` | Start here | ចាប់ផ្ដើមនៅទីនេះ |
+| `allDone` | All done for now | រួចរាល់សម្រាប់ពេលនេះ |
+| `booksLit` | {done} of {total} done | បានធ្វើ {done} ក្នុងចំណោម {total} |
+| `open` | {subject}: {state} | {subject}៖ {state} |
+| `allSubjects` | All my subjects | មុខវិជ្ជាទាំងអស់របស់ខ្ញុំ |
+
+## 2. Landing page: audiences, product screens, schools - `frontend/src/features/marketing/messages.ts` (`landing`)
+
+Seen by visitors on the landing page.
+
+| Key | English | Khmer |
+|---|---|---|
+| `landing.forFamilies` | Start as a family | ចាប់ផ្ដើមជាគ្រួសារ |
+| `landing.forSchools` | For schools | សម្រាប់សាលារៀន |
+| `landing.sample` | Screens from the product, with sample data. | អេក្រង់ពីផលិតផល ជាមួយទិន្នន័យគំរូ។ |
+| `landing.audiences` | Who it's for | សម្រាប់អ្នកណា |
+| `landing.familiesTitle` | For families | សម្រាប់គ្រួសារ |
+| `landing.familiesLead` | Set up each child in a minute, choose what they learn, and see what their answers really show. | រៀបចំកូននីមួយៗក្នុងមួយនាទី ជ្រើសរើសអ្វីដែលពួកគេរៀន ហើយមើលឃើញអ្វីដែលចម្លើយរបស់ពួកគេបង្ហាញពិតប្រាកដ។ |
+| `landing.familiesPoints.a` | Choose the subjects for each child, and change them any time | ជ្រើសរើសមុខវិជ្ជាសម្រាប់កូននីមួយៗ ហើយផ្លាស់ប្ដូរបានគ្រប់ពេល |
+| `landing.familiesPoints.b` | A world of their own, with a buddy they choose | ពិភពផ្ទាល់ខ្លួនរបស់ពួកគេ ជាមួយមិត្តរៀនដែលពួកគេជ្រើសរើស |
+| `landing.familiesPoints.c` | Skills, the evidence behind them, and why each next step was chosen | ជំនាញ ភស្តុតាងពីក្រោយវា និងហេតុអ្វីជំហានបន្ទាប់នីមួយៗត្រូវបានជ្រើសរើស |
+| `landing.familiesCta` | Create a family account | បង្កើតគណនីគ្រួសារ |
+| `landing.schoolsTitle` | For schools | សម្រាប់សាលារៀន |
+| `landing.schoolsLead` | Classes, teachers and families on one platform - with each class's learning drawn from the children's own answers. | ថ្នាក់រៀន គ្រូ និងគ្រួសារនៅលើវេទិកាតែមួយ - ជាមួយការរៀនរបស់ថ្នាក់នីមួយៗ ដែលយកចេញពីចម្លើយផ្ទាល់របស់កុមារ។ |
+| `landing.schoolsPoints.a` | Families join a class with its code, and can end access at any time | គ្រួសារចូលរួមថ្នាក់ដោយប្រើលេខកូដរបស់វា ហើយអាចបញ្ចប់ការចូលប្រើបានគ្រប់ពេល |
+| `landing.schoolsPoints.b` | Each class's skills, and how the class moved week by week | ជំនាញរបស់ថ្នាក់នីមួយៗ និងរបៀបដែលថ្នាក់បានផ្លាស់ប្ដូរពីមួយសប្ដាហ៍ទៅមួយសប្ដាហ៍ |
+| `landing.schoolsPoints.c` | Practice assigned to the children who need it | លំហាត់ដែលកំណត់ឱ្យកុមារដែលត្រូវការវា |
+| `landing.schoolsCta` | Register your school | ចុះឈ្មោះសាលារៀនរបស់អ្នក |
+| `landing.shotChild` | A child's home: their subjects and the buddy they chose. | ទំព័រដើមរបស់កុមារ៖ មុខវិជ្ជារបស់ពួកគេ និងមិត្តរៀនដែលពួកគេបានជ្រើសរើស។ |
+| `landing.shotQuestion` | Inside an activity: one question at a time. | នៅក្នុងសកម្មភាព៖ សំណួរមួយម្ដងៗ។ |
+| `landing.shotParent` | A parent's home: what each child learns, and what the answers show. | ទំព័រដើមរបស់ឪពុកម្ដាយ៖ អ្វីដែលកូននីមួយៗរៀន និងអ្វីដែលចម្លើយបង្ហាញ។ |
+| `landing.shotParentChild` | One child's page: the learning plan, why the next step is next, and what changed. | ទំព័ររបស់កូនម្នាក់៖ ផែនការរៀន ហេតុអ្វីជំហានបន្ទាប់ជាជំហានបន្ទាប់ និងអ្វីដែលបានផ្លាស់ប្ដូរ។ |
+| `landing.shotTeacher` | A teacher's view of a class: where its skills stood at the end of each week. | ទិដ្ឋភាពរបស់គ្រូលើថ្នាក់មួយ៖ កន្លែងដែលជំនាញរបស់វាឈរនៅចុងសប្ដាហ៍នីមួយៗ។ |
+| `landing.seeParent` | What a parent sees | អ្វីដែលឪពុកម្ដាយមើលឃើញ |
+| `landing.schoolCapabilities.a` | A school overview for the principal: what is still to set up, and how each class is learning. | ទិដ្ឋភាពទូទៅនៃសាលារៀនសម្រាប់នាយកសាលា៖ អ្វីដែលនៅត្រូវរៀបចំ និងរបៀបដែលថ្នាក់នីមួយៗកំពុងរៀន។ |
+| `landing.schoolCapabilities.b` | Class codes that families use - and that families can end at any time. | លេខកូដថ្នាក់ដែលគ្រួសារប្រើ - ហើយដែលគ្រួសារអាចបញ្ចប់បានគ្រប់ពេល។ |
+| `landing.schoolCapabilities.c` | Each class's skills from its children's answers, with how much evidence stands behind them. | ជំនាញរបស់ថ្នាក់នីមួយៗពីចម្លើយរបស់កុមារ ជាមួយនឹងបរិមាណភស្តុតាងពីក្រោយវា។ |
+| `landing.schoolCapabilities.d` | The class over four, eight or twelve weeks, worked out from the answers given by then. | ថ្នាក់ក្នុងរយៈពេលបួន ប្រាំបី ឬដប់ពីរសប្ដាហ៍ ដែលគណនាពីចម្លើយដែលបានផ្ដល់រហូតដល់ពេលនោះ។ |
+| `landing.schoolCapabilities.e` | Practice assigned to the children who need it, from the skill's own page. | លំហាត់ដែលកំណត់ឱ្យកុមារដែលត្រូវការវា ពីទំព័ររបស់ជំនាញនោះផ្ទាល់។ |
+| `landing.schoolCapabilities.f` | Teachers can author their own questions and activities for their classes. | គ្រូអាចនិពន្ធសំណួរ និងសកម្មភាពផ្ទាល់ខ្លួនសម្រាប់ថ្នាក់របស់ពួកគេ។ |
+
+## 3. Parent pages: renamed and corrected lines - `frontend/src/features/parent/messages.ts`
+
+Seen by parents on the child page and the family home.
+
+| Key | English | Khmer |
+|---|---|---|
+| `home.noChildrenLead` | Each child gets their own path, their own buddy, and a page here for you. | កូននីមួយៗមានផ្លូវរៀនផ្ទាល់ខ្លួន មិត្តរៀនផ្ទាល់ខ្លួន និងទំព័រមួយនៅទីនេះសម្រាប់អ្នក។ |
+| `learningNow.title` | Learning plan | ផែនការរៀន |
+| `learningNow.subtitle` | The subjects {name} learns, what comes next, and why. | មុខវិជ្ជាដែល {name} រៀន អ្វីដែលនឹងមកបន្ទាប់ និងហេតុអ្វី។ |
+
+## 4. Adding a child and the learning plan - `frontend/src/features/parent/setup.messages.ts`
+
+Seen by parents: /parent/add-child (three steps), the family home's child summaries and actions, and the child page's sections.
+
+| Key | English | Khmer |
+|---|---|---|
+| `title` | Add a child | បន្ថែមកូន |
+| `steps.about` | About your child | អំពីកូនរបស់អ្នក |
+| `steps.subjects` | Subjects | មុខវិជ្ជា |
+| `steps.review` | Review | ពិនិត្យ |
+| `stepOf` | Step {n} of {total} | ជំហាន {n} នៃ {total} |
+| `about.heading` | Who is learning? | តើអ្នកណាកំពុងរៀន? |
+| `about.lead` | Their age decides which paths suit them. Only you and your family can see this. | អាយុរបស់ពួកគេកំណត់ថាផ្លូវរៀនណាសមស្រប។ មានតែអ្នក និងគ្រួសាររបស់អ្នកប៉ុណ្ណោះដែលអាចមើលឃើញព័ត៌មាននេះ។ |
+| `about.name` | Name | ឈ្មោះ |
+| `about.nameHint` | The name your child knows - it's how their space greets them. | ឈ្មោះដែលកូនរបស់អ្នកស្គាល់ - គឺជារបៀបដែលកន្លែងរបស់ពួកគេស្វាគមន៍ពួកគេ។ |
+| `about.dateOfBirth` | Date of birth | ថ្ងៃខែឆ្នាំកំណើត |
+| `about.next` | Next: choose subjects | បន្ទាប់៖ ជ្រើសរើសមុខវិជ្ជា |
+| `about.creating` | Adding… | កំពុងបន្ថែម… |
+| `about.cancel` | Cancel | បោះបង់ |
+| `about.failed` | Couldn't add your child. | មិនអាចបន្ថែមកូនរបស់អ្នកបានទេ។ |
+| `about.somethingWrong` | Something went wrong. Please try again. | មានបញ្ហាអ្វីមួយបានកើតឡើង។ សូមព្យាយាមម្ដងទៀត។ |
+| `subjects.heading` | What will {name} learn? | តើ {name} នឹងរៀនអ្វីខ្លះ? |
+| `subjects.lead` | Choose the subjects to start with. You can add or stop a subject at any time from their learning plan. | ជ្រើសរើសមុខវិជ្ជាដើម្បីចាប់ផ្ដើម។ អ្នកអាចបន្ថែម ឬបញ្ឈប់មុខវិជ្ជាណាមួយបានគ្រប់ពេល ពីផែនការរៀនរបស់ពួកគេ។ |
+| `subjects.loading` | Finding subjects… | កំពុងស្វែងរកមុខវិជ្ជា… |
+| `subjects.forAge` | Made for {name}'s age | រៀបចំសម្រាប់អាយុរបស់ {name} |
+| `subjects.otherAges` | {n} paths for other ages | ផ្លូវរៀន {n} សម្រាប់អាយុផ្សេងទៀត |
+| `subjects.ages` | Ages {min}+ / Ages {min}-{max} | អាយុ {min}+ / អាយុ {min}-{max} |
+| `subjects.chosen` | Chosen | បានជ្រើសរើស |
+| `subjects.tapToChoose` | Tap to choose | ចុចដើម្បីជ្រើសរើស |
+| `subjects.none` | Nothing is published for {name}'s age yet. When a subject is ready, you can add it from {name}'s learning plan. | មិនទាន់មានអ្វីបានផ្សាយសម្រាប់អាយុរបស់ {name} នៅឡើយទេ។ នៅពេលមុខវិជ្ជាណាមួយរួចរាល់ អ្នកអាចបន្ថែមវាពីផែនការរៀនរបស់ {name}។ |
+| `subjects.needOne` | Choose a subject, or decide later. | ជ្រើសរើសមុខវិជ្ជាមួយ ឬសម្រេចចិត្តពេលក្រោយ។ |
+| `subjects.next` | Next: review the plan | បន្ទាប់៖ ពិនិត្យផែនការ |
+| `subjects.later` | Decide later | សម្រេចចិត្តពេលក្រោយ |
+| `subjects.count` | {n} subjects chosen | បានជ្រើសរើសមុខវិជ្ជា {n} |
+| `review.heading` | {name}'s learning plan | ផែនការរៀនរបស់ {name} |
+| `review.lead` | This is what {name} will find in their own space. Each subject starts at its first chapter, and the platform adapts from {name}'s answers. | នេះជាអ្វីដែល {name} នឹងឃើញនៅក្នុងកន្លែងរបស់ពួកគេ។ មុខវិជ្ជានីមួយៗចាប់ផ្ដើមពីជំពូកទីមួយ ហើយប្រព័ន្ធសម្របតាមចម្លើយរបស់ {name}។ |
+| `review.none` | No subjects yet. You can add them any time from {name}'s learning plan. | មិនទាន់មានមុខវិជ្ជានៅឡើយទេ។ អ្នកអាចបន្ថែមវាបានគ្រប់ពេល ពីផែនការរៀនរបស់ {name}។ |
+| `review.start` | Start {name}'s learning | ចាប់ផ្ដើមការរៀនរបស់ {name} |
+| `review.finish` | Finish | បញ្ចប់ |
+| `review.starting` | Starting… | កំពុងចាប់ផ្ដើម… |
+| `review.back` | Back to subjects | ត្រឡប់ទៅមុខវិជ្ជា |
+| `review.failedSome` | These subjects couldn't be started: | មុខវិជ្ជាទាំងនេះមិនអាចចាប់ផ្ដើមបានទេ៖ |
+| `review.retry` | Try again | ព្យាយាមម្ដងទៀត |
+| `review.continue` | Continue without them | បន្តដោយគ្មានពួកវា |
+| `home.learning` | Learning | ការរៀន |
+| `home.practice` | May need more practice | ប្រហែលជាត្រូវការហាត់បន្ថែម |
+| `home.practiceNone` | Nothing flagged. A skill is flagged only once there are enough answers to judge. | មិនទាន់មានអ្វីត្រូវកត់សម្គាល់ទេ។ ជំនាញមួយត្រូវបានកត់សម្គាល់ លុះត្រាតែមានចម្លើយគ្រប់គ្រាន់ដើម្បីវាយតម្លៃ។ |
+| `home.manage` | Manage subjects | គ្រប់គ្រងមុខវិជ្ជា |
+| `home.chooseSubjects` | Choose {name}'s subjects | ជ្រើសរើសមុខវិជ្ជារបស់ {name} |
+| `home.standingsLabel` | {name}'s skills by standing | ជំនាញរបស់ {name} តាមកម្រិត |
+| `home.skillsCount` | {n} skills | ជំនាញ {n} |
+| `home.doTitle` | Things you can do | អ្វីដែលអ្នកអាចធ្វើបាន |
+| `home.addChild` | Add a child | បន្ថែមកូន |
+| `home.addChildLead` | Set up their space and choose what they learn. | រៀបចំកន្លែងរបស់ពួកគេ និងជ្រើសរើសអ្វីដែលពួកគេរៀន។ |
+| `home.account` | Your plan and account | គម្រោង និងគណនីរបស់អ្នក |
+| `home.accountLead` | Plan, sign-in, language and your family's data. | គម្រោង ការចូលគណនី ភាសា និងទិន្នន័យគ្រួសាររបស់អ្នក។ |
+| `home.school` | Join a class with a code | ចូលរួមថ្នាក់ដោយប្រើលេខកូដ |
+| `home.schoolLead` | Share {name}'s school-assigned learning with a teacher. | ចែករំលែកការរៀនដែលសាលាកំណត់របស់ {name} ជាមួយគ្រូ។ |
+| `child.tabs` | Sections | ផ្នែក |
+| `child.overview` | Overview | ទិដ្ឋភាពទូទៅ |
+| `child.progress` | Skills & progress | ជំនាញ និងវឌ្ឍនភាព |
+| `child.settings` | School & settings | សាលា និងការកំណត់ |
+| `child.space` | Their own space | កន្លែងផ្ទាល់ខ្លួនរបស់ពួកគេ |
+| `child.spaceLead` | {name} chooses their buddy and the language of their space themselves. | {name} ជ្រើសរើសមិត្តរៀន និងភាសានៃកន្លែងរបស់ពួកគេដោយខ្លួនឯង។ |
+| `child.buddy` | Buddy: {buddy} | មិត្តរៀន៖ {buddy} |
+| `child.language` | Language: {language} | ភាសា៖ {language} |
+| `child.openSpace` | Open {name}'s space | បើកកន្លែងរបស់ {name} |
+| `plan.title` | Learning plan | ផែនការរៀន |
+| `plan.lead` | The subjects {name} learns. Adding one starts it at its first chapter; stopping one keeps everything {name} has done. | មុខវិជ្ជាដែល {name} រៀន។ ការបន្ថែមមួយចាប់ផ្ដើមវាពីជំពូកទីមួយ ការបញ្ឈប់មួយរក្សាទុកអ្វីៗទាំងអស់ដែល {name} បានធ្វើ។ |
+| `plan.add` | Add a subject | បន្ថែមមុខវិជ្ជា |
+| `plan.empty` | {name} has no subjects yet. | {name} មិនទាន់មានមុខវិជ្ជានៅឡើយទេ។ |
+| `plan.emptyLead` | Choose what to start with - it appears in their space straight away. | ជ្រើសរើសអ្វីដែលត្រូវចាប់ផ្ដើម - វានឹងបង្ហាញនៅក្នុងកន្លែងរបស់ពួកគេភ្លាមៗ។ |
+
+Uncertain throughout: whether the parent-facing lines read naturally (they were written to match the
+English closely), and whether មិត្តរៀន is the right word for a Learning Buddy. The landing page's
+school capabilities are product claims and must stay true to what the product does - a reviewer
+should change wording, not meaning.

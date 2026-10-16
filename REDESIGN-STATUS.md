@@ -1,7 +1,7 @@
 # River Garden redesign — working status
 
 Direction contract: `.impeccable/surfaces/frontend-src-app-tsx.md`. Design system: `DESIGN.md` (rewritten
-for River Garden). Replaces "Blue hour on the Mekong". Progress record: Y33 and Y34 in
+for River Garden). Replaces "Blue hour on the Mekong". Progress record: Y33, Y34 and Y35 in
 `BOOKEYOND-KID-ENGINEERING-PROGRESS.md`.
 Reference: owner's Figma "Bookeyond Kid · River Garden" (frame 03: Momo the otter, cocoa coat, cream
 muzzle and belly, blue lotus neckerchief, eight poses). Its houses and trees were not kept.
@@ -34,6 +34,35 @@ muzzle and belly, blue lotus neckerchief, eight poses). Its houses and trees wer
       the default configuration by design (PD-18 documents, PD-20 switch).
 - [x] Bundle: family pages and the child's space are separate downloads; main chunk 585 → 339 kB.
 - [x] Buddy names: one source (the catalog), used consistently; still proposals (below).
+
+## Design iteration 2 (Y35)
+
+What was wrong, and what changed:
+
+- **Colour had no jobs.** One teal did everything, and "progressing" (tonle-600) sat 9.0 from "secure"
+  in OKLab for normal vision, so class charts blurred them. Now: sky, coral and cream join the palette;
+  one standing palette is used everywhere (checked under colour-blindness simulation); each subject has
+  an accent and an emblem; each staff workspace has its own mark in the rail.
+- **The art was stickers.** Buddies had single-stroke arms and one body shape; the scene was flat colour
+  fields. Buddies are rebuilt with shaped limbs and paws, form shading and texture; the scene has
+  atmospheric depth, lit vegetation, a waterway, wildlife and a lived-in house. Hand-built vector art -
+  no image-generation tool was available in this environment.
+- **Children were dropped straight into Maths.** Child creation auto-started the single curriculum for
+  the age (Battle 2B). Now a family chooses subjects as it adds a child (`/parent/add-child`, backend
+  `familyChoosesSubjects`), the choice is the child's real enrolments, and it is changed later from the
+  child's learning plan.
+- **The child's home had no entrance.** It now opens on the child's subjects; each opens its journey.
+  Activities are unchanged and stay simple.
+- **The parent space was thin.** The family home shows each child at a glance (subjects with progress, a
+  standing bar, skills flagged for practice, next actions, the family's actions); the child page has
+  sections (overview, skills & progress, school & settings).
+- **The landing page was an illustration.** It now speaks to families and schools separately, shows the
+  real product (screens captured from the app with sample data, labelled as such), lists only the
+  school capabilities that exist, and the school call to action opens registration as a principal.
+
+Open from this iteration: the new Khmer (107 strings, in KHMER-REVIEW-Y33.md) awaits native review;
+the landing screenshots must be re-captured when the screens change (`frontend/scripts/capture-marketing-shots.mjs`
+on an isolated stack).
 
 ## Learning Buddy names — awaiting the owner (PD-13)
 

@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqueEmail, workspaceLink } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, addChild, expectNoViolations, logIn, openSubject, uniqueEmail, workspaceLink } from "./support";
 
 /**
  * Content golden journey: an administrator authors a small maths path in the Content Studio
@@ -149,20 +149,14 @@ test("studio: author, check, publish; a child plays exactly what was published @
   await family.getByLabel("Email").fill(uniqueEmail("studio-family"));
   await family.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await family.getByRole("button", { name: /create/i }).click();
-  await family.getByRole("button", { name: /add your first child/i }).click();
-  await family.getByLabel("Name").fill("Vanna");
-  await family.getByLabel("Date of birth").fill("2019-04-04");
-  await family.getByRole("button", { name: "Add child" }).click();
-  await family.getByRole("link", { name: /Vanna/ }).first().click();
+  // The family chooses the newly published path as it adds the child (iteration 2).
+  await addChild(family, "Vanna", "2019-04-04", new RegExp(`Counting stars ${tag}`));
   const vannaPage = family.url();
-  // With more than one path for the child's age the parent chooses (no invented default).
-  const addSubject = family.getByRole("button", { name: "Add a subject" });
-  if (await addSubject.isVisible()) await addSubject.click();
-  await family.getByRole("listitem").filter({ hasText: `Counting stars ${tag}` }).getByRole("button", { name: "Start this path" }).click();
-  // Started: its "Learning now" card (the name alone is also in the list of choices, before it starts).
+  // Started: its learning plan card.
   await expect(family.getByRole("heading", { name: `Counting stars ${tag}` })).toBeVisible();
 
   await family.getByRole("link", { name: "Start Vanna's session" }).click();
+  await openSubject(family, subject);
   // The published activity is on the child's home (beside Play and as the current step of the path).
   await expect(family.getByText(`Star counting ${tag}`).first()).toBeVisible();
   await family.getByRole("link", { name: "Play", exact: true }).click();
@@ -205,7 +199,7 @@ test("studio: author, check, publish; a child plays exactly what was published @
   await expect(family.locator("#done-title")).toBeVisible();
 
   // The parent sees the evidence from the number, ordering and sorting questions, on the skill they were about.
-  await family.goto(vannaPage);
+  await family.goto(`${vannaPage}/progress`);
   await expect(family.getByText("3 of 3 answers correct").first()).toBeVisible();
   await expect(family.getByText(skill).first()).toBeVisible();
   await expectNoViolations(family, "parent: evidence from number, ordering and sorting questions");
@@ -324,18 +318,12 @@ test("studio: multiple choice, true or false, short answer and matching - author
   await family.getByLabel("Email").fill(uniqueEmail("types-family"));
   await family.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await family.getByRole("button", { name: /create/i }).click();
-  await family.getByRole("button", { name: /add your first child/i }).click();
-  await family.getByLabel("Name").fill("Rith");
-  await family.getByLabel("Date of birth").fill("2019-05-05");
-  await family.getByRole("button", { name: "Add child" }).click();
-  await family.getByRole("link", { name: /Rith/ }).first().click();
+  await addChild(family, "Rith", "2019-05-05", new RegExp(`Word play ${tag}`));
   const childPage = family.url();
-  const addSubject = family.getByRole("button", { name: "Add a subject" });
-  if (await addSubject.isVisible()) await addSubject.click();
-  await family.getByRole("listitem").filter({ hasText: `Word play ${tag}` }).getByRole("button", { name: "Start this path" }).click();
-  // Started: its "Learning now" card (the name alone is also in the list of choices, before it starts).
+  // Started: its learning plan card.
   await expect(family.getByRole("heading", { name: `Word play ${tag}` })).toBeVisible();
   await family.getByRole("link", { name: "Start Rith's session" }).click();
+  await openSubject(family, `E2E Words ${tag}`);
   await expect(family.getByText(`Word play ${tag}`).first()).toBeVisible();
   await family.getByRole("link", { name: "Play", exact: true }).click();
   await family.getByRole("button", { name: "Let's go" }).click();
@@ -370,6 +358,7 @@ test("studio: multiple choice, true or false, short answer and matching - author
   // The parent sees the evidence: three of four right, on the skill it was about.
   await family.goto(childPage);
   await expect(family.getByText(`Word play ${tag}`).first()).toBeVisible();
+  await family.getByRole("link", { name: "Skills & progress" }).click();
   await expect(family.getByText("3 of 4 answers correct").first()).toBeVisible();
   await expect(family.getByText(skill).first()).toBeVisible();
   await expectNoViolations(family, "parent: evidence from four kinds of question");

@@ -11,6 +11,7 @@ export function PrincipalLayout() {
   const m = useMessages(staffMessages).nav;
   return (
     <WorkspaceShell
+      accent="leaf"
       home="/principal"
       workspace={m.school}
       nav={[

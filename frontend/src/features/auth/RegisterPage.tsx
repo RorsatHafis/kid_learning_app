@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { LegalAgreement } from "@/features/legal/Legal";
 import { useLegal } from "@/features/legal/useLegal";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AuthLayout } from "./AuthLayout";
 import { FormField } from "./FormField";
 import { Button } from "@/components/ui/Button";
@@ -18,7 +18,9 @@ export function RegisterPage() {
   const r = m.register;
   const navigate = useNavigate();
 
-  const [role, setRole] = useState<"PARENT" | "PRINCIPAL">("PARENT");
+  // ?as=principal (the landing page's "Register your school") opens on the school application.
+  const [params] = useSearchParams();
+  const [role, setRole] = useState<"PARENT" | "PRINCIPAL">(params.get("as") === "principal" ? "PRINCIPAL" : "PARENT");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [familyName, setFamilyName] = useState("");

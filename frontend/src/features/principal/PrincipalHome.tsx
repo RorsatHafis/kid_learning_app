@@ -130,7 +130,7 @@ function AtAGlance({ school }: { school: SchoolOverview | undefined }) {
   return (
     <section
       aria-labelledby="glance-heading"
-      className="grid grid-cols-2 gap-6 rounded-[14px] border border-line bg-white px-5 py-5 sm:grid-cols-[auto_auto_minmax(0,1fr)] sm:gap-10 sm:px-6"
+      className="grid grid-cols-2 gap-6 rounded-[16px] border border-palm/20 bg-palm-soft/70 px-5 py-5 sm:grid-cols-[auto_auto_minmax(0,1fr)] sm:gap-10 sm:px-6"
     >
       <h2 id="glance-heading" className="sr-only">
         {m.atAGlance}

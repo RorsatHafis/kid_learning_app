@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqueEmail } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, openSubject, uniqueEmail } from "./support";
 
 test.describe("accessibility @phone", () => {
   // Scan the settled screens: with reduced motion the app skips entrance animations, whose
@@ -28,28 +28,30 @@ test.describe("accessibility @phone", () => {
     await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
     await expectNoViolations(page, "family home (empty)");
 
-    await page.getByRole("button", { name: /add your first child/i }).click();
-    await expectNoViolations(page, "add child form");
+    // Adding a child (iteration 2): who they are, what they learn, the plan.
+    await page.getByRole("link", { name: /add your first child/i }).click();
+    await expectNoViolations(page, "add child: about");
     await page.getByLabel("Name").fill("Dara");
     await page.getByLabel("Date of birth").fill("2019-06-02");
-    await page.getByRole("button", { name: "Add child" }).click();
-    await page.getByRole("link", { name: /Dara/ }).first().click();
-    await expect(page.getByRole("heading", { name: "Learning now" })).toBeVisible();
+    await page.getByRole("button", { name: "Next: choose subjects" }).click();
+    await expect(page.getByRole("heading", { name: "What will Dara learn?" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await expectNoViolations(page, "add child: subjects");
+    await page.getByRole("button", { name: /Maths - Junior/ }).first().click();
+    await page.getByRole("button", { name: "Next: review the plan" }).click();
+    await expect(page.getByRole("heading", { name: "Dara's learning plan" })).toBeVisible();
+    await expectNoViolations(page, "add child: review");
+    await page.getByRole("button", { name: "Start Dara's learning" }).click();
+    await expect(page.getByRole("heading", { name: "Learning plan" })).toBeVisible();
+    await expect(page.getByText("Up next").first()).toBeVisible();
     await page.waitForLoadState("networkidle");
     await expectNoViolations(page, "child overview");
-    // With several paths for this age the parent chooses one (otherwise the child was enrolled already).
-    const choose = page
-      .getByRole("listitem")
-      .filter({ hasText: "Maths - Junior" })
-      .getByRole("button", { name: "Start this path" });
-    if (await choose.isVisible()) {
-      await choose.click();
-      await expect(page.getByText("Up next").first()).toBeVisible();
-    }
 
     await page.getByRole("link", { name: "Start Dara's session" }).click();
     await expect(page.getByText(/Hi, Dara/)).toBeVisible();
-    await expectNoViolations(page, "child home");
+    await expectNoViolations(page, "child home (subjects)");
+    await openSubject(page, "Maths");
+    await expectNoViolations(page, "child home (a subject's journey)");
     await page.getByRole("link", { name: "Play", exact: true }).click();
     await expectNoViolations(page, "activity intro");
     await page.getByRole("button", { name: "Let's go" }).click();

@@ -124,3 +124,33 @@ export async function expectNoViolations(page: Page, screen: string) {
   );
   expect(summary, `${screen} accessibility violations`).toEqual([]);
 }
+
+/**
+ * Adds a child as a family does (iteration 2): who they are, the subjects chosen for them, a look at
+ * the plan, and on to the child's page. `subject` names the path to choose (its card's text); without
+ * one the family decides later and the child starts with no subjects.
+ */
+export async function addChild(page: Page, name: string, dateOfBirth: string, subject?: RegExp | string) {
+  // Called right after signing up: let the sign-up land in the family space before moving on.
+  await page.waitForURL(/\/parent(\/|\?|$)/);
+  if (new URL(page.url()).pathname !== "/parent") await page.goto("/parent");
+  await page.getByRole("link", { name: /^(Add your first child|Add a child)/ }).first().click();
+  await page.getByLabel("Name").fill(name);
+  await page.getByLabel("Date of birth").fill(dateOfBirth);
+  await page.getByRole("button", { name: "Next: choose subjects" }).click();
+  await expect(page.getByRole("heading", { name: `What will ${name} learn?` })).toBeVisible();
+  if (!subject) {
+    await page.getByRole("button", { name: "Decide later" }).click();
+  } else {
+    await page.getByRole("button", { name: subject }).first().click();
+    await page.getByRole("button", { name: "Next: review the plan" }).click();
+    await expect(page.getByRole("heading", { name: `${name}'s learning plan` })).toBeVisible();
+    await page.getByRole("button", { name: `Start ${name}'s learning` }).click();
+  }
+  await page.waitForURL(/\/parent\/children\/[^/?#]+$/);
+}
+
+/** In the child's space: from the entrance, into one subject's journey (its door). */
+export async function openSubject(page: Page, subject: string) {
+  await page.getByRole("link", { name: new RegExp(`^${subject}:`) }).click();
+}

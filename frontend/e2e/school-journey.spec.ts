@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, crawl, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail, workspaceLink } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, addChild, crawl, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail, workspaceLink } from "./support";
 
 /**
  * The school side end to end: a principal applies, an administrator approves, the principal sets
@@ -124,12 +124,9 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expect(parent.getByRole("heading", { name: "Your family" })).toBeVisible();
   await parent.goto(linkIn(await waitForEmail(request, parentEmail, "Confirm your email"), "/verify-email"));
   await expect(parent.getByText(/confirmed/i).first()).toBeVisible();
-  await parent.goto("/parent");
-  await parent.getByRole("button", { name: /add your first child/i }).click();
-  await parent.getByLabel("Name").fill("Rithy");
-  await parent.getByLabel("Date of birth").fill("2019-05-02");
-  await parent.getByRole("button", { name: "Add child" }).click();
-  await parent.getByRole("link", { name: /Rithy/ }).first().click();
+  // No subject chosen at home: the class's own learning arrives when Rithy joins it.
+  await addChild(parent, "Rithy", "2019-05-02");
+  await parent.getByRole("link", { name: "School & settings" }).click();
 
   const school = parent.getByRole("region", { name: "School", exact: true });
   await school.getByRole("button", { name: "Join a class" }).click();
@@ -180,17 +177,20 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expect(teacher.getByRole("status")).toHaveText("Assigned to Rithy.");
   await expect(teacher.getByText(/Practice assigned .* · waiting/)).toBeVisible();
 
-  // ...which the family sees first on Rithy's path, with who asked and why.
+  // ...which the family sees first on Rithy's path (the child page's overview), with who asked and why.
+  await parent.getByRole("link", { name: "Overview" }).click();
   await parent.reload();
   await expect(
     parent.getByText(`Practice on ${skillName}, assigned by a teacher of Grade 1 A · ${schoolName}.`).first(),
   ).toBeVisible();
 
   // The family ends the school's access: the class loses the child at once.
+  await parent.getByRole("link", { name: "School & settings" }).click();
   await school.getByRole("button", { name: "End access…" }).click();
   await school.getByRole("button", { name: "End access", exact: true }).click();
   await expect(school.getByRole("status")).toHaveText(`${schoolName} can no longer see Rithy's learning.`);
   // The class's waiting practice leaves Rithy's path with its access.
+  await parent.getByRole("link", { name: "Overview" }).click();
   await parent.reload();
   await expect(parent.getByRole("heading", { name: "Rithy" }).first()).toBeVisible();
   await expect(parent.getByText(/assigned by a teacher of/)).toHaveCount(0);

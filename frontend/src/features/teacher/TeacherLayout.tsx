@@ -11,6 +11,7 @@ export function TeacherLayout() {
   const m = useMessages(staffMessages).nav;
   return (
     <WorkspaceShell
+      accent="sky"
       home="/teacher"
       workspace={m.teaching}
       nav={[

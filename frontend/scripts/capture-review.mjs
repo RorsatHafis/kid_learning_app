@@ -38,6 +38,14 @@ for (const [label, viewport] of sizes) {
     const [name, path] = route.split("=");
     await page.goto(base + path);
     await page.waitForLoadState("networkidle");
+    // Scroll through once so lazy images and anything revealed on scroll are loaded for the capture.
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.documentElement.scrollHeight; y += 700) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 80));
+      }
+      window.scrollTo(0, 0);
+    });
     await page.waitForTimeout(600);
     // A page wider than the viewport scrolls sideways on a phone: report it with the capture.
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

@@ -1,12 +1,13 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { RiverGarden } from "@/features/world/RiverGarden";
-import { PathOfBooks, khmerNumber, type PathStep } from "@/features/world/PathOfBooks";
+import { khmerNumber } from "@/features/world/PathOfBooks";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { BUDDY_KINDS } from "@/features/buddy/kinds";
 import { buddyMessages } from "@/features/buddy/buddy.messages";
 import { EvidenceLine } from "@/features/learning/EvidenceLine";
+import { onPath } from "@/features/world/villagePath";
 import { buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import type { EvidenceLevel } from "@/lib/api/types";
@@ -14,6 +15,12 @@ import { Nav } from "./sections/Nav";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { Footer } from "./sections/Footer";
 import { Place, type PlaceKind } from "./Places";
+import { BrowserFrame, PhoneFrame } from "./Frames";
+import childEntrance from "./shots/child-entrance.webp";
+import childQuestion from "./shots/child-question.webp";
+import parentHome from "./shots/parent-home.webp";
+import parentChild from "./shots/parent-child.webp";
+import teacherTrend from "./shots/teacher-trend.webp";
 import { messagesIn, useLocale, useMessages } from "@/i18n/catalog";
 import { marketingMessages } from "./messages";
 import { common } from "@/components/ui/messages";
@@ -35,6 +42,7 @@ export function LandingPage() {
       <Nav />
       <main id="main" tabIndex={-1}>
         <Hero />
+        <Audiences />
         <HowItWorks />
         <ForParents />
         <ForChildren />
@@ -47,52 +55,132 @@ export function LandingPage() {
   );
 }
 
-// An illustration of a path, not anyone's data: three books lit, the fourth glowing next.
-const ILLUSTRATIVE_PATH: PathStep[] = Array.from({ length: 8 }, (_, i) => ({
-  learningPathItemId: `illustration-${i}`,
-  status: i < 3 ? "COMPLETED" : "PENDING",
-}));
-
 const goButton =
   "inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-[14px] bg-light px-7 text-base font-semibold text-tonle-950 shadow-[0_3px_0_#C77A1E] transition-[background-color,transform,box-shadow] duration-150 ease-out hover:bg-light-glow active:translate-y-0.5 active:shadow-[0_1px_0_#C77A1E]";
 const quietButton =
   "inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-[14px] bg-white/85 px-6 text-base font-semibold text-tonle-900 ring-1 ring-inset ring-tonle-950/10 backdrop-blur-sm transition-colors duration-150 hover:bg-white";
 
+/**
+ * The first view: the promise in both languages, a way in for families and one for schools, and the
+ * product itself - the child's real home in a phone, standing in the village, beside the parent's
+ * page - with the buddy family waiting on the path.
+ */
 function Hero() {
   const m = useMessages(marketingMessages);
+  const l = m.landing;
   const locale = useLocale();
   const other = locale === "km" ? "en" : "km";
+  const at = (t: number) => onPath(t);
   return (
-    <section className="relative bg-[#DCEDEC]">
-      <div className="relative h-[52svh] min-h-[340px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto">
-        <RiverGarden crop="bottom" bloom={0.6} className="absolute inset-0">
-          <PathOfBooks steps={ILLUSTRATIVE_PATH} currentId="illustration-3" />
+    <section className="relative overflow-hidden bg-[#DCEDEC]">
+      <div aria-hidden className="absolute inset-0">
+        <RiverGarden crop="bottom" bloom={0.8} className="absolute inset-0">
+          <g transform={`translate(${at(0.62).x - 30} ${at(0.62).y - 120})`}>
+            <LearningBuddy kind="OTTER" mood="happy" size={118} />
+          </g>
+          <g transform={`translate(${at(0.82).x - 4} ${at(0.82).y - 78})`}>
+            <LearningBuddy kind="FROG" mood="idle" size={76} />
+          </g>
         </RiverGarden>
         {/* a morning haze behind the words, so they read on the sky */}
         <div
-          aria-hidden
-          className="absolute inset-0 hidden lg:block"
-          style={{ background: "radial-gradient(ellipse 52% 62% at 18% 34%, rgba(244,246,241,0.94) 0%, rgba(244,246,241,0.7) 45%, rgba(244,246,241,0) 78%)" }}
+          className="absolute inset-0"
+          style={{ background: "radial-gradient(ellipse 62% 72% at 16% 38%, rgba(244,246,241,0.96) 0%, rgba(244,246,241,0.78) 45%, rgba(244,246,241,0) 80%)" }}
         />
       </div>
-      <div className="relative mx-auto flex max-w-[1240px] flex-col px-4 pb-14 pt-8 sm:px-8 lg:min-h-[min(calc(100svh-4.5rem),880px)] lg:pb-48 lg:pt-20">
-        <div className="flex max-w-[34rem] flex-col gap-6 motion-safe:animate-rise-in">
+      <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-4 pb-16 pt-10 sm:px-8 lg:min-h-[min(calc(100svh-4.5rem),900px)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:pb-24 lg:pt-16">
+        <div className="flex max-w-[36rem] flex-col gap-6 motion-safe:animate-rise-in">
           {/* The promise in the other language too: the site speaks to Cambodian families in both. */}
           <p lang={other} className={cn("text-lg font-semibold leading-[1.6] text-clay-deep sm:text-xl", other === "km" && "font-khmer")}>
             {messagesIn(marketingMessages, other).hero.title}
           </p>
-          <h1 className="font-display text-[2.6rem] font-bold leading-[1.02] text-tonle-950 sm:text-[3.6rem] lg:text-[4.4rem]">{m.hero.title}</h1>
-          <p className="max-w-[30rem] text-lg leading-relaxed text-ink-soft">{m.hero.lead}</p>
+          <h1 className="font-display text-[2.6rem] font-bold leading-[1.02] text-tonle-950 sm:text-[3.6rem] lg:text-[4.3rem]">{m.hero.title}</h1>
+          <p className="max-w-[31rem] text-lg leading-relaxed text-ink-soft">{m.hero.lead}</p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link to="/register" className={goButton}>
-              {m.nav.getStarted}
+              {l.forFamilies} <ArrowRight size={18} aria-hidden />
             </Link>
-            <a href="#how-it-works" className={quietButton}>
-              {m.hero.seeHow}
+            <a href="#schools" className={quietButton}>
+              {l.forSchools}
             </a>
           </div>
           <p className="text-sm font-medium text-ink-soft">{m.hero.status}</p>
         </div>
+        <div className="relative mx-auto w-full max-w-[520px] lg:mx-0 lg:justify-self-end">
+          <BrowserFrame
+            src={parentHome}
+            alt={l.shotParent}
+            width={1600}
+            height={1051}
+            eager
+            className="ml-auto w-[88%] rotate-[1.5deg] motion-safe:animate-rise-in"
+          />
+          <PhoneFrame
+            src={childEntrance}
+            alt={l.shotChild}
+            eager
+            className="absolute -bottom-8 left-0 w-[44%] -rotate-[4deg] motion-safe:animate-rise-in sm:-bottom-12"
+          />
+          <p className="mt-14 text-right text-xs font-medium text-ink-soft sm:mt-16">{l.sample}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Two ways in: what a family gets, and what a school gets - each with its own first step. */
+function Audiences() {
+  const l = useMessages(marketingMessages).landing;
+  const cards = [
+    {
+      title: l.familiesTitle,
+      lead: l.familiesLead,
+      points: [l.familiesPoints.a, l.familiesPoints.b, l.familiesPoints.c],
+      cta: l.familiesCta,
+      to: "/register",
+      tone: "bg-coral-soft",
+      mark: "text-coral-deep",
+      buddy: "OTTER" as const,
+    },
+    {
+      title: l.schoolsTitle,
+      lead: l.schoolsLead,
+      points: [l.schoolsPoints.a, l.schoolsPoints.b, l.schoolsPoints.c],
+      cta: l.schoolsCta,
+      to: "/register?as=principal",
+      tone: "bg-sky-soft",
+      mark: "text-sky-deep",
+      buddy: "ELEPHANT" as const,
+    },
+  ];
+  return (
+    <section aria-labelledby="audiences" className="relative px-4 pb-6 pt-16 sm:px-8 sm:pt-20">
+      <h2 id="audiences" className="sr-only">
+        {l.audiences}
+      </h2>
+      <div className="mx-auto grid max-w-[1240px] gap-6 md:grid-cols-2">
+        {cards.map((c) => (
+          <article key={c.title} className={cn("relative flex flex-col gap-5 overflow-hidden rounded-[28px] p-7 sm:p-9", c.tone)}>
+            <div aria-hidden className="absolute -right-4 -top-3 opacity-90">
+              <LearningBuddy kind={c.buddy} mood="idle" size={120} className="!animate-none" />
+            </div>
+            <h3 className="font-display text-[2rem] font-bold leading-tight text-tonle-950">{c.title}</h3>
+            <p className="max-w-[26rem] text-lg leading-relaxed text-ink">{c.lead}</p>
+            <ul className="flex flex-col gap-2.5">
+              {c.points.map((point) => (
+                <li key={point} className="flex items-start gap-3 text-[0.9375rem] text-ink">
+                  <span className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white", c.mark)}>
+                    <Check size={13} strokeWidth={3} aria-hidden />
+                  </span>
+                  {point}
+                </li>
+              ))}
+            </ul>
+            <Link to={c.to} className={buttonClasses("solid", "lg", "mt-auto w-fit")}>
+              {c.cta} <ArrowRight size={18} aria-hidden />
+            </Link>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -119,56 +207,20 @@ function Heading({ id, title, lead }: { id?: string; title: string; lead?: strin
 
 function HowItWorks() {
   const m = useMessages(marketingMessages).how;
+  const l = useMessages(marketingMessages).landing;
   const loop = [m.loop1, m.loop2, m.loop3, m.loop4, m.loop5];
   return (
     <Section id="how-it-works">
       <Heading title={m.title} lead={m.lead} />
 
-      <div className="mt-14 grid items-stretch gap-6 lg:grid-cols-2 lg:gap-8">
-        <figure className="flex flex-col gap-3">
-          <div className="relative flex flex-1 flex-col justify-center gap-7 overflow-visible rounded-[28px] bg-[#FFFDF8] px-7 py-9 shadow-lift ring-1 ring-tonle-950/5 sm:px-10">
-            <div aria-hidden className="absolute -top-12 right-6">
-              <LearningBuddy mood="cheer" size={92} />
-            </div>
-            <p className="font-display text-[2.75rem] font-bold leading-none text-tonle-950">4 + 3 = ?</p>
-            <div className="grid grid-cols-3 gap-3" aria-hidden>
-              {["6", "7", "8"].map((n) => (
-                <span
-                  key={n}
-                  className={cn(
-                    "flex h-16 items-center justify-center rounded-[18px] font-display text-2xl font-bold",
-                    n === "7" ? "bg-light-soft text-tonle-950 ring-2 ring-light" : "bg-white text-tonle-800 ring-2 ring-tonle-100",
-                  )}
-                >
-                  {n}
-                </span>
-              ))}
-            </div>
-            <p className="text-base font-semibold text-light-deep">{m.thatsRight}</p>
-          </div>
-          <figcaption className="px-2 text-sm text-ink-soft">{m.childSees}</figcaption>
+      <div className="mt-14 grid items-center gap-10 lg:grid-cols-[minmax(0,0.55fr)_minmax(0,1.45fr)] lg:gap-12">
+        <figure className="flex flex-col items-center gap-4">
+          <PhoneFrame src={childQuestion} alt={l.shotQuestion} className="w-full max-w-[280px]" />
+          <figcaption className="max-w-[280px] text-center text-sm text-ink-soft">{m.childSees}</figcaption>
         </figure>
-
-        <figure className="flex flex-col gap-3">
-          <div className="flex flex-1 flex-col justify-center gap-6 rounded-[28px] bg-white px-7 py-9 shadow-paper ring-1 ring-line/70 sm:px-10">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-ink">{m.sampleSkill}</p>
-                <p className="tabular text-sm text-ink-soft">{m.sampleStats}</p>
-              </div>
-              <span className="inline-flex items-center gap-2 text-sm font-semibold text-tonle-700">
-                <span aria-hidden className="h-3 w-3 rounded-[3px] bg-tonle-600" /> {m.progressing}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-ink-soft">
-              <EvidenceLine level="SUFFICIENT" width={120} /> {m.enoughToJudge}
-            </div>
-            <p className="border-t border-line pt-5 text-[0.9375rem] leading-relaxed text-ink">
-              <span className="font-semibold">{m.whyNext} </span>
-              {m.whyNextBody}
-            </p>
-          </div>
-          <figcaption className="px-2 text-sm text-ink-soft">{m.parentSees}</figcaption>
+        <figure className="flex flex-col gap-4">
+          <BrowserFrame src={parentChild} alt={l.shotParentChild} width={1600} height={1058} />
+          <figcaption className="text-sm text-ink-soft">{m.parentSees}</figcaption>
         </figure>
       </div>
 
@@ -322,26 +374,39 @@ function Subjects() {
 
 function Schools() {
   const m = useMessages(marketingMessages).schools;
+  const l = useMessages(marketingMessages).landing;
+  const caps = [l.schoolCapabilities.a, l.schoolCapabilities.b, l.schoolCapabilities.c, l.schoolCapabilities.d, l.schoolCapabilities.e, l.schoolCapabilities.f];
   return (
-    <Section id="schools" className="bg-white">
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
+    <section id="schools" className="scroll-mt-20 bg-tonle-900 px-4 py-20 text-white sm:px-8 sm:py-28">
+      <div className="mx-auto grid max-w-[1240px] gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
         <div className="flex flex-col gap-8">
-          <Heading title={m.title} lead={m.lead} />
-          <Link to="/register" className={buttonClasses("solid", "lg", "w-fit")}>
-            {m.register} <ArrowRight size={18} aria-hidden />
-          </Link>
+          <div className="flex max-w-xl flex-col gap-4">
+            <h2 className="font-display text-[2.1rem] font-bold leading-[1.08] sm:text-[2.9rem]">{m.title}</h2>
+            <p className="text-lg leading-relaxed text-tonle-100">{m.lead}</p>
+          </div>
+          <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+            {caps.map((cap) => (
+              <li key={cap} className="flex items-start gap-3 border-t border-white/15 pt-4 text-[0.9375rem] leading-relaxed text-tonle-50">
+                <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-light" />
+                {cap}
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link to="/register?as=principal" className={goButton}>
+              {m.register} <ArrowRight size={18} aria-hidden />
+            </Link>
+            <span className="text-sm font-medium text-tonle-200">{m.earlyAccess}</span>
+          </div>
         </div>
-        <ol className="flex flex-col gap-0 border-l border-line">
-          {[m.step1, m.step2, m.step3].map((text) => (
-            <li key={text} className="relative flex flex-col gap-1 pb-8 pl-8 last:pb-0">
-              <span aria-hidden className="absolute -left-[7px] top-1.5 h-3.5 w-3.5 rounded-full bg-tonle-700 ring-4 ring-white" />
-              <p className="text-lg font-semibold text-ink">{text}</p>
-              <p className="text-sm text-ink-soft">{m.earlyAccess}</p>
-            </li>
-          ))}
-        </ol>
+        <figure className="flex flex-col gap-4">
+          <BrowserFrame src={teacherTrend} alt={l.shotTeacher} width={1400} height={1030} />
+          <figcaption className="text-sm text-tonle-200">
+            {l.shotTeacher} {l.sample}
+          </figcaption>
+        </figure>
       </div>
-    </Section>
+    </section>
   );
 }
 

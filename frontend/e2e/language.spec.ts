@@ -111,11 +111,16 @@ test("language: a parent and a child each keep their own language; nothing carri
   await expect(page.getByRole("heading", { name: "គ្រួសាររបស់អ្នក" })).toBeVisible();
 
   // A child added in Khmer starts in Khmer.
-  await page.getByRole("button", { name: "បន្ថែមកូនដំបូងរបស់អ្នក" }).click();
+  // (Iteration 2: who, what they learn, the plan - all in Khmer.)
+  await page.getByRole("link", { name: "បន្ថែមកូនដំបូងរបស់អ្នក" }).click();
   await page.getByLabel("ឈ្មោះ").fill("សុខា");
   await page.getByLabel("ថ្ងៃខែឆ្នាំកំណើត").fill("2019-06-02");
-  await page.getByRole("button", { name: "បន្ថែមកូន", exact: true }).last().click();
-  await page.getByRole("link", { name: /សុខា/ }).first().click();
+  await page.getByRole("button", { name: "បន្ទាប់៖ ជ្រើសរើសមុខវិជ្ជា" }).click();
+  await expect(page.getByRole("heading", { name: "តើ សុខា នឹងរៀនអ្វីខ្លះ?" })).toBeVisible();
+  await page.getByRole("button", { name: /Maths - Junior/ }).first().click();
+  await page.getByRole("button", { name: "បន្ទាប់៖ ពិនិត្យផែនការ" }).click();
+  await page.getByRole("button", { name: "ចាប់ផ្ដើមការរៀនរបស់ សុខា" }).click();
+  await page.waitForURL(/\/parent\/children\/[^/?#]+$/);
   const childId = new URL(page.url()).pathname.split("/")[3];
   await page.goto(`/learn/${childId}`);
   await expect(page.getByText(/សួស្ដី,? សុខា!/)).toBeVisible();

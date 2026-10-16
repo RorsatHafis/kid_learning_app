@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PASSWORD, expectNoViolations, uniqueEmail } from "./support";
+import { PASSWORD, addChild, expectNoViolations, uniqueEmail } from "./support";
 
 /**
  * Y19: a family stops a path (to change subject within its plan) and, choosing it again, the child
@@ -11,17 +11,11 @@ test("a family stops a path and starting it again carries on where it stopped @p
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: /create/i }).click();
   await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
-  await page.getByRole("button", { name: /add your first child/i }).click();
-  await page.getByLabel("Name").fill("Vanna");
-  await page.getByLabel("Date of birth").fill("2019-05-02");
-  await page.getByRole("button", { name: "Add child" }).click();
-  await page.getByRole("link", { name: /Vanna/ }).first().click();
+  await addChild(page, "Vanna", "2019-05-02", /Maths - Junior/);
 
   const maths = () =>
     page.getByRole("listitem").filter({ hasText: "Maths - Junior" }).getByRole("button", { name: "Start this path" });
   const upNext = page.getByText("Up next").first();
-  await expect(maths().or(upNext)).toBeVisible();
-  if (await maths().isVisible()) await maths().click();
   await expect(upNext).toBeVisible();
   const firstStep = (await page.getByText("Up next").first().locator("xpath=following-sibling::p[1]").innerText()).trim();
 
