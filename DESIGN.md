@@ -277,7 +277,7 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
 - **Brand mark:** a teal open book with a lotus-pink bloom and a marigold spark.
   - From 36px: the full mark.
   - Below 36px: a compact drawing.
-  - The print outlines in `brand/print` predate the River Garden colours and need regenerating.
+  - Outlined print files (`brand/print`) and the app icons (`frontend/public`: the mark in paper and lotus on deep river `#10323A`) are rebuilt from the live logo by `brand/tools/build.mjs`.
 
 ## Do's and Don'ts
 

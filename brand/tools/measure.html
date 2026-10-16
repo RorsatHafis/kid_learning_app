@@ -1,11 +1,13 @@
 <!doctype html>
 <html><head><style>
-@font-face { font-family: BG; src: url("bg-opsz.woff2") format("woff2"); font-weight: 200 800; }
+/* The live lockup (frontend/src/components/brand/Logo.tsx) at 1000px type: Alegreya, "Bookeyond" at
+   750 and -0.012em, " Kid" at 420 and -0.008em, the mark 0.45em before the words. */
+@font-face { font-family: AL; src: url("alegreya.woff2") format("woff2"); font-weight: 400 900; }
 body { margin: 0; padding: 200px; }
 .lockup { display: inline-flex; align-items: center; gap: 0.45em; font-size: 1000px; }
 .words { display: flex; flex-direction: column; line-height: 1; }
-.w { white-space: nowrap; font-family: BG; font-weight: 750; letter-spacing: -0.035em; font-variation-settings: "opsz" 48; font-kerning: normal; }
-.k { font-weight: 420; letter-spacing: -0.02em; }
+.w { white-space: nowrap; font-family: AL; font-weight: 750; letter-spacing: -0.012em; font-kerning: normal; }
+.k { font-weight: 420; letter-spacing: -0.008em; }
 .base { display: inline-block; width: 0; height: 0; vertical-align: baseline; }
 </style></head>
 <body>

@@ -79,8 +79,9 @@ export function BrandMark({
 
 /**
  * Mark + wordmark. "Bookeyond" carries the weight; "Kid" follows in the lighter voice, so the
- * product name reads as one name with a clear lead. The wordmark is live type (Bricolage
- * Grotesque, self-hosted); outlined print files (SVG, PDF) are in brand/print.
+ * product name reads as one name with a clear lead. The wordmark is live type (Alegreya,
+ * self-hosted); outlined print files (SVG, PDF) and the app icons are rebuilt from it by
+ * brand/tools/build.mjs - change them together.
  */
 export function Logo({
   tone = "ink",
@@ -100,7 +101,7 @@ export function Logo({
     <span className={cn("inline-flex items-center gap-[0.45em]", s.text, className)}>
       <BrandMark size={s.mark} tone={ink ? "ink" : "paper"} />
       <span className="flex flex-col leading-none">
-        <span className="font-display font-[750] tracking-[-0.012em]" style={{ fontVariationSettings: '"opsz" 48' }}>
+        <span className="font-display font-[750] tracking-[-0.012em]">
           <span className={ink ? "text-tonle-900" : "text-white"}>Bookeyond</span>
           <span className={cn("font-[420] tracking-[-0.008em]", ink ? "text-tonle-600" : "text-tonle-200")}> Kid</span>
         </span>
