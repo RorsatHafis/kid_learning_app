@@ -49,9 +49,14 @@ public class MediaService {
     private final ContentAssetRepository assets;
     private final MediaStorage storage;
     private final ContentAccessGuard guard;
+    private final StorageService storageAllowance;
+    private final com.platform.identity.repository.AccountRepository accounts;
     private final byte[] urlKey;
 
-    public MediaService(ContentAssetRepository assets, MediaStorage storage, ContentAccessGuard guard, SecurityProperties security) {
+    public MediaService(ContentAssetRepository assets, MediaStorage storage, ContentAccessGuard guard, SecurityProperties security,
+                        StorageService storageAllowance, com.platform.identity.repository.AccountRepository accounts) {
+        this.storageAllowance = storageAllowance;
+        this.accounts = accounts;
         this.assets = assets;
         this.storage = storage;
         this.guard = guard;
@@ -79,9 +84,15 @@ public class MediaService {
         MediaInspector.Inspected inspected = MediaInspector.inspect(bytes);
         String sha256 = sha256(bytes);
         UUID owner = guard.authoringOwner(author);
+        if (owner != null) {
+            // One upload at a time per owner (Y35): two at once can't both take the last free space.
+            accounts.findForUpdate(owner);
+        }
         ContentAsset asset = (owner == null ? assets.findBySha256AndOwnerAccountIdIsNull(sha256)
                 : assets.findBySha256AndOwnerAccountId(sha256, owner))
                 .orElseGet(() -> {
+                    // A file the owner doesn't keep yet: it must fit their allowance, checked before it is stored.
+                    storageAllowance.requireRoom(owner, bytes.length);
                     ContentAsset created = ContentAsset.uploaded(inspected.type(), sha256, storage.store(sha256, bytes),
                             inspected.mimeType(), bytes.length, owner, author.getId())
                             .withDimensions(inspected.width(), inspected.height());

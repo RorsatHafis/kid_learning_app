@@ -16,6 +16,7 @@ import { speak, stopSpeaking, usePlaying } from "@/features/child/speaker";
 import { cn } from "@/lib/utils/cn";
 import { StatusBadge, TextAreaField } from "./shared";
 import { uploadError } from "./mediaText";
+import { StorageMeter } from "./StorageMeter";
 import { useStudioScope } from "./studioLogic";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { formatDate, formatNumber } from "@/i18n/format";
@@ -64,6 +65,12 @@ export function MediaLibraryPage() {
   );
   usePageInRange(list.data, setPage);
   const [openId, setOpenId] = useState<string | null>(null);
+  // Uploading, deleting or archiving changes what the storage meter shows.
+  const [storageVersion, setStorageVersion] = useState(0);
+  const changed = () => {
+    list.refetch();
+    setStorageVersion((v) => v + 1);
+  };
   const m = useMessages(mediaMessages);
 
   return (
@@ -71,8 +78,9 @@ export function MediaLibraryPage() {
       <PageHeader
         title={m.title}
         description={m.lead}
-        actions={<UploadButton onUploaded={list.refetch} />}
+        actions={<UploadButton onUploaded={changed} />}
       />
+      <StorageMeter version={storageVersion} />
 
       <div className="flex flex-col gap-3 rounded-[16px] bg-white p-4 ring-1 ring-line sm:flex-row sm:flex-wrap sm:items-center">
         <SearchField
@@ -121,7 +129,7 @@ export function MediaLibraryPage() {
         </section>
       )}
 
-      <MediaDetailDialog id={openId} onClose={() => setOpenId(null)} onChanged={list.refetch} />
+      <MediaDetailDialog id={openId} onClose={() => setOpenId(null)} onChanged={changed} />
     </div>
   );
 }

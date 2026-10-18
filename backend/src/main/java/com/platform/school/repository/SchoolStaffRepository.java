@@ -22,6 +22,8 @@ public interface SchoolStaffRepository extends JpaRepository<SchoolStaff, UUID> 
 
     boolean existsBySchoolIdAndAccountIdAndStatus(UUID schoolId, UUID accountId, SchoolStaffStatus status);
 
+    long countBySchoolIdAndStatusIn(UUID schoolId, java.util.Collection<SchoolStaffStatus> statuses);
+
     /** Whether {@code accountId} is ACTIVE staff at a school {@code principalId} is the principal of. */
     @Query("select count(s) > 0 from SchoolStaff s, School sc where s.schoolId = sc.id and sc.principalAccountId = :principalId"
             + " and s.accountId = :accountId and s.status = com.platform.school.entity.SchoolStaffStatus.ACTIVE")

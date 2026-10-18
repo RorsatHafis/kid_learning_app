@@ -49,11 +49,21 @@ public class SubscriptionPlan extends AuditableEntity {
     @Column(name = "billing_interval", length = 10)
     private BillingInterval billingInterval;
 
+    /** Who it is for (V59); fixed when the plan is drafted. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "audience", nullable = false, updatable = false, length = 10)
+    private PlanAudience audience;
+
     protected SubscriptionPlan() {
         // JPA
     }
 
     public static SubscriptionPlan draft(String code, String name, String description) {
+        return draft(code, name, description, PlanAudience.FAMILY);
+    }
+
+    public static SubscriptionPlan draft(String code, String name, String description, PlanAudience audience) {
+        Assert.notNull(audience, "audience must not be null");
         Assert.hasText(code, "code must not be blank");
         Assert.hasText(name, "name must not be blank");
         SubscriptionPlan plan = new SubscriptionPlan();
@@ -61,6 +71,7 @@ public class SubscriptionPlan extends AuditableEntity {
         plan.name = name.strip();
         plan.description = description == null || description.isBlank() ? null : description.strip();
         plan.status = PlanStatus.DRAFT;
+        plan.audience = audience;
         return plan;
     }
 
@@ -124,6 +135,10 @@ public class SubscriptionPlan extends AuditableEntity {
         if (status != PlanStatus.DRAFT) {
             throw new IllegalStateException("Only a draft plan can be " + action + "; this one is " + status.name().toLowerCase());
         }
+    }
+
+    public PlanAudience getAudience() {
+        return audience;
     }
 
     public String getCode() {

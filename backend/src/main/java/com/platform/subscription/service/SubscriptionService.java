@@ -1,5 +1,9 @@
 package com.platform.subscription.service;
 
+import com.platform.school.repository.SchoolRepository;
+import com.platform.subscription.entity.PlanAudience;
+import com.platform.subscription.entity.SchoolSubscription;
+import com.platform.subscription.repository.SchoolSubscriptionRepository;
 import com.platform.audit.dto.RecordAuditEvent;
 import com.platform.audit.entity.AuditActorType;
 import com.platform.audit.service.AuditService;
@@ -56,12 +60,19 @@ public class SubscriptionService {
     private final EntitlementService entitlementService;
     private final AuditService audit;
     private final PlanRequestService planRequests;
+    private final SchoolSubscriptionRepository schoolSubscriptions;
+    private final SchoolEntitlementService schoolEntitlements;
+    private final SchoolRepository schools;
 
     public SubscriptionService(SubscriptionPlanRepository plans, PlanEntitlementRepository entitlements,
                                FamilySubscriptionRepository subscriptions, FamilyRepository families,
                                MembershipRepository memberships, AccountRepository accounts, ChildRepository children,
                                EntitlementService entitlementService, AuditService audit,
-                               PlanRequestService planRequests) {
+                               PlanRequestService planRequests, SchoolSubscriptionRepository schoolSubscriptions,
+                               SchoolEntitlementService schoolEntitlements, SchoolRepository schools) {
+        this.schoolSubscriptions = schoolSubscriptions;
+        this.schoolEntitlements = schoolEntitlements;
+        this.schools = schools;
         this.plans = plans;
         this.entitlements = entitlements;
         this.subscriptions = subscriptions;
@@ -76,7 +87,13 @@ public class SubscriptionService {
 
     // ------------------------------------------------------------------ views
 
-    public record PlanView(SubscriptionPlan plan, Map<EntitlementKey, Integer> limits, long familiesOnPlan) {
+    /** {@code subscribers}: families (family plan) or schools (school plan) whose subscription names it. */
+    public record PlanView(SubscriptionPlan plan, Map<EntitlementKey, Integer> limits, long subscribers) {
+    }
+
+    /** A school as an operator or its principal sees it: its plan and what it holds. */
+    public record SchoolView(UUID schoolId, String schoolName, SchoolEntitlementService.SchoolPlan effective,
+                             Map<EntitlementKey, Integer> usage) {
     }
 
     public record ParentRef(UUID accountId, String email) {
@@ -108,14 +125,17 @@ public class SubscriptionService {
     @Transactional(readOnly = true)
     public List<PlanView> listPlans(UUID adminId) {
         requireAdmin(adminId);
-        return plans.findAllByOrderByCreatedAtAsc().stream()
-                .map(plan -> new PlanView(plan, entitlementService.limitsOf(plan.getId()), subscriptions.countByPlanId(plan.getId())))
-                .toList();
+        return plans.findAllByOrderByCreatedAtAsc().stream().map(this::view).toList();
     }
 
-    /** A new plan starts as a draft with the default plan's limits, so nothing is left unset by accident. */
+    /** A new plan starts as a draft with its audience's default plan's limits, so nothing is left unset by accident. */
     @Transactional
     public PlanView createPlan(UUID adminId, String code, String name, String description) {
+        return createPlan(adminId, code, name, description, PlanAudience.FAMILY);
+    }
+
+    @Transactional
+    public PlanView createPlan(UUID adminId, String code, String name, String description, PlanAudience audience) {
         requireAdmin(adminId);
         String normalized = code == null ? "" : code.strip().toUpperCase();
         if (!CODE.matcher(normalized).matches()) {
@@ -124,12 +144,12 @@ public class SubscriptionService {
         if (plans.findByCode(normalized).isPresent()) {
             throw new IllegalStateException("A plan with the code " + normalized + " already exists");
         }
-        SubscriptionPlan plan = plans.save(SubscriptionPlan.draft(normalized, name, description));
-        Map<EntitlementKey, Integer> start = entitlementService.limitsOf(entitlementService.defaultPlan().getId());
-        for (EntitlementKey key : EntitlementKey.values()) {
+        SubscriptionPlan plan = plans.save(SubscriptionPlan.draft(normalized, name, description, audience));
+        Map<EntitlementKey, Integer> start = entitlementService.limitsOf(entitlementService.defaultPlan(audience).getId());
+        for (EntitlementKey key : EntitlementKey.of(audience)) {
             entitlements.save(PlanEntitlement.of(plan.getId(), key, start.get(key)));
         }
-        record(adminId, "PLAN_CREATED", plan.getId(), Map.of("code", normalized));
+        record(adminId, "PLAN_CREATED", plan.getId(), Map.of("code", normalized, "audience", audience.name()));
         return view(plan);
     }
 
@@ -139,8 +159,15 @@ public class SubscriptionService {
                                Map<EntitlementKey, Integer> limits) {
         requireAdmin(adminId);
         SubscriptionPlan plan = plan(planId);
+        if (selfService && plan.getAudience() == PlanAudience.SCHOOL) {
+            // Families ask for self-service plans (Y11); a school's plan is arranged by an administrator.
+            throw new IllegalArgumentException("A school plan is arranged by an administrator: families can't ask for it");
+        }
         plan.revise(name, description, selfService, priceAmountMinor, priceCurrency, interval);
         for (Map.Entry<EntitlementKey, Integer> entry : limits.entrySet()) {
+            if (entry.getKey().audience() != plan.getAudience()) {
+                throw new IllegalArgumentException("This limit belongs to another kind of plan");
+            }
             PlanEntitlement entitlement = entitlements.findByPlanIdAndKey(planId, entry.getKey())
                     .orElseGet(() -> entitlements.save(PlanEntitlement.of(planId, entry.getKey(), null)));
             entitlement.setLimit(entry.getValue());
@@ -154,7 +181,7 @@ public class SubscriptionService {
         requireAdmin(adminId);
         SubscriptionPlan plan = plan(planId);
         Map<EntitlementKey, Integer> limits = entitlementService.limitsOf(planId);
-        for (EntitlementKey key : EntitlementKey.values()) {
+        for (EntitlementKey key : EntitlementKey.of(plan.getAudience())) {
             if (!limits.containsKey(key)) {
                 throw new IllegalStateException("Set every entitlement before activating (missing " + key + ")");
             }
@@ -173,7 +200,10 @@ public class SubscriptionService {
         return view(plan);
     }
 
-    /** Families without a subscription get the default plan; changing it changes what they can add from now on. */
+    /**
+     * Families (or schools) without a subscription get their audience's default plan; changing it
+     * changes what they can add from now on.
+     */
     @Transactional
     public PlanView makeDefault(UUID adminId, UUID planId) {
         requireAdmin(adminId);
@@ -181,7 +211,7 @@ public class SubscriptionService {
         if (plan.getStatus() != PlanStatus.ACTIVE) {
             throw new IllegalStateException("Only an active plan can be the default");
         }
-        Optional<SubscriptionPlan> current = plans.findDefaultForUpdate();
+        Optional<SubscriptionPlan> current = plans.findDefaultForUpdate(plan.getAudience());
         if (current.isPresent() && current.get().getId().equals(planId)) {
             return view(plan);
         }
@@ -217,6 +247,9 @@ public class SubscriptionService {
         SubscriptionPlan plan = plan(planId);
         if (plan.getStatus() != PlanStatus.ACTIVE) {
             throw new IllegalStateException("Only an active plan can be given to a family");
+        }
+        if (plan.getAudience() != PlanAudience.FAMILY) {
+            throw new IllegalArgumentException("This is a school plan: give it to a school");
         }
         Instant now = Instant.now();
         Optional<FamilySubscription> existing = subscriptions.findByFamilyIdForUpdate(familyId);
@@ -270,6 +303,84 @@ public class SubscriptionService {
         return familyView(familyId);
     }
 
+    // ------------------------------------------------------------------ schools
+
+    /** A school's plan and what it holds - for an administrator (any school) or its principal (SchoolAccessGuard). */
+    @Transactional(readOnly = true)
+    public SchoolView schoolView(UUID schoolId) {
+        com.platform.school.entity.School school = schools.findById(schoolId)
+                .orElseThrow(() -> new ResourceNotFoundException("School", schoolId));
+        return new SchoolView(schoolId, school.getName(), schoolEntitlements.effectivePlan(schoolId), schoolEntitlements.usage(schoolId));
+    }
+
+    @Transactional(readOnly = true)
+    public SchoolView adminSchoolView(UUID adminId, UUID schoolId) {
+        requireAdmin(adminId);
+        return schoolView(schoolId);
+    }
+
+    /** An administrator gives a school a plan (a pilot, a partnership), open-ended or until a date. */
+    @Transactional
+    public SchoolView grantSchool(UUID adminId, UUID schoolId, UUID planId, Instant periodEnd, String note) {
+        requireAdmin(adminId);
+        schools.findByIdForUpdate(schoolId).orElseThrow(() -> new ResourceNotFoundException("School", schoolId));
+        SubscriptionPlan plan = plan(planId);
+        if (plan.getStatus() != PlanStatus.ACTIVE) {
+            throw new IllegalStateException("Only an active plan can be given to a school");
+        }
+        if (plan.getAudience() != PlanAudience.SCHOOL) {
+            throw new IllegalArgumentException("This is a family plan: give it to a family");
+        }
+        Instant now = Instant.now();
+        Optional<SchoolSubscription> existing = schoolSubscriptions.findBySchoolIdForUpdate(schoolId);
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("plan", plan.getCode());
+        metadata.put("until", periodEnd == null ? "open-ended" : periodEnd.toString());
+        existing.ifPresent(previous -> {
+            metadata.put("previousPlan", plans.findById(previous.getPlanId()).map(SubscriptionPlan::getCode).orElse("?"));
+            metadata.put("previousStatus", previous.getStatus().name());
+        });
+        if (note != null && !note.isBlank()) {
+            metadata.put("note", note.strip());
+        }
+        SchoolSubscription subscription = existing.orElse(null);
+        if (subscription == null) {
+            subscription = schoolSubscriptions.save(SchoolSubscription.grant(schoolId, planId, now, periodEnd, note));
+        } else {
+            subscription.regrant(planId, now, periodEnd, note);
+        }
+        recordSchool(adminId, "SCHOOL_SUBSCRIPTION_GRANTED", subscription.getId(), metadata);
+        return schoolView(schoolId);
+    }
+
+    @Transactional
+    public SchoolView changeSchoolPeriodEnd(UUID adminId, UUID schoolId, Instant periodEnd, String reason) {
+        requireAdmin(adminId);
+        SchoolSubscription subscription = schoolSubscriptions.findBySchoolIdForUpdate(schoolId)
+                .orElseThrow(() -> new IllegalStateException("This school has no subscription to change"));
+        Instant previous = subscription.getCurrentPeriodEnd();
+        subscription.changePeriodEnd(periodEnd, Instant.now());
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("plan", plans.findById(subscription.getPlanId()).map(SubscriptionPlan::getCode).orElse("?"));
+        metadata.put("from", previous == null ? "open-ended" : previous.toString());
+        metadata.put("until", periodEnd == null ? "open-ended" : periodEnd.toString());
+        metadata.put("reason", reason == null ? "" : reason.strip());
+        recordSchool(adminId, "SCHOOL_SUBSCRIPTION_PERIOD_CHANGED", subscription.getId(), metadata);
+        return schoolView(schoolId);
+    }
+
+    /** Ends it now; the school's default plan applies from now on. Nothing the school holds is removed. */
+    @Transactional
+    public SchoolView endSchool(UUID adminId, UUID schoolId, String reason) {
+        requireAdmin(adminId);
+        SchoolSubscription subscription = schoolSubscriptions.findBySchoolIdForUpdate(schoolId)
+                .orElseThrow(() -> new IllegalStateException("This school has no subscription to end"));
+        subscription.end(Instant.now());
+        recordSchool(adminId, "SCHOOL_SUBSCRIPTION_ENDED", subscription.getId(), Map.of("reason", reason == null ? "" : reason.strip(),
+                "plan", plans.findById(subscription.getPlanId()).map(SubscriptionPlan::getCode).orElse("?")));
+        return schoolView(schoolId);
+    }
+
     // ------------------------------------------------------------------ the family's own view
 
     /** The signed-in parent's family plan: what it includes and what the family uses. */
@@ -294,6 +405,7 @@ public class SubscriptionService {
                 && effective.subscription().map(s -> s.getCurrentPeriodEnd() != null).orElse(false);
         Optional<PlanOffer> afterwards = ends ? Optional.of(offer(entitlementService.defaultPlan())) : Optional.empty();
         List<PlanOffer> choices = plans.findAllByOrderByCreatedAtAsc().stream()
+                .filter(plan -> plan.getAudience() == PlanAudience.FAMILY)
                 .filter(plan -> plan.getStatus() == PlanStatus.ACTIVE && plan.isSelfService())
                 .filter(plan -> !plan.getId().equals(effective.plan().getId()))
                 .map(this::offer)
@@ -321,7 +433,13 @@ public class SubscriptionService {
     }
 
     private PlanView view(SubscriptionPlan plan) {
-        return new PlanView(plan, entitlementService.limitsOf(plan.getId()), subscriptions.countByPlanId(plan.getId()));
+        long subscribers = plan.getAudience() == PlanAudience.SCHOOL ? schoolSubscriptions.countByPlanId(plan.getId())
+                : subscriptions.countByPlanId(plan.getId());
+        return new PlanView(plan, entitlementService.limitsOf(plan.getId()), subscribers);
+    }
+
+    private void recordSchool(UUID adminId, String action, UUID resourceId, Map<String, Object> metadata) {
+        audit.record(new RecordAuditEvent(null, adminId, AuditActorType.ADMIN, action, "SCHOOL_SUBSCRIPTION", resourceId, metadata));
     }
 
     private SubscriptionPlan plan(UUID planId) {

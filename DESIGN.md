@@ -275,6 +275,7 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
 - **Loading:** three small books breathing, which fade in only after a noticeable wait and only before the first data arrives.
 - **Empty:** a dashed outline, a title, and one sentence on what to do next. Family empty states may show the buddy.
 - **Error:** "That didn't load", the reason, and "Try again". The child space uses the buddy (encourage mood) and a pressable retry.
+- **Limits and meters (Y35):** a plan or storage limit is shown before anyone reaches it. Each meter is a thin bar (`role="meter"`, with its value as text beside it) in tonle-600. From 80% it turns to the warm *light*, and the words say "Nearly full", "Full: new ones wait" or "Over: everything stays". It is never brick-red, because a limit never takes anything away. A refusal shows the server's sentence next to the action that caused it. Limits apply only to adults' actions, so the child space never shows one.
 
 ### Navigation
 - **Family:** a white sticky bar with text links and a 2px underline indicator, on a cream ground. A child's page has sections as link tabs on a cream track: Overview (learning plan, what changed, insights), Skills & progress (skills, recent activity), School & settings (class codes, the child's own space, deletion).

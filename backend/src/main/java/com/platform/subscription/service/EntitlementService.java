@@ -10,6 +10,7 @@ import com.platform.learning.entity.EnrollmentStatus;
 import com.platform.learning.repository.EnrollmentRepository;
 import com.platform.subscription.entity.EntitlementKey;
 import com.platform.subscription.entity.FamilySubscription;
+import com.platform.subscription.entity.PlanAudience;
 import com.platform.subscription.entity.PlanEntitlement;
 import com.platform.subscription.entity.SubscriptionPlan;
 import com.platform.subscription.repository.FamilySubscriptionRepository;
@@ -78,9 +79,15 @@ public class EntitlementService {
         return new FamilyPlan(plan, subscription, granted.isPresent(), limitsOf(plan.getId()));
     }
 
+    /** The families' default plan. */
     public SubscriptionPlan defaultPlan() {
-        // V42 seeds one and the plan service never leaves the platform without one.
-        return plans.findByDefaultPlanTrue().orElseThrow(() -> new IllegalStateException("No default subscription plan is configured"));
+        return defaultPlan(PlanAudience.FAMILY);
+    }
+
+    public SubscriptionPlan defaultPlan(PlanAudience audience) {
+        // V42 (families) and V59 (schools) seed one each, and the plan service never leaves an audience without one.
+        return plans.findByAudienceAndDefaultPlanTrue(audience)
+                .orElseThrow(() -> new IllegalStateException("No default subscription plan is configured"));
     }
 
     public Map<EntitlementKey, Integer> limitsOf(UUID planId) {

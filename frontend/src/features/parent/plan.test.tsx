@@ -10,6 +10,7 @@ const summary = (over: Partial<PlanSummary>): PlanSummary => ({
   code: "P",
   name: "Plan",
   description: null,
+  audience: "FAMILY",
   status: "ACTIVE",
   isDefault: false,
   selfService: false,

@@ -77,6 +77,8 @@ public class SchoolJoinService {
     private final AuditService audit;
     private final LearningPathItemRepository pathItems;
     private final SecureRandom random = new SecureRandom();
+    private final com.platform.subscription.service.SchoolEntitlementService entitlements;
+
     /** Code lookups per parent account: enough for typos, far too few to guess a code (31^8). */
     private final TokenBucketLimiter lookups = new TokenBucketLimiter(10, Duration.ofHours(1), System::nanoTime);
 
@@ -85,7 +87,9 @@ public class SchoolJoinService {
                              ClassJoinCodeRepository codes, SchoolChildAccessRepository grants,
                              ClassEnrollmentRepository classEnrollments, ClassCurriculumAssignmentRepository classCurricula,
                              CurriculumRepository curricula, CurriculumService curriculumService,
-                             EnrollmentService enrollmentService, AuditService audit, LearningPathItemRepository pathItems) {
+                             EnrollmentService enrollmentService, AuditService audit, LearningPathItemRepository pathItems,
+                             com.platform.subscription.service.SchoolEntitlementService entitlements) {
+        this.entitlements = entitlements;
         this.schoolGuard = schoolGuard;
         this.familyGuard = familyGuard;
         this.accounts = accounts;
@@ -192,6 +196,8 @@ public class SchoolJoinService {
         Child child = children.findByIdForUpdate(childId).orElseThrow(() -> new ResourceNotFoundException("Child", childId));
         Instant now = Instant.now();
 
+        // The school's plan (V59): a child it doesn't have yet takes one of its places.
+        entitlements.requireRoomForChild(schoolClass.getSchoolId(), child.getId());
         SchoolChildAccess grant = grants.findBySchoolIdAndChildIdAndStatus(schoolClass.getSchoolId(), child.getId(),
                 SchoolChildAccessStatus.ACTIVE).orElse(null);
         boolean newGrant = grant == null;

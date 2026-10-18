@@ -5,6 +5,7 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { ApiError } from "@/lib/api/ApiError";
 import {
+  ENTITLEMENT_KEYS,
   entitlementLabel,
   currencyDigits,
   planRequestsApi,
@@ -13,6 +14,7 @@ import {
   type BillingInterval,
   type EntitlementKey,
   type FamilyAccountSummary,
+  type PlanAudience,
   type PlanResponse,
 } from "@/lib/api/subscriptions";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
@@ -27,32 +29,58 @@ import { messagesNow, useMessages } from "@/i18n/catalog";
 import { formatDate } from "@/i18n/format";
 import { plansMessages } from "./plans.messages";
 
-const KEYS: EntitlementKey[] = ["CHILDREN_MAX", "JOURNEYS_PER_CHILD_MAX"];
-const limitText = (limit: number | null) => (limit === null ? messagesNow(plansMessages).noLimit : String(limit));
+const limitText = (limit: number | null, key?: EntitlementKey) =>
+  limit === null ? messagesNow(plansMessages).noLimit : key === "TEACHER_STORAGE_MB" ? `${limit} MB` : String(limit);
 const dateOnly = (iso: string) => formatDate(iso, { day: "numeric", month: "short", year: "numeric" });
 
 /**
- * Plans and what families have (PLATFORM-EXPANSION.md §3). Names, limits and prices are the
- * owner's to decide; this page only records them. No payment happens here or anywhere yet.
+ * Plans and what families and schools have (PLATFORM-EXPANSION.md §3). Names, limits and prices
+ * are the owner's to decide; this page only records them. No payment happens here or anywhere yet.
  */
 export function PlansPage() {
   const m = useMessages(plansMessages);
   useDocumentTitle(m.title);
   const plans = useAsync(() => plansApi.list(), []);
   const composer = useComposer(false);
+  const [params, setParams] = useSearchParams();
+  // ?for=schools shows school plans; a link to a family (?parentEmail=) is always about family plans.
+  const audience: PlanAudience = params.get("for") === "schools" && !params.get("parentEmail") ? "SCHOOL" : "FAMILY";
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [requestsVersion, setRequestsVersion] = useState(0);
-  const selected = plans.data?.find((p) => p.plan.id === selectedId) ?? null;
+  const shown = plans.data?.filter((p) => p.plan.audience === audience) ?? null;
+  const selected = shown?.find((p) => p.plan.id === selectedId) ?? null;
+
+  function choose(next: PlanAudience) {
+    setSelectedId(null);
+    setParams(next === "SCHOOL" ? { for: "schools" } : {}, { replace: true });
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={m.title}
-        description={m.lead}
+        description={audience === "SCHOOL" ? m.leadSchools : m.lead}
         actions={!composer.open && <NewButton label={m.newPlan} onClick={composer.show} />}
       />
+      <div role="group" aria-label={m.audienceLabel} className="flex w-fit gap-1 rounded-[12px] bg-paper p-1 ring-1 ring-line">
+        {(["FAMILY", "SCHOOL"] as const).map((a) => (
+          <button
+            key={a}
+            type="button"
+            aria-pressed={audience === a}
+            onClick={() => choose(a)}
+            className={cn(
+              "min-h-11 rounded-[9px] px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tonle-600",
+              audience === a ? "bg-white text-tonle-900 shadow-sm ring-1 ring-line" : "text-ink-soft hover:text-ink",
+            )}
+          >
+            {m.audience[a]}
+          </button>
+        ))}
+      </div>
       {composer.open && (
         <NewPlan
+          audience={audience}
           focusOnOpen={composer.requested}
           onClose={composer.hide}
           onCreated={(plan) => {
@@ -75,12 +103,12 @@ export function PlansPage() {
               <ErrorState error={plans.error} onRetry={plans.refetch} />
             </div>
           )}
-          {plans.data && plans.data.length === 0 && (
+          {shown && shown.length === 0 && (
             <div className="px-5 pb-5">
               <EmptyState title={m.none} />
             </div>
           )}
-          {plans.data && plans.data.length > 0 && (
+          {shown && shown.length > 0 && (
             <>
               <div
                 aria-hidden
@@ -93,7 +121,7 @@ export function PlansPage() {
                 <span className="text-right">{m.onIt}</span>
               </div>
               <ul aria-label={m.list} className="divide-y divide-line border-t border-line sm:border-t-0">
-                {plans.data.map((p) => (
+                {shown.map((p) => (
                   <li key={p.plan.id}>
                     <button
                       type="button"
@@ -115,13 +143,13 @@ export function PlansPage() {
                       <span className="hidden text-sm text-ink-soft sm:block">
                         {p.entitlements.map((e) => (
                           <span key={e.key} className="block">
-                            {entitlementLabel(e.key, true)}: {limitText(e.limit)}
+                            {entitlementLabel(e.key, true)}: {limitText(e.limit, e.key)}
                           </span>
                         ))}
                       </span>
                       <span className="hidden text-sm text-ink-soft sm:block">{priceText(p.plan.price) ?? m.notSet}</span>
                       <span className="hidden text-right text-sm text-ink-soft tabular sm:block">
-                        {m.families(p.familiesOnPlan)}
+                        {audience === "SCHOOL" ? m.schools(p.subscribers) : m.families(p.subscribers)}
                       </span>
                     </button>
                   </li>
@@ -133,8 +161,24 @@ export function PlansPage() {
         {selected && <PlanDetail key={selected.plan.id + selected.plan.status} plan={selected} onChanged={plans.refetch} />}
       </div>
 
-      <PlanRequests version={requestsVersion} />
-      <FamilyAccess plans={plans.data ?? []} onFamilyChanged={() => setRequestsVersion((n) => n + 1)} />
+      {audience === "FAMILY" ? (
+        <>
+          <PlanRequests version={requestsVersion} />
+          <FamilyAccess
+            plans={(plans.data ?? []).filter((p) => p.plan.audience === "FAMILY")}
+            onFamilyChanged={() => setRequestsVersion((n) => n + 1)}
+          />
+        </>
+      ) : (
+        <Panel title={m.schoolGrants.title}>
+          <p className="text-sm text-ink-soft">
+            {m.schoolGrants.lead}{" "}
+            <Link to="/admin/schools" className="font-semibold text-tonle-700 underline-offset-2 hover:underline">
+              {m.schoolGrants.open}
+            </Link>
+          </p>
+        </Panel>
+      )}
     </div>
   );
 }
@@ -255,10 +299,12 @@ function PlanBadge({ status }: { status: PlanResponse["plan"]["status"] }) {
 }
 
 function NewPlan({
+  audience,
   onCreated,
   onClose,
   focusOnOpen,
 }: {
+  audience: PlanAudience;
   onCreated: (plan: PlanResponse) => void;
   onClose: () => void;
   focusOnOpen: boolean;
@@ -274,7 +320,7 @@ function NewPlan({
     setBusy(true);
     setError(null);
     try {
-      onCreated(await plansApi.create({ code: code.trim().toUpperCase(), name: name.trim() }));
+      onCreated(await plansApi.create({ code: code.trim().toUpperCase(), name: name.trim(), audience }));
     } catch (err) {
       setError(errorText(err, m.failed));
       setBusy(false);
@@ -282,12 +328,12 @@ function NewPlan({
   }
 
   return (
-    <ComposerPanel title={m.title} onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-2xl">
+    <ComposerPanel title={m.titleFor[audience]} onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-2xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <p className="text-sm text-ink-soft">{m.lead}</p>
+        <p className="text-sm text-ink-soft">{m.leadFor[audience]}</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField
-            label={m.name}
+            label={m.nameFor[audience]}
             value={name}
             maxLength={120}
             required
@@ -319,11 +365,9 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
   const [name, setName] = useState(plan.plan.name);
   const [description, setDescription] = useState(plan.plan.description ?? "");
   const [selfService, setSelfService] = useState(plan.plan.selfService);
-  const [limits, setLimits] = useState<Record<EntitlementKey, number | null>>(
-    Object.fromEntries(KEYS.map((k) => [k, plan.entitlements.find((e) => e.key === k)?.limit ?? null])) as Record<
-      EntitlementKey,
-      number | null
-    >,
+  const KEYS = ENTITLEMENT_KEYS[plan.plan.audience];
+  const [limits, setLimits] = useState<Partial<Record<EntitlementKey, number | null>>>(
+    Object.fromEntries(KEYS.map((k) => [k, plan.entitlements.find((e) => e.key === k)?.limit ?? null])),
   );
   const [amount, setAmount] = useState(
     plan.plan.price ? String(plan.plan.price.amountMinor / 10 ** (currencyDigits(plan.plan.price.currency) ?? 2)) : "",
@@ -390,20 +434,20 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
         <p className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
           <PlanBadge status={plan.plan.status} />
           {plan.plan.isDefault && <span className="font-semibold text-tonle-700">{m.defaultPlan}</span>}
-          <span>{m.subscribed(plan.familiesOnPlan)}</span>
+          <span>{plan.plan.audience === "SCHOOL" ? m.subscribedSchools(plan.subscribers) : m.subscribed(plan.subscribers)}</span>
         </p>
 
         {draft ? (
           <form onSubmit={save} className="flex flex-col gap-4">
             <FormField
-              label={all.create.name}
+              label={all.create.nameFor[plan.plan.audience]}
               value={name}
               maxLength={120}
               required
               onChange={(e) => setName(e.target.value)}
             />
             <TextAreaField
-              label={m.description}
+              label={m.descriptionFor[plan.plan.audience]}
               value={description}
               maxLength={1000}
               onChange={(e) => setDescription(e.target.value)}
@@ -418,16 +462,16 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
                       <input
                         type="checkbox"
                         className="h-4 w-4 accent-tonle-700"
-                        checked={limits[key] === null}
+                        checked={limits[key] == null}
                         onChange={(e) => setLimits({ ...limits, [key]: e.target.checked ? null : 1 })}
                       />
                       {m.noLimit}
                     </label>
                   </div>
-                  {limits[key] !== null && (
+                  {limits[key] != null && (
                     <div className="w-32">
                       <FormField
-                        label={m.upTo(entitlementLabel(key).toLowerCase())}
+                        label={key === "TEACHER_STORAGE_MB" ? m.upToMb : m.upTo(entitlementLabel(key).toLowerCase())}
                         type="number"
                         min={0}
                         value={String(limits[key])}
@@ -471,15 +515,18 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
                 </SelectField>
               </div>
             </details>
-            <label className="flex items-start gap-2 text-sm text-ink">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 accent-tonle-700"
-                checked={selfService}
-                onChange={(e) => setSelfService(e.target.checked)}
-              />
-              {m.selfService}
-            </label>
+            {/* Families ask for self-service plans; a school's plan is arranged by an administrator. */}
+            {plan.plan.audience === "FAMILY" && (
+              <label className="flex items-start gap-2 text-sm text-ink">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 accent-tonle-700"
+                  checked={selfService}
+                  onChange={(e) => setSelfService(e.target.checked)}
+                />
+                {m.selfService}
+              </label>
+            )}
             {error && (
               <p role="alert" className="text-sm font-medium text-brick-deep">
                 {error}
@@ -506,7 +553,7 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
               {plan.entitlements.map((e) => (
                 <div key={e.key} className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
                   <dt className="text-sm text-ink-faint">{entitlementLabel(e.key)}</dt>
-                  <dd className="font-semibold text-ink">{limitText(e.limit)}</dd>
+                  <dd className="font-semibold text-ink">{limitText(e.limit, e.key)}</dd>
                 </div>
               ))}
               <div className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line sm:col-span-2">

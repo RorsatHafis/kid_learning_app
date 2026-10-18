@@ -117,6 +117,95 @@ Owner decisions this leaves open: plan names, prices, currency (USD/KHR), trial 
 limits of a free plan (if any), the provider (e.g. Stripe, ABA PayWay, local wallets), refunds
 and taxes.
 
+### 3.1 School plans and storage (Y35, V59)
+
+**One plan model, two audiences.** A plan's `audience` is FAMILY or SCHOOL. It is fixed when the
+plan is created, and each audience has its own default plan. Every entitlement key belongs to one
+audience (`EntitlementKey.audience()`). A plan only carries its own audience's keys: revising a
+plan with another audience's key is refused (400). A family plan is given only to a family, and
+a school plan only to a school. A parent's plan choices never include school plans.
+
+| Key | Audience | Limits | Counted from | Checked when |
+|---|---|---|---|---|
+| `CHILDREN_MAX` | family | children in the family | ACTIVE `children` | a child is added |
+| `JOURNEYS_PER_CHILD_MAX` | family | journeys a child follows at once | active or paused enrolments | a journey starts |
+| `SCHOOL_CHILDREN_MAX` | school | children the school has access to | ACTIVE `school_child_access` | a family joins a class with a child the school doesn't have yet |
+| `SCHOOL_TEACHERS_MAX` | school | teachers on the staff, invited ones included | `school_staff` ACTIVE or INVITED | a principal invites someone not already invited or on the staff |
+| `SCHOOL_CLASSES_MAX` | school | classes in use | ACTIVE `school_classes` (archived ones free their place) | a class is created or restored |
+| `TEACHER_STORAGE_MB` | school | media each teacher keeps | that teacher's own `content_assets` rows | a teacher uploads a file they don't already keep |
+
+Every limit has a purpose. Places in a school are what a school arrangement is about. Storage is
+the platform's one real cost driver, and only teachers and principals upload.
+
+**School subscriptions** (`school_subscriptions`) mirror family ones: one row per school, with
+the same statuses and sources. `SchoolEntitlementService` resolves school → effective plan →
+limits on every read; without a subscription, the schools' default plan applies. An
+administrator gives, moves or ends a school's plan from the school's page. Each change is
+audited as `SCHOOL_SUBSCRIPTION_*`. A principal sees the plan and what is in use on the school
+home, with no operator note. Checks run under the school's row lock (`SELECT … FOR UPDATE`), so
+two invitations or two joins at once can't both take the last place.
+
+**Storage.**
+- **What counts.** Usage is read from the rows each time, never kept as a counter. An owner's
+  usage is the sum of `size_bytes` over the `content_assets` rows they own. There is one row per
+  owner and file (`uq_content_assets_owner_sha256`), so uploading the same file again takes no
+  more space, and deleting a file frees its size at once. Archived media still counts until it is
+  deleted. Platform media (no owner, authored by administrators) is shared by every learner and
+  counts against no one. Families upload nothing, so they have no storage allowance.
+- **The allowance.** An administrator's exception for that account comes first. Otherwise it is
+  the most generous `TEACHER_STORAGE_MB` among the schools the author works in, as staff or as
+  principal; joining a second school never makes it smaller. An author in no school gets the
+  schools' default plan's value.
+- **Enforcement.** The check runs in `MediaService.uploadAsset`. The upload locks the owner's
+  account row, looks for the owner's copy of the same bytes, and only when there is none checks
+  the allowance. The check comes before anything is written to disk. A refusal is 409 "Storage
+  Limit Reached" with `usedBytes`, `limitBytes` and `neededBytes`, and nothing is stored. Two
+  uploads at once can't both take the last free space: the test checks this over three rounds.
+- **Lowered below what is kept.** After a plan change or a lowered exception, everything stays
+  and keeps working, and can be archived or deleted. Only new uploads wait. The state reads
+  OVER, so it is never hidden.
+- **Feedback.** The media library shows how full storage is and where the allowance comes from.
+  From 80% it shows the warm "nearly full" state, never alarm red, because nothing is lost. It
+  shows what takes the space, with a link to media no question uses. Plan limits never interrupt
+  a child's learning: every check is on an adult's action.
+- **Administration** (Operations → Storage). It shows what is on disk (each file once), platform
+  media, authors' media, and who is nearly full or over. For any author it shows their largest
+  files and lets an administrator set an exception (MB, or no limit). An exception needs a reason
+  and a confirmation step that says nothing kept is removed. Removing it returns the author to
+  the plans' allowance. Each change is audited (`STORAGE_ALLOWANCE_SET` or `_CLEARED`, with
+  before, after, source and note) and shown as that account's history.
+
+**Lifecycle actually supported.**
+- new (the default plan);
+- admin-assigned, open-ended or until a date;
+- period moved;
+- ended (EXPIRED, back to the default);
+- replaced: upgrade or downgrade by giving another plan;
+- RETIRED plans: kept by current subscribers until their subscription ends.
+
+TRIALING, PAST_DUE and CANCELED exist in the schema for a provider, but nothing sets them yet:
+there is no trial or payment flow to drive them (PD-09).
+
+**Payments.** Still none. The `PROVIDER` source and the provider columns are the integration
+point. No screen offers a purchase. School plans are "arranged with the Bookeyond team", and
+families ask for a plan and an administrator answers (Y11).
+
+**Owner decisions (recommendations only, all configurable as data):**
+- **Prices, currency and provider (PD-09).** No price is set anywhere.
+- **Family limits.** Recommendation: keep the family default unlimited until there is a paid
+  plan to compare it with. A free-tier limit belongs with pricing.
+- **School limits.** Recommendation: a pilot plan with places sized per school, given by an
+  administrator. The seeded school default is unlimited for places.
+- **Storage per teacher.** The seeded default is 1024 MB. This is a recommendation, not an
+  approved figure: a typical teacher's pictures and short recordings fit with room to spare,
+  and the per-file limits of 2 MB per picture and 5 MB per recording keep any one upload small.
+- **Pooled storage per school.** Should storage be pooled per school instead of per teacher?
+  Per teacher is simpler and fair with several schools. A pool would need a school-level owner
+  for media, which the content model doesn't have.
+- **Trials.** Should there be trials, and how long? Not built.
+- **Retention.** How long ended subscriptions and their history are kept. Currently forever,
+  as audit.
+
 ## 4. Schools: real class work (PD-01, decided 2026-09-29 under the owner's delegation)
 
 The owner asked for teachers and principals to do real school work and delegated the design.

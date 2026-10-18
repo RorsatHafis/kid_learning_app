@@ -37,6 +37,44 @@ const SCHOOL = { id: "s1", name: "Sunrise Primary", principalAccountId: "p1", ar
 
 const NO_LEARNING = { schoolId: "s1", schoolName: "Sunrise Primary", weeks: 4, classes: [] };
 
+/** GET /schools/{id}/plan: the schools' default plan, nothing limited. */
+function schoolPlan(entitlements: { key: string; limit: number | null; used: number | null }[], onDefaultPlan = true) {
+  return {
+    schoolId: "s1",
+    schoolName: "Sunrise Primary",
+    plan: {
+      id: "sp",
+      code: "SCHOOL_EARLY_ACCESS",
+      name: "School early access",
+      description: null,
+      audience: "SCHOOL",
+      status: "ACTIVE",
+      isDefault: onDefaultPlan,
+      selfService: false,
+      price: null,
+    },
+    onDefaultPlan,
+    subscription: onDefaultPlan
+      ? null
+      : {
+          status: "ACTIVE",
+          source: "ADMIN_GRANT",
+          startedAt: "2026-09-01T00:00:00Z",
+          currentPeriodEnd: null,
+          cancelAtPeriodEnd: false,
+          grantsAccess: true,
+        },
+    entitlements,
+  };
+}
+
+const SCHOOL_PLAN = schoolPlan([
+  { key: "SCHOOL_CHILDREN_MAX", limit: null, used: 0 },
+  { key: "SCHOOL_TEACHERS_MAX", limit: null, used: 0 },
+  { key: "SCHOOL_CLASSES_MAX", limit: null, used: 0 },
+  { key: "TEACHER_STORAGE_MB", limit: 1024, used: null },
+]);
+
 const EMPTY_OVERVIEW = {
   schools: [
     {
@@ -73,6 +111,7 @@ describe("PrincipalHome", () => {
     const calls = server({
       "GET /schools/mine": () => respond(200, created ? [SCHOOL] : []),
       "GET /schools/s1/learning": respond(200, NO_LEARNING),
+      "GET /schools/s1/plan": respond(200, SCHOOL_PLAN),
       "POST /schools": () => {
         created = true;
         return respond(201, SCHOOL);
@@ -118,6 +157,7 @@ describe("PrincipalHome", () => {
     server({
       "GET /schools/mine": respond(200, [SCHOOL]),
       "GET /schools/s1/learning": respond(200, NO_LEARNING),
+      "GET /schools/s1/plan": respond(200, SCHOOL_PLAN),
       "GET /schools/s1/classes": respond(200, []),
       "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, staff),
@@ -156,10 +196,58 @@ describe("PrincipalHome", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("Invitation sent to new@example.com.");
   });
 
+  it("shows the school's plan and what is in use, and the server's reason when a limit is reached", async () => {
+    server({
+      "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/learning": respond(200, NO_LEARNING),
+      "GET /schools/s1/plan": respond(
+        200,
+        schoolPlan(
+          [
+            { key: "SCHOOL_CHILDREN_MAX", limit: 40, used: 12 },
+            { key: "SCHOOL_TEACHERS_MAX", limit: 5, used: 1 },
+            { key: "SCHOOL_CLASSES_MAX", limit: 3, used: 3 },
+            { key: "TEACHER_STORAGE_MB", limit: 1024, used: null },
+          ],
+          false,
+        ),
+      ),
+      "GET /schools/s1/classes": respond(200, []),
+      "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
+      "GET /schools/s1/staff": respond(200, []),
+      "POST /schools/s1/classes": respond(409, {
+        status: 409,
+        title: "Plan Limit Reached",
+        detail: "Your school's plan includes up to 3 classes in use.",
+        entitlement: "SCHOOL_CLASSES_MAX",
+        limit: 3,
+      }),
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PrincipalHome />
+      </MemoryRouter>,
+    );
+
+    const plan = await screen.findByRole("region", { name: "Your school's plan" });
+    expect(await within(plan).findByText("School early access")).toBeInTheDocument();
+    expect(within(plan).getByText(/Arranged with the Bookeyond team on/)).toBeInTheDocument();
+    expect(within(plan).getByRole("meter", { name: "Classes in use" })).toHaveAttribute("aria-valuenow", "3");
+    expect(within(plan).getByText("3 of 3")).toBeInTheDocument();
+    expect(within(plan).getByText("Full: new ones wait until a place is free.")).toBeInTheDocument();
+    expect(within(plan).getByText("1024 MB for each teacher")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("New class"), "Grade 4");
+    await user.click(screen.getByRole("button", { name: "Add class" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your school's plan includes up to 3 classes in use.");
+  });
+
   it("confirms before removing a teacher", async () => {
     const calls = server({
       "GET /schools/mine": respond(200, [SCHOOL]),
       "GET /schools/s1/learning": respond(200, NO_LEARNING),
+      "GET /schools/s1/plan": respond(200, SCHOOL_PLAN),
       "GET /schools/s1/classes": respond(200, []),
       "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, [
@@ -316,6 +404,7 @@ describe("Class lifecycle (X17)", () => {
     server({
       "GET /schools/mine": respond(200, [SCHOOL]),
       "GET /schools/s1/learning": respond(200, NO_LEARNING),
+      "GET /schools/s1/plan": respond(200, SCHOOL_PLAN),
       "GET /schools/s1/classes": respond(200, [
         { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [], archived: false },
         { id: "c9", schoolId: "s1", name: "Last year", teachers: [], archived: true },
@@ -344,6 +433,7 @@ describe("Class lifecycle (X17)", () => {
     const calls = server({
       "GET /schools/mine": () => respond(200, [{ ...SCHOOL, archived }]),
       "GET /schools/s1/learning": respond(200, NO_LEARNING),
+      "GET /schools/s1/plan": respond(200, SCHOOL_PLAN),
       "GET /schools/s1/classes": respond(200, []),
       "GET /schools/s1/staff": respond(200, []),
       "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
@@ -385,6 +475,7 @@ describe("Staff homes (X7)", () => {
     server({
       "GET /schools/mine": respond(200, [SCHOOL]),
       "GET /schools/s1/learning": respond(200, NO_LEARNING),
+      "GET /schools/s1/plan": respond(200, SCHOOL_PLAN),
       "GET /schools/s1/classes": respond(200, [
         { id: "c1", schoolId: "s1", name: "Grade 1A", teachers: [{ accountId: "t1", email: "a@example.com" }] },
         { id: "c2", schoolId: "s1", name: "Grade 2B", teachers: [] },

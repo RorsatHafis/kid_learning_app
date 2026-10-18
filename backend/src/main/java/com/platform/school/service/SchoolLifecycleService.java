@@ -34,10 +34,13 @@ public class SchoolLifecycleService {
     private final AuditService audit;
     private final com.platform.school.repository.SchoolClassRepository classes;
     private final com.platform.school.repository.SchoolRepository schools;
+    private final com.platform.subscription.service.SchoolEntitlementService entitlements;
 
     public SchoolLifecycleService(SchoolAccessGuard guard, ClassJoinCodeRepository codes, AccountRepository accounts, AuditService audit,
                                   com.platform.school.repository.SchoolClassRepository classes,
-                                  com.platform.school.repository.SchoolRepository schools) {
+                                  com.platform.school.repository.SchoolRepository schools,
+                                  com.platform.subscription.service.SchoolEntitlementService entitlements) {
+        this.entitlements = entitlements;
         this.classes = classes;
         this.schools = schools;
         this.guard = guard;
@@ -125,6 +128,8 @@ public class SchoolLifecycleService {
         if (schools.findById(schoolClass.getSchoolId()).map(School::isArchived).orElse(false)) {
             throw new IllegalStateException("Restore the school first.");
         }
+        // Back in use, it takes a class's place in the school's plan (V59).
+        entitlements.requireRoomForClass(schoolClass.getSchoolId());
         schoolClass.restore();
         record(accountId, "CLASS_RESTORED", "SCHOOL_CLASS", classId, Map.of());
         return schoolClass;

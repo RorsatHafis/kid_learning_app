@@ -468,6 +468,10 @@ export interface ApiProblem {
   /** 409 "Plan Limit Reached" only: which entitlement and its limit (PlanLimitException). */
   entitlement?: string;
   limit?: number;
+  /** 409 "Storage Limit Reached" only (StorageLimitException): nothing was stored. */
+  usedBytes?: number;
+  limitBytes?: number;
+  neededBytes?: number;
   correlationId?: string;
   timestamp?: string;
 }

@@ -6,6 +6,7 @@ import { StaffPage } from "./StaffPage";
 import { AccountsPage } from "./operations/AccountsPage";
 import { ActivityPage } from "./operations/ActivityPage";
 import { PlansPage } from "./operations/PlansPage";
+import { StoragePage } from "./operations/StoragePage";
 import { OverviewPage } from "./operations/OverviewPage";
 import { SchoolDetailPage, SchoolsPage } from "./operations/SchoolsPage";
 import { LearningOpsPage } from "./operations/LearningOpsPage";
@@ -49,6 +50,7 @@ export default function AdminArea() {
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="activity" element={<ActivityPage />} />
         <Route path="plans" element={<PlansPage />} />
+        <Route path="storage" element={<StoragePage />} />
         <Route path="schools" element={<SchoolsPage />} />
         <Route path="schools/:schoolId" element={<SchoolDetailPage />} />
         <Route path="learning" element={<LearningOpsPage />} />

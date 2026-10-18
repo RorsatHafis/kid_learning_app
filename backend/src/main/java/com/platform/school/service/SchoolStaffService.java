@@ -66,11 +66,14 @@ public class SchoolStaffService {
     private final ApplicationEventPublisher events;
     private final PlatformMailProperties mail;
     private final SecureRandom random = new SecureRandom();
+    private final com.platform.subscription.service.SchoolEntitlementService entitlements;
 
     public SchoolStaffService(SchoolRepository schools, SchoolClassRepository classes, SchoolStaffRepository staff,
                               TeacherAssignmentRepository assignments, AccountRepository accounts,
                               PasswordEncoder passwordEncoder, AccountRecoveryService recovery,
-                              AuditService auditService, ApplicationEventPublisher events, PlatformMailProperties mail) {
+                              AuditService auditService, ApplicationEventPublisher events, PlatformMailProperties mail,
+                              com.platform.subscription.service.SchoolEntitlementService entitlements) {
+        this.entitlements = entitlements;
         this.schools = schools;
         this.classes = classes;
         this.staff = staff;
@@ -113,6 +116,13 @@ public class SchoolStaffService {
         Instant now = Instant.now();
         String normalized = Account.normalize(email);
         Account account = accounts.findByNormalizedEmail(normalized).orElse(null);
+        // The school's plan (V59): a new teacher takes a place; someone already on the staff or
+        // invited holds theirs, so inviting them again takes none. Checked before any account exists.
+        boolean holdsPlace = account != null && staff.findBySchoolIdAndAccountId(schoolId, account.getId())
+                .map(m -> m.getStatus() == SchoolStaffStatus.ACTIVE || m.getStatus() == SchoolStaffStatus.INVITED).orElse(false);
+        if (!holdsPlace) {
+            entitlements.requireRoomForTeacher(schoolId);
+        }
         boolean newAccount = account == null;
         if (newAccount) {
             byte[] secret = new byte[32];

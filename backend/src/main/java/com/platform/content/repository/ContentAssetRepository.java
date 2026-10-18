@@ -20,6 +20,70 @@ public interface ContentAssetRepository extends JpaRepository<ContentAsset, UUID
     /** Any asset still holding these bytes (the stored file is shared by every owner's copy). */
     boolean existsBySha256(String sha256);
 
+    // ------------------------------------------------------------------ storage (Y35)
+    // Usage is what an owner's rows say: one row per owner and file (uq_content_assets_owner_sha256),
+    // so a file uploaded twice is counted once, and deleting a row frees its size at once.
+
+    /** Bytes an owner keeps (archived media too: it still takes space until it is deleted). */
+    @Query(value = "SELECT COALESCE(SUM(a.size_bytes), 0) FROM content_assets a WHERE a.sha256 IS NOT NULL AND a.owner_account_id = :ownerId",
+            nativeQuery = true)
+    long sumSizeByOwner(@Param("ownerId") UUID ownerId);
+
+    interface StorageSlice {
+        String getAssetType();
+
+        boolean getArchived();
+
+        boolean getUnused();
+
+        long getFiles();
+
+        long getBytes();
+    }
+
+    /** An owner's media by kind, archived or not, and used by content or not (null owner = platform media). */
+    @Query(nativeQuery = true, value = """
+            SELECT a.asset_type AS assetType, (a.archived_at IS NOT NULL) AS archived,
+                   NOT (EXISTS (SELECT 1 FROM question_versions v WHERE v.prompt_image_asset_id = a.id OR v.prompt_audio_asset_id = a.id)
+                        OR EXISTS (SELECT 1 FROM question_options o WHERE o.image_asset_id = a.id OR o.audio_asset_id = a.id)) AS unused,
+                   count(*) AS files, COALESCE(SUM(a.size_bytes), 0) AS bytes
+            FROM content_assets a
+            WHERE a.sha256 IS NOT NULL AND a.owner_account_id IS NOT DISTINCT FROM CAST(:ownerId AS uuid)
+            GROUP BY 1, 2, 3
+            """)
+    java.util.List<StorageSlice> storageSlices(@Param("ownerId") UUID ownerId);
+
+    /** An owner's largest files, the first place to look when space runs short. */
+    @Query(nativeQuery = true, value = """
+            SELECT a.id FROM content_assets a
+            WHERE a.sha256 IS NOT NULL AND a.owner_account_id IS NOT DISTINCT FROM CAST(:ownerId AS uuid)
+            ORDER BY a.size_bytes DESC NULLS LAST, a.created_at DESC LIMIT :limit
+            """)
+    java.util.List<UUID> largestOf(@Param("ownerId") UUID ownerId, @Param("limit") int limit);
+
+    interface OwnerUsage {
+        UUID getOwnerId();
+
+        long getFiles();
+
+        long getBytes();
+    }
+
+    /** Every owner who keeps media, by how much (the platform's own media is the null owner). */
+    @Query(nativeQuery = true, value = """
+            SELECT a.owner_account_id AS ownerId, count(*) AS files, COALESCE(SUM(a.size_bytes), 0) AS bytes
+            FROM content_assets a WHERE a.sha256 IS NOT NULL
+            GROUP BY a.owner_account_id ORDER BY 3 DESC
+            """)
+    java.util.List<OwnerUsage> usageByOwner();
+
+    /** What the files take on disk: each stored file once, however many owners hold it (content-addressed). */
+    @Query(nativeQuery = true, value = """
+            SELECT COALESCE(SUM(size), 0) FROM (SELECT max(a.size_bytes) AS size FROM content_assets a
+            WHERE a.sha256 IS NOT NULL GROUP BY a.sha256) stored
+            """)
+    long storedBytes();
+
     /*
      * The media library (X13): what an author's content may use - platform media, plus their own when
      * they are not an administrator (ownerId null = an administrator, who manages platform media). Every

@@ -6,6 +6,8 @@ import { MediaLibraryPage } from "./MediaLibrary";
 import { QuestionDraftForm } from "./QuestionDraftForm";
 import { studioApi, type MediaItem } from "@/lib/api/studio";
 import type { Page } from "@/lib/api/types";
+import { storageApi } from "@/lib/api/storage";
+import { ApiError } from "@/lib/api/ApiError";
 
 const item = (over: Partial<MediaItem>): MediaItem => ({
   id: "m1",
@@ -84,6 +86,56 @@ describe("MediaLibraryPage", () => {
     await user.click(within(dialog).getByRole("button", { name: "Archive" }));
     expect(archive).toHaveBeenCalledWith("m1");
     expect(await within(dialog).findByRole("status")).toHaveTextContent("questions using it keep it");
+  });
+});
+
+describe("Storage in the media library", () => {
+  it("shows how full the author's storage is, and says why an upload that doesn't fit was refused", async () => {
+    vi.spyOn(studioApi, "mediaLibrary").mockResolvedValue(page([item({})]));
+    const own = vi.spyOn(storageApi, "own").mockResolvedValue({
+      usedBytes: 900 * 1024 * 1024,
+      allowance: { limitMb: 1024, limitBytes: 1024 * 1024 * 1024, source: "SCHOOL_PLAN" },
+      remainingBytes: 124 * 1024 * 1024,
+      state: "NEARLY_FULL",
+      slices: [
+        { type: "IMAGE", archived: false, unused: true, files: 4, bytes: 300 * 1024 * 1024 },
+        { type: "AUDIO", archived: false, unused: false, files: 10, bytes: 600 * 1024 * 1024 },
+      ],
+      largest: [],
+    });
+    vi.spyOn(studioApi, "uploadMedia").mockRejectedValue(
+      new ApiError(409, {
+        type: "about:blank",
+        title: "Storage Limit Reached",
+        status: 409,
+        detail: "Your storage is full: 900 MB of 1024 MB is used, and this file needs 4.5 MB. Remove media you no longer use, or ask for more space.",
+        usedBytes: 900 * 1024 * 1024,
+        limitBytes: 1024 * 1024 * 1024,
+        neededBytes: 4.5 * 1024 * 1024,
+      }),
+    );
+    const user = userEvent.setup();
+    const { container } = render(
+      <MemoryRouter initialEntries={["/admin/media"]}>
+        <MediaLibraryPage />
+      </MemoryRouter>,
+    );
+
+    const storage = await screen.findByRole("region", { name: "Storage" });
+    expect(within(storage).getByText(/900 MB of 1 GB used/)).toBeInTheDocument();
+    expect(within(storage).getByText(/124 MB left/)).toBeInTheDocument();
+    expect(within(storage).getByRole("meter", { name: "Storage" })).toHaveAttribute("aria-valuenow", "88");
+    expect(within(storage).getByRole("status")).toHaveTextContent("Nearly full.");
+    expect(within(storage).getByText(/comes from your school's plan/)).toBeInTheDocument();
+    expect(within(storage).getByRole("link", { name: "Show them" })).toHaveAttribute("href", "/admin/media?show=unused");
+
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await user.upload(input, new File(["x"], "big recording.wav", { type: "audio/wav" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "big recording.wav: Your storage is full: 900 MB of 1024 MB is used, and this file needs 4.5 MB.",
+    );
+    // A refused upload still refreshes what the meter shows.
+    expect(own).toHaveBeenCalledTimes(2);
   });
 });
 

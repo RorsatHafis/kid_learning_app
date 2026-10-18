@@ -3,6 +3,9 @@ package com.platform.subscription.web;
 import com.platform.subscription.entity.BillingInterval;
 import com.platform.subscription.entity.EntitlementKey;
 import com.platform.subscription.entity.FamilySubscription;
+import com.platform.subscription.entity.PlanAudience;
+import com.platform.subscription.entity.SchoolSubscription;
+import com.platform.subscription.service.SchoolEntitlementService;
 import com.platform.subscription.entity.SubscriptionPlan;
 import com.platform.subscription.service.EntitlementService;
 import com.platform.subscription.service.SubscriptionService;
@@ -24,18 +27,20 @@ public final class SubscriptionDtos {
     public record Price(long amountMinor, String currency, BillingInterval interval) {
     }
 
-    public record PlanSummary(UUID id, String code, String name, String description, String status, boolean isDefault,
-                              boolean selfService, Price price) {
+    /** {@code audience}: FAMILY or SCHOOL - who the plan is for (V59). */
+    public record PlanSummary(UUID id, String code, String name, String description, String audience, String status,
+                              boolean isDefault, boolean selfService, Price price) {
 
         static PlanSummary of(SubscriptionPlan plan) {
             Price price = plan.getPriceAmountMinor() == null ? null
                     : new Price(plan.getPriceAmountMinor(), plan.getPriceCurrency(), plan.getBillingInterval());
-            return new PlanSummary(plan.getId(), plan.getCode(), plan.getName(), plan.getDescription(), plan.getStatus().name(),
+            return new PlanSummary(plan.getId(), plan.getCode(), plan.getName(), plan.getDescription(), plan.getAudience().name(),
+                    plan.getStatus().name(),
                     plan.isDefaultPlan(), plan.isSelfService(), price);
         }
     }
 
-    /** {@code limit} null = unlimited; {@code used} only in a family's view. */
+    /** {@code limit} null = unlimited; {@code used} only in a family's or a school's view. */
     public record Entitlement(EntitlementKey key, Integer limit, Integer used) {
     }
 
@@ -46,10 +51,11 @@ public final class SubscriptionDtos {
                 .toList();
     }
 
-    public record PlanResponse(PlanSummary plan, List<Entitlement> entitlements, long familiesOnPlan) {
+    /** {@code subscribers}: the families (family plan) or schools (school plan) whose subscription names it. */
+    public record PlanResponse(PlanSummary plan, List<Entitlement> entitlements, long subscribers) {
 
         static PlanResponse of(SubscriptionService.PlanView view) {
-            return new PlanResponse(PlanSummary.of(view.plan()), entitlementList(view.limits(), null), view.familiesOnPlan());
+            return new PlanResponse(PlanSummary.of(view.plan()), entitlementList(view.limits(), null), view.subscribers());
         }
     }
 
@@ -62,6 +68,12 @@ public final class SubscriptionDtos {
                     subscription.getStartedAt(), subscription.getCurrentPeriodEnd(), subscription.isCancelAtPeriodEnd(),
                     subscription.getNote(), grantsAccess);
         }
+
+        static SubscriptionState of(SchoolSubscription subscription, boolean grantsAccess) {
+            return new SubscriptionState(subscription.getId(), subscription.getStatus().name(), subscription.getSource().name(),
+                    subscription.getStartedAt(), subscription.getCurrentPeriodEnd(), subscription.isCancelAtPeriodEnd(),
+                    subscription.getNote(), grantsAccess);
+        }
     }
 
     /** The family's own view of its subscription: no operator note (it is for administrators only). */
@@ -69,6 +81,11 @@ public final class SubscriptionDtos {
                                        boolean cancelAtPeriodEnd, boolean grantsAccess) {
 
         static OwnSubscriptionState of(FamilySubscription subscription, boolean grantsAccess) {
+            return new OwnSubscriptionState(subscription.getStatus().name(), subscription.getSource().name(),
+                    subscription.getStartedAt(), subscription.getCurrentPeriodEnd(), subscription.isCancelAtPeriodEnd(), grantsAccess);
+        }
+
+        static OwnSubscriptionState of(SchoolSubscription subscription, boolean grantsAccess) {
             return new OwnSubscriptionState(subscription.getStatus().name(), subscription.getSource().name(),
                     subscription.getStartedAt(), subscription.getCurrentPeriodEnd(), subscription.isCancelAtPeriodEnd(), grantsAccess);
         }
@@ -133,8 +150,35 @@ public final class SubscriptionDtos {
         }
     }
 
+    /** {@code audience} defaults to FAMILY; it can't change once the plan exists. */
     public record CreatePlanRequest(@NotBlank @Size(max = 60) String code, @NotBlank @Size(max = 120) String name,
-                                    @Size(max = 1000) String description) {
+                                    @Size(max = 1000) String description, PlanAudience audience) {
+    }
+
+    /** A school's plan as its principal sees it: no operator note. */
+    public record OwnSchoolPlanResponse(UUID schoolId, String schoolName, PlanSummary plan, boolean onDefaultPlan,
+                                        OwnSubscriptionState subscription, List<Entitlement> entitlements) {
+
+        public static OwnSchoolPlanResponse of(SubscriptionService.SchoolView view) {
+            SchoolEntitlementService.SchoolPlan effective = view.effective();
+            return new OwnSchoolPlanResponse(view.schoolId(), view.schoolName(), PlanSummary.of(effective.plan()),
+                    !effective.fromSubscription(),
+                    effective.subscription().map(s -> OwnSubscriptionState.of(s, effective.fromSubscription())).orElse(null),
+                    entitlementList(effective.limits(), view.usage()));
+        }
+    }
+
+    /** A school's plan as an operator sees it. */
+    public record SchoolPlanResponse(UUID schoolId, String schoolName, PlanSummary plan, boolean onDefaultPlan,
+                                     SubscriptionState subscription, List<Entitlement> entitlements) {
+
+        public static SchoolPlanResponse of(SubscriptionService.SchoolView view) {
+            SchoolEntitlementService.SchoolPlan effective = view.effective();
+            return new SchoolPlanResponse(view.schoolId(), view.schoolName(), PlanSummary.of(effective.plan()),
+                    !effective.fromSubscription(),
+                    effective.subscription().map(s -> SubscriptionState.of(s, effective.fromSubscription())).orElse(null),
+                    entitlementList(effective.limits(), view.usage()));
+        }
     }
 
     /** {@code limits}: every key to set; a null value is unlimited. */

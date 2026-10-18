@@ -131,8 +131,9 @@ export async function expectNoViolations(page: Page, screen: string) {
  * one the family decides later and the child starts with no subjects.
  */
 export async function addChild(page: Page, name: string, dateOfBirth: string, subject?: RegExp | string) {
-  // Called right after signing up: let the sign-up land in the family space before moving on.
-  await page.waitForURL(/\/parent(\/|\?|$)/);
+  // Called right after signing up: let the sign-up land in the family space before moving on
+  // (navigating away would cancel it). From anywhere else, go to the family home.
+  if (new URL(page.url()).pathname.startsWith("/register")) await page.waitForURL(/\/parent(\/|\?|$)/);
   if (new URL(page.url()).pathname !== "/parent") await page.goto("/parent");
   await page.getByRole("link", { name: /^(Add your first child|Add a child)/ }).first().click();
   await page.getByLabel("Name").fill(name);

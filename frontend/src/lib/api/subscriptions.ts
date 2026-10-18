@@ -5,8 +5,16 @@ import { apiMessages } from "./messages";
 
 // ---- subscription/web/SubscriptionDtos.java ----
 
-/** The product's levers (subscription/entity/EntitlementKey.java). */
-export type EntitlementKey = "CHILDREN_MAX" | "JOURNEYS_PER_CHILD_MAX";
+/** The product's levers (subscription/entity/EntitlementKey.java); each belongs to one audience. */
+export type FamilyEntitlementKey = "CHILDREN_MAX" | "JOURNEYS_PER_CHILD_MAX";
+export type SchoolEntitlementKey = "SCHOOL_CHILDREN_MAX" | "SCHOOL_TEACHERS_MAX" | "SCHOOL_CLASSES_MAX" | "TEACHER_STORAGE_MB";
+export type EntitlementKey = FamilyEntitlementKey | SchoolEntitlementKey;
+/** Who a plan is for (V59): a family's plan or a school's. */
+export type PlanAudience = "FAMILY" | "SCHOOL";
+export const ENTITLEMENT_KEYS: Record<PlanAudience, EntitlementKey[]> = {
+  FAMILY: ["CHILDREN_MAX", "JOURNEYS_PER_CHILD_MAX"],
+  SCHOOL: ["SCHOOL_CHILDREN_MAX", "SCHOOL_TEACHERS_MAX", "SCHOOL_CLASSES_MAX", "TEACHER_STORAGE_MB"],
+};
 export type PlanStatus = "DRAFT" | "ACTIVE" | "RETIRED";
 export type BillingInterval = "MONTH" | "YEAR";
 export type SubscriptionStatus = "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
@@ -23,6 +31,7 @@ export interface PlanSummary {
   code: string;
   name: string;
   description: string | null;
+  audience: PlanAudience;
   status: PlanStatus;
   isDefault: boolean;
   selfService: boolean;
@@ -30,7 +39,7 @@ export interface PlanSummary {
   price: Price | null;
 }
 
-/** `limit` null = unlimited; `used` only in a family's view. */
+/** `limit` null = unlimited (TEACHER_STORAGE_MB is in MB); `used` only in a family's or school's view. */
 export interface Entitlement {
   key: EntitlementKey;
   limit: number | null;
@@ -40,7 +49,8 @@ export interface Entitlement {
 export interface PlanResponse {
   plan: PlanSummary;
   entitlements: Entitlement[];
-  familiesOnPlan: number;
+  /** Families (family plan) or schools (school plan) whose subscription names it. */
+  subscribers: number;
 }
 
 /** An operator's view; `id` is the audit log's resource for this subscription. */
@@ -94,6 +104,22 @@ export interface PlanRequestRow {
   planName: string;
   requestedAt: string;
 }
+
+/** A school's plan: `GET /schools/{id}/plan` (its principal; no operator note) or the admin's view. */
+export interface SchoolPlan {
+  schoolId: string;
+  schoolName: string;
+  plan: PlanSummary;
+  /** No subscription grants a plan now, so the schools' default plan applies. */
+  onDefaultPlan: boolean;
+  subscription: SubscriptionState | null;
+  /** `used`: what the school holds now (storage is per teacher, so TEACHER_STORAGE_MB has none). */
+  entitlements: Entitlement[];
+}
+
+export type OwnSchoolPlan = Omit<SchoolPlan, "subscription"> & {
+  subscription: Omit<SubscriptionState, "id" | "note"> | null;
+};
 
 export interface FamilyAccountSummary {
   familyId: string;
@@ -150,7 +176,8 @@ export const planRequestsApi = {
 
 export const plansApi = {
   list: () => apiClient.get<PlanResponse[]>("/admin/plans"),
-  create: (body: { code: string; name: string; description?: string }) => apiClient.post<PlanResponse>("/admin/plans", body),
+  create: (body: { code: string; name: string; description?: string; audience?: PlanAudience }) =>
+    apiClient.post<PlanResponse>("/admin/plans", body),
   revise: (
     planId: string,
     body: {
@@ -160,7 +187,7 @@ export const plansApi = {
       priceAmountMinor: number | null;
       priceCurrency: string | null;
       billingInterval: BillingInterval | null;
-      limits: Record<EntitlementKey, number | null>;
+      limits: Partial<Record<EntitlementKey, number | null>>;
     },
   ) => apiClient.put<PlanResponse>(`/admin/plans/${planId}`, body),
   activate: (planId: string) => apiClient.post<PlanResponse>(`/admin/plans/${planId}/activate`),
@@ -175,4 +202,17 @@ export const plansApi = {
     apiClient.put<FamilyAccountSummary>(`/admin/families/${familyId}/subscription/period`, { periodEnd, reason }),
   end: (familyId: string, reason: string) =>
     apiClient.post<FamilyAccountSummary>(`/admin/families/${familyId}/subscription/end`, { reason }),
+};
+
+/** A school's plan: the administrator gives, moves or ends it; the principal reads it. */
+export const schoolPlansApi = {
+  own: (schoolId: string) => apiClient.get<OwnSchoolPlan>(`/schools/${schoolId}/plan`),
+  get: (schoolId: string) => apiClient.get<SchoolPlan>(`/admin/schools/${schoolId}/subscription`),
+  grant: (schoolId: string, body: { planId: string; periodEnd: string | null; note: string | null }) =>
+    apiClient.post<SchoolPlan>(`/admin/schools/${schoolId}/subscription`, body),
+  /** `periodEnd` null = open-ended. */
+  changePeriod: (schoolId: string, periodEnd: string | null, reason: string) =>
+    apiClient.put<SchoolPlan>(`/admin/schools/${schoolId}/subscription/period`, { periodEnd, reason }),
+  end: (schoolId: string, reason: string) =>
+    apiClient.post<SchoolPlan>(`/admin/schools/${schoolId}/subscription/end`, { reason }),
 };

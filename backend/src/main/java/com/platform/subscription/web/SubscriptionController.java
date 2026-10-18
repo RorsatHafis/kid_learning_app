@@ -32,7 +32,11 @@ public class SubscriptionController {
 
     private final PlanRequestService planRequests;
 
-    public SubscriptionController(SubscriptionService service, PlanRequestService planRequests) {
+    private final com.platform.school.service.SchoolAccessGuard schoolGuard;
+
+    public SubscriptionController(SubscriptionService service, PlanRequestService planRequests,
+                                  com.platform.school.service.SchoolAccessGuard schoolGuard) {
+        this.schoolGuard = schoolGuard;
         this.service = service;
         this.planRequests = planRequests;
     }
@@ -86,7 +90,8 @@ public class SubscriptionController {
     public ResponseEntity<SubscriptionDtos.PlanResponse> createPlan(@AuthenticationPrincipal UUID adminId,
                                                                     @Valid @RequestBody SubscriptionDtos.CreatePlanRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(SubscriptionDtos.PlanResponse.of(service.createPlan(adminId, request.code(), request.name(), request.description())));
+                .body(SubscriptionDtos.PlanResponse.of(service.createPlan(adminId, request.code(), request.name(), request.description(),
+                        request.audience() == null ? com.platform.subscription.entity.PlanAudience.FAMILY : request.audience())));
     }
 
     @PutMapping("/api/v1/admin/plans/{planId}")
@@ -135,5 +140,37 @@ public class SubscriptionController {
     public SubscriptionDtos.FamilyResponse end(@AuthenticationPrincipal UUID adminId, @PathVariable UUID familyId,
                                                @Valid @RequestBody SubscriptionDtos.EndRequest request) {
         return SubscriptionDtos.FamilyResponse.of(service.end(adminId, familyId, request.reason()));
+    }
+
+    // ------------------------------------------------------------------ schools (V59)
+
+    /** The school's plan and what it holds, for its principal (or an administrator). */
+    @GetMapping("/api/v1/schools/{schoolId}/plan")
+    public SubscriptionDtos.OwnSchoolPlanResponse schoolPlan(@AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId) {
+        schoolGuard.requireSchoolManage(accountId, schoolId);
+        return SubscriptionDtos.OwnSchoolPlanResponse.of(service.schoolView(schoolId));
+    }
+
+    @GetMapping("/api/v1/admin/schools/{schoolId}/subscription")
+    public SubscriptionDtos.SchoolPlanResponse adminSchoolPlan(@AuthenticationPrincipal UUID adminId, @PathVariable UUID schoolId) {
+        return SubscriptionDtos.SchoolPlanResponse.of(service.adminSchoolView(adminId, schoolId));
+    }
+
+    @PostMapping("/api/v1/admin/schools/{schoolId}/subscription")
+    public SubscriptionDtos.SchoolPlanResponse grantSchool(@AuthenticationPrincipal UUID adminId, @PathVariable UUID schoolId,
+                                                           @Valid @RequestBody SubscriptionDtos.GrantRequest request) {
+        return SubscriptionDtos.SchoolPlanResponse.of(service.grantSchool(adminId, schoolId, request.planId(), request.periodEnd(), request.note()));
+    }
+
+    @PutMapping("/api/v1/admin/schools/{schoolId}/subscription/period")
+    public SubscriptionDtos.SchoolPlanResponse changeSchoolPeriod(@AuthenticationPrincipal UUID adminId, @PathVariable UUID schoolId,
+                                                                  @Valid @RequestBody SubscriptionDtos.PeriodRequest request) {
+        return SubscriptionDtos.SchoolPlanResponse.of(service.changeSchoolPeriodEnd(adminId, schoolId, request.periodEnd(), request.reason()));
+    }
+
+    @PostMapping("/api/v1/admin/schools/{schoolId}/subscription/end")
+    public SubscriptionDtos.SchoolPlanResponse endSchool(@AuthenticationPrincipal UUID adminId, @PathVariable UUID schoolId,
+                                                         @Valid @RequestBody SubscriptionDtos.EndRequest request) {
+        return SubscriptionDtos.SchoolPlanResponse.of(service.endSchool(adminId, schoolId, request.reason()));
     }
 }

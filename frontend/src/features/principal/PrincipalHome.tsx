@@ -9,6 +9,7 @@ import { staffOverviewApi, type ClassOverview, type SchoolOverview, type StaffOv
 import { ClassSummary } from "@/features/school/ClassSummary";
 import { ArchivedSchoolNotice, ManageSchoolButton } from "@/features/school/ClassLifecycle";
 import { SchoolLearningSection } from "./SchoolLearningSection";
+import { PrincipalSchoolPlan } from "@/features/school/SchoolPlanCard";
 import type { SchoolClassWithTeachers } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
@@ -22,6 +23,8 @@ export function PrincipalHome() {
   const schools = useAsync(() => schoolApi.mySchools(), []);
   const overview = useAsync(() => staffOverviewApi.get(), []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Adding a class or inviting a teacher changes what the school's plan shows as in use.
+  const [planVersion, setPlanVersion] = useState(0);
   const m = useMessages(staffMessages).principal;
   useDocumentTitle((schools.data?.find((s) => s.id === selectedId) ?? schools.data?.[0])?.name ?? (schools.data ? m.setUpTitle : null));
 
@@ -64,9 +67,17 @@ export function PrincipalHome() {
       {overview.data && <AtAGlance school={overview.data.schools.find((s) => s.schoolId === school.id)} />}
       <SchoolLearningSection key={school.id} schoolId={school.id} />
       <div className="grid gap-10 xl:grid-cols-2 xl:items-start xl:gap-8">
-        <Classes school={school} overview={overview.data} onChanged={overview.refetch} />
-        <Teachers school={school} />
+        <Classes
+          school={school}
+          overview={overview.data}
+          onChanged={() => {
+            overview.refetch();
+            setPlanVersion((v) => v + 1);
+          }}
+        />
+        <Teachers school={school} onChanged={() => setPlanVersion((v) => v + 1)} />
       </div>
+      <PrincipalSchoolPlan schoolId={school.id} version={planVersion} />
     </div>
   );
 }
@@ -287,7 +298,7 @@ const STATUS: Record<SchoolStaffMember["status"], { label: (m: SchoolStaffMember
   REMOVED: { label: () => words().removed, className: "text-ink-soft" },
 };
 
-function Teachers({ school }: { school: SchoolSummary }) {
+function Teachers({ school, onChanged }: { school: SchoolSummary; onChanged: () => void }) {
   const staff = useAsync(() => schoolApi.staff(school.id), [school.id]);
   const [email, setEmail] = useState("");
   const [inviting, setInviting] = useState(false);
@@ -303,6 +314,7 @@ function Teachers({ school }: { school: SchoolSummary }) {
       setNotice({ kind: "ok", text: w.invitationSent(address) });
       setEmail("");
       staff.refetch();
+      onChanged();
     } catch (err) {
       setNotice({ kind: "error", text: problemMessage(err, w.inviteFailed) });
     } finally {
@@ -316,6 +328,7 @@ function Teachers({ school }: { school: SchoolSummary }) {
       await schoolApi.removeStaff(school.id, member.id);
       setConfirmingRemove(null);
       staff.refetch();
+      onChanged();
     } catch (err) {
       setNotice({ kind: "error", text: problemMessage(err, w.removeFailed) });
     }

@@ -170,6 +170,8 @@ test.describe("accessibility @phone", () => {
       ["/admin/accounts", "accounts"],
       ["/admin/activity", "activity log"],
       ["/admin/plans", "plans"],
+      ["/admin/plans?for=schools", "school plans"],
+      ["/admin/storage", "storage"],
     ] as const) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");

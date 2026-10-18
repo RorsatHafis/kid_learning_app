@@ -91,6 +91,7 @@ public class PlanRequestService {
         UUID familyId = familyOf(accountId);
         families.findByIdForUpdate(familyId).orElseThrow(() -> new ResourceNotFoundException("Family", familyId));
         SubscriptionPlan plan = plans.findById(planId)
+                .filter(p -> p.getAudience() == com.platform.subscription.entity.PlanAudience.FAMILY)
                 .filter(p -> p.getStatus() == PlanStatus.ACTIVE && p.isSelfService())
                 .orElseThrow(() -> new ResourceNotFoundException("Plan", planId));
         if (entitlements.effectivePlan(familyId).plan().getId().equals(planId)) {

@@ -11,6 +11,7 @@ import { Panel } from "../studio/shared";
 import { cn } from "@/lib/utils/cn";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { adminMessages } from "../messages";
+import { SchoolPlanPanel } from "./SchoolPlanPanel";
 
 /** Archived by its principal (PD-26, Y17): it takes nothing new, so it has nothing left to set up. */
 const isArchived = (school: AdminSchoolRow) => school.status === "ARCHIVED";
@@ -173,6 +174,7 @@ export function SchoolDetailPage() {
           </Panel>
         </div>
       )}
+      {data && <SchoolPlanPanel schoolId={schoolId} />}
     </div>
   );
 }

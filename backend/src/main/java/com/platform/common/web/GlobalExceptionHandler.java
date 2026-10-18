@@ -216,6 +216,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(com.platform.content.media.StorageLimitException.class)
+    public ResponseEntity<Object> handleStorageLimit(com.platform.content.media.StorageLimitException ex, WebRequest request) {
+
+        // Y35: an upload that doesn't fit the author's storage allowance. Nothing was stored; the
+        // numbers let the studio show how full it is and what the file needed.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Storage Limit Reached");
+        problem.setProperty("usedBytes", ex.getUsedBytes());
+        problem.setProperty("limitBytes", ex.getLimitBytes());
+        problem.setProperty("neededBytes", ex.getNeededBytes());
+
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
+
+    }
+
     @ExceptionHandler(IncompleteQuestionException.class)
     public ResponseEntity<Object> handleIncompleteQuestion(IncompleteQuestionException ex, WebRequest request) {
 

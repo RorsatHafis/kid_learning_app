@@ -254,3 +254,27 @@ Uncertain throughout: whether the parent-facing lines read naturally (they were 
 English closely), and whether មិត្តរៀន is the right word for a Learning Buddy. The landing page's
 school capabilities are product claims and must stay true to what the product does - a reviewer
 should change wording, not meaning.
+
+# Y35 additions (plans for schools and storage, 2026-10-16)
+
+All Claude-drafted, none native-reviewed (PD-14). The English is the reference. Most of these are
+for staff (principals, teachers, administrators). None of them is shown to a child.
+
+- `frontend/src/features/school/plan.messages.ts`: the principal's "Your school's plan" card
+  (where the plan comes from, usage "N of M", Full/Over/Nearly full, "nothing is removed").
+- `frontend/src/features/admin/studio/storage.messages.ts`: the storage meter in the media
+  library (allowance sources, full/over states, what takes the space).
+- `frontend/src/features/admin/operations/storage.messages.ts`: the administrator's Storage page
+  and allowance exceptions.
+- `frontend/src/features/admin/operations/schoolPlan.messages.ts`: giving, moving and ending a
+  school's plan.
+- `frontend/src/features/admin/operations/plans.messages.ts`: the For families / For schools
+  tabs, school plan wording.
+- `frontend/src/lib/api/messages.ts`: names of the four school limits.
+- `frontend/src/features/admin/operations/auditCodes.ts`: SCHOOL_SUBSCRIPTION_*,
+  STORAGE_ALLOWANCE_*.
+- `backend/src/main/java/com/platform/common/web/ServerText.java`: the school limit messages and
+  "Your storage is full: …" (pattern rules keep the numbers).
+
+Uncertain: whether កន្លែងផ្ទុក is the right word for storage in this sense, and whether "arranged with
+the Bookeyond team" (បានរៀបចំជាមួយក្រុម Bookeyond) reads naturally.
