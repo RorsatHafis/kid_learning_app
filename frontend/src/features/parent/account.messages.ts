@@ -5,6 +5,7 @@ export const accountMessages = defineMessages(
   "features/parent/account",
   {
     title: "Account",
+    onThisPage: "On this page",
     lead: "Your sign-in details, security and data.",
     details: "Your details",
     detailsSub: "The address you sign in with.",
@@ -102,6 +103,7 @@ export const accountMessages = defineMessages(
   },
   {
     title: "គណនី",
+    onThisPage: "នៅលើទំព័រនេះ",
     lead: "ព័ត៌មានចូលគណនី សុវត្ថិភាព និងទិន្នន័យរបស់អ្នក។",
     details: "ព័ត៌មានរបស់អ្នក",
     detailsSub: "អាសយដ្ឋានដែលអ្នកប្រើដើម្បីចូលគណនី។",

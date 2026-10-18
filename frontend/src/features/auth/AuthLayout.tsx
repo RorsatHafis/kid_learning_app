@@ -24,7 +24,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
         <RiverGarden crop="bottom" bloom={0.4} className="absolute inset-0" />
         <div className="absolute bottom-10 left-10 hidden max-w-sm items-end gap-3 lg:flex">
           <LearningBuddy mood="happy" size={112} className="-mb-2 shrink-0" />
-          <p className="rounded-[22px] bg-white/92 px-6 py-4 font-display text-[1.9rem] font-bold leading-[1.1] text-tonle-950 shadow-lift">
+          <p className="rounded-[22px] bg-white/95 px-6 py-4 font-display text-[1.9rem] font-bold leading-[1.1] text-tonle-950 shadow-lift">
             {m.motto}
             <br />
             {m.motto2}

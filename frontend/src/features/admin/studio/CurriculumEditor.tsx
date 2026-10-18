@@ -349,7 +349,7 @@ function JourneyBuilder({
                 <select
                   value={toAdd}
                   onChange={(e) => setToAdd(e.target.value)}
-                  className="h-11 rounded-[10px] border border-line-strong bg-white px-3 text-sm font-normal text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+                  className="h-11 rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white px-3 text-sm font-normal text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
                 >
                   <option value="">{m.chooseObjective}</option>
                   {available.map((o) => (

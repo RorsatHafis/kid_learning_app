@@ -46,6 +46,35 @@ export function AccountPage() {
         <p className="text-[1.0625rem] text-ink-soft">{m.lead}</p>
       </header>
 
+      {/* Y38: a long page gets an index - each topic one click away on wide screens. */}
+      <div className="grid gap-8 xl:grid-cols-[200px_minmax(0,1fr)] xl:items-start">
+      <nav aria-label={m.onThisPage} className="hidden xl:sticky xl:top-24 xl:block">
+        <p className="mb-2 px-3 text-[0.8125rem] font-semibold text-ink-faint">{m.onThisPage}</p>
+        <ul className="flex flex-col gap-0.5 border-l border-line">
+          {[
+            { id: "profile", label: m.details },
+            { id: "language", label: m.language.title },
+            { id: "password", label: m.password.title },
+            { id: "devices", label: m.devices.title },
+            ...(profile.data?.platformRole === "PARENT"
+              ? [
+                  { id: "plan", label: m.plan.title },
+                  { id: "your-data", label: m.data.title },
+                  { id: "delete-account", label: m.deletion.title },
+                ]
+              : []),
+          ].map((item) => (
+            <li key={item.id}>
+              <a
+                href={`#${item.id}`}
+                className="-ml-px block border-l-2 border-transparent px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors duration-150 hover:border-tonle-300 hover:text-tonle-950"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
       <div className="divide-y divide-line overflow-hidden rounded-paper bg-white shadow-card">
         <SettingsRow id="profile" title={m.details} subtitle={m.detailsSub}>
           {profile.isLoading && !profile.data && <LoadingState label={m.loadingAccount} />}
@@ -86,6 +115,7 @@ export function AccountPage() {
           </SettingsRow>
         )}
       </div>
+      </div>
     </div>
   );
 }
@@ -93,7 +123,7 @@ export function AccountPage() {
 /** One settings topic: what it is on the left, the controls on the right. */
 function SettingsRow({ id, title, subtitle, children }: { id: string; title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className="grid gap-5 px-6 py-8 sm:px-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-12">
+    <section aria-labelledby={id} className="scroll-mt-24 grid gap-5 px-6 py-8 sm:px-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
       <div>
         <h2 id={id} className="font-display text-lg font-semibold text-tonle-950">
           {title}

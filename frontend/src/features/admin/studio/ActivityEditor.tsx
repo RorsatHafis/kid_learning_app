@@ -150,7 +150,7 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
                     id="add-activity-skill"
                     value={skillToAdd}
                     onChange={(e) => setSkillToAdd(e.target.value)}
-                    className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
+                    className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-10 px-3 text-sm text-ink"
                   >
                     <option value="">{m.addSkillMenu}</option>
                     {available.map((s) => (
@@ -370,7 +370,7 @@ function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail
         {items.length === 0 && <p className="text-sm text-ink-soft">{m.noQuestions}</p>}
         <ol className="flex flex-col gap-2">
           {items.map((item, index) => (
-            <li key={item.questionVersionId} className="flex items-start gap-2 rounded-[10px] border border-line-strong p-3">
+            <li key={item.questionVersionId} className="flex items-start gap-2 rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] p-3">
               <span className="mt-0.5 w-6 shrink-0 text-sm font-bold text-ink-soft">{index + 1}.</span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-ink">{item.prompt}</span>
@@ -403,7 +403,7 @@ function ItemsEditor({ version, busy, onSave }: { version: ActivityVersionDetail
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={m.searchQuestions}
-            className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+            className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-10 px-3 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
           />
           {questions.isLoading && !questions.data && <p className="text-sm text-ink-soft">{m.loadingQuestions}</p>}
           {questions.error && <ErrorState error={questions.error} onRetry={questions.refetch} />}

@@ -70,7 +70,7 @@ export function StoragePage() {
                   <select
                     value={attentionOnly ? "attention" : ""}
                     onChange={(e) => update({ show: e.target.value || undefined })}
-                    className="min-h-11 rounded-[10px] border border-line-strong bg-white px-3 py-2 text-sm focus:border-tonle-600 focus:outline-none focus:ring-2 focus:ring-tonle-600/15"
+                    className="min-h-11 rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white px-3 py-2 text-sm focus:border-tonle-600 focus:outline-none focus:ring-2 focus:ring-tonle-600/15"
                   >
                     <option value="">{m.showAll}</option>
                     <option value="attention">{m.showAttention}</option>

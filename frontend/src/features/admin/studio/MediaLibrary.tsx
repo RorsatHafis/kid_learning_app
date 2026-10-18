@@ -105,7 +105,7 @@ export function MediaLibraryPage() {
           <select
             value={show}
             onChange={(e) => update({ show: e.target.value || undefined })}
-            className="rounded-[10px] border border-line-strong bg-white px-3 py-2 text-sm focus:border-tonle-600 focus:outline-none focus:ring-2 focus:ring-tonle-600/15"
+            className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white px-3 py-2 text-sm focus:border-tonle-600 focus:outline-none focus:ring-2 focus:ring-tonle-600/15"
           >
             <option value="">{m.inLibrary}</option>
             <option value="unused">{m.unused}</option>

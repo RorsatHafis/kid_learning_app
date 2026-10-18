@@ -106,7 +106,7 @@ export function PrincipalClassPage() {
                   <select
                     value={selected}
                     onChange={(e) => setSelected(e.target.value)}
-                    className="rounded-[10px] border border-line-strong px-4 py-3 text-sm font-normal text-ink focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+                    className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] px-4 py-3 text-sm font-normal text-ink focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
                   >
                     <option value="">{m.chooseTeacher}</option>
                     {assignable.map((m) => (

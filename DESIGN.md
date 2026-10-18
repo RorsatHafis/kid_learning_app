@@ -13,15 +13,15 @@ colors:
   tonle-800: "#154049"
   tonle-900: "#10323A"
   tonle-950: "#0A2127"
-  ink: "#172B2E"
-  ink-soft: "#46595B"
-  ink-faint: "#5B6C6E"
-  paper: "#F4F6F1"
+  ink: "#162A2D"
+  ink-soft: "#43575A"
+  ink-faint: "#556568"
+  paper: "#F6F3EC"
   paper-raised: "#FFFFFF"
-  paper-sunk: "#E8EEE6"
+  paper-sunk: "#ECE7DC"
   child-ground: "#E7F1EC"
-  line: "#DCE4DA"
-  line-strong: "#C2CEC0"
+  line: "#E3DDD0"
+  line-strong: "#CBC3B2"
   light: "#F2A93B"
   light-soft: "#FCEED3"
   light-glow: "#FFD27A"
@@ -184,7 +184,8 @@ and heading.
 - **Brick** (#C2412F / deep #9E2F20): errors and destructive actions only.
 
 ### Neutral
-- **Ink** (#172B2E), **Ink Soft** (#46595B, 6.8:1 on paper), **Ink Faint** (#5B6C6E, 5.1:1 on paper and at least 4.7:1 on every light ground, paper-sunk included).
+- **Ink** (#162A2D), **Ink Soft** (#43575A, 6.9:1 on paper), **Ink Faint** (#556568, 5.3:1 on paper and 4.7:1 on paper-sunk).
+- **Paper (Y38):** a warm rice-paper ivory, #F6F3EC (was a celadon #F4F6F1), with warm hairlines (#E3DDD0, strong #CBC3B2). The river teal and the marigold read as fine print on it, not as app chrome. White sheets sit on it with the **card** depth: a hairline, a close shadow and a long soft one.
 - **Rice Paper** (#F4F6F1) is the page ground. **Raised** (#FFFFFF) is for sheets and panels. **Sunk** (#E8EEE6) is for wells. **Child Ground** (#E7F1EC) sits behind the scene.
 - **Line** (#DCE4DA) divides; **Line Strong** (#C2CEC0) strokes fields.
 
@@ -252,14 +253,15 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
 ## Components
 
 ### Buttons
-- **Shape:** an adult rounded rectangle (12px; sm 10px, lg 14px).
-- **Solid:** Deep River fill, white text, 44px tall.
+- **Shape (Y38):** every adult action is a pill: sm 36px, md 44px, lg 52px. Labels may wrap (no `nowrap`), so long Khmer labels grow in height instead of clipping.
+- **Solid:** tonle-900 fill, white text, a lit top edge and a short drop (`shadow-button`).
+- **Accent:** the marigold invitation, used once per page where a visitor or family starts something (the landing's "Start as a family").
 - **Outline / Ghost:** white with a line-strong ring, or text-only tonle-700.
 - **Child "go":** a Marigold pill, 64px, tonle-950 text, with a key-press shadow. **Child "quiet":** a white pill, 56px, tonle-800 text.
 - **Focus:** a 2px River Link outline at a 3px offset (global `:focus-visible`), on every surface including the child space and the staff rail. Only `.on-night` surfaces (the landing footer) use Marigold Glow `#FFD27A`.
 
 ### Inputs / Fields
-- **Style:** white, 48px, 12px radius, 1px line-strong inset ring. Hover: tonle-300. Focus: 2px tonle-600.
+- **Style:** white, 48px, 14px radius, 1px line-strong inset ring, a faint inner shadow (a well, not a box). Hover: tonle-300. Focus: 2px tonle-600 with a soft 4px halo.
 - **Error:** a 2px brick ring, with the message in brick-deep beside an icon, linked by aria-describedby.
 
 ### Cards / Containers
@@ -279,12 +281,15 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
 
 ### Navigation
 - **Family:** a white sticky bar with text links and a 2px underline indicator, on a cream ground. A child's page has sections as link tabs on a cream track: Overview (learning plan, what changed, insights), Skills & progress (skills, recent activity), School & settings (class codes, the child's own space, deletion).
-- **Staff:** a white rail with a 4px band and a name chip in the workspace's accent, sentence-case section labels and nav items (10px radius; the active item is the accent's soft ground with a 3px inset bar). Account and log out sit at the foot. Sub-pages carry a slash breadcrumb ("Classes / Grade 1 A").
+- **Staff (Y38):** a deep-river rail (tonle-950) with the paper lockup and a 3px band in the workspace's accent (teaching sky, school leaf, operations marigold). Nav text is tonle-100 and labels tonle-300 (>= 8:1). The active item is a 9% white ground with a 3px inset bar and icon in the accent. The phone bar is the same night. Focus on the rail is the night ring, Marigold Glow. Work sits on warm paper in white **card** sheets with 20px radius. Page titles are Alegreya 2.5rem bold. Sub-pages carry a slash breadcrumb ("Classes / Grade 1 A").
+- **Brand lockup (Y38):** "Bookeyond" in Alegreya 760, with "Kid" as a marigold tag beside it. The product reads as Bookeyond's, for children. The pictorial mark is the product's own until the official Bookeyond mark is supplied (PD-34): `components/brand/officialMark.ts` is the single slot that swaps it in at every touchpoint.
 - **Landing:** a light paper bar with a Deep River "Get started" button, and a deep-teal footer.
 - **Principal (Y37):** one job per page. **Overview** has the glance, learning across the school and a one-line plan summary. **Classes**, **Teachers** and **Plan** are each their own address in the rail. The other pages show the school's name above their own heading. With more than one school, a picker is shown, and the chosen school is remembered across the pages.
 - **Teacher home (Y37):** classes first. Then "Your content": their content, and their pictures and recordings with the storage bar. Then their schools.
 
 ### Signature Components
+- **Child entrance (Y38):** the world above, a greeting band (the name, one line and "keep going"), then each subject as a **destination**. It has an illustrated header in the subject's soft colour with its emblem standing on a pale hill. Below that: the name in Alegreya, where the child is, lotus progress (open lotuses for steps done, a taller bud for the next) and a marigold "Next: <activity>" ribbon. One per row on a phone, up to three on a desktop.
+- **Activity page (Y38):** a storybook sheet with a printed frame line 10px inside its edge. A perfect activity or a finished chapter throws 18 motes of marigold and lotus up from the page and fades them (1.1s). This is decorative, hidden from assistive tech and absent under reduced motion. The words never claim mastery.
 - **Landing order (Y37):**
   - hero, then families and schools as one ruled band (no pastel cards);
   - how it works; evidence; the buddy world;

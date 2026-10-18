@@ -178,7 +178,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                     id="add-question-skill"
                     value={skillToAdd}
                     onChange={(e) => setSkillToAdd(e.target.value)}
-                    className="rounded-[10px] border border-line-strong bg-white h-10 px-3 text-sm text-ink"
+                    className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-10 px-3 text-sm text-ink"
                   >
                     <option value="">{m.addSkillMenu}</option>
                     {available.map((s) => (

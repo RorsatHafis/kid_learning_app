@@ -21,7 +21,7 @@ const MIN_SORT_ITEMS = 4;
 const MAX_SORT_ITEMS = 10;
 
 const fieldClass =
-  "flex-1 rounded-[10px] border border-line-strong px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15";
+  "flex-1 rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15";
 const inputClass = `min-w-0 ${fieldClass}`;
 const removeClass = "rounded-full p-2 text-ink-soft hover:bg-tonle-50 hover:text-ink disabled:opacity-40";
 const addClass = "flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-tonle-700 hover:bg-tonle-50";
@@ -482,7 +482,7 @@ export function QuestionDraftForm({
                       setSortItems(sortItems.map((it, i) => (i === index ? { ...it, group: Number(e.target.value) } : it)))
                     }
                     aria-label={m.groupFor(index + 1)}
-                    className="h-[42px] rounded-[10px] border border-line-strong bg-white px-2 text-sm text-ink"
+                    className="h-[42px] rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white px-2 text-sm text-ink"
                   >
                     {groups.map((g, gi) => (
                       <option key={gi} value={gi}>

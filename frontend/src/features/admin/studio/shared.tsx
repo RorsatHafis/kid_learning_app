@@ -187,7 +187,7 @@ export function SelectField({
       </label>
       <select
         id={id}
-        className="rounded-[10px] border border-line-strong bg-white h-11 px-3.5 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+        className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-11 px-3.5 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
         {...props}
       >
         {children}
@@ -213,7 +213,7 @@ export function TextAreaField({
       <textarea
         id={id}
         aria-describedby={hint ? `${id}-hint` : undefined}
-        className="min-h-[88px] rounded-[10px] border border-line-strong px-4 py-3 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+        className="min-h-[88px] rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] px-4 py-3 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
         {...props}
       />
       {hint && (
