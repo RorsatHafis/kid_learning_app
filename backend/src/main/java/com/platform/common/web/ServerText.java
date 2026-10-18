@@ -180,6 +180,7 @@ public final class ServerText {
             Map.entry("This limit belongs to another kind of plan", "ដែនកំណត់នេះជារបស់កញ្ចប់ប្រភេទផ្សេង"),
             Map.entry("This is a school plan: give it to a school", "នេះជាកញ្ចប់សាលា៖ សូមផ្ដល់វាឱ្យសាលាមួយ"),
             Map.entry("This is a family plan: give it to a family", "នេះជាកញ្ចប់គ្រួសារ៖ សូមផ្ដល់វាឱ្យគ្រួសារមួយ"),
+            Map.entry("A break can be suggested after 10, 15, 20, 30 or 45 minutes", "អាចណែនាំឱ្យសម្រាកបន្ទាប់ពី 10, 15, 20, 30 ឬ 45 នាទី"),
             Map.entry("A school plan is arranged by an administrator: families can't ask for it", "កញ្ចប់សាលាត្រូវបានរៀបចំដោយអ្នកគ្រប់គ្រង៖ គ្រួសារមិនអាចស្នើសុំវាបានទេ"),
             Map.entry("A note is required when changing a storage allowance", "ត្រូវការកំណត់ចំណាំ នៅពេលផ្លាស់ប្ដូរកន្លែងផ្ទុកដែលបានអនុញ្ញាត"),
             Map.entry("Only teachers and principals keep media of their own", "មានតែគ្រូ និងនាយកសាលាប៉ុណ្ណោះដែលរក្សាមេឌៀផ្ទាល់ខ្លួន"),

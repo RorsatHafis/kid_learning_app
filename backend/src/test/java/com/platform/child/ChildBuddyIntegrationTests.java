@@ -65,6 +65,32 @@ class ChildBuddyIntegrationTests {
                 .isEqualTo("ELEPHANT");
     }
 
+    /** Y36: a break reminder is off until the family sets one, only from the allowed lengths, for its own child. */
+    @Test
+    void aFamilySetsABreakReminderForItsOwnChildOnly() throws Exception {
+        String token = register();
+        String childId = json(post("/api/v1/children", "{\"displayName\":\"Sokha\",\"dateOfBirth\":\""
+                + LocalDate.now().minusYears(5) + "\"}", token), 201).get("id").asString();
+        String path = "/api/v1/children/" + childId + "/break-reminder";
+        assertThat(json(get(path, token), 200).get("minutes").isNull()).as("off until a parent turns it on").isTrue();
+
+        assertThat(json(put(path, "{\"minutes\":20}", token), 200).get("minutes").asInt()).isEqualTo(20);
+        assertThat(json(get(path, token), 200).get("minutes").asInt()).isEqualTo(20);
+        assertThat(json(put(path, "{\"minutes\":15}", token), 200).get("minutes").asInt()).as("changed, not a second row").isEqualTo(15);
+        assertThat(jdbc.queryForObject("select count(*) from child_settings where child_id = ?::uuid", Integer.class, childId)).isEqualTo(1);
+        assertThat(json(get("/api/v1/account/data-export", token), 200).get("children").get(0).get("breakReminderMinutes").asInt())
+                .isEqualTo(15);
+
+        assertThat(put(path, "{\"minutes\":25}", token).statusCode()).as("not an offered length").isEqualTo(400);
+        assertThat(put(path, "{\"minutes\":0}", token).statusCode()).isEqualTo(400);
+        String stranger = register();
+        assertThat(get(path, stranger).statusCode()).as("another family").isIn(403, 404);
+        assertThat(put(path, "{\"minutes\":45}", stranger).statusCode()).isIn(403, 404);
+        assertThat(get(path, null).statusCode()).isEqualTo(401);
+
+        assertThat(json(put(path, "{\"minutes\":null}", token), 200).get("minutes").isNull()).as("turned off again").isTrue();
+    }
+
     private String register() throws Exception {
         String email = "buddy-" + UUID.randomUUID() + "@example.com";
         return json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD

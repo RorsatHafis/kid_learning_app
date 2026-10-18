@@ -81,6 +81,7 @@ public class FamilyDataExportService {
     private final AuditService auditService;
     private final SchoolJoinService schoolAccess;
     private final SubscriptionService subscriptions;
+    private final com.platform.child.service.ChildSettingsService childSettings;
 
     public FamilyDataExportService(AccountRepository accounts, ChildService childService, FamilyAccessGuard familyAccessGuard,
                                    LearningJourneyService journeys, SkillProgressService skills, ParentInsightService insights,
@@ -88,7 +89,9 @@ public class FamilyDataExportService {
                                    ActivityVersionRepository activityVersions, ActivityRepository activities,
                                    QuestionVersionRepository questionVersions, QuestionOptionRepository questionOptions,
                                    AuditService auditService, SchoolJoinService schoolAccess,
-                                   SubscriptionService subscriptions) {
+                                   SubscriptionService subscriptions,
+                                   com.platform.child.service.ChildSettingsService childSettings) {
+        this.childSettings = childSettings;
         this.accounts = accounts;
         this.childService = childService;
         this.familyAccessGuard = familyAccessGuard;
@@ -116,7 +119,7 @@ public class FamilyDataExportService {
     }
 
     public record ChildData(UUID id, String displayName, LocalDate dateOfBirth, Instant addedAt, String interfaceLanguage,
-                            String learningBuddy,
+                            String learningBuddy, Integer breakReminderMinutes,
                             List<EnrollmentOverview> learningPaths, List<CurriculumProgress> skills,
                             List<CompletedActivity> completedActivities, List<AnswerData> answers,
                             List<ParentInsightResponse> insightHistory, List<SchoolAccessRecord> schoolAccess) {
@@ -149,7 +152,8 @@ public class FamilyDataExportService {
         // listForAccount already scopes to the caller's families; checked again per child on purpose.
         familyAccessGuard.requireChildRecord(accountId, child.getId());
         return new ChildData(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getCreatedAt(),
-                child.getPreferredLanguage(), child.getLearningBuddy().name(), journeys.enrollmentsFor(child.getId()),
+                child.getPreferredLanguage(), child.getLearningBuddy().name(),
+                childSettings.breakReminderMinutes(child.getId()), journeys.enrollmentsFor(child.getId()),
                 skills.progressFor(child.getId()),
                 journeys.completedActivities(child.getId(), ALL), answersOf(child.getId()),
                 insights.listRecent(child.getId()).stream().map(ParentInsightResponse::from).toList(),

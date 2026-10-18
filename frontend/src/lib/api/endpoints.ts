@@ -109,6 +109,10 @@ export const childrenApi = {
   // The language of the child's own space - the child's, never the parent's.
   changeLanguage: (childId: string, language: Locale) => apiClient.put<Child>(`/children/${childId}/language`, { language }),
   chooseBuddy: (childId: string, buddy: LearningBuddyKind) => apiClient.put<Child>(`/children/${childId}/buddy`, { buddy }),
+  // Y36: minutes of continuous learning after which the child's space suggests a break (null = off).
+  breakReminder: (childId: string) => apiClient.get<{ minutes: number | null }>(`/children/${childId}/break-reminder`),
+  setBreakReminder: (childId: string, minutes: number | null) =>
+    apiClient.put<{ minutes: number | null }>(`/children/${childId}/break-reminder`, { minutes }),
   /** The family catalog for this child: the child's age group first (curriculum/web/CurriculumController.java). */
   curricula: (childId: string) => apiClient.get<CurriculumChoice[]>(`/children/${childId}/curricula`),
 };

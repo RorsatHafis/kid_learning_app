@@ -17,6 +17,7 @@ import { RecentActivitySection } from "./RecentActivitySection";
 import { InsightsSection } from "./InsightsSection";
 import { SchoolAccessSection } from "./SchoolAccessSection";
 import { DeleteChildSection } from "./Deletion";
+import { BreakReminderSection } from "./BreakReminderSection";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
@@ -110,6 +111,7 @@ function ChildOverview({ childId }: { childId: string }) {
               {/* Where a parent with a class code looks: it adds the learning a class assigns. */}
               <SchoolAccessSection childId={childId} childName={data.displayName} onJoined={enrollments.refetch} />
               <OwnSpace child={data} />
+              <BreakReminderSection childId={childId} childName={data.displayName} />
               <DeleteChildSection child={data} />
             </div>
           }

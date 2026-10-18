@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, BookOpen, Library, X } from "lucide-react";
 import { ProgressBuds, Bud } from "@/features/world/ProgressBuds";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
@@ -20,6 +20,8 @@ import { QuestionView, type AnswerResult } from "./QuestionView";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
+import { breakDue, readSitting, sittingMinutes, useBreakReminder } from "./breaks";
+import { childBreakMessages } from "@/features/parent/breaks.messages";
 
 /** Why loading or saving stopped: a key into the child's words, so the line follows the language. */
 type TroubleKey = "loadFailed" | "saveFailed";
@@ -86,6 +88,12 @@ export function PlaySession() {
   const child = useAsync(() => childrenApi.get(childId), [childId]);
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const m = useMessages(childMessages);
+  // Y36: the sitting grows while the child plays and finishes activities.
+  const breaks = useBreakReminder(childId);
+  const { touch } = breaks;
+  useEffect(() => {
+    if (phase.kind === "playing" || phase.kind === "completed") touch();
+  }, [phase.kind, touch]);
   useDocumentTitle(
     phase.kind === "intro" || phase.kind === "playing" ? phase.activity.title : phase.kind === "completed" ? phase.title : m.play.documentTitle,
   );
@@ -289,7 +297,18 @@ export function PlaySession() {
         />,
       );
     case "completed":
-      return shell(<Completed phase={phase} journeyHref={journeyHref} onKeepGoing={loadNext} />);
+      return shell(
+        <Completed
+          phase={phase}
+          journeyHref={journeyHref}
+          onKeepGoing={loadNext}
+          breakSuggestion={
+            breakDue(breaks.minutes, readSitting(childId), Date.now())
+              ? { minutes: sittingMinutes(readSitting(childId), Date.now()), rest: breaks.rest, oneMore: breaks.oneMore }
+              : null
+          }
+        />,
+      );
     case "playing":
       return shell(
         // Keyed per question: each question gets fresh interaction state
@@ -700,20 +719,33 @@ function Question({
   );
 }
 
+/** Y36: a break the parent asked for, suggested at this natural pause; the child chooses. */
+interface BreakSuggestion {
+  minutes: number;
+  rest: () => void;
+  oneMore: () => void;
+}
+
 function Completed({
   phase,
   journeyHref,
   onKeepGoing,
+  breakSuggestion,
 }: {
   phase: Extract<Phase, { kind: "completed" }>;
   journeyHref: string;
   onKeepGoing: () => void;
+  breakSuggestion: BreakSuggestion | null;
 }) {
   const { title, correct, total, next, finishedChapter, nextChapter, itemId, chapterSteps, nextId } = phase;
   const allRight = total > 0 && correct === total;
   const m = useMessages(childMessages).play;
   const keepGoingRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => keepGoingRef.current?.focus(), []);
+  const b = useMessages(childBreakMessages);
+  const navigate = useNavigate();
+  // Decided once, when the activity is finished: the suggestion doesn't come and go while it is read.
+  const [suggestion] = useState(breakSuggestion);
   // The path shows the next book only while it is in this chapter.
   const nextHere = nextId !== null && chapterSteps.some((s) => s.learningPathItemId === nextId) ? nextId : null;
 
@@ -753,14 +785,54 @@ function Completed({
             </div>
           </div>
         )}
-        <div className="mt-8 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
-          <JourneyLink href={journeyHref} />
-          {next !== null && (
-            <button ref={keepGoingRef} type="button" onClick={onKeepGoing} className={goButton}>
-              {m.keepGoing} <ArrowRight size={22} aria-hidden />
-            </button>
-          )}
-        </div>
+        {suggestion ? (
+          <section
+            aria-labelledby="break-title"
+            className="mt-8 flex flex-col items-center gap-4 rounded-[22px] bg-palm-soft/70 px-5 py-6 ring-1 ring-palm/20 sm:flex-row sm:text-left"
+          >
+            <LearningBuddy mood="happy" size={88} className="shrink-0" />
+            <div className="flex-1">
+              <h2 id="break-title" className="font-display text-2xl font-bold text-tonle-950">
+                {b.title}
+              </h2>
+              <p className="mt-1 text-lg font-medium text-ink-soft">{b.body(suggestion.minutes)}</p>
+              <div className="mt-4 flex flex-col-reverse items-center gap-3 sm:flex-row">
+                {next !== null && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      suggestion.oneMore();
+                      onKeepGoing();
+                    }}
+                    className={quietButton}
+                  >
+                    {b.oneMore}
+                  </button>
+                )}
+                <button
+                  ref={keepGoingRef}
+                  type="button"
+                  onClick={() => {
+                    suggestion.rest();
+                    navigate(journeyHref);
+                  }}
+                  className={goButton}
+                >
+                  {b.rest}
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <div className="mt-8 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
+            <JourneyLink href={journeyHref} />
+            {next !== null && (
+              <button ref={keepGoingRef} type="button" onClick={onKeepGoing} className={goButton}>
+                {m.keepGoing} <ArrowRight size={22} aria-hidden />
+              </button>
+            )}
+          </div>
+        )}
       </Page>
     </div>
   );
