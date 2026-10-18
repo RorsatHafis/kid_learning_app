@@ -7,19 +7,13 @@ import { useMessages } from "@/i18n/catalog";
 import { LanguageSwitcher, LanguageToggle } from "@/i18n/LanguageSwitcher";
 import { cn } from "@/lib/utils/cn";
 import { marketingMessages } from "../messages";
-
-export const sectionLinks = [
-  { key: "how", href: "#how-it-works" },
-  { key: "parents", href: "#for-parents" },
-  { key: "children", href: "#for-children" },
-  { key: "subjects", href: "#subjects" },
-  { key: "schools", href: "#schools" },
-] as const;
+import { sectionLinks, useSectionLabel } from "./links";
 
 /** A light paper bar over the morning scene: the brand, where to go, and one way in. */
 export function Nav() {
   const [open, setOpen] = useState(false);
   const m = useMessages(marketingMessages).nav;
+  const label = useSectionLabel();
   const c = useMessages(common);
 
   useEffect(() => {
@@ -41,7 +35,7 @@ export function Nav() {
         >
           {sectionLinks.map((link) => (
             <a key={link.href} href={link.href} className="rounded-[6px] transition-colors duration-150 hover:text-tonle-950">
-              {m[link.key]}
+              {label(link.key)}
             </a>
           ))}
         </nav>
@@ -87,7 +81,7 @@ export function Nav() {
               onClick={() => setOpen(false)}
               className="border-b border-tonle-950/10 py-3.5 text-base font-medium text-ink hover:text-tonle-700"
             >
-              {m[link.key]}
+              {label(link.key)}
             </a>
           ))}
         </nav>

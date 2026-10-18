@@ -281,8 +281,19 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
 - **Family:** a white sticky bar with text links and a 2px underline indicator, on a cream ground. A child's page has sections as link tabs on a cream track: Overview (learning plan, what changed, insights), Skills & progress (skills, recent activity), School & settings (class codes, the child's own space, deletion).
 - **Staff:** a white rail with a 4px band and a name chip in the workspace's accent, sentence-case section labels and nav items (10px radius; the active item is the accent's soft ground with a 3px inset bar). Account and log out sit at the foot. Sub-pages carry a slash breadcrumb ("Classes / Grade 1 A").
 - **Landing:** a light paper bar with a Deep River "Get started" button, and a deep-teal footer.
+- **Principal (Y37):** one job per page. **Overview** has the glance, learning across the school and a one-line plan summary. **Classes**, **Teachers** and **Plan** are each their own address in the rail. The other pages show the school's name above their own heading. With more than one school, a picker is shown, and the chosen school is remembered across the pages.
+- **Teacher home (Y37):** classes first. Then "Your content": their content, and their pictures and recordings with the storage bar. Then their schools.
 
 ### Signature Components
+- **Landing order (Y37):**
+  - hero, then families and schools as one ruled band (no pastel cards);
+  - how it works; evidence; the buddy world;
+  - **Safe by design. You decide.**: six things the product really does, as a ruled two-column list with drawn icons;
+  - subjects;
+  - **Plans**: early access for families, "Nothing to pay"; schools "Arranged with us". No invented price, and nothing is promised about paid plans;
+  - schools; the closing band.
+  - The navigation is How it works, For parents, Safety, Plans, Schools.
+- **Break suggestion (Y36):** on the activity-complete page only, a palm-soft panel with the buddy (happy). **Take a break** is the primary action and **One more** the quiet one. There is no countdown or timer graphic.
 - **Child setup** (`/parent/add-child`): three steps - about, subjects (one card per subject from the server's catalog for the child's age, with its emblem), review. Resumable (`?child=`).
 - **Subject door** (the child's entrance): a large card per subject the family chose - emblem, name, what's next, books done in the subject's colour - opening that subject's journey.
 - **Child summary** (family home): a cream header with the child's buddy portrait and actions; subjects with progress in their colour; a standing bar; skills flagged for practice.

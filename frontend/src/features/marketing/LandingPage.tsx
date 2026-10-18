@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Coffee, Download, Hand, Languages, ShieldCheck, Sprout } from "lucide-react";
 import { RiverGarden } from "@/features/world/RiverGarden";
 import { khmerNumber } from "@/features/world/PathOfBooks";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
@@ -24,6 +24,7 @@ import teacherTrend from "./shots/teacher-trend.webp";
 import { messagesIn, useLocale, useMessages } from "@/i18n/catalog";
 import { marketingMessages } from "./messages";
 import { common } from "@/components/ui/messages";
+import { trustMessages } from "./trust.messages";
 
 /**
  * The public front door. It shows the product as it is — early maths today, Khmer and English in
@@ -46,7 +47,9 @@ export function LandingPage() {
         <HowItWorks />
         <ForParents />
         <ForChildren />
+        <Safety />
         <Subjects />
+        <Plans />
         <Schools />
         <Closing />
       </main>
@@ -138,8 +141,6 @@ function Audiences() {
       points: [l.familiesPoints.a, l.familiesPoints.b, l.familiesPoints.c],
       cta: l.familiesCta,
       to: "/register",
-      tone: "bg-coral-soft",
-      mark: "text-coral-deep",
       buddy: "OTTER" as const,
     },
     {
@@ -148,8 +149,6 @@ function Audiences() {
       points: [l.schoolsPoints.a, l.schoolsPoints.b, l.schoolsPoints.c],
       cta: l.schoolsCta,
       to: "/register?as=principal",
-      tone: "bg-sky-soft",
-      mark: "text-sky-deep",
       buddy: "ELEPHANT" as const,
     },
   ];
@@ -158,25 +157,23 @@ function Audiences() {
       <h2 id="audiences" className="sr-only">
         {l.audiences}
       </h2>
-      <div className="mx-auto grid max-w-[1240px] gap-6 md:grid-cols-2">
-        {cards.map((c) => (
-          <article key={c.title} className={cn("relative flex flex-col gap-5 overflow-hidden rounded-[28px] p-7 sm:p-9", c.tone)}>
-            <div aria-hidden className="absolute -right-4 -top-3 opacity-90">
-              <LearningBuddy kind={c.buddy} mood="idle" size={120} className="!animate-none" />
+      <div className="mx-auto grid max-w-[1240px] border-y border-line md:grid-cols-2 md:divide-x md:divide-line">
+        {cards.map((c, i) => (
+          <article key={c.title} className={cn("flex flex-col gap-5 py-10 md:py-12", i === 0 ? "md:pr-12" : "border-t border-line md:border-t-0 md:pl-12")}>
+            <div className="flex items-center gap-4">
+              <LearningBuddy kind={c.buddy} mood="idle" size={72} className="!animate-none shrink-0" />
+              <h3 className="font-display text-[2rem] font-bold leading-tight text-tonle-950">{c.title}</h3>
             </div>
-            <h3 className="font-display text-[2rem] font-bold leading-tight text-tonle-950">{c.title}</h3>
-            <p className="max-w-[26rem] text-lg leading-relaxed text-ink">{c.lead}</p>
+            <p className="max-w-[30rem] text-lg leading-relaxed text-ink">{c.lead}</p>
             <ul className="flex flex-col gap-2.5">
               {c.points.map((point) => (
-                <li key={point} className="flex items-start gap-3 text-[0.9375rem] text-ink">
-                  <span className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white", c.mark)}>
-                    <Check size={13} strokeWidth={3} aria-hidden />
-                  </span>
+                <li key={point} className="flex items-start gap-3 text-[0.9375rem] leading-relaxed text-ink">
+                  <Check size={18} strokeWidth={2.5} className="mt-0.5 shrink-0 text-palm" aria-hidden />
                   {point}
                 </li>
               ))}
             </ul>
-            <Link to={c.to} className={buttonClasses("solid", "lg", "mt-auto w-fit")}>
+            <Link to={c.to} className={buttonClasses(i === 0 ? "solid" : "outline", "lg", "mt-auto w-fit")}>
               {c.cta} <ArrowRight size={18} aria-hidden />
             </Link>
           </article>
@@ -410,31 +407,91 @@ function Schools() {
   );
 }
 
+/**
+ * What a parent asks first: is it safe, and who decides how it's used. Only what the product does
+ * today (Y37): each line names a real behaviour a parent will find inside.
+ */
+function Safety() {
+  const m = useMessages(trustMessages).safety;
+  const items = [
+    { icon: ShieldCheck, ...m.items.nothingElse },
+    { icon: Hand, ...m.items.gate },
+    { icon: Coffee, ...m.items.breaks },
+    { icon: Sprout, ...m.items.evidence },
+    { icon: Download, ...m.items.data },
+    { icon: Languages, ...m.items.language },
+  ];
+  return (
+    <Section id="safety" className="bg-white">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-20">
+        <div className="flex flex-col gap-8">
+          <Heading title={m.title} lead={m.lead} />
+          <LearningBuddy kind="BUFFALO" mood="happy" size={150} className="!animate-none hidden lg:block" />
+        </div>
+        <ul className="grid gap-x-10 sm:grid-cols-2">
+          {items.map(({ icon: Icon, title, text }) => (
+            <li key={title} className="flex gap-4 border-t border-line py-6">
+              <Icon size={22} strokeWidth={1.75} className="mt-1 shrink-0 text-tonle-600" aria-hidden />
+              <div className="flex flex-col gap-1.5">
+                <h3 className="font-display text-xl font-bold leading-snug text-tonle-950">{title}</h3>
+                <p className="leading-relaxed text-ink-soft">{text}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Section>
+  );
+}
+
+/**
+ * Plans as they really are (PRODUCT-MODEL-BRIEF.md): early access for families with nothing to pay,
+ * and schools arranged with the team. No price appears until the owner sets one (PD-09).
+ */
+function Plans() {
+  const m = useMessages(trustMessages).plans;
+  const sheets = [
+    { ...m.family, to: "/register", tone: "bg-white ring-1 ring-line", solid: true },
+    { ...m.school, to: "/register?as=principal", tone: "bg-tonle-50 ring-1 ring-tonle-100", solid: false },
+  ];
+  return (
+    <Section id="plans">
+      <Heading title={m.title} lead={m.lead} />
+      <div className="mt-12 grid gap-6 md:grid-cols-2">
+        {sheets.map((s) => (
+          <article key={s.name} aria-labelledby={`plan-${s.name}`} className={cn("flex flex-col gap-6 rounded-[24px] p-7 sm:p-9", s.tone)}>
+            <div className="flex flex-col gap-1">
+              <h3 id={`plan-${s.name}`} className="text-[0.9375rem] font-semibold text-tonle-700">
+                {s.name}
+              </h3>
+              <p className="font-display text-[2.25rem] font-bold leading-tight text-tonle-950">{s.plan}</p>
+              <p className="text-lg font-semibold text-ink">{s.price}</p>
+            </div>
+            <ul className="flex flex-col gap-3 border-t border-line pt-6">
+              {[s.points.a, s.points.b, s.points.c].map((point) => (
+                <li key={point} className="flex items-start gap-3 leading-relaxed text-ink">
+                  <Check size={18} strokeWidth={2.5} className="mt-0.5 shrink-0 text-palm" aria-hidden />
+                  {point}
+                </li>
+              ))}
+            </ul>
+            <p className="text-sm leading-relaxed text-ink-soft">{s.note}</p>
+            <Link to={s.to} className={buttonClasses(s.solid ? "solid" : "outline", "lg", "mt-auto w-fit")}>
+              {s.cta} <ArrowRight size={18} aria-hidden />
+            </Link>
+          </article>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 function Closing() {
   const all = useMessages(marketingMessages);
   const m = all.promises;
   const c = useMessages(common);
-  const promises = [
-    [m.learningFirst, m.learningFirstText],
-    [m.evidence, m.evidenceText],
-    [m.window, m.windowText],
-    [m.data, m.dataText],
-  ];
   return (
     <>
-      <Section>
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
-          <Heading title={m.title} />
-          <dl className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
-            {promises.map(([title, text]) => (
-              <div key={title} className="flex flex-col gap-2 border-t-2 border-tonle-900 pt-4">
-                <dt className="font-display text-xl font-bold text-tonle-950">{title}</dt>
-                <dd className="leading-relaxed text-ink-soft">{text}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </Section>
       <section className="relative overflow-hidden bg-[#DCEDEC]">
         <div aria-hidden className="absolute inset-0">
           <RiverGarden crop="center" frame={false} bloom={1} />

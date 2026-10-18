@@ -5,6 +5,8 @@ export const adminStorageMessages = defineMessages(
   "features/admin/operations/storage",
   {
     title: "Storage",
+    waiting: (n: number) => (n === 1 ? "1 author is nearly out of storage, or over" : `${n} authors are nearly out of storage, or over`),
+    waitingAction: "Open Storage",
     lead: "What media takes on the platform, and each author's allowance. Allowances come from school plans; an exception for one account is set here with a reason and kept in its history. Nothing is ever deleted because of a limit — only new uploads wait.",
     loading: "Loading storage…",
     onDisk: "On disk",
@@ -65,6 +67,8 @@ export const adminStorageMessages = defineMessages(
   },
   {
     title: "កន្លែងផ្ទុក",
+    waiting: (n: number) => `អ្នកនិពន្ធ ${n} នាក់ជិតអស់កន្លែងផ្ទុក ឬលើស`,
+    waitingAction: "បើកកន្លែងផ្ទុក",
     lead: "អ្វីដែលមេឌៀប្រើលើវេទិកា និងកន្លែងផ្ទុកដែលអនុញ្ញាតរបស់អ្នកនិពន្ធម្នាក់ៗ។ កន្លែងដែលអនុញ្ញាតមកពីកញ្ចប់សាលា។ ការលើកលែងសម្រាប់គណនីមួយត្រូវបានកំណត់នៅទីនេះ ជាមួយមូលហេតុ ហើយរក្សាទុកក្នុងប្រវត្តិរបស់វា។ គ្មានអ្វីត្រូវបានលុបដោយសារដែនកំណត់ទេ — មានតែការផ្ទុកឡើងថ្មីប៉ុណ្ណោះដែលត្រូវរង់ចាំ។",
     loading: "កំពុងផ្ទុកព័ត៌មានកន្លែងផ្ទុក…",
     onDisk: "នៅលើថាស",

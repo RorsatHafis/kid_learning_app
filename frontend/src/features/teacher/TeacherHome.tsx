@@ -4,6 +4,7 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { ClassSummary } from "@/features/school/ClassSummary";
 import { SchoolInvitations } from "./SchoolInvitations";
 import { YourSchools } from "./YourSchools";
+import { TeachingTools } from "./TeachingTools";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { staffMessages } from "@/features/school/staff.messages";
@@ -64,6 +65,7 @@ export function TeacherHome() {
         </section>
       ))}
 
+      <TeachingTools />
       <YourSchools onLeft={refetch} />
     </div>
   );

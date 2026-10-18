@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { NotFound } from "@/components/ui/NotFound";
 import { AccountPage } from "@/features/parent/AccountPage";
 import { PrincipalLayout } from "./PrincipalLayout";
-import { PrincipalHome } from "./PrincipalHome";
+import { PrincipalClassesPage, PrincipalHome, PrincipalPlanPage, PrincipalTeachersPage } from "./PrincipalHome";
 import { PrincipalClassPage } from "./PrincipalClassPage";
 import { PrincipalMemberPage } from "./PrincipalMemberPage";
 import { PrincipalSkillPage } from "./PrincipalSkillPage";
@@ -16,6 +16,9 @@ export default function PrincipalArea() {
     <Routes>
       <Route element={<PrincipalLayout />}>
         <Route index element={<PrincipalHome />} />
+        <Route path="classes" element={<PrincipalClassesPage />} />
+        <Route path="teachers" element={<PrincipalTeachersPage />} />
+        <Route path="plan" element={<PrincipalPlanPage />} />
         <Route path="classes/:classId" element={<PrincipalClassPage />} />
         <Route path="classes/:classId/children/:childId" element={<PrincipalMemberPage />} />
         <Route path="classes/:classId/skills/:skillId" element={<PrincipalSkillPage />} />

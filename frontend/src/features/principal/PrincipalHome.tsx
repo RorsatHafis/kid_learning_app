@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { CheckCircle2, ChevronRight, MailPlus, Plus, School as SchoolIcon, UserMinus } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
@@ -18,40 +18,77 @@ import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { formatDate } from "@/i18n/format";
 import { staffMessages } from "@/features/school/staff.messages";
+import { schoolPlansApi } from "@/lib/api/subscriptions";
+import { principalWorkspaceMessages } from "./workspace.messages";
 
-export function PrincipalHome() {
+const SCHOOL_KEY = "bk.principal.school";
+
+/** The principal's schools and the one they are looking at, kept across the workspace's pages. */
+function usePrincipalSchool() {
   const schools = useAsync(() => schoolApi.mySchools(), []);
-  const overview = useAsync(() => staffOverviewApi.get(), []);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  // Adding a class or inviting a teacher changes what the school's plan shows as in use.
-  const [planVersion, setPlanVersion] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(SCHOOL_KEY);
+    } catch {
+      return null;
+    }
+  });
+  const school = schools.data?.find((s) => s.id === selectedId) ?? schools.data?.[0] ?? null;
+  function select(id: string) {
+    setSelectedId(id);
+    try {
+      localStorage.setItem(SCHOOL_KEY, id);
+    } catch {
+      // Remembered for this page only.
+    }
+  }
+  return { schools, school, select };
+}
+
+/**
+ * Every principal page: set up a school first if there is none, then the page's heading with the
+ * school picker when the principal runs more than one (Y37: one job per page).
+ */
+function SchoolFrame({
+  title,
+  lead,
+  overview = false,
+  children,
+}: {
+  title?: string;
+  lead?: string;
+  overview?: boolean;
+  children: (school: SchoolSummary) => ReactNode;
+}) {
+  const { schools, school, select } = usePrincipalSchool();
   const m = useMessages(staffMessages).principal;
-  useDocumentTitle((schools.data?.find((s) => s.id === selectedId) ?? schools.data?.[0])?.name ?? (schools.data ? m.setUpTitle : null));
+  useDocumentTitle(title ?? school?.name ?? (schools.data ? m.setUpTitle : null));
 
   if (schools.isLoading && !schools.data) return <LoadingState label={m.loading} />;
   if (schools.error) return <ErrorState error={schools.error} onRetry={schools.refetch} />;
-  if (!schools.data || schools.data.length === 0) return <SetUpSchool onCreated={schools.refetch} />;
-
-  const school = schools.data.find((s) => s.id === selectedId) ?? schools.data[0];
+  if (!school || !schools.data) {
+    return overview ? <SetUpSchool onCreated={schools.refetch} /> : <Navigate to="/principal" replace />;
+  }
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
+          {!overview && <p className="text-sm font-semibold text-palm-deep">{school.name}</p>}
           <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
-            {school.name}
+            {overview ? school.name : title}
           </h1>
-          <p className="mt-1.5 text-[0.9375rem] text-ink-soft">
-            {m.lead}
-          </p>
-          <ManageSchoolButton schoolId={school.id} name={school.name} archived={school.archived} onChanged={schools.refetch} />
+          <p className="mt-1.5 max-w-prose text-[0.9375rem] text-ink-soft">{overview ? m.lead : lead}</p>
+          {overview && (
+            <ManageSchoolButton schoolId={school.id} name={school.name} archived={school.archived} onChanged={schools.refetch} />
+          )}
         </div>
         {schools.data.length > 1 && (
           <label className="flex items-center gap-2 text-sm text-ink-soft">
             {m.schoolPicker}
             <select
               value={school.id}
-              onChange={(e) => setSelectedId(e.target.value)}
-              className="h-10 rounded-[10px] border border-line-strong bg-white px-3 text-sm font-medium text-ink"
+              onChange={(e) => select(e.target.value)}
+              className="h-11 rounded-[10px] border border-line-strong bg-white px-3 text-sm font-medium text-ink"
             >
               {schools.data.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -63,22 +100,70 @@ export function PrincipalHome() {
         )}
       </div>
       {school.archived && <ArchivedSchoolNotice />}
-      {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
-      {overview.data && <AtAGlance school={overview.data.schools.find((s) => s.schoolId === school.id)} />}
-      <SchoolLearningSection key={school.id} schoolId={school.id} />
-      <div className="grid gap-10 xl:grid-cols-2 xl:items-start xl:gap-8">
-        <Classes
-          school={school}
-          overview={overview.data}
-          onChanged={() => {
-            overview.refetch();
-            setPlanVersion((v) => v + 1);
-          }}
-        />
-        <Teachers school={school} onChanged={() => setPlanVersion((v) => v + 1)} />
-      </div>
-      <PrincipalSchoolPlan schoolId={school.id} version={planVersion} />
+      {children(school)}
     </div>
+  );
+}
+
+/** The school at a glance: who it reaches, what is still to set up, learning across classes, the plan. */
+export function PrincipalHome() {
+  const overview = useAsync(() => staffOverviewApi.get(), []);
+  return (
+    <SchoolFrame overview>
+      {(school) => (
+        <>
+          {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
+          {overview.data && <AtAGlance school={overview.data.schools.find((s) => s.schoolId === school.id)} />}
+          <SchoolLearningSection key={school.id} schoolId={school.id} />
+          <PlanLine schoolId={school.id} />
+        </>
+      )}
+    </SchoolFrame>
+  );
+}
+
+export function PrincipalClassesPage() {
+  const overview = useAsync(() => staffOverviewApi.get(), []);
+  const w = useMessages(principalWorkspaceMessages);
+  return (
+    <SchoolFrame title={w.nav.classes} lead={w.classesLead}>
+      {(school) => <Classes key={school.id} school={school} overview={overview.data} onChanged={overview.refetch} />}
+    </SchoolFrame>
+  );
+}
+
+export function PrincipalTeachersPage() {
+  const w = useMessages(principalWorkspaceMessages);
+  return (
+    <SchoolFrame title={w.nav.teachers} lead={w.teachersLead}>
+      {(school) => <Teachers key={school.id} school={school} onChanged={() => undefined} />}
+    </SchoolFrame>
+  );
+}
+
+export function PrincipalPlanPage() {
+  const w = useMessages(principalWorkspaceMessages);
+  return (
+    <SchoolFrame title={w.nav.plan} lead={w.planLead}>
+      {(school) => <PrincipalSchoolPlan key={school.id} schoolId={school.id} version={0} />}
+    </SchoolFrame>
+  );
+}
+
+/** One line on the overview: the plan's name, and whether a limit is full, linking to the plan page. */
+function PlanLine({ schoolId }: { schoolId: string }) {
+  const plan = useAsync(() => schoolPlansApi.own(schoolId), [schoolId]);
+  const w = useMessages(principalWorkspaceMessages);
+  if (!plan.data) return null;
+  const full = plan.data.entitlements.filter((e) => e.limit !== null && e.used !== null && e.used >= e.limit).length;
+  return (
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-5 text-sm text-ink-soft">
+      <span className="font-semibold text-ink">{w.planSummary(plan.data.plan.name)}</span>
+      {full > 0 && <span className="font-medium text-light-deep">{w.planFull(full)}</span>}
+      <Link to="/principal/plan" className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+        {w.planSee}
+      </Link>
+    </p>
   );
 }
 
@@ -131,6 +216,7 @@ function SetUpSchool({ onCreated }: { onCreated: () => void }) {
  */
 function AtAGlance({ school }: { school: SchoolOverview | undefined }) {
   const m = useMessages(staffMessages).principal;
+  const w = useMessages(principalWorkspaceMessages);
   if (!school) return null;
   const todo = [
     school.classesWithoutTeacher > 0 && m.needTeacher(school.classesWithoutTeacher),
@@ -170,6 +256,9 @@ function AtAGlance({ school }: { school: SchoolOverview | undefined }) {
                 <li key={item}>{item}</li>
               ))}
             </ul>
+            <Link to="/principal/classes" className="mt-2 inline-block text-sm font-semibold text-tonle-700 underline-offset-4 hover:underline">
+              {w.goClasses}
+            </Link>
           </>
         )}
       </div>
@@ -214,12 +303,10 @@ function Classes({
 
   return (
     <section aria-labelledby="classes-heading" className="flex min-w-0 flex-col gap-3">
-      <div>
-        <h2 id="classes-heading" className="text-lg font-semibold text-tonle-950">
-          {m.classesTitle}
-        </h2>
-        <p className="text-sm text-ink-soft">{m.classesLead}</p>
-      </div>
+      {/* The page's own heading says what this is (Y37); this one names the region for assistive tech. */}
+      <h2 id="classes-heading" className="sr-only">
+        {m.classesTitle}
+      </h2>
       {classes.isLoading && !classes.data && <LoadingState label={m.loadingClasses} />}
       {classes.error && <ErrorState error={classes.error} onRetry={classes.refetch} />}
       {classes.data && active.length === 0 && (
@@ -338,12 +425,9 @@ function Teachers({ school, onChanged }: { school: SchoolSummary; onChanged: () 
 
   return (
     <section aria-labelledby="teachers-heading" className="flex min-w-0 flex-col gap-3">
-      <div>
-        <h2 id="teachers-heading" className="text-lg font-semibold text-tonle-950">
-          {w.teachersTitle}
-        </h2>
-        <p className="text-sm text-ink-soft">{w.teachersLead}</p>
-      </div>
+      <h2 id="teachers-heading" className="sr-only">
+        {w.teachersTitle}
+      </h2>
       {staff.isLoading && !staff.data && <LoadingState label={w.loadingTeachers} />}
       {staff.error && <ErrorState error={staff.error} onRetry={staff.refetch} />}
       {staff.data && visible.length === 0 && (

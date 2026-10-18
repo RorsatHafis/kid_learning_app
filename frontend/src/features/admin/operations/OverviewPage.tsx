@@ -8,6 +8,8 @@ import { Panel } from "../studio/shared";
 import { useMessages } from "@/i18n/catalog";
 import { opsMessages } from "./messages";
 import { formatDate, formatNumber } from "@/i18n/format";
+import { adminStorageApi } from "@/lib/api/storage";
+import { adminStorageMessages } from "./storage.messages";
 
 const shortDate = (iso: string) => formatDate(iso, { day: "numeric", month: "short", year: "numeric" });
 
@@ -39,6 +41,10 @@ export function OverviewPage() {
 function Waiting({ data }: { data: AdminOverview }) {
   const w = data.waiting;
   const m = useMessages(opsMessages).overview;
+  const s = useMessages(adminStorageMessages);
+  // Y37: authors nearly out of storage (or over after a change) wait on an administrator too.
+  const storage = useAsync(() => adminStorageApi.overview(), []);
+  const crowded = storage.data?.owners.filter((o) => o.state !== "OK").length ?? 0;
   const items = [
     w.principalsAwaitingApproval > 0 && { text: m.applications(w.principalsAwaitingApproval), to: "/admin/staff", action: m.review },
     w.planRequestsOpen > 0 && { text: m.planAsks(w.planRequestsOpen), to: "/admin/plans#requests", action: m.answer },
@@ -49,6 +55,7 @@ function Waiting({ data }: { data: AdminOverview }) {
       action: m.seeLog,
     },
     w.suspendedAccounts > 0 && { text: m.suspended(w.suspendedAccounts), to: "/admin/accounts", action: m.findAccount },
+    crowded > 0 && { text: s.waiting(crowded), to: "/admin/storage?show=attention", action: s.waitingAction },
   ].filter((item): item is { text: string; to: string; action: string } => Boolean(item));
   const nothing = items.length === 0 && w.plansEndingSoonTotal === 0;
 

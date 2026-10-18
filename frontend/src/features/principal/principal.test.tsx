@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { PrincipalHome } from "./PrincipalHome";
+import { PrincipalClassesPage, PrincipalHome, PrincipalPlanPage, PrincipalTeachersPage } from "./PrincipalHome";
 import { PrincipalClassPage } from "./PrincipalClassPage";
 import { SchoolInvitations } from "@/features/teacher/SchoolInvitations";
 
@@ -132,7 +132,7 @@ describe("PrincipalHome", () => {
 
     expect(await screen.findByRole("heading", { name: "Sunrise Primary" })).toBeInTheDocument();
     expect(calls.find((c) => c.method === "POST")?.body).toEqual({ name: "Sunrise Primary" });
-    expect(screen.getByText("No classes yet. Add your first class below.")).toBeInTheDocument();
+    expect(await screen.findByText("Add your first class below, then invite its teacher.")).toBeInTheDocument();
   });
 
   it("invites a teacher, and shows the server's reason when an address can't be invited", async () => {
@@ -178,7 +178,7 @@ describe("PrincipalHome", () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
-        <PrincipalHome />
+        <PrincipalTeachersPage />
       </MemoryRouter>,
     );
 
@@ -226,7 +226,8 @@ describe("PrincipalHome", () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
-        <PrincipalHome />
+        <PrincipalPlanPage />
+        <PrincipalClassesPage />
       </MemoryRouter>,
     );
 
@@ -265,7 +266,7 @@ describe("PrincipalHome", () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
-        <PrincipalHome />
+        <PrincipalTeachersPage />
       </MemoryRouter>,
     );
 
@@ -418,6 +419,7 @@ describe("Class lifecycle (X17)", () => {
     render(
       <MemoryRouter>
         <PrincipalHome />
+        <PrincipalClassesPage />
       </MemoryRouter>,
     );
     const old = await screen.findByRole("link", { name: /Last year/ });
@@ -509,6 +511,7 @@ describe("Staff homes (X7)", () => {
     render(
       <MemoryRouter>
         <PrincipalHome />
+        <PrincipalClassesPage />
       </MemoryRouter>,
     );
 

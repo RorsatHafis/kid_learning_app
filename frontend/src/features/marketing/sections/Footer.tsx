@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { LegalLinks } from "@/features/legal/Legal";
 import { Logo } from "@/components/brand/Logo";
-import { sectionLinks } from "./Nav";
+import { sectionLinks, useSectionLabel } from "./links";
 import { useMessages } from "@/i18n/catalog";
 import { common } from "@/components/ui/messages";
 import { marketingMessages } from "../messages";
@@ -9,6 +9,7 @@ import { marketingMessages } from "../messages";
 // Only links that lead somewhere: there are no About, Contact, Terms or Privacy pages yet (PD-18).
 export function Footer() {
   const m = useMessages(marketingMessages).nav;
+  const label = useSectionLabel();
   const c = useMessages(common);
   return (
     <footer className="on-night bg-tonle-900 px-4 pb-10 pt-14 text-tonle-100 sm:px-8">
@@ -21,7 +22,7 @@ export function Footer() {
           <nav aria-label={m.footer} className="grid grid-cols-2 gap-x-12 gap-y-3 text-[0.9375rem]">
             {sectionLinks.map((link) => (
               <a key={link.href} href={link.href} className="w-fit hover:text-white hover:underline hover:underline-offset-4">
-                {m[link.key]}
+                {label(link.key)}
               </a>
             ))}
             <LegalLinks className="col-span-2 hover:[&_a]:text-white" />

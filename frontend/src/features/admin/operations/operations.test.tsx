@@ -201,12 +201,31 @@ function overview(waiting: Record<string, unknown>) {
   };
 }
 
+/** GET /admin/storage: authors' storage (Y35); `crowded` of them nearly full. */
+function storage(crowded: number) {
+  return {
+    storedBytes: 0,
+    platformBytes: 0,
+    platformFiles: 0,
+    authorBytes: 0,
+    owners: Array.from({ length: crowded }, (_, i) => ({
+      accountId: `t${i}`,
+      email: `t${i}@example.com`,
+      role: "TEACHER",
+      files: 1,
+      usedBytes: 900,
+      allowance: { limitMb: 0, limitBytes: 1000, source: "SCHOOL_PLAN" },
+      state: "NEARLY_FULL",
+    })),
+  };
+}
+
 describe("OverviewPage", () => {
   it("leads with what is waiting, each linked to where it is done", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        respond(
+      vi.fn(async (url: string) =>
+        url.includes("/admin/storage") ? respond(200, storage(2)) : respond(
           200,
           overview({
             principalsAwaitingApproval: 2,
@@ -234,11 +253,16 @@ describe("OverviewPage", () => {
       "/admin/plans?parentEmail=sok%40example.com",
     );
     expect(within(waiting).queryByText(/suspended/)).not.toBeInTheDocument();
+    expect(await within(waiting).findByText("2 authors are nearly out of storage, or over")).toBeInTheDocument();
+    expect(within(waiting).getByRole("link", { name: /Open Storage/ })).toHaveAttribute("href", "/admin/storage?show=attention");
     expect(screen.getByText("1,850")).toBeInTheDocument();
   });
 
   it("says so plainly when nothing is waiting", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => respond(200, overview({}))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => respond(200, url.includes("/admin/storage") ? storage(0) : overview({}))),
+    );
     render(
       <MemoryRouter>
         <OverviewPage />

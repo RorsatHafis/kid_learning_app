@@ -55,9 +55,12 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expectNoViolations(page, "principal: set up school");
   await page.getByLabel("School name").fill(schoolName);
   await page.getByRole("button", { name: "Create school" }).click();
+  // Y37: the school's classes and teachers each have their own page.
+  await workspaceLink(page, "Classes");
   await page.getByLabel("New class").fill("Grade 1 A");
   await page.getByRole("button", { name: "Add class" }).click();
   await expect(page.getByText("Grade 1 A")).toBeVisible();
+  await workspaceLink(page, "Teachers");
   await page.getByLabel("Teacher's email").fill(teacherEmail);
   await page.getByRole("button", { name: "Invite" }).click();
   await expect(page.getByRole("status")).toBeVisible();
@@ -83,7 +86,7 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expect(teacher.getByText(new RegExp(`joined ${schoolName}`, "i"))).toBeVisible();
 
   // Back to the principal: the accepted teacher can now be assigned to the class.
-  await page.reload();
+  await page.goto("/principal/classes");
   await page
     .getByRole("region", { name: "Classes", exact: true })
     .getByRole("link", { name: /Grade 1 A/ })

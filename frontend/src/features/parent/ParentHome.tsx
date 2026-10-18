@@ -292,6 +292,8 @@ function NeedsPractice({ progress, childId }: { progress: CurriculumProgress[]; 
   const flagged = uniqueSkills(progress).filter((x) => x.standing === "NEEDS_PRACTICE");
   const answered = uniqueSkills(progress).some((x) => x.scoredAnswers > 0);
   if (!answered) return null;
+  // Attention only where there is something to act on: otherwise one quiet line (Y37).
+  if (flagged.length === 0) return <p className="text-sm leading-relaxed text-ink-soft">{s.practiceNone}</p>;
   return (
     <div className="flex flex-col gap-2 rounded-[18px] bg-light-soft/70 p-4">
       <p className="inline-flex items-center gap-2 text-[0.8125rem] font-semibold text-light-deep">
