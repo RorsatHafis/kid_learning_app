@@ -132,8 +132,8 @@ test.describe("accessibility @phone", () => {
     await page.keyboard.press("Enter");
     await expect(page.locator("#main")).toBeFocused();
 
-    // The next stop is on the rail (or phone bar), which is paper: its focus ring must be the river
-    // ring made for paper (6.3:1), not the warm light kept for night surfaces.
+    // The next stop is on the rail (or phone bar), which is the deep river since Y38: its focus ring must
+    // be the warm light made for night surfaces (>= 3:1 there), not the river ring kept for paper.
     await page.reload();
     await expect(page.getByRole("heading", { name: "Staff", level: 1 })).toBeVisible();
     await page.keyboard.press("Tab");
@@ -150,7 +150,7 @@ test.describe("accessibility @phone", () => {
           };
         }),
       )
-      .toEqual({ color: "rgb(34, 99, 110)", style: "solid", onNight: false });
+      .toEqual({ color: "rgb(255, 210, 122)", style: "solid", onNight: true });
   });
 
   test("admin console", async ({ page }) => {

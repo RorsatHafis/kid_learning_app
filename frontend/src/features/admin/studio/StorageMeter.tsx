@@ -58,7 +58,7 @@ export function StorageMeter({ version }: { version: number }) {
   const limit = view.allowance.limitBytes;
 
   return (
-    <section aria-labelledby="storage-heading" className="flex flex-col gap-3 rounded-[16px] bg-white p-4 ring-1 ring-line sm:p-5">
+    <section aria-labelledby="storage-heading" className="flex flex-col gap-3 rounded-[20px] bg-white p-4 shadow-card sm:p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 id="storage-heading" className="text-base font-semibold text-tonle-950">
           {m.title}

@@ -36,7 +36,7 @@ export function InsightsSection({ childId }: { childId: string }) {
         </div>
       )}
       {data && data.length > 0 && (
-        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-paper bg-white shadow-card">
           {/* Current insights are derived live (no id): one per objective or review
               flag, so type + headline is unique within the list. */}
           {data.map((insight) => (

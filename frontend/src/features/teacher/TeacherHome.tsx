@@ -33,7 +33,7 @@ export function TeacherHome() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
+        <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">
           {m.title}
         </h1>
         <p className="mt-1.5 max-w-2xl text-[0.9375rem] text-ink-soft">{m.lead}</p>
@@ -55,7 +55,7 @@ export function TeacherHome() {
           <h2 id={`school-${schoolId}`} className={groups.length > 1 ? "text-sm font-semibold text-ink-soft" : "sr-only"}>
             {group.name}
           </h2>
-          <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
+          <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
             {group.classes.map((c) => (
               <li key={c.classId}>
                 <ClassSummary overview={c} to={`/teacher/classes/${c.classId}`} showSchool={groups.length === 1} />

@@ -131,7 +131,7 @@ function ChildTabs({ base }: { base: string }) {
       isActive ? "bg-tonle-900 text-white" : "text-ink-soft hover:bg-white hover:text-tonle-900",
     );
   return (
-    <nav aria-label={m.tabs} className="-mx-1 flex gap-1 overflow-x-auto rounded-pill bg-cream-deep/70 p-1 sm:mx-0 sm:w-fit">
+    <nav aria-label={m.tabs} className="-mx-1 flex gap-1 overflow-x-auto rounded-pill bg-paper-sunk p-1 sm:mx-0 sm:w-fit">
       <NavLink to={base} end className={tab}>
         {m.overview}
       </NavLink>
@@ -163,7 +163,7 @@ function OwnSpace({ child }: { child: Child }) {
   const m = useMessages(setupMessages).child;
   const b = useMessages(buddyMessages);
   return (
-    <section aria-labelledby="own-space" className="flex flex-col gap-4 rounded-[24px] bg-white p-6 shadow-paper ring-1 ring-line/70 sm:p-8">
+    <section aria-labelledby="own-space" className="flex flex-col gap-4 rounded-[24px] bg-white p-6 shadow-card sm:p-8">
       <div className="flex items-center gap-4">
         <ChildPortrait buddy={child.learningBuddy} />
         <div>

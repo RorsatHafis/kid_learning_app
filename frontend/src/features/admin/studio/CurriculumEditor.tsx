@@ -539,7 +539,7 @@ function ChapterCard({
   const meta = [m.steps(chapter.steps.length), m.skills(chapter.skills.length), ...(time ? [time] : [])].join(" · ");
 
   return (
-    <li id={`chapter-${chapter.objectiveId}`} className="scroll-mt-24 rounded-[16px] bg-white ring-1 ring-line">
+    <li id={`chapter-${chapter.objectiveId}`} className="scroll-mt-24 rounded-[20px] bg-white shadow-card">
       <div className="flex items-start gap-3 p-4 sm:p-5">
         <span
           aria-hidden

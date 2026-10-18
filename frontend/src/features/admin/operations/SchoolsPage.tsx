@@ -57,7 +57,7 @@ export function SchoolsPage() {
       )}
       {schools.data && schools.data.items.length > 0 && (
         <section aria-label={m.title} className="flex flex-col gap-4">
-          <ul className="divide-y divide-line overflow-hidden rounded-[16px] bg-white ring-1 ring-line">
+          <ul className="divide-y divide-line overflow-hidden rounded-[20px] bg-white shadow-card">
             {schools.data.items.map((school) => {
               const todo = gaps(school);
               return (

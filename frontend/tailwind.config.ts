@@ -32,10 +32,12 @@ export default {
         tonle,
         // Text: river ink, never pure black. soft 6.8:1 on paper; faint 5.1:1 on paper, 4.7:1 on the
         // darkest light ground (paper-sunk), so it is legible on every light surface.
-        ink: { DEFAULT: "#172B2E", soft: "#46595B", faint: "#5B6C6E" },
+        ink: { DEFAULT: "#162A2D", soft: "#43575A", faint: "#556568" },
         // Rice paper with a breath of celadon; white sheets; a sunk well for inputs and code.
-        paper: { DEFAULT: "#F4F6F1", raised: "#FFFFFF", sunk: "#E8EEE6" },
-        line: { DEFAULT: "#DCE4DA", strong: "#C2CEC0" },
+        // Y38: warm rice paper (was celadon) - an ivory ground that makes the river teal and the
+        // marigold read as premium print rather than app chrome. ink-faint 5.3:1 on paper, 4.7:1 on sunk.
+        paper: { DEFAULT: "#F6F3EC", raised: "#FFFFFF", sunk: "#ECE7DC" },
+        line: { DEFAULT: "#E3DDD0", strong: "#CBC3B2" },
         // The one warm voice: light. Fill only; text on it uses light.deep (ink on fill 8.9:1).
         light: { DEFAULT: "#F2A93B", soft: "#FCEED3", glow: "#FFD27A", deep: "#8A4A0B", ember: "#E0782F" },
         lotus: { DEFAULT: "#E48BA0", soft: "#FBE6EB", deep: "#9C3656" },
@@ -128,6 +130,10 @@ export default {
         nav: "0 1px 0 rgba(16,50,58,0.06)",
         tight: "0 1px 2px rgba(16,50,58,0.08)",
         paper: "0 1px 1px rgba(16,50,58,0.05), 0 12px 32px -18px rgba(16,50,58,0.32)",
+        // A sheet on the desk: hairline, a close shadow and a long soft one.
+        card: "0 0 0 1px rgba(16,50,58,0.07), 0 1px 2px rgba(16,50,58,0.05), 0 18px 40px -28px rgba(16,50,58,0.35)",
+        // Primary buttons: a lit top edge and a short drop.
+        button: "inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 2px rgba(10,33,39,0.25), 0 6px 14px -8px rgba(10,33,39,0.5)",
         lift: "0 2px 4px rgba(16,50,58,0.08), 0 24px 48px -24px rgba(16,50,58,0.40)",
         glow: "0 0 0 1px rgba(242,169,59,0.45), 0 0 32px 4px rgba(255,210,122,0.55)",
       },

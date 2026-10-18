@@ -104,7 +104,7 @@ function EnrollmentCard({
   const ch = useMessages(familyMessages).chapters;
 
   return (
-    <article className="overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+    <article className="overflow-hidden rounded-paper bg-white shadow-card">
       <span aria-hidden className={cn("block h-1.5", subjectTheme(curriculum.subjectCode, curriculum.subjectName).solid)} />
       <div className="flex flex-col gap-6 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">

@@ -31,7 +31,7 @@ export function ClassRosterPage() {
 
       {schoolClass.data && (
         <>
-          <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
+          <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">
             {schoolClass.data.name}
           </h1>
           {schoolClass.data.archived && <ArchivedClassNotice />}

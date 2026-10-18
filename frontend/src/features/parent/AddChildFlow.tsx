@@ -76,7 +76,7 @@ export function AddChildFlow() {
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-[28px] bg-white p-6 shadow-paper ring-1 ring-line/70 sm:p-9" aria-labelledby="setup-step">
+        <section className="min-w-0 rounded-[28px] bg-white p-6 shadow-card sm:p-9" aria-labelledby="setup-step">
           <p className="mb-1 text-sm font-semibold text-ink-soft">{m.stepOf(index + 1, steps.length)}</p>
           {step === "about" && (
             <AboutStep

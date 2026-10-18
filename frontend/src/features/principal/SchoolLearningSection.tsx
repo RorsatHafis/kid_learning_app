@@ -35,7 +35,7 @@ export function SchoolLearningSection({ schoolId }: { schoolId: string }) {
         </p>
       )}
       {data && data.classes.length > 0 && (
-        <div className="overflow-hidden rounded-[14px] border border-line bg-white">
+        <div className="overflow-hidden rounded-[18px] bg-white shadow-card">
           <ul aria-label={m.key} className="flex flex-wrap gap-x-4 gap-y-1.5 border-b border-line px-5 py-3 text-xs text-ink-soft">
             {TALLY.map((t) => (
               <li key={t.key} className="inline-flex items-center gap-1.5">

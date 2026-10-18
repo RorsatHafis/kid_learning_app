@@ -2,6 +2,7 @@ import { useId } from "react";
 import { cn } from "@/lib/utils/cn";
 import { useMessages } from "@/i18n/catalog";
 import { common } from "@/components/ui/messages";
+import { OFFICIAL_MARK } from "./officialMark";
 
 /**
  * The Bookeyond Kid mark: an open book, a lotus rising from its spine, and a spark of light
@@ -36,6 +37,19 @@ export function BrandMark({
   const c = TONES[tone];
   const compact = size < 36;
   const titleId = useId();
+  if (OFFICIAL_MARK) {
+    // PD-34: the official Bookeyond mark, once supplied, replaces the drawn one everywhere.
+    return (
+      <img
+        src={tone === "ink" ? OFFICIAL_MARK.ink : OFFICIAL_MARK.paper}
+        width={size}
+        height={size}
+        alt={title ?? ""}
+        aria-hidden={title ? undefined : true}
+        className={cn("shrink-0 object-contain", className)}
+      />
+    );
+  }
   return (
     <svg
       viewBox="0 0 64 64"
@@ -94,16 +108,21 @@ export function Logo({
   className?: string;
   showTagline?: boolean;
 }) {
-  const s = { sm: { mark: 32, text: "text-[1.15rem]" }, md: { mark: 40, text: "text-[1.4rem]" }, lg: { mark: 56, text: "text-[2rem]" }, xl: { mark: 88, text: "text-[3.2rem]" } }[size];
+  const s = { sm: { mark: 30, text: "text-[1.15rem]" }, md: { mark: 38, text: "text-[1.4rem]" }, lg: { mark: 54, text: "text-[2rem]" }, xl: { mark: 84, text: "text-[3.2rem]" } }[size];
   const ink = tone === "ink";
   const m = useMessages(common);
+  // Y38: "Bookeyond" is the parent brand; "Kid" is its tag - a marigold label beside the name, so the
+  // product reads as Bookeyond's, for children. The name stays one accessible string.
   return (
-    <span className={cn("inline-flex items-center gap-[0.45em]", s.text, className)}>
+    <span className={cn("inline-flex items-center gap-[0.4em]", s.text, className)}>
       <BrandMark size={s.mark} tone={ink ? "ink" : "paper"} />
       <span className="flex flex-col leading-none">
-        <span className="font-display font-[750] tracking-[-0.012em]">
-          <span className={ink ? "text-tonle-900" : "text-white"}>Bookeyond</span>
-          <span className={cn("font-[420] tracking-[-0.008em]", ink ? "text-tonle-600" : "text-tonle-200")}> Kid</span>
+        <span className="inline-flex items-center gap-[0.28em] font-display font-[760] tracking-[-0.014em]">
+          <span className={ink ? "text-tonle-950" : "text-white"}>Bookeyond</span>
+          <span className="sr-only"> </span>
+          <span className="rounded-[0.3em] bg-light px-[0.32em] pb-[0.06em] pt-[0.02em] font-sans text-[max(0.66em,12px)] font-bold tracking-[0.01em] text-tonle-950">
+            Kid
+          </span>
         </span>
         {showTagline && (
           <span className={cn("mt-[0.45em] font-sans text-[0.36em] font-medium tracking-[0.02em]", ink ? "text-ink-soft" : "text-tonle-200")}>

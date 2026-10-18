@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Coffee, Download, Hand, Languages, ShieldCheck, Sprout } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Check, Coffee, Download, Hand, Languages, ShieldCheck, Sprout } from "lucide-react";
 import { RiverGarden } from "@/features/world/RiverGarden";
 import { khmerNumber } from "@/features/world/PathOfBooks";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
@@ -58,10 +58,8 @@ export function LandingPage() {
   );
 }
 
-const goButton =
-  "inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-[14px] bg-light px-7 text-base font-semibold text-tonle-950 shadow-[0_3px_0_#C77A1E] transition-[background-color,transform,box-shadow] duration-150 ease-out hover:bg-light-glow active:translate-y-0.5 active:shadow-[0_1px_0_#C77A1E]";
-const quietButton =
-  "inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-[14px] bg-white/85 px-6 text-base font-semibold text-tonle-900 ring-1 ring-inset ring-tonle-950/10 backdrop-blur-sm transition-colors duration-150 hover:bg-white";
+const goButton = buttonClasses("accent", "lg", "px-8 text-[1.0625rem]");
+const quietButton = buttonClasses("outline", "lg", "bg-white/90");
 
 /**
  * The first view: the promise in both languages, a way in for families and one for schools, and the
@@ -70,6 +68,7 @@ const quietButton =
  */
 function Hero() {
   const m = useMessages(marketingMessages);
+  const t = useMessages(trustMessages);
   const l = m.landing;
   const locale = useLocale();
   const other = locale === "km" ? "en" : "km";
@@ -88,7 +87,7 @@ function Hero() {
         {/* a morning haze behind the words, so they read on the sky */}
         <div
           className="absolute inset-0"
-          style={{ background: "radial-gradient(ellipse 62% 72% at 16% 38%, rgba(244,246,241,0.96) 0%, rgba(244,246,241,0.78) 45%, rgba(244,246,241,0) 80%)" }}
+          style={{ background: "radial-gradient(ellipse 70% 96% at 16% 50%, rgba(246,243,236,0.97) 0%, rgba(246,243,236,0.86) 50%, rgba(246,243,236,0) 82%)" }}
         />
       </div>
       <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-4 pb-16 pt-10 sm:px-8 lg:min-h-[min(calc(100svh-4.5rem),900px)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:pb-24 lg:pt-16">
@@ -97,8 +96,8 @@ function Hero() {
           <p lang={other} className={cn("text-lg font-semibold leading-[1.6] text-clay-deep sm:text-xl", other === "km" && "font-khmer")}>
             {messagesIn(marketingMessages, other).hero.title}
           </p>
-          <h1 className="font-display text-[2.6rem] font-bold leading-[1.02] text-tonle-950 sm:text-[3.6rem] lg:text-[4.3rem]">{m.hero.title}</h1>
-          <p className="max-w-[31rem] text-lg leading-relaxed text-ink-soft">{m.hero.lead}</p>
+          <h1 className="font-display text-[2.7rem] font-bold leading-[1.0] tracking-[-0.02em] text-tonle-950 sm:text-[3.8rem] lg:text-[4.5rem]">{m.hero.title}</h1>
+          <p className="max-w-[31rem] text-lg leading-relaxed text-ink-soft sm:text-[1.1875rem]">{m.hero.lead}</p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link to="/register" className={goButton}>
               {l.forFamilies} <ArrowRight size={18} aria-hidden />
@@ -107,6 +106,18 @@ function Hero() {
               {l.forSchools}
             </a>
           </div>
+          <ul aria-label={t.proof.label} className="flex flex-col gap-2 border-t border-tonle-950/10 pt-5 text-[0.9375rem] font-medium text-tonle-900 sm:flex-row sm:flex-wrap sm:gap-x-6">
+            {[
+              { icon: Sprout, text: t.proof.ages },
+              { icon: BookOpenCheck, text: t.proof.evidence },
+              { icon: ShieldCheck, text: t.proof.safe },
+            ].map(({ icon: Icon, text }) => (
+              <li key={text} className="flex items-center gap-2">
+                <Icon size={18} strokeWidth={2} className="shrink-0 text-palm" aria-hidden />
+                {text}
+              </li>
+            ))}
+          </ul>
           <p className="text-sm font-medium text-ink-soft">{m.hero.status}</p>
         </div>
         <div className="relative mx-auto w-full max-w-[520px] lg:mx-0 lg:justify-self-end">
@@ -114,7 +125,7 @@ function Hero() {
             src={parentHome}
             alt={l.shotParent}
             width={1600}
-            height={1051}
+            height={949}
             eager
             className="ml-auto w-[88%] rotate-[1.5deg] motion-safe:animate-rise-in"
           />
@@ -221,14 +232,18 @@ function HowItWorks() {
         </figure>
       </div>
 
-      <ol className="mt-16 grid gap-x-8 gap-y-8 border-t border-line pt-10 sm:grid-cols-2 lg:grid-cols-5">
+      <ol className="relative mt-16 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-5">
+        {/* The loop is one line: each step hands on to the next. */}
+        <span aria-hidden className="absolute left-[22px] right-[22px] top-[22px] hidden h-px bg-gradient-to-r from-light via-tonle-300 to-palm lg:block" />
         {loop.map((text, i) => (
-          <li key={text} className="flex flex-col gap-3">
-            <span className="flex items-baseline gap-2 text-clay-deep">
-              <span lang="km" className="font-khmer text-2xl font-semibold">
-                {khmerNumber(i + 1)}
+          <li key={text} className="relative flex flex-col gap-4">
+            <span className="flex items-center gap-3">
+              <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-clay-deep shadow-card">
+                <span lang="km" className="font-khmer text-xl font-semibold leading-none">
+                  {khmerNumber(i + 1)}
+                </span>
               </span>
-              <span className="text-sm text-ink-faint">{i + 1}</span>
+              <span className="relative bg-paper px-1.5 text-sm font-semibold text-ink-faint">{i + 1}</span>
             </span>
             <p className="text-[0.9375rem] leading-relaxed text-ink">{text}</p>
           </li>
@@ -397,7 +412,7 @@ function Schools() {
           </div>
         </div>
         <figure className="flex flex-col gap-4">
-          <BrowserFrame src={teacherTrend} alt={l.shotTeacher} width={1400} height={1030} />
+          <BrowserFrame src={teacherTrend} alt={l.shotTeacher} width={1400} height={1097} />
           <figcaption className="text-sm text-tonle-200">
             {l.shotTeacher} {l.sample}
           </figcaption>

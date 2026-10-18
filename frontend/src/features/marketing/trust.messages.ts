@@ -9,6 +9,14 @@ export const trustMessages = defineMessages(
   "features/marketing/trust",
   {
     nav: { safety: "Safety", plans: "Plans" },
+    proof: {
+      label: "In short",
+      ages: "Short lessons for ages 4 to 9",
+      evidence: "Progress from real answers",
+      safe: "No ads, no chat, no strangers",
+    },
+    family: "Bookeyond Kid is the children's learning space from Bookeyond.",
+    language: "Language",
     safety: {
       title: "Safe by design. You decide.",
       lead: "A child's space with nothing in it that isn't for learning, and a parent who sets the rhythm.",
@@ -70,6 +78,14 @@ export const trustMessages = defineMessages(
   },
   {
     nav: { safety: "សុវត្ថិភាព", plans: "កញ្ចប់" },
+    proof: {
+      label: "ដោយសង្ខេប",
+      ages: "មេរៀនខ្លីៗសម្រាប់អាយុ 4 ដល់ 9 ឆ្នាំ",
+      evidence: "វឌ្ឍនភាពពីចម្លើយពិតប្រាកដ",
+      safe: "គ្មានពាណិជ្ជកម្ម គ្មានការជជែក គ្មានមនុស្សចម្លែក",
+    },
+    family: "Bookeyond Kid គឺជាកន្លែងរៀនសូត្ររបស់កុមារពី Bookeyond។",
+    language: "ភាសា",
     safety: {
       title: "សុវត្ថិភាពតាំងពីការរចនា។ អ្នកជាអ្នកសម្រេច។",
       lead: "កន្លែងរបស់កុមារដែលគ្មានអ្វីក្រៅពីការរៀន ហើយឪពុកម្ដាយជាអ្នកកំណត់ចង្វាក់។",

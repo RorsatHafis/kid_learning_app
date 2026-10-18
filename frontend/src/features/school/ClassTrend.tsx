@@ -13,7 +13,7 @@ import { formatDate } from "@/i18n/format";
 import { schoolMessages } from "./messages";
 
 const PERIODS = [4, 8, 12] as const;
-const card = "rounded-[16px] bg-white ring-1 ring-line";
+const card = "rounded-[20px] bg-white shadow-card";
 const dayMonth = (iso: string) => formatDate(iso, { day: "numeric", month: "short" });
 
 /**

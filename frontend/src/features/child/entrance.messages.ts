@@ -14,6 +14,8 @@ export const entranceMessages = defineMessages(
     booksLit: (done: number, total: number) => `${done} of ${total} done`,
     open: (subject: string, state: string) => `${subject}: ${state}`,
     allSubjects: "All my subjects",
+    next: (title: string) => `Next: ${title}`,
+    where: "Where shall we go today?",
   },
   {
     ask: "ថ្ងៃនេះ យើងរៀនអ្វី?",
@@ -26,5 +28,7 @@ export const entranceMessages = defineMessages(
     booksLit: (done: number, total: number) => `បានធ្វើ ${done} ក្នុងចំណោម ${total}`,
     open: (subject: string, state: string) => `${subject}៖ ${state}`,
     allSubjects: "មុខវិជ្ជាទាំងអស់របស់ខ្ញុំ",
+    next: (title: string) => `បន្ទាប់៖ ${title}`,
+    where: "ថ្ងៃនេះ យើងទៅណាដែរ?",
   },
 );

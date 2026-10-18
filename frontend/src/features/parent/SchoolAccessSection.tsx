@@ -113,7 +113,7 @@ function SchoolRow({
   const m = useMessages(familyMessages).school;
 
   return (
-    <li className="rounded-paper bg-white px-5 py-4 shadow-paper ring-1 ring-line/70">
+    <li className="rounded-paper bg-white px-5 py-4 shadow-card">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span
@@ -219,7 +219,7 @@ function JoinClass({
   }
 
   return (
-    <div className="flex flex-col gap-5 rounded-paper bg-white p-5 shadow-paper ring-1 ring-line/70 sm:p-6">
+    <div className="flex flex-col gap-5 rounded-paper bg-white p-5 shadow-card sm:p-6">
       {!preview ? (
         <form onSubmit={lookUp} className="flex flex-col gap-3" noValidate>
           <label htmlFor={inputId} className="text-sm font-semibold text-ink">

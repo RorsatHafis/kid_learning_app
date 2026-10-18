@@ -164,7 +164,7 @@ function FollowUp({
   return (
     <div className={cn("flex flex-col gap-8", data.practice.length > 0 && "pb-32 lg:pb-0")}>
       <header className="flex flex-col gap-2">
-        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
+        <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">
           {data.skillName}
         </h1>
         <p className="text-[0.9375rem] text-ink-soft">
@@ -198,7 +198,7 @@ function FollowUp({
                   </h3>
                   <p className="text-xs text-ink-soft">{standingHelp(standing)}</p>
                 </div>
-                <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
+                <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
                   {group.map((child) => (
                     <ChildRow
                       key={child.childId}

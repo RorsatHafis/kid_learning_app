@@ -31,7 +31,7 @@ export function ErrorState({ error, onRetry, message: messageOverride }: { error
   // The server's detail is already in the interface language (the request carried it).
   const message = messageOverride ?? (error instanceof ApiError && error.problem?.detail ? error.problem.detail : m.somethingWentWrong);
   return (
-    <div role="alert" className="flex flex-col items-center justify-center gap-4 rounded-paper bg-white px-6 py-14 text-center ring-1 ring-line">
+    <div role="alert" className="flex flex-col items-center justify-center gap-4 rounded-[20px] bg-white px-6 py-14 text-center shadow-card">
       <p className="font-display text-lg font-semibold text-ink">{m.didntLoad}</p>
       <p className="max-w-sm text-sm text-ink-soft">{message}</p>
       {onRetry && (
@@ -45,7 +45,7 @@ export function ErrorState({ error, onRetry, message: messageOverride }: { error
 
 export function EmptyState({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-paper border border-dashed border-line-strong px-6 py-14 text-center">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] border border-dashed border-line-strong bg-white/50 px-6 py-14 text-center">
       <svg viewBox="0 0 64 40" className="h-10 w-16 text-tonle-300" aria-hidden>
         <path d="M32 12 C25 6 13 5 4 8 L4 34 C13 31 25 32 32 38 C39 32 51 31 60 34 L60 8 C51 5 39 6 32 12 Z" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
         <path d="M32 12 L32 38" stroke="currentColor" strokeWidth="2.5" />

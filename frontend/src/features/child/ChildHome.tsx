@@ -19,6 +19,7 @@ import { useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
 import { entranceMessages } from "./entrance.messages";
 import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
+import { Bud } from "@/features/world/ProgressBuds";
 import { subjectTheme } from "@/features/learning/subjectTheme";
 
 
@@ -145,14 +146,15 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
         </RiverGarden>
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#E7F1EC] via-[#E7F1EC]/60 to-transparent lg:hidden" />
       </div>
-      <div className="relative mx-auto -mt-8 w-full max-w-6xl px-4 pb-12 sm:px-8 lg:mt-auto lg:pb-10 lg:pt-40">
-        <div className="flex max-w-[36rem] flex-col gap-6 rounded-[32px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 backdrop-blur-sm sm:p-8">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="relative mx-auto -mt-10 flex w-full max-w-6xl flex-col gap-5 px-4 pb-12 sm:px-8 lg:mt-auto lg:pb-10 lg:pt-40">
+        {/* Y38: a greeting band, then the subjects as destinations - big, illustrated, each saying what's next. */}
+        <div className="flex flex-col gap-5 rounded-[32px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 sm:p-7 lg:max-w-[44rem]">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 id="greeting" className="font-display text-[clamp(2.5rem,1.9rem+2.2vw,3.6rem)] font-bold leading-[1.02] text-tonle-950">
+              <h1 id="greeting" className="font-display text-[clamp(2.5rem,1.9rem+2.2vw,3.6rem)] font-bold leading-[1.02] tracking-[-0.015em] text-tonle-950">
                 {m.home.hi(name ?? "")}
               </h1>
-              <p className="mt-2 text-xl font-semibold text-ink-soft">{paths.length > 1 ? e.ask : e.askOne}</p>
+              <p className="mt-2 text-xl font-semibold text-ink-soft">{paths.length > 1 ? e.where : e.askOne}</p>
             </div>
             {unfinished?.nextStep && (
               <Link to={`/learn/${childId}/play/${unfinished.enrollmentId}`} className={cn(goButton, "pl-2.5 pr-7 text-lg")}>
@@ -166,11 +168,6 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
               </Link>
             )}
           </div>
-          <ul aria-label={e.subjects} className={cn("grid gap-3", paths.length > 1 && "sm:grid-cols-2 lg:grid-cols-1")}>
-            {paths.map((path) => (
-              <SubjectDoor key={path.enrollmentId} childId={childId} path={path} wide={paths.length === 1} />
-            ))}
-          </ul>
           <Link
             to={`/learn/${childId}/shelf`}
             className="inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
@@ -178,6 +175,11 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
             <Library size={16} aria-hidden /> {m.myShelf}
           </Link>
         </div>
+        <ul aria-label={e.subjects} className={cn("grid gap-4", paths.length > 1 ? "sm:grid-cols-2 lg:grid-cols-3" : "lg:max-w-[44rem]")}>
+          {paths.map((path) => (
+            <SubjectDoor key={path.enrollmentId} childId={childId} path={path} wide={paths.length === 1} />
+          ))}
+        </ul>
       </div>
     </section>
   );
@@ -190,32 +192,50 @@ function SubjectDoor({ childId, path, wide }: { childId: string; path: Enrollmen
   const subject = path.curriculum.subjectName ?? path.curriculum.name;
   const where = path.currentChapter ? [chapterOf(path.currentChapter, path.chapterCount), path.currentChapter.title].filter(Boolean).join(" · ") : null;
   const state = path.nextStep === null ? e.allDone : path.completedSteps === 0 ? e.start : (where ?? e.booksLit(path.completedSteps, path.totalSteps));
-  const total = Math.min(path.totalSteps, 12);
+  const total = Math.min(path.totalSteps, 10);
   const done = path.totalSteps > 0 ? Math.round((path.completedSteps / path.totalSteps) * total) : 0;
+  const next = path.nextStep;
   return (
-    <li>
+    <li className="min-w-0">
       <Link
         to={`/learn/${childId}?path=${path.enrollmentId}`}
         aria-label={e.open(subject, state)}
         className={cn(
-          "group flex h-full items-center gap-5 rounded-[26px] p-5 ring-2 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-lift active:translate-y-0",
-          t.soft,
-          t.ring,
-          wide && "sm:p-6",
+          "group flex h-full overflow-hidden rounded-[28px] bg-white shadow-lift ring-1 ring-tonle-950/5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 active:translate-y-0 motion-reduce:hover:translate-y-0",
+          wide ? "flex-col sm:flex-row" : "flex-col",
         )}
       >
-        <SubjectEmblem code={path.curriculum.subjectCode} name={path.curriculum.subjectName} size={wide ? 112 : 92} className="transition-transform duration-300 ease-out group-hover:-rotate-3 group-hover:scale-105" />
-        <span className="flex min-w-0 flex-1 flex-col gap-2">
-          <span className="font-display text-[1.75rem] font-bold leading-tight text-tonle-950">{subject}</span>
-          <span className={cn("text-base font-semibold", t.deep)}>{state}</span>
-          <span aria-hidden className="flex flex-wrap gap-1">
-            {Array.from({ length: total }, (_, i) => (
-              <span key={i} className={cn("h-2.5 w-5 rounded-[3px]", i < done ? t.solid : "bg-white/80 ring-1 ring-tonle-950/10")} />
-            ))}
-          </span>
+        <span aria-hidden className={cn("relative flex shrink-0 items-end justify-center overflow-hidden", t.soft, wide ? "h-36 sm:h-auto sm:w-56" : "h-36")}>
+          {/* a hill for the emblem to stand on, in the subject's own light */}
+          <span className="absolute -bottom-10 left-1/2 h-24 w-[120%] -translate-x-1/2 rounded-[50%] bg-white/55" />
+          <SubjectEmblem
+            code={path.curriculum.subjectCode}
+            name={path.curriculum.subjectName}
+            size={wide ? 124 : 108}
+            className="relative mb-2 transition-transform duration-300 ease-out group-hover:-rotate-3 group-hover:scale-105 motion-reduce:transition-none"
+          />
         </span>
-        <span aria-hidden className={cn("hidden h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-tight sm:flex", t.deep)}>
-          <ArrowRight size={22} />
+        <span className="flex min-w-0 flex-1 flex-col gap-2.5 p-5 sm:p-6">
+          <span className="flex items-start justify-between gap-3">
+            <span className="font-display text-[1.9rem] font-bold leading-tight tracking-[-0.01em] text-tonle-950">{subject}</span>
+            <span aria-hidden className={cn("mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform duration-200 ease-out group-hover:translate-x-0.5", t.soft, t.deep)}>
+              <ArrowRight size={21} />
+            </span>
+          </span>
+          <span className={cn("text-base font-semibold", t.deep)}>{state}</span>
+          {total > 0 && (
+            <span aria-hidden className="flex flex-wrap items-end gap-0.5">
+              {Array.from({ length: total }, (_, i) => (
+                <Bud key={i} state={i < done ? "open" : i === done && next ? "current" : "waiting"} size={24} />
+              ))}
+            </span>
+          )}
+          {next && (
+            <span className="mt-auto flex w-fit max-w-full items-center gap-2 rounded-pill bg-light-soft px-3.5 py-1.5 text-sm font-bold text-light-deep">
+              <Play size={13} fill="currentColor" aria-hidden className="shrink-0" />
+              <span className="truncate">{e.next(next.title)}</span>
+            </span>
+          )}
         </span>
       </Link>
     </li>
@@ -321,12 +341,9 @@ function BooksLit({ done, total, label, suffix }: { done: number; total: number;
   const m = useMessages(childMessages);
   return (
     <div className="flex items-center gap-3" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={label}>
-      <div className="flex flex-wrap gap-1.5" aria-hidden>
-        {Array.from({ length: total }, (_, i) => (
-          <span
-            key={i}
-            className={cn("h-2.5 w-6 rounded-[3px]", i < done ? "bg-light" : "bg-tonle-100")}
-          />
+      <div className="flex flex-wrap items-end gap-0.5" aria-hidden>
+        {Array.from({ length: Math.min(total, 12) }, (_, i) => (
+          <Bud key={i} state={i < done ? "open" : i === done ? "current" : "waiting"} size={22} />
         ))}
       </div>
       <span className="text-sm font-semibold text-ink-soft">

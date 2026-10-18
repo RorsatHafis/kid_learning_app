@@ -38,7 +38,7 @@ export function BreakReminderSection({ childId, childName }: { childId: string; 
   }
 
   return (
-    <section aria-labelledby="breaks" className="flex flex-col gap-4 rounded-[24px] bg-white p-6 shadow-paper ring-1 ring-line/70 sm:p-8">
+    <section aria-labelledby="breaks" className="flex flex-col gap-4 rounded-[24px] bg-white p-6 shadow-card sm:p-8">
       <div>
         <h2 id="breaks" className="font-display text-title font-bold text-tonle-950">
           {m.title}

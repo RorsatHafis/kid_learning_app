@@ -36,10 +36,12 @@ function groupBySection(nav: WorkspaceNavItem[]) {
  * name and the item you are on - and nothing else: data keeps the shared standing palette.
  */
 export type WorkspaceAccent = "sky" | "leaf" | "river";
+// Y38: the rail is the deep river; each workspace keeps its accent as the light on the item you are
+// on. Paper text on tonle-950: 15:1; tonle-300 labels 8:1.
 const ACCENT: Record<WorkspaceAccent, { band: string; chip: string; dot: string; active: string; icon: string }> = {
-  sky: { band: "bg-sky", chip: "bg-sky-soft text-sky-deep", dot: "bg-sky", active: "bg-sky-soft text-tonle-950 shadow-[inset_3px_0_0_#3B82C4]", icon: "text-sky-deep" },
-  leaf: { band: "bg-palm", chip: "bg-palm-soft text-palm-deep", dot: "bg-palm", active: "bg-palm-soft text-tonle-950 shadow-[inset_3px_0_0_#2E7A5A]", icon: "text-palm-deep" },
-  river: { band: "bg-tonle-700", chip: "bg-tonle-100 text-tonle-800", dot: "bg-tonle-700", active: "bg-tonle-100/80 text-tonle-950 shadow-[inset_3px_0_0_#1A515B]", icon: "text-tonle-700" },
+  sky: { band: "bg-sky", chip: "bg-white/[0.07] text-sky-pale", dot: "bg-sky-pale", active: "bg-white/[0.09] text-white shadow-[inset_3px_0_0_#94BEDF]", icon: "text-sky-pale" },
+  leaf: { band: "bg-palm", chip: "bg-white/[0.07] text-[#9FD8B9]", dot: "bg-[#9FD8B9]", active: "bg-white/[0.09] text-white shadow-[inset_3px_0_0_#9FD8B9]", icon: "text-[#9FD8B9]" },
+  river: { band: "bg-light", chip: "bg-white/[0.07] text-light-glow", dot: "bg-light-glow", active: "bg-white/[0.09] text-white shadow-[inset_3px_0_0_#FFD27A]", icon: "text-light-glow" },
 };
 
 /**
@@ -80,14 +82,14 @@ export function WorkspaceShell({
         end={end}
         className={({ isActive }) =>
           cn(
-            "group flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] transition-colors duration-150 lg:h-9",
-            isActive ? cn(a.active, "font-semibold") : "font-medium text-ink-soft hover:bg-paper hover:text-ink",
+            "group flex min-h-10 items-center gap-3 rounded-[10px] px-3 py-1.5 text-[0.9375rem] transition-colors duration-150",
+            isActive ? cn(a.active, "font-semibold") : "font-medium text-tonle-100 hover:bg-white/[0.06] hover:text-white",
           )
         }
       >
         {({ isActive }) => (
           <>
-            <Icon size={17} aria-hidden className={isActive ? a.icon : "text-ink-faint group-hover:text-tonle-700"} />
+            <Icon size={17} aria-hidden className={isActive ? a.icon : "text-tonle-300 group-hover:text-white"} />
             {label}
           </>
         )}
@@ -100,7 +102,7 @@ export function WorkspaceShell({
       {groupBySection(nav).map((group, index) =>
         group.section ? (
           <div key={group.section} role="group" aria-label={group.section}>
-            <p aria-hidden className="mb-1 px-3 text-[0.75rem] font-semibold text-ink-faint">
+            <p aria-hidden className="mb-1 px-3 text-[0.75rem] font-semibold text-tonle-300">
               {group.section}
             </p>
             <ul className="flex flex-col gap-0.5">{group.items.map(link)}</ul>
@@ -115,16 +117,16 @@ export function WorkspaceShell({
   );
 
   const account = (
-    <div className="flex flex-col gap-1 border-t border-line pt-4">
-      <p className="truncate px-3 text-sm text-ink-faint" title={session?.email}>
+    <div className="flex flex-col gap-1 border-t border-white/10 pt-4">
+      <p className="truncate px-3 text-sm text-tonle-300" title={session?.email}>
         {session?.email}
       </p>
       <button
         type="button"
         onClick={onLogout}
-        className="flex h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] font-medium text-ink-soft transition-colors duration-150 hover:bg-paper hover:text-ink"
+        className="flex min-h-10 items-center gap-3 rounded-[10px] px-3 text-[0.9375rem] font-medium text-tonle-100 transition-colors duration-150 hover:bg-white/[0.06] hover:text-white"
       >
-        <LogOut size={17} aria-hidden className="text-ink-faint" /> {m.logOut}
+        <LogOut size={17} aria-hidden className="text-tonle-300" /> {m.logOut}
       </button>
     </div>
   );
@@ -133,10 +135,10 @@ export function WorkspaceShell({
     <div className="min-h-screen bg-paper">
       <SkipLink />
       {/* Desktop rail */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-line bg-white px-3 pb-4 pt-5 lg:flex">
-        <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1", a.band)} />
-        <Link to={home} className="mb-2 w-fit rounded-[10px] px-3 py-1" aria-label={m.workspaceHome}>
-          <Logo size="sm" />
+      <aside className="on-night fixed inset-y-0 left-0 z-30 hidden w-[256px] flex-col bg-tonle-950 px-3 pb-4 pt-5 text-white lg:flex">
+        <span aria-hidden className={cn("absolute inset-x-0 top-0 h-[3px]", a.band)} />
+        <Link to={home} className="mb-3 w-fit rounded-[10px] px-3 py-1" aria-label={m.workspaceHome}>
+          <Logo size="sm" tone="paper" />
         </Link>
         <p className={cn("mx-3 mb-6 inline-flex w-fit items-center gap-2 rounded-pill px-3 py-1 text-[0.8125rem] font-semibold", a.chip)}>
           <span aria-hidden className={cn("h-2 w-2 rounded-full", a.dot)} />
@@ -149,12 +151,12 @@ export function WorkspaceShell({
       </aside>
 
       {/* Phone and tablet bar */}
-      <header className="sticky top-0 z-30 border-b border-line bg-white/95 text-ink backdrop-blur-sm lg:hidden">
-        <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1", a.band)} />
+      <header className="on-night sticky top-0 z-30 bg-tonle-950 text-white lg:hidden">
+        <span aria-hidden className={cn("absolute inset-x-0 top-0 h-[3px]", a.band)} />
         <div className="flex h-14 items-center gap-3 px-4">
           <Link to={home} className="flex items-center gap-2.5 rounded-[10px]" aria-label={m.workspaceHome}>
-            <BrandMark size={30} />
-            <span className="text-sm font-semibold text-tonle-950">{workspace}</span>
+            <BrandMark size={30} tone="paper" />
+            <span className="text-sm font-semibold text-white">{workspace}</span>
           </Link>
           <button
             type="button"
@@ -162,20 +164,20 @@ export function WorkspaceShell({
             aria-expanded={open}
             aria-controls="workspace-menu"
             aria-label={open ? m.closeMenu : m.openMenu}
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-[10px] text-tonle-900 hover:bg-paper"
+            className="ml-auto flex h-11 w-11 items-center justify-center rounded-[10px] text-white hover:bg-white/10"
           >
             {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
           </button>
         </div>
-        <div id="workspace-menu" hidden={!open} className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-line px-3 pb-4 pt-3">
+        <div id="workspace-menu" hidden={!open} className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-white/10 px-3 pb-4 pt-3">
           <nav aria-label={m.menuOf(workspace)}>{links}</nav>
           <div className="mt-3">{account}</div>
         </div>
       </header>
 
-      <main id="main" tabIndex={-1} className="lg:pl-[248px]">
+      <main id="main" tabIndex={-1} className="lg:pl-[256px]">
         <LegalUpdateNotice />
-        <div className="mx-auto max-w-[1180px] px-4 pb-20 pt-6 sm:px-8 sm:pt-9">
+        <div className="mx-auto max-w-[1180px] px-4 pb-20 pt-7 sm:px-10 sm:pt-11">
           <Outlet />
         </div>
       </main>
@@ -197,12 +199,12 @@ export function PageHeader({
 }) {
   useDocumentTitle(typeof title === "string" ? title : null);
   return (
-    <header className="flex flex-col gap-3 pb-7">
+    <header className="flex flex-col gap-3 pb-8">
       {breadcrumb && breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} />}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 max-w-3xl">
-          <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{title}</h1>
-          {description && <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-ink-soft">{description}</p>}
+          <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">{title}</h1>
+          {description && <p className="mt-2 max-w-[60ch] text-[0.9375rem] leading-relaxed text-ink-soft">{description}</p>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
@@ -229,7 +231,7 @@ export function Panel({
   id?: string;
 }) {
   return (
-    <section aria-labelledby={title && id ? id : undefined} className={cn("overflow-hidden rounded-[16px] bg-white ring-1 ring-line shadow-[0_1px_2px_rgba(16,50,58,0.04)]", className)}>
+    <section aria-labelledby={title && id ? id : undefined} className={cn("overflow-hidden rounded-[20px] bg-white shadow-card", className)}>
       {(title || actions) && (
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div className="min-w-0">

@@ -52,7 +52,7 @@ export function AccountsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{m.title}</h1>
+        <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">{m.title}</h1>
         <p className="max-w-2xl text-sm text-ink-soft">{m.lead}</p>
       </div>
 

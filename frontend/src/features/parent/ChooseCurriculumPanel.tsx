@@ -67,7 +67,7 @@ export function ChooseCurriculumPanel({
   if (error) return <ErrorState error={error} onRetry={refetch} />;
 
   return (
-    <div className="flex flex-col gap-5 rounded-paper bg-white p-6 shadow-paper ring-1 ring-line/70 sm:p-8">
+    <div className="flex flex-col gap-5 rounded-paper bg-white p-6 shadow-card sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-display text-lg font-semibold text-tonle-950">{m.title}</p>

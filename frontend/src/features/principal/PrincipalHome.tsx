@@ -74,7 +74,7 @@ function SchoolFrame({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           {!overview && <p className="text-sm font-semibold text-palm-deep">{school.name}</p>}
-          <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
+          <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">
             {overview ? school.name : title}
           </h1>
           <p className="mt-1.5 max-w-prose text-[0.9375rem] text-ink-soft">{overview ? m.lead : lead}</p>
@@ -192,7 +192,7 @@ function SetUpSchool({ onCreated }: { onCreated: () => void }) {
         <SchoolIcon size={22} aria-hidden />
       </div>
       <div>
-        <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">{m.setUpTitle}</h1>
+        <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">{m.setUpTitle}</h1>
         <p className="mt-1 text-sm text-ink-soft">{m.setUpLead}</p>
       </div>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -346,7 +346,7 @@ function Classes({
 function ClassList({ classes, byId }: { classes: SchoolClassWithTeachers[]; byId: Map<string, ClassOverview> }) {
   const m = useMessages(staffMessages).principal;
   return (
-    <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
+    <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
       {classes.map((c) => {
         const summary = byId.get(c.id);
         return summary ? (
@@ -434,7 +434,7 @@ function Teachers({ school, onChanged }: { school: SchoolSummary; onChanged: () 
         <p className="rounded-[14px] border border-dashed border-line-strong px-5 py-4 text-sm text-ink-soft">{w.noTeachers}</p>
       )}
       {visible.length > 0 && (
-        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
+        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
           {visible.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
               <div className="min-w-0">

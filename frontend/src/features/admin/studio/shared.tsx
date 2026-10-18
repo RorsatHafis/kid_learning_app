@@ -114,13 +114,13 @@ export function Panel({
     <section
       aria-labelledby={id}
       className={cn(
-        "overflow-hidden rounded-[16px] bg-white shadow-[0_1px_2px_rgba(16,50,58,0.04)] ring-1 ring-line",
+        "overflow-hidden rounded-[20px] bg-white shadow-card",
         flush ? "pt-5 sm:pt-6" : "p-5 sm:p-6",
         className,
       )}
     >
       <div className={cn("mb-4 flex flex-wrap items-center justify-between gap-2", flush && "px-5 sm:px-6")}>
-        <h2 id={id} className="text-base font-semibold text-tonle-950">
+        <h2 id={id} className="font-display text-[1.2rem] font-bold leading-snug text-tonle-950">
           {title}
         </h2>
         {action}
@@ -300,7 +300,7 @@ export function ComposerPanel({
       )}
     >
       <div className="flex items-center justify-between gap-3 border-b border-line bg-tonle-50/60 px-5 py-3 sm:px-6">
-        <h2 id={id} className="text-base font-semibold text-tonle-950">
+        <h2 id={id} className="font-display text-[1.2rem] font-bold leading-snug text-tonle-950">
           {title}
         </h2>
         {onClose && (

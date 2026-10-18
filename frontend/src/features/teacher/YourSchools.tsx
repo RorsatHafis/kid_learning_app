@@ -29,7 +29,7 @@ export function YourSchools({ onLeft }: { onLeft: () => void }) {
         </p>
       )}
       {data.length > 0 && (
-        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
+        <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
           {data.map((membership) => (
             <Membership
               key={membership.id}

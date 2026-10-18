@@ -101,7 +101,7 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
         <div className="flex min-w-0 flex-col gap-12">
           <section aria-labelledby="stands" className="flex flex-col gap-5">
             <SectionTitle id="stands" title={m.whereItStands} />
-            <div className="flex flex-col gap-4 rounded-paper bg-white p-6 shadow-paper ring-1 ring-line/70 sm:p-8">
+            <div className="flex flex-col gap-4 rounded-paper bg-white p-6 shadow-card sm:p-8">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <span className="text-lg">
                   <Standing standing={now.standing} />
@@ -135,7 +135,7 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
             ) : (
               <>
                 <MovementStrip activities={story.activities} />
-                <ol className="flex flex-col divide-y divide-line overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+                <ol className="flex flex-col divide-y divide-line overflow-hidden rounded-paper bg-white shadow-card">
                   {story.activities.map((a) => (
                     <ActivityRow key={a.attemptId} activity={a} />
                   ))}

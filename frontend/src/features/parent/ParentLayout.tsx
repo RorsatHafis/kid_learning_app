@@ -38,7 +38,7 @@ export function ParentLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-paper">
       <SkipLink />
       <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
         <div className="mx-auto flex h-16 max-w-[1180px] items-center gap-6 px-4 sm:px-8">

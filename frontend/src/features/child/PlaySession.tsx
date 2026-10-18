@@ -514,7 +514,12 @@ function Page({ children, className, labelledBy }: { children: React.ReactNode; 
   return (
     <section
       aria-labelledby={labelledBy}
-      className={cn("relative mx-auto w-full max-w-3xl rounded-[32px] bg-[#FFFDF8] text-ink shadow-lift ring-1 ring-tonle-950/5", className)}
+      className={cn(
+        "relative mx-auto w-full max-w-3xl rounded-[32px] bg-[#FFFDF8] text-ink shadow-lift ring-1 ring-tonle-950/5",
+        // Y38: a storybook page - a printed frame line just inside the sheet.
+        "before:pointer-events-none before:absolute before:inset-[10px] before:rounded-[24px] before:border before:border-[#EFE6D2]",
+        className,
+      )}
     >
       {children}
     </section>
@@ -719,6 +724,29 @@ function Question({
   );
 }
 
+/**
+ * A moment of light when the work was all right or a chapter ends: motes of marigold and lotus rise
+ * from the page and fade. Purely decorative (hidden from assistive tech) and gone under reduced motion.
+ */
+function Celebration() {
+  const motes = Array.from({ length: 18 }, (_, i) => {
+    const angle = (i / 18) * Math.PI - Math.PI; // the upper half
+    const reach = 120 + (i % 3) * 46;
+    return { bx: Math.cos(angle) * reach, by: Math.sin(angle) * reach, delay: (i % 6) * 70, lotus: i % 3 === 0 };
+  });
+  return (
+    <span aria-hidden className="pointer-events-none absolute left-1/2 top-24 z-10 motion-reduce:hidden">
+      {motes.map((mote, i) => (
+        <span
+          key={i}
+          className={cn("absolute h-2.5 w-2.5 rounded-full animate-burst", mote.lotus ? "bg-lotus" : "bg-light-glow shadow-[0_0_12px_rgba(255,210,122,0.9)]")}
+          style={{ "--bx": `${mote.bx}px`, "--by": `${mote.by}px`, animationDelay: `${mote.delay}ms`, animationDuration: "1100ms" } as React.CSSProperties}
+        />
+      ))}
+    </span>
+  );
+}
+
 /** Y36: a break the parent asked for, suggested at this natural pause; the child chooses. */
 interface BreakSuggestion {
   minutes: number;
@@ -752,6 +780,7 @@ function Completed({
   return (
     <div className="px-4 pb-16 pt-28 sm:pt-32">
       <Page labelledBy="done-title" className="px-6 pb-10 pt-10 text-center motion-safe:animate-pop-in sm:px-14 sm:pb-12">
+        {(allRight || finishedChapter) && <Celebration />}
         {/* One buddy: on the path when the path is shown, otherwise standing over the page. */}
         {chapterSteps.length === 0 && <LearningBuddy mood="cheer" size={140} className="mx-auto -mt-32 sm:-mt-36" />}
         <h1 id="done-title" className="font-display text-headline font-bold text-tonle-950">

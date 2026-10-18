@@ -57,7 +57,7 @@ export function PrincipalClassPage() {
       {schoolClass.data && (
         <>
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
+            <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">
               {schoolClass.data.name}
             </h1>
             <ManageClassButton
@@ -81,7 +81,7 @@ export function PrincipalClassPage() {
                 {m.noClassTeacher}
               </p>
             ) : (
-              <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
+              <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
                 {schoolClass.data.teachers.map((t) => (
                   <li key={t.accountId} className="flex items-center justify-between gap-3 px-5 py-3">
                     <span className="break-all font-semibold text-ink">{t.email}</span>

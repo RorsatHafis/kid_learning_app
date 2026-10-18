@@ -23,7 +23,7 @@ export function TeachingTools() {
       <h2 id="your-content" className="text-sm font-semibold text-ink-soft">
         {m.title}
       </h2>
-      <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[14px] border border-line bg-white">
+      <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
         <li>
           <Link to="/teacher/studio" className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-tonle-50/60">
             <LibraryBig size={20} className="shrink-0 text-tonle-600" aria-hidden />

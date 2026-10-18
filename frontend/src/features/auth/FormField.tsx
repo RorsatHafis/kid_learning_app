@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils/cn";
 
 /** Shared look for text inputs, selects and textareas on adult surfaces. */
 export const fieldClasses =
-  "w-full rounded-[12px] bg-white px-4 text-[0.9375rem] text-ink ring-1 ring-inset ring-line-strong placeholder:text-ink-faint outline-none transition-shadow duration-150 ease-out hover:ring-tonle-300 focus:ring-2 focus:ring-tonle-600 aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-brick disabled:bg-paper-sunk disabled:text-ink-faint";
+  "w-full rounded-[14px] bg-white px-4 text-[0.9375rem] text-ink shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] ring-1 ring-inset ring-line-strong placeholder:text-ink-faint outline-none transition-shadow duration-150 ease-out hover:ring-tonle-300 focus:ring-2 focus:ring-tonle-600 focus:shadow-[0_0_0_4px_rgba(34,99,110,0.12)] aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-brick disabled:bg-paper-sunk disabled:text-ink-faint";
 
 /** A labelled input. The label, the error message and the invalid state are tied to
  * the input explicitly, so assistive technology announces the error with the field. */

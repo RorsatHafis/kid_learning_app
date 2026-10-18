@@ -87,7 +87,7 @@ function ObjectiveTable({ childId, objective, position }: { childId: string; obj
   const started = objective.skillsPractised > 0;
   const m = useMessages(familyMessages).skills;
   return (
-    <article className="overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+    <article className="overflow-hidden rounded-paper bg-white shadow-card">
       <header className="flex flex-wrap items-start justify-between gap-4 px-6 pb-5 pt-6 sm:px-8">
         <div className="max-w-xl">
           <h4 className="font-display text-lg font-semibold text-tonle-950">

@@ -82,7 +82,7 @@ export function MediaLibraryPage() {
       />
       <StorageMeter version={storageVersion} />
 
-      <div className="flex flex-col gap-3 rounded-[16px] bg-white p-4 ring-1 ring-line sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="flex flex-col gap-3 rounded-[20px] bg-white p-4 shadow-card sm:flex-row sm:flex-wrap sm:items-center">
         <SearchField
           label={m.search}
           placeholder={m.searchHint}

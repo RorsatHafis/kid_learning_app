@@ -515,7 +515,7 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
             {m.displayName.charAt(0).toUpperCase()}
           </span>
           <div>
-            <h1 className="font-display text-[1.875rem] font-semibold leading-tight tracking-[-0.01em] text-tonle-950 sm:text-[2.125rem]">
+            <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">
               {m.displayName}
             </h1>
             <p className="text-sm text-ink-soft">{w.since(longDate(m.joinedAt))}</p>

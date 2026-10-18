@@ -47,8 +47,8 @@ export function ParentHome() {
   return (
     <div className="flex flex-col gap-10">
       <SceneBand>
-        <div className="flex min-h-[220px] flex-col justify-end gap-3 px-6 pb-8 pt-12 sm:min-h-[250px] sm:px-10">
-          <h1 className="font-display text-headline font-bold text-tonle-950">{m.title}</h1>
+        <div className="flex min-h-[200px] flex-col justify-end gap-2 px-6 pb-7 pt-12 sm:min-h-[210px] sm:px-10">
+          <h1 className="font-display text-[2.4rem] font-bold leading-[1.05] tracking-[-0.015em] text-tonle-950 sm:text-[2.9rem]">{m.title}</h1>
           <p className="max-w-md text-[1.0625rem] leading-relaxed text-ink-soft">{count === 0 ? m.leadEmpty : m.lead}</p>
         </div>
       </SceneBand>
@@ -57,7 +57,7 @@ export function ParentHome() {
       {error && <ErrorState error={error} onRetry={refetch} />}
 
       {children && children.length === 0 && (
-        <section className="flex flex-col items-center gap-4 rounded-[28px] bg-white px-6 py-14 text-center shadow-paper ring-1 ring-line/70">
+        <section className="flex flex-col items-center gap-4 rounded-[28px] bg-white px-6 py-14 text-center shadow-card">
           <LearningBuddy mood="happy" size={120} />
           <h2 className="font-display text-2xl font-bold text-tonle-950">{m.noChildren}</h2>
           <p className="max-w-sm text-ink-soft">{m.noChildrenLead}</p>
@@ -72,7 +72,7 @@ export function ParentHome() {
           <section aria-label={m.children} className="flex min-w-0 flex-col gap-6">
             {children.map((child) =>
               child.status === "DELETION_PENDING" ? (
-                <div key={child.id} className="overflow-hidden rounded-[28px] bg-white shadow-paper ring-1 ring-line/70">
+                <div key={child.id} className="overflow-hidden rounded-[28px] bg-white shadow-card">
                   <PendingChildChapter child={child} onKept={refetch} />
                 </div>
               ) : (
@@ -84,6 +84,7 @@ export function ParentHome() {
             <h2 id="family-actions" className="font-display text-xl font-bold text-tonle-950">
               {s.doTitle}
             </h2>
+            <div className="flex flex-col divide-y divide-line overflow-hidden rounded-[22px] bg-white shadow-card">
             <Action to="/parent/add-child" icon={<Plus size={18} aria-hidden />} tone="bg-coral-soft text-coral-deep" title={s.addChild} lead={s.addChildLead} />
             {first && (
               <Action
@@ -95,6 +96,7 @@ export function ParentHome() {
               />
             )}
             <Action to="/parent/account" icon={<CreditCard size={18} aria-hidden />} tone="bg-palm-soft text-palm-deep" title={s.account} lead={s.accountLead} />
+            </div>
           </aside>
         </div>
       )}
@@ -106,7 +108,7 @@ function Action({ to, icon, tone, title, lead }: { to: string; icon: ReactNode; 
   return (
     <Link
       to={to}
-      className="group flex items-start gap-3 rounded-[20px] bg-white p-4 ring-1 ring-line/80 transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-soft"
+      className="group flex items-start gap-3 p-4 transition-colors duration-150 ease-out hover:bg-paper"
     >
       <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]", tone)}>{icon}</span>
       <span className="flex min-w-0 flex-col">
@@ -145,12 +147,12 @@ function ChildSummary({ child }: { child: Child }) {
     enrollments.every((e) => e.nextStep === null && e.totalSteps > 0 && e.completedSteps >= e.totalSteps);
 
   return (
-    <article className="overflow-hidden rounded-[28px] bg-white shadow-paper ring-1 ring-line/70">
-      <header className="flex flex-wrap items-center justify-between gap-4 bg-cream px-6 py-5 sm:px-8">
+    <article className="overflow-hidden rounded-[28px] bg-white shadow-card">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-6 py-5 sm:px-8">
         <Link to={`/parent/children/${child.id}`} className="group flex items-center gap-4">
           <ChildPortrait buddy={child.learningBuddy} />
           <div>
-            <h2 className="font-display text-2xl font-bold text-tonle-950 group-hover:underline group-hover:decoration-tonle-300 group-hover:underline-offset-4">
+            <h2 className="font-display text-[1.75rem] font-bold leading-tight tracking-[-0.01em] text-tonle-950 group-hover:underline group-hover:decoration-tonle-300 group-hover:underline-offset-4">
               {child.displayName}
             </h2>
             <p className="flex flex-wrap gap-x-1.5 text-sm text-ink-soft">
@@ -229,7 +231,7 @@ function SubjectLine({ enrollment, words }: { enrollment: EnrollmentOverview; wo
           <span className="font-semibold text-tonle-950">{curriculum.subjectName ?? curriculum.name}</span>
           <span className="tabular text-[0.8125rem] text-ink-faint">{words.steps(enrollment.completedSteps, enrollment.totalSteps)}</span>
         </p>
-        <span aria-hidden className={cn("h-2 overflow-hidden rounded-full", t.soft)}>
+        <span aria-hidden className={cn("h-1.5 overflow-hidden rounded-full", t.soft)}>
           <span className={cn("block h-full rounded-full", t.solid)} style={{ width: `${Math.round(share * 100)}%` }} />
         </span>
         <p className="truncate text-sm text-ink-soft">{pathState(enrollment, words)}</p>

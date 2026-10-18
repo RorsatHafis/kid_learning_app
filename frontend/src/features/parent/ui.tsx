@@ -51,7 +51,7 @@ export function ChildPortrait({ buddy, size = "md" }: { buddy: LearningBuddyKind
 /** A page opening: the same place the child learns in, seen in calm daylight. */
 export function SceneBand({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <section className={cn("relative overflow-hidden rounded-[28px] bg-tonle-50 ring-1 ring-line/60", className)}>
+    <section className={cn("relative overflow-hidden rounded-[28px] bg-tonle-50 shadow-card", className)}>
       <div aria-hidden className="absolute inset-0">
         <RiverGarden variant="band" crop="center" frame={false} className="absolute inset-x-0 top-0 h-[62%] w-full sm:inset-y-0 sm:left-auto sm:right-0 sm:h-full sm:w-[72%]" />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#fff_0%,#fff_34%,rgba(255,255,255,0.72)_52%,rgba(255,255,255,0)_78%)] max-sm:bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.1)_20%,rgba(255,255,255,0.86)_42%,#fff_64%)]" />

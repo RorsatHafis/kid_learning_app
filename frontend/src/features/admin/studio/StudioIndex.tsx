@@ -62,7 +62,7 @@ export function StudioIndex() {
         />
       )}
       {archived && subjects.data && subjects.data.length > 0 && (
-        <ul aria-label={m.archivedList} className="divide-y divide-line overflow-hidden rounded-[16px] bg-white ring-1 ring-line">
+        <ul aria-label={m.archivedList} className="divide-y divide-line overflow-hidden rounded-[20px] bg-white shadow-card">
           {subjects.data.map((subject) => (
             <li key={subject.id} className="flex items-center justify-between gap-4 px-5 py-4">
               <span className="min-w-0">
@@ -84,7 +84,7 @@ export function StudioIndex() {
         </ul>
       )}
       {!archived && subjects.data && subjects.data.length > 0 && (
-        <ul className="divide-y divide-line overflow-hidden rounded-[16px] bg-white ring-1 ring-line">
+        <ul className="divide-y divide-line overflow-hidden rounded-[20px] bg-white shadow-card">
           {subjects.data.map((subject) => (
             <li key={subject.id}>
               <Link

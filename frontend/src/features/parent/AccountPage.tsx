@@ -46,7 +46,7 @@ export function AccountPage() {
         <p className="text-[1.0625rem] text-ink-soft">{m.lead}</p>
       </header>
 
-      <div className="divide-y divide-line overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+      <div className="divide-y divide-line overflow-hidden rounded-paper bg-white shadow-card">
         <SettingsRow id="profile" title={m.details} subtitle={m.detailsSub}>
           {profile.isLoading && !profile.data && <LoadingState label={m.loadingAccount} />}
           {profile.error && <ErrorState error={profile.error} onRetry={profile.refetch} />}

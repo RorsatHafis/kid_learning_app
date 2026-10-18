@@ -72,7 +72,7 @@ export function ChangesSection({ childId, childName }: { childId: string; childN
             <span className="font-semibold">{m.answers(data.answersSince)}</span>
             {m.onSkills(data.changes.length, phrase)}
           </p>
-          <div className="flex flex-col divide-y divide-line overflow-hidden rounded-paper bg-white shadow-paper ring-1 ring-line/70">
+          <div className="flex flex-col divide-y divide-line overflow-hidden rounded-paper bg-white shadow-card">
             {groups
               .filter((g) => g.items.length > 0)
               .map((group) => (
