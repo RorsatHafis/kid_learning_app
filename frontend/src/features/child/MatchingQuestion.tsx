@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { HowTo } from "./HowTo";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, QuestionOption } from "@/lib/api/types";
@@ -85,9 +86,7 @@ export function MatchingQuestion({
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-center text-base font-bold text-ink-soft">
-        {answered ? m.yourMatches : m.howTo}
-      </p>
+      {answered ? <p className="text-center text-base font-bold text-ink-soft">{m.yourMatches}</p> : <HowTo kind="match">{m.howTo}</HowTo>}
       <div className="grid grid-cols-2 gap-3 sm:gap-6">
         <ul className="flex flex-col gap-3" aria-label={m.left}>
           {lefts.map((l, index) => {

@@ -168,10 +168,13 @@ describe("ShelfPage (X18)", () => {
     expect(screen.getByRole("listitem", { name: "Book 3, waiting" })).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "My lanterns" })).getByText("First book lit")).toBeInTheDocument();
 
-    expect(await screen.findByText("Count to 10")).toBeInTheDocument();
-    expect(screen.getByText("Add within 5")).toBeInTheDocument();
-    // A skill that needs practice is not paraded in front of the child.
-    expect(screen.queryByText("Add within 10")).not.toBeInTheDocument();
+    // Y39: the garden grows only from the server's standings - secure blooms, progressing buds.
+    const garden = within(screen.getByRole("region", { name: "My garden" }));
+    expect(await garden.findByRole("listitem", { name: "Count to 10: I can do this" })).toBeInTheDocument();
+    expect(garden.getByRole("listitem", { name: "Add within 5: Getting stronger" })).toBeInTheDocument();
+    // A skill that needs practice is never labelled so in front of the child: it is a neutral sprout, still growing.
+    expect(garden.getByRole("listitem", { name: "Add within 10: Growing" })).toBeInTheDocument();
+    expect(screen.queryByText(/needs practice/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Play next/ })).toHaveAttribute("href", "/learn/c1/play/e1");
   });
 });

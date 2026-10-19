@@ -15,6 +15,7 @@ export const entranceMessages = defineMessages(
     open: (subject: string, state: string) => `${subject}: ${state}`,
     allSubjects: "All my subjects",
     next: (title: string) => `Next: ${title}`,
+    replay: "Play any book again from your shelf",
     where: "Where shall we go today?",
   },
   {
@@ -29,6 +30,7 @@ export const entranceMessages = defineMessages(
     open: (subject: string, state: string) => `${subject}៖ ${state}`,
     allSubjects: "មុខវិជ្ជាទាំងអស់របស់ខ្ញុំ",
     next: (title: string) => `បន្ទាប់៖ ${title}`,
+    replay: "លេងសៀវភៅណាមួយម្ដងទៀតពីធ្នើររបស់ប្អូន",
     where: "ថ្ងៃនេះ យើងទៅណាដែរ?",
   },
 );

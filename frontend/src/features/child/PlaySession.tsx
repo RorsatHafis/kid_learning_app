@@ -21,6 +21,10 @@ import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
 import { breakDue, readSitting, sittingMinutes, useBreakReminder } from "./breaks";
+import { grown, type GardenPlant } from "./garden";
+import { gardenMessages } from "./garden.messages";
+import { Plant } from "@/features/world/Plant";
+import type { CurriculumProgress } from "@/lib/api/types";
 import { childBreakMessages } from "@/features/parent/breaks.messages";
 
 /** Why loading or saving stopped: a key into the child's words, so the line follows the language. */
@@ -47,6 +51,8 @@ type Phase =
   | { kind: "completing" }
   | {
       kind: "completed";
+      /** Y39: skills whose standing advanced with this activity (server standings, before vs after). */
+      grew?: GardenPlant[];
       title: string;
       correct: number;
       total: number;
@@ -91,6 +97,21 @@ export function PlaySession() {
   // Y36: the sitting grows while the child plays and finishes activities.
   const breaks = useBreakReminder(childId);
   const { touch } = breaks;
+  // Y39: what the answers showed before this activity, to say afterwards what grew. Read once per
+  // activity; a failed read only means no "your garden grew" (it never blocks playing).
+  const skillsBefore = useRef<CurriculumProgress[] | null>(null);
+  const snapshotFor = useRef<string | null>(null);
+  useEffect(() => {
+    if ((phase.kind !== "intro" && phase.kind !== "playing") || snapshotFor.current === phase.attemptId) return;
+    snapshotFor.current = phase.attemptId;
+    skillsBefore.current = null;
+    learningApi
+      .skills(childId)
+      .then((s) => {
+        skillsBefore.current = s;
+      })
+      .catch(() => undefined);
+  }, [phase, childId]);
   useEffect(() => {
     if (phase.kind === "playing" || phase.kind === "completed") touch();
   }, [phase.kind, touch]);
@@ -153,9 +174,10 @@ export function PlaySession() {
         return;
       }
       playCue("complete");
-      const [answers, after] = await Promise.all([
+      const [answers, after, skillsAfter] = await Promise.all([
         activityAttemptApi.listAnswers(attemptId).catch(() => [] as AnswerRecord[]),
         journeyAfter(itemId),
+        learningApi.skills(childId).catch(() => null),
       ]);
       setPhase({
         kind: "completed",
@@ -163,10 +185,11 @@ export function PlaySession() {
         correct: answers.filter((answer) => answer.correct).length,
         total: answers.length,
         itemId,
+        grew: grown(skillsBefore.current, skillsAfter),
         ...after,
       });
     },
-    [journeyAfter],
+    [journeyAfter, childId],
   );
 
   const loadNext = useCallback(async () => {
@@ -747,6 +770,31 @@ function Celebration() {
   );
 }
 
+/** Y39: the skills this activity helped grow, from the server's standings before and after it. */
+function GardenGrew({ plants }: { plants: GardenPlant[] }) {
+  const g = useMessages(gardenMessages);
+  return (
+    <section aria-labelledby="grew-title" className="mx-auto mt-6 max-w-md rounded-[22px] bg-rice-soft px-5 pb-4 pt-4 ring-1 ring-rice/30">
+      <h2 id="grew-title" className="font-display text-xl font-bold text-tonle-950">
+        {g.grew}
+      </h2>
+      <p className="text-sm font-medium text-rice-deep">{g.grewNote}</p>
+      <ul className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-3">
+        {plants.slice(0, 4).map((p, i) => (
+          <li
+            key={p.skill.skillId}
+            className="flex flex-col items-center gap-1 motion-safe:animate-pop-in"
+            style={{ animationDelay: `${300 + i * 140}ms` }}
+          >
+            <Plant stage={p.stage} size={56} />
+            <span className="max-w-[9rem] text-sm font-bold leading-snug text-tonle-950">{g.newPlant[p.stage](p.skill.name)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /** Y36: a break the parent asked for, suggested at this natural pause; the child chooses. */
 interface BreakSuggestion {
   minutes: number;
@@ -794,6 +842,7 @@ function Completed({
             {m.gotRight(correct, total)}
           </p>
         )}
+        {phase.grew && phase.grew.length > 0 && <GardenGrew plants={phase.grew} />}
         {chapterSteps.length > 0 && (
           // The child's stretch of the path: the book just finished takes the light where it sits.
           <div className={cn("mt-8 overflow-hidden bg-[#EAF3E4] px-4 pt-3", next ? "rounded-t-[22px]" : "rounded-[22px] pb-3")}>

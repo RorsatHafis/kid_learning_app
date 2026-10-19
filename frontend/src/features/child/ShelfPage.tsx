@@ -2,16 +2,17 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Check, Play, RotateCcw } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
-import type { CurriculumProgress, JourneyStep, SkillProgress } from "@/lib/api/types";
+import type { CurriculumProgress, JourneyStep } from "@/lib/api/types";
 import { BuddySays } from "@/features/buddy/LearningBuddy";
 import { stepTag } from "@/features/learning/explain";
 import { Lantern } from "@/features/world/Lantern";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils/cn";
+import { SkillGarden } from "./SkillGarden";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { goButton, quietButton } from "./chips";
 import { Trouble, Waiting } from "./ChildHome";
-import { SHELF_SPINES, milestones, skillShelves, type Shelf } from "./shelf";
+import { SHELF_SPINES, milestones, type Shelf } from "./shelf";
 import { useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
 
@@ -66,7 +67,6 @@ function Shelves({
 }) {
   const lit = shelves.reduce((sum, s) => sum + s.journey.steps.filter((step) => step.status === "COMPLETED").length, 0);
   const lanterns = milestones(shelves);
-  const { canDo, growing } = skillShelves(skills);
   const next = shelves.find((s) => s.overview.nextStep !== null);
   const all = useMessages(childMessages);
   const m = all.shelf;
@@ -128,15 +128,8 @@ function Shelves({
         )}
       </section>
 
-      {(canDo.length > 0 || growing.length > 0) && (
-        <section aria-labelledby="can-do" className="grid gap-6 md:grid-cols-2">
-          <h2 id="can-do" className="sr-only">
-            {m.whatICanDo}
-          </h2>
-          {canDo.length > 0 && <SkillCard title={m.iCan} tone="lit" skills={canDo} note={m.iCanNote} />}
-          {growing.length > 0 && <SkillCard title={m.gettingStronger} tone="growing" skills={growing} note={m.gettingStrongerNote} />}
-        </section>
-      )}
+      {/* Y39: what the child has practised, as a garden that grows only from their answers. */}
+      <SkillGarden skills={skills} />
 
       {shelves.length === 0 ? (
         <BuddySays mood="happy" size={110}>
@@ -152,45 +145,6 @@ function Shelves({
           />
         ))
       )}
-    </div>
-  );
-}
-
-function SkillCard({
-  title,
-  tone,
-  skills,
-  note,
-}: {
-  title: string;
-  tone: "lit" | "growing";
-  skills: SkillProgress[];
-  note: string;
-}) {
-  return (
-    <div className="flex flex-col gap-4 rounded-[24px] bg-white/95 p-6 shadow-paper ring-1 ring-tonle-950/5">
-      <div>
-        <h3 className="font-display text-xl font-bold text-tonle-950">{title}</h3>
-        <p className="text-sm text-ink-soft">{note}</p>
-      </div>
-      <ul className="flex flex-col gap-2">
-        {skills.map((skill) => (
-          <li key={skill.skillId} className="flex items-center gap-3">
-            <span
-              aria-hidden
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                tone === "lit"
-                  ? "bg-light text-tonle-950"
-                  : "bg-light-soft text-light-deep ring-1 ring-light/50",
-              )}
-            >
-              {tone === "lit" ? <Check size={16} strokeWidth={3} /> : <span className="h-2.5 w-2.5 rounded-full bg-light" />}
-            </span>
-            <span className="text-[1.05rem] font-semibold text-tonle-950">{skill.name}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

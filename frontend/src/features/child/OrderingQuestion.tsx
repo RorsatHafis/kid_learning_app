@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { HowTo } from "./HowTo";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, QuestionOption } from "@/lib/api/types";
@@ -64,9 +65,11 @@ export function OrderingQuestion({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <p className="text-center text-base font-bold text-ink-soft">
-        {answered ? (result.correct ? m.rightOrder : m.yourOrder) : m.howTo}
-      </p>
+      {answered ? (
+        <p className="text-center text-base font-bold text-ink-soft">{result.correct ? m.rightOrder : m.yourOrder}</p>
+      ) : (
+        <HowTo kind="order">{m.howTo}</HowTo>
+      )}
 
       <ol aria-label={m.orderLabel} className="flex flex-wrap items-stretch justify-center gap-2 sm:gap-3">
         {items.map((_, index) => {

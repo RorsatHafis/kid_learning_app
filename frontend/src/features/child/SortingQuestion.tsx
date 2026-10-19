@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { HowTo } from "./HowTo";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, QuestionOption } from "@/lib/api/types";
@@ -71,9 +72,11 @@ export function SortingQuestion({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <p className="text-center text-base font-bold text-ink-soft">
-        {answered ? (result.correct ? m.allRight : m.yourGroups) : picked ? m.tapGroupFor(byId.get(picked)?.label ?? "") : m.howTo}
-      </p>
+      {answered ? (
+        <p className="text-center text-base font-bold text-ink-soft">{result.correct ? m.allRight : m.yourGroups}</p>
+      ) : (
+        <HowTo kind="sort">{picked ? m.tapGroupFor(byId.get(picked)?.label ?? "") : m.howTo}</HowTo>
+      )}
 
       {!answered && (
         <ul aria-label={m.toSort} className="flex min-h-[5rem] flex-wrap items-start justify-center gap-2 sm:gap-3">

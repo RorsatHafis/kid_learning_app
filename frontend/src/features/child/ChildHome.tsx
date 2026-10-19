@@ -20,6 +20,9 @@ import { childMessages } from "./messages";
 import { entranceMessages } from "./entrance.messages";
 import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
 import { Bud } from "@/features/world/ProgressBuds";
+import { GardenGlimpse } from "./SkillGarden";
+import { gardenMessages } from "./garden.messages";
+import { RotateCcw } from "lucide-react";
 import { subjectTheme } from "@/features/learning/subjectTheme";
 
 
@@ -132,6 +135,10 @@ function BackToSubjects({ childId }: { childId: string }) {
 function Entrance({ childId, name, paths }: { childId: string; name?: string; paths: EnrollmentOverview[] }) {
   const m = useMessages(childMessages);
   const e = useMessages(entranceMessages);
+  const g = useMessages(gardenMessages);
+  // The garden glimpse is a nice-to-have: if the skills can't be read, the home simply doesn't show it.
+  const skills = useAsync(() => learningApi.skills(childId), [childId]);
+  const review = paths.find((p) => p.nextStep?.explanation.reason === "REVIEW");
   const unfinished = paths.find((p) => p.nextStep?.status === "IN_PROGRESS");
   const bloom = paths.reduce((sum, p) => sum + journeyLight(p), 0) / paths.length;
   return (
@@ -168,12 +175,31 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
               </Link>
             )}
           </div>
-          <Link
-            to={`/learn/${childId}/shelf`}
-            className="inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
-          >
-            <Library size={16} aria-hidden /> {m.myShelf}
-          </Link>
+          {review?.nextStep && (
+            <Link
+              to={`/learn/${childId}/play/${review.enrollmentId}`}
+              className="flex items-center gap-3 rounded-[20px] bg-lotus-soft px-4 py-3 ring-1 ring-lotus/30 transition-colors duration-150 ease-out hover:bg-[#F8DCE3]"
+            >
+              <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-lotus-deep">
+                <RotateCcw size={18} />
+              </span>
+              <span className="flex flex-col">
+                <span className="font-bold text-tonle-950">{g.review}</span>
+                <span className="text-sm font-medium text-lotus-deep">
+                  {g.reviewNote(review.nextStep.explanation.skill?.name ?? review.nextStep.title)}
+                </span>
+              </span>
+            </Link>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to={`/learn/${childId}/shelf`}
+              className="inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
+            >
+              <Library size={16} aria-hidden /> {m.myShelf}
+            </Link>
+            <GardenGlimpse childId={childId} skills={skills.data} />
+          </div>
         </div>
         <ul aria-label={e.subjects} className={cn("grid gap-4", paths.length > 1 ? "sm:grid-cols-2 lg:grid-cols-3" : "lg:max-w-[44rem]")}>
           {paths.map((path) => (
@@ -235,6 +261,10 @@ function SubjectDoor({ childId, path, wide }: { childId: string; path: Enrollmen
               <Play size={13} fill="currentColor" aria-hidden className="shrink-0" />
               <span className="truncate">{e.next(next.title)}</span>
             </span>
+          )}
+          {!next && path.completedSteps > 0 && (
+            // A finished path offers what really exists: replaying lit books from the shelf.
+            <span className="mt-auto text-sm font-semibold text-ink-soft">{e.replay}</span>
           )}
         </span>
       </Link>
@@ -422,10 +452,17 @@ function MyPath({
     return <div className={cn(scroll && "max-h-[340px] overflow-y-auto pr-1")}>{steps}</div>;
   }
   return (
-    <ol className={cn("flex flex-col gap-1.5", scroll && "max-h-[380px] overflow-y-auto pr-1")} aria-label={m.home.chapters}>
+    <ol
+      className={cn(
+        // Y39: the chapters as stops on a village trail - a dashed sand path runs behind the stops.
+        "relative flex flex-col gap-1.5 before:absolute before:bottom-5 before:left-[25px] before:top-5 before:w-[3px] before:rounded-full before:bg-[repeating-linear-gradient(to_bottom,#E6CFA0_0_8px,transparent_8px_14px)]",
+        scroll && "max-h-[380px] overflow-y-auto pr-1",
+      )}
+      aria-label={m.home.chapters}
+    >
       {journey.chapters.map((chapter) =>
         chapter.id === focus.chapter!.id ? (
-          <li key={chapter.id} className="rounded-[18px] bg-paper p-2 ring-1 ring-line">
+          <li key={chapter.id} className="relative rounded-[20px] bg-light-soft/60 p-2 ring-1 ring-light/40">
             <p className="flex items-baseline justify-between gap-3 px-2 pb-2 pt-1">
               <span className="text-sm font-bold text-tonle-950">{m.home.chapter(chapter.position, chapter.title)}</span>
               <span className="shrink-0 text-xs font-semibold text-clay-deep">{m.home.youAreHere}</span>
@@ -467,8 +504,8 @@ function ChapterRow({ chapter }: { chapter: Chapter }) {
       <span
         aria-hidden
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
-          done ? "bg-light-soft text-light-deep" : later ? "bg-paper text-ink-faint" : "bg-tonle-50 text-tonle-700",
+          "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-4 ring-white",
+          done ? "bg-light text-tonle-950" : later ? "bg-paper-sunk text-ink-faint" : "bg-tonle-100 text-tonle-700",
         )}
       >
         {done ? <Check size={17} strokeWidth={3} /> : <BookOpen size={16} />}
@@ -491,10 +528,10 @@ function StepRow({ step, index, isCurrent, playHref }: { step: JourneyStep; inde
   const badge = (
     <span
       className={cn(
-        "flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-sm font-bold",
-        done && "bg-light-soft text-light-deep",
-        isCurrent && "bg-light text-tonle-950",
-        !done && !isCurrent && "bg-paper text-ink-soft ring-1 ring-line",
+        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ring-4 ring-white",
+        done && "bg-light text-tonle-950",
+        isCurrent && "bg-tonle-900 text-light shadow-[0_0_0_6px_rgba(242,169,59,0.35)]",
+        !done && !isCurrent && "bg-paper-sunk text-ink-soft",
       )}
       aria-hidden
     >
@@ -517,7 +554,7 @@ function StepRow({ step, index, isCurrent, playHref }: { step: JourneyStep; inde
     <Link
       to={playHref}
       aria-label={m.playStep(step.title, status)}
-      className="flex items-center gap-3 rounded-[14px] bg-light-soft p-2 ring-1 ring-light/50 transition-colors duration-150 ease-out hover:bg-light-soft/70"
+      className="flex items-center gap-3 rounded-[16px] bg-white p-2 shadow-tight ring-1 ring-light/60 transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-soft"
     >
       {body}
     </Link>
