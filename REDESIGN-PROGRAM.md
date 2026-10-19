@@ -43,10 +43,14 @@ Started 2026-10-19 from aed3a32. Phases are marked when done, so they are never 
 | 2 | Parent dashboard and statistics | ✅ Each child answers four questions in four ruled cells: Learning (subjects, where, last activity), What the answers show (standing bar), The last 4 weeks (what became secure or moved up, what may need practice, link to What changed), Next (the path's step, or the parent's decision when a path is done or missing). Removed: duplicated "every step done", per-child empty "nothing flagged" panel, per-child notes (now one "About these numbers") |
 | 3 | Teacher, principal, admin deeper screens | ✅ Principal Teachers page says which classes each teacher teaches (or that they have none yet), linked; Studio activities as one ruled sheet of lessons instead of a card each. Reviewed and kept: Studio authoring (checks, preview, review, versions, skills), class workspace, admin accounts, schools, plans, storage, learning operations |
 | 4 | Landing and design-system gaps | ✅ Hero screenshots re-captured from the redesigned product (parent four-cell overview; child home with the garden by the path) and their descriptions updated; the rest of the landing kept as completed in Y39 |
-| 5 | Responsive and bilingual pass; final checks | ⏳ |
+| 5 | Responsive and bilingual pass; final checks | ✅ Khmer on a phone: child home, shelf, a matching activity through completion, parent overview (account and child switched to Khmer, then restored); desktop, tablet and phone of the changed screens; tsc, ESLint, Vitest 51/280, build; E2E accessibility 8, golden 9, school 2, studio 4, language 4 |
 
 **Child review (what was only restyled, what was weak):** the world showed chapters (pond lotuses) but
 not what the child can do; a wrong typed answer or order was corrected only in words; the sorting basket
 took a tap only on its name; the lantern rail showed only past lanterns, nothing to look forward to.
 Hints, missions, points and new destinations have no backing in the content model or the API, so they
 are not invented.
+
+**Y40 complete.** What remains waits on the owner: the official Bookeyond logo (PD-34), native Khmer review
+of the drafted copy (PD-14), educator-authored curriculum (PD-15), and hints or explanations in the content
+model if they are wanted.
