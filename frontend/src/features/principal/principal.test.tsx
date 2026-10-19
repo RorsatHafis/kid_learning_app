@@ -158,7 +158,10 @@ describe("PrincipalHome", () => {
       "GET /schools/mine": respond(200, [SCHOOL]),
       "GET /schools/s1/learning": respond(200, NO_LEARNING),
       "GET /schools/s1/plan": respond(200, SCHOOL_PLAN),
-      "GET /schools/s1/classes": respond(200, []),
+      "GET /schools/s1/classes": respond(200, [
+        { id: "k1", schoolId: "s1", name: "Grade 1A", teachers: [{ accountId: "t1", email: "active@example.com" }], archived: false },
+        { id: "k2", schoolId: "s1", name: "Old class", teachers: [{ accountId: "t1", email: "active@example.com" }], archived: true },
+      ]),
       "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, staff),
       "POST /schools/s1/staff": (_m, body) =>
@@ -184,6 +187,9 @@ describe("PrincipalHome", () => {
 
     expect(await screen.findByText("active@example.com")).toBeInTheDocument();
     expect(screen.getByText("Teaching here")).toBeInTheDocument();
+    // Y40: which classes each teacher teaches - active ones only - each a way to its page.
+    expect(await screen.findByRole("link", { name: "Grade 1A" })).toHaveAttribute("href", "/principal/classes/k1");
+    expect(screen.queryByRole("link", { name: "Old class" })).not.toBeInTheDocument();
     expect(screen.queryByText("gone@example.com")).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Teacher's email"), "parent@example.com");

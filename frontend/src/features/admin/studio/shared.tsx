@@ -101,6 +101,7 @@ export function Panel({
   action,
   className,
   flush,
+  bare,
 }: {
   title: string;
   children: ReactNode;
@@ -108,13 +109,16 @@ export function Panel({
   className?: string;
   /** The body runs edge to edge (tables); the header keeps its padding. */
   flush?: boolean;
+  /** One section of a larger sheet: no card of its own (Y40). */
+  bare?: boolean;
 }) {
   const id = useId();
   return (
     <section
       aria-labelledby={id}
       className={cn(
-        "overflow-hidden rounded-[20px] bg-white shadow-card",
+        "overflow-hidden bg-white",
+        !bare && "rounded-[20px] shadow-card",
         flush ? "pt-5 sm:pt-6" : "p-5 sm:p-6",
         className,
       )}

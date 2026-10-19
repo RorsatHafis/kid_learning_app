@@ -385,8 +385,35 @@ const STATUS: Record<SchoolStaffMember["status"], { label: (m: SchoolStaffMember
   REMOVED: { label: () => words().removed, className: "text-ink-soft" },
 };
 
+/** The active classes this teacher is assigned to, each a way to its page; or that there is none yet. */
+function TeacherClasses({
+  classes,
+  accountId,
+  words,
+}: {
+  classes: SchoolClassWithTeachers[];
+  accountId: string;
+  words: { teaches: string; noClassYet: string };
+}) {
+  const theirs = classes.filter((c) => !c.archived && c.teachers.some((t) => t.accountId === accountId));
+  if (theirs.length === 0) return <p className="mt-1 text-sm text-light-deep">{words.noClassYet}</p>;
+  return (
+    <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-ink-soft">
+      <span>{words.teaches}:</span>
+      {theirs.map((c) => (
+        <Link key={c.id} to={`/principal/classes/${c.id}`} className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+          {c.name}
+        </Link>
+      ))}
+    </p>
+  );
+}
+
 function Teachers({ school, onChanged }: { school: SchoolSummary; onChanged: () => void }) {
   const staff = useAsync(() => schoolApi.staff(school.id), [school.id]);
+  // Y40: who teaches which class - a principal's first question about a teacher. A failed read only hides it.
+  const classes = useAsync(() => schoolApi.schoolClasses(school.id), [school.id]);
+  const ws = useMessages(principalWorkspaceMessages);
   const [email, setEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -440,6 +467,7 @@ function Teachers({ school, onChanged }: { school: SchoolSummary; onChanged: () 
               <div className="min-w-0">
                 <p className="break-all font-semibold text-ink">{m.email}</p>
                 <p className={`text-sm font-medium ${STATUS[m.status].className}`}>{STATUS[m.status].label(m)}</p>
+                {m.status === "ACTIVE" && classes.data && <TeacherClasses classes={classes.data} accountId={m.accountId} words={ws} />}
               </div>
               {confirmingRemove === m.id ? (
                 <div className="flex flex-wrap items-center gap-2" role="group" aria-label={w.confirmRemoving(m.email)}>

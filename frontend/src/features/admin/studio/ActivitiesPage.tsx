@@ -90,9 +90,12 @@ export function ActivitiesPage() {
           className={cn("flex flex-col gap-5 transition-opacity", lessons.isLoading && "opacity-60")}
           aria-busy={lessons.isLoading}
         >
-          {data.items.map((lesson) => (
-            <LessonPanel key={lesson.id} lesson={lesson} onChanged={lessons.refetch} />
-          ))}
+          {/* Y40: the lessons as one ruled sheet - a lesson is a heading over its activities, not a card each. */}
+          <div className="flex flex-col divide-y divide-line overflow-hidden rounded-[20px] bg-white shadow-card">
+            {data.items.map((lesson) => (
+              <LessonPanel key={lesson.id} lesson={lesson} onChanged={lessons.refetch} />
+            ))}
+          </div>
           <Pager label={m.lessons} page={data.page} size={data.size} total={data.total} onPage={setPage} />
         </div>
       )}
@@ -107,6 +110,7 @@ function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: 
   return (
     <Panel
       title={lesson.title}
+      bare
       action={
         <span className="flex items-center gap-2">
           {lesson.archived && <ArchivedBadge />}
