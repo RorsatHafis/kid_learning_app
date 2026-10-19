@@ -91,6 +91,8 @@ describe("PracticeSession (X24)", () => {
 
     expect(await screen.findByText("Playing it again")).toBeInTheDocument();
     expect(calls.find((c) => c.method === "POST")?.body).toEqual({ activityVersionId: "av1" });
+    // Y40: the intro shows what the book asks the child to do, from its own questions.
+    expect(screen.getByRole("list", { name: "In this book" }).textContent).toBe("Numbers");
     await user.click(screen.getByRole("button", { name: /Let's go/ }));
     await user.type(await screen.findByRole("textbox"), "4");
     await user.click(screen.getByRole("button", { name: "Check" }));

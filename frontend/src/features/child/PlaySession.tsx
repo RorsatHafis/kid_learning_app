@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, BookOpen, Library, X } from "lucide-react";
+import { ArrowDownToLine, ArrowRight, BookOpen, Hash, Library, Link2, ListOrdered, Pencil, Pointer, ThumbsUp, X } from "lucide-react";
 import { ProgressBuds, Bud } from "@/features/world/ProgressBuds";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
-import type { ActivityVersionDetail, AnswerRecord, Chapter, EnrollmentOverview, JourneyStep } from "@/lib/api/types";
+import type { ActivityVersionDetail, AnswerRecord, Chapter, EnrollmentOverview, JourneyStep, QuestionType } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { play as playCue } from "@/features/buddy/sound";
 import { childReason } from "@/features/learning/explain";
@@ -582,6 +582,7 @@ function Intro({
           </div>
           <p className="text-base font-semibold text-ink-soft">{m.lanterns(n)}</p>
         </div>
+        <Kinds activity={activity} />
 
         <div className="mt-9 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
           <JourneyLink href={journeyHref} />
@@ -590,6 +591,47 @@ function Intro({
           </button>
         </div>
       </Page>
+    </div>
+  );
+}
+
+/** A picture of what each kind of question asks the child to do; the word beside it is the label. */
+const KIND_PICTURE: Record<QuestionType, typeof Pointer> = {
+  MULTIPLE_CHOICE: Pointer,
+  TRUE_FALSE: ThumbsUp,
+  NUMERIC: Hash,
+  SHORT_ANSWER: Pencil,
+  ORDERING: ListOrdered,
+  MATCHING: Link2,
+  SORTING: ArrowDownToLine,
+};
+
+/**
+ * Y40: what this book will ask the child to do - choose, put in order, match, sort... - as pictures
+ * with one word each, in the order they first come. Read from the activity's own questions.
+ */
+function Kinds({ activity }: { activity: ActivityVersionDetail }) {
+  const m = useMessages(childMessages).play;
+  const kinds = [...new Set(activity.items.map((item) => item.questionType))].filter((k): k is QuestionType => k in KIND_PICTURE);
+  if (kinds.length === 0) return null;
+  return (
+    <div className="mx-auto mt-6 flex max-w-lg flex-col items-center gap-2.5">
+      <p id="in-this-book" className="text-sm font-bold text-clay-deep">
+        {m.inThisBook}
+      </p>
+      <ul aria-labelledby="in-this-book" className="flex flex-wrap justify-center gap-2">
+        {kinds.map((kind) => {
+          const Icon = KIND_PICTURE[kind];
+          return (
+            <li key={kind} className="flex items-center gap-2 rounded-pill bg-tonle-50 py-1.5 pl-1.5 pr-4 font-bold text-tonle-800 ring-1 ring-tonle-100">
+              <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-tonle-600 shadow-tight">
+                <Icon size={17} strokeWidth={2.4} />
+              </span>
+              {m.kinds[kind]}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

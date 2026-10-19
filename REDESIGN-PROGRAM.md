@@ -39,8 +39,8 @@ Started 2026-10-19 from aed3a32. Phases are marked when done, so they are never 
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | Child experience | ⏳ World garden, verdict pictures, in-place corrections, whole-basket sorting, next lantern done; buddy and intro next |
-| 2 | Parent dashboard and statistics | ⬜ |
+| 1 | Child experience | ✅ Garden in the world (by the path), verdicts as lotus pictures, right answer and right order shown in place, whole basket takes a tile, next lantern with books to go, intro shows what the book asks (pictures + one word) |
+| 2 | Parent dashboard and statistics | ⏳ |
 | 3 | Teacher, principal, admin deeper screens | ⬜ |
 | 4 | Landing and design-system gaps | ⬜ |
 | 5 | Responsive and bilingual pass; final checks | ⬜ |
