@@ -54,3 +54,16 @@ are not invented.
 **Y40 complete.** What remains waits on the owner: the official Bookeyond logo (PD-34), native Khmer review
 of the drafted copy (PD-14), educator-authored curriculum (PD-15), and hints or explanations in the content
 model if they are wanted.
+
+---
+
+# Learning feedback and official brand (Y41)
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Practice, improvement and mastery told apart | ✅ The completion screen uses the server's change rule; "grew" only for became secure or moved up; first answers are "new"; the rest is "good practice"; sprouts read "Practising" |
+| 2 | Author-written hints and explanations | ✅ V61; Studio authoring, checks and preview; hint before answering (never the answer), explanation only with it |
+| 3 | Child-friendly feedback | ✅ "Need a hint?" pill; "Why" card under the verdict and the right answer; Khmer and English checked |
+| 4 | Official Bookeyond logo | ✅ The supplied badge, recoloured to the platform teal as allowed, with KID underneath at every touchpoint; drafted mark retired |
+
+Hints and explanations exist only where educators write them (PD-15); the interface Khmer still needs native review (PD-14).
