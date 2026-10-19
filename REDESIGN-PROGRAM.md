@@ -13,8 +13,8 @@ BOOKEYOND-KID-ENGINEERING-PROGRESS.md.
 | 5 | Parent dashboard, statistics, drill-downs | ✅ Done: per-child "Recently" (one activity's answers, labelled as such) and "Next" (named as a review when it is one) signals shown only with data; no duplicate date; path count says "steps done"; practice box only when flagged (Y37); drill-down Overview → child → Skills & progress → skill evidence kept |
 | 6 | Landing page and marketing story | ✅ Done: "Watch understanding grow" section (real plant stages, real garden shot with sample data, no points/coins/streaks), fresh child-entrance and parent shots matching the current product |
 | 7 | Teacher, principal and admin workspaces | ✅ Done: teacher home in two columns (classes are the work; content, media and schools beside them); "On this page" index on the long class page for teachers and principals, built from the headings actually shown; Studio subject list drops the placeholder dash. Principal home (reach, setup gaps, learning across classes, plan) and admin dashboard (what waits on you first, platform numbers beside) were already summary-first and stay |
-| 8 | Bilingual, responsive and shared components | ⏳ In progress |
-| 9 | Bounded final review and commit | ⬜ |
+| 8 | Bilingual, responsive and shared components | ✅ Done: Khmer captured at phone width with the account and the child each switched to Khmer (entrance, shelf and garden, parent home, child page, account, sign-in) and restored after; tablet (768) captures of landing, parent, child and teacher; desktop and phone of every changed screen. No defect needed a code change; curriculum titles correctly stay in their own language |
+| 9 | Bounded final review and commit | ✅ Done: tsc, ESLint (0 errors), Vitest 50 files / 275 tests, vite build; E2E accessibility 8, golden 9, school 2, studio 4, language 4, plan 4, navigation 4 (all passed); Y39 row in the progress record; DESIGN.md components |
 
 ## Decisions
 
@@ -29,4 +29,4 @@ BOOKEYOND-KID-ENGINEERING-PROGRESS.md.
 
 ## Next step
 
-Step 8: Khmer and phone pass over child, parent, settings, sign-in and empty states.
+The program is complete. What remains waits on the owner: the official Bookeyond logo (PD-34), native Khmer review (PD-14), and educator-authored curriculum (PD-15).
