@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Check, Delete, X } from "lucide-react";
+import { ArrowRight, Check, Delete, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, CorrectAnswer, MediaRef } from "@/lib/api/types";
 import { MatchingQuestion } from "./MatchingQuestion";
@@ -358,6 +358,19 @@ function FreeResponse({
       {answered && result.correct && <SparkBurst />}
     </span>
   );
+  // Y40: what it should have been, in the same place and size (the words below say it too, for readers).
+  const rightOne = answered && !result.correct && result.correctAnswer?.text ? result.correctAnswer.text : null;
+  const withRightOne = rightOne ? (
+    <span className="inline-flex items-baseline gap-[0.25em]">
+      {slot}
+      <span aria-hidden className="inline-flex items-center gap-[0.2em] motion-safe:animate-pop-in">
+        <ArrowRight className="h-[0.6em] w-[0.6em] self-center text-tonle-400" strokeWidth={3} />
+        <span className="rounded-[0.28em] border-[3px] border-light bg-light-soft px-[0.25em] text-tonle-950 shadow-glow">{rightOne}</span>
+      </span>
+    </span>
+  ) : (
+    slot
+  );
 
   return (
     <form onSubmit={submit} className="flex flex-col items-center gap-8">
@@ -369,7 +382,7 @@ function FreeResponse({
               {/* the rest of the prompt ("?"), so the heading still reads as the whole question */}
               <span className="sr-only">{trimmedPrompt.slice(lead.length)}</span>
             </Heading>
-            {slot}
+            {withRightOne}
           </div>
         ) : (
           <>
@@ -380,8 +393,8 @@ function FreeResponse({
         )}
       </PromptFrame>
       {!inline && (
-        <div className={cn(promptClass, "flex w-full justify-center", numeric ? "text-[clamp(2.5rem,1.6rem+3.6vw,4rem)]" : "text-[2rem]")} style={promptStyle}>
-          {slot}
+        <div className={cn(promptClass, "flex w-full flex-wrap justify-center", numeric ? "text-[clamp(2.5rem,1.6rem+3.6vw,4rem)]" : "text-[2rem]")} style={promptStyle}>
+          {withRightOne}
         </div>
       )}
 

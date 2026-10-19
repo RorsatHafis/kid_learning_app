@@ -109,6 +109,23 @@ export function OrderingQuestion({
         })}
       </ol>
 
+      {answered && !result.correct && correctOrder.length > 0 && (
+        // Y40: the order it should be, seen and not only read (each tile above also says it to a screen reader).
+        <div aria-hidden className="flex flex-col items-center gap-2 rounded-[20px] bg-light-soft/70 px-4 pb-4 pt-3 ring-1 ring-light/40 motion-safe:animate-rise-in">
+          <p className="text-sm font-bold text-light-deep">{m.theRightOrder}</p>
+          <ol className="flex flex-wrap justify-center gap-2">
+            {correctOrder.map((option, index) => (
+              <li
+                key={`${option.id}-${index}`}
+                className="flex h-14 min-w-14 items-center justify-center rounded-[14px] border-[3px] border-light bg-white px-3 font-display text-[1.375rem] font-bold leading-none text-tonle-950"
+              >
+                {option.image ? <img src={option.image.url} alt="" className="h-10 w-10 rounded-[8px] object-contain" /> : option.label}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
       {!answered && (
         <ul aria-label={m.waiting} className="flex min-h-[5.5rem] flex-wrap items-start justify-center gap-2 sm:gap-3">
           {waiting.map((option) => (

@@ -721,6 +721,10 @@ function Question({
               result.correct ? "bg-light-soft" : "bg-tonle-50",
             )}
           >
+            {/* Y40: the verdict as a picture, for a child who can't read the words yet. */}
+            <span aria-hidden className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-full ring-4 ring-white", result.correct ? "bg-white motion-safe:animate-pop-in" : "bg-white/80")}>
+              <Bud state={result.correct ? "open" : "current"} size={44} />
+            </span>
             <div className="flex-1 text-center sm:text-left">
               <p className={cn("font-display text-[1.875rem] font-bold leading-tight", result.correct ? "text-light-deep" : "text-tonle-800")}>
                 {result.correct ? m[RIGHT_HEADLINES[index % RIGHT_HEADLINES.length]] : m.notQuite}

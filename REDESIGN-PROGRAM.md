@@ -30,3 +30,23 @@ BOOKEYOND-KID-ENGINEERING-PROGRESS.md.
 ## Next step
 
 The program is complete. What remains waits on the owner: the official Bookeyond logo (PD-34), native Khmer review (PD-14), and educator-authored curriculum (PD-15).
+
+---
+
+# Deep UX redesign (Y40)
+
+Started 2026-10-19 from aed3a32. Phases are marked when done, so they are never repeated.
+
+| # | Phase | Status |
+|---|---|---|
+| 1 | Child experience | ⏳ World garden, verdict pictures, in-place corrections, whole-basket sorting, next lantern done; buddy and intro next |
+| 2 | Parent dashboard and statistics | ⬜ |
+| 3 | Teacher, principal, admin deeper screens | ⬜ |
+| 4 | Landing and design-system gaps | ⬜ |
+| 5 | Responsive and bilingual pass; final checks | ⬜ |
+
+**Child review (what was only restyled, what was weak):** the world showed chapters (pond lotuses) but
+not what the child can do; a wrong typed answer or order was corrected only in words; the sorting basket
+took a tap only on its name; the lantern rail showed only past lanterns, nothing to look forward to.
+Hints, missions, points and new destinations have no backing in the content model or the API, so they
+are not invented.

@@ -4,7 +4,7 @@ import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Play } from "lucide-r
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
-import type { Chapter, EnrollmentOverview, Journey, JourneyStep } from "@/lib/api/types";
+import type { Chapter, CurriculumProgress, EnrollmentOverview, Journey, JourneyStep } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { childReason, stepTag } from "@/features/learning/explain";
 import { chapterOf, focusChapter, journeyLight } from "@/features/learning/chapters";
@@ -21,6 +21,8 @@ import { entranceMessages } from "./entrance.messages";
 import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
 import { Bud } from "@/features/world/ProgressBuds";
 import { GardenGlimpse } from "./SkillGarden";
+import { garden } from "./garden";
+import { WorldGarden } from "@/features/world/WorldGarden";
 import { gardenMessages } from "./garden.messages";
 import { RotateCcw } from "lucide-react";
 import { subjectTheme } from "@/features/learning/subjectTheme";
@@ -114,6 +116,17 @@ export function ChildHome() {
   );
 }
 
+/** The child's garden in the scene: in the field on a phone or tablet, by the path on a large screen. */
+function GardenInWorld({ skills }: { skills: CurriculumProgress[] }) {
+  const stages = garden(skills).map((p) => p.stage);
+  return (
+    <>
+      <WorldGarden spot="field" stages={stages} className="lg:hidden" />
+      <WorldGarden spot="near" stages={stages} className="hidden lg:inline" />
+    </>
+  );
+}
+
 /** From a subject's journey back to the entrance, where every subject is. */
 function BackToSubjects({ childId }: { childId: string }) {
   const e = useMessages(entranceMessages);
@@ -147,6 +160,7 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
           above the words; on a large screen it fills the stage and the card sits on it. */}
       <div aria-hidden className="relative h-[52svh] min-h-[360px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
         <RiverGarden crop="bottom" bloom={bloom}>
+          {skills.data && <GardenInWorld skills={skills.data} />}
           <g transform={`translate(${onPath(0.5).x - 40} ${onPath(0.5).y - 150})`}>
             <LearningBuddy mood="happy" size={150} />
           </g>
@@ -284,6 +298,8 @@ function JourneyStage({
   switcher: React.ReactNode;
 }) {
   const journey = useAsync(() => learningApi.journey(overview.enrollmentId), [overview.enrollmentId]);
+  // Y40: the child's garden grows in the world beside the path (only once the standings are read).
+  const skills = useAsync(() => learningApi.skills(childId), [childId]);
   const m = useMessages(childMessages);
   const focus = journey.data ? focusChapter(journey.data) : null;
   const playHref = `/learn/${childId}/play/${overview.enrollmentId}`;
@@ -296,6 +312,7 @@ function JourneyStage({
             screen it fills the stage and the page of words sits on it. */}
         <div aria-hidden className="relative h-[60svh] min-h-[420px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
           <RiverGarden crop="bottom" bloom={journeyLight(overview)}>
+            {skills.data && <GardenInWorld skills={skills.data} />}
             {focus && <PathOfBooks steps={focus.steps.map(({ step }) => step)} currentId={journey.data!.nextStepId} />}
           </RiverGarden>
           <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#E7F1EC] via-[#E7F1EC]/60 to-transparent lg:hidden" />

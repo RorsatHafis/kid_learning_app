@@ -12,7 +12,7 @@ import { SkillGarden } from "./SkillGarden";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { goButton, quietButton } from "./chips";
 import { Trouble, Waiting } from "./ChildHome";
-import { SHELF_SPINES, milestones, type Shelf } from "./shelf";
+import { SHELF_SPINES, milestones, nextLanterns, type Shelf } from "./shelf";
 import { useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
 
@@ -67,6 +67,7 @@ function Shelves({
 }) {
   const lit = shelves.reduce((sum, s) => sum + s.journey.steps.filter((step) => step.status === "COMPLETED").length, 0);
   const lanterns = milestones(shelves);
+  const waiting = nextLanterns(shelves);
   const next = shelves.find((s) => s.overview.nextStep !== null);
   const all = useMessages(childMessages);
   const m = all.shelf;
@@ -107,7 +108,7 @@ function Shelves({
         <h2 id="lanterns" className="font-display text-2xl font-bold text-tonle-950">
           {m.myLanterns}
         </h2>
-        {lanterns.length === 0 ? (
+        {lanterns.length === 0 && waiting.length === 0 ? (
           <p className="text-ink-soft">{m.noLanterns}</p>
         ) : (
           <ul className="relative grid grid-cols-2 gap-x-4 gap-y-8 pt-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -122,6 +123,15 @@ function Shelves({
                 <Lantern state="lit" size={34} />
                 <span className="text-sm font-semibold leading-snug text-tonle-950">{m.title}</span>
                 {m.detail && <span className="text-xs leading-snug text-ink-soft">{m.detail}</span>}
+              </li>
+            ))}
+            {/* Y40: the lantern each path is working towards, waiting to be lit - with how far there is to go. */}
+            {waiting.map((w) => (
+              <li key={w.key} className="flex flex-col items-center gap-2 text-center">
+                <Lantern state="current" size={34} className="opacity-80" />
+                <span className="sr-only">{m.nextLantern}:</span>
+                <span className="text-sm font-semibold leading-snug text-ink-soft">{w.title}</span>
+                <span className="rounded-pill bg-light-soft px-2.5 py-0.5 text-xs font-bold text-light-deep">{w.detail}</span>
               </li>
             ))}
           </ul>

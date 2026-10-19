@@ -56,6 +56,19 @@ describe("SortingQuestion (X23)", () => {
     expect(JSON.parse(onAnswer.mock.calls[0][0])).toEqual({ s3: "odd", s4: "even", s7: "odd", s2: "even" });
   });
 
+  it("takes the tile when the child taps anywhere in the basket, not only its name (Y40)", async () => {
+    const user = userEvent.setup();
+    render(<QuestionView item={EVEN_ODD} onAnswer={vi.fn()} disabled={false} result={null} />);
+    await user.click(within(tray()).getByRole("button", { name: "3: pick it up" }));
+    // The basket under the "Odd" name: the name's list item, below its button.
+    const oddBasket = within(groups()).getByRole("button", { name: /^Odd: empty/ }).nextElementSibling as HTMLElement;
+    await user.click(oddBasket);
+    const placed = within(groups()).getByRole("button", { name: "3 in Odd. Tap to take it out" });
+    // Taking it back out picks it up; the tap doesn't drop it straight back in.
+    await user.click(placed);
+    expect(within(tray()).getByRole("button", { name: "3, picked up" })).toBeInTheDocument();
+  });
+
   it("does nothing when a group is tapped with nothing picked up", async () => {
     const user = userEvent.setup();
     render(<QuestionView item={EVEN_ODD} onAnswer={vi.fn()} disabled={false} result={null} />);

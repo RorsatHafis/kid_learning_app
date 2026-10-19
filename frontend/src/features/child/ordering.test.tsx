@@ -95,6 +95,8 @@ describe("OrderingQuestion", () => {
       "3rd: k, should be o",
       "4th: o, should be k",
     ]);
+    // Y40: the right order is laid out as tiles too, for a child who can't read "should be".
+    expect(screen.getByText("The right order").nextElementSibling?.textContent).toBe("book");
     expect(screen.queryByRole("list", { name: "Put these in order" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Check my order" })).not.toBeInTheDocument();
   });

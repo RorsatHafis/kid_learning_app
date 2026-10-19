@@ -33,7 +33,7 @@ export function SkillGarden({ skills }: { skills: CurriculumProgress[] | null })
             <Plant stage="sprout" size={64} />
           </div>
         ) : (
-          <ul className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
+          <ul className="grid grid-cols-3 gap-x-2 gap-y-5 sm:gap-x-3 lg:grid-cols-5">
             {plants.map((plant, i) => (
               <GardenBed key={plant.skill.skillId} plant={plant} index={i} />
             ))}

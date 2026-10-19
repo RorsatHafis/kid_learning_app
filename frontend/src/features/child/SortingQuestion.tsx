@@ -126,10 +126,13 @@ export function SortingQuestion({
                 {group.image && <img src={group.image.url} alt="" className="h-9 w-9 rounded-[8px] object-contain" />}
                 {group.label}
               </button>
+              {/* Y40: the whole basket takes the tile, not only its name - that's where a child taps. The name
+                  above stays the one control a keyboard or screen reader uses. */}
               <div
+                onClick={() => drop(group.id)}
                 className={cn(
                   "flex min-h-[7rem] flex-1 flex-wrap content-start justify-center gap-2 rounded-b-[18px] border-[3px] border-t-0 p-3",
-                  target ? "border-light bg-light-soft/50" : "border-tonle-200 bg-tonle-50/70",
+                  target ? "cursor-pointer border-light bg-light-soft/50" : "border-tonle-200 bg-tonle-50/70",
                 )}
               >
                 {inside.map((option) => {
@@ -207,7 +210,11 @@ function Tile({
   return (
     <button
       type="button"
-      onClick={onTap}
+      onClick={(event) => {
+        // A tile in a basket is taken back out; the tap mustn't also drop into the basket around it.
+        event.stopPropagation();
+        onTap();
+      }}
       aria-disabled={locked}
       aria-pressed={picked}
       aria-label={ariaLabel}

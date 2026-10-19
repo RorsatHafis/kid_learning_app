@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ShelfPage } from "./ShelfPage";
-import { milestones, type Shelf } from "./shelf";
+import { milestones, nextLanterns, type Shelf } from "./shelf";
 
 function respond(body: unknown) {
   return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -94,6 +94,23 @@ describe("milestones (X18)", () => {
 
     const finished = milestones([shelf([step("1", "COMPLETED")], [chapter("ch1", 1, "COMPLETE", 1, 1)], null)]);
     expect(finished.map((m) => m.title)).toEqual(["First book lit", "Chapter 1 all lit", "Maths path all lit"]);
+  });
+});
+
+describe("the next lantern (Y40)", () => {
+  it("waits for the first book, then for the chapter the child is in, with the books still to go - and none on a finished path", () => {
+    expect(nextLanterns([shelf([step("1", "PENDING")], [chapter("ch1", 1, "CURRENT", 1, 0)], "1")])).toEqual([
+      { key: "e1:first", title: "First book lit", detail: "1 more book" },
+    ]);
+    const midway = nextLanterns([
+      shelf(
+        [step("1", "COMPLETED"), step("2", "COMPLETED", "ch2"), step("3", "PENDING", "ch2"), step("4", "PENDING", "ch2")],
+        [chapter("ch1", 1, "COMPLETE", 1, 1), chapter("ch2", 2, "CURRENT", 3, 1)],
+        "3",
+      ),
+    ]);
+    expect(midway.map((l) => [l.title, l.detail])).toEqual([["Chapter 2 all lit", "2 more books"]]);
+    expect(nextLanterns([shelf([step("1", "COMPLETED")], [chapter("ch1", 1, "COMPLETE", 1, 1)], null)])).toEqual([]);
   });
 });
 
