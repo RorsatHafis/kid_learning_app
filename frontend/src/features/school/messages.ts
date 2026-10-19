@@ -7,6 +7,7 @@ import { defineMessages, plural } from "@/i18n/catalog";
 export const schoolMessages = defineMessages(
   "features/school",
   {
+    onThisPage: "On this page",
     didntWork: "That didn't work. Please try again.",
     cancel: "Cancel",
     loading: "Loading…",
@@ -204,6 +205,7 @@ export const schoolMessages = defineMessages(
     },
   },
   {
+    onThisPage: "នៅលើទំព័រនេះ",
     didntWork: "មិនដំណើរការទេ។ សូមព្យាយាមម្ដងទៀត។",
     cancel: "បោះបង់",
     loading: "កំពុងផ្ទុក…",

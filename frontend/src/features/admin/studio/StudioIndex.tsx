@@ -97,7 +97,7 @@ export function StudioIndex() {
                   </span>
                   <span className="block font-mono text-xs text-ink-faint">{subject.code}</span>
                 </span>
-                <span className="hidden truncate text-sm text-ink-soft sm:block">{subject.description ?? "—"}</span>
+                <span className="hidden truncate text-sm text-ink-soft sm:block">{subject.description}</span>
                 <ChevronRight size={18} className="shrink-0 text-ink-faint" aria-hidden />
               </Link>
             </li>

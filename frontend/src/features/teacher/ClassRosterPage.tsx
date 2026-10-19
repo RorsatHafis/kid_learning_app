@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Breadcrumb } from "@/components/workspace/WorkspaceShell";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -7,6 +7,7 @@ import { LoadingState, ErrorState } from "@/components/ui/States";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { ClassCurriculaPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
 import { ArchivedClassNotice } from "@/features/school/ClassLifecycle";
+import { SectionIndex } from "@/features/school/SectionIndex";
 import { useMessages } from "@/i18n/catalog";
 import { staffMessages } from "@/features/school/staff.messages";
 
@@ -16,12 +17,13 @@ export function ClassRosterPage() {
   const schoolClass = useAsync(() => schoolApi.schoolClass(classId), [classId]);
   const [refreshKey, setRefreshKey] = useState(0);
   const m = useMessages(staffMessages);
+  const page = useRef<HTMLDivElement>(null);
   useDocumentTitle(schoolClass.data?.name);
 
   if (!classId) return null;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div ref={page} className="flex flex-col gap-8">
       <Breadcrumb items={[{ label: m.crumbs.classes, to: "/teacher" }, { label: schoolClass.data?.name ?? m.crumbs.class }]} />
 
       {schoolClass.isLoading && !schoolClass.data && <LoadingState label={m.loadingClass} />}
@@ -34,6 +36,7 @@ export function ClassRosterPage() {
           <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">
             {schoolClass.data.name}
           </h1>
+          <SectionIndex scope={page} />
           {schoolClass.data.archived && <ArchivedClassNotice />}
           <ClassLearningPanel
             classId={classId}

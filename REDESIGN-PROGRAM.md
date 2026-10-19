@@ -12,8 +12,8 @@ BOOKEYOND-KID-ENGINEERING-PROGRESS.md.
 | 4 | Child experience and meaningful gamification | ✅ Done: garden of skills (shelf + home glimpse), "your garden grew" on completion from real standings, review chip, chapter trail, interaction pictograms, finished-path replay hint |
 | 5 | Parent dashboard, statistics, drill-downs | ✅ Done: per-child "Recently" (one activity's answers, labelled as such) and "Next" (named as a review when it is one) signals shown only with data; no duplicate date; path count says "steps done"; practice box only when flagged (Y37); drill-down Overview → child → Skills & progress → skill evidence kept |
 | 6 | Landing page and marketing story | ✅ Done: "Watch understanding grow" section (real plant stages, real garden shot with sample data, no points/coins/streaks), fresh child-entrance and parent shots matching the current product |
-| 7 | Teacher, principal and admin workspaces | ⏳ In progress |
-| 8 | Bilingual, responsive and shared components | ⬜ |
+| 7 | Teacher, principal and admin workspaces | ✅ Done: teacher home in two columns (classes are the work; content, media and schools beside them); "On this page" index on the long class page for teachers and principals, built from the headings actually shown; Studio subject list drops the placeholder dash. Principal home (reach, setup gaps, learning across classes, plan) and admin dashboard (what waits on you first, platform numbers beside) were already summary-first and stay |
+| 8 | Bilingual, responsive and shared components | ⏳ In progress |
 | 9 | Bounded final review and commit | ⬜ |
 
 ## Decisions
@@ -24,7 +24,9 @@ BOOKEYOND-KID-ENGINEERING-PROGRESS.md.
   content gap.
 - **Garden of skills:** the child's only collectible, grown solely from server standings.
 - **"Challenge Garden" and "Discover":** not product capabilities and not invented.
+- **Teacher authoring readiness:** no per-teacher summary of drafts or review outcomes exists in the
+  API, so the teacher home doesn't invent one; reviews stay visible in the Studio itself.
 
 ## Next step
 
-Step 7: teacher, principal and admin workspaces - role-specific first screens, less overload.
+Step 8: Khmer and phone pass over child, parent, settings, sign-in and empty states.

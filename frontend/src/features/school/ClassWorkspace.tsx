@@ -49,7 +49,7 @@ export function WorkspaceSection({
     <section aria-labelledby={id} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="max-w-2xl">
-          <h2 id={id} className="text-base font-semibold text-tonle-950">
+          <h2 id={id} className="scroll-mt-24 text-base font-semibold text-tonle-950 focus:outline-none">
             {title}
           </h2>
           {description && <p className="mt-0.5 text-sm text-ink-soft">{description}</p>}

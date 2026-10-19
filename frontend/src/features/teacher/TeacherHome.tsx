@@ -40,33 +40,35 @@ export function TeacherHome() {
       </div>
       <SchoolInvitations onAccepted={refetch} />
 
-      {isLoading && !data && <LoadingState label={m.loading} />}
-      {error && <ErrorState error={error} onRetry={refetch} />}
+      {/* Y39: the classes are the work; what a teacher keeps and where they teach sit beside them. */}
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="flex flex-col gap-6">
+          {isLoading && !data && <LoadingState label={m.loading} />}
+          {error && <ErrorState error={error} onRetry={refetch} />}
 
-      {data && data.classes.length === 0 && (
-        <EmptyState
-          title={m.none}
-          description={m.noneLead}
-        />
-      )}
+          {data && data.classes.length === 0 && <EmptyState title={m.none} description={m.noneLead} />}
 
-      {groups.map(([schoolId, group]) => (
-        <section key={schoolId} aria-labelledby={`school-${schoolId}`} className="flex flex-col gap-2">
-          <h2 id={`school-${schoolId}`} className={groups.length > 1 ? "text-sm font-semibold text-ink-soft" : "sr-only"}>
-            {group.name}
-          </h2>
-          <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
-            {group.classes.map((c) => (
-              <li key={c.classId}>
-                <ClassSummary overview={c} to={`/teacher/classes/${c.classId}`} showSchool={groups.length === 1} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+          {groups.map(([schoolId, group]) => (
+            <section key={schoolId} aria-labelledby={`school-${schoolId}`} className="flex flex-col gap-2">
+              <h2 id={`school-${schoolId}`} className={groups.length > 1 ? "text-sm font-semibold text-ink-soft" : "sr-only"}>
+                {group.name}
+              </h2>
+              <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
+                {group.classes.map((c) => (
+                  <li key={c.classId}>
+                    <ClassSummary overview={c} to={`/teacher/classes/${c.classId}`} showSchool={groups.length === 1} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
 
-      <TeachingTools />
-      <YourSchools onLeft={refetch} />
+        <aside className="flex flex-col gap-6">
+          <TeachingTools />
+          <YourSchools onLeft={refetch} />
+        </aside>
+      </div>
     </div>
   );
 }

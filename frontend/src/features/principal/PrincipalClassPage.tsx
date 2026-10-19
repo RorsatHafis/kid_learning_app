@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { UserPlus, X } from "lucide-react";
 import { Breadcrumb } from "@/components/workspace/WorkspaceShell";
@@ -10,6 +10,7 @@ import { problemMessage } from "@/lib/api/problemMessage";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { ClassCurriculaPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
 import { ArchivedClassNotice, ManageClassButton } from "@/features/school/ClassLifecycle";
+import { SectionIndex } from "@/features/school/SectionIndex";
 import { useMessages } from "@/i18n/catalog";
 import { staffMessages } from "@/features/school/staff.messages";
 
@@ -24,6 +25,7 @@ export function PrincipalClassPage() {
   const schoolId = schoolClass.data?.schoolId;
   const staff = useAsync(() => (schoolId ? schoolApi.staff(schoolId) : Promise.resolve([])), [schoolId]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const page = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export function PrincipalClassPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div ref={page} className="flex flex-col gap-8">
       <Breadcrumb items={[{ label: all.crumbs.school, to: "/principal" }, { label: schoolClass.data?.name ?? all.crumbs.class }]} />
 
       {schoolClass.isLoading && !schoolClass.data && <LoadingState label={all.loadingClass} />}
@@ -70,10 +72,11 @@ export function PrincipalClassPage() {
               }}
             />
           </div>
+          <SectionIndex scope={page} />
           {schoolClass.data.archived && <ArchivedClassNotice principal />}
 
           <section aria-labelledby="class-teachers" className="flex flex-col gap-3">
-            <h2 id="class-teachers" className="text-base font-semibold text-tonle-950">
+            <h2 id="class-teachers" className="scroll-mt-24 text-base font-semibold text-tonle-950 focus:outline-none">
               {m.classTeachers}
             </h2>
             {schoolClass.data.teachers.length === 0 ? (
