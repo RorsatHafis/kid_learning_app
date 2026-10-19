@@ -17,7 +17,7 @@ export const trustMessages = defineMessages(
         b: "No points, coins or streaks to chase",
         c: "The same evidence you see as a parent",
       },
-      shot: "A child's garden in the product: one skill in bloom, two still growing.",
+      shot: "A child's garden in the product: one skill in bloom, one getting stronger, one being practised.",
       caption: "From the product, with sample data.",
     },
     proof: {
@@ -97,7 +97,7 @@ export const trustMessages = defineMessages(
         b: "គ្មានពិន្ទុ កាក់ ឬការប្រកួតរាប់ថ្ងៃដែលត្រូវដេញតាម",
         c: "ភស្តុតាងដូចគ្នាដែលអ្នកឃើញក្នុងនាមជាឪពុកម្ដាយ",
       },
-      shot: "សួនរបស់កុមារម្នាក់នៅក្នុងផលិតផល៖ ជំនាញមួយកំពុងរីកផ្កា និងពីរកំពុងលូតលាស់។",
+      shot: "សួនរបស់កុមារម្នាក់នៅក្នុងផលិតផល៖ ជំនាញមួយកំពុងរីកផ្កា មួយកាន់តែខ្លាំងឡើង និងមួយកំពុងហាត់។",
       caption: "ពីផលិតផល ជាមួយទិន្នន័យគំរូ។",
     },
     proof: {
