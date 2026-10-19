@@ -189,8 +189,9 @@ describe("ShelfPage (X18)", () => {
     const garden = within(screen.getByRole("region", { name: "My garden" }));
     expect(await garden.findByRole("listitem", { name: "Count to 10: I can do this" })).toBeInTheDocument();
     expect(garden.getByRole("listitem", { name: "Add within 5: Getting stronger" })).toBeInTheDocument();
-    // A skill that needs practice is never labelled so in front of the child: it is a neutral sprout, still growing.
-    expect(garden.getByRole("listitem", { name: "Add within 10: Growing" })).toBeInTheDocument();
+    // A skill that needs practice is never labelled so in front of the child: it is a neutral sprout - practice,
+    // not a claim that it is improving (Y41).
+    expect(garden.getByRole("listitem", { name: "Add within 10: Practising" })).toBeInTheDocument();
     expect(screen.queryByText(/needs practice/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Play next/ })).toHaveAttribute("href", "/learn/c1/play/e1");
   });

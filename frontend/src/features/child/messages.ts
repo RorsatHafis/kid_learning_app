@@ -71,6 +71,7 @@ export const childMessages = defineMessages(
       backToShelf: "Back to my shelf",
       lanterns: (n: number) => `${n} ${plural(n, "question", "questions")}`,
       letsGo: "Let's go",
+      why: "Why",
       inThisBook: "In this book",
       kinds: {
         MULTIPLE_CHOICE: "Choose",
@@ -116,6 +117,8 @@ export const childMessages = defineMessages(
       hear: (label: string) => `Hear ${label}`,
       listen: "Listen to the question",
       answerLabel: "Your answer",
+      needHint: "Need a hint?",
+      hideHint: "Hide the hint",
       typeAnswer: "Type your answer",
       check: "Check",
       numberPad: "Number pad",
@@ -278,6 +281,7 @@ export const childMessages = defineMessages(
       backToShelf: "ត្រឡប់ទៅធ្នើរបស់ខ្ញុំ",
       lanterns: (n: number) => `សំណួរ ${n}`,
       letsGo: "តោះទៅ",
+      why: "ហេតុអ្វី",
       inThisBook: "ក្នុងសៀវភៅនេះ",
       kinds: {
         MULTIPLE_CHOICE: "ជ្រើសរើស",
@@ -323,6 +327,8 @@ export const childMessages = defineMessages(
       hear: (label: string) => `ស្ដាប់ ${label}`,
       listen: "ស្ដាប់សំណួរ",
       answerLabel: "ចម្លើយរបស់ប្អូន",
+      needHint: "ត្រូវការជំនួយទេ?",
+      hideHint: "លាក់ជំនួយ",
       typeAnswer: "វាយចម្លើយរបស់ប្អូន",
       check: "ពិនិត្យ",
       numberPad: "ក្ដារលេខ",

@@ -166,6 +166,8 @@ export interface ActivityItem {
    * TRUE_FALSE ("true"/"false") or free-response types. Never carries which
    * option is correct — that stays server-side. */
   options: QuestionOption[];
+  /** Y41: the author's hint, offered before answering (never the answer); null when there is none. */
+  hint?: string | null;
 }
 
 export interface ActivityVersionDetail {
@@ -212,6 +214,8 @@ export interface AnswerRecord {
   timeSpentSeconds: number | null;
   occurredAt: string;
   correctAnswer: CorrectAnswer | null;
+  /** Y41: the author's explanation, only ever with a recorded answer; null when there is none. */
+  explanation?: string | null;
 }
 
 // ---- learning/service/LearningJourneyService.java (records served as-is by LearningJourneyController) ----

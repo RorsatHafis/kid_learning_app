@@ -270,6 +270,10 @@ export interface QuestionVersionDetail extends VersionSummary {
   /** SORTING (X23): its groups (by number) and its items. */
   groups: SortGroupDetail[];
   sortItems: SortItemDetail[];
+  /** Y41: offered to the child before answering; never the answer. */
+  hint: string | null;
+  /** Y41: shown to the child after answering, with the right answer. */
+  explanation: string | null;
 }
 
 export interface QuestionSummary {
@@ -380,6 +384,10 @@ export interface QuestionDraftInput {
   /** SORTING (X23): 2–4 groups and 4–10 items, each in one of them (every group used, to publish). */
   groups?: SortGroupInput[];
   sortItems?: SortItemInput[];
+  /** Y41: up to 300 characters; null or blank for none. */
+  hint?: string | null;
+  /** Y41: up to 600 characters; null or blank for none. */
+  explanation?: string | null;
 }
 
 // ---- content/media/MediaLibraryService.java (X13): the media library ----

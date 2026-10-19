@@ -264,6 +264,14 @@ public class QuestionService {
         return questionVersionRepository.saveAndFlush(version);
     }
 
+    /** A draft's hint and explanation (Y41); blank removes one. */
+    @Transactional
+    public QuestionVersion setGuidance(UUID questionVersionId, String hint, String explanation) {
+        QuestionVersion version = getVersion(questionVersionId);
+        version.setGuidance(hint, explanation);
+        return questionVersionRepository.saveAndFlush(version);
+    }
+
     /**
      * Replaces a MATCHING draft's pairs: pair i is the left item {@code left} and its match
      * {@code right}. Replaces every option of the draft.
@@ -297,7 +305,7 @@ public class QuestionService {
 
     /**
      * The draft to edit next: the open draft if there is one, otherwise a new draft
-     * copied from the latest version (prompt, its media, answer, difficulty and choices), so
+     * copied from the latest version (prompt, its media, answer, difficulty, hint, explanation and choices), so
      * changing published content never means retyping it.
      */
     @Transactional
@@ -311,6 +319,10 @@ public class QuestionService {
                 latest.getDifficultyLevel());
         if (latest.getPromptImageAssetId() != null || latest.getPromptAudioAssetId() != null) {
             draft.setPromptMedia(latest.getPromptImageAssetId(), latest.getPromptImageDescription(), latest.getPromptAudioAssetId());
+            questionVersionRepository.saveAndFlush(draft);
+        }
+        if (latest.getHint() != null || latest.getExplanation() != null) {
+            draft.setGuidance(latest.getHint(), latest.getExplanation());
             questionVersionRepository.saveAndFlush(draft);
         }
         for (QuestionOption option : listOptions(latest.getId())) {

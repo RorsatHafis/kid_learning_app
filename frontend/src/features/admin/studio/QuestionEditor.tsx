@@ -123,6 +123,8 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                   promptImage: latest.promptImage,
                   promptImageDescription: latest.promptImageDescription,
                   promptAudio: latest.promptAudio,
+                  hint: latest.hint,
+                  explanation: latest.explanation,
                   options: latest.options.map((o) => ({ label: o.label, correct: o.correct, image: o.image, audio: o.audio })),
                   pairs: latest.pairs.map((p) => ({ left: p.left, right: p.right ?? "", leftImage: p.leftImage, rightImage: p.rightImage })),
                   items: latest.items.map((i) => ({ label: i.label, image: i.image, audio: i.audio })),
@@ -225,7 +227,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
             </Panel>
           )}
           <Panel title={m.preview}>
-            {preview ? <ChildPreview item={preview} /> : <p className="text-sm text-ink-soft">{m.loadingPreview}</p>}
+            {preview ? <ChildPreview item={preview} explanation={latest.explanation} /> : <p className="text-sm text-ink-soft">{m.loadingPreview}</p>}
           </Panel>
           {liveVersion && <WithdrawalPanel kind="QUESTION" versionId={liveVersion.id} versionNumber={liveVersion.versionNumber} />}
           <Panel title={m.versions}>
@@ -306,6 +308,18 @@ function PublishedSummary({ detail }: { detail: QuestionDetail }) {
         <dt className="font-semibold text-ink-soft">{m.difficulty}</dt>
         <dd className="text-ink">{latest.difficultyLevel ?? m.notSet}</dd>
       </div>
+      {latest.hint && (
+        <div>
+          <dt className="font-semibold text-ink-soft">{m.hint}</dt>
+          <dd className="text-ink">{latest.hint}</dd>
+        </div>
+      )}
+      {latest.explanation && (
+        <div>
+          <dt className="font-semibold text-ink-soft">{m.explanation}</dt>
+          <dd className="text-ink">{latest.explanation}</dd>
+        </div>
+      )}
     </dl>
   );
 }

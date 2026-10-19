@@ -21,7 +21,8 @@ import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
 import { breakDue, readSitting, sittingMinutes, useBreakReminder } from "./breaks";
-import { grown, type GardenPlant } from "./garden";
+import { afterActivity, type GardenNews } from "./garden";
+import { Explanation } from "./Explanation";
 import { gardenMessages } from "./garden.messages";
 import { Plant } from "@/features/world/Plant";
 import type { CurriculumProgress } from "@/lib/api/types";
@@ -51,8 +52,8 @@ type Phase =
   | { kind: "completing" }
   | {
       kind: "completed";
-      /** Y39: skills whose standing advanced with this activity (server standings, before vs after). */
-      grew?: GardenPlant[];
+      /** Y41: what this activity did for the garden (server standings, before vs after); null when unknown. */
+      garden?: GardenNews | null;
       title: string;
       correct: number;
       total: number;
@@ -185,7 +186,7 @@ export function PlaySession() {
         correct: answers.filter((answer) => answer.correct).length,
         total: answers.length,
         itemId,
-        grew: grown(skillsBefore.current, skillsAfter),
+        garden: afterActivity(skillsBefore.current, skillsAfter),
         ...after,
       });
     },
@@ -677,7 +678,7 @@ function Question({
 
   function reveal(record: AnswerRecord, submitted: string) {
     playCue(record.correct ? "correct" : "incorrect");
-    onAnswered({ submitted, correct: record.correct, correctAnswer: record.correctAnswer });
+    onAnswered({ submitted, correct: record.correct, correctAnswer: record.correctAnswer, explanation: record.explanation ?? null });
   }
 
   async function handleAnswer(submittedAnswer: string) {
@@ -759,10 +760,11 @@ function Question({
           <div
             role="status"
             className={cn(
-              "flex flex-col items-center gap-5 rounded-b-[32px] px-6 pb-7 pt-6 motion-safe:animate-rise-in sm:flex-row sm:px-12",
+              "flex flex-col gap-5 rounded-b-[32px] px-6 pb-7 pt-6 motion-safe:animate-rise-in sm:px-12",
               result.correct ? "bg-light-soft" : "bg-tonle-50",
             )}
           >
+          <div className="flex flex-col items-center gap-5 sm:flex-row">
             {/* Y40: the verdict as a picture, for a child who can't read the words yet. */}
             <span aria-hidden className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-full ring-4 ring-white", result.correct ? "bg-white motion-safe:animate-pop-in" : "bg-white/80")}>
               <Bud state={result.correct ? "open" : "current"} size={44} />
@@ -786,6 +788,8 @@ function Question({
             <button ref={continueRef} type="button" onClick={onContinue} className={goButton}>
               {index + 1 < total ? m.next : m.finish} <ArrowRight size={22} aria-hidden />
             </button>
+          </div>
+          {result.explanation && <Explanation text={result.explanation} />}
           </div>
         )}
       </Page>
@@ -816,29 +820,63 @@ function Celebration() {
   );
 }
 
-/** Y39: the skills this activity helped grow, from the server's standings before and after it. */
-function GardenGrew({ plants }: { plants: GardenPlant[] }) {
+/**
+ * Y41: what this activity did for the child's garden, told truthfully (garden.ts afterActivity):
+ * "grew" only when the server's standing really advanced - a bloom when the answers show the skill is
+ * secure; a new bud or a planted seed said as what it is; otherwise warm words for the practice itself.
+ */
+function GardenNewsPanel({ news }: { news: GardenNews }) {
   const g = useMessages(gardenMessages);
-  return (
-    <section aria-labelledby="grew-title" className="mx-auto mt-6 max-w-md rounded-[22px] bg-rice-soft px-5 pb-4 pt-4 ring-1 ring-rice/30">
-      <h2 id="grew-title" className="font-display text-xl font-bold text-tonle-950">
-        {g.grew}
-      </h2>
-      <p className="text-sm font-medium text-rice-deep">{g.grewNote}</p>
-      <ul className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-3">
-        {plants.slice(0, 4).map((p, i) => (
-          <li
-            key={p.skill.skillId}
-            className="flex flex-col items-center gap-1 motion-safe:animate-pop-in"
-            style={{ animationDelay: `${300 + i * 140}ms` }}
-          >
-            <Plant stage={p.stage} size={56} />
-            <span className="max-w-[9rem] text-sm font-bold leading-snug text-tonle-950">{g.newPlant[p.stage](p.skill.name)}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
+  const fresh = [...news.budded, ...news.planted];
+  const label = (plant: (typeof fresh)[number]) => (plant.stage === "bud" ? g.budded(plant.skill.name) : g.planted(plant.skill.name));
+  const plants = (list: typeof fresh, text: (p: (typeof fresh)[number]) => string) => (
+    <ul className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-3">
+      {list.slice(0, 4).map((p, i) => (
+        <li key={p.skill.skillId} className="flex flex-col items-center gap-1 motion-safe:animate-pop-in" style={{ animationDelay: `${300 + i * 140}ms` }}>
+          <Plant stage={p.stage} size={56} />
+          <span className="max-w-[10rem] text-sm font-bold leading-snug text-tonle-950">{text(p)}</span>
+        </li>
+      ))}
+    </ul>
   );
+  if (news.grew.length > 0) {
+    return (
+      <section aria-labelledby="garden-news" className="mx-auto mt-6 max-w-md rounded-[22px] bg-rice-soft px-5 pb-4 pt-4 ring-1 ring-rice/30">
+        <h2 id="garden-news" className="font-display text-xl font-bold text-tonle-950">
+          {g.grew}
+        </h2>
+        <p className="text-sm font-medium text-rice-deep">{g.grewNote}</p>
+        {plants(news.grew, (p) => (p.stage === "bloom" ? g.grewPlant.bloom(p.skill.name) : g.grewPlant.bud(p.skill.name)))}
+        {fresh.length > 0 && (
+          <p className="mt-3 text-sm font-medium text-ink-soft">
+            {g.alsoNew}: {fresh.map((p) => p.skill.name).join(", ")}
+          </p>
+        )}
+      </section>
+    );
+  }
+  if (fresh.length > 0) {
+    return (
+      <section aria-labelledby="garden-news" className="mx-auto mt-6 max-w-md rounded-[22px] bg-palm-soft/60 px-5 pb-4 pt-4 ring-1 ring-palm/20">
+        <h2 id="garden-news" className="font-display text-xl font-bold text-tonle-950">
+          {g.newTitle}
+        </h2>
+        <p className="text-sm font-medium text-palm-deep">{news.budded.length > 0 ? g.buddedNote : g.plantedNote}</p>
+        {plants(fresh, label)}
+      </section>
+    );
+  }
+  if (news.practised.length > 0) {
+    return (
+      <section aria-labelledby="garden-news" className="mx-auto mt-6 max-w-md rounded-[22px] bg-tonle-50 px-5 py-4 ring-1 ring-tonle-100">
+        <h2 id="garden-news" className="font-display text-xl font-bold text-tonle-950">
+          {g.practisedTitle}
+        </h2>
+        <p className="mt-1 text-sm font-medium text-ink-soft">{g.practisedNote(news.practised.slice(0, 3).map((s) => s.name).join(", "))}</p>
+      </section>
+    );
+  }
+  return null;
 }
 
 /** Y36: a break the parent asked for, suggested at this natural pause; the child chooses. */
@@ -888,7 +926,7 @@ function Completed({
             {m.gotRight(correct, total)}
           </p>
         )}
-        {phase.grew && phase.grew.length > 0 && <GardenGrew plants={phase.grew} />}
+        {phase.garden && <GardenNewsPanel news={phase.garden} />}
         {chapterSteps.length > 0 && (
           // The child's stretch of the path: the book just finished takes the light where it sits.
           <div className={cn("mt-8 overflow-hidden bg-[#EAF3E4] px-4 pt-3", next ? "rounded-t-[22px]" : "rounded-[22px] pb-3")}>

@@ -70,6 +70,8 @@ export const studioMessages = defineMessages(
           : `Question ${v.question} has no skill, so answering it records no evidence.`,
       NO_DIFFICULTY: (v) =>
         v.of === "ACTIVITY" ? "No difficulty is set; challenge and reinforcement choices use it." : "No difficulty is set.",
+      HINT_GIVES_ANSWER: (v) => `The hint says the answer ("${v.answer}"). A hint is shown before the child answers.`,
+      HINT_NAMES_CHOICE: (v) => `The hint names the right choice ("${v.choice}"). Check it guides the child without giving it away.`,
       ACTIVITY_NO_SKILL: () =>
         "Tag at least one skill: learning paths choose activities by skill, so without one it is never placed.",
       NO_QUESTIONS: () => "Add at least one question.",
@@ -164,6 +166,7 @@ export const studioMessages = defineMessages(
       childsView: "Child's view",
       questionOf: (n: number, total: number) => `Question ${n} of ${total}`,
       previewOnly: "Preview only — in the app the server checks the answer and records it as evidence.",
+      afterAnswer: "After answering, the child also sees:",
     },
     curricula: {
       title: "Curricula",
@@ -359,6 +362,8 @@ export const studioMessages = defineMessages(
         v.of === "ACTIVITY"
           ? "មិនទាន់កំណត់កម្រិតលំបាក៖ ការជ្រើសរើសលំហាត់ពិបាកជាងមុន និងលំហាត់ពង្រឹង ប្រើវា។"
           : "មិនទាន់កំណត់កម្រិតលំបាក។",
+      HINT_GIVES_ANSWER: (v) => `ជំនួយប្រាប់ចម្លើយ («${v.answer}»)។ ជំនួយត្រូវបានបង្ហាញមុនពេលកុមារឆ្លើយ។`,
+      HINT_NAMES_CHOICE: (v) => `ជំនួយនិយាយពីជម្រើសត្រឹមត្រូវ («${v.choice}»)។ សូមពិនិត្យថាវាណែនាំកុមារ ដោយមិនប្រាប់ចម្លើយ។`,
       ACTIVITY_NO_SKILL: () =>
         "សូមភ្ជាប់ជំនាញយ៉ាងតិចមួយ៖ ផ្លូវរៀនជ្រើសសកម្មភាពតាមជំនាញ ដូច្នេះបើគ្មានជំនាញ វាមិនត្រូវបានដាក់ឡើយ។",
       NO_QUESTIONS: () => "សូមបន្ថែមសំណួរយ៉ាងតិចមួយ។",
@@ -452,6 +457,7 @@ export const studioMessages = defineMessages(
       childsView: "ទិដ្ឋភាពរបស់កុមារ",
       questionOf: (n: number, total: number) => `សំណួរទី ${n} នៃ ${total}`,
       previewOnly: "គ្រាន់តែជាការមើលជាមុនប៉ុណ្ណោះ — នៅក្នុងកម្មវិធី ម៉ាស៊ីនមេពិនិត្យចម្លើយ ហើយកត់ត្រាវាជាភស្តុតាង។",
+      afterAnswer: "ក្រោយពេលឆ្លើយ កុមារក៏ឃើញ៖",
     },
     curricula: {
       title: "កម្មវិធីសិក្សា",

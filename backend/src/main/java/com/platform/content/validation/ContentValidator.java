@@ -154,7 +154,50 @@ public class ContentValidator {
         if (version.getDifficultyLevel() == null) {
             warnings.add(new Issue("NO_DIFFICULTY", "No difficulty is set."));
         }
+        checkHint(question.getQuestionType(), version, options, errors, warnings);
         return new ValidationReport(errors, warnings);
+    }
+
+    /** Khmer digits read as the digits they are, so "៧" in a hint is the 7 of the answer. */
+    private static String westernDigits(String text) {
+        StringBuilder out = new StringBuilder(text.length());
+        text.codePoints().forEach(c -> out.appendCodePoint(c >= 0x17E0 && c <= 0x17E9 ? '0' + (c - 0x17E0) : c));
+        return out.toString();
+    }
+
+    /** Whether {@code phrase} stands on its own in {@code text} (not inside a longer word or number), ignoring case. */
+    static boolean mentions(String text, String phrase) {
+        if (phrase == null || phrase.isBlank()) {
+            return false;
+        }
+        String pattern = "(?<![\\p{L}\\p{N}\\p{M}])" + java.util.regex.Pattern.quote(westernDigits(phrase.strip())) + "(?![\\p{L}\\p{N}\\p{M}])";
+        return java.util.regex.Pattern.compile(pattern, java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE)
+                .matcher(westernDigits(text)).find();
+    }
+
+    /**
+     * Y41: a hint helps the child reason; it must not hand over the answer. A typed answer written in the
+     * hint is an error (the hint is shown before answering); a correct choice's words in it are a warning
+     * (choices are often short words that a good hint may still use).
+     */
+    private static void checkHint(QuestionType type, QuestionVersion version, List<QuestionOption> options,
+                                  List<Issue> errors, List<Issue> warnings) {
+        String hint = version.getHint();
+        if (hint == null) {
+            return;
+        }
+        if ((type == QuestionType.NUMERIC || type == QuestionType.SHORT_ANSWER) && mentions(hint, version.getCorrectAnswer())) {
+            errors.add(new Issue("HINT_GIVES_ANSWER",
+                    "The hint says the answer (\"%s\"). A hint is shown before the child answers.".formatted(version.getCorrectAnswer().strip()),
+                    Map.of("answer", version.getCorrectAnswer().strip())));
+        }
+        if (type == QuestionType.MULTIPLE_CHOICE) {
+            options.stream().filter(QuestionOption::isCorrect).filter(option -> mentions(hint, option.getLabel())).findFirst()
+                    .ifPresent(option -> warnings.add(new Issue("HINT_NAMES_CHOICE",
+                            "The hint names the right choice (\"%s\"). Check it guides the child without giving it away."
+                                    .formatted(option.getLabel().strip()),
+                            Map.of("choice", option.getLabel().strip()))));
+        }
     }
 
     // ------------------------------------------------------------------ activities

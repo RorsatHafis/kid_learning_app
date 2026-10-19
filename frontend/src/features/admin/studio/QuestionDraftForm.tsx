@@ -43,6 +43,8 @@ export interface DraftValues {
   /** SORTING (X23): the groups, and each item with the place of its group in `groups`. */
   groups?: { label: string; image?: Media }[];
   sortItems?: { label: string; group: number; image?: Media; audio?: Media }[];
+  hint?: string | null;
+  explanation?: string | null;
 }
 
 const id = (media: Media) => media?.id ?? undefined;
@@ -83,6 +85,8 @@ export function QuestionDraftForm({
   const [promptAudio, setPromptAudio] = useState<Media>(initial.promptAudio ?? null);
   const [answer, setAnswer] = useState(initial.correctAnswer ?? "");
   const [difficulty, setDifficulty] = useState(initial.difficultyLevel ? String(initial.difficultyLevel) : "");
+  const [hint, setHint] = useState(initial.hint ?? "");
+  const [explanation, setExplanation] = useState(initial.explanation ?? "");
   const [options, setOptions] = useState<NonNullable<DraftValues["options"]>>(
     initial.options && initial.options.length > 0
       ? initial.options
@@ -125,6 +129,8 @@ export function QuestionDraftForm({
       promptImageAssetId: id(promptImage),
       promptImageDescription: promptImage && description.trim() ? description.trim() : undefined,
       promptAudioAssetId: id(promptAudio),
+      hint: hint.trim() || null,
+      explanation: explanation.trim() || null,
       options: multipleChoice
         ? options.map((o) => ({
             label: o.label.trim(),
@@ -561,6 +567,21 @@ export function QuestionDraftForm({
           </option>
         ))}
       </SelectField>
+
+      {/* Y41: the educator's own help for the child, each said where and when the child sees it. */}
+      <fieldset className="flex min-w-0 flex-col gap-4 rounded-[12px] bg-paper px-4 py-3 ring-1 ring-inset ring-line">
+        <legend className="px-1 text-sm font-semibold text-ink">{m.helpTitle}</legend>
+        <p className="-mt-1 text-xs text-ink-soft">{m.helpLead}</p>
+        <TextAreaField label={m.hint} hint={m.hintHelp} value={hint} maxLength={300} rows={2} onChange={(e) => setHint(e.target.value)} />
+        <TextAreaField
+          label={m.explanation}
+          hint={m.explanationHelp}
+          value={explanation}
+          maxLength={600}
+          rows={3}
+          onChange={(e) => setExplanation(e.target.value)}
+        />
+      </fieldset>
 
       {children}
 

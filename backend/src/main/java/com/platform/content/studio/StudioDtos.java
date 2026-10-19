@@ -166,7 +166,8 @@ public final class StudioDtos {
                                         String prompt, String correctAnswer, Integer difficultyLevel,
                                         MediaRef promptImage, String promptImageDescription, MediaRef promptAudio,
                                         List<OptionDetail> options, List<MatchPairDetail> pairs, List<OrderItemDetail> items,
-                                        List<UUID> skillIds, List<SortGroupDetail> groups, List<SortItemDetail> sortItems) {
+                                        List<UUID> skillIds, List<SortGroupDetail> groups, List<SortItemDetail> sortItems,
+                                        String hint, String explanation) {
     }
 
     public record QuestionSummary(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,
@@ -216,14 +217,15 @@ public final class StudioDtos {
                                         UUID promptAudioAssetId,
                                         @NotNull @Size(max = 20) List<@NotNull UUID> skillIds,
                                         @Size(max = 4) List<@Valid @NotNull SortGroupRequest> groups,
-                                        @Size(max = 10) List<@Valid @NotNull SortItemRequest> sortItems) {
+                                        @Size(max = 10) List<@Valid @NotNull SortItemRequest> sortItems,
+                                        @Size(max = 300) String hint, @Size(max = 600) String explanation) {
         /** Every type but SORTING. */
         public CreateQuestionRequest(UUID subjectId, QuestionType questionType, String prompt, String correctAnswer,
                                      Integer difficultyLevel, List<OptionRequest> options, List<MatchPairRequest> pairs,
                                      List<OrderItemRequest> items, UUID promptImageAssetId, String promptImageDescription,
                                      UUID promptAudioAssetId, List<UUID> skillIds) {
             this(subjectId, questionType, prompt, correctAnswer, difficultyLevel, options, pairs, items, promptImageAssetId,
-                    promptImageDescription, promptAudioAssetId, skillIds, null, null);
+                    promptImageDescription, promptAudioAssetId, skillIds, null, null, null, null);
         }
     }
 
@@ -235,13 +237,14 @@ public final class StudioDtos {
                                              UUID promptImageAssetId, @Size(max = 300) String promptImageDescription,
                                              UUID promptAudioAssetId,
                                              @Size(max = 4) List<@Valid @NotNull SortGroupRequest> groups,
-                                             @Size(max = 10) List<@Valid @NotNull SortItemRequest> sortItems) {
+                                             @Size(max = 10) List<@Valid @NotNull SortItemRequest> sortItems,
+                                             @Size(max = 300) String hint, @Size(max = 600) String explanation) {
         /** Every type but SORTING. */
         public ReviseQuestionDraftRequest(String prompt, String correctAnswer, Integer difficultyLevel, List<OptionRequest> options,
                                           List<MatchPairRequest> pairs, List<OrderItemRequest> items, UUID promptImageAssetId,
                                           String promptImageDescription, UUID promptAudioAssetId) {
             this(prompt, correctAnswer, difficultyLevel, options, pairs, items, promptImageAssetId, promptImageDescription,
-                    promptAudioAssetId, null, null);
+                    promptAudioAssetId, null, null, null, null);
         }
     }
 

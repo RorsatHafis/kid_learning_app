@@ -108,6 +108,8 @@ describe("QuestionDraftForm", () => {
         { label: "3", correct: true },
         { label: "4", correct: false },
       ],
+      hint: null,
+      explanation: null,
     });
   });
 
@@ -125,7 +127,14 @@ describe("QuestionDraftForm", () => {
     const user = userEvent.setup();
     await user.selectOptions(screen.getByLabelText("Correct answer"), "false");
     await user.click(screen.getByRole("button", { name: "Save" }));
-    expect(onSubmit).toHaveBeenCalledWith({ prompt: "The sky is green", correctAnswer: "false", difficultyLevel: null, options: undefined });
+    expect(onSubmit).toHaveBeenCalledWith({
+      prompt: "The sky is green",
+      correctAnswer: "false",
+      difficultyLevel: null,
+      options: undefined,
+      hint: null,
+      explanation: null,
+    });
   });
 });
 
@@ -142,7 +151,7 @@ function draftQuestion(skillIds: string[]): QuestionDetail {
     questionType: "NUMERIC",
     skillIds,
     versions: [
-      { id: "qv1", versionNumber: 1, status: "DRAFT", publishedAt: null, prompt: "2 + 2 = ?", correctAnswer: "4", difficultyLevel: 1, promptImage: null, promptImageDescription: null, promptAudio: null, options: [], pairs: [], items: [], skillIds, groups: [], sortItems: [] },
+      { id: "qv1", versionNumber: 1, status: "DRAFT", publishedAt: null, prompt: "2 + 2 = ?", correctAnswer: "4", difficultyLevel: 1, promptImage: null, promptImageDescription: null, promptAudio: null, options: [], pairs: [], items: [], skillIds, groups: [], sortItems: [], hint: null, explanation: null },
     ],
   };
 }

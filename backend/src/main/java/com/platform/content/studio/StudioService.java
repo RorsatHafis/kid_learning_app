@@ -611,7 +611,8 @@ public class StudioService {
                                             refs.get(group.getImageAssetId()))).toList() : List.of(),
                             sorting ? options.stream().filter(o -> o.getSortRole() == SortRole.ITEM)
                                     .map(item -> new SortItemDetail(item.getId(), item.getLabel(), item.getSortGroup(),
-                                            refs.get(item.getImageAssetId()), refs.get(item.getAudioAssetId()))).toList() : List.of());
+                                            refs.get(item.getImageAssetId()), refs.get(item.getAudioAssetId()))).toList() : List.of(),
+                            version.getHint(), version.getExplanation());
                 })
                 .toList(), question.getStatus() == CatalogStatus.ARCHIVED);
     }
@@ -629,6 +630,7 @@ public class StudioService {
         request.skillIds().forEach(skillId -> questionService.tagSkill(draft.getId(), skillId));
         writeDraftContent(question, draft.getId(), request.promptImageAssetId(), request.promptImageDescription(),
                 request.promptAudioAssetId(), request.options(), request.pairs(), request.items(), request.groups(), request.sortItems());
+        questionService.setGuidance(draft.getId(), request.hint(), request.explanation());
         return question(accountId, question.getId());
     }
 
@@ -647,6 +649,7 @@ public class StudioService {
                 answerFor(question.getQuestionType(), request.correctAnswer()), request.difficultyLevel());
         writeDraftContent(question, questionVersionId, request.promptImageAssetId(), request.promptImageDescription(),
                 request.promptAudioAssetId(), request.options(), request.pairs(), request.items(), request.groups(), request.sortItems());
+        questionService.setGuidance(questionVersionId, request.hint(), request.explanation());
         return question(accountId, question.getId());
     }
 

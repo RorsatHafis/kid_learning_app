@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye } from "lucide-react";
 import type { ActivityItem } from "@/lib/api/types";
 import { QuestionView } from "@/features/child/QuestionView";
+import { Explanation } from "@/features/child/Explanation";
 import { useMessages } from "@/i18n/catalog";
 import { studioMessages } from "./messages";
 
@@ -9,7 +10,18 @@ import { studioMessages } from "./messages";
  * A question exactly as the child's app renders it, from exactly what the server
  * would send the child (no answer key). Answers here are not scored or recorded.
  */
-export function ChildPreview({ item, index, total }: { item: ActivityItem; index?: number; total?: number }) {
+export function ChildPreview({
+  item,
+  index,
+  total,
+  explanation,
+}: {
+  item: ActivityItem;
+  index?: number;
+  total?: number;
+  /** Y41: the draft's explanation, shown as the child gets it once they have answered. */
+  explanation?: string | null;
+}) {
   const [tried, setTried] = useState(false);
   const m = useMessages(studioMessages).preview;
   return (
@@ -27,9 +39,17 @@ export function ChildPreview({ item, index, total }: { item: ActivityItem; index
         <QuestionView key={item.questionVersionId} item={item} onAnswer={() => setTried(true)} disabled={false} result={null} headingLevel={3} autoFocus={false} />
       </div>
       {tried && (
-        <p role="status" className="text-sm text-ink-soft">
-          {m.previewOnly}
-        </p>
+        <div role="status" className="flex flex-col gap-3">
+          <p className="text-sm text-ink-soft">{m.previewOnly}</p>
+          {explanation && (
+            <>
+              <p className="text-sm font-semibold text-ink">{m.afterAnswer}</p>
+              <div className="[zoom:0.7]">
+                <Explanation text={explanation} />
+              </div>
+            </>
+          )}
+        </div>
       )}
     </figure>
   );

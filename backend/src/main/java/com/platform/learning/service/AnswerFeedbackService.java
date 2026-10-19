@@ -61,6 +61,12 @@ public class AnswerFeedbackService {
     public record MatchPair(UUID leftOptionId, UUID rightOptionId) {
     }
 
+    /** Y41: the author's explanation of the answered question's version, if it has one - only ever for a recorded answer. */
+    @Transactional(readOnly = true)
+    public String explanationFor(AnswerRecord answer) {
+        return questionVersionRepository.findById(answer.getQuestionVersionId()).map(QuestionVersion::getExplanation).orElse(null);
+    }
+
     @Transactional(readOnly = true)
     public CorrectAnswer correctAnswerFor(AnswerRecord answer) {
         QuestionVersion version = questionVersionRepository.findById(answer.getQuestionVersionId())

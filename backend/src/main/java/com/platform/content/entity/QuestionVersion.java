@@ -37,6 +37,14 @@ public class QuestionVersion extends PublishableVersion {
     @Column(name = "prompt_image_description", columnDefinition = "text")
     private String promptImageDescription;
 
+    /** Y41: shown before the child answers - guidance, never the answer. */
+    @Column(name = "hint", columnDefinition = "text")
+    private String hint;
+
+    /** Y41: shown after the child answers, with the right answer: why it is right. */
+    @Column(name = "explanation", columnDefinition = "text")
+    private String explanation;
+
     protected QuestionVersion() {
         // JPA
     }
@@ -77,6 +85,21 @@ public class QuestionVersion extends PublishableVersion {
         this.promptImageDescription = imageAssetId == null || imageDescription == null || imageDescription.isBlank()
                 ? null : imageDescription.strip();
         this.promptAudioAssetId = audioAssetId;
+    }
+
+    /** Y41: the author's hint and explanation; part of the version like its text, so only a draft's can change. Blank removes one. */
+    public void setGuidance(String newHint, String newExplanation) {
+        requireStatus(com.platform.common.entity.PublicationStatus.DRAFT, "edited");
+        this.hint = newHint == null || newHint.isBlank() ? null : newHint.strip();
+        this.explanation = newExplanation == null || newExplanation.isBlank() ? null : newExplanation.strip();
+    }
+
+    public String getHint() {
+        return hint;
+    }
+
+    public String getExplanation() {
+        return explanation;
     }
 
     public String getPromptImageDescription() {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CurriculumProgress, SkillStanding } from "@/lib/api/types";
-import { garden, grown } from "./garden";
+import { afterActivity, garden } from "./garden";
 
 function progress(skills: { id: string; standing: SkillStanding; answers?: number }[]): CurriculumProgress[] {
   return [
@@ -45,24 +45,36 @@ describe("the garden of skills", () => {
     ]);
   });
 
-  it("tells only what advanced in this activity: a new sprout, a bud, a bloom - never a step back", () => {
+  it("says a skill grew only when the server's standing advanced; first answers are planted; the rest is practice (Y41)", () => {
     const before = progress([
       { id: "a", standing: "NOT_STARTED", answers: 0 },
-      { id: "b", standing: "TOO_EARLY_TO_TELL" },
-      { id: "c", standing: "PROGRESSING" },
-      { id: "d", standing: "SECURE" },
+      { id: "b", standing: "TOO_EARLY_TO_TELL", answers: 2 },
+      { id: "c", standing: "NEEDS_PRACTICE", answers: 6 },
+      { id: "d", standing: "PROGRESSING", answers: 6 },
+      { id: "e", standing: "PROGRESSING", answers: 6 },
+      { id: "f", standing: "SECURE", answers: 9 },
+      { id: "g", standing: "TOO_EARLY_TO_TELL", answers: 2 },
+      { id: "h", standing: "PROGRESSING", answers: 4 },
     ]);
     const after = progress([
-      { id: "a", standing: "TOO_EARLY_TO_TELL", answers: 2 },
-      { id: "b", standing: "PROGRESSING" },
-      { id: "c", standing: "SECURE" },
-      { id: "d", standing: "PROGRESSING" },
+      { id: "a", standing: "TOO_EARLY_TO_TELL", answers: 1 }, // first answers: planted
+      { id: "b", standing: "PROGRESSING", answers: 5 }, // first reading, getting stronger: budded (not "grew")
+      { id: "c", standing: "PROGRESSING", answers: 8 }, // moved up: grew
+      { id: "d", standing: "SECURE", answers: 9 }, // became secure: grew, in bloom
+      { id: "e", standing: "PROGRESSING", answers: 8 }, // same standing: practice
+      { id: "f", standing: "PROGRESSING", answers: 11 }, // a slip: practice, never told as a loss
+      { id: "g", standing: "TOO_EARLY_TO_TELL", answers: 3 }, // still too early, not the first answers: practice
+      { id: "h", standing: "PROGRESSING", answers: 4 }, // not answered in this activity: nothing
     ]);
-    expect(grown(before, after).map((p) => [p.skill.skillId, p.stage])).toEqual([
-      ["c", "bloom"],
-      ["b", "bud"],
-      ["a", "sprout"],
+    const news = afterActivity(before, after)!;
+    expect(news.grew.map((p) => [p.skill.skillId, p.stage])).toEqual([
+      ["d", "bloom"],
+      ["c", "bud"],
     ]);
-    expect(grown(null, after)).toEqual([]);
-  });
+    expect(news.budded.map((p) => p.skill.skillId)).toEqual(["b"]);
+    expect(news.planted.map((p) => p.skill.skillId)).toEqual(["a"]);
+    expect(news.practised.map((s) => s.skillId)).toEqual(["e", "f", "g"]);
+    // Without both readings nothing is claimed.
+    expect(afterActivity(null, after)).toBeNull();
+});
 });

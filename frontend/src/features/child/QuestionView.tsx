@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowRight, Check, Delete, X } from "lucide-react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { ArrowRight, Check, Delete, Lightbulb, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityItem, CorrectAnswer, MediaRef } from "@/lib/api/types";
 import { MatchingQuestion } from "./MatchingQuestion";
@@ -21,6 +21,8 @@ export interface AnswerResult {
   submitted: string;
   correct: boolean;
   correctAnswer: CorrectAnswer | null;
+  /** Y41: the author's explanation, with the answer; null when the question has none. */
+  explanation?: string | null;
 }
 
 /** A picture choice shows its picture; its label is what a screen reader says. */
@@ -32,8 +34,62 @@ const TRUE_FALSE = ["true", "false"] as const;
 const promptClass = "font-display font-bold leading-[1.08] tracking-[-0.008em] text-tonle-950";
 const promptStyle = { fontVariationSettings: '"opsz" 72' };
 
+type QuestionProps = {
+  item: ActivityItem;
+  onAnswer: (submittedAnswer: string) => void;
+  disabled: boolean;
+  result: AnswerResult | null;
+  headingLevel?: 1 | 3;
+  autoFocus?: boolean;
+};
+
+/**
+ * The question, with the interaction its type calls for, and - when its author wrote one - a hint the
+ * child can ask for before answering (Y41). Once answered, the hint goes: the explanation takes over.
+ */
+export function QuestionView(props: QuestionProps) {
+  const hint = props.item.hint?.trim();
+  return (
+    <div className="flex flex-col gap-6">
+      <QuestionBody {...props} />
+      {hint && !props.result && <Hint key={props.item.questionVersionId} text={hint} />}
+    </div>
+  );
+}
+
+/**
+ * A hint the child opens when they want it: closed by default, so the question stays theirs to try. The
+ * words are the educator's, in the curriculum's own language.
+ */
+function Hint({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const q = useMessages(childMessages).question;
+  const id = useId();
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex min-h-12 items-center gap-2 rounded-pill bg-light-soft py-1.5 pl-1.5 pr-5 text-base font-bold text-light-deep ring-1 ring-light/40 transition-colors duration-150 ease-out hover:bg-[#FCE6BC]"
+      >
+        <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-light-deep shadow-tight">
+          <Lightbulb size={18} strokeWidth={2.4} />
+        </span>
+        {open ? q.hideHint : q.needHint}
+      </button>
+      <div id={id} hidden={!open} className="w-full max-w-xl motion-safe:animate-rise-in">
+        <p className="rounded-[20px] bg-white px-5 py-4 text-center text-lg font-medium leading-snug text-ink shadow-tight ring-1 ring-light/40 [overflow-wrap:anywhere]">
+          {text}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /** The question itself, with the interaction its type calls for. */
-export function QuestionView({
+function QuestionBody({
   item,
   onAnswer,
   disabled,

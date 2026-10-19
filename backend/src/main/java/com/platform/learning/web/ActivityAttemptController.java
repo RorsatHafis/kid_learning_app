@@ -58,7 +58,8 @@ public class ActivityAttemptController {
     }
 
     private AnswerRecordResponse toResponse(AnswerRecord record) {
-        return AnswerRecordResponse.from(record, answerFeedbackService.correctAnswerFor(record));
+        return AnswerRecordResponse.from(record, answerFeedbackService.correctAnswerFor(record),
+                answerFeedbackService.explanationFor(record));
     }
 
     @PostMapping("/api/v1/children/{childId}/activity-attempts")

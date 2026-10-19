@@ -52,7 +52,8 @@ public final class ActivityAttemptDtos {
     /**
      * {@code correctAnswer} is feedback on an answer already given (see
      * {@link com.platform.learning.service.AnswerFeedbackService}), so a mistake can be
-     * explained. It is only ever returned for a recorded answer.
+     * explained. It is only ever returned for a recorded answer. {@code explanation} (Y41): the author's
+     * reasoning for the answer, likewise only after answering; null when the question has none.
      */
     public record AnswerRecordResponse(
             UUID id,
@@ -60,12 +61,14 @@ public final class ActivityAttemptDtos {
             boolean correct,
             Integer timeSpentSeconds,
             Instant occurredAt,
-            AnswerFeedbackService.CorrectAnswer correctAnswer
+            AnswerFeedbackService.CorrectAnswer correctAnswer,
+            String explanation
     ) {
-        public static AnswerRecordResponse from(AnswerRecord record, AnswerFeedbackService.CorrectAnswer correctAnswer) {
+        public static AnswerRecordResponse from(AnswerRecord record, AnswerFeedbackService.CorrectAnswer correctAnswer,
+                                                String explanation) {
             return new AnswerRecordResponse(
                     record.getId(), record.getQuestionVersionId(), record.isCorrect(),
-                    record.getTimeSpentSeconds(), record.getOccurredAt(), correctAnswer);
+                    record.getTimeSpentSeconds(), record.getOccurredAt(), correctAnswer, explanation);
         }
     }
 

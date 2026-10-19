@@ -122,6 +122,8 @@ describe("QuestionDraftForm (MATCHING)", () => {
         { left: "1", right: "•" },
         { left: "2", right: "••" },
       ],
+      hint: null,
+      explanation: null,
     });
   });
 });

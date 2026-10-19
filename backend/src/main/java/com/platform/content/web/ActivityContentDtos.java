@@ -95,7 +95,9 @@ public final class ActivityContentDtos {
 
     /**
      * {@code promptImage}/{@code promptAudio} (X11): shown with the prompt, and the prompt read aloud;
-     * {@code promptImageDescription}: what the picture shows, for screen readers.
+     * {@code promptImageDescription}: what the picture shows, for screen readers. {@code hint} (Y41): the
+     * author's guidance, offered before answering. The explanation is not here: it comes with the answer
+     * ({@code AnswerRecordResponse}), so it is never seen before the child has answered.
      */
     public record ActivityItemResponse(
             UUID activityItemId,
@@ -106,7 +108,8 @@ public final class ActivityContentDtos {
             MediaRef promptImage,
             String promptImageDescription,
             MediaRef promptAudio,
-            List<QuestionOptionResponse> options
+            List<QuestionOptionResponse> options,
+            String hint
     ) {
         /** One item as a learner sees it; {@code media} holds the references of every asset it uses ({@link #mediaOf}). */
         public static ActivityItemResponse forLearner(UUID itemId, int sequenceOrder, QuestionType questionType,
@@ -115,7 +118,7 @@ public final class ActivityContentDtos {
             return new ActivityItemResponse(itemId, sequenceOrder, version.getId(), questionType, version.getPrompt(),
                     media.get(version.getPromptImageAssetId()), version.getPromptImageDescription(),
                     media.get(version.getPromptAudioAssetId()),
-                    QuestionOptionResponse.forLearner(questionType, version.getId(), options, media));
+                    QuestionOptionResponse.forLearner(questionType, version.getId(), options, media), version.getHint());
         }
     }
 
