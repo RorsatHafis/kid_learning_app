@@ -128,7 +128,7 @@ function Hero() {
             src={parentHome}
             alt={l.shotParent}
             width={1600}
-            height={1073}
+            height={1227}
             eager
             className="ml-auto w-[88%] rotate-[1.5deg] motion-safe:animate-rise-in"
           />
