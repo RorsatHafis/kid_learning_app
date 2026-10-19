@@ -55,6 +55,7 @@ describe("the garden of skills", () => {
       { id: "f", standing: "SECURE", answers: 9 },
       { id: "g", standing: "TOO_EARLY_TO_TELL", answers: 2 },
       { id: "h", standing: "PROGRESSING", answers: 4 },
+      { id: "i", standing: "NOT_STARTED", answers: 0 },
     ]);
     const after = progress([
       { id: "a", standing: "TOO_EARLY_TO_TELL", answers: 1 }, // first answers: planted
@@ -65,6 +66,7 @@ describe("the garden of skills", () => {
       { id: "f", standing: "PROGRESSING", answers: 11 }, // a slip: practice, never told as a loss
       { id: "g", standing: "TOO_EARLY_TO_TELL", answers: 3 }, // still too early, not the first answers: practice
       { id: "h", standing: "PROGRESSING", answers: 4 }, // not answered in this activity: nothing
+      { id: "i", standing: "NEEDS_PRACTICE", answers: 3 }, // first answers, first reading not stronger: planted, nothing more
     ]);
     const news = afterActivity(before, after)!;
     expect(news.grew.map((p) => [p.skill.skillId, p.stage])).toEqual([
@@ -72,7 +74,7 @@ describe("the garden of skills", () => {
       ["c", "bud"],
     ]);
     expect(news.budded.map((p) => p.skill.skillId)).toEqual(["b"]);
-    expect(news.planted.map((p) => p.skill.skillId)).toEqual(["a"]);
+    expect(news.planted.map((p) => p.skill.skillId)).toEqual(["a", "i"]);
     expect(news.practised.map((s) => s.skillId)).toEqual(["e", "f", "g"]);
     // Without both readings nothing is claimed.
     expect(afterActivity(null, after)).toBeNull();

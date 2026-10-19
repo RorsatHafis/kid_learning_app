@@ -48,7 +48,7 @@ export function moveOf(then: SkillStanding, now: SkillStanding): Move {
  * the skills this activity's answers touched. Three different things, never mixed up:
  * - **grew**: the standing really advanced - became secure (mastery, a bloom) or moved up (a bud);
  * - **budded**: the first time there were enough answers to judge it, and it reads as getting stronger;
- * - **planted**: its very first answers (too few to judge yet);
+ * - **planted**: its very first answers, when they don't already read as getting stronger;
  * - **practised**: answered again, standing unchanged (or a first reading that isn't stronger, or a slip -
  *   a slip is not something to tell a child at the end of an activity; their parent sees it).
  * Null when either reading is missing: then nothing is claimed.
@@ -71,7 +71,8 @@ export function afterActivity(before: CurriculumProgress[] | null, after: Curric
     const move = moveOf(previous?.standing ?? "NOT_STARTED", skill.standing);
     if (move === "BECAME_SECURE" || move === "MOVED_UP") news.grew.push({ skill, stage });
     else if (move === "FIRST_READING" && skill.standing === "PROGRESSING") news.budded.push({ skill, stage });
-    else if (move === "STARTED" && !previous?.scoredAnswers) news.planted.push({ skill, stage: "sprout" });
+    // Its very first answers: a new plant (whatever the first reading), never a claim it improved.
+    else if (!previous?.scoredAnswers) news.planted.push({ skill, stage: "sprout" });
     else news.practised.push(skill);
   }
   news.grew.sort((a, b) => ORDER[a.stage] - ORDER[b.stage]);
