@@ -56,9 +56,11 @@ describe("family home (X8)", () => {
         { attemptId: "t1", title: "Counting Practice", correctAnswers: 2, totalAnswers: 3, completedAt: new Date().toISOString() },
       ],
       "/children/c1/skills": [],
+      "/children/c1/changes": { answersSince: 3, changes: [] },
       "/children/c2/enrollments": [],
       "/children/c2/activity-history": [],
       "/children/c2/skills": [],
+      "/children/c2/changes": { answersSince: 0, changes: [] },
       "/children": [
         { id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14" },
         { id: "c2", displayName: "Dara", dateOfBirth: "2020-01-02" },
@@ -70,14 +72,20 @@ describe("family home (X8)", () => {
       </MemoryRouter>,
     );
 
-    // Y39: when the child last played, as the last activity's own answers - never as a skill judgement.
-    expect(await screen.findByText("Counting Practice: 2 of 3 answers right, today")).toBeInTheDocument();
-    expect(screen.getAllByText("One activity's answers - not a judgement of the skill.").length).toBeGreaterThan(0);
+    // Y39/Y40: what the child did last, as that activity's own answers - and, once for the family, that
+    // one activity's answers are no judgement of a skill.
+    expect(await screen.findByText("Last: Counting Practice - 2 of 3 right, today")).toBeInTheDocument();
+    expect(screen.getByText(/"Last" is one activity's answers - not a judgement of the skill\./)).toBeInTheDocument();
+    // What comes next is the path's, with nothing for the parent to do.
+    expect(screen.getByText("Addition Within 10 Practice - Easy")).toBeInTheDocument();
+    expect(screen.getByText(/Ready when Sokha is\./)).toBeInTheDocument();
+    // A child with no subjects: that is the parent's to choose.
+    expect(screen.getByText("No subjects chosen yet.", { selector: "p.text-ink" })).toBeInTheDocument();
     expect(await screen.findByText("Hasn't played yet")).toBeInTheDocument();
     const sokha = screen.getByRole("list", { name: "Sokha's subjects" });
     expect(within(sokha).getByText(/2 of 6 steps/)).toBeInTheDocument();
     // A path still in progress is not "done", so no nudge to add a subject.
-    expect(screen.queryByRole("link", { name: /Add a subject/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Choose what comes next/ })).not.toBeInTheDocument();
   });
 
   it("calls a finished path finished, without claiming mastery, and offers the next subject", async () => {
@@ -85,6 +93,7 @@ describe("family home (X8)", () => {
       "/children/c1/enrollments": [enrollment({ completedSteps: 6, nextStep: null, currentChapter: null })],
       "/children/c1/activity-history": [{ attemptId: "t1", completedAt: "2026-09-28T09:00:00Z" }],
       "/children/c1/skills": [],
+      "/children/c1/changes": { answersSince: 0, changes: [] },
       "/children": [{ id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14" }],
     });
     render(
@@ -93,9 +102,9 @@ describe("family home (X8)", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("every step done so far")).toBeInTheDocument();
+    expect(await screen.findByText("Every step on the path is done.")).toBeInTheDocument();
     expect(screen.queryByText(/mastered|all caught up/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Add a subject for Sokha" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Choose what comes next" })).toHaveAttribute(
       "href",
       "/parent/children/c1?add=subject",
     );
@@ -116,6 +125,7 @@ describe("family home (X8)", () => {
           ],
         },
       ],
+      "/children/c1/changes": { answersSince: 0, changes: [] },
       "/children": [{ id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14" }],
     });
     render(
@@ -124,7 +134,7 @@ describe("family home (X8)", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("What the answers show so far")).toBeInTheDocument();
+    expect(await screen.findByText("4 skills")).toBeInTheDocument();
     expect(screen.getByText("1 Secure")).toBeInTheDocument();
     expect(screen.getByText("2 Too early to tell")).toBeInTheDocument();
     expect(screen.queryByText(/Not started/)).not.toBeInTheDocument();
@@ -135,6 +145,7 @@ describe("family home (X8)", () => {
       "/children/c1/enrollments": [enrollment({})],
       "/children/c1/activity-history": [],
       "/children/c1/skills": [{ enrollmentId: "e1", objectives: [{ objectiveId: "o1", skills: [{ skillId: "s1", standing: "NOT_STARTED" }] }] }],
+      "/children/c1/changes": { answersSince: 0, changes: [] },
       "/children": [{ id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14" }],
     });
     render(
@@ -144,6 +155,45 @@ describe("family home (X8)", () => {
     );
 
     expect(await screen.findByText("No answers yet - this fills in as they play.")).toBeInTheDocument();
+  });
+});
+
+describe("the last 4 weeks on the family home (Y40)", () => {
+  it("names what moved up, links what may need practice to its evidence, and stays quiet without answers", async () => {
+    family({
+      "/children/c1/enrollments": [enrollment({})],
+      "/children/c1/activity-history": [],
+      "/children/c1/skills": [
+        { enrollmentId: "e1", objectives: [{ objectiveId: "o1", skills: [{ skillId: "s9", name: "Add within 5", standing: "NEEDS_PRACTICE" }] }] },
+      ],
+      "/children/c1/changes": {
+        answersSince: 8,
+        changes: [
+          { skillId: "s1", name: "Add within 10", kind: "BECAME_SECURE", then: "PROGRESSING", now: "SECURE", answersSince: 4, lastPracticedAt: null },
+          { skillId: "s2", name: "Count to 20", kind: "PRACTISED", then: "PROGRESSING", now: "PROGRESSING", answersSince: 4, lastPracticedAt: null },
+        ],
+      },
+      "/children/c2/enrollments": [enrollment({ enrollmentId: "e2" })],
+      "/children/c2/activity-history": [],
+      "/children/c2/skills": [],
+      "/children/c2/changes": { answersSince: 0, changes: [] },
+      "/children": [
+        { id: "c1", displayName: "Sokha", dateOfBirth: "2019-03-14" },
+        { id: "c2", displayName: "Dara", dateOfBirth: "2020-01-02" },
+      ],
+    });
+    render(
+      <MemoryRouter>
+        <ParentHome />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("8 answers on 2 skills")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add within 10" })).toHaveAttribute("href", "/parent/children/c1/skills/s1");
+    // "Practised, same standing" is not news; it waits on the child's page.
+    expect(screen.queryByRole("link", { name: "Count to 20" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add within 5" })).toHaveAttribute("href", "/parent/children/c1/skills/s9");
+    expect(screen.getByRole("link", { name: /What changed/ })).toHaveAttribute("href", "/parent/children/c1#changes");
+    expect(await screen.findByText("No answers in the last 4 weeks.")).toBeInTheDocument();
   });
 });
 

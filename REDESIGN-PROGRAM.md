@@ -40,8 +40,8 @@ Started 2026-10-19 from aed3a32. Phases are marked when done, so they are never 
 | # | Phase | Status |
 |---|---|---|
 | 1 | Child experience | ✅ Garden in the world (by the path), verdicts as lotus pictures, right answer and right order shown in place, whole basket takes a tile, next lantern with books to go, intro shows what the book asks (pictures + one word) |
-| 2 | Parent dashboard and statistics | ⏳ |
-| 3 | Teacher, principal, admin deeper screens | ⬜ |
+| 2 | Parent dashboard and statistics | ✅ Each child answers four questions in four ruled cells: Learning (subjects, where, last activity), What the answers show (standing bar), The last 4 weeks (what became secure or moved up, what may need practice, link to What changed), Next (the path's step, or the parent's decision when a path is done or missing). Removed: duplicated "every step done", per-child empty "nothing flagged" panel, per-child notes (now one "About these numbers") |
+| 3 | Teacher, principal, admin deeper screens | ⏳ |
 | 4 | Landing and design-system gaps | ⬜ |
 | 5 | Responsive and bilingual pass; final checks | ⬜ |
 

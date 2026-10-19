@@ -16,12 +16,12 @@ import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { lastPlayedText } from "./familyText";
 import { ChildPortrait, SceneBand } from "./ui";
 import { PendingChildChapter } from "./Deletion";
-import type { Child, CompletedActivity, CurriculumProgress, EnrollmentOverview, SkillProgress, SkillStanding } from "@/lib/api/types";
+import type { ChangeKind, Child, CurriculumProgress, EnrollmentOverview, SkillProgress, SkillStanding } from "@/lib/api/types";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
 import { setupMessages } from "./setup.messages";
-import { signalsMessages } from "./signals.messages";
+import { overviewMessages } from "./overview.messages";
 
 /** Fill for each standing in the bar (the shared standing palette); "too early" and "not started" stay light. */
 const BAR: Record<SkillStanding, string> = {
@@ -80,6 +80,7 @@ export function ParentHome() {
                 <ChildSummary key={child.id} child={child} />
               ),
             )}
+            <AboutNumbers />
           </section>
           <aside aria-labelledby="family-actions" className="flex flex-col gap-3 xl:sticky xl:top-24 xl:self-start">
             <h2 id="family-actions" className="font-display text-xl font-bold text-tonle-950">
@@ -102,6 +103,21 @@ export function ParentHome() {
         </div>
       )}
     </div>
+  );
+}
+
+/** Y40: how to read the figures above, once for the family rather than under every child. */
+function AboutNumbers() {
+  const o = useMessages(overviewMessages);
+  return (
+    <details className="group rounded-[20px] bg-paper-sunk/60 px-5 py-4 text-sm text-ink-soft">
+      <summary className="cursor-pointer font-semibold text-tonle-800">{o.about}</summary>
+      <ul className="mt-3 flex list-disc flex-col gap-1.5 pl-5">
+        <li>{o.aboutStandings}</li>
+        <li>{o.aboutLast}</li>
+        <li>{o.aboutSteps}</li>
+      </ul>
+    </details>
   );
 }
 
@@ -136,30 +152,28 @@ function pathState(enrollment: EnrollmentOverview, m: typeof familyMessages.en.h
 
 function ChildSummary({ child }: { child: Child }) {
   const { data: enrollments, error, isLoading } = useAsync(() => learningApi.enrollments(child.id), [child.id]);
-  // The most recent finished activity only - enough to say when the child last played.
+  // The most recent finished activity only - what the child did last.
   const recent = useAsync(() => learningApi.history(child.id, 1), [child.id]);
   const skills = useAsync(() => learningApi.skills(child.id), [child.id]);
-  const lastPlayed = recent.data?.[0]?.completedAt ?? null;
+  const last = recent.data?.[0] ?? null;
   const m = useMessages(familyMessages).home;
-  const s = useMessages(setupMessages).home;
-  const allDone =
-    enrollments !== null &&
-    enrollments.length > 0 &&
-    enrollments.every((e) => e.nextStep === null && e.totalSteps > 0 && e.completedSteps >= e.totalSteps);
+  const o = useMessages(overviewMessages);
 
   return (
-    <article className="overflow-hidden rounded-[28px] bg-white shadow-card">
+    <article aria-labelledby={`child-${child.id}`} className="overflow-hidden rounded-[28px] bg-white shadow-card">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-6 py-5 sm:px-8">
         <Link to={`/parent/children/${child.id}`} className="group flex items-center gap-4">
           <ChildPortrait buddy={child.learningBuddy} />
           <div>
-            <h2 className="font-display text-[1.75rem] font-bold leading-tight tracking-[-0.01em] text-tonle-950 group-hover:underline group-hover:decoration-tonle-300 group-hover:underline-offset-4">
+            <h2
+              id={`child-${child.id}`}
+              className="font-display text-[1.75rem] font-bold leading-tight tracking-[-0.01em] text-tonle-950 group-hover:underline group-hover:decoration-tonle-300 group-hover:underline-offset-4"
+            >
               {child.displayName}
             </h2>
             <p className="flex flex-wrap gap-x-1.5 text-sm text-ink-soft">
               <span>{m.age(ageFromDateOfBirth(child.dateOfBirth))}</span>
-              {/* When the child has played, the "Recently" strip below says what and when. */}
-              {recent.data && !lastPlayed && (
+              {recent.data && !last && (
                 <>
                   <span aria-hidden>·</span>
                   <span>{m.notPlayed}</span>
@@ -178,21 +192,12 @@ function ChildSummary({ child }: { child: Child }) {
         </div>
       </header>
 
-      <Signals last={recent.data?.[0] ?? null} enrollments={enrollments} />
-
-      <div className="grid gap-8 px-6 py-6 sm:px-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10">
-        <div className="flex min-w-0 flex-col gap-3">
-          <h3 className="text-[0.8125rem] font-semibold text-ink-soft">{s.learning}</h3>
+      {/* Y40: four questions, four cells - ruled, not boxed. */}
+      <div className="grid gap-px bg-line sm:grid-cols-2">
+        <Cell title={o.learning}>
           {isLoading && !enrollments && <p className="text-sm text-ink-faint">{m.loadingLearning}</p>}
           {error && <p className="text-sm text-ink-soft">{m.learningFailed}</p>}
-          {enrollments && enrollments.length === 0 && (
-            <div className="flex flex-col items-start gap-2 rounded-[18px] bg-paper p-4">
-              <p className="text-sm text-ink-soft">{m.noPath}</p>
-              <Link to={`/parent/add-child?child=${child.id}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-tonle-700 hover:text-tonle-900">
-                <Plus size={15} aria-hidden /> {s.chooseSubjects(child.displayName)}
-              </Link>
-            </div>
-          )}
+          {enrollments && enrollments.length === 0 && <p className="text-sm text-ink-soft">{o.noPath}</p>}
           {enrollments && enrollments.length > 0 && (
             <ul className="flex flex-col gap-3" aria-label={m.subjectsOf(child.displayName)}>
               {enrollments.map((enrollment) => (
@@ -200,58 +205,127 @@ function ChildSummary({ child }: { child: Child }) {
               ))}
             </ul>
           )}
-          <div className="flex flex-wrap gap-x-5 gap-y-1">
-            {allDone && (
-              <Link to={`/parent/children/${child.id}?add=subject`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-tonle-700 hover:text-tonle-900">
-                <Plus size={15} aria-hidden /> {m.addSubjectFor(child.displayName)}
-              </Link>
-            )}
-            {enrollments && enrollments.length > 0 && (
-              <Link to={`/parent/children/${child.id}#plan`} className="text-sm font-semibold text-tonle-700 underline-offset-4 hover:underline">
-                {s.manage}
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-5">
-          {skills.data && <SkillTally progress={skills.data} childName={child.displayName} />}
-          {skills.data && <NeedsPractice progress={skills.data} childId={child.id} />}
-        </div>
+          {last && <p className="text-sm leading-snug text-ink-soft">{o.last(last.title, last.correctAnswers, last.totalAnswers, lastPlayedText(last.completedAt))}</p>}
+        </Cell>
+        <Cell title={o.shows}>
+          {skills.data ? <SkillTally progress={skills.data} childName={child.displayName} /> : <p className="text-sm text-ink-faint">{m.loadingLearning}</p>}
+        </Cell>
+        <Cell title={o.lately}>
+          <Lately childId={child.id} progress={skills.data} />
+        </Cell>
+        <Cell title={o.next}>
+          <NextUp child={child} enrollments={enrollments} />
+        </Cell>
       </div>
     </article>
   );
 }
 
-/**
- * Two signals a parent can act on, each shown only when the data exists (Y39): the last activity with
- * its answers (one activity's result, said to be no more than that) and what the path places next -
- * named as a review when it is one.
- */
-function Signals({ last, enrollments }: { last: CompletedActivity | null; enrollments: EnrollmentOverview[] | null }) {
-  const m = useMessages(signalsMessages);
-  const next = enrollments?.map((e) => e.nextStep).find((step): step is NonNullable<typeof step> => step !== null) ?? null;
-  if (!last && !next) return null;
+function Cell({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <dl className="grid gap-x-8 gap-y-3 border-b border-line bg-paper/60 px-6 py-4 text-sm sm:grid-cols-2 sm:px-8">
-      {last && (
-        <div className="min-w-0">
-          <dt className="text-[0.8125rem] font-semibold text-ink-faint">{m.recently}</dt>
-          <dd className="font-medium text-ink">
-            {m.recent(last.title, last.correctAnswers, last.totalAnswers, lastPlayedText(last.completedAt))}
-          </dd>
-          <dd className="text-xs text-ink-faint">{m.recentNote}</dd>
+    <section className="flex min-w-0 flex-col gap-3 bg-white px-6 py-5 sm:px-8">
+      <h3 className="text-[0.8125rem] font-semibold text-ink-faint">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+/** Kinds of move a parent is glad to hear about, best first (the server's own change kinds). */
+const GOOD_NEWS: ChangeKind[] = ["BECAME_SECURE", "MOVED_UP"];
+
+/**
+ * What moved in the last four weeks (X12's recorded changes) and what the answers flag for practice
+ * now: the good news named, the practice linked to its evidence. Quiet when there were no answers.
+ */
+function Lately({ childId, progress }: { childId: string; progress: CurriculumProgress[] | null }) {
+  const { data, error } = useAsync(() => learningApi.changes(childId, 28), [childId]);
+  const o = useMessages(overviewMessages);
+  const heading = useMessages(familyMessages).changes.heading;
+  if (error) return <p className="text-sm text-ink-soft">{o.latelyFailed}</p>;
+  if (!data) return null;
+  const flagged = progress ? uniqueSkills(progress).filter((x) => x.standing === "NEEDS_PRACTICE") : [];
+  const good = GOOD_NEWS.flatMap((kind) => data.changes.filter((c) => c.kind === kind));
+  if (data.answersSince === 0 && flagged.length === 0) return <p className="text-sm text-ink-soft">{o.quiet}</p>;
+  return (
+    <div className="flex flex-col gap-3">
+      {data.answersSince > 0 ? (
+        <p className="text-sm font-medium text-ink">{o.answersOn(data.answersSince, data.changes.length)}</p>
+      ) : (
+        <p className="text-sm text-ink-soft">{o.quiet}</p>
+      )}
+      {good.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {good.slice(0, 3).map((change) => (
+            <li key={change.skillId} className="flex flex-wrap items-center gap-x-2 text-sm">
+              <StandingMark standing={change.now} />
+              <span className="text-ink-soft">{heading[change.kind]}:</span>
+              <Link to={`/parent/children/${childId}/skills/${change.skillId}`} className="font-semibold text-tonle-900 underline-offset-4 hover:underline">
+                {change.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {flagged.length > 0 && (
+        <div className="flex flex-col gap-1.5 rounded-[16px] bg-light-soft/70 px-4 py-3">
+          <p className="inline-flex items-center gap-2 text-[0.8125rem] font-semibold text-light-deep">
+            <Sparkles size={15} aria-hidden /> {o.practice}
+          </p>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1">
+            {flagged.slice(0, 3).map((skill) => (
+              <li key={skill.skillId}>
+                <Link to={`/parent/children/${childId}/skills/${skill.skillId}`} className="text-sm font-semibold text-tonle-900 underline-offset-4 hover:underline">
+                  {skill.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
-      {next && (
-        <div className="min-w-0">
-          <dt className="text-[0.8125rem] font-semibold text-ink-faint">{m.next}</dt>
-          <dd className="font-medium text-ink">
-            {next.explanation.reason === "REVIEW" ? m.review(next.explanation.skill?.name ?? next.title) : m.nextStep(next.title)}
-          </dd>
-        </div>
+      {data.answersSince > 0 && (
+        <Link to={`/parent/children/${childId}#changes`} className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-tonle-700 underline-offset-4 hover:underline">
+          {o.seeChanges} <ArrowRight size={14} aria-hidden />
+        </Link>
       )}
-    </dl>
+    </div>
+  );
+}
+
+/**
+ * What comes next, and whether it is the parent's to do: the path's next step (named as a review when
+ * it is one) needs nothing from them; a finished path or no path at all is theirs to decide.
+ */
+function NextUp({ child, enrollments }: { child: Child; enrollments: EnrollmentOverview[] | null }) {
+  const o = useMessages(overviewMessages);
+  const s = useMessages(setupMessages).home;
+  if (!enrollments) return null;
+  if (enrollments.length === 0) {
+    return (
+      <ParentStep line={o.noPath} to={`/parent/add-child?child=${child.id}`} action={s.chooseSubjects(child.displayName)} />
+    );
+  }
+  const next = enrollments.map((e) => e.nextStep).find((step): step is NonNullable<typeof step> => step !== null) ?? null;
+  if (!next) return <ParentStep line={o.allDone} to={`/parent/children/${child.id}?add=subject`} action={o.chooseNext} />;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="font-semibold text-tonle-950">{next.explanation.reason === "REVIEW" ? o.review(next.explanation.skill?.name ?? next.title) : next.title}</p>
+      <p className="text-sm text-ink-soft">{o.ready(child.displayName)}</p>
+      <Link to={`/parent/children/${child.id}#plan`} className="mt-1 text-sm font-semibold text-tonle-700 underline-offset-4 hover:underline w-fit">
+        {s.manage}
+      </Link>
+    </div>
+  );
+}
+
+/** Something for the parent to decide: said plainly, with the one way to do it. */
+function ParentStep({ line, to, action }: { line: string; to: string; action: string }) {
+  return (
+    <div className="flex flex-col items-start gap-2.5">
+      <p className="text-sm text-ink">{line}</p>
+      <Link to={to} className={buttonClasses("accent", "md")}>
+        <Plus size={16} aria-hidden /> {action}
+      </Link>
+    </div>
   );
 }
 
@@ -270,7 +344,7 @@ function SubjectLine({ enrollment, words }: { enrollment: EnrollmentOverview; wo
         <span aria-hidden className={cn("h-1.5 overflow-hidden rounded-full", t.soft)}>
           <span className={cn("block h-full rounded-full", t.solid)} style={{ width: `${Math.round(share * 100)}%` }} />
         </span>
-        <p className="truncate text-sm text-ink-soft">{pathState(enrollment, words)}</p>
+        {enrollment.nextStep && <p className="truncate text-sm text-ink-soft">{pathState(enrollment, words)}</p>}
       </div>
     </li>
   );
@@ -295,10 +369,7 @@ function SkillTally({ progress, childName }: { progress: CurriculumProgress[]; c
   const counts = all.filter((c) => c.standing !== "NOT_STARTED" && c.n > 0);
   return (
     <div className="flex flex-col gap-2">
-      <p className="flex items-baseline justify-between gap-3 text-[0.8125rem] font-semibold text-ink-soft">
-        {m.answersShow}
-        {skills.length > 0 && <span className="tabular font-medium text-ink-faint">{s.skillsCount(skills.length)}</span>}
-      </p>
+      {skills.length > 0 && <p className="tabular -mt-1 text-[0.8125rem] font-medium text-ink-faint">{s.skillsCount(skills.length)}</p>}
       {skills.length > 0 && (
         <span role="img" aria-label={s.standingsLabel(childName)} className="flex h-3 gap-[2px] overflow-hidden rounded-full">
           {all
@@ -316,36 +387,6 @@ function SkillTally({ progress, childName }: { progress: CurriculumProgress[]; c
             <li key={standing} className="inline-flex items-center gap-2 text-sm font-medium text-ink">
               <StandingMark standing={standing} />
               {m.tally(n, standingLabel(standing))}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/** Skills the server says need practice (enough answers to judge), each a way into its story. */
-function NeedsPractice({ progress, childId }: { progress: CurriculumProgress[]; childId: string }) {
-  const s = useMessages(setupMessages).home;
-  const flagged = uniqueSkills(progress).filter((x) => x.standing === "NEEDS_PRACTICE");
-  const answered = uniqueSkills(progress).some((x) => x.scoredAnswers > 0);
-  if (!answered) return null;
-  // Attention only where there is something to act on: otherwise one quiet line (Y37).
-  if (flagged.length === 0) return <p className="text-sm leading-relaxed text-ink-soft">{s.practiceNone}</p>;
-  return (
-    <div className="flex flex-col gap-2 rounded-[18px] bg-light-soft/70 p-4">
-      <p className="inline-flex items-center gap-2 text-[0.8125rem] font-semibold text-light-deep">
-        <Sparkles size={15} aria-hidden /> {s.practice}
-      </p>
-      {flagged.length === 0 ? (
-        <p className="text-sm text-ink-soft">{s.practiceNone}</p>
-      ) : (
-        <ul className="flex flex-col gap-1">
-          {flagged.slice(0, 3).map((skill) => (
-            <li key={skill.skillId}>
-              <Link to={`/parent/children/${childId}/skills/${skill.skillId}`} className="text-sm font-semibold text-tonle-900 underline-offset-4 hover:underline">
-                {skill.name}
-              </Link>
             </li>
           ))}
         </ul>

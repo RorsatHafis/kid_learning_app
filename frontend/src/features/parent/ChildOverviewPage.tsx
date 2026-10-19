@@ -145,11 +145,11 @@ function ChildTabs({ base }: { base: string }) {
   );
 }
 
-/** "#plan" (the family home's "Manage subjects") brings the learning plan into view. */
+/** "#plan" (the family home's "Manage subjects") or "#changes" ("What changed") brings that part into view. */
 function PlanAnchor({ children }: { children: ReactNode }) {
   const { hash } = useLocation();
   useEffect(() => {
-    if (hash === "#plan") document.getElementById("plan")?.scrollIntoView?.({ block: "start" });
+    if (hash === "#plan" || hash === "#changes") document.getElementById(hash.slice(1))?.scrollIntoView?.({ block: "start" });
   }, [hash]);
   return (
     <div id="plan" className="scroll-mt-24">
