@@ -16,11 +16,12 @@ import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { lastPlayedText } from "./familyText";
 import { ChildPortrait, SceneBand } from "./ui";
 import { PendingChildChapter } from "./Deletion";
-import type { Child, CurriculumProgress, EnrollmentOverview, SkillProgress, SkillStanding } from "@/lib/api/types";
+import type { Child, CompletedActivity, CurriculumProgress, EnrollmentOverview, SkillProgress, SkillStanding } from "@/lib/api/types";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
 import { setupMessages } from "./setup.messages";
+import { signalsMessages } from "./signals.messages";
 
 /** Fill for each standing in the bar (the shared standing palette); "too early" and "not started" stay light. */
 const BAR: Record<SkillStanding, string> = {
@@ -157,10 +158,11 @@ function ChildSummary({ child }: { child: Child }) {
             </h2>
             <p className="flex flex-wrap gap-x-1.5 text-sm text-ink-soft">
               <span>{m.age(ageFromDateOfBirth(child.dateOfBirth))}</span>
-              {recent.data && (
+              {/* When the child has played, the "Recently" strip below says what and when. */}
+              {recent.data && !lastPlayed && (
                 <>
                   <span aria-hidden>·</span>
-                  <span>{lastPlayed ? m.played(lastPlayedText(lastPlayed)) : m.notPlayed}</span>
+                  <span>{m.notPlayed}</span>
                 </>
               )}
             </p>
@@ -175,6 +177,8 @@ function ChildSummary({ child }: { child: Child }) {
           </Link>
         </div>
       </header>
+
+      <Signals last={recent.data?.[0] ?? null} enrollments={enrollments} />
 
       <div className="grid gap-8 px-6 py-6 sm:px-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10">
         <div className="flex min-w-0 flex-col gap-3">
@@ -216,6 +220,38 @@ function ChildSummary({ child }: { child: Child }) {
         </div>
       </div>
     </article>
+  );
+}
+
+/**
+ * Two signals a parent can act on, each shown only when the data exists (Y39): the last activity with
+ * its answers (one activity's result, said to be no more than that) and what the path places next -
+ * named as a review when it is one.
+ */
+function Signals({ last, enrollments }: { last: CompletedActivity | null; enrollments: EnrollmentOverview[] | null }) {
+  const m = useMessages(signalsMessages);
+  const next = enrollments?.map((e) => e.nextStep).find((step): step is NonNullable<typeof step> => step !== null) ?? null;
+  if (!last && !next) return null;
+  return (
+    <dl className="grid gap-x-8 gap-y-3 border-b border-line bg-paper/60 px-6 py-4 text-sm sm:grid-cols-2 sm:px-8">
+      {last && (
+        <div className="min-w-0">
+          <dt className="text-[0.8125rem] font-semibold text-ink-faint">{m.recently}</dt>
+          <dd className="font-medium text-ink">
+            {m.recent(last.title, last.correctAnswers, last.totalAnswers, lastPlayedText(last.completedAt))}
+          </dd>
+          <dd className="text-xs text-ink-faint">{m.recentNote}</dd>
+        </div>
+      )}
+      {next && (
+        <div className="min-w-0">
+          <dt className="text-[0.8125rem] font-semibold text-ink-faint">{m.next}</dt>
+          <dd className="font-medium text-ink">
+            {next.explanation.reason === "REVIEW" ? m.review(next.explanation.skill?.name ?? next.title) : m.nextStep(next.title)}
+          </dd>
+        </div>
+      )}
+    </dl>
   );
 }
 

@@ -22,7 +22,12 @@ function enrollment(over: Record<string, unknown>) {
     enrolledAt: "2026-09-01T00:00:00Z",
     completedSteps: 2,
     totalSteps: 6,
-    nextStep: { learningPathItemId: "i3", activityVersionId: "a3", title: "Addition Within 10 Practice - Easy" },
+    nextStep: {
+      learningPathItemId: "i3",
+      activityVersionId: "a3",
+      title: "Addition Within 10 Practice - Easy",
+      explanation: { reason: "CURRICULUM", skill: null, targetSkill: null, afterActivityTitle: null, afterScore: null, decidedAt: null },
+    },
     currentChapter: chapter,
     chapterCount: 2,
     chapters: [chapter],
@@ -47,7 +52,9 @@ describe("family home (X8)", () => {
   it("says when each child last played and where each path stands", async () => {
     family({
       "/children/c1/enrollments": [enrollment({})],
-      "/children/c1/activity-history": [{ attemptId: "t1", completedAt: new Date().toISOString() }],
+      "/children/c1/activity-history": [
+        { attemptId: "t1", title: "Counting Practice", correctAnswers: 2, totalAnswers: 3, completedAt: new Date().toISOString() },
+      ],
       "/children/c1/skills": [],
       "/children/c2/enrollments": [],
       "/children/c2/activity-history": [],
@@ -63,7 +70,9 @@ describe("family home (X8)", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Played today")).toBeInTheDocument();
+    // Y39: when the child last played, as the last activity's own answers - never as a skill judgement.
+    expect(await screen.findByText("Counting Practice: 2 of 3 answers right, today")).toBeInTheDocument();
+    expect(screen.getAllByText("One activity's answers - not a judgement of the skill.").length).toBeGreaterThan(0);
     expect(await screen.findByText("Hasn't played yet")).toBeInTheDocument();
     const sokha = screen.getByRole("list", { name: "Sokha's subjects" });
     expect(within(sokha).getByText(/2 of 6 steps/)).toBeInTheDocument();

@@ -10,8 +10,8 @@ BOOKEYOND-KID-ENGINEERING-PROGRESS.md.
 | 2 | Research and short design rationale | ✅ Done: DESIGN-DIRECTION-Y39.md |
 | 3 | Shared visual system | ✅ Done in Y38 (warm paper, pills, card depth, lockup, night rail); extended per step below |
 | 4 | Child experience and meaningful gamification | ✅ Done: garden of skills (shelf + home glimpse), "your garden grew" on completion from real standings, review chip, chapter trail, interaction pictograms, finished-path replay hint |
-| 5 | Parent dashboard, statistics, drill-downs | ⏳ In progress |
-| 6 | Landing page and marketing story | ⬜ |
+| 5 | Parent dashboard, statistics, drill-downs | ✅ Done: per-child "Recently" (one activity's answers, labelled as such) and "Next" (named as a review when it is one) signals shown only with data; no duplicate date; path count says "steps done"; practice box only when flagged (Y37); drill-down Overview → child → Skills & progress → skill evidence kept |
+| 6 | Landing page and marketing story | ⏳ In progress |
 | 7 | Teacher, principal and admin workspaces | ⬜ |
 | 8 | Bilingual, responsive and shared components | ⬜ |
 | 9 | Bounded final review and commit | ⬜ |
@@ -27,5 +27,4 @@ BOOKEYOND-KID-ENGINEERING-PROGRESS.md.
 
 ## Next step
 
-Step 5: parent statistics audit and per-child signals.
-interaction pictograms and the review chip.
+Step 6: landing - the garden in the story, fresh product shots.
