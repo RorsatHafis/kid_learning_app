@@ -9,6 +9,17 @@ export const trustMessages = defineMessages(
   "features/marketing/trust",
   {
     nav: { safety: "Safety", plans: "Plans" },
+    grow: {
+      title: "Watch understanding grow.",
+      lead: "Every skill your child practises becomes a plant in their own garden. It buds when their answers show it getting stronger, and blooms when they show it is secure - never just because a lesson was finished.",
+      points: {
+        a: "Grown only from your child's own answers",
+        b: "No points, coins or streaks to chase",
+        c: "The same evidence you see as a parent",
+      },
+      shot: "A child's garden in the product: one skill in bloom, two still growing.",
+      caption: "From the product, with sample data.",
+    },
     proof: {
       label: "In short",
       ages: "Short lessons for ages 4 to 9",
@@ -78,6 +89,17 @@ export const trustMessages = defineMessages(
   },
   {
     nav: { safety: "សុវត្ថិភាព", plans: "កញ្ចប់" },
+    grow: {
+      title: "មើលការយល់ដឹងលូតលាស់។",
+      lead: "ជំនាញនីមួយៗដែលកូនរបស់អ្នកហាត់ ក្លាយជារុក្ខជាតិមួយនៅក្នុងសួនផ្ទាល់ខ្លួនរបស់ពួកគេ។ វាចេញពន្លកផ្កា ពេលចម្លើយរបស់ពួកគេបង្ហាញថាវាកាន់តែខ្លាំងឡើង ហើយរីកផ្កា ពេលចម្លើយបង្ហាញថាវារឹងមាំ - មិនដែលគ្រាន់តែដោយសារមេរៀនមួយត្រូវបានបញ្ចប់នោះទេ។",
+      points: {
+        a: "លូតលាស់តែពីចម្លើយផ្ទាល់របស់កូនអ្នកប៉ុណ្ណោះ",
+        b: "គ្មានពិន្ទុ កាក់ ឬការប្រកួតរាប់ថ្ងៃដែលត្រូវដេញតាម",
+        c: "ភស្តុតាងដូចគ្នាដែលអ្នកឃើញក្នុងនាមជាឪពុកម្ដាយ",
+      },
+      shot: "សួនរបស់កុមារម្នាក់នៅក្នុងផលិតផល៖ ជំនាញមួយកំពុងរីកផ្កា និងពីរកំពុងលូតលាស់។",
+      caption: "ពីផលិតផល ជាមួយទិន្នន័យគំរូ។",
+    },
     proof: {
       label: "ដោយសង្ខេប",
       ages: "មេរៀនខ្លីៗសម្រាប់អាយុ 4 ដល់ 9 ឆ្នាំ",

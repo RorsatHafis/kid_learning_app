@@ -21,6 +21,8 @@ import childQuestion from "./shots/child-question.webp";
 import parentHome from "./shots/parent-home.webp";
 import parentChild from "./shots/parent-child.webp";
 import teacherTrend from "./shots/teacher-trend.webp";
+import childGarden from "./shots/child-garden.webp";
+import { Plant } from "@/features/world/Plant";
 import { messagesIn, useLocale, useMessages } from "@/i18n/catalog";
 import { marketingMessages } from "./messages";
 import { common } from "@/components/ui/messages";
@@ -47,6 +49,7 @@ export function LandingPage() {
         <HowItWorks />
         <ForParents />
         <ForChildren />
+        <Grow />
         <Safety />
         <Subjects />
         <Plans />
@@ -125,7 +128,7 @@ function Hero() {
             src={parentHome}
             alt={l.shotParent}
             width={1600}
-            height={949}
+            height={1073}
             eager
             className="ml-auto w-[88%] rotate-[1.5deg] motion-safe:animate-rise-in"
           />
@@ -419,6 +422,40 @@ function Schools() {
         </figure>
       </div>
     </section>
+  );
+}
+
+/**
+ * The garden of skills (Y39), told to a parent: the one thing a child collects, grown only from their
+ * answers - shown with the real component's stages and a screenshot of the product (sample data).
+ */
+function Grow() {
+  const m = useMessages(trustMessages).grow;
+  return (
+    <Section id="grow">
+      <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+        <div className="flex flex-col gap-7">
+          <Heading title={m.title} lead={m.lead} />
+          <div aria-hidden className="flex items-end gap-6">
+            <Plant stage="sprout" size={56} />
+            <Plant stage="bud" size={62} />
+            <Plant stage="bloom" size={72} />
+          </div>
+          <ul className="flex flex-col gap-3">
+            {[m.points.a, m.points.b, m.points.c].map((point) => (
+              <li key={point} className="flex items-start gap-3 leading-relaxed text-ink">
+                <Check size={18} strokeWidth={2.5} className="mt-0.5 shrink-0 text-palm" aria-hidden />
+                {point}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <figure className="flex flex-col gap-3">
+          <img src={childGarden} alt={m.shot} width={1600} height={543} loading="lazy" className="w-full rounded-[24px] shadow-lift" />
+          <figcaption className="text-sm text-ink-soft">{m.caption}</figcaption>
+        </figure>
+      </div>
+    </Section>
   );
 }
 

@@ -53,7 +53,10 @@ function GardenBed({ plant, index }: { plant: GardenPlant; index: number }) {
       className="flex flex-col items-center gap-1.5 text-center motion-safe:animate-rise-in"
       style={{ animationDelay: `${Math.min(index, 10) * 60}ms` }}
     >
-      <Plant stage={plant.stage} size={plant.stage === "bloom" ? 76 : 66} />
+      {/* every plant stands on the same ground line, whatever its height */}
+      <span className="flex h-[96px] items-end justify-center">
+        <Plant stage={plant.stage} size={plant.stage === "bloom" ? 76 : 66} />
+      </span>
       <span className="text-[0.95rem] font-semibold leading-snug text-tonle-950">{plant.skill.name}</span>
       <span
         className={cn(
