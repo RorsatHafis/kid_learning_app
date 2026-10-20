@@ -15,6 +15,8 @@ import { currentStatus, errorText, useStudio, useComposer, useArchivedView } fro
 import { ArchivedBadge, ArchivedSwitch, ManageButton } from "./Lifecycle";
 import { useMessages } from "@/i18n/catalog";
 import { editorMessages } from "./editor.messages";
+import { builderMessages } from "./builder.messages";
+import { SelectField } from "./shared";
 
 const PAGE_SIZE = 10;
 
@@ -36,8 +38,10 @@ export function ActivitiesPage() {
   const data = lessons.data;
   const filtered = Boolean(text);
   const composer = useComposer(!archived && data?.total === 0 && !filtered);
+  const [starting, setStarting] = useState(false);
   usePageInRange(data, setPage);
   const m = useMessages(editorMessages).activities;
+  const b = useMessages(builderMessages);
 
   return (
     <div className="flex flex-col gap-5">
@@ -47,9 +51,15 @@ export function ActivitiesPage() {
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <ArchivedSwitch archived={archived} onChange={setArchived} list="lessons" />
-          {!composer.open && !archived && <NewButton label={m.newLesson} onClick={composer.show} />}
+          {!composer.open && !archived && (
+            <Button variant="ghost" onClick={composer.show}>
+              <Plus size={16} aria-hidden /> {m.newLesson}
+            </Button>
+          )}
+          {!starting && !archived && <NewButton label={b.newActivity} onClick={() => setStarting(true)} />}
         </div>
       </div>
+      {starting && <QuickActivity onClose={() => setStarting(false)} />}
       {composer.open && (
         <NewLesson
           focusOnOpen={composer.requested}
@@ -214,6 +224,93 @@ function NewActivity({ lessonId, onCancel }: { lessonId: string; onCancel: () =>
         </Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Y42: a new activity in one step - its name, what it practises, and the lesson it sits in (one of the
+ * subject's, or a new one) - and straight on to writing its questions in the builder.
+ */
+function QuickActivity({ onClose }: { onClose: () => void }) {
+  const { catalog } = useStudio();
+  const navigate = useNavigate();
+  const b = useMessages(builderMessages);
+  const lessons = useAsync(() => studioApi.lessons(catalog.subject.id, { size: 100 }), [catalog.subject.id]);
+  const [title, setTitle] = useState("");
+  const [skillIds, setSkillIds] = useState<string[]>(catalog.skills.length === 1 ? [catalog.skills[0].id] : []);
+  const [lesson, setLesson] = useState<string>("");
+  const [lessonName, setLessonName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const existing = lessons.data?.items ?? [];
+  const chosen = lesson || (existing[0]?.id ?? "__new");
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const lessonId =
+        chosen === "__new"
+          ? (await studioApi.createLesson({ subjectId: catalog.subject.id, title: (lessonName.trim() || title.trim()) })).id
+          : chosen;
+      const activity = await studioApi.createActivity(lessonId, { title: title.trim(), skillIds });
+      navigate(activity.id);
+    } catch (err) {
+      setError(errorText(err));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ComposerPanel title={b.newActivity} onClose={onClose} focusOnOpen className="max-w-2xl">
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        <p className="-mt-1 text-sm text-ink-soft">{b.newActivityLead}</p>
+        <FormField label={b.activityName} hint={b.activityNameHint} value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
+        {catalog.skills.length === 0 ? (
+          <p className="rounded-[12px] bg-light-soft px-4 py-3 text-sm text-light-deep">{b.noSkills}</p>
+        ) : (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-0.5 text-sm font-semibold text-ink">{b.practises}</legend>
+            <p className="-mt-0.5 mb-1 text-xs text-ink-soft">{b.practisesHint}</p>
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              {catalog.skills.map((skill) => (
+                <label key={skill.id} className="flex min-h-11 items-center gap-2.5 rounded-[12px] bg-paper px-3 text-sm text-ink ring-1 ring-line">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-tonle-700"
+                    checked={skillIds.includes(skill.id)}
+                    onChange={(e) => setSkillIds(e.target.checked ? [...skillIds, skill.id] : skillIds.filter((id) => id !== skill.id))}
+                  />
+                  {skill.name}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SelectField label={b.lesson} hint={b.lessonHint} value={chosen} onChange={(e) => setLesson(e.target.value)}>
+            {existing.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.title}
+              </option>
+            ))}
+            <option value="__new">{b.newLessonOption}</option>
+          </SelectField>
+          {chosen === "__new" && (
+            <FormField label={b.newLessonName} hint={b.newLessonNameHint} value={lessonName} maxLength={200} onChange={(e) => setLessonName(e.target.value)} />
+          )}
+        </div>
+        {error && (
+          <p role="alert" className="text-sm font-medium text-brick-deep">
+            {error}
+          </p>
+        )}
+        <Button type="submit" className="w-fit" disabled={busy || !title.trim() || skillIds.length === 0 || lessons.isLoading}>
+          {busy ? b.creating : b.createAndWrite}
+        </Button>
+      </form>
+    </ComposerPanel>
   );
 }
 

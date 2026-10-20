@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowDownToLine, ArrowRight, BookOpen, Hash, Library, Link2, ListOrdered, Pencil, Pointer, ThumbsUp, X } from "lucide-react";
+import { ArrowRight, BookOpen, Library, X } from "lucide-react";
+import { KIND_PICTURE } from "@/features/learning/questionKinds";
 import { ProgressBuds, Bud } from "@/features/world/ProgressBuds";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
@@ -595,17 +596,6 @@ function Intro({
     </div>
   );
 }
-
-/** A picture of what each kind of question asks the child to do; the word beside it is the label. */
-const KIND_PICTURE: Record<QuestionType, typeof Pointer> = {
-  MULTIPLE_CHOICE: Pointer,
-  TRUE_FALSE: ThumbsUp,
-  NUMERIC: Hash,
-  SHORT_ANSWER: Pencil,
-  ORDERING: ListOrdered,
-  MATCHING: Link2,
-  SORTING: ArrowDownToLine,
-};
 
 /**
  * Y40: what this book will ask the child to do - choose, put in order, match, sort... - as pictures

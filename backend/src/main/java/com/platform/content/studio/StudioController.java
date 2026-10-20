@@ -225,6 +225,20 @@ public class StudioController {
         return studio.publishActivityVersion(accountId, versionId);
     }
 
+    /** Y42: a new question written in the activity, added at its end (subject and default skills: the activity's). */
+    @PostMapping("/activity-versions/{versionId}/questions")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ActivityDetail addNewQuestion(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId,
+                                         @Valid @RequestBody CreateQuestionRequest request) {
+        return studio.addNewQuestion(accountId, versionId, request);
+    }
+
+    /** Y42: the activity and its draft questions, published together or not at all. */
+    @PostMapping("/activity-versions/{versionId}/publish-with-questions")
+    public ActivityDetail publishActivityWithQuestions(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId) {
+        return studio.publishActivityWithQuestions(accountId, versionId);
+    }
+
     // ------------------------------------------------------------------ questions
 
     @GetMapping("/questions")

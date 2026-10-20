@@ -180,6 +180,9 @@ public class ActivityService {
         return activityItemRepository.save(ActivityItem.create(activityVersionId, questionVersionId, sequenceOrder, points));
     }
 
+    /** The most questions one activity holds (the Studio's request limit too). */
+    public static final int MAX_ITEMS = 50;
+
     public record ItemDraft(UUID questionVersionId, BigDecimal points) {
     }
 
@@ -195,10 +198,17 @@ public class ActivityService {
         if (items.stream().map(ItemDraft::questionVersionId).distinct().count() != items.size()) {
             throw new IllegalArgumentException("A question can appear only once in an activity");
         }
+        if (items.size() > MAX_ITEMS) {
+            throw new IllegalArgumentException("An activity can hold at most %d questions".formatted(MAX_ITEMS));
+        }
         for (ItemDraft item : items) {
             QuestionVersion questionVersion = requireUsableQuestion(version.getActivityId(), item.questionVersionId());
-            if (questionVersion.getStatus() != PublicationStatus.PUBLISHED) {
-                throw new IllegalStateException("Only a question's current published version can be added (question version %s is %s)"
+            // Y42: an activity draft may hold a question that is still a draft, so an author can write a quiz in
+            // one place. The activity is only ever published once every question in it is (ContentValidator:
+            // QUESTION_NOT_PUBLISHED), and children are only ever served published activities; a superseded or
+            // retired version is never added.
+            if (questionVersion.getStatus() != PublicationStatus.PUBLISHED && questionVersion.getStatus() != PublicationStatus.DRAFT) {
+                throw new IllegalStateException("Only a draft or the current published version of a question can be added (question version %s is %s)"
                         .formatted(questionVersion.getId(), questionVersion.getStatus()));
             }
         }

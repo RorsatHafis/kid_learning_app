@@ -268,9 +268,11 @@ class ContentStudioIntegrationTests {
                 "{\"title\":\"Empty\",\"skillIds\":[\"" + catalog.skillId() + "\"]}", admin), 201);
         assertThat(publishErrors(post("/api/v1/studio/activity-versions/" + firstVersion(empty) + "/publish", "", admin)))
                 .contains("NO_QUESTIONS");
-        // A draft question can't go into an activity.
-        assertThat(put("/api/v1/studio/activity-versions/" + firstVersion(empty) + "/items",
-                "{\"items\":[{\"questionVersionId\":\"" + firstVersion(untagged) + "\"}]}", admin).statusCode()).isEqualTo(409);
+        // Y42: a draft question may go into an activity draft, but the activity isn't published until it is.
+        json(put("/api/v1/studio/activity-versions/" + firstVersion(empty) + "/items",
+                "{\"items\":[{\"questionVersionId\":\"" + firstVersion(untagged) + "\"}]}", admin), 200);
+        assertThat(publishErrors(post("/api/v1/studio/activity-versions/" + firstVersion(empty) + "/publish", "", admin)))
+                .contains("QUESTION_NOT_PUBLISHED");
     }
 
     @Test

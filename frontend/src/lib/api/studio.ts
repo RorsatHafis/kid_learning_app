@@ -574,6 +574,12 @@ export const studioApi = {
     apiClient.get<LearnerActivityPreview>(`${S}/activity-versions/${versionId}/preview`),
   publishActivityVersion: (versionId: string) =>
     apiClient.post<ActivityDetail>(`${S}/activity-versions/${versionId}/publish`),
+  /** Y42: a new question written in the activity and added at its end - one step (its subject and skills: the activity's). */
+  addNewQuestion: (versionId: string, body: QuestionDraftInput & { subjectId: string; questionType: QuestionType }) =>
+    apiClient.post<ActivityDetail>(`${S}/activity-versions/${versionId}/questions`, { ...body, skillIds: [] }),
+  /** Y42: the activity and its draft questions, published together or not at all. */
+  publishActivityWithQuestions: (versionId: string) =>
+    apiClient.post<ActivityDetail>(`${S}/activity-versions/${versionId}/publish-with-questions`),
 
   /** One page of the caller's question bank for a subject, searched and filtered by the server. */
   questions: (subjectId: string, query: QuestionQuery = {}) => {

@@ -127,8 +127,9 @@ public final class ServerText {
                     m -> "\"" + m.group(1) + "\" មិនមែនជាកូដរូបិយប័ណ្ណទេ (ប្រើ ISO 4217 ដូចជា USD ឬ KHR)"),
             rule("Only a draft plan can be (\\w+); this one is (\\w+)",
                     m -> "មានតែកញ្ចប់ព្រាងទេ ដែលអាចកែប្រែបែបនេះបាន។ កញ្ចប់នេះមានស្ថានភាព " + m.group(2)),
-            rule("Only a question's current published version can be added \\(question version \\S+ is \\w+\\)",
-                    m -> "អាចបន្ថែមបានតែកំណែដែលបានផ្សព្វផ្សាយបច្ចុប្បន្នរបស់សំណួរប៉ុណ្ណោះ"),
+            rule("Only a draft or the current published version of a question can be added \\(question version \\S+ is \\w+\\)",
+                    m -> "អាចបន្ថែមបានតែសេចក្ដីព្រាង ឬកំណែដែលបានផ្សព្វផ្សាយបច្ចុប្បន្នរបស់សំណួរប៉ុណ្ណោះ"),
+            rule("An activity can hold at most (\\d+) questions", m -> "សកម្មភាពមួយអាចមានសំណួរយ៉ាងច្រើន " + m.group(1)),
             rule("Question version [0-9a-f-]+: (.*)", m -> {
                 String inner = khmer(m.group(1));
                 return inner != null ? inner : "សំណួរនេះមិនទាន់ពេញលេញទេ។";

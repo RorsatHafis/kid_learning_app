@@ -177,10 +177,13 @@ export function SkillChips({
 
 export function SelectField({
   label,
+  hint,
   children,
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
+  /** Plain help under the field, read with it. */
+  hint?: string;
   children: ReactNode;
 }) {
   const id = useId();
@@ -191,11 +194,17 @@ export function SelectField({
       </label>
       <select
         id={id}
+        aria-describedby={hint ? `${id}-hint` : undefined}
         className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-11 px-3.5 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
         {...props}
       >
         {children}
       </select>
+      {hint && (
+        <span id={`${id}-hint`} className="text-xs text-ink-soft">
+          {hint}
+        </span>
+      )}
     </div>
   );
 }

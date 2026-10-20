@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { ChildPreview } from "./ChildPreview";
 import { ArchivedBadge, ManageButton } from "./Lifecycle";
 import { QuestionDraftForm } from "./QuestionDraftForm";
+import { draftValuesOf } from "./draftValues";
 import { errorText, questionTypeLabel, reportFromError, useStudio } from "./studioLogic";
 import { Panel, SkillChips, StatusBadge, ValidationPanel, VersionHistory } from "./shared";
 import { useMessages } from "@/i18n/catalog";
@@ -116,26 +117,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
               <QuestionDraftForm
                 key={latest.id}
                 questionType={detail.questionType}
-                initial={{
-                  prompt: latest.prompt,
-                  correctAnswer: latest.correctAnswer,
-                  difficultyLevel: latest.difficultyLevel,
-                  promptImage: latest.promptImage,
-                  promptImageDescription: latest.promptImageDescription,
-                  promptAudio: latest.promptAudio,
-                  hint: latest.hint,
-                  explanation: latest.explanation,
-                  options: latest.options.map((o) => ({ label: o.label, correct: o.correct, image: o.image, audio: o.audio })),
-                  pairs: latest.pairs.map((p) => ({ left: p.left, right: p.right ?? "", leftImage: p.leftImage, rightImage: p.rightImage })),
-                  items: latest.items.map((i) => ({ label: i.label, image: i.image, audio: i.audio })),
-                  groups: (latest.groups ?? []).map((g) => ({ label: g.label, image: g.image })),
-                  sortItems: (latest.sortItems ?? []).map((i) => ({
-                    label: i.label,
-                    group: Math.max(0, (latest.groups ?? []).findIndex((g) => g.group === i.group)),
-                    image: i.image,
-                    audio: i.audio,
-                  })),
-                }}
+                initial={draftValuesOf(latest)}
                 submitLabel={m.saveDraft}
                 busy={busy}
                 onSubmit={(draft) => run(() => studioApi.reviseQuestionDraft(latest.id, draft), m.draftSaved)}

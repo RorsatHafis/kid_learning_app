@@ -525,6 +525,46 @@ public class StudioService {
         return activity(accountId, version.getActivityId());
     }
 
+    /**
+     * Y42: a new question written inside an activity - created like any question (for the author, in the
+     * activity's subject; tagged with the activity's skills unless others are given) and added at the end of
+     * the activity's draft, in one transaction: either both happen or neither does.
+     */
+    @Transactional
+    public ActivityDetail addNewQuestion(UUID accountId, UUID activityVersionId, CreateQuestionRequest request) {
+        ActivityVersion version = activityService.getVersion(activityVersionId);
+        Activity activity = guard.requireActivityWrite(accountId, version.getActivityId());
+        List<UUID> skills = request.skillIds() == null || request.skillIds().isEmpty()
+                ? activityService.skillsOf(activityVersionId) : request.skillIds();
+        QuestionDetail created = createQuestion(accountId, new CreateQuestionRequest(activity.getSubjectId(), request.questionType(),
+                request.prompt(), request.correctAnswer(), request.difficultyLevel(), request.options(), request.pairs(), request.items(),
+                request.promptImageAssetId(), request.promptImageDescription(), request.promptAudioAssetId(), skills, request.groups(),
+                request.sortItems(), request.hint(), request.explanation()));
+        List<ActivityService.ItemDraft> items = new java.util.ArrayList<>(activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId)
+                .stream().map(item -> new ActivityService.ItemDraft(item.getQuestionVersionId(), item.getPoints())).toList());
+        items.add(new ActivityService.ItemDraft(created.versions().get(0).id(), null));
+        activityService.replaceItems(activityVersionId, items);
+        return activity(accountId, activity.getId());
+    }
+
+    /**
+     * Y42: publish an activity together with the questions in it that are still drafts - one step for the
+     * author, one transaction for the platform. Each question goes through the same guard, review gate and
+     * checks as publishing it alone, then the activity does; if any one of them is refused, nothing is
+     * published. Where content review is required, the review gate refuses here as anywhere.
+     */
+    @Transactional
+    public ActivityDetail publishActivityWithQuestions(UUID accountId, UUID activityVersionId) {
+        ActivityVersion version = activityService.getVersion(activityVersionId);
+        guard.requireActivityWrite(accountId, version.getActivityId());
+        for (ActivityItem item : activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId)) {
+            if (questionService.getVersion(item.getQuestionVersionId()).getStatus() == PublicationStatus.DRAFT) {
+                publishQuestionVersion(accountId, item.getQuestionVersionId(), null);
+            }
+        }
+        return publishActivityVersion(accountId, activityVersionId, null);
+    }
+
     /** Exactly what a child is served for this version - the learner DTO - for the author to try before publishing. */
     @Transactional(readOnly = true)
     public ActivityVersionDetailResponse previewActivityVersion(UUID accountId, UUID activityVersionId) {
