@@ -27,7 +27,9 @@ const reviewApi = vi.hoisted(() => ({
   settings: vi.fn(async () => ({ required: false })),
   state: vi.fn(async () => ({ required: false, review: null })),
 }));
-vi.mock("@/lib/api/studio", () => ({ studioApi: api, reviewApi }));
+// The published view shows the withdrawal panel: nothing is withdrawn here.
+const withdrawalApi = vi.hoisted(() => ({ state: vi.fn(async () => ({ withdrawal: null, viaQuestion: false })) }));
+vi.mock("@/lib/api/studio", () => ({ studioApi: api, reviewApi, withdrawalApi }));
 const { ActivityEditor } = await import("./ActivityEditor");
 
 const catalog = {

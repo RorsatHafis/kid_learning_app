@@ -175,9 +175,7 @@ function Checkout({
           <span className="tabular font-display text-xl font-semibold text-tonle-950">{priceText(price)}</span>
         </div>
         <p className="text-sm text-ink-soft">
-          {renewing
-            ? `${m.extendsWhen} ${price.interval === "MONTH" ? m.month : m.year} ${m.afterCurrent}`
-            : `${m.startsWhen} ${price.interval === "MONTH" ? m.month : m.year}.`}
+          {(renewing ? m.extendsWhen : m.startsWhen)(price.interval === "MONTH" ? m.month : m.year)}
         </p>
         {smaller && !renewing && (
           <p className="rounded-[12px] bg-light-soft/60 px-4 py-3 text-sm leading-relaxed text-ink ring-1 ring-light/40">{m.smaller}</p>

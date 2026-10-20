@@ -107,6 +107,13 @@ it — each deletion locks its rows), `ERASURE_LEDGER_FILE` (**required in `prod
 `/var/lib/bookeyond/erasures/ledger.log` on its own volume: the file where every erasure is recorded, ids
 only, so that restoring a database backup can't bring an erased child or account back — see section 6).
 
+**Payments** (Y43, all off by default; see [docs/PAYMENTS.md](docs/PAYMENTS.md)):
+`PAYMENTS_MANUAL_ENABLED` and `PAYMENTS_MANUAL_INSTRUCTIONS` (bank transfer, confirmed by an administrator
+against the real receipt; only with the owner's real instructions), `PAYMENTS_PENDING_LIFETIME` (PT30M),
+`ABA_PAYWAY_ENABLED`, `ABA_PAYWAY_BASE_URL`, `ABA_PAYWAY_MERCHANT_ID`, `ABA_PAYWAY_API_KEY`,
+`ABA_PAYWAY_RETURN_URL`, `ABA_PAYWAY_SUCCESS_URL` (only after sandbox testing with ABA's credentials).
+`PAYMENTS_DEV_SIMULATOR_ENABLED` must stay unset or `false`: production refuses to start with test payments on.
+
 Keep secrets in your platform's secret store or password manager, never in the repository.
 `backend/.env.example` is out of date (TD-02, a file the engineering agent may not edit): use this
 table and `deploy/production.settings.example`, and bring `.env.example` in line or delete it.

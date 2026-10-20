@@ -7,7 +7,9 @@ domain, a legal text or a decision. Nothing here has been done yet.
 
 ## A. External actions, in order
 
-1. **Repository and CI.** Create a private GitHub repository, push `master`, allow Actions
+1. **Repository and CI.** (2026-10-20: `master` is pushed to `github.com/RorsatHafis/kid_learning_app`, a
+   **public** repository whose `main` holds an unrelated earlier project, YulMe; decide whether to make
+   `master` the default branch and whether the repository should be private.) Allow Actions
    (Settings -> Actions -> General) and protect the release branch so merging needs the `CI` checks.
    No secrets are needed. Wait for the first run to be green (DEPLOYMENT.md section 8).
    Before pushing, bring `backend/.env.example` in line with DEPLOYMENT.md section 3 or delete it: it is
@@ -59,7 +61,7 @@ domain, a legal text or a decision. Nothing here has been done yet.
 
 | # | Decision | What is ready for it |
 |---|---|---|
-| C1 | **Prices, plans and a payment provider** (PD-09), refunds and cancellation terms (part of B1). | Plans with limits, administrator grants with periods and history, families asking for a plan; no payment is taken. |
+| C1 | **Prices, plans and a payment provider** (PD-09), refunds and cancellation terms (part of B1), receipts/invoices required in Cambodia, and how long anonymised payment records are kept after erasure. | Y43: a payment lifecycle that grants a plan only on a confirmed payment, bank transfer confirmed by an administrator against the receipt, school invoices, refunds that take back exactly what was paid, an append-only ledger. Prices are set per plan; none are set. ABA PayWay is prepared but untested: it needs ABA's sandbox credentials and a sandbox run ([docs/PAYMENTS.md](docs/PAYMENTS.md)). |
 | C2 | Whether a path a child's **class** assigns counts against the family's plan (part of PD-09). | Counted today; no effect while the default plan is unlimited. |
 
 ### Required for legal compliance
