@@ -74,7 +74,7 @@ test("studio: author, check, publish; a child plays exactly what was published @
   await expect(page.getByRole("heading", { name: "Checks" })).toBeVisible();
   // The checks explain why it can't be published yet.
   await expect(page.getByText(/Describe the question's picture/).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Publish" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /^Publish/ })).toBeDisabled();
   await page.getByLabel(/Describe the picture/).fill("Three stars");
   await page.getByRole("button", { name: "Save draft" }).click();
   await expect(page.getByText("Draft saved.")).toBeVisible();
@@ -114,11 +114,14 @@ test("studio: author, check, publish; a child plays exactly what was published @
   await page.getByRole("checkbox", { name: skill }).check();
   await page.getByRole("button", { name: "Create activity" }).click();
   // Without questions the checks block publishing.
-  await expect(page.getByRole("button", { name: "Publish" })).toBeDisabled();
-  await page.getByRole("button", { name: new RegExp(`Add question: ${escape(prompt)}`) }).click();
-  await page.getByRole("button", { name: new RegExp(`Add question: ${escape(orderPrompt)}`) }).click();
-  await page.getByRole("button", { name: new RegExp(`Add question: ${escape(sortPrompt)}`) }).click();
-  await page.getByRole("button", { name: "Save questions" }).click();
+  await expect(page.getByRole("button", { name: /^Publish/ })).toBeDisabled();
+  // Y42: questions already published are reused from the builder; each one added is saved at once.
+  await page.getByText("Use a question you already published").click();
+  for (const p of [prompt, orderPrompt, sortPrompt]) {
+    await page.getByRole("button", { name: new RegExp(`Add question: ${escape(p)}`) }).click();
+    await expect(page.getByRole("list", { name: "Write the questions" }).getByText(p)).toBeVisible();
+  }
+  await page.getByText("More settings").click();
   await page.getByLabel("Instructions the child hears before starting").fill("Count the stars and type how many.");
   await page.getByRole("button", { name: "Save details" }).click();
   await publish(page);
@@ -293,10 +296,12 @@ test("studio: multiple choice, true or false, short answer and matching - author
   await page.getByLabel("Activity title").fill(`Word play ${tag}`);
   await page.getByRole("checkbox", { name: skill }).check();
   await page.getByRole("button", { name: "Create activity" }).click();
+  await page.getByText("Use a question you already published").click();
   for (const prompt of Object.values(prompts)) {
     await page.getByRole("button", { name: new RegExp(`Add question: ${escape(prompt)}`) }).click();
+    await expect(page.getByRole("list", { name: "Write the questions" }).getByText(prompt)).toBeVisible();
   }
-  await page.getByRole("button", { name: "Save questions" }).click();
+  await page.getByText("More settings").click();
   await page.getByLabel("Instructions the child hears before starting").fill("Four little questions about words.");
   await page.getByRole("button", { name: "Save details" }).click();
   await publish(page);
@@ -377,9 +382,15 @@ test("studio: multiple choice, true or false, short answer and matching - author
 });
 
 async function publish(page: Page) {
-  const button = page.getByRole("button", { name: "Publish" });
+  const button = page.getByRole("button", { name: /^Publish/ });
   await expect(button).toBeEnabled();
   await button.click();
+  // Y42: the activity builder asks once, in plain words, before publishing.
+  const confirm = page.getByRole("button", { name: "Yes, publish" });
+  await confirm.waitFor({ timeout: 1500 }).then(
+    () => confirm.click(),
+    () => undefined,
+  );
   await expect(page.getByText(/^Published\./)).toBeVisible();
 }
 

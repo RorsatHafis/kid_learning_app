@@ -13,10 +13,11 @@ import { ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { ChildPreview } from "./ChildPreview";
-import { DIFFICULTIES, errorText, reportFromError, useStudio } from "./studioLogic";
+import { DIFFICULTIES, errorText, reportFromError, useStudio, useStudioScope } from "./studioLogic";
 import { Panel, SelectField, SkillChips, StatusBadge, TextAreaField, VersionHistory } from "./shared";
 import { ArchivedBadge, ManageButton } from "./Lifecycle";
 import { ActivityBuilder } from "./ActivityBuilder";
+import { builderMessages } from "./builder.messages";
 import { useMessages } from "@/i18n/catalog";
 import { editorMessages } from "./editor.messages";
 
@@ -195,6 +196,7 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
                 </Button>
               </div>
             </Panel>
+            {latest.status === "PUBLISHED" && !detail.archived && <ReachChildren />}
         </div>
 
         <div className="flex flex-col gap-6">
@@ -218,6 +220,24 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
       </div>
       )}
     </div>
+  );
+}
+
+/** Y42: what to do once it is published - the way it actually reaches children, for this kind of author. */
+function ReachChildren() {
+  const { base } = useStudioScope();
+  const b = useMessages(builderMessages);
+  const teacher = base.startsWith("/teacher");
+  return (
+    <section aria-labelledby="reach" className="flex flex-col gap-3 rounded-[20px] bg-palm-soft/60 p-5 ring-1 ring-palm/25 sm:p-6">
+      <h2 id="reach" className="font-display text-[1.2rem] font-bold text-tonle-950">
+        {b.reachTitle}
+      </h2>
+      <p className="text-sm leading-relaxed text-ink">{teacher ? b.reachTeacher : b.reachAdmin}</p>
+      <Link to={teacher ? "/teacher" : "../../curricula"} relative={teacher ? undefined : "path"} className="w-fit text-sm font-semibold text-tonle-700 underline-offset-4 hover:underline">
+        {teacher ? b.reachTeacherAction : b.reachAdminAction} →
+      </Link>
+    </section>
   );
 }
 

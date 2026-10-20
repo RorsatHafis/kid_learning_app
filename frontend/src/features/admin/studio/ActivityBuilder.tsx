@@ -26,6 +26,7 @@ import { AUTHORABLE_TYPES, errorText, issueText, reportFromError } from "./studi
 import { IconButton, Panel } from "./shared";
 import { useMessages } from "@/i18n/catalog";
 import { builderMessages } from "./builder.messages";
+import { editorMessages } from "./editor.messages";
 
 export type Message = { tone: "error" | "ok"; text: string } | null;
 
@@ -393,6 +394,7 @@ function InlineEditor({
 /** Published questions of this subject to add as they are - tucked away: writing new ones is the main road. */
 function Reuse({ subjectId, taken, busy, onAdd }: { subjectId: string; taken: string[]; busy: boolean; onAdd: (versionId: string) => void }) {
   const b = useMessages(builderMessages);
+  const e = useMessages(editorMessages).editor;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const settled = useDebouncedValue(query);
@@ -425,6 +427,7 @@ function Reuse({ subjectId, taken, busy, onAdd }: { subjectId: string; taken: st
                 <button
                   type="button"
                   disabled={busy}
+                  aria-label={e.addQuestion(q.latestPrompt ?? "", b.types[q.questionType].name)}
                   onClick={() => onAdd(q.publishedVersionId!)}
                   className="flex w-full items-center gap-2 rounded-[10px] px-2 py-2 text-left text-sm hover:bg-white disabled:opacity-50"
                 >

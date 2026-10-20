@@ -72,6 +72,13 @@ export const builderMessages = defineMessages(
     createAndWrite: "Create and write questions",
     creating: "Creating…",
     noSkills: "This subject has no skills yet. Add one under Skills & objectives first: every answer is evidence for a skill.",
+    reachTitle: "Get it to children",
+    reachTeacher:
+      "Give it as practice: open your class, choose the skill it practises, and assign it to the children who need it. It appears first on their path.",
+    reachAdmin:
+      "Learning paths place activities by skill: a published curriculum whose objectives include this activity's skills can give it to children.",
+    reachTeacherAction: "Go to your classes",
+    reachAdminAction: "Open curricula",
     tryIt: "Try it as a child",
     tryItLead: "Exactly what a child will get. Answers here aren't recorded.",
     types: {
@@ -148,6 +155,13 @@ export const builderMessages = defineMessages(
     createAndWrite: "បង្កើត ហើយសរសេរសំណួរ",
     creating: "កំពុងបង្កើត…",
     noSkills: "មុខវិជ្ជានេះមិនទាន់មានជំនាញទេ។ សូមបន្ថែមមួយនៅក្រោម ជំនាញ និងគោលបំណង ជាមុនសិន៖ ចម្លើយនីមួយៗជាភស្តុតាងសម្រាប់ជំនាញមួយ។",
+    reachTitle: "ផ្ដល់វាដល់កុមារ",
+    reachTeacher:
+      "ផ្ដល់ជាលំហាត់៖ បើកថ្នាក់របស់អ្នក ជ្រើសរើសជំនាញដែលវាហាត់ ហើយកំណត់វាឱ្យកុមារដែលត្រូវការ។ វានឹងលេចឡើងមុនគេនៅលើផ្លូវរៀនរបស់ពួកគេ។",
+    reachAdmin:
+      "ផ្លូវរៀនដាក់សកម្មភាពតាមជំនាញ៖ កម្មវិធីសិក្សាដែលបានផ្សាយ ហើយគោលបំណងរបស់វារួមមានជំនាញរបស់សកម្មភាពនេះ អាចផ្ដល់វាដល់កុមារ។",
+    reachTeacherAction: "ទៅកាន់ថ្នាក់របស់អ្នក",
+    reachAdminAction: "បើកកម្មវិធីសិក្សា",
     tryIt: "សាកល្បងជាកុមារ",
     tryItLead: "ដូចដែលកុមារនឹងទទួលបាន។ ចម្លើយនៅទីនេះមិនត្រូវបានកត់ត្រាទេ។",
     types: {
