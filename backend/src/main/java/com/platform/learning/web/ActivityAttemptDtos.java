@@ -12,6 +12,10 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Requests and responses for playing an activity: starting an attempt, submitting an answer (scored by the
+ * server), the feedback and explanation after it, and what comes next.
+ */
 public final class ActivityAttemptDtos {
 
     private ActivityAttemptDtos() {

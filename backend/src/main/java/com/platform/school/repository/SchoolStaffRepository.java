@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for school staff (teachers invited by a principal): a school's staff, an account's schools, and a
+ * locked read for accepting or removing.
+ */
 public interface SchoolStaffRepository extends JpaRepository<SchoolStaff, UUID> {
 
     List<SchoolStaff> findBySchoolIdOrderByInvitedAtDesc(UUID schoolId);

@@ -4,6 +4,10 @@ import org.springframework.stereotype.Component;
 
 import com.platform.identity.exception.WeakPasswordException;
 
+/**
+ * The password rules: at least 12 characters, within bcrypt's limit, not a repeated pattern, a sequence or a
+ * commonly used password, and not the email itself.
+ */
 @Component
 public class PasswordPolicy {
 

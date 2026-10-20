@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for a child's progress on each learning objective.
+ */
 public interface LearnerObjectiveStateRepository extends JpaRepository<LearnerObjectiveState, UUID> {
 
     Optional<LearnerObjectiveState> findByChildIdAndLearningObjectiveId(UUID childId, UUID learningObjectiveId);

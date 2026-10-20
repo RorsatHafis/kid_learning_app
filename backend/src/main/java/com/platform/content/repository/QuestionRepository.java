@@ -9,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Persistence for questions: by owner, platform-owned by subject, and the Studio's paged, searchable bank.
+ */
 public interface QuestionRepository extends JpaRepository<Question, UUID> {
 
     List<Question> findByOwnerAccountId(UUID ownerAccountId);

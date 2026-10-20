@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for subjects, by code and by status.
+ */
 public interface SubjectRepository extends JpaRepository<Subject, UUID> {
 
     Optional<Subject> findByCode(String code);

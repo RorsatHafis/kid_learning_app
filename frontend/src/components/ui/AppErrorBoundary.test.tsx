@@ -1,3 +1,7 @@
+/**
+ * The app's error boundary shows what happened and a way on instead of a blank page, can try again, and clears
+ * when the person goes elsewhere.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

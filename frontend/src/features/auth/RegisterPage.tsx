@@ -1,3 +1,7 @@
+/**
+ * Creating a family account: email, password (with the policy explained) and agreement to the current legal
+ * documents once they are published.
+ */
 import { useState, type FormEvent } from "react";
 import { LegalAgreement } from "@/features/legal/Legal";
 import { useLegal } from "@/features/legal/useLegal";

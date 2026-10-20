@@ -1,3 +1,7 @@
+/**
+ * Rate-limit messages: the wait in seconds or whole minutes, a refusal still explained without one, and only a 429
+ * treated as rate limited.
+ */
 import { describe, expect, it } from "vitest";
 import { ApiError, rateLimitedMessage } from "./ApiError";
 

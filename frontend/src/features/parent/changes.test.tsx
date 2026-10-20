@@ -1,3 +1,6 @@
+/**
+ * What changed: each skill answered on, grouped by how it moved, with where it stood then and now.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { render, screen, within } from "@testing-library/react";

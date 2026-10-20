@@ -12,6 +12,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.util.Assert;
 
+/**
+ * A subject (for example Mathematics) with a stable code; archiving hides it from new content and keeps the rest.
+ */
 @Entity
 @Table(name = "subjects")
 public class Subject extends AuditableEntity {

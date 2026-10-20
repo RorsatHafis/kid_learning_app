@@ -13,6 +13,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for one-time account links (confirm email, reset password, set up account): a locked lookup by token
+ * hash for single use, the open links to invalidate, and counts for resend limits.
+ */
 public interface AccountActionTokenRepository extends JpaRepository<AccountActionToken, UUID> {
 
     /** Row-locked, so two uses of one link are serialized and only the first succeeds. */

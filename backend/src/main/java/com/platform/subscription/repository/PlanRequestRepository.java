@@ -10,6 +10,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for families' requests for a plan: the open request (locked when answering) and one by id.
+ */
 public interface PlanRequestRepository extends JpaRepository<PlanRequest, UUID> {
 
     /** The family's open request, row-locked. */

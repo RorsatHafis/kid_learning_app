@@ -13,6 +13,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Reads the bearer token on each request and, when it is valid, sets the account and role as the authenticated
+ * principal. An invalid token leaves the request unauthenticated.
+ */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";

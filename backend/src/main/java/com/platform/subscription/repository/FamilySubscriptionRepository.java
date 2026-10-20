@@ -10,6 +10,10 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for family subscriptions (one per family), with a locked read for changes, and how many families a
+ * plan has.
+ */
 public interface FamilySubscriptionRepository extends JpaRepository<FamilySubscription, UUID> {
 
     Optional<FamilySubscription> findByFamilyId(UUID familyId);

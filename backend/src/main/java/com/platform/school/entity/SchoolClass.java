@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import org.springframework.util.Assert;
 import java.util.UUID;
 
+/**
+ * A class within a school; archiving keeps its members and history.
+ */
 @Entity @Table(name = "school_classes")
 public class SchoolClass extends AuditableEntity {
     @Column(name = "school_id", nullable = false, updatable = false) private UUID schoolId;

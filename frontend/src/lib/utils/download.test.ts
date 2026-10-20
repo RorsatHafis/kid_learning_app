@@ -1,3 +1,6 @@
+/**
+ * CSV export quotes what needs it, keeps numbers, and stops a spreadsheet from running a field as a formula.
+ */
 import { describe, expect, it } from "vitest";
 import { toCsv } from "./download";
 

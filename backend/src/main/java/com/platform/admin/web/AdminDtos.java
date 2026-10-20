@@ -9,6 +9,10 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Requests and responses for staff management. A staff account's response carries its email, role and status,
+ * never a password or token.
+ */
 public final class AdminDtos {
     private AdminDtos() {}
 

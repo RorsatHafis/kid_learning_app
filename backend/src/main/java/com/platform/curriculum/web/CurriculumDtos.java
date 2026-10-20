@@ -2,6 +2,10 @@ package com.platform.curriculum.web;
 
 import java.util.UUID;
 
+/**
+ * Curricula as a family or teacher chooses between them: name, subject, age band and the published version an
+ * enrolment would be pinned to.
+ */
 public final class CurriculumDtos {
 
     private CurriculumDtos() {

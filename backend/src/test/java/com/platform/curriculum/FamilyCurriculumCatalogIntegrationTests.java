@@ -35,6 +35,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "spring.jpa.properties.hibernate.generate_statistics=true")
+/**
+ * The curriculum catalogue for a child lists their age group first, only their family can read it, and it costs
+ * the same number of queries however many curricula exist.
+ */
 @Tag("integration")
 class FamilyCurriculumCatalogIntegrationTests {
 

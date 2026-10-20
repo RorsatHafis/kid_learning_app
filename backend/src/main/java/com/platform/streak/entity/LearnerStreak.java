@@ -3,6 +3,9 @@ import com.platform.common.entity.AuditableEntity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
+/**
+ * A child's practice streak: the current and longest run of days with learning, and the last such day.
+ */
 @Entity @Table(name="learner_streaks")
 public class LearnerStreak extends AuditableEntity {
  @Column(name="child_id",nullable=false,unique=true,updatable=false) private UUID childId;

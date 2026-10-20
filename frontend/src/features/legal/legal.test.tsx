@@ -1,3 +1,7 @@
+/**
+ * Privacy notice and terms (Y15): nothing shown until published, agreement asked of new families with the version
+ * sent, and a new version agreed without blocking.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

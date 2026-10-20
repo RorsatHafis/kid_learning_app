@@ -13,6 +13,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 
+/**
+ * Schools and classes over HTTP under /api/v1/schools. Who may act is checked by SchoolAccessGuard and the
+ * services, never by role alone.
+ */
 @RestController @RequestMapping("/api/v1/schools")
 public class SchoolController {
  private final SchoolService service; private final SchoolStaffService staffService; private final SchoolAccessGuard guard; private final SchoolRepository schools; private final SchoolLearningService learning;

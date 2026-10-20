@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * A child's learner profile: created on first use, and updated with time spent when an activity is finished.
+ */
 @Service
 public class LearnerProfileService {
 

@@ -1,3 +1,7 @@
+/**
+ * Sign-in: email and password, with clear words for wrong details, a locked account and rate limits, then on to
+ * the home for the person's role.
+ */
 import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout } from "./AuthLayout";

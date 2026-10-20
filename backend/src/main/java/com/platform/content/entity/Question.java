@@ -11,6 +11,10 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * A question in the bank: its subject, type and owner (none for platform content). The wording, answer and options
+ * live in its versions.
+ */
 @Entity
 @Table(name = "questions")
 public class Question extends AuditableEntity {

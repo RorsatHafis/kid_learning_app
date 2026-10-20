@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for learning paths (one per enrolment), with a locked read so items are added one at a time.
+ */
 public interface LearningPathRepository extends JpaRepository<LearningPath, UUID> {
 
     // Matches uq_learning_paths_enrollment (V14 migration) - one path per enrollment.

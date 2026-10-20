@@ -9,6 +9,10 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Persistence for lessons: by owner (none for platform lessons), by subject and status, and the Studio's paged
+ * list.
+ */
 public interface LessonRepository extends JpaRepository<Lesson, UUID> {
 
     List<Lesson> findByOwnerAccountId(UUID ownerAccountId);

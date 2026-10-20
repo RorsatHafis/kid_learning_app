@@ -1,3 +1,7 @@
+/**
+ * Hints and explanations (Y41): a hint waits until the child asks and is gone after answering; an explanation
+ * comes with the verdict.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

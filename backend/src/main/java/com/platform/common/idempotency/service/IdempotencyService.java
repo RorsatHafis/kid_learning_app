@@ -14,6 +14,11 @@ import com.platform.common.idempotency.exception.DuplicateRequestInProgressExcep
 import com.platform.common.idempotency.exception.IdempotencyKeyReusedException;
 import com.platform.common.idempotency.repository.IdempotencyRecordRepository;
 
+/**
+ * Makes an operation safe to retry: begin() records the actor, operation, key and request fingerprint, returning
+ * either 'start' or the earlier outcome; a key reused for a different request, or one still running, is refused.
+ * complete() and fail() close the record.
+ */
 @Service
 public class IdempotencyService {
 

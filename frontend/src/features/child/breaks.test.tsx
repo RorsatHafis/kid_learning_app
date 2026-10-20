@@ -1,3 +1,7 @@
+/**
+ * Break reminders: a sitting grows while the child learns and resets after time away, a break is suggested only
+ * when a parent set one, and the parent's setting saves safely.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

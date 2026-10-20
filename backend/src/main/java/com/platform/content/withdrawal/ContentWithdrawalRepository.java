@@ -9,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for content withdrawals: the active withdrawal of a version (locked when changing it).
+ */
 public interface ContentWithdrawalRepository extends JpaRepository<ContentWithdrawal, UUID> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

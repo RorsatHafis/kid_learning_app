@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Requests and responses for plans and subscriptions. A family's or principal's own view leaves out operator
+ * notes; prices are in minor units with their currency.
+ */
 public final class SubscriptionDtos {
 
     private SubscriptionDtos() {

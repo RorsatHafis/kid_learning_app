@@ -8,6 +8,9 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * One version of a curriculum. Enrolments are pinned to the version they started on.
+ */
 @Entity
 @Table(name = "curriculum_versions")
 public class CurriculumVersion extends PublishableVersion {

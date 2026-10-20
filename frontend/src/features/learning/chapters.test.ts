@@ -1,3 +1,7 @@
+/**
+ * Grouping a path into chapters in play order, choosing the chapter in focus, and lighting the world by finished
+ * chapters.
+ */
 import { describe, expect, it } from "vitest";
 import type { Chapter, Journey, JourneyStep } from "@/lib/api/types";
 import { chapterOf, chapterRuns, focusChapter, journeyLight } from "./chapters";

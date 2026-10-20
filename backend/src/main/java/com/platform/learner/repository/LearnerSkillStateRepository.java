@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for a child's current mastery of each skill.
+ */
 public interface LearnerSkillStateRepository extends JpaRepository<LearnerSkillState, UUID> {
 
     Optional<LearnerSkillState> findByChildIdAndSkillId(UUID childId, UUID skillId);

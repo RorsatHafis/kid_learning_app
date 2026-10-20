@@ -22,6 +22,10 @@ import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.exception.EmailAlreadyRegisteredException;
 import com.platform.identity.repository.AccountRepository;
 
+/**
+ * The transactional half of registration: creates the account, its family and owner membership, records the
+ * idempotency outcome and audit event, and sends the confirmation email after commit.
+ */
 @Service
 class AccountRegistrationWriter  {
 

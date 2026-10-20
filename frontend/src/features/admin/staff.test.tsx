@@ -1,3 +1,7 @@
+/**
+ * Creating a staff account never asks the administrator for its password: the person sets their own through the
+ * emailed link.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

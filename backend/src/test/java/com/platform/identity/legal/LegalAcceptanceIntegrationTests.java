@@ -31,6 +31,9 @@ import static org.assertj.core.api.Assertions.assertThat;
         "platform.legal.privacy-url=https://example.org/privacy",
         "platform.legal.terms-url=https://example.org/terms",
         "platform.legal.version=2026-10"})
+/**
+ * An account is created only by agreeing to the current legal version.
+ */
 @Tag("integration")
 class LegalAcceptanceIntegrationTests {
 

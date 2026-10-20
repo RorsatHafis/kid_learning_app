@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.platform.common.idempotency.entity.IdempotencyRecord;
 
+/**
+ * Persistence for idempotency records, unique by actor, operation and key.
+ */
 public interface IdempotencyRecordRepository extends JpaRepository<IdempotencyRecord, UUID> {
 
      Optional<IdempotencyRecord> findByActorIdAndOperationAndIdempotencyKey(

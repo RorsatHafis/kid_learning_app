@@ -1,3 +1,7 @@
+/**
+ * ESLint for the frontend: recommended and TypeScript rules, the rules of hooks, and react-refresh so files keep
+ * hot reload working. Run with `npm run lint`.
+ */
 module.exports = {
   root: true,
   env: { browser: true, es2020: true },

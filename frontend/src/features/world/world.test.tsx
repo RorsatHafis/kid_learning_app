@@ -1,3 +1,7 @@
+/**
+ * The child's world (X9): the path strip lights the finished book and moves the buddy on, and the pond opens a
+ * lotus per finished chapter.
+ */
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { RiverGarden } from "./RiverGarden";

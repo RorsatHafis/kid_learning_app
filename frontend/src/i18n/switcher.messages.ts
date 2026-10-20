@@ -1,3 +1,6 @@
+/**
+ * Words for the language switcher, in English and Khmer.
+ */
 import { defineMessages } from "./catalog";
 
 export const messages = defineMessages(

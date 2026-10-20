@@ -8,6 +8,10 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * One version of an activity: instructions, difficulty and expected duration, with its ordered questions
+ * (ActivityItem). A draft is edited freely; once published it never changes.
+ */
 @Entity
 @Table(name = "activity_versions")
 public class ActivityVersion extends PublishableVersion {

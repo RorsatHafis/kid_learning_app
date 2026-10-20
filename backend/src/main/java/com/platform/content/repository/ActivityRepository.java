@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Persistence for activities: by subject and status, and by lesson.
+ */
 public interface ActivityRepository extends JpaRepository<Activity, UUID> {
 
     List<Activity> findBySubjectIdAndStatus(UUID subjectId, CatalogStatus status);

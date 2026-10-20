@@ -11,6 +11,10 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
+/**
+ * Remembers one idempotent operation by actor, operation and key, with a fingerprint of the request, so a retry
+ * returns the first outcome and a reused key with a different request is refused.
+ */
 @Entity
 @Table(name = "idempotency_records")
 public class IdempotencyRecord extends AuditableEntity {

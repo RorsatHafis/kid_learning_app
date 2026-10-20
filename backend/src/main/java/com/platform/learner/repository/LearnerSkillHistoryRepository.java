@@ -11,6 +11,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Persistence for the history of a child's skill mastery: each change in order, and the evidence and mastery each
+ * skill had at a past moment (for 'what changed' views).
+ */
 public interface LearnerSkillHistoryRepository extends JpaRepository<LearnerSkillHistory, UUID> {
 
     List<LearnerSkillHistory> findByChildIdAndSkillIdOrderByOccurredAtDesc(UUID childId, UUID skillId);

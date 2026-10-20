@@ -12,6 +12,10 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * An activity in the content library: its subject, optional lesson, type and title. What a learner does lives in
+ * its versions; archiving keeps every version and the evidence they produced.
+ */
 @Entity
 @Table(name = "activities")
 public class Activity extends AuditableEntity {

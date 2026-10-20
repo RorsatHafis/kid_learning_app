@@ -16,6 +16,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * The migrated schema's foundations against PostgreSQL: required tables exist, and constraints and deletion rules
+ * protect shared state.
+ */
 @Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
 @SpringBootTest

@@ -6,6 +6,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Version;
 
+/**
+ * Base for entities that change: optimistic-locking version plus created and updated times kept by Hibernate.
+ */
 @MappedSuperclass
 public abstract class AuditableEntity extends BaseEntity {
 

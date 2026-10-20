@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for enrolments: a child on a pinned curriculum version.
+ */
 public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
 
     // Matches uq_enrollments_child_curriculum_version (V14 migration).

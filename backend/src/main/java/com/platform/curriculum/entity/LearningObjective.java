@@ -13,6 +13,9 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * A learning objective within a subject, with a stable code.
+ */
 @Entity
 @Table(name = "learning_objectives")
 public class LearningObjective extends AuditableEntity {

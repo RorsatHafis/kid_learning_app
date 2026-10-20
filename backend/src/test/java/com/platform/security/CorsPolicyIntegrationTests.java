@@ -30,6 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "platform.security.cors.allowed-origins="
                 + CorsPolicyIntegrationTests.DEV_ORIGIN + "," + CorsPolicyIntegrationTests.PROD_ORIGIN)
+/**
+ * CORS: configured origins may call the API with the headers it needs; any other origin, or an unlisted header, is
+ * refused before the request is processed.
+ */
 @Tag("integration")
 class CorsPolicyIntegrationTests {
 

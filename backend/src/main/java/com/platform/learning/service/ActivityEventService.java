@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Records and lists the events of an activity attempt.
+ */
 @Service
 public class ActivityEventService {
 

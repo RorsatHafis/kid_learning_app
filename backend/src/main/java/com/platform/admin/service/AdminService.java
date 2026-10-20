@@ -23,6 +23,11 @@ import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Platform staff accounts, for an administrator: creating teacher, principal and admin accounts (the new person
+ * sets their own password through a recovery link), listing staff, and approving principals who registered
+ * themselves. Every action is audited.
+ */
 @Service
 public class AdminService {
     private final AccountRepository accounts;

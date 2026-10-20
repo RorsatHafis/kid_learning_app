@@ -1,3 +1,7 @@
+/**
+ * The activity builder (Y42): questions listed with what is new, checks run together, everything published in one
+ * confirmed step, new questions written in place, and publishing left to review where review is required.
+ */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

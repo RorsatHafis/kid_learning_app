@@ -16,6 +16,11 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * A person's account: email (with a normalised form for uniqueness), password hash, role, status, email
+ * confirmation, accepted legal version, failed-login lockout and scheduled erasure. The server alone decides its
+ * state.
+ */
 @Entity
 @Table(name = "accounts")
 public class Account extends AuditableEntity {

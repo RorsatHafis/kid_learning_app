@@ -15,6 +15,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * One line of the audit log (append-only): actor, action, resource and metadata, with the correlation id of the
+ * request that caused it. Written through AuditService.
+ */
 @Entity
 @Table(name = "audit_events")
 public class AuditEvent extends ImmutableEvent {

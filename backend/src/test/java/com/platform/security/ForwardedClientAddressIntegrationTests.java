@@ -27,6 +27,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "platform.security.rate-limit.login-per-minute=3"})
+/**
+ * Behind the proxy each real client has its own rate-limit budget, a client can't escape it by inventing forwarded
+ * addresses, and the app's own origin is recognised from the forwarded scheme and port.
+ */
 @Tag("integration")
 class ForwardedClientAddressIntegrationTests {
 

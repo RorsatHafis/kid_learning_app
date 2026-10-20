@@ -1,3 +1,7 @@
+/**
+ * Renaming, archiving and restoring content: archiving says what it does first, a refusal says why, and questions
+ * aren't renamed (their words live in versions).
+ */
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

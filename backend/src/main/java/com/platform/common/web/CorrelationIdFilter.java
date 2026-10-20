@@ -15,6 +15,11 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 
+/**
+ * Gives every request a correlation id: the incoming X-Correlation-Id when it is well formed, otherwise a new one.
+ * It is put in the logging context and returned in the response, so one request can be followed through logs and
+ * the audit log.
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorrelationIdFilter extends OncePerRequestFilter {

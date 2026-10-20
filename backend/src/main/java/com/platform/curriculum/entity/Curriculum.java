@@ -13,6 +13,10 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * A curriculum: a subject for one age band, owned by the platform or by a teacher. Its content is in its versions;
+ * archiving keeps them.
+ */
 @Entity
 @Table(name = "curriculums")
 public class Curriculum extends AuditableEntity {

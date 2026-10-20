@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for learning path items: a path's items in order, a class's assigned practice for its teacher, the
+ * practice waiting for a child, and counts for progress.
+ */
 public interface LearningPathItemRepository extends JpaRepository<LearningPathItem, UUID> {
 
     List<LearningPathItem> findByLearningPathIdOrderBySequenceOrderAsc(UUID learningPathId);

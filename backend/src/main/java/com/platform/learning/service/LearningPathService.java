@@ -14,6 +14,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * A learning path's items: appending (adaptive, review or a teacher's practice), the next item to play, the play
+ * order, and marking items started and completed. The path is locked while it changes.
+ */
 @Service
 public class LearningPathService {
 

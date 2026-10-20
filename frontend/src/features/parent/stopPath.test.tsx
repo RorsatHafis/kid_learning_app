@@ -1,3 +1,6 @@
+/**
+ * Stopping a path (Y19): what stopping means is said first, and a path the class assigns can't be stopped here.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

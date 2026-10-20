@@ -1,3 +1,7 @@
+/**
+ * The principal's comparison of classes (X21): who answered, where they stand, what moved, and a silent class
+ * flagged.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";

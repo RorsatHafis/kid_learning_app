@@ -1,3 +1,7 @@
+/**
+ * The family's plan: when it ends and what follows, being over a limit without anything taken away, and an ended
+ * plan described as over.
+ */
 import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";

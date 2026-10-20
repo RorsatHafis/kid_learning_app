@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import org.springframework.util.Assert;
 import java.util.UUID;
 
+/**
+ * A teacher's assignment to one class: what lets a teacher work with that class, and nothing beyond it.
+ */
 @Entity @Table(name = "teacher_assignments")
 public class TeacherAssignment extends AuditableEntity {
     @Column(name = "school_class_id", nullable = false, updatable = false) private UUID schoolClassId;

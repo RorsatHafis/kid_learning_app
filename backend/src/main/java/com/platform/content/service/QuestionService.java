@@ -24,6 +24,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Questions and their versions: creating, revising drafts and their options, media, hint and explanation, tagging
+ * skills, and publishing after ContentValidator's checks. A published version is never edited.
+ */
 @Service
 public class QuestionService {
 

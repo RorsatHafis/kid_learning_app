@@ -1,5 +1,8 @@
 package com.platform.challenge.entity;
 import com.platform.common.entity.AuditableEntity; import jakarta.persistence.*; import java.time.Instant; import java.util.UUID; import org.springframework.util.Assert;
+/**
+ * A teacher's class challenge: one activity, a target and a time window. Owned by the teacher who created it.
+ */
 @Entity @Table(name="challenges") public class Challenge extends AuditableEntity {
  @Column(name="owner_account_id",nullable=false,updatable=false) private UUID ownerAccountId;
  @Column(name="activity_version_id",nullable=false,updatable=false) private UUID activityVersionId;

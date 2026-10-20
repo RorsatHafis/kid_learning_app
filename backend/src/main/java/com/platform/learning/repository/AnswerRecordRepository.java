@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for answers given in attempts; one answer per question per attempt.
+ */
 public interface AnswerRecordRepository extends JpaRepository<AnswerRecord, UUID> {
 
     List<AnswerRecord> findByActivityAttemptId(UUID activityAttemptId);

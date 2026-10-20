@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Persistence for curricula: by subject, age band, status and owner.
+ */
 public interface CurriculumRepository extends JpaRepository<Curriculum, UUID> {
 
     List<Curriculum> findBySubjectIdAndAgeHubIdAndStatus(UUID subjectId, UUID ageHubId, CatalogStatus status);

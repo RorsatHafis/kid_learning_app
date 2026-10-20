@@ -13,6 +13,10 @@ import org.springframework.data.repository.query.Param;
 
 import com.platform.child.entity.Child;
 
+/**
+ * Persistence for children: a family's children and counts against plan limits, and a locked read so concurrent
+ * changes to one child are serialised.
+ */
 public interface ChildRepository extends JpaRepository<Child, UUID> {
 
     List<Child> findByFamilyId(UUID familyId);

@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for plans: the default for an audience (locked when it changes), by code, and all plans in order.
+ */
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, UUID> {
 
     /** The default plan of an audience (V59: one per audience). */

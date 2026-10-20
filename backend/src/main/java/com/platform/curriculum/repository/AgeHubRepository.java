@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for age bands, by code and in display order.
+ */
 public interface AgeHubRepository extends JpaRepository<AgeHub, UUID> {
 
     Optional<AgeHub> findByCode(String code);

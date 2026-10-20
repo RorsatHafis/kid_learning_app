@@ -8,6 +8,9 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * One skill that should be secure before another is practised; used to order learning paths.
+ */
 @Entity
 @Table(name = "skill_prerequisites")
 public class SkillPrerequisite extends BaseEntity {

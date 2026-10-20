@@ -1,5 +1,8 @@
 package com.platform.content.entity;
 
+/**
+ * The kinds of question the player can show and the server can score.
+ */
 public enum QuestionType {
     
     MULTIPLE_CHOICE,

@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import org.springframework.util.Assert;
 import java.util.UUID;
 
+/**
+ * A school, run by its principal. Archiving keeps its classes and history.
+ */
 @Entity @Table(name = "schools")
 public class School extends AuditableEntity {
     @Column(name = "name", nullable = false) private String name;

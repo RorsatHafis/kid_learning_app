@@ -14,6 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
+/**
+ * Creates the first platform administrator once, when bootstrap is switched on and no such account exists. The
+ * password must meet the password policy, and the creation is audited; an existing account is never changed.
+ */
 @Component
 public class AdminBootstrapRunner implements CommandLineRunner {
     private final AdminBootstrapProperties properties;
@@ -30,6 +34,7 @@ public class AdminBootstrapRunner implements CommandLineRunner {
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
         this.auditService = auditService;
+
     }
 
     @Override

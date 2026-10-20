@@ -11,6 +11,9 @@ import com.platform.child.entity.ConsentRecord;
 import com.platform.child.entity.ConsentType;
 import com.platform.child.repository.ConsentRecordRepository;
 
+/**
+ * Grants and withdraws a child's consents by appending records, and answers whether a consent is in force now.
+ */
 @Service
 public class ConsentService {
 

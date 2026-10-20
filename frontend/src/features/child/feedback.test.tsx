@@ -1,3 +1,7 @@
+/**
+ * Feedback on a typed answer (Y40): the right answer shown beside a wrong one, and nothing extra when it was
+ * right.
+ */
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QuestionView } from "./QuestionView";

@@ -10,6 +10,10 @@ import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+/**
+ * Test database: a PostgreSQL 18 container, or an existing database when bk.test.external-db is set (for machines
+ * without Docker).
+ */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 

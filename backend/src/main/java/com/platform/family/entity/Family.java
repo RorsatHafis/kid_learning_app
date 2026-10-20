@@ -9,6 +9,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * A family: the private unit that owns children and their learning. Parents belong to it through memberships;
+ * nothing in it is visible to a school unless a parent grants access.
+ */
 @Entity
 @Table(name = "families")
 public class Family extends AuditableEntity {

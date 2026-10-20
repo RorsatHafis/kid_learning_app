@@ -1,3 +1,7 @@
+/**
+ * Free practice (X24): a lit book played again off the path, back to the shelf after, and clear words when a book
+ * can't be played.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

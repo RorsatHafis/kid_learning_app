@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for Smart Review items (one per child and skill): an idempotent insert and a locked read, so
+ * concurrent answers can't create or schedule an item twice.
+ */
 public interface ReviewItemRepository extends JpaRepository<ReviewItem, UUID> {
 
     Optional<ReviewItem> findByChildIdAndSkillId(UUID childId, UUID skillId);

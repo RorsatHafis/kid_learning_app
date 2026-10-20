@@ -15,6 +15,10 @@ import com.platform.identity.exception.EmailAlreadyRegisteredException;
 import com.platform.identity.exception.WeakPasswordException;
 import com.platform.identity.repository.AccountRepository;
 
+/**
+ * Registers a parent account idempotently: the same request repeated returns the same account; an email already in
+ * use is refused.
+ */
 @Service
 public class RegisterAccountService {
 

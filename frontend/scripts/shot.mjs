@@ -1,3 +1,7 @@
+/**
+ * Takes one screenshot with Playwright for design review: node scripts/shot.mjs <url> <out.png> [width] [height]
+ * [fullPage 1|0]. Motion is reduced so captures are stable. A development aid, not part of the build.
+ */
 import { chromium } from "@playwright/test";
 const [url, out, w = "1440", h = "900", full = "1"] = process.argv.slice(2);
 const b = await chromium.launch();

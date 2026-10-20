@@ -1,3 +1,8 @@
+/**
+ * The Studio's question editor: a question's versions, editing its draft (wording, answer, options, media, hint
+ * and explanation), checks, review and publishing. A published version is read-only; changing it opens a new
+ * draft.
+ */
 import { useEffect, useState } from "react";
 import { WithdrawalPanel } from "./Withdrawal";
 import { PublishControl } from "./Review";

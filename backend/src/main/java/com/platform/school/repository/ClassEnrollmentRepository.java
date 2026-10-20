@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for class membership: a class's members, a child's classes, and a child's active classes in one
+ * school.
+ */
 public interface ClassEnrollmentRepository extends JpaRepository<ClassEnrollment, UUID> {
 
     List<ClassEnrollment> findByChildIdAndStatus(UUID childId, ClassEnrollmentStatus status);

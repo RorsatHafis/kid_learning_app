@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for the result of an assessment attempt (at most one per attempt).
+ */
 public interface AssessmentResultRepository extends JpaRepository<AssessmentResult, UUID> {
 
     // Matches uq_assessment_results_attempt (V16 migration).

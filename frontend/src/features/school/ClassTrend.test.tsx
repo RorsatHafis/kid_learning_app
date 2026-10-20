@@ -1,3 +1,6 @@
+/**
+ * A class's trend over the weeks: what moved, with every week in a table, and an empty period said plainly.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

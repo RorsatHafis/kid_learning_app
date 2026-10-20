@@ -1,3 +1,7 @@
+/**
+ * Words for the public landing page, in English and Khmer. Claims stay within what the product actually does: no
+ * prices or invented results.
+ */
 import { defineMessages } from "@/i18n/catalog";
 import type { EvidenceLevel } from "@/lib/api/types";
 

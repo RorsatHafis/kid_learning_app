@@ -39,6 +39,10 @@ import static org.assertj.core.api.Assertions.assertThat;
         "platform.security.rate-limit.register-per-hour=3",
         "platform.security.rate-limit.refresh-per-minute=60",
         "platform.security.rate-limit.recovery-per-hour=3"})
+/**
+ * Rate limits on the public auth endpoints: registration and password-reset requests beyond the budget are refused
+ * without effect, a refused refresh doesn't spend the refresh token, and other endpoints aren't limited here.
+ */
 @Tag("integration")
 class AuthRateLimitIntegrationTests {
 

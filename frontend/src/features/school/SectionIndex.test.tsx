@@ -1,3 +1,7 @@
+/**
+ * The class page's section index: only sections on the page, following them as they appear, and none on a short
+ * page.
+ */
 import { useRef, useState } from "react";
 import { describe, expect, it } from "vitest";
 import { act, render, screen, within } from "@testing-library/react";

@@ -1,3 +1,7 @@
+/**
+ * Administrator insight pages: what each school still has to set up, an empty platform explained, and the learning
+ * loop with the skills nothing practises.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

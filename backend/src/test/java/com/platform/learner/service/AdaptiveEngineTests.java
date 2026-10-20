@@ -29,6 +29,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Adaptive placement doesn't duplicate a harder activity already waiting, and never places again a revised version
+ * of an activity the child has finished.
+ */
 @ExtendWith(MockitoExtension.class)
 class AdaptiveEngineTests {
 

@@ -1,5 +1,9 @@
 package com.platform.common.idempotency.exception;
 
+/**
+ * Base for idempotency refusals (answered as 409): the request can't run because of an earlier one with the same
+ * key.
+ */
 public abstract sealed class IdempotencyConflictException extends RuntimeException
         permits DuplicateRequestInProgressException, IdempotencyKeyReusedException {
 

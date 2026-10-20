@@ -10,6 +10,9 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Requests and responses for enrolments and the learning path items they lead to.
+ */
 public final class EnrollmentDtos {
 
     private EnrollmentDtos() {

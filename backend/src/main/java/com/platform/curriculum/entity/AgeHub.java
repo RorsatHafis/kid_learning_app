@@ -9,6 +9,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.util.Assert;
 
+/**
+ * An age band (for example 4 to 6) that curricula are written for, with its display order.
+ */
 @Entity
 @Table(name = "age_hubs")
 public class AgeHub extends AuditableEntity {

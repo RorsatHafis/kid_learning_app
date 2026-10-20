@@ -11,6 +11,10 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * One option of a question version: a choice (and whether it is correct), one side of a matching pair, or an item
+ * and group for sorting, with optional picture and sound. Never sent to learners with its correctness.
+ */
 @Entity
 @Table(name = "question_options")
 public class QuestionOption extends BaseEntity {

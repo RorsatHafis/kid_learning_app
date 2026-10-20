@@ -7,6 +7,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * The token bucket: capacity then refusal with the wait for the next token, refill up to capacity, one budget per
+ * key, and idle buckets forgotten while spent ones are kept.
+ */
 class TokenBucketLimiterTests {
 
     private final AtomicLong now = new AtomicLong(1_000_000_000L);

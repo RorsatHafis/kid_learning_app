@@ -1,3 +1,7 @@
+/**
+ * The family home (X8): when each child last played, where each path stands, a finished path called finished
+ * without claiming mastery, and skills counted by the server's standing.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";

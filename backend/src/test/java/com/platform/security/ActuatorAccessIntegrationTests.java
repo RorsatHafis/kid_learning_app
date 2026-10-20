@@ -30,6 +30,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "management.endpoints.web.exposure.include=health,info,metrics")
+/**
+ * Health stays public while metrics and other actuator endpoints are for administrators only.
+ */
 @Tag("integration")
 class ActuatorAccessIntegrationTests {
 

@@ -8,6 +8,9 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * One learning objective in a curriculum version, in order.
+ */
 @Entity
 @Table(name = "curriculum_objectives")
 public class CurriculumObjective extends BaseEntity {

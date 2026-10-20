@@ -27,6 +27,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Activities and their versions: creating drafts, choosing their questions (published, or drafts published
+ * together with the activity), and publishing. Learners are only ever given published versions; ownership rules
+ * come from ContentOwnership.
+ */
 @Service
 public class ActivityService {
 

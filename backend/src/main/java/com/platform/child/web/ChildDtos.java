@@ -11,6 +11,10 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.UUID;
 
+/**
+ * Requests and responses for children. The response is what a parent sees; it carries no family-private data
+ * beyond the child's own profile.
+ */
 public final class ChildDtos {
 
     private ChildDtos() {

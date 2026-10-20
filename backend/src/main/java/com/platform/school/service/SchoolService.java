@@ -19,6 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
+/**
+ * Schools and classes for their principal: creating and renaming, archiving, and assigning teachers. A child joins
+ * a class only through their family (a join code), never by staff adding them. Changes are audited.
+ */
 @Service
 public class SchoolService {
     private final SchoolRepository schools; private final SchoolClassRepository classes; private final TeacherAssignmentRepository assignments; private final ClassEnrollmentRepository enrollments; private final AccountRepository accounts; private final ChildRepository children; private final CurriculumRepository curricula; private final CurriculumService curriculumService; private final EnrollmentService enrollmentService; private final ClassCurriculumAssignmentRepository classCurricula; private final AuditService audit; private final com.platform.subscription.service.SchoolEntitlementService entitlements;

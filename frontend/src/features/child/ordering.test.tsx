@@ -1,3 +1,7 @@
+/**
+ * Ordering questions played by tapping and marked place by place, and questions with pictures and recordings read
+ * aloud.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

@@ -8,6 +8,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 
+/**
+ * Base for every entity: a UUID id that Hibernate generates when the row is first saved.
+ */
 @MappedSuperclass
 public abstract class BaseEntity {
 

@@ -7,6 +7,10 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.MappedSuperclass;
 
+/**
+ * Base for versioned content (questions, activities, curricula, assessments): a version number and its publication
+ * lifecycle. A published version is never edited; a change is a new version.
+ */
 @MappedSuperclass
 public abstract class PublishableVersion extends AuditableEntity {
  

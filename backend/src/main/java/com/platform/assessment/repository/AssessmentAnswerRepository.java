@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for the answers given within one assessment attempt.
+ */
 public interface AssessmentAnswerRepository extends JpaRepository<AssessmentAnswer, UUID> {
 
     List<AssessmentAnswer> findByAssessmentAttemptId(UUID assessmentAttemptId);

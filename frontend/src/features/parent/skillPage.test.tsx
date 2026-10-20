@@ -1,3 +1,7 @@
+/**
+ * A skill's page for a parent (X19): where it stands and why, honest when there are too few answers, and a skill
+ * that isn't the family's explained.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";

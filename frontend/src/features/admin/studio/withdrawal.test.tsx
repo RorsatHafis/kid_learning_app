@@ -1,3 +1,7 @@
+/**
+ * Withdrawing published content (Y16): only with a reason, then shown with why and by whom; an activity withdrawn
+ * through one of its questions is explained.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

@@ -30,6 +30,12 @@ import com.platform.security.ratelimit.AuthRateLimitFilter;
 import com.platform.security.ratelimit.RateLimitProperties;
 
 
+/**
+ * HTTP security: stateless JWT authentication, the few public endpoints (health, /auth, signed media URLs, payment
+ * notices and the API docs where a profile enables them), CORS from configuration, and Spring's delegating
+ * password encoder (bcrypt). Other actuator endpoints are for administrators; every other request needs a valid
+ * token, and what it may do is decided by the services.
+ */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {

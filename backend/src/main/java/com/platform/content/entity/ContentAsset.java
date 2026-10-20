@@ -12,6 +12,11 @@ import org.springframework.util.Assert;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * A media file in the library (image, audio...): where it is stored, its type, size, checksum, owner and
+ * description. An author's upload counts against their storage; platform media has no owner. Archiving hides it
+ * from new use but keeps it for content already using it.
+ */
 @Entity
 @Table(name = "content_assets")
 public class ContentAsset extends BaseEntity {

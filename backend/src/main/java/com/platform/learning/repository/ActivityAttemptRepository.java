@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.UUID;
 import java.time.Instant;
 
+/**
+ * Persistence for activity attempts: a child's attempts, those completed on a path, totals for progress, and
+ * whether a child has already met an activity version.
+ */
 public interface ActivityAttemptRepository extends JpaRepository<ActivityAttempt, UUID> {
 
     /**

@@ -1,3 +1,7 @@
+/**
+ * The shelf and its lanterns (X18, Y40): a lantern only for what actually happened, and the next one shown with
+ * the books still to go.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";

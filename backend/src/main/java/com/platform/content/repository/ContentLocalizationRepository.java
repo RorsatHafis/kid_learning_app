@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for translated content text.
+ */
 public interface ContentLocalizationRepository extends JpaRepository<ContentLocalization, UUID> {
 
     // Matches uq_content_localizations_target (V12 migration).

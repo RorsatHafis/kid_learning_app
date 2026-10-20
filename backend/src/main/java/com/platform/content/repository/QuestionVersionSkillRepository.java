@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for the skills a question version assesses.
+ */
 public interface QuestionVersionSkillRepository extends JpaRepository<QuestionVersionSkill, UUID> {
 
     List<QuestionVersionSkill> findByQuestionVersionIdOrderByCreatedAtAscIdAsc(UUID questionVersionId);

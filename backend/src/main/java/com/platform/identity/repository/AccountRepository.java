@@ -18,6 +18,10 @@ import com.platform.identity.entity.Account;
 import com.platform.identity.entity.AccountStatus;
 import com.platform.identity.entity.PlatformRole;
 
+/**
+ * Persistence for accounts: by normalised email, a locked read for state changes, staff searches, and whether any
+ * account has a role (first administrator).
+ */
 public interface AccountRepository extends JpaRepository<Account, UUID> {
 
      Optional<Account> findByNormalizedEmail(String normalizedEmail);

@@ -16,6 +16,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Lessons and their versions: creating, editing a draft's body, publishing, and tagging the skills a lesson
+ * covers.
+ */
 @Service
 public class LessonService {
 

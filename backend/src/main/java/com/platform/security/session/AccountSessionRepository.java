@@ -12,6 +12,10 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/**
+ * Persistence for sign-in sessions: refresh tokens are stored only as hashes; rotation and revocation are single
+ * conditional updates, so a reused or raced refresh token revokes its whole session family.
+ */
 public interface AccountSessionRepository extends JpaRepository<AccountSession, UUID> {
 
     Optional<AccountSession> findByRefreshTokenHash(String refreshTokenHash);

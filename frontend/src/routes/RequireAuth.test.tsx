@@ -1,3 +1,7 @@
+/**
+ * Protected routes on start-up: a saved sign-in that can't be checked yet is kept and retried, and a refused or
+ * missing sign-in goes to the log-in page.
+ */
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

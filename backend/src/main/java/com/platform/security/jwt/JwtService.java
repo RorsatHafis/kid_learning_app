@@ -16,6 +16,10 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
+/**
+ * Issues and validates short-lived access tokens (HMAC-signed, with issuer, account, role and session family). The
+ * signing key comes only from configuration.
+ */
 @Service
 public class JwtService {
 

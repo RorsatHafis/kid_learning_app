@@ -1,3 +1,7 @@
+/**
+ * The child's home (X25): due reviews placed first, subjects chosen by the family rather than for the child, the
+ * shelf when everything is lit, and still opening if placing reviews fails.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";

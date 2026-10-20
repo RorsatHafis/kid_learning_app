@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for class join codes: by code, and a class's code that is still valid.
+ */
 public interface ClassJoinCodeRepository extends JpaRepository<ClassJoinCode, UUID> {
 
     Optional<ClassJoinCode> findByCode(String code);

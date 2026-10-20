@@ -5,6 +5,10 @@ import jakarta.persistence.*;
 import org.springframework.util.Assert;
 import java.util.UUID;
 
+/**
+ * A child's membership of one class. Separate from the school's access to the child and from teacher assignment:
+ * each is checked on its own.
+ */
 @Entity @Table(name = "class_enrollments")
 public class ClassEnrollment extends AuditableEntity {
     @Column(name="school_class_id", nullable=false, updatable=false) private UUID schoolClassId;

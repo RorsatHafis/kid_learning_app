@@ -10,6 +10,10 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
+/**
+ * A parent's place in a family: owner or guardian, active or removed. Access to a family's children is decided
+ * from an active membership, never from a role alone.
+ */
 @Entity
 @Table(name = "memberships")
 public class Membership extends AuditableEntity {

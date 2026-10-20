@@ -10,6 +10,9 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * A school grade within an age band.
+ */
 @Entity
 @Table(name = "grade_levels")
 public class GradeLevel extends AuditableEntity {

@@ -9,6 +9,10 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Persistence for parent insights: a child's newest insights, the latest per subject, and a row lock on the child
+ * so two insights for one event can't be written at once.
+ */
 public interface ParentInsightRepository extends JpaRepository<ParentInsight, UUID> {
 
     /** The most recent snapshots, newest first, at most {@code limit} of them. */

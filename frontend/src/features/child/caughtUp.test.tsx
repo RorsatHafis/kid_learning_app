@@ -1,3 +1,6 @@
+/**
+ * When every step is done, the child is offered the shelf to play lit books again; nothing new is promised.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";

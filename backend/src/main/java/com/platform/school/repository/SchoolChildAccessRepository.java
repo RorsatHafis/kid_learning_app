@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for the access families grant schools: in force for a school and child, a child's grants, and counts
+ * against the school's plan.
+ */
 public interface SchoolChildAccessRepository extends JpaRepository<SchoolChildAccess, UUID> {
 
     Optional<SchoolChildAccess> findBySchoolIdAndChildIdAndStatus(UUID schoolId, UUID childId, SchoolChildAccessStatus status);

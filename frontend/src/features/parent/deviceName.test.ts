@@ -1,3 +1,6 @@
+/**
+ * Naming a signed-in device from its browser and system for the sessions list.
+ */
 import { describe, expect, it } from "vitest";
 import { deviceName } from "./deviceName";
 

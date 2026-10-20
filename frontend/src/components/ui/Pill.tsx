@@ -1,3 +1,6 @@
+/**
+ * A small coloured label (a status or role) in one of a few fixed tones.
+ */
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 

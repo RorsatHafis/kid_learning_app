@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Persistence for a curriculum version's objectives, in order.
+ */
 public interface CurriculumObjectiveRepository extends JpaRepository<CurriculumObjective, UUID> {
 
     List<CurriculumObjective> findByCurriculumVersionIdOrderByDisplayOrderAsc(UUID curriculumVersionId);

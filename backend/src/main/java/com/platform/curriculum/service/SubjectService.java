@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Creates, renames, lists and archives subjects.
+ */
 @Service
 public class SubjectService {
 

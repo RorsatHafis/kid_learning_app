@@ -19,6 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
  
+/**
+ * AuditService uses the request's correlation id (or mints one) and refuses an event without an action or actor
+ * type.
+ */
 @ExtendWith(MockitoExtension.class)
 class AuditServiceTests {
  

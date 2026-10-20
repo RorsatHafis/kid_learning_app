@@ -5,6 +5,9 @@ import java.time.Instant;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 
+/**
+ * Base for append-only records: an id and the moment it happened, never updated after insert.
+ */
 @MappedSuperclass
 public abstract class ImmutableEvent extends BaseEntity {
 

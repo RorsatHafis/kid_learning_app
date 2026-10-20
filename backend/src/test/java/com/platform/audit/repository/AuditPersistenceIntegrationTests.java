@@ -21,6 +21,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
  
+/**
+ * Audit events persist their JSON metadata, and their optional link to an idempotency record must point at a real
+ * one.
+ */
 @Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
 @SpringBootTest

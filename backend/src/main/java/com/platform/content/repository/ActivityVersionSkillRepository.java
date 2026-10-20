@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for the skills an activity version practises, and the activities practising a skill (published only,
+ * or all for authors).
+ */
 public interface ActivityVersionSkillRepository extends JpaRepository<ActivityVersionSkill, UUID> {
 
     List<ActivityVersionSkill> findByActivityVersionIdOrderByCreatedAtAscIdAsc(UUID activityVersionId);

@@ -22,6 +22,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+/**
+ * Idempotency rules: a new key starts, a matching retry returns the completed outcome, a reused key with a
+ * different request or one still running is refused, and an abandoned guard is reclaimed after expiry.
+ */
 @ExtendWith(MockitoExtension.class)
 class IdempotencyServiceTests {
 

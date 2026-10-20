@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for learning objectives, by code and by subject.
+ */
 public interface LearningObjectiveRepository extends JpaRepository<LearningObjective, UUID> {
 
     Optional<LearningObjective> findByCode(String code);

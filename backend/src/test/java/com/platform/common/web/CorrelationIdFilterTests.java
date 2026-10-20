@@ -9,6 +9,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * The correlation id filter keeps a valid incoming id, mints one otherwise, returns it, and clears the logging
+ * context afterwards.
+ */
 class CorrelationIdFilterTests {
 
     private final CorrelationIdFilter filter = new CorrelationIdFilter();

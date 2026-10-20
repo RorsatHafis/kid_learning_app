@@ -5,6 +5,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
+/**
+ * A SHA-256 fingerprint of a request's canonical payload, so a retried request can be told apart from a different
+ * one sent with the same idempotency key.
+ */
 public final class RequestFingerprint {
 
     private RequestFingerprint() {

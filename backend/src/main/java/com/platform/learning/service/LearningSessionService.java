@@ -11,6 +11,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Starts and ends a child's learning session.
+ */
 @Service
 public class LearningSessionService {
 

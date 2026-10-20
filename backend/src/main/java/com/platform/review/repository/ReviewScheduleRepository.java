@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for when each review item is next due.
+ */
 public interface ReviewScheduleRepository extends JpaRepository<ReviewSchedule, UUID> {
 
     Optional<ReviewSchedule> findByReviewItemId(UUID reviewItemId);

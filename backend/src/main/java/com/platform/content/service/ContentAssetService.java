@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+/**
+ * Registers and reads media records. Uploading, checksums and storage limits are handled by the media module.
+ */
 @Service
 public class ContentAssetService {
 

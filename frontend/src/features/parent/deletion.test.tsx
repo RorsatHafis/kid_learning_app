@@ -1,3 +1,7 @@
+/**
+ * Deleting a child: the waiting period shown with a way to keep the child, the plan's room explained, and the
+ * password asked before anything is scheduled.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

@@ -25,6 +25,11 @@ import com.platform.security.SecurityProperties;
 import com.platform.security.jwt.JwtService;
 import com.platform.security.session.AccountSessionService;
 
+/**
+ * Signs a person in: checks the password (spending the same time when the email is unknown), applies the
+ * failed-attempt lockout, refuses disabled accounts, and opens a session with an access and refresh token.
+ * Sign-ins are audited.
+ */
 @Service
 public class LoginService {
 

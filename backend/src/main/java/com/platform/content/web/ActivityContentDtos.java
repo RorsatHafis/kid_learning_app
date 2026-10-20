@@ -16,6 +16,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * What a learner is sent for an activity: its questions and options in order, without correct answers, authoring
+ * notes or moderation details, plus the media they need.
+ */
 public final class ActivityContentDtos {
 
     private ActivityContentDtos() {

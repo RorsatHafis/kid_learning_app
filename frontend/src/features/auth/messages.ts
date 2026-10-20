@@ -1,3 +1,6 @@
+/**
+ * Words for signing in, registering and account recovery, in English and Khmer.
+ */
 import { defineMessages } from "@/i18n/catalog";
 
 export const authMessages = defineMessages(

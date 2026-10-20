@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Creates and reads learning objectives.
+ */
 @Service
 public class LearningObjectiveService {
 

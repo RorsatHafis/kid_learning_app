@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for the questions of an activity version, in their order.
+ */
 public interface ActivityItemRepository extends JpaRepository<ActivityItem, UUID> {
 
     List<ActivityItem> findByActivityVersionIdOrderBySequenceOrderAsc(UUID activityVersionId);

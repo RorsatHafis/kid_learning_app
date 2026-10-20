@@ -7,6 +7,9 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * A parent insight as the family sees it, in the reader's language, with how strong the evidence behind it is.
+ */
 public record ParentInsightResponse(
         UUID id,
         ParentInsightType insightType,

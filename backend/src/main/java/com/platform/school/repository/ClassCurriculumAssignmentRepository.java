@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for curricula assigned to a class.
+ */
 public interface ClassCurriculumAssignmentRepository extends JpaRepository<ClassCurriculumAssignment, UUID> {
 
     List<ClassCurriculumAssignment> findBySchoolClassIdAndStatusOrderByCreatedAtAsc(UUID schoolClassId,

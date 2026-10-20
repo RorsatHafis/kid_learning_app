@@ -12,6 +12,10 @@ import com.platform.audit.entity.AuditEvent;
 import com.platform.audit.repository.AuditEventRepository;
 import com.platform.common.web.CorrelationIdFilter;
 
+/**
+ * Records audit events. Callers describe the action; the correlation id is taken from the current request so one
+ * action can be traced across logs and the audit log.
+ */
 @Service
 public class AuditService {
 

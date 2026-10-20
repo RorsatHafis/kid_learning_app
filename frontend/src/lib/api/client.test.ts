@@ -1,3 +1,7 @@
+/**
+ * Refreshing a session: rotated tokens stored, the refresh token kept on a rate limit, server error or network
+ * failure, and a refused token ending the session.
+ */
 import { describe, expect, it, vi } from "vitest";
 import { SESSION_EXPIRED_EVENT, apiClient, refreshSession } from "./client";
 import { tokenStore } from "./tokenStore";

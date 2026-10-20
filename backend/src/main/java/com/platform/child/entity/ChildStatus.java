@@ -1,5 +1,8 @@
 package com.platform.child.entity;
 
+/**
+ * A child's lifecycle: active, archived by the family (kept and restorable), or scheduled for erasure.
+ */
 public enum ChildStatus {
 
     ACTIVE,

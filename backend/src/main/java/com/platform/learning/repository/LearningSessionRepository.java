@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Persistence for a child's learning sessions, and the one still open.
+ */
 public interface LearningSessionRepository extends JpaRepository<LearningSession, UUID> {
 
     List<LearningSession> findByChildIdOrderByStartedAtDesc(UUID childId);

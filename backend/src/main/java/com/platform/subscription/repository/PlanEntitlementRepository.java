@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for each plan's limits.
+ */
 public interface PlanEntitlementRepository extends JpaRepository<PlanEntitlement, UUID> {
 
     List<PlanEntitlement> findByPlanId(UUID planId);

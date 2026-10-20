@@ -10,6 +10,10 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for school subscriptions (one per school), with a locked read for changes, and how many schools a
+ * plan has.
+ */
 public interface SchoolSubscriptionRepository extends JpaRepository<SchoolSubscription, UUID> {
 
     Optional<SchoolSubscription> findBySchoolId(UUID schoolId);

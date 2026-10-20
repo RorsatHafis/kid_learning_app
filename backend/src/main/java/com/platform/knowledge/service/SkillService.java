@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Skills and skill groups: create, list, archive, and order skills within a group.
+ */
 @Service
 public class SkillService {
 

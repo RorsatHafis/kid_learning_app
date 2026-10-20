@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Adds and lists skill prerequisites (a skill can't be its own prerequisite).
+ */
 @Service
 public class SkillPrerequisiteService {
 

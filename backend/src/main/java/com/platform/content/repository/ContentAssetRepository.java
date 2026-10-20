@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for media files: finding an existing copy by checksum (per owner), each owner's usage and the
+ * storage overview for administrators, and the paged media library.
+ */
 public interface ContentAssetRepository extends JpaRepository<ContentAsset, UUID> {
 
     /** Platform media (no owner) already uploaded with these bytes. */

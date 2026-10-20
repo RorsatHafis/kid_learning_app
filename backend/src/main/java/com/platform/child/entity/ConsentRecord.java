@@ -10,6 +10,10 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
+/**
+ * One recorded consent decision for a child (append-only): which consent, granted or withdrawn, by which parent
+ * and when. The latest record for a type is the one in force.
+ */
 @Entity
 @Table(name = "consent_records")
 public class ConsentRecord extends ImmutableEvent {

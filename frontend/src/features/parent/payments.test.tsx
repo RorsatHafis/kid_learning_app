@@ -1,3 +1,7 @@
+/**
+ * Paying for a family plan (Y43): only the plan and the way of paying are sent, the outcome is said plainly, and
+ * the request flow stays when no payment method is on.
+ */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";

@@ -12,6 +12,9 @@ import org.springframework.data.repository.query.Param;
 
 import com.platform.family.entity.Family;
 
+/**
+ * Persistence for families, with a locked read so plan limits are checked one change at a time.
+ */
 public interface FamilyRepository extends JpaRepository<Family, UUID> {
 
     /** Serializes plan-limited changes to a family (adding children) so a limit can't be overrun by a race. */

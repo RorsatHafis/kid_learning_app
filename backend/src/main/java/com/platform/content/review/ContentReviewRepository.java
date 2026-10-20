@@ -9,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for content reviews, with locked reads so one version's review can't be decided twice at once.
+ */
 public interface ContentReviewRepository extends JpaRepository<ContentReview, UUID> {
 
     /** The latest review of a version, whatever its state. */

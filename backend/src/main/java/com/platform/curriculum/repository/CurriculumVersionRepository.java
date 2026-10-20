@@ -11,6 +11,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Persistence for curriculum versions: an exact version, the newest, all in order, and which curricula have a
+ * version in a given status.
+ */
 public interface CurriculumVersionRepository extends JpaRepository<CurriculumVersion, UUID> {
 
     // Matches uq_curriculum_versions_curriculum_number (V10 migration).

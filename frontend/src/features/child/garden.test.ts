@@ -1,3 +1,7 @@
+/**
+ * The skills garden: only practised skills are planted, at the stage the server's standing supports, and a skill
+ * 'grew' only when that standing advanced.
+ */
 import { describe, expect, it } from "vitest";
 import type { CurriculumProgress, SkillStanding } from "@/lib/api/types";
 import { afterActivity, garden } from "./garden";

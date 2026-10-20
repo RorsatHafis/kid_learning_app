@@ -18,6 +18,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 
+/**
+ * A child in a family: display name, date of birth, language and Learning Buddy, and lifecycle (active, archived,
+ * waiting for erasure). Only the family's parents manage it; school access is a separate, explicit grant.
+ */
 @Entity
 @Table(name = "children")
 public class Child extends AuditableEntity {

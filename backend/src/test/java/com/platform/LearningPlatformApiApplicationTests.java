@@ -6,6 +6,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
+/**
+ * The whole application context starts with the test profile.
+ */
 @Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
 @SpringBootTest

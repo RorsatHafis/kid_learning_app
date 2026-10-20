@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for question versions: an exact version, the newest, all of them in order, or the newest in a given
+ * publication status.
+ */
 public interface QuestionVersionRepository extends JpaRepository<QuestionVersion, UUID> {
 
     Optional<QuestionVersion> findByQuestionIdAndVersionNumber(UUID questionId, int versionNumber);

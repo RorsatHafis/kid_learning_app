@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Staff management over HTTP under /api/v1/admin (administrators only): create and list staff accounts and approve
+ * pending principals. Rules live in AdminService.
+ */
 @RestController
 @RequestMapping("/api/v1/admin")
 public class AdminController {

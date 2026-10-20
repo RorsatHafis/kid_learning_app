@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for skills, by code and by subject and status.
+ */
 public interface SkillRepository extends JpaRepository<Skill, UUID> {
 
     Optional<Skill> findByCode(String code);

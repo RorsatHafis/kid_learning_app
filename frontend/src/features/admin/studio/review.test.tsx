@@ -1,3 +1,7 @@
+/**
+ * Content review (Y14): publishing directly when no review is needed, asking for review otherwise, and approval
+ * only by another administrator.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

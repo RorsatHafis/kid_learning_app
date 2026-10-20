@@ -46,6 +46,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "spring.jpa.properties.hibernate.generate_statistics=true")
+/**
+ * A class's reads take the same number of queries however many children it has.
+ */
 @Tag("integration")
 class SchoolReadScalingIntegrationTests {
 

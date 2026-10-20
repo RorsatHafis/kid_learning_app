@@ -2,6 +2,10 @@ package com.platform.identity.dto;
 
 import com.platform.identity.entity.PlatformRole;
 
+/**
+ * What registering an account needs: email, password and an idempotency key, with the family name and the role (a
+ * parent unless stated) resolved to defaults.
+ */
 public record RegisterAccountCommand(
     String email,
     String rawPassword,

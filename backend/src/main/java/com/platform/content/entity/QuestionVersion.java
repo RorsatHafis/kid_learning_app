@@ -9,6 +9,11 @@ import org.springframework.util.Assert;
 
 import java.util.UUID;
 
+/**
+ * One version of a question: prompt, correct answer, difficulty, optional picture and sound, and the hint and
+ * explanation (V61). A draft is edited freely; once published it never changes, so evidence always points at
+ * exactly what the child saw.
+ */
 @Entity
 @Table(name = "question_versions")
 public class QuestionVersion extends PublishableVersion {
