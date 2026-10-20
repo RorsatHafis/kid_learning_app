@@ -2,7 +2,8 @@
 
 What is left before real families use Bookeyond Kid. The software side is built and verified locally
 (the whole release procedure was rehearsed on the production Compose file with a real TLS proxy -
-[DEPLOYMENT.md](DEPLOYMENT.md) section 5a). Everything below needs you: an account, a payment, a
+[DEPLOYMENT.md](DEPLOYMENT.md) section 5a; the Vercel + Railway shape was rehearsed locally on 2026-10-20 -
+[docs/DEPLOY-VERCEL-RAILWAY.md](docs/DEPLOY-VERCEL-RAILWAY.md)). Everything below needs you: an account, a payment, a
 domain, a legal text or a decision. Nothing here has been done yet.
 
 ## A. External actions, in order
@@ -63,6 +64,7 @@ domain, a legal text or a decision. Nothing here has been done yet.
 |---|---|---|
 | C1 | **Prices, plans and a payment provider** (PD-09), refunds and cancellation terms (part of B1), receipts/invoices required in Cambodia, and how long anonymised payment records are kept after erasure. | Y43: a payment lifecycle that grants a plan only on a confirmed payment, bank transfer confirmed by an administrator against the receipt, school invoices, refunds that take back exactly what was paid, an append-only ledger. Prices are set per plan; none are set. ABA PayWay is prepared but untested: it needs ABA's sandbox credentials and a sandbox run ([docs/PAYMENTS.md](docs/PAYMENTS.md)). |
 | C2 | Whether a path a child's **class** assigns counts against the family's plan (part of PD-09). | Counted today; no effect while the default plan is unlimited. |
+| C3 | **Schools pay before using school services (Y44).** Set a price on each school plan, then invoice each school and confirm its payment against the receipt. Upgrading an environment that already has schools pauses them (principals see the payment panel, teachers a notice) until they are paid: administrator-granted school plans no longer count. | Invoices, confirmation by an administrator, renewal by the principal, and the paused state are built and tested ([docs/PAYMENTS.md](docs/PAYMENTS.md)). Families' own learning is never paused. |
 
 ### Required for legal compliance
 

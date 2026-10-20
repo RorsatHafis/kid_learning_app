@@ -96,6 +96,39 @@ Run each against the deployed URLs and record the result. A failure in any of th
 8. A child plays an activity; the parent sees the evidence; a teacher and principal see only their classes.
 9. Khmer and English, desktop and phone, on the deployed site.
 
+## Local rehearsal (2026-10-20, Y44)
+
+The same shape was rehearsed on one machine, with nothing public and no cloud account:
+- "Railway": the image built from `backend/Dockerfile`, the `prod` profile and the variables of the table above
+  (secrets generated locally), PostgreSQL 18, a `/data` volume with the process running as uid 0 as
+  `RAILWAY_RUN_UID=0` does;
+- "Vercel": the production build served by Caddy, whose headers, `/api/*` rewrite and SPA fallback were generated
+  from `frontend/vercel.json` itself.
+
+Rehearsal-only differences: mail went to Mailpit, manual payments carried test instructions, the register budget
+was raised for the test families, and the bootstrap administrator stayed enabled.
+
+Passed:
+- **App and headers**: the app is served, a deep link reloads, every `vercel.json` header is present, no server
+  header, and hashed assets are cached as immutable.
+- **Backend**: readiness is UP, metrics are refused anonymously, Flyway applied V1–V62 with none failed, and `prod` is
+  active.
+- **Startup refusals**: production refuses to start with `PAYMENTS_DEV_SIMULATOR_ENABLED=true`, and refuses to start
+  without `ERASURE_LEDGER_FILE`, each with a message naming the variable.
+- **Payments**: `/payments/{id}/simulate` is unavailable and only bank transfer is offered.
+- **Uploads**: an administrator signs in through the rewrite and uploads a picture, which is served back byte for
+  byte. A tampered signature is refused. A 6 MB upload gets 413.
+- **Volume**: media and the ledger file are on the volume and survive both a restart and a replaced container.
+- **Browser journeys** through the rehearsed origin: golden 9/9, school (paid access: refused unpaid, invoiced and
+  confirmed by an administrator, then open) 2/2, plans 4/4.
+
+Not covered by the rehearsal: Vercel's and Railway's own platforms, real SMTP, the client-address check in step 3.4
+(Vercel's proxy can't be simulated locally), Vercel's request-size limit for uploads (step 3.5), and a ledger
+*entry* surviving a restart (no erasure was due during the rehearsal; the file itself persisted).
+
+Found: if a stored media file is lost, uploading the same file again returns the existing record without writing the
+file back, so it stays missing. Recorded as an open finding; it matters only after storage loss.
+
 ## 4. Costs and approvals
 
 Railway bills usage on a paid plan; a volume and an always-on backend plus PostgreSQL need one. Vercel's free
