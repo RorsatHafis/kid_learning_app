@@ -67,3 +67,17 @@ model if they are wanted.
 | 4 | Official Bookeyond logo | ✅ The supplied badge, recoloured to the platform teal as allowed, with KID underneath at every touchpoint; drafted mark retired |
 
 Hints and explanations exist only where educators write them (PD-15); the interface Khmer still needs native review (PD-14).
+
+---
+
+# Simpler authoring for staff (Y42)
+
+| # | Item | Status |
+|---|---|---|
+| 1 | New activity in one step | ✅ Name, what it practises, lesson (or a new one), then straight into the builder |
+| 2 | Write questions inside the activity | ✅ Friendly type cards with examples; the question takes the activity's subject and skills; one transaction creates and adds it |
+| 3 | One safe publish | ✅ Combined checks by question; plain confirmation; the activity and its new questions publish together or not at all; review gate unchanged |
+| 4 | After publishing | ✅ "Get it to children": teachers assign from a class's skill, admins use curricula |
+| 5 | Team test guide | ✅ TEAM-TEST-GUIDE.md |
+
+Rule change, deliberate: an activity **draft** may now hold draft questions (superseded versions are still refused); an activity is still published only when every question in it is, and children are only ever served published content.
