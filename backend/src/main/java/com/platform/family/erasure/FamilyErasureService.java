@@ -142,6 +142,9 @@ public class FamilyErasureService {
             "delete from account_sessions where account_id = :a",
             "delete from account_action_tokens where account_id = :a",
             "delete from idempotency_records where actor_id = :a",
+            // Y43: payment records stay (financial facts), without the person: their name leaves the ledger.
+            "update payment_orders set created_by_account_id = null, customer_note = null where created_by_account_id = :a",
+            "update payment_events set actor_account_id = null where actor_account_id = :a",
             "delete from accounts where id = :a");
 
     private final ErasureProperties properties;
@@ -485,6 +488,8 @@ public class FamilyErasureService {
             }
             MapSqlParameterSource family = new MapSqlParameterSource("f", familyId);
             rows += jdbc.update("delete from plan_requests where family_id = :f", family);
+            // Y43: the family's payments are kept as financial records, no longer linked to the family.
+            rows += jdbc.update("update payment_orders set family_id = null, customer_note = null where family_id = :f", family);
             rows += jdbc.update("delete from family_subscriptions where family_id = :f", family);
             rows += jdbc.update("delete from memberships where family_id = :f", family);
             rows += jdbc.update("delete from families where id = :f", family);

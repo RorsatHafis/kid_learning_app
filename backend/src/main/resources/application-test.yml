@@ -17,6 +17,14 @@ spring:
       "[mail.smtp.starttls.required]": false
 
 platform:
+  # Y43: tests drive the whole payment lifecycle with the simulator and a manual method whose
+  # "instructions" are plainly not a real account.
+  payments:
+    dev-simulator:
+      enabled: true
+    manual:
+      enabled: true
+      instructions: "TEST INSTRUCTIONS - not a real account. Quote your payment reference."
   security:
     jwt:
       secret: test-secret-key-for-automated-tests-only-0123456789ab

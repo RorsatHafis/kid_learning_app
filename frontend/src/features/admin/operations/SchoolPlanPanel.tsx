@@ -12,6 +12,7 @@ import { schoolPlanMessages } from "@/features/school/plan.messages";
 import { Panel, SelectField } from "../studio/shared";
 import { errorText } from "../studio/studioLogic";
 import { AuditLog } from "./AuditLog";
+import { SchoolInvoice } from "./SchoolInvoice";
 import { adminSchoolPlanMessages } from "./schoolPlan.messages";
 
 const dateOnly = (iso: string) => formatDate(iso, { day: "numeric", month: "short", year: "numeric" });
@@ -43,6 +44,7 @@ export function SchoolPlanPanel({ schoolId }: { schoolId: string }) {
           m={m}
         />
       )}
+      {plan && <SchoolInvoice schoolId={schoolId} plans={plans.data ?? []} />}
     </Panel>
   );
 }

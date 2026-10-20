@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  CreditCard,
   Gauge,
   HardDrive,
   History,
@@ -16,6 +17,7 @@ import {
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { useMessages } from "@/i18n/catalog";
 import { opsMessages } from "./operations/messages";
+import { adminPaymentMessages } from "./operations/payments.messages";
 
 /**
  * The platform administrator's console (X15), in separate areas: the dashboard; content; people;
@@ -24,6 +26,7 @@ import { opsMessages } from "./operations/messages";
  */
 export function AdminLayout() {
   const m = useMessages(opsMessages).nav;
+  const payments = useMessages(adminPaymentMessages).nav;
   return (
     <WorkspaceShell
       accent="river"
@@ -39,6 +42,7 @@ export function AdminLayout() {
         { to: "/admin/learning", label: m.learning, icon: Activity, section: m.operations },
         { to: "/admin/reports", label: m.reports, icon: BarChart3, section: m.operations },
         { to: "/admin/plans", label: m.plans, icon: Layers, section: m.commerce },
+        { to: "/admin/payments", label: payments, icon: CreditCard, section: m.commerce },
         { to: "/admin/storage", label: m.storage, icon: HardDrive, section: m.commerce },
         { to: "/admin/system", label: m.system, icon: Server, section: m.systemSection },
         { to: "/admin/activity", label: m.activity, icon: History, section: m.systemSection },

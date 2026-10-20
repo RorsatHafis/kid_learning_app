@@ -148,6 +148,8 @@ public class SecurityConfig {
                 // X11: media by signed URL only - the signature, issued inside a response the caller
                 // could read, is the permission (MediaService). Nothing else under it is public.
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/media/*").permitAll()
+                // Y43: a payment provider's notice has no session; it only makes us ask the provider (PaymentService).
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payments/callbacks/*").permitAll()
                 .anyRequest().authenticated()
             )
             // Battle 4D: 401 for "not authenticated" (no, malformed, forged, or expired

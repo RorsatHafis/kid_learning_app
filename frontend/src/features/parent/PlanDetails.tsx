@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Info, Send, Undo2 } from "lucide-react";
+import { CreditCard, Info, Send, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { familyPlanApi } from "@/lib/api/subscriptions";
 import { entitlementLabel, priceText, type Entitlement, type OwnFamilyPlan, type PlanOffer } from "@/lib/api/subscriptions";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { formatDate } from "@/i18n/format";
+import type { PaymentMethod } from "@/lib/api/payments";
 import { familyMessages } from "./messages";
+import { paymentMessages } from "./payments.messages";
 
 const DAY = 24 * 60 * 60 * 1000;
 const dateOnly = (iso: string) => formatDate(iso, { day: "numeric", month: "long", year: "numeric" });
@@ -81,20 +83,32 @@ function OfferLimits({ offer }: { offer: PlanOffer }) {
   );
 }
 
+/** What lets a family pay here (Y43): the ways of paying switched on, and whether a checkout is already open. */
+export interface PlanPurchase {
+  methods: PaymentMethod[];
+  locked: boolean;
+  onChoose: (offer: PlanOffer) => void;
+}
+
 /**
  * What the family's plan includes, how much of it is in use, what follows when it ends, and
- * which other plans exist. Nothing here pretends a checkout exists (PLATFORM-EXPANSION.md §3,
- * PD-09): with `onChanged`, a family may *ask* for another plan, which Bookeyond Kid answers (Y11).
+ * which other plans exist. With `onChanged`, a family may *ask* for another plan, which Bookeyond
+ * Kid answers (Y11); with `purchase`, a priced plan offered to families can be paid for (Y43).
  */
 export function PlanDetails({
   plan,
   now = new Date(),
   onChanged,
+  purchase,
 }: {
   plan: OwnFamilyPlan;
   now?: Date;
   onChanged?: (next: OwnFamilyPlan) => void;
+  purchase?: PlanPurchase;
 }) {
+  const pay = useMessages(paymentMessages);
+  const payable = (offer: { plan: OwnFamilyPlan["plan"] }) =>
+    !!purchase && purchase.methods.length > 0 && offer.plan.price !== null && offer.plan.selfService;
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const m = useMessages(familyMessages).plan;
@@ -124,6 +138,17 @@ export function PlanDetails({
         </p>
         {plan.plan.description && <p className="mt-1 text-sm leading-relaxed text-ink-soft">{plan.plan.description}</p>}
         {period.note && <p className="mt-1 text-sm text-ink-soft">{period.note}</p>}
+        {purchase && !plan.onDefaultPlan && payable(plan) && plan.plan.price && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-3 w-fit"
+            disabled={purchase.locked}
+            onClick={() => purchase.onChoose({ plan: plan.plan, entitlements: plan.entitlements })}
+          >
+            <CreditCard size={15} aria-hidden /> {pay.renew(plan.plan.price.interval === "MONTH" ? pay.month : pay.year)}
+          </Button>
+        )}
       </div>
 
       <dl className="grid gap-3 sm:grid-cols-2">
@@ -165,7 +190,7 @@ export function PlanDetails({
             <h3 id="plan-choices" className="text-sm font-semibold text-ink">
               {m.otherPlans}
             </h3>
-            <p className="text-sm text-ink-soft">{m.cantBuy}</p>
+            <p className="text-sm text-ink-soft">{plan.choices.some(payable) ? pay.canBuy : m.cantBuy}</p>
           </div>
           <ul className="grid gap-3 sm:grid-cols-2">
             {plan.choices.map((offer) => (
@@ -176,7 +201,12 @@ export function PlanDetails({
                 </p>
                 {offer.plan.description && <p className="text-sm text-ink-soft">{offer.plan.description}</p>}
                 <OfferLimits offer={offer} />
-                {onChanged && plan.request?.planId === offer.plan.id && (
+                {purchase && payable(offer) && (
+                  <Button size="sm" variant="accent" className="w-fit" disabled={purchase.locked} onClick={() => purchase.onChoose(offer)}>
+                    <CreditCard size={15} aria-hidden /> {pay.choose(offer.plan.name)}
+                  </Button>
+                )}
+                {!payable(offer) && onChanged && plan.request?.planId === offer.plan.id && (
                   <div className="flex flex-col items-start gap-2">
                     <p role="status" className="text-sm font-semibold text-palm-deep">
                       {m.askedOn(dateOnly(plan.request.requestedAt))}
@@ -186,7 +216,7 @@ export function PlanDetails({
                     </Button>
                   </div>
                 )}
-                {onChanged && plan.request?.planId !== offer.plan.id && (
+                {!payable(offer) && onChanged && plan.request?.planId !== offer.plan.id && (
                   <Button
                     size="sm"
                     variant="outline"

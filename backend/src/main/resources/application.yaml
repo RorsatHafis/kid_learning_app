@@ -118,6 +118,28 @@ platform:
   # Off by default (an author publishes); a teacher's own content never needs it.
   content-review:
     required: ${CONTENT_REVIEW_REQUIRED:false}
+  # Y43: how this deployment takes payments. Every method is off until configured; with none on, no plan
+  # can be bought and families are told so. Prices come from the plans (set by an administrator).
+  payments:
+    pending-lifetime: ${PAYMENTS_PENDING_LIFETIME:PT30M}
+    manual-lifetime: ${PAYMENTS_MANUAL_LIFETIME:P14D}
+    sweep-interval: ${PAYMENTS_SWEEP_INTERVAL:PT5M}
+    # A simulation for development and tests only; a production (prod profile) instance refuses to start with it on.
+    dev-simulator:
+      enabled: ${PAYMENTS_DEV_SIMULATOR_ENABLED:false}
+    # Bank transfer or invoice, confirmed by an administrator against the receipt. The instructions are the
+    # owner's own payee details (blank = not offered).
+    manual:
+      enabled: ${PAYMENTS_MANUAL_ENABLED:false}
+      instructions: ${PAYMENTS_MANUAL_INSTRUCTIONS:}
+    # ABA PayWay: prepared, not yet tested against its sandbox (see PAYMENTS.md). The API key is a secret.
+    aba-payway:
+      enabled: ${ABA_PAYWAY_ENABLED:false}
+      base-url: ${ABA_PAYWAY_BASE_URL:https://checkout-sandbox.payway.com.kh}
+      merchant-id: ${ABA_PAYWAY_MERCHANT_ID:}
+      api-key: ${ABA_PAYWAY_API_KEY:}
+      return-url: ${ABA_PAYWAY_RETURN_URL:}
+      success-url: ${ABA_PAYWAY_SUCCESS_URL:}
   # Deleting a child or a family account (PD-24 as adopted, Y3). A deletion waits this long
   # before it is carried out, so a mistake can be undone (0s..90d); the sweep runs this often.
   erasure:

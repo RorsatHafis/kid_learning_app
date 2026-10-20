@@ -10,8 +10,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
-import { familyPlanApi } from "@/lib/api/subscriptions";
-import { PlanDetails } from "./PlanDetails";
+import { FamilyPlanWithPayments } from "./FamilyPayments";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { downloadFile } from "@/lib/utils/download";
 import { messagesNow, useMessages } from "@/i18n/catalog";
@@ -576,15 +575,12 @@ function YourData() {
   );
 }
 
-/** The family's plan, read-only (see PlanDetails). */
+/** The family's plan, and paying for one where that is switched on (see FamilyPayments). */
 function YourPlan() {
-  const plan = useAsync(() => familyPlanApi.get(), []);
   const m = useMessages(accountMessages).plan;
   return (
     <SettingsRow id="plan" title={m.title} subtitle={m.subtitle}>
-      {plan.isLoading && !plan.data && <LoadingState label={m.loading} />}
-      {plan.error && <ErrorState error={plan.error} onRetry={plan.refetch} />}
-      {plan.data && <PlanDetails plan={plan.data} onChanged={plan.refetch} />}
+      <FamilyPlanWithPayments />
     </SettingsRow>
   );
 }

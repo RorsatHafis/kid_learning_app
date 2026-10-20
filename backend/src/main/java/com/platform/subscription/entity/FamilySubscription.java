@@ -84,6 +84,62 @@ public class FamilySubscription extends AuditableEntity {
         this.note = note == null || note.isBlank() ? null : note.strip();
     }
 
+    /**
+     * Y43: what a confirmed payment gives - the plan until {@code periodEnd}, recorded as coming from the
+     * payment (provider and our order reference), so access and billing can't drift apart. Only
+     * PaymentService calls this, and only for an order that has just succeeded.
+     */
+    public static FamilySubscription fromPayment(UUID familyId, UUID planId, Instant now, Instant periodEnd, String provider,
+                                              String reference) {
+
+        Assert.notNull(familyId, "familyId must not be null");
+        FamilySubscription subscription = new FamilySubscription();
+        subscription.familyId = familyId;
+        subscription.applyPayment(planId, now, periodEnd, provider, reference);
+        return subscription;
+
+    }
+
+    /**
+     * Y43: a confirmed payment replaces or extends what the family had. Renewing the same paid plan keeps
+     * its start; anything else starts now. The previous state is audited by the caller.
+     */
+    public void applyPayment(UUID planId, Instant now, Instant periodEnd, String provider, String reference) {
+
+        Assert.notNull(planId, "planId must not be null");
+        Assert.hasText(provider, "provider must not be blank");
+        Assert.hasText(reference, "reference must not be blank");
+        boolean renewal = source == SubscriptionSource.PROVIDER && planId.equals(this.planId) && grantsAccessAt(now);
+        this.planId = planId;
+        this.status = SubscriptionStatus.ACTIVE;
+        this.source = SubscriptionSource.PROVIDER;
+        this.startedAt = renewal ? this.startedAt : now;
+        this.currentPeriodEnd = periodEnd;
+        this.cancelAtPeriodEnd = false;
+        this.provider = provider;
+        this.providerReference = reference;
+
+    }
+
+    /**
+     * Y43: a refunded payment's time is taken back - the period ends at {@code newEnd}, or now if that has
+     * passed. Nothing else changes: no other payment's time is touched.
+     */
+    public void reverseRefund(Instant newEnd, Instant now) {
+
+        if (source != SubscriptionSource.PROVIDER) {
+            throw new IllegalStateException("This plan wasn't paid for, so there is nothing to refund on it");
+        }
+
+        if (newEnd == null || !newEnd.isAfter(now)) {
+            this.status = SubscriptionStatus.EXPIRED;
+            this.currentPeriodEnd = now;
+        } else {
+            this.currentPeriodEnd = newEnd;
+        }
+
+    }
+
     /** Ends access now (an administrator ending a grant). */
     public void end(Instant now) {
         requireAdminManaged();

@@ -29,6 +29,10 @@ spring:
 # Local-only fallbacks for the values application.yaml requires. The same variables
 # still override them; TTL, lockout and mastery defaults come from application.yaml.
 platform:
+  # Y43: development payments are simulated here (labelled TEST PAYMENT; never real money).
+  payments:
+    dev-simulator:
+      enabled: ${PAYMENTS_DEV_SIMULATOR_ENABLED:true}
   security:
     jwt:
       # Dev-only fallback; every other profile must provide JWT_SECRET.

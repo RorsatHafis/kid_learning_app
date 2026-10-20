@@ -5,6 +5,7 @@ import { useMessages } from "@/i18n/catalog";
 import { cn } from "@/lib/utils/cn";
 import { schoolPlanMessages } from "./plan.messages";
 import { fullness, planSourceText } from "./planUsage";
+import { SchoolInvoices } from "./SchoolInvoices";
 
 /** One line per limit: what the school holds against what its plan includes. */
 export function SchoolPlanUsage({ entitlements }: { entitlements: Entitlement[] }) {
@@ -89,6 +90,7 @@ export function PrincipalSchoolPlan({ schoolId, version }: { schoolId: string; v
           <p className="text-sm leading-relaxed text-ink-soft">
             {m.keepsAll} {m.noPurchase}
           </p>
+          <SchoolInvoices schoolId={schoolId} />
         </>
       )}
     </section>
