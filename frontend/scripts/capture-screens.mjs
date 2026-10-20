@@ -1,6 +1,8 @@
 // Design review captures: every main screen, per role, at desktop and phone width.
 // Usage: node scripts/capture-screens.mjs <outDir> [baseUrl]
-// Signs in through the real UI with local test accounts (see the design-review seed).
+// Signs in through the real UI with local test accounts (see the design-review seed). Their emails and
+// passwords come from the environment, never from the repository:
+//   CAPTURE_PARENT, CAPTURE_ADMIN, CAPTURE_PRINCIPAL, CAPTURE_TEACHER = "email:password"
 import { chromium } from "@playwright/test";
 import fs from "node:fs";
 
@@ -8,12 +10,14 @@ const out = process.argv[2] ?? "shots";
 const base = process.argv[3] ?? "http://localhost:5174";
 fs.mkdirSync(out, { recursive: true });
 
-const accounts = {
-  parent: ["sok.family@bk-design.test", "Design-Parent-2026"],
-  admin: ["admin@bk-verify.test", "Verify-Admin-Pass-2026"],
-  principal: ["principal@bk-design.test", "Design-Principal-2026"],
-  teacher: ["teacher@bk-design.test", "Design-Teacher-2026"],
-};
+function account(role) {
+  const value = process.env[`CAPTURE_${role.toUpperCase()}`] ?? "";
+  const at = value.indexOf(":");
+  if (at < 1) throw new Error(`Set CAPTURE_${role.toUpperCase()}="email:password" for a local test account.`);
+  return [value.slice(0, at), value.slice(at + 1)];
+}
+
+const accounts = Object.fromEntries(["parent", "admin", "principal", "teacher"].map((role) => [role, account(role)]));
 
 // A child with an unfinished path to play through (the capture itself advances it):
 // reuses "Kanha" while her path has steps left, otherwise adds a fresh one.

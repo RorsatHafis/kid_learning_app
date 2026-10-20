@@ -36,3 +36,6 @@ deploy/*.settings
 .impeccable/review/
 .impeccable/mocks/
 .impeccable/decision-*.json
+
+# Local preview launch configuration (per machine)
+.claude/launch.json
