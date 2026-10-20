@@ -107,6 +107,8 @@ jobs:
       E2E_ADMIN_PASSWORD: CI-Admin-Pass-2026
       # The journeys (desktop and phone) register more than 20 accounts from one address within the hour.
       RATE_LIMIT_REGISTER_PER_HOUR: "1000"
+      # Every compose command in this job (including scripts/verify-runtime.sh) uses the CI network overlay.
+      COMPOSE_FILE: docker-compose.yml:.github/compose.ci-network.yml
     steps:
       - uses: actions/checkout@v4
       - name: Build and start the product
@@ -131,7 +133,7 @@ jobs:
       - name: Turn on legal documents, content review and the erasure ledger
         # Only the backend is replaced; the web front finds it on its new address by itself (nginx
         # resolves it per request), so this step also proves that recovery.
-        run: docker compose -f docker-compose.yml -f .github/compose.features.yml up -d --wait backend
+        run: docker compose -f docker-compose.yml -f .github/compose.ci-network.yml -f .github/compose.features.yml up -d --wait backend
       - name: Configuration-specific journeys
         run: npx playwright test e2e/legal.spec.ts e2e/review-journey.spec.ts
         working-directory: frontend

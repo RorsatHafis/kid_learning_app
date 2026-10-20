@@ -1,0 +1,8 @@
+# CI only: the stack's network with a configured subnet. scripts/verify-runtime.sh replaces the backend
+# while a placeholder holds its old address (docker run --ip), to prove the web front finds the new one;
+# Docker accepts --ip only on a network whose subnet is configured. Not used by the owner's local stack.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
