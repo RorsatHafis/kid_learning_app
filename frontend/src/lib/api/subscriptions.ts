@@ -105,6 +105,15 @@ export interface PlanRequestRow {
   requestedAt: string;
 }
 
+/** Y44: whether the school's services are paid for now; only a confirmed payment makes them so. */
+export interface SchoolAccess {
+  paid: boolean;
+  /** When the paid period ends; null when not paid. */
+  paidUntil: string | null;
+  /** A payment of the school is waiting to be confirmed (it grants nothing yet). */
+  paymentPending: boolean;
+}
+
 /** A school's plan: `GET /schools/{id}/plan` (its principal; no operator note) or the admin's view. */
 export interface SchoolPlan {
   schoolId: string;
@@ -115,6 +124,7 @@ export interface SchoolPlan {
   subscription: SubscriptionState | null;
   /** `used`: what the school holds now (storage is per teacher, so TEACHER_STORAGE_MB has none). */
   entitlements: Entitlement[];
+  access: SchoolAccess;
 }
 
 export type OwnSchoolPlan = Omit<SchoolPlan, "subscription"> & {
@@ -208,8 +218,6 @@ export const plansApi = {
 export const schoolPlansApi = {
   own: (schoolId: string) => apiClient.get<OwnSchoolPlan>(`/schools/${schoolId}/plan`),
   get: (schoolId: string) => apiClient.get<SchoolPlan>(`/admin/schools/${schoolId}/subscription`),
-  grant: (schoolId: string, body: { planId: string; periodEnd: string | null; note: string | null }) =>
-    apiClient.post<SchoolPlan>(`/admin/schools/${schoolId}/subscription`, body),
   /** `periodEnd` null = open-ended. */
   changePeriod: (schoolId: string, periodEnd: string | null, reason: string) =>
     apiClient.put<SchoolPlan>(`/admin/schools/${schoolId}/subscription/period`, { periodEnd, reason }),

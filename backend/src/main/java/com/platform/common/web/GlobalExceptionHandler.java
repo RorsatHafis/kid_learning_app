@@ -216,6 +216,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(com.platform.subscription.service.SchoolPaymentRequiredException.class)
+    public ResponseEntity<Object> handleSchoolPaymentRequired(com.platform.subscription.service.SchoolPaymentRequiredException ex,
+                                                              WebRequest request) {
+
+        // Y44: school services need a paid subscription. 402 with the school, so its staff are shown the
+        // school's billing state (and its principal how to pay) rather than a generic refusal.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.PAYMENT_REQUIRED, ex.getMessage());
+        problem.setTitle("School Payment Required");
+        problem.setProperty("schoolPaymentRequired", true);
+        problem.setProperty("schoolId", ex.getSchoolId());
+
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.PAYMENT_REQUIRED, request);
+
+    }
+
     @ExceptionHandler(com.platform.content.media.StorageLimitException.class)
     public ResponseEntity<Object> handleStorageLimit(com.platform.content.media.StorageLimitException ex, WebRequest request) {
 

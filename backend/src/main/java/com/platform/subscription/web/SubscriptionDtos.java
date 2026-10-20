@@ -160,28 +160,36 @@ public final class SubscriptionDtos {
     }
 
     /** A school's plan as its principal sees it: no operator note. */
+    /** {@code access} (Y44): whether school services are paid for now, until when, and whether a payment waits. */
+    public record SchoolAccess(boolean paid, Instant paidUntil, boolean paymentPending) {
+
+        static SchoolAccess of(SchoolEntitlementService.SchoolAccess access) {
+            return new SchoolAccess(access.paid(), access.paidUntil(), access.paymentPending());
+        }
+    }
+
     public record OwnSchoolPlanResponse(UUID schoolId, String schoolName, PlanSummary plan, boolean onDefaultPlan,
-                                        OwnSubscriptionState subscription, List<Entitlement> entitlements) {
+                                        OwnSubscriptionState subscription, List<Entitlement> entitlements, SchoolAccess access) {
 
         public static OwnSchoolPlanResponse of(SubscriptionService.SchoolView view) {
             SchoolEntitlementService.SchoolPlan effective = view.effective();
             return new OwnSchoolPlanResponse(view.schoolId(), view.schoolName(), PlanSummary.of(effective.plan()),
                     !effective.fromSubscription(),
                     effective.subscription().map(s -> OwnSubscriptionState.of(s, effective.fromSubscription())).orElse(null),
-                    entitlementList(effective.limits(), view.usage()));
+                    entitlementList(effective.limits(), view.usage()), SchoolAccess.of(view.access()));
         }
     }
 
     /** A school's plan as an operator sees it. */
     public record SchoolPlanResponse(UUID schoolId, String schoolName, PlanSummary plan, boolean onDefaultPlan,
-                                     SubscriptionState subscription, List<Entitlement> entitlements) {
+                                     SubscriptionState subscription, List<Entitlement> entitlements, SchoolAccess access) {
 
         public static SchoolPlanResponse of(SubscriptionService.SchoolView view) {
             SchoolEntitlementService.SchoolPlan effective = view.effective();
             return new SchoolPlanResponse(view.schoolId(), view.schoolName(), PlanSummary.of(effective.plan()),
                     !effective.fromSubscription(),
                     effective.subscription().map(s -> SubscriptionState.of(s, effective.fromSubscription())).orElse(null),
-                    entitlementList(effective.limits(), view.usage()));
+                    entitlementList(effective.limits(), view.usage()), SchoolAccess.of(view.access()));
         }
     }
 

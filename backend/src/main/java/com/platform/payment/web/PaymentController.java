@@ -72,6 +72,24 @@ public class PaymentController {
 
     }
 
+    /** Y44: the school plans its principal may pay for, and starting that payment (open while the school is unpaid). */
+    @GetMapping("/api/v1/schools/{schoolId}/payment-plans")
+    public List<PaymentDtos.SchoolPlanChoice> schoolPlanChoices(@AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId) {
+
+        return payments.schoolPlanChoices(accountId, schoolId).stream().map(PaymentDtos.SchoolPlanChoice::of).toList();
+
+    }
+
+    @PostMapping("/api/v1/schools/{schoolId}/payments")
+    @ResponseStatus(HttpStatus.CREATED)
+    public OrderResponse startSchoolPayment(@AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId,
+                                            @Valid @RequestBody StartPaymentRequest request) {
+
+        return OrderResponse.of(payments.startSchoolPayment(accountId, schoolId, request.planId(), request.method(), request.idempotencyKey()),
+                false);
+
+    }
+
     @GetMapping("/api/v1/payments/{orderId}")
     public OrderResponse order(@AuthenticationPrincipal UUID accountId, @PathVariable UUID orderId) {
 

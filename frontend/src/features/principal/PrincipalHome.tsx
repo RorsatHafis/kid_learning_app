@@ -10,6 +10,7 @@ import { ClassSummary } from "@/features/school/ClassSummary";
 import { ArchivedSchoolNotice, ManageSchoolButton } from "@/features/school/ClassLifecycle";
 import { SchoolLearningSection } from "./SchoolLearningSection";
 import { PrincipalSchoolPlan } from "@/features/school/SchoolPlanCard";
+import { SchoolPaymentRequired } from "@/features/school/SchoolBilling";
 import type { SchoolClassWithTeachers } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
@@ -53,15 +54,21 @@ function SchoolFrame({
   title,
   lead,
   overview = false,
+  billing = false,
   children,
 }: {
   title?: string;
   lead?: string;
   overview?: boolean;
+  /** The plan page: open while the school's services wait for payment (Y44), since it is the way to pay. */
+  billing?: boolean;
   children: (school: SchoolSummary) => ReactNode;
 }) {
   const { schools, school, select } = usePrincipalSchool();
   const m = useMessages(staffMessages).principal;
+  // Y44: the school's paid state decides whether its services show, or the way to pay for them.
+  const access = useAsync(() => (school ? schoolPlansApi.own(school.id) : Promise.resolve(null)), [school?.id]);
+  const paused = !billing && access.data != null && !access.data.access.paid;
   useDocumentTitle(title ?? school?.name ?? (schools.data ? m.setUpTitle : null));
 
   if (schools.isLoading && !schools.data) return <LoadingState label={m.loading} />;
@@ -100,7 +107,13 @@ function SchoolFrame({
         )}
       </div>
       {school.archived && <ArchivedSchoolNotice />}
-      {children(school)}
+      {!billing && access.data?.schoolId !== school.id && !access.error ? (
+        <LoadingState label={m.loading} />
+      ) : paused && access.data ? (
+        <SchoolPaymentRequired schoolId={school.id} schoolName={school.name} plan={access.data} />
+      ) : (
+        children(school)
+      )}
     </div>
   );
 }
@@ -144,7 +157,7 @@ export function PrincipalTeachersPage() {
 export function PrincipalPlanPage() {
   const w = useMessages(principalWorkspaceMessages);
   return (
-    <SchoolFrame title={w.nav.plan} lead={w.planLead}>
+    <SchoolFrame title={w.nav.plan} lead={w.planLead} billing>
       {(school) => <PrincipalSchoolPlan key={school.id} schoolId={school.id} version={0} />}
     </SchoolFrame>
   );

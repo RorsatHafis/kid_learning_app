@@ -27,6 +27,7 @@ import com.platform.subscription.entity.FamilySubscription;
 import com.platform.subscription.entity.PlanAudience;
 import com.platform.subscription.entity.PlanStatus;
 import com.platform.subscription.entity.SchoolSubscription;
+import com.platform.subscription.entity.SubscriptionSource;
 import com.platform.subscription.entity.SubscriptionPlan;
 import com.platform.subscription.repository.FamilySubscriptionRepository;
 import com.platform.subscription.repository.SchoolSubscriptionRepository;
@@ -193,11 +194,68 @@ public class PaymentService {
 
     }
 
+    /**
+     * A school's principal renews its plan (Y44): the plan its last confirmed payment bought, at that plan's price
+     * now; it extends from the current paid end, or starts now when the paid period is over. A school's first plan
+     * is arranged and invoiced by an administrator. Open while the school is unpaid - it is how school services
+     * come back. The same request repeated returns the same order.
+     */
+    @Transactional
+    public OrderView startSchoolPayment(UUID accountId, UUID schoolId, UUID planId, PaymentProviderType method, String idempotencyKey) {
+
+        schoolGuard.requireSchoolBilling(accountId, schoolId);
+        Optional<PaymentOrder> repeated = orders.findByCreatedByAccountIdAndIdempotencyKey(accountId, idempotencyKey);
+        if (repeated.isPresent()) {
+            return view(repeated.get(), false);
+        }
+
+        schools.findByIdForUpdate(schoolId).orElseThrow(() -> new ResourceNotFoundException("School", schoolId));
+        SubscriptionPlan plan = plans.findById(planId).orElseThrow(() -> new ResourceNotFoundException("Plan", planId));
+        if (plan.getAudience() != PlanAudience.SCHOOL) {
+            throw new IllegalArgumentException("Only a school plan can be invoiced to a school");
+        }
+
+        boolean renewal = schoolSubscriptions.findBySchoolId(schoolId)
+                .filter(s -> s.getSource() == SubscriptionSource.PROVIDER && s.getPlanId().equals(planId))
+                .isPresent();
+        if (!renewal) {
+            throw new IllegalArgumentException("This plan isn't offered for schools to choose: ask the Bookeyond team");
+        }
+
+        PaymentProvider provider = requireAvailable(method);
+        expireStale(orders.findFirstBySchoolIdAndStatus(schoolId, PaymentStatus.PENDING));
+        if (orders.findFirstBySchoolIdAndStatus(schoolId, PaymentStatus.PENDING).isPresent()) {
+            throw new IllegalStateException("A payment is already in progress: finish or cancel it first");
+        }
+
+        PaymentOrder order = open(PaymentCustomerType.SCHOOL, null, schoolId, accountId, plan, provider, idempotencyKey);
+        record(order, "CREATED", null, PaymentStatus.PENDING, accountId, null,
+                Map.of("plan", plan.getCode(), "method", method.name(), "renewal", renewal));
+        return view(order, false);
+
+    }
+
+    /** What a principal may renew: the school's own paid plan, while it is active and priced (empty before a first payment). */
+    @Transactional(readOnly = true)
+    public List<SubscriptionPlan> schoolPlanChoices(UUID accountId, UUID schoolId) {
+
+        schoolGuard.requireSchoolBilling(accountId, schoolId);
+        Optional<UUID> own = schoolSubscriptions.findBySchoolId(schoolId)
+                .filter(s -> s.getSource() == SubscriptionSource.PROVIDER)
+                .map(SchoolSubscription::getPlanId);
+        return plans.findAllByOrderByCreatedAtAsc().stream()
+                .filter(plan -> plan.getAudience() == PlanAudience.SCHOOL && plan.getPriceAmountMinor() != null)
+                .filter(plan -> plan.getStatus() == com.platform.subscription.entity.PlanStatus.ACTIVE)
+                .filter(plan -> own.filter(plan.getId()::equals).isPresent())
+                .toList();
+
+    }
+
     /** A school's invoices, for its principal (or an administrator). */
     @Transactional
     public List<PaymentOrder> schoolPayments(UUID accountId, UUID schoolId) {
 
-        schoolGuard.requireSchoolManage(accountId, schoolId);
+        schoolGuard.requireSchoolBilling(accountId, schoolId);
         expireStale(orders.findFirstBySchoolIdAndStatus(schoolId, PaymentStatus.PENDING));
         return orders.findTop20BySchoolIdOrderByCreatedAtDesc(schoolId);
 
@@ -630,7 +688,7 @@ public class PaymentService {
                 throw new AccessDeniedException("Not this family's payment");
             }
         } else {
-            schoolGuard.requireSchoolManage(accountId, order.getSchoolId());
+            schoolGuard.requireSchoolBilling(accountId, order.getSchoolId());
         }
 
         return false;

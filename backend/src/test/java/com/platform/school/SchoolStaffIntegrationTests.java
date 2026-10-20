@@ -1,6 +1,7 @@
 package com.platform.school;
 
 import com.icegreen.greenmail.util.GreenMail;
+import com.platform.PaidSchools;
 import com.platform.TestcontainersConfiguration;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
@@ -51,6 +52,7 @@ class SchoolStaffIntegrationTests {
     private static final Pattern SETUP_LINK = Pattern.compile("http://localhost:5173/set-up-account#token=([A-Za-z0-9_-]+)");
 
     @Value("${local.server.port}") private int port;
+    @Autowired private org.springframework.context.ApplicationContext context;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private GreenMail greenMail;
     @Autowired private AccountRepository accountRepository;
@@ -373,8 +375,11 @@ class SchoolStaffIntegrationTests {
         return new User(body.get("accountId").asString(), email, role, body.get("accessToken").asString());
     }
 
+    /** A school of the principal's, paid for (Y44: its services need a confirmed payment). */
     private String createSchool(User principal, String name) throws Exception {
-        return json(post("/api/v1/schools", "{\"name\":\"" + name + "\"}", principal), 201).get("id").asString();
+        String schoolId = json(post("/api/v1/schools", "{\"name\":\"" + name + "\"}", principal), 201).get("id").asString();
+        PaidSchools.pay(context, UUID.fromString(schoolId));
+        return schoolId;
     }
 
     private String createClass(User principal, String schoolId, String name) throws Exception {

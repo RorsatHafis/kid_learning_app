@@ -155,3 +155,49 @@ export async function addChild(page: Page, name: string, dateOfBirth: string, su
 export async function openSubject(page: Page, subject: string) {
   await page.getByRole("link", { name: new RegExp(`^${subject}:`) }).click();
 }
+
+// ---- Y44: school services need a confirmed payment ----
+
+/** An access token for the E2E administrator, through the API. */
+export async function adminToken(request: APIRequestContext): Promise<string> {
+  const res = await request.post("/api/v1/auth/login", { data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD } });
+  expect(res.ok(), await res.text()).toBe(true);
+  return (await res.json()).accessToken as string;
+}
+
+/**
+ * A priced, active school plan the administrator can invoice (an E2E test plan, created once). Its price is a
+ * test value set here by the administrator, as a real price would be.
+ */
+export async function ensurePricedSchoolPlan(request: APIRequestContext, token: string): Promise<string> {
+  const auth = { Authorization: `Bearer ${token}` };
+  const plans = (await (await request.get("/api/v1/admin/plans", { headers: auth })).json()) as {
+    plan: { id: string; code: string; audience: string; status: string; price: unknown };
+  }[];
+  const existing = plans.find((p) => p.plan.code === "E2E_SCHOOL_YEAR" && p.plan.status === "ACTIVE");
+  if (existing) return existing.plan.id;
+  const created = await request.post("/api/v1/admin/plans", {
+    headers: auth,
+    data: { code: "E2E_SCHOOL_YEAR", name: "E2E school year", audience: "SCHOOL" },
+  });
+  expect(created.ok(), await created.text()).toBe(true);
+  const id = (await created.json()).plan.id as string;
+  const revised = await request.put(`/api/v1/admin/plans/${id}`, {
+    headers: auth,
+    data: { name: "E2E school year", description: null, selfService: false, priceAmountMinor: 12000, priceCurrency: "USD", billingInterval: "YEAR", limits: {} },
+  });
+  expect(revised.ok(), await revised.text()).toBe(true);
+  expect((await request.post(`/api/v1/admin/plans/${id}/activate`, { headers: auth })).ok()).toBe(true);
+  return id;
+}
+
+/** The id of the school with this name (an administrator sees every school). */
+export async function schoolIdByName(request: APIRequestContext, token: string, name: string): Promise<string> {
+  const schools = (await (await request.get("/api/v1/schools/mine", { headers: { Authorization: `Bearer ${token}` } })).json()) as {
+    id: string;
+    name: string;
+  }[];
+  const school = schools.find((s) => s.name === name);
+  expect(school, `school ${name}`).toBeTruthy();
+  return school!.id;
+}

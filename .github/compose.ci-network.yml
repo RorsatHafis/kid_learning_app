@@ -1,6 +1,15 @@
-# CI only: the stack's network with a configured subnet. scripts/verify-runtime.sh replaces the backend
-# while a placeholder holds its old address (docker run --ip), to prove the web front finds the new one;
-# Docker accepts --ip only on a network whose subnet is configured. Not used by the owner's local stack.
+# CI only, on top of docker-compose.yml (the owner's local stack never uses this file):
+# - the stack's network with a configured subnet: scripts/verify-runtime.sh replaces the backend while a placeholder
+#   holds its old address (docker run --ip), to prove the web front finds the new one, and Docker accepts --ip only
+#   on a network whose subnet is configured;
+# - bank-transfer payments switched on with clearly fake instructions (Y44): a school's services need a confirmed
+#   payment, so the school journey has an administrator invoice the school and confirm the transfer.
+services:
+  backend:
+    environment:
+      PAYMENTS_MANUAL_ENABLED: "true"
+      PAYMENTS_MANUAL_INSTRUCTIONS: "CI TEST INSTRUCTIONS - not a real account. Quote your payment reference."
+
 networks:
   default:
     ipam:

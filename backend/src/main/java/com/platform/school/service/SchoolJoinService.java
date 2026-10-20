@@ -170,6 +170,8 @@ public class SchoolJoinService {
         familyGuard.requireChildAccess(accountId, childId);
         spendLookup(accountId);
         SchoolClass schoolClass = classFor(code);
+        // Y44: a school that isn't paid takes no one into its classes (the family's own learning is unaffected).
+        schoolGuard.requirePaidSchool(schoolClass.getSchoolId());
         School school = schools.findById(schoolClass.getSchoolId()).orElseThrow();
         boolean hasAccess = grants.findBySchoolIdAndChildIdAndStatus(school.getId(), childId, SchoolChildAccessStatus.ACTIVE).isPresent();
         boolean inClass = hasAccess && classEnrollments.findMembers(schoolClass.getId()).stream()
@@ -193,6 +195,7 @@ public class SchoolJoinService {
         }
         spendLookup(accountId);
         SchoolClass schoolClass = classFor(code);
+        schoolGuard.requirePaidSchool(schoolClass.getSchoolId());
         Child child = children.findByIdForUpdate(childId).orElseThrow(() -> new ResourceNotFoundException("Child", childId));
         Instant now = Instant.now();
 

@@ -12,13 +12,13 @@ export function fullness(used: number, limit: number | null): "OK" | "NEARLY" | 
   return used >= limit * 0.8 ? "NEARLY" : "OK";
 }
 
-/** Where the plan comes from: arranged (until when), ended, or the schools' default. */
+/** Y44: the school's paid state in words - paid until when, a payment waiting, a paid period over, or never paid. */
 export function planSourceText(plan: SchoolPlan | OwnSchoolPlan, m: typeof schoolPlanMessages.en): string {
+  const access = plan.access;
+  if (access.paid) return access.paidUntil ? m.paidUntil(day(access.paidUntil)) : m.paidUntil("—");
+  if (access.paymentPending) return m.paymentPending;
   const sub = plan.subscription;
-  if (sub?.grantsAccess) {
-    return sub.currentPeriodEnd ? m.givenUntil(day(sub.startedAt), day(sub.currentPeriodEnd)) : m.givenOpen(day(sub.startedAt));
-  }
-  if (sub) return m.ended(sub.currentPeriodEnd ? day(sub.currentPeriodEnd) : null);
-  return m.onDefault;
+  if (sub?.source === "PROVIDER") return m.paidEnded(sub.currentPeriodEnd ? day(sub.currentPeriodEnd) : null);
+  return m.notPaid;
 }
 

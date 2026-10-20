@@ -33,8 +33,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Y35 over real HTTP against PostgreSQL: a school's plan limits what the school adds (teachers,
- * classes in use, children) and never removes what it already holds; storage is measured from what
+ * Y35 over real HTTP against PostgreSQL: a school's services need a confirmed, paid plan (Y44), and that plan
+ * limits what the school adds (teachers, classes in use, children) and never removes what it already holds; storage is measured from what
  * an author keeps, limited by their allowance in the real upload path, and an administrator's
  * exception to it is audited. Each school, author and plan sees only its own.
  */
@@ -58,29 +58,34 @@ class SchoolPlanAndStorageIntegrationTests {
     // ------------------------------------------------------------------ school plans
 
     @Test
-    void aSchoolWithoutASubscriptionHasTheSchoolDefaultAndPlansStayWithTheirAudience() throws Exception {
+    void anUnpaidSchoolHasNoPlanAdministratorsCantGiveOneAndPlansStayWithTheirAudience() throws Exception {
         User admin = user(PlatformRole.ADMIN);
         User principal = user(PlatformRole.PRINCIPAL);
         String schoolId = createSchool(principal);
 
+        // Y44: a new school isn't paid; its billing stays open to its principal, its services don't.
         JsonNode own = json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200);
-        assertThat(own.get("onDefaultPlan").asBoolean()).isTrue();
-        assertThat(own.get("plan").get("code").asString()).isEqualTo("SCHOOL_EARLY_ACCESS");
+        assertThat(own.get("access").get("paid").asBoolean()).isFalse();
+        assertThat(own.get("access").get("paymentPending").asBoolean()).isFalse();
         assertThat(own.get("plan").get("audience").asString()).isEqualTo("SCHOOL");
         assertThat(keys(own)).containsExactly("SCHOOL_CHILDREN_MAX", "SCHOOL_TEACHERS_MAX", "SCHOOL_CLASSES_MAX", "TEACHER_STORAGE_MB");
+        JsonNode refused = json(post("/api/v1/schools/" + schoolId + "/classes", "{\"name\":\"Grade 1A\"}", principal), 402);
+        assertThat(refused.get("schoolPaymentRequired").asBoolean()).isTrue();
+        assertThat(classCount(schoolId)).isZero();
 
         String schoolPlan = schoolPlan(admin, 1, 1, 1, 1);
         String familyPlan = familyPlan(admin);
-        // A limit of the other audience can't be set on a plan; a plan is given only to its own audience.
+        // A limit of the other audience can't be set on a plan.
         String draft = json(post("/api/v1/admin/plans", "{\"code\":\"S_" + suffix() + "\",\"name\":\"Draft\",\"audience\":\"SCHOOL\"}",
                 admin), 201).get("plan").get("id").asString();
         assertThat(put("/api/v1/admin/plans/" + draft, "{\"name\":\"Draft\",\"selfService\":false,\"limits\":{\"CHILDREN_MAX\":1}}",
                 admin).statusCode()).isEqualTo(400);
-        // Families ask only for family plans: a school plan can't be offered to them.
-        assertThat(put("/api/v1/admin/plans/" + draft, "{\"name\":\"Draft\",\"selfService\":true,\"limits\":{\"SCHOOL_CLASSES_MAX\":1}}",
+        // A plan is never given to a school without payment (Y44), nor invoiced across audiences.
+        assertThat(json(post("/api/v1/admin/schools/" + schoolId + "/subscription", "{\"planId\":\"" + schoolPlan + "\"}", admin), 409)
+                .get("detail").asString()).contains("invoice the school instead");
+        assertThat(post("/api/v1/admin/schools/" + schoolId + "/invoices", "{\"planId\":\"" + familyPlan + "\",\"idempotencyKey\":\"f\"}",
                 admin).statusCode()).isEqualTo(400);
-        assertThat(post("/api/v1/admin/schools/" + schoolId + "/subscription", "{\"planId\":\"" + familyPlan + "\"}", admin)
-                .statusCode()).isEqualTo(400);
+        assertThat(json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200).get("access").get("paid").asBoolean()).isFalse();
         String parentEmail = "y35-parent-" + UUID.randomUUID() + "@example.com";
         String parent = registerParent(parentEmail);
         String familyId = json(get("/api/v1/admin/families?parentEmail=" + parentEmail, admin), 200).get("familyId").asString();
@@ -91,36 +96,35 @@ class SchoolPlanAndStorageIntegrationTests {
             assertThat(choice.get("plan").get("audience").asString()).isEqualTo("FAMILY");
         }
 
-        // Only the school's principal (or an administrator) sees its plan; only an administrator changes it.
+        // Only the school's principal (or an administrator) sees its plan; only an administrator invoices it.
         User otherPrincipal = user(PlatformRole.PRINCIPAL);
         User teacher = user(PlatformRole.TEACHER);
         assertThat(get("/api/v1/schools/" + schoolId + "/plan", otherPrincipal).statusCode()).isEqualTo(403);
         assertThat(get("/api/v1/schools/" + schoolId + "/plan", teacher).statusCode()).isEqualTo(403);
         assertThat(get("/api/v1/schools/" + schoolId + "/plan", new User(null, null, parent)).statusCode()).isEqualTo(403);
-        assertThat(post("/api/v1/admin/schools/" + schoolId + "/subscription", "{\"planId\":\"" + schoolPlan + "\"}", principal)
-                .statusCode()).isEqualTo(403);
+        assertThat(post("/api/v1/admin/schools/" + schoolId + "/invoices", "{\"planId\":\"" + schoolPlan + "\",\"idempotencyKey\":\"p\"}",
+                principal).statusCode()).isEqualTo(403);
         assertThat(get("/api/v1/admin/schools/" + schoolId + "/subscription", principal).statusCode()).isEqualTo(403);
     }
 
     @Test
-    void aSchoolPlanLimitsWhatTheSchoolAddsAndEndingItRemovesNothing() throws Exception {
+    void aPaidSchoolPlanLimitsWhatTheSchoolAddsAndARefundStopsServicesButRemovesNothing() throws Exception {
         User admin = user(PlatformRole.ADMIN);
         User principal = user(PlatformRole.PRINCIPAL);
         String schoolId = createSchool(principal);
-        String classA = createClass(principal, schoolId, "Grade 1A");
         String plan = schoolPlan(admin, 1, 1, 1, 50);
+        String paid = pay(admin, schoolId, plan);
 
-        JsonNode granted = json(post("/api/v1/admin/schools/" + schoolId + "/subscription",
-                "{\"planId\":\"" + plan + "\",\"note\":\"Pilot school\"}", admin), 200);
-        assertThat(granted.get("onDefaultPlan").asBoolean()).isFalse();
-        assertThat(granted.get("subscription").get("note").asString()).isEqualTo("Pilot school");
         JsonNode own = json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200);
+        assertThat(own.get("access").get("paid").asBoolean()).isTrue();
+        assertThat(own.get("onDefaultPlan").asBoolean()).isFalse();
         assertThat(own.get("subscription").has("note")).as("the operator's note is not the principal's").isFalse();
-        assertThat(entitlement(own, "SCHOOL_CLASSES_MAX").get("used").asInt()).isEqualTo(1);
+        String classA = createClass(principal, schoolId, "Grade 1A");
+        assertThat(entitlement(json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200), "SCHOOL_CLASSES_MAX")
+                .get("used").asInt()).isEqualTo(1);
 
         // Classes: one in use; a second is refused, and nothing is created.
-        HttpResponse<String> second = post("/api/v1/schools/" + schoolId + "/classes", "{\"name\":\"Grade 1B\"}", principal);
-        JsonNode refused = json(second, 409);
+        JsonNode refused = json(post("/api/v1/schools/" + schoolId + "/classes", "{\"name\":\"Grade 1B\"}", principal), 409);
         assertThat(refused.get("title").asString()).isEqualTo("Plan Limit Reached");
         assertThat(refused.get("entitlement").asString()).isEqualTo("SCHOOL_CLASSES_MAX");
         assertThat(classCount(schoolId)).isEqualTo(1);
@@ -147,24 +151,33 @@ class SchoolPlanAndStorageIntegrationTests {
         assertThat(json(join(two, code), 409).get("entitlement").asString()).isEqualTo("SCHOOL_CHILDREN_MAX");
         assertThat(access(schoolId, two.childId())).isZero();
 
-        // Ending the subscription: the school's default applies again; everything it holds stays.
-        json(post("/api/v1/admin/schools/" + schoolId + "/subscription/end", "{\"reason\":\"Pilot over\"}", admin), 200);
-        assertThat(json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200).get("onDefaultPlan").asBoolean()).isTrue();
+        // Refunded: the school's services stop at once - for its principal, its teachers and families joining -
+        // and everything it holds stays.
+        json(post("/api/v1/admin/payments/" + paid + "/refund", "{\"reason\":\"Refund agreed\"}", admin), 200);
+        assertThat(json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200).get("access").get("paid").asBoolean()).isFalse();
+        assertThat(post("/api/v1/schools/" + schoolId + "/classes", "{\"name\":\"Grade 2\"}", principal).statusCode()).isEqualTo(402);
+        assertThat(get("/api/v1/schools/classes/" + classB + "/children", principal).statusCode()).isEqualTo(402);
+        assertThat(join(two, code).statusCode()).isEqualTo(402);
         assertThat(access(schoolId, one.childId())).isEqualTo(1);
+        assertThat(classCount(schoolId)).isEqualTo(2);
+
+        // Paid again on a roomier plan: everything is back, and the school can grow.
+        pay(admin, schoolId, schoolPlan(admin, 10, 10, 10, 50));
         assertThat(join(two, code).statusCode()).isEqualTo(200);
         assertThat(invite(principal, schoolId, secondTeacher).statusCode()).isEqualTo(201);
         assertThat(post("/api/v1/schools/classes/" + classA + "/restore", "", principal).statusCode()).isEqualTo(200);
 
-        // A plan given again with lower limits never removes anything: it only stops new additions.
-        json(post("/api/v1/admin/schools/" + schoolId + "/subscription", "{\"planId\":\"" + plan + "\"}", admin), 200);
+        // Paid on the smaller plan again: lower limits never remove anything; they only stop new additions.
+        pay(admin, schoolId, plan);
         JsonNode over = json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200);
         assertThat(entitlement(over, "SCHOOL_CHILDREN_MAX").get("used").asInt()).isEqualTo(2);
         assertThat(entitlement(over, "SCHOOL_CLASSES_MAX").get("used").asInt()).isEqualTo(2);
         assertThat(access(schoolId, two.childId())).isEqualTo(1);
+        assertThat(post("/api/v1/schools/" + schoolId + "/classes", "{\"name\":\"Grade 3\"}", principal).statusCode()).isEqualTo(409);
 
-        assertThat(jdbc.queryForObject("select count(*) from audit_events where action in "
-                + "('SCHOOL_SUBSCRIPTION_GRANTED', 'SCHOOL_SUBSCRIPTION_ENDED') and actor_id = ?::uuid", Integer.class, admin.id()))
-                .isEqualTo(3);
+        // Each confirmation is the administrator's, audited with the receipt.
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'PAYMENT_CONFIRMED' and actor_id = ?::uuid",
+                Integer.class, admin.id())).isEqualTo(3);
     }
 
     // ------------------------------------------------------------------ storage
@@ -250,8 +263,7 @@ class SchoolPlanAndStorageIntegrationTests {
         User principal = user(PlatformRole.PRINCIPAL);
         User teacher = user(PlatformRole.TEACHER);
         String schoolId = createSchool(principal);
-        json(post("/api/v1/admin/schools/" + schoolId + "/subscription", "{\"planId\":\"" + schoolPlan(admin, 10, 10, 10, 3) + "\"}",
-                admin), 200);
+        pay(admin, schoolId, schoolPlan(admin, 10, 10, 10, 3));
         assertThat(invite(principal, schoolId, teacher).statusCode()).isEqualTo(201);
         for (JsonNode invitation : json(get("/api/v1/schools/invitations/mine", teacher), 200)) {
             post("/api/v1/schools/invitations/" + invitation.get("id").asString() + "/accept", "", teacher);
@@ -355,12 +367,21 @@ class SchoolPlanAndStorageIntegrationTests {
     private String schoolPlan(User admin, int children, int teachers, int classes, int storageMb) throws Exception {
         String planId = json(post("/api/v1/admin/plans", "{\"code\":\"SCHOOL_" + suffix() + "\",\"name\":\"School test plan\","
                 + "\"audience\":\"SCHOOL\"}", admin), 201).get("plan").get("id").asString();
-        json(put("/api/v1/admin/plans/" + planId, "{\"name\":\"School test plan\",\"selfService\":false,\"limits\":{"
+        json(put("/api/v1/admin/plans/" + planId, "{\"name\":\"School test plan\",\"selfService\":false,\"priceAmountMinor\":12000,"
+                + "\"priceCurrency\":\"USD\",\"billingInterval\":\"YEAR\",\"limits\":{"
                 + "\"SCHOOL_CHILDREN_MAX\":" + children + ",\"SCHOOL_TEACHERS_MAX\":" + teachers + ",\"SCHOOL_CLASSES_MAX\":" + classes
                 + ",\"TEACHER_STORAGE_MB\":" + storageMb + "}}", admin), 200);
         JsonNode active = json(post("/api/v1/admin/plans/" + planId + "/activate", "{}", admin), 200);
         assertThat(active.get("plan").get("audience").asString()).isEqualTo("SCHOOL");
         return planId;
+    }
+
+    /** Y44: a school is paid as a real one is - invoiced by an administrator, confirmed against the receipt. Returns the order. */
+    private String pay(User admin, String schoolId, String planId) throws Exception {
+        String orderId = json(post("/api/v1/admin/schools/" + schoolId + "/invoices", "{\"planId\":\"" + planId
+                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", admin), 201).get("id").asString();
+        json(post("/api/v1/admin/payments/" + orderId + "/confirm", "{\"receiptReference\":\"BANK-" + suffix() + "\"}", admin), 200);
+        return orderId;
     }
 
     private String familyPlan(User admin) throws Exception {

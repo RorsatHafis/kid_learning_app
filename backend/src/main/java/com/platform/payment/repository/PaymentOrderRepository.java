@@ -44,4 +44,16 @@ public interface PaymentOrderRepository extends JpaRepository<PaymentOrder, UUID
 
     List<PaymentOrder> findByStatusAndExpiresAtBefore(PaymentStatus status, Instant now);
 
+    /**
+     * Whether a confirmed payment of the school covers {@code now} (Y44): a succeeded order whose paid
+     * period contains it. A test payment counts only where test payments are switched on.
+     */
+    @Query("""
+            select count(o) > 0 from PaymentOrder o
+            where o.schoolId = :schoolId and o.status = com.platform.payment.entity.PaymentStatus.SUCCEEDED
+              and o.periodStart <= :now and o.periodEnd > :now
+              and (:simulatedCounts = true or o.provider <> com.platform.payment.entity.PaymentProviderType.DEV_SIMULATOR)
+            """)
+    boolean schoolPaidAt(@Param("schoolId") UUID schoolId, @Param("now") Instant now, @Param("simulatedCounts") boolean simulatedCounts);
+
 }

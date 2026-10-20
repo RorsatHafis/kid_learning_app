@@ -8,6 +8,8 @@ import { TeachingTools } from "./TeachingTools";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { staffMessages } from "@/features/school/staff.messages";
+import { schoolPlanMessages } from "@/features/school/plan.messages";
+import { PauseCircle } from "lucide-react";
 
 /** Classes grouped by school, in the server's order (school, then class name). */
 function bySchool(classes: ClassOverview[]) {
@@ -27,6 +29,7 @@ function bySchool(classes: ClassOverview[]) {
 export function TeacherHome() {
   const { data, error, isLoading, refetch } = useAsync(() => staffOverviewApi.get(), []);
   const m = useMessages(staffMessages).teacher;
+  const plan = useMessages(schoolPlanMessages);
   useDocumentTitle(m.title);
   const groups = data ? bySchool(data.classes) : [];
 
@@ -46,7 +49,14 @@ export function TeacherHome() {
           {isLoading && !data && <LoadingState label={m.loading} />}
           {error && <ErrorState error={error} onRetry={refetch} />}
 
-          {data && data.classes.length === 0 && <EmptyState title={m.none} description={m.noneLead} />}
+          {/* Y44: a school whose services wait for payment is named, not hidden; its classes come back once it's paid. */}
+          {(data?.unpaid ?? []).map((school) => (
+            <p key={school.schoolId} role="status" className="flex gap-2 rounded-[14px] bg-light-soft/60 px-4 py-3 text-sm leading-relaxed text-ink ring-1 ring-light/40">
+              <PauseCircle size={18} aria-hidden className="mt-0.5 shrink-0 text-light-deep" />
+              <span>{plan.teacherPaused(school.name)}</span>
+            </p>
+          ))}
+          {data && data.classes.length === 0 && !data.unpaid?.length && <EmptyState title={m.none} description={m.noneLead} />}
 
           {groups.map(([schoolId, group]) => (
             <section key={schoolId} aria-labelledby={`school-${schoolId}`} className="flex flex-col gap-2">

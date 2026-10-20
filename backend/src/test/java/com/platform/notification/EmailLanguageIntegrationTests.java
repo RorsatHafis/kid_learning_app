@@ -1,6 +1,7 @@
 package com.platform.notification;
 
 import com.icegreen.greenmail.util.GreenMail;
+import com.platform.PaidSchools;
 import com.platform.TestcontainersConfiguration;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
@@ -48,6 +49,7 @@ class EmailLanguageIntegrationTests {
     private static final Pattern LINK = Pattern.compile("(http://localhost:5173/[a-z-]+)#token=([A-Za-z0-9_-]+)");
 
     @Value("${local.server.port}") private int port;
+    @Autowired private org.springframework.context.ApplicationContext context;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private GreenMail greenMail;
     @Autowired private AccountRepository accountRepository;
@@ -94,6 +96,7 @@ class EmailLanguageIntegrationTests {
     void aNewlyInvitedTeacherStartsInTheLanguageTheInviterIsUsing() throws Exception {
         String principal = token(PlatformRole.PRINCIPAL, "en");
         String schoolId = json(post("/api/v1/schools", "{\"name\":\"Sala Sunrise\"}", principal, null), 201).get("id").asString();
+        PaidSchools.pay(context, UUID.fromString(schoolId));
 
         String khmerInvitee = "invitee-km-" + UUID.randomUUID() + "@example.com";
         json(post("/api/v1/schools/" + schoolId + "/staff", "{\"email\":\"" + khmerInvitee + "\"}", principal, "km"), 201);

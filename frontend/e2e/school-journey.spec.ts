@@ -1,5 +1,20 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, addChild, crawl, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail, workspaceLink } from "./support";
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  PASSWORD,
+  addChild,
+  adminToken,
+  ensurePricedSchoolPlan,
+  crawl,
+  expectNoViolations,
+  linkIn,
+  logIn,
+  schoolIdByName,
+  uniqueEmail,
+  waitForEmail,
+  workspaceLink,
+} from "./support";
 
 /**
  * The school side end to end: a principal applies, an administrator approves, the principal sets
@@ -55,6 +70,28 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await expectNoViolations(page, "principal: set up school");
   await page.getByLabel("School name").fill(schoolName);
   await page.getByRole("button", { name: "Create school" }).click();
+
+  // Y44: a new school's services wait for payment - said plainly, with the way to pay, and nothing of the school shown.
+  await expect(page.getByRole("heading", { name: `${schoolName}'s subscription needs payment` })).toBeVisible();
+  await expectNoViolations(page, "principal: school waiting for payment");
+  // The administrator invoices the school and confirms the transfer against its receipt.
+  const token = await adminToken(request);
+  await ensurePricedSchoolPlan(request, token);
+  const schoolId = await schoolIdByName(request, token, schoolName);
+  const billingContext = await browser.newContext();
+  const billing = await billingContext.newPage();
+  await logIn(billing, ADMIN_EMAIL, ADMIN_PASSWORD);
+  await expect(billing).toHaveURL(/\/admin/);
+  await billing.goto(`/admin/schools/${schoolId}`);
+  await billing.getByRole("combobox", { name: "School plan" }).selectOption({ label: "E2E school year · $120.00 / year" });
+  await billing.getByRole("button", { name: "Create invoice" }).click();
+  await billing.getByRole("status").getByRole("link", { name: "Payments" }).click();
+  await billing.getByLabel("Receipt reference").fill(`E2E-RECEIPT-${Date.now()}`);
+  await billing.getByRole("button", { name: "Confirm payment received" }).click();
+  await expect(billing.getByText("Done. The payment and the plan are up to date.")).toBeVisible();
+  await expectNoViolations(billing, "admin: payment confirmed");
+  await billingContext.close();
+
   // Y37: the school's classes and teachers each have their own page.
   await workspaceLink(page, "Classes");
   await page.getByLabel("New class").fill("Grade 1 A");

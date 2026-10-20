@@ -1,5 +1,6 @@
 package com.platform.school;
 
+import com.platform.PaidSchools;
 import com.platform.TestcontainersConfiguration;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
@@ -56,6 +57,7 @@ class SchoolReadScalingIntegrationTests {
     private static final String PASSWORD = "School-Scaling-Pass-2026";
 
     @Value("${local.server.port}") private int port;
+    @Autowired private org.springframework.context.ApplicationContext context;
     @Autowired private EntityManagerFactory entityManagerFactory;
     @Autowired private AccountRepository accountRepository;
     @Autowired private PasswordEncoder passwordEncoder;
@@ -72,6 +74,7 @@ class SchoolReadScalingIntegrationTests {
         UUID teacherId = account(PlatformRole.TEACHER);
         String teacher = token(teacherId);
         School school = schoolService.createSchool("Scaling School", principalId);
+        PaidSchools.pay(context, school.getId());
         SchoolClass schoolClass = schoolService.createClass(school.getId(), "Grade 1");
         SchoolStaff membership = SchoolStaff.invite(school.getId(), teacherId, principalId, Instant.now());
         membership.accept(Instant.now());

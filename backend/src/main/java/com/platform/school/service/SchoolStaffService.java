@@ -308,6 +308,8 @@ public class SchoolStaffService {
             throw new IllegalStateException("This school is archived: no one can join it until its principal restores it.");
         }
         if (accept) {
+            // Y44: joining a school's staff is a school service; declining stays open.
+            entitlements.requirePaid(membership.getSchoolId());
             membership.accept(now);
         } else {
             membership.decline(now);

@@ -147,7 +147,7 @@ public class SubscriptionController {
     /** The school's plan and what it holds, for its principal (or an administrator). */
     @GetMapping("/api/v1/schools/{schoolId}/plan")
     public SubscriptionDtos.OwnSchoolPlanResponse schoolPlan(@AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId) {
-        schoolGuard.requireSchoolManage(accountId, schoolId);
+        schoolGuard.requireSchoolBilling(accountId, schoolId);
         return SubscriptionDtos.OwnSchoolPlanResponse.of(service.schoolView(schoolId));
     }
 

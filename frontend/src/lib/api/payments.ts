@@ -51,6 +51,17 @@ export interface PaymentOrder {
   admin: { familyId: string | null; providerReference: string | null; planVersion: number; ledger: LedgerEntry[] } | null;
 }
 
+/** A school plan its principal may renew, at the plan's own price. */
+export interface SchoolPlanChoice {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  amountMinor: number;
+  currency: string;
+  billingInterval: BillingInterval;
+}
+
 export interface PaymentOrderPage {
   items: PaymentOrder[];
   total: number;
@@ -77,6 +88,10 @@ export const paymentsApi = {
   simulate: (orderId: string, outcome: "SUCCEEDED" | "FAILED" | "CANCELLED") =>
     apiClient.post<PaymentOrder>(`/payments/${orderId}/simulate`, { outcome }),
   schoolOrders: (schoolId: string) => apiClient.get<PaymentOrder[]>(`/schools/${schoolId}/payments`),
+  /** Y44: what the principal may renew (the school's own paid plan), and renewing it. */
+  schoolRenewals: (schoolId: string) => apiClient.get<SchoolPlanChoice[]>(`/schools/${schoolId}/payment-plans`),
+  renewSchool: (schoolId: string, planId: string, method: PaymentMethod, idempotencyKey: string) =>
+    apiClient.post<PaymentOrder>(`/schools/${schoolId}/payments`, { planId, method, idempotencyKey }),
 };
 
 export const adminPaymentsApi = {

@@ -37,8 +37,8 @@ const SCHOOL = { id: "s1", name: "Sunrise Primary", principalAccountId: "p1", ar
 
 const NO_LEARNING = { schoolId: "s1", schoolName: "Sunrise Primary", weeks: 4, classes: [] };
 
-/** GET /schools/{id}/plan: the schools' default plan, nothing limited. */
-function schoolPlan(entitlements: { key: string; limit: number | null; used: number | null }[], onDefaultPlan = true) {
+/** GET /schools/{id}/plan: a paid school (Y44: its services need a confirmed payment); unlimited unless given limits. */
+function schoolPlan(entitlements: { key: string; limit: number | null; used: number | null }[], onDefaultPlan = true, paid = true) {
   return {
     schoolId: "s1",
     schoolName: "Sunrise Primary",
@@ -58,13 +58,14 @@ function schoolPlan(entitlements: { key: string; limit: number | null; used: num
       ? null
       : {
           status: "ACTIVE",
-          source: "ADMIN_GRANT",
+          source: "PROVIDER",
           startedAt: "2026-09-01T00:00:00Z",
-          currentPeriodEnd: null,
+          currentPeriodEnd: "2027-09-01T00:00:00Z",
           cancelAtPeriodEnd: false,
           grantsAccess: true,
         },
     entitlements,
+    access: { paid, paidUntil: paid ? "2027-09-01T00:00:00Z" : null, paymentPending: false },
   };
 }
 
@@ -85,9 +86,11 @@ const EMPTY_OVERVIEW = {
       classesWithoutTeacher: 0,
       classesWithoutCurriculum: 0,
       classesWithoutOpenCode: 0,
+      paid: true,
     },
   ],
   classes: [],
+  unpaid: [],
 };
 
 function classOverview(over: Record<string, unknown>) {
@@ -239,7 +242,7 @@ describe("PrincipalHome", () => {
 
     const plan = await screen.findByRole("region", { name: "Your school's plan" });
     expect(await within(plan).findByText("School early access")).toBeInTheDocument();
-    expect(within(plan).getByText(/Arranged with the Bookeyond team on/)).toBeInTheDocument();
+    expect(within(plan).getByText(/Paid until .*The school's services are on/)).toBeInTheDocument();
     expect(within(plan).getByRole("meter", { name: "Classes in use" })).toHaveAttribute("aria-valuenow", "3");
     expect(within(plan).getByText("3 of 3")).toBeInTheDocument();
     expect(within(plan).getByText("Full: new ones wait until a place is free.")).toBeInTheDocument();
@@ -248,6 +251,35 @@ describe("PrincipalHome", () => {
     await user.type(screen.getByLabelText("New class"), "Grade 4");
     await user.click(screen.getByRole("button", { name: "Add class" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Your school's plan includes up to 3 classes in use.");
+  });
+
+  it("shows an unpaid school's way to pay instead of its classes, and reads nothing of them (Y44)", async () => {
+    const calls = server({
+      "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/plan": respond(200, schoolPlan(SCHOOL_PLAN.entitlements, false, false)),
+      "GET /schools/s1/payment-plans": respond(200, [
+        { id: "yp", code: "SCHOOL_YEAR", name: "School year", description: null, amountMinor: 12000, currency: "USD", billingInterval: "YEAR" },
+      ]),
+      "GET /payments/methods": respond(200, { methods: ["MANUAL"] }),
+      "GET /schools/s1/payments": respond(200, []),
+      "POST /schools/s1/payments": respond(201, {}),
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PrincipalClassesPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Sunrise Primary's subscription needs payment" })).toBeInTheDocument();
+    expect(screen.getByText(/Nothing is deleted, and families' own learning carries on/)).toBeInTheDocument();
+    expect(calls.some((c) => c.path === "/schools/s1/classes")).toBe(false);
+
+    await user.click(await screen.findByRole("button", { name: /Renew School year/ }));
+    const started = calls.find((c) => c.method === "POST" && c.path === "/schools/s1/payments");
+    expect(started?.body).toMatchObject({ planId: "yp", method: "MANUAL" });
+    expect(Object.keys(started?.body as object).sort()).toEqual(["idempotencyKey", "method", "planId"]);
+    expect(await screen.findByRole("status")).toHaveTextContent(/The payment has started/);
   });
 
   it("confirms before removing a teacher", async () => {

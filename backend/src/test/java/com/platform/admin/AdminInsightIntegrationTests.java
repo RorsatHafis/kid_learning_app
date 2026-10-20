@@ -1,5 +1,6 @@
 package com.platform.admin;
 
+import com.platform.PaidSchools;
 import com.platform.TestcontainersConfiguration;
 import com.platform.identity.entity.Account;
 import com.platform.identity.entity.PlatformRole;
@@ -49,6 +50,7 @@ class AdminInsightIntegrationTests {
             "/api/v1/admin/reports/weekly", "/api/v1/admin/system");
 
     @Value("${local.server.port}") private int port;
+    @Autowired private org.springframework.context.ApplicationContext context;
     @Autowired private AccountRepository accountRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private SchoolService schoolService;
@@ -80,6 +82,7 @@ class AdminInsightIntegrationTests {
         Staff teacher = staff(PlatformRole.TEACHER);
         String tag = UUID.randomUUID().toString().substring(0, 8);
         School school = schoolService.createSchool("Insight School " + tag, principal.id());
+        PaidSchools.pay(context, school.getId());
         SchoolClass taught = schoolService.createClass(school.getId(), "Grade 1 " + tag);
         schoolService.createClass(school.getId(), "Grade 2 " + tag);
         SchoolStaff membership = SchoolStaff.invite(school.getId(), teacher.id(), principal.id(), Instant.now());

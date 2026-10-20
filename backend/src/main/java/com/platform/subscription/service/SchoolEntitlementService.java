@@ -2,6 +2,9 @@ package com.platform.subscription.service;
 
 import com.platform.common.entity.CatalogStatus;
 import com.platform.common.web.ResourceNotFoundException;
+import com.platform.payment.config.PaymentProperties;
+import com.platform.payment.entity.PaymentStatus;
+import com.platform.payment.repository.PaymentOrderRepository;
 import com.platform.school.entity.SchoolChildAccessStatus;
 import com.platform.school.entity.SchoolStaff;
 import com.platform.school.entity.SchoolStaffStatus;
@@ -11,8 +14,10 @@ import com.platform.school.repository.SchoolRepository;
 import com.platform.school.repository.SchoolStaffRepository;
 import com.platform.subscription.entity.EntitlementKey;
 import com.platform.subscription.entity.PlanAudience;
+import com.platform.subscription.entity.PlanStatus;
 import com.platform.subscription.entity.SchoolSubscription;
 import com.platform.subscription.entity.SubscriptionPlan;
+import com.platform.subscription.entity.SubscriptionSource;
 import com.platform.subscription.repository.SchoolSubscriptionRepository;
 import com.platform.subscription.repository.SubscriptionPlanRepository;
 import org.springframework.stereotype.Service;
@@ -28,12 +33,18 @@ import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
- * What a school may hold now (V59), the school counterpart of {@link EntitlementService}: its
- * effective plan is the one its subscription grants at this moment, or the schools' default plan,
- * resolved on every read. Limits apply only where a school adds something - a teacher, a class in
- * use, a child - under a lock on the school row, so two requests can't both take its last place.
- * Nothing a school already has is ever taken away: over a limit after a downgrade, it keeps what it
- * has and can't add more until it is back under.
+ * What a school may use and hold now (V59, Y44), the school counterpart of {@link EntitlementService}.
+ * <p>
+ * <b>School services are paid (Y44).</b> A school may use them only while a subscription backed by a
+ * confirmed payment is in force: a provider-sourced subscription within its period, on an active school
+ * plan, and a succeeded payment order whose paid period covers this moment. A plan given by an
+ * administrator, the schools' default plan, a requested plan or a pending, failed, cancelled, expired or
+ * refunded payment grants nothing; a test payment counts only where test payments are switched on (never
+ * in production). Nothing the school holds is deleted when it isn't paid.
+ * <p>
+ * Limits apply only where a school adds something - a teacher, a class in use, a child - under a lock on
+ * the school row, so two requests can't both take its last place. Over a limit after a downgrade, a
+ * school keeps what it has and can't add more until it is back under.
  */
 @Service
 public class SchoolEntitlementService {
@@ -48,10 +59,13 @@ public class SchoolEntitlementService {
     private final SchoolStaffRepository staff;
     private final SchoolClassRepository classes;
     private final SchoolChildAccessRepository access;
+    private final PaymentOrderRepository orders;
+    private final PaymentProperties payments;
 
     public SchoolEntitlementService(SubscriptionPlanRepository plans, SchoolSubscriptionRepository subscriptions,
                                     EntitlementService entitlements, SchoolRepository schools, SchoolStaffRepository staff,
-                                    SchoolClassRepository classes, SchoolChildAccessRepository access) {
+                                    SchoolClassRepository classes, SchoolChildAccessRepository access,
+                                    PaymentOrderRepository orders, PaymentProperties payments) {
         this.plans = plans;
         this.subscriptions = subscriptions;
         this.entitlements = entitlements;
@@ -59,6 +73,50 @@ public class SchoolEntitlementService {
         this.staff = staff;
         this.classes = classes;
         this.access = access;
+        this.orders = orders;
+        this.payments = payments;
+    }
+
+    /**
+     * Whether the school may use its school services now (Y44).
+     *
+     * @param paid           a confirmed, paid subscription is in force
+     * @param paidUntil      when the paid period ends (null when not paid)
+     * @param paymentPending a payment of the school is waiting to be confirmed (it grants nothing yet)
+     */
+    public record SchoolAccess(boolean paid, Instant paidUntil, boolean paymentPending) {
+    }
+
+    @Transactional(readOnly = true)
+    public SchoolAccess access(UUID schoolId) {
+
+        Instant now = Instant.now();
+        Optional<SchoolSubscription> paid = paidSubscription(schoolId, now);
+        boolean pending = orders.findFirstBySchoolIdAndStatus(schoolId, PaymentStatus.PENDING).filter(o -> !o.isPastExpiry(now)).isPresent();
+        return new SchoolAccess(paid.isPresent(), paid.map(SchoolSubscription::getCurrentPeriodEnd).orElse(null), pending);
+
+    }
+
+    /** Refuses a school service (402) unless the school's paid subscription is in force. */
+    @Transactional(readOnly = true)
+    public void requirePaid(UUID schoolId) {
+
+        if (paidSubscription(schoolId, Instant.now()).isEmpty()) {
+            throw new SchoolPaymentRequiredException(schoolId);
+        }
+
+    }
+
+    /** The subscription that makes the school paid at {@code at}, if one does. */
+    private Optional<SchoolSubscription> paidSubscription(UUID schoolId, Instant at) {
+
+        return subscriptions.findBySchoolId(schoolId)
+                .filter(s -> s.getSource() == SubscriptionSource.PROVIDER && s.grantsAccessAt(at))
+                .filter(s -> plans.findById(s.getPlanId())
+                        .filter(plan -> plan.getAudience() == PlanAudience.SCHOOL && plan.getStatus() != PlanStatus.DRAFT)
+                        .isPresent())
+                .filter(s -> orders.schoolPaidAt(schoolId, at, payments.devSimulator().enabled()));
+
     }
 
     /**
@@ -82,7 +140,8 @@ public class SchoolEntitlementService {
     @Transactional(readOnly = true)
     public SchoolPlan effectivePlan(UUID schoolId, Instant at) {
         Optional<SchoolSubscription> subscription = subscriptions.findBySchoolId(schoolId);
-        Optional<SubscriptionPlan> granted = subscription.filter(s -> s.grantsAccessAt(at)).flatMap(s -> plans.findById(s.getPlanId()));
+        // Y44: only a paid subscription gives a school its plan.
+        Optional<SubscriptionPlan> granted = paidSubscription(schoolId, at).flatMap(s -> plans.findById(s.getPlanId()));
         SubscriptionPlan plan = granted.orElseGet(() -> entitlements.defaultPlan(PlanAudience.SCHOOL));
         return new SchoolPlan(plan, subscription, granted.isPresent(), entitlements.limitsOf(plan.getId()));
     }

@@ -469,6 +469,9 @@ export interface ApiProblem {
   lockedUntil?: string;
   /** 429 only (security/ratelimit/AuthRateLimitFilter.java), mirrors Retry-After. */
   retryAfterSeconds?: number;
+  /** 402 only (Y44, SchoolPaymentRequiredException): the school's services wait for payment. */
+  schoolPaymentRequired?: boolean;
+  schoolId?: string;
   /** 409 "Plan Limit Reached" only: which entitlement and its limit (PlanLimitException). */
   entitlement?: string;
   limit?: number;

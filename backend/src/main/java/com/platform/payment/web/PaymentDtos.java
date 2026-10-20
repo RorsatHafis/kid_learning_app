@@ -48,6 +48,19 @@ public final class PaymentDtos {
     public record MethodsResponse(List<PaymentProviderType> methods) {
     }
 
+    /** A school plan a principal may pay for (Y44): its price is the plan's own, set by an administrator. */
+    public record SchoolPlanChoice(UUID id, String code, String name, String description, long amountMinor, String currency,
+                                   String billingInterval) {
+
+        public static SchoolPlanChoice of(com.platform.subscription.entity.SubscriptionPlan plan) {
+
+            return new SchoolPlanChoice(plan.getId(), plan.getCode(), plan.getName(), plan.getDescription(),
+                    plan.getPriceAmountMinor(), plan.getPriceCurrency(), plan.getBillingInterval().name());
+
+        }
+
+    }
+
     /** The order as the customer sees it; {@code checkout} only while it can be paid. */
     public record OrderResponse(UUID id, String reference, String customerType, UUID schoolId, String planCode, String planName,
                                 long amountMinor, String currency, String billingInterval, Map<String, Integer> limits,

@@ -38,6 +38,11 @@ export class ApiError extends Error {
     return this.status === 409 && typeof this.problem?.entitlement === "string";
   }
 
+  /** 402 (Y44): the school's services wait for its subscription to be paid. */
+  get isSchoolPaymentRequired() {
+    return this.status === 402 && this.problem?.schoolPaymentRequired === true;
+  }
+
   /** 429: the server's per-network budget for sign-in, registration or refresh ran out. */
   get isRateLimited() {
     return this.status === 429;

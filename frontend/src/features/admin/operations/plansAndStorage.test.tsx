@@ -116,36 +116,16 @@ const ADMIN_VIEW = {
     { key: "SCHOOL_CLASSES_MAX", limit: null, used: 3 },
     { key: "TEACHER_STORAGE_MB", limit: 1024, used: null },
   ],
+  access: { paid: false, paidUntil: null, paymentPending: false },
 };
 
 describe("SchoolPlanPanel", () => {
-  it("gives only active school plans, then ends the plan only with a reason", async () => {
-    const granted = {
-      ...ADMIN_VIEW,
-      plan: PLANS[3].plan,
-      onDefaultPlan: false,
-      subscription: {
-        id: "sub1",
-        status: "ACTIVE",
-        source: "ADMIN_GRANT",
-        startedAt: "2026-10-16T00:00:00Z",
-        currentPeriodEnd: null,
-        cancelAtPeriodEnd: false,
-        note: "Pilot",
-        grantsAccess: true,
-      },
-      entitlements: [
-        { key: "SCHOOL_CHILDREN_MAX", limit: 5, used: 14 },
-        { key: "SCHOOL_TEACHERS_MAX", limit: 5, used: 2 },
-        { key: "SCHOOL_CLASSES_MAX", limit: 5, used: 3 },
-        { key: "TEACHER_STORAGE_MB", limit: 1024, used: null },
-      ],
-    };
+  it("says the school isn't paid, offers no plan without payment, and invoices a priced school plan (Y44)", async () => {
+    const priced = plan("year", "SCHOOL", { name: "School year", price: { amountMinor: 12000, currency: "USD", interval: "YEAR" } });
     const calls = server({
       "GET /admin/schools/s1/subscription": respond(200, ADMIN_VIEW),
-      "GET /admin/plans": respond(200, PLANS),
-      "POST /admin/schools/s1/subscription": respond(200, granted),
-      "POST /admin/schools/s1/subscription/end": respond(200, { ...ADMIN_VIEW, subscription: { ...granted.subscription, status: "EXPIRED", grantsAccess: false } }),
+      "GET /admin/plans": respond(200, [...PLANS, priced]),
+      "POST /admin/schools/s1/invoices": respond(201, { id: "o1", reference: "BKINVOICE0001" }),
       "GET /admin/audit-events": respond(200, NO_HISTORY),
     });
     const user = userEvent.setup();
@@ -155,23 +135,16 @@ describe("SchoolPlanPanel", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText(/No plan has been arranged for this school/)).toBeInTheDocument();
-    const choice = await screen.findByRole("combobox", { name: "Plan" });
-    expect(within(choice).getAllByRole("option").map((o) => o.textContent)).toEqual(["School pilot"]);
-    await user.type(screen.getByLabelText("Note for administrators (optional)"), "Pilot");
-    await user.click(screen.getByRole("button", { name: "Give the plan" }));
-    expect(calls.find((c) => c.method === "POST")?.body).toEqual({ planId: "pilot", periodEnd: null, note: "Pilot" });
-    expect(await screen.findByRole("status")).toHaveTextContent("School pilot given, with no end date.");
-    // A school over a lowered limit keeps everything; the line says so.
-    expect(screen.getByText(/More than the plan includes: everything stays/)).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "End the plan…" }));
-    const form = screen.getByRole("form", { name: "End the plan…" });
-    expect(within(form).getByText(/Nothing the school holds is removed/)).toBeInTheDocument();
-    expect(within(form).getByRole("button", { name: "End it now" })).toBeDisabled();
-    await user.type(within(form).getByLabelText("Why (kept in the history)"), "Pilot over");
-    await user.click(within(form).getByRole("button", { name: "End it now" }));
-    expect(calls.find((c) => c.path.endsWith("/end"))?.body).toEqual({ reason: "Pilot over" });
+    expect(await screen.findByText(/This school hasn't paid for a plan yet/)).toBeInTheDocument();
+    // No way to give a plan without payment: the only choice is an invoice at a priced school plan.
+    expect(screen.queryByRole("button", { name: /Give the plan/ })).not.toBeInTheDocument();
+    const choice = await screen.findByRole("combobox", { name: "School plan" });
+    expect(within(choice).getAllByRole("option").map((o) => o.textContent)).toEqual(["School year · $120.00 / year"]);
+    await user.click(screen.getByRole("button", { name: "Create invoice" }));
+    const invoiced = calls.find((c) => c.method === "POST");
+    expect(invoiced?.path).toBe("/admin/schools/s1/invoices");
+    expect(invoiced?.body).toMatchObject({ planId: "year" });
+    expect(await screen.findByRole("status")).toHaveTextContent("Invoice BKINVOICE0001 created");
   });
 });
 

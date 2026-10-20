@@ -15,5 +15,6 @@ export function problemMessage(err: unknown, fallback: string): string {
     return seconds ? m.justSent(waitInWords(seconds)) : m.waitAMoment;
   }
   if (err.validationErrors) return Object.values(err.validationErrors)[0] ?? fallback;
-  return err.status === 409 || err.status === 404 ? (err.problem?.detail ?? fallback) : fallback;
+  // 402 (Y44): a school whose services wait for payment - the server says so in words meant for people.
+  return err.status === 409 || err.status === 404 || err.status === 402 ? (err.problem?.detail ?? fallback) : fallback;
 }

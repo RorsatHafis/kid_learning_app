@@ -24,6 +24,28 @@ amount and status and checks they are ignored).
 Access is granted **only** when a payment is confirmed: by the provider's own answer, or by an administrator
 against the real receipt. A pending, failed, cancelled or expired payment changes nothing.
 
+## Schools pay for school services (Y44)
+
+A school may use its school services (its workspace, classes, staff, invitations, class codes, rosters, school
+learning and reports) only while **a subscription backed by a confirmed payment** is in force:
+
+- a provider-sourced school subscription within its paid period, on an active school plan, **and**
+- a succeeded payment order of the school whose paid period covers this moment.
+
+Nothing else grants it: not the schools' default plan, not a plan an administrator gives (that action is now
+refused - invoice the school instead), not a requested plan, a pending invoice, or a failed, cancelled, expired or
+refunded payment. A test payment counts only where test payments are switched on, which production refuses.
+
+Enforced on the server in `SchoolAccessGuard` (via `SchoolEntitlementService.requirePaid`) for principals and
+teachers, and for a teacher accepting an invitation or a family joining a class. Refusals are `402` with
+`schoolPaymentRequired`. Who may act is checked first, so a stranger still gets `403`.
+
+Still open while unpaid: the school's plan, payment status, invoices and history for its principal, renewing the
+school's own paid plan, administrators invoicing and reconciling, families leaving a school, and every family's own
+learning (including path steps a class placed earlier). Nothing the school holds is deleted; services resume the
+moment a payment is confirmed. A school's first plan is invoiced by an administrator (school plans aren't
+self-service); its principal can then renew it.
+
 ## Lifecycle
 
 ```

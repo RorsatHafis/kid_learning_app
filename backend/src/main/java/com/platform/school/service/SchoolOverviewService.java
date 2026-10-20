@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -47,10 +48,12 @@ public class SchoolOverviewService {
     private final TeacherAssignmentRepository assignments;
     private final ClassJoinCodeRepository joinCodes;
     private final SchoolChildAccessRepository grants;
+    private final com.platform.subscription.service.SchoolEntitlementService entitlements;
 
     public SchoolOverviewService(SchoolAccessGuard guard, SchoolLearningService learning, SchoolRepository schools,
                                  SchoolClassRepository classes, TeacherAssignmentRepository assignments,
-                                 ClassJoinCodeRepository joinCodes, SchoolChildAccessRepository grants) {
+                                 ClassJoinCodeRepository joinCodes, SchoolChildAccessRepository grants,
+                                 com.platform.subscription.service.SchoolEntitlementService entitlements) {
         this.guard = guard;
         this.learning = learning;
         this.schools = schools;
@@ -58,6 +61,7 @@ public class SchoolOverviewService {
         this.assignments = assignments;
         this.joinCodes = joinCodes;
         this.grants = grants;
+        this.entitlements = entitlements;
     }
 
     /**
@@ -81,11 +85,16 @@ public class SchoolOverviewService {
     }
 
     /** A principal's school at a glance: who it reaches and what is still to set up. */
+    /** {@code paid} false (Y44): the school's services wait for payment, and its classes aren't listed. */
     public record SchoolOverview(UUID schoolId, String name, long childrenWithAccess, int classes, int classesWithoutTeacher,
-                                 int classesWithoutCurriculum, int classesWithoutOpenCode) {
+                                 int classesWithoutCurriculum, int classesWithoutOpenCode, boolean paid) {
     }
 
-    public record StaffOverview(List<SchoolOverview> schools, List<ClassOverview> classes) {
+    /** A school whose classes the person works in but whose services wait for payment (Y44). */
+    public record UnpaidSchool(UUID schoolId, String name) {
+    }
+
+    public record StaffOverview(List<SchoolOverview> schools, List<ClassOverview> classes, List<UnpaidSchool> unpaid) {
     }
 
     @Transactional(readOnly = true)
@@ -105,8 +114,16 @@ public class SchoolOverviewService {
                         .filter(Objects::nonNull)
                         .toList();
 
+        // Y44: a school that isn't paid shows as such; its classes and children's learning aren't read.
+        Map<UUID, Boolean> paid = new HashMap<>();
+        java.util.function.Predicate<UUID> isPaid = schoolId -> paid.computeIfAbsent(schoolId, id -> entitlements.access(id).paid());
         List<ClassOverview> overviews = new ArrayList<>();
+        Set<UUID> unpaidSchools = new java.util.LinkedHashSet<>();
         for (SchoolClass schoolClass : visible) {
+            if (!isPaid.test(schoolClass.getSchoolId())) {
+                unpaidSchools.add(schoolClass.getSchoolId());
+                continue;
+            }
             guard.requireClassStaff(accountId, schoolClass.getId());
             overviews.add(overview(schoolClass, now));
         }
@@ -119,9 +136,15 @@ public class SchoolOverviewService {
                     grants.countBySchoolIdAndStatus(school.getId(), SchoolChildAccessStatus.ACTIVE), ofSchool.size(),
                     (int) ofSchool.stream().filter(c -> c.teachers() == 0).count(),
                     (int) ofSchool.stream().filter(c -> c.curricula().isEmpty()).count(),
-                    (int) ofSchool.stream().filter(c -> !c.joinCode().open()).count());
+                    (int) ofSchool.stream().filter(c -> !c.joinCode().open()).count(), isPaid.test(school.getId()));
         }).toList();
-        return new StaffOverview(schoolOverviews, overviews);
+        run.stream().filter(school -> !isPaid.test(school.getId())).forEach(school -> unpaidSchools.add(school.getId()));
+        List<UnpaidSchool> unpaid = unpaidSchools.stream()
+                .map(id -> schools.findById(id).map(school -> new UnpaidSchool(id, school.getName())).orElse(null))
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(UnpaidSchool::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        return new StaffOverview(schoolOverviews, overviews, unpaid);
     }
 
     private ClassOverview overview(SchoolClass schoolClass, Instant now) {

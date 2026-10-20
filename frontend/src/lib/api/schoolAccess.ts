@@ -252,12 +252,16 @@ export interface SchoolOverview {
   classesWithoutTeacher: number;
   classesWithoutCurriculum: number;
   classesWithoutOpenCode: number;
+  /** Y44: false while the school's services wait for payment (its classes aren't listed). */
+  paid: boolean;
 }
 
 export interface StaffOverview {
   /** Principals only; empty for a teacher. */
   schools: SchoolOverview[];
   classes: ClassOverview[];
+  /** Y44: schools the person works in whose services wait for payment. */
+  unpaid: { schoolId: string; name: string }[];
 }
 
 export const staffOverviewApi = {

@@ -1,5 +1,6 @@
 package com.platform.school;
 
+import com.platform.PaidSchools;
 import com.platform.TestcontainersConfiguration;
 import com.platform.content.entity.Activity;
 import com.platform.content.entity.Question;
@@ -66,6 +67,7 @@ class SchoolFamilyBoundaryIntegrationTests {
     private static final String PASSWORD = "School-Boundary-Pass-2026";
 
     @Value("${local.server.port}") private int port;
+    @Autowired private org.springframework.context.ApplicationContext context;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private AccountRepository accountRepository;
     @Autowired private PasswordEncoder passwordEncoder;
@@ -175,6 +177,7 @@ class SchoolFamilyBoundaryIntegrationTests {
 
     private SchoolClass classTaughtBy(Staff principal, Staff teacher) {
         School school = schoolService.createSchool("Boundary School", principal.id());
+        PaidSchools.pay(context, school.getId());
         SchoolClass schoolClass = schoolService.createClass(school.getId(), "Grade 1");
         // Only a school's own staff can be assigned to its classes (V39).
         SchoolStaff membership = SchoolStaff.invite(school.getId(), teacher.id(), principal.id(), java.time.Instant.now());

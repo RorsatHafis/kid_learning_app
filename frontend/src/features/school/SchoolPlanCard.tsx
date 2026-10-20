@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils/cn";
 import { schoolPlanMessages } from "./plan.messages";
 import { fullness, planSourceText } from "./planUsage";
 import { SchoolInvoices } from "./SchoolInvoices";
+import { SchoolRenew } from "./SchoolBilling";
+import { useState } from "react";
 
 /** One line per limit: what the school holds against what its plan includes. */
 export function SchoolPlanUsage({ entitlements }: { entitlements: Entitlement[] }) {
@@ -62,11 +64,12 @@ export function SchoolPlanUsage({ entitlements }: { entitlements: Entitlement[] 
 }
 
 /**
- * The principal's view of the school's plan: what it includes and how much of it is in use, so a
- * limit is never a surprise. Changing it is arranged with the Bookeyond team (no payment, PD-09).
+ * The principal's view of the school's plan: whether its services are paid for (Y44), what the plan includes and
+ * how much of it is in use - so a limit is never a surprise - with its invoices and renewing it.
  */
 export function PrincipalSchoolPlan({ schoolId, version }: { schoolId: string; version: number }) {
-  const plan = useAsync(() => schoolPlansApi.own(schoolId), [schoolId, version]);
+  const [renewed, setRenewed] = useState(0);
+  const plan = useAsync(() => schoolPlansApi.own(schoolId), [schoolId, version, renewed]);
   const m = useMessages(schoolPlanMessages);
   return (
     <section aria-labelledby="school-plan-heading" className="flex flex-col gap-4 rounded-[16px] border border-line bg-white px-5 py-5 sm:px-6">
@@ -74,23 +77,26 @@ export function PrincipalSchoolPlan({ schoolId, version }: { schoolId: string; v
         <h2 id="school-plan-heading" className="text-lg font-semibold text-tonle-950">
           {m.title}
         </h2>
-        {plan.data && (
-          <p className="text-sm font-semibold text-tonle-700">
-            {plan.data.plan.name}
-            {plan.data.onDefaultPlan && <span className="font-normal text-ink-soft"> {m.defaultSuffix}</span>}
-          </p>
-        )}
+        {plan.data?.access.paid && <p className="text-sm font-semibold text-tonle-700">{plan.data.plan.name}</p>}
       </div>
       {plan.isLoading && !plan.data && <LoadingState label={m.loading} />}
       {plan.error && <ErrorState error={plan.error} onRetry={plan.refetch} />}
       {plan.data && (
         <>
-          <p className="text-sm text-ink-soft">{planSourceText(plan.data, m)}</p>
-          <SchoolPlanUsage entitlements={plan.data.entitlements} />
+          <p
+            className={cn(
+              "rounded-[12px] px-4 py-3 text-sm ring-1",
+              plan.data.access.paid ? "bg-palm-soft/40 text-palm-deep ring-palm/30" : "bg-light-soft/50 text-ink ring-light/40",
+            )}
+          >
+            {planSourceText(plan.data, m)}
+          </p>
+          {plan.data.access.paid && <SchoolPlanUsage entitlements={plan.data.entitlements} />}
           <p className="text-sm leading-relaxed text-ink-soft">
             {m.keepsAll} {m.noPurchase}
           </p>
-          <SchoolInvoices schoolId={schoolId} />
+          {!plan.data.access.paymentPending && <SchoolRenew schoolId={schoolId} onStarted={() => setRenewed((v) => v + 1)} />}
+          <SchoolInvoices key={renewed} schoolId={schoolId} />
         </>
       )}
     </section>

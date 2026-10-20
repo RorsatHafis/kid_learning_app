@@ -23,7 +23,30 @@ export const schoolPlanMessages = defineMessages(
     nearly: "Nearly full.",
     keepsAll:
       "A plan limits only what the school adds next. Nothing the school already has — classes, teachers, children's learning — is ever removed because of a plan.",
-    noPurchase: "School plans are arranged with the Bookeyond team; nothing is bought here.",
+    noPurchase: "School plans are arranged with the Bookeyond team and paid by invoice.",
+    // Y44: the school's services are paid; only a confirmed payment turns them on.
+    paidUntil: (until: string) => `Paid until ${until}. The school's services are on.`,
+    paymentPending: "A payment is waiting to be confirmed. The school's services start as soon as the Bookeyond team confirms it.",
+    paidEnded: (when: string | null) =>
+      when
+        ? `The school's paid period ended on ${when}. Its services are paused until it is renewed; nothing it holds is removed.`
+        : "The school's paid period has ended. Its services are paused until it is renewed; nothing it holds is removed.",
+    notPaid: "This school hasn't paid for a plan yet. Its services start once a payment is confirmed: the Bookeyond team sends the invoice.",
+    pausedTitle: (school: string) => `${school}'s subscription needs payment`,
+    pausedLead:
+      "Classes, teachers and children's school learning are paused until the school's plan is paid. Nothing is deleted, and families' own learning carries on.",
+    pausedPending:
+      "A payment is waiting to be confirmed. Everything opens again as soon as the Bookeyond team confirms it.",
+    seePlan: "Plan and invoices",
+    renewTitle: "Renew the school's plan",
+    renew: (plan: string, price: string) => `Renew ${plan} · ${price}`,
+    renewMethod: "How the school pays",
+    renewing: "Starting…",
+    renewed: "The payment has started. Follow the invoice's instructions below; the school's services open once it is confirmed.",
+    renewFailed: "That didn't work just now. Please try again.",
+    askTeam: "To start a plan, ask the Bookeyond team for an invoice.",
+    teacherPaused: (school: string) =>
+      `${school}'s subscription needs payment, so its classes are paused for now. The school's principal can renew it.`,
   },
   {
     title: "កញ្ចប់របស់សាលាអ្នក",
@@ -45,6 +68,27 @@ export const schoolPlanMessages = defineMessages(
     nearly: "ជិតពេញហើយ។",
     keepsAll:
       "កញ្ចប់មួយកំណត់តែអ្វីដែលសាលាបន្ថែមបន្ទាប់ប៉ុណ្ណោះ។ អ្វីដែលសាលាមានរួចហើយ — ថ្នាក់ គ្រូ ការរៀនរបស់កុមារ — មិនដែលត្រូវដកចេញដោយសារកញ្ចប់ទេ។",
-    noPurchase: "កញ្ចប់សាលាត្រូវបានរៀបចំជាមួយក្រុម Bookeyond។ គ្មានអ្វីត្រូវបានទិញនៅទីនេះទេ។",
+    noPurchase: "កញ្ចប់សាលាត្រូវបានរៀបចំជាមួយក្រុម Bookeyond ហើយបង់ប្រាក់តាមវិក្កយបត្រ។",
+    paidUntil: (until: string) => `បានបង់រហូតដល់ ${until}។ សេវាកម្មរបស់សាលាកំពុងដំណើរការ។`,
+    paymentPending: "មានការបង់ប្រាក់មួយកំពុងរង់ចាំការបញ្ជាក់។ សេវាកម្មរបស់សាលានឹងចាប់ផ្ដើមភ្លាមៗនៅពេលក្រុម Bookeyond បញ្ជាក់វា។",
+    paidEnded: (when: string | null) =>
+      when
+        ? `រយៈពេលបង់ប្រាក់របស់សាលាបានបញ្ចប់នៅ ${when}។ សេវាកម្មរបស់វាត្រូវបានផ្អាករហូតដល់មានការបន្ត។ គ្មានអ្វីដែលវាមានត្រូវបានដកចេញទេ។`
+        : "រយៈពេលបង់ប្រាក់របស់សាលាបានបញ្ចប់ហើយ។ សេវាកម្មរបស់វាត្រូវបានផ្អាករហូតដល់មានការបន្ត។ គ្មានអ្វីដែលវាមានត្រូវបានដកចេញទេ។",
+    notPaid: "សាលានេះមិនទាន់បានបង់ប្រាក់សម្រាប់កញ្ចប់ណាមួយនៅឡើយទេ។ សេវាកម្មរបស់វាចាប់ផ្ដើមនៅពេលការបង់ប្រាក់ត្រូវបានបញ្ជាក់៖ ក្រុម Bookeyond នឹងផ្ញើវិក្កយបត្រ។",
+    pausedTitle: (school: string) => `ការជាវរបស់ ${school} ត្រូវការការបង់ប្រាក់`,
+    pausedLead:
+      "ថ្នាក់ គ្រូ និងការរៀននៅសាលារបស់កុមារ ត្រូវបានផ្អាករហូតដល់កញ្ចប់របស់សាលាត្រូវបានបង់។ គ្មានអ្វីត្រូវបានលុបទេ ហើយការរៀនផ្ទាល់ខ្លួនរបស់គ្រួសារនៅតែបន្ត។",
+    pausedPending: "មានការបង់ប្រាក់មួយកំពុងរង់ចាំការបញ្ជាក់។ អ្វីៗទាំងអស់នឹងបើកវិញភ្លាមៗនៅពេលក្រុម Bookeyond បញ្ជាក់វា។",
+    seePlan: "កញ្ចប់ និងវិក្កយបត្រ",
+    renewTitle: "បន្តកញ្ចប់របស់សាលា",
+    renew: (plan: string, price: string) => `បន្ត ${plan} · ${price}`,
+    renewMethod: "របៀបដែលសាលាបង់ប្រាក់",
+    renewing: "កំពុងចាប់ផ្ដើម…",
+    renewed: "ការបង់ប្រាក់បានចាប់ផ្ដើមហើយ។ សូមធ្វើតាមការណែនាំនៃវិក្កយបត្រខាងក្រោម។ សេវាកម្មរបស់សាលានឹងបើកនៅពេលវាត្រូវបានបញ្ជាក់។",
+    renewFailed: "មិនដំណើរការនៅពេលនេះទេ។ សូមព្យាយាមម្ដងទៀត។",
+    askTeam: "ដើម្បីចាប់ផ្ដើមកញ្ចប់ សូមស្នើសុំវិក្កយបត្រពីក្រុម Bookeyond។",
+    teacherPaused: (school: string) =>
+      `ការជាវរបស់ ${school} ត្រូវការការបង់ប្រាក់ ដូច្នេះថ្នាក់របស់វាត្រូវបានផ្អាកសិន។ នាយកសាលាអាចបន្តវាបាន។`,
   },
 );

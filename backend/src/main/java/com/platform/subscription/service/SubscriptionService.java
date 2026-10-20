@@ -92,8 +92,9 @@ public class SubscriptionService {
     }
 
     /** A school as an operator or its principal sees it: its plan and what it holds. */
+    /** {@code access}: whether school services are paid for now (Y44). */
     public record SchoolView(UUID schoolId, String schoolName, SchoolEntitlementService.SchoolPlan effective,
-                             Map<EntitlementKey, Integer> usage) {
+                             Map<EntitlementKey, Integer> usage, SchoolEntitlementService.SchoolAccess access) {
     }
 
     public record ParentRef(UUID accountId, String email) {
@@ -310,7 +311,8 @@ public class SubscriptionService {
     public SchoolView schoolView(UUID schoolId) {
         com.platform.school.entity.School school = schools.findById(schoolId)
                 .orElseThrow(() -> new ResourceNotFoundException("School", schoolId));
-        return new SchoolView(schoolId, school.getName(), schoolEntitlements.effectivePlan(schoolId), schoolEntitlements.usage(schoolId));
+        return new SchoolView(schoolId, school.getName(), schoolEntitlements.effectivePlan(schoolId), schoolEntitlements.usage(schoolId),
+                schoolEntitlements.access(schoolId));
     }
 
     @Transactional(readOnly = true)
@@ -319,38 +321,16 @@ public class SubscriptionService {
         return schoolView(schoolId);
     }
 
-    /** An administrator gives a school a plan (a pilot, a partnership), open-ended or until a date. */
+    /**
+     * Refused since Y44: a school's plan starts only when its payment is confirmed (invoice the school, then confirm
+     * the transfer against its receipt). A plan given without payment would look like school access it isn't.
+     */
     @Transactional
     public SchoolView grantSchool(UUID adminId, UUID schoolId, UUID planId, Instant periodEnd, String note) {
+
         requireAdmin(adminId);
-        schools.findByIdForUpdate(schoolId).orElseThrow(() -> new ResourceNotFoundException("School", schoolId));
-        SubscriptionPlan plan = plan(planId);
-        if (plan.getStatus() != PlanStatus.ACTIVE) {
-            throw new IllegalStateException("Only an active plan can be given to a school");
-        }
-        if (plan.getAudience() != PlanAudience.SCHOOL) {
-            throw new IllegalArgumentException("This is a family plan: give it to a family");
-        }
-        Instant now = Instant.now();
-        Optional<SchoolSubscription> existing = schoolSubscriptions.findBySchoolIdForUpdate(schoolId);
-        Map<String, Object> metadata = new LinkedHashMap<>();
-        metadata.put("plan", plan.getCode());
-        metadata.put("until", periodEnd == null ? "open-ended" : periodEnd.toString());
-        existing.ifPresent(previous -> {
-            metadata.put("previousPlan", plans.findById(previous.getPlanId()).map(SubscriptionPlan::getCode).orElse("?"));
-            metadata.put("previousStatus", previous.getStatus().name());
-        });
-        if (note != null && !note.isBlank()) {
-            metadata.put("note", note.strip());
-        }
-        SchoolSubscription subscription = existing.orElse(null);
-        if (subscription == null) {
-            subscription = schoolSubscriptions.save(SchoolSubscription.grant(schoolId, planId, now, periodEnd, note));
-        } else {
-            subscription.regrant(planId, now, periodEnd, note);
-        }
-        recordSchool(adminId, "SCHOOL_SUBSCRIPTION_GRANTED", subscription.getId(), metadata);
-        return schoolView(schoolId);
+        throw new IllegalStateException("A school's plan starts when its payment is confirmed: invoice the school instead");
+
     }
 
     @Transactional
