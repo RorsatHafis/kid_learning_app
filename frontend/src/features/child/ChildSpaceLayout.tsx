@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Volume2, VolumeX, Lock } from "lucide-react";
 import { BrandMark } from "@/components/brand/Logo";
-import { RiverGarden } from "@/features/world/RiverGarden";
+import { PaintedBackdrop } from "@/features/world/PaintedWorld";
 import { BuddyKindProvider, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { buddyMessages } from "@/features/buddy/buddy.messages";
 import { isMuted, setMuted } from "@/features/buddy/sound";
@@ -16,7 +16,7 @@ import { useChildLanguage } from "@/i18n/useLanguage";
 import type { Locale } from "@/i18n/store";
 
 /**
- * The child's space: a morning in River Garden, with a few quiet paper controls floating over it
+ * The child's space: the painted river village (Y44), with a few quiet paper controls floating over it
  * (CLAUDE.md §19). There is no child account — a child plays inside a parent's session
  * (PlatformRole has no CHILD) — so leaving for the grown-up area goes through a press-and-hold gate.
  * The gate is friction against a child wandering into parent settings, not a security boundary:
@@ -55,21 +55,16 @@ export function ChildSpaceLayout({
   const kind = buddy ?? "OTTER";
   return (
     <BuddyKindProvider kind={kind}>
-      <div className="relative min-h-[100dvh] bg-[#E7F1EC] text-ink">
-        {backdrop && (
-          <div aria-hidden className="fixed inset-0">
-            <RiverGarden variant="quiet" crop="bottom" frame={false} />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/0 to-[#E7F1EC]/40" />
-          </div>
-        )}
+      <div className="relative min-h-[100dvh] bg-paper text-ink">
+        {backdrop && <PaintedBackdrop />}
         {focus ? (
           <header className="relative z-20 mx-auto flex max-w-3xl justify-end px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
             <SoundToggle />
           </header>
         ) : (
-          <header className="relative z-20 mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
-            <div className="flex items-center gap-2">
-              <Link to={home ?? `/learn/${childId}`} className={cn(chip, "gap-2.5 py-1.5 pl-1.5 pr-4")}>
+          <header className="relative z-20 mx-auto flex max-w-[88rem] flex-wrap items-center justify-between gap-x-2 gap-y-2 px-3 pt-[max(1rem,env(safe-area-inset-top))] sm:gap-x-3 sm:px-8 sm:pt-6">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Link to={home ?? `/learn/${childId}`} className={cn(chip, "gap-2 py-1.5 pl-1.5 pr-3 sm:gap-2.5 sm:pr-4")}>
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-light text-base font-bold text-light-deep">
                   {childName?.charAt(0).toUpperCase() ?? "•"}
                 </span>
@@ -80,8 +75,8 @@ export function ChildSpaceLayout({
               </Link>
             </div>
             <BrandMark size={34} className="hidden sm:block" title="Bookeyond Kid" />
-            <div className="ml-auto flex items-center gap-2">
-              <LanguageToggle className={cn(chip, "justify-center px-3.5 text-sm font-semibold")} />
+            <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+              <LanguageToggle className={cn(chip, "justify-center px-3 text-sm font-semibold sm:px-3.5")} />
               <SoundToggle />
               <GrownUpGate to={`/parent/children/${childId}`} />
             </div>

@@ -3,7 +3,8 @@ import { ArrowLeft, Check, Play, RotateCcw } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
 import type { CurriculumProgress, JourneyStep } from "@/lib/api/types";
-import { BuddySays } from "@/features/buddy/LearningBuddy";
+import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
+import shelfArt from "@/assets/world/river-bend-sm.webp";
 import { stepTag } from "@/features/learning/explain";
 import { Lantern } from "@/features/world/Lantern";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
@@ -78,8 +79,11 @@ function Shelves({
         <Link to={`/learn/${childId}`} className={cn(quietButton, "min-h-11 w-fit px-4 text-sm")}>
           <ArrowLeft size={16} aria-hidden /> {m.backToPath}
         </Link>
-        <div className="flex flex-col gap-5 rounded-[28px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 sm:flex-row sm:items-end sm:justify-between sm:p-8">
-          <div className="flex flex-col gap-2">
+        <div className="relative flex flex-col gap-5 overflow-hidden rounded-[28px] bg-[#FFFDF8] p-6 pb-24 shadow-lift ring-1 ring-tonle-950/5 sm:flex-row sm:items-end sm:justify-between sm:p-8 sm:pb-24">
+          {/* Y44: the shelf sits by the river - a strip of the painting under the words, the buddy at its end. */}
+          <img src={shelfArt} alt="" aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-20 w-full object-cover object-[50%_80%] opacity-60 [mask-image:linear-gradient(to_top,black_45%,transparent)]" />
+          <LearningBuddy mood="happy" size={120} className="pointer-events-none absolute -bottom-1 right-6 h-auto w-[86px] sm:w-[104px]" />
+          <div className="relative flex flex-col gap-2">
             <h1 className="font-display text-[2.6rem] font-bold leading-none tracking-[-0.008em] text-tonle-950 sm:text-[3.25rem]">
               {all.myShelf}
             </h1>
@@ -90,7 +94,7 @@ function Shelves({
           {next && (
             <Link
               to={`/learn/${childId}/play/${next.overview.enrollmentId}`}
-              className={cn(goButton, "min-h-14 w-fit pl-2.5 pr-7 text-lg")}
+              className={cn(goButton, "relative min-h-14 w-fit pl-2.5 pr-7 text-lg")}
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-tonle-900 text-light">
                 <Play size={17} fill="currentColor" aria-hidden className="translate-x-px" />
@@ -274,7 +278,7 @@ function Book({
           <Link
             to={`/learn/${childId}/practice/${step.activityVersionId}`}
             aria-label={m.playAgainLabel(step.title)}
-            className="inline-flex min-h-9 w-fit items-center gap-1.5 rounded-pill bg-tonle-900 px-3 text-xs font-bold text-white transition-colors duration-150 hover:bg-tonle-800"
+            className="inline-flex min-h-11 w-fit items-center gap-1.5 whitespace-nowrap rounded-pill bg-tonle-900 px-3.5 text-xs font-bold text-white transition-colors duration-150 hover:bg-tonle-800"
           >
             <RotateCcw size={12} aria-hidden /> {m.playAgain}
           </Link>

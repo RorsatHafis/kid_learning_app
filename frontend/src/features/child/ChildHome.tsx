@@ -4,13 +4,15 @@ import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Play } from "lucide-r
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
-import type { Chapter, CurriculumProgress, EnrollmentOverview, Journey, JourneyStep } from "@/lib/api/types";
+import type { Chapter, EnrollmentOverview, Journey, JourneyStep } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
+import { useBuddyKind } from "@/features/buddy/kinds";
+import { buddyMessages } from "@/features/buddy/buddy.messages";
+import { OnWorld, PaintedWorld } from "@/features/world/PaintedWorld";
+import { placesFor } from "@/features/world/places";
 import { childReason, stepTag } from "@/features/learning/explain";
-import { chapterOf, focusChapter, journeyLight } from "@/features/learning/chapters";
-import { RiverGarden } from "@/features/world/RiverGarden";
-import { onPath } from "@/features/world/villagePath";
-import { PathOfBooks, khmerNumber } from "@/features/world/PathOfBooks";
+import { chapterOf, focusChapter } from "@/features/learning/chapters";
+import { khmerNumber } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { goButton } from "./chips";
@@ -21,19 +23,16 @@ import { entranceMessages } from "./entrance.messages";
 import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
 import { Bud } from "@/features/world/ProgressBuds";
 import { GardenGlimpse } from "./SkillGarden";
-import { garden } from "./garden";
-import { WorldGarden } from "@/features/world/WorldGarden";
 import { gardenMessages } from "./garden.messages";
 import { RotateCcw } from "lucide-react";
 import { subjectTheme } from "@/features/learning/subjectTheme";
 
 
 /**
- * The child's home: River Garden with their journey laid along the village path as books.
- * Finished books are lit, the current one glows with the child's buddy beside it, and one warm
- * "Play" button starts it (directive §12.1–12.2). Lotuses open in the pond as chapters finish. The journey is exactly the server's
- * learning path; the child can only start the current step — the platform decides what
- * comes next. The scene is decorative; the list beside it is the readable journey.
+ * The child's home (Y44): the painted river village from the owner's Figma artwork, each subject at its place, and
+ * a card that says where the child is with one button to carry on. A subject's journey opens at the river bend with
+ * its chapters and books beneath. The journey is exactly the server's learning path; the child can only start the
+ * current step - the platform decides what comes next. The painting is decoration; the words carry the meaning.
  */
 export function ChildHome() {
   const { childId = "" } = useParams<{ childId: string }>();
@@ -116,17 +115,6 @@ export function ChildHome() {
   );
 }
 
-/** The child's garden in the scene: in the field on a phone or tablet, by the path on a large screen. */
-function GardenInWorld({ skills }: { skills: CurriculumProgress[] }) {
-  const stages = garden(skills).map((p) => p.stage);
-  return (
-    <>
-      <WorldGarden spot="field" stages={stages} className="lg:hidden" />
-      <WorldGarden spot="near" stages={stages} className="hidden lg:inline" />
-    </>
-  );
-}
-
 /** From a subject's journey back to the entrance, where every subject is. */
 function BackToSubjects({ childId }: { childId: string }) {
   const e = useMessages(entranceMessages);
@@ -141,92 +129,198 @@ function BackToSubjects({ childId }: { childId: string }) {
 }
 
 /**
- * The entrance: who this space is for, the subjects the family chose (exactly the child's paths),
- * how far each has come, and - when an activity was left part-way - a way straight back into it.
- * The world behind is the child's: its lotuses open with every chapter they finish.
+ * The entrance (Y44): the painted river village, with each of the child's subjects at its own place - the bridge,
+ * the pavilion, the treehouse, the lotus pond - exactly the subjects the family chose. A card says where the child
+ * is and what's next, with one button to carry on; Momo (or the buddy they chose) waits on the stone path with a
+ * line written for this moment. On a large screen the places are on the painting; on a phone or tablet the
+ * painting is a window above, and the places are big cards beneath it.
  */
 function Entrance({ childId, name, paths }: { childId: string; name?: string; paths: EnrollmentOverview[] }) {
   const m = useMessages(childMessages);
   const e = useMessages(entranceMessages);
   const g = useMessages(gardenMessages);
+  const b = useMessages(buddyMessages);
+  const kind = useBuddyKind();
   // The garden glimpse is a nice-to-have: if the skills can't be read, the home simply doesn't show it.
   const skills = useAsync(() => learningApi.skills(childId), [childId]);
   const review = paths.find((p) => p.nextStep?.explanation.reason === "REVIEW");
-  const unfinished = paths.find((p) => p.nextStep?.status === "IN_PROGRESS");
-  const bloom = paths.reduce((sum, p) => sum + journeyLight(p), 0) / paths.length;
+  const current = paths.find((p) => p.nextStep?.status === "IN_PROGRESS") ?? paths.find((p) => p.nextStep) ?? null;
+  const places = placesFor(paths.map((p) => subjectTheme(p.curriculum.subjectCode, p.curriculum.subjectName).motif));
+  const anyStarted = paths.some((p) => p.completedSteps > 0);
+  const line = !current ? e.buddyAllDone : anyStarted ? e.buddyGo : e.buddyStart;
+
   return (
-    <section aria-labelledby="greeting" className="relative -mt-[76px] sm:-mt-[88px] lg:flex lg:min-h-[100dvh] lg:flex-col">
-      {/* The world, with the child's buddy waiting on the village path. On a phone it is a tall window
-          above the words; on a large screen it fills the stage and the card sits on it. */}
-      <div aria-hidden className="relative h-[52svh] min-h-[360px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
-        <RiverGarden crop="bottom" bloom={bloom}>
-          {skills.data && <GardenInWorld skills={skills.data} />}
-          <g transform={`translate(${onPath(0.5).x - 40} ${onPath(0.5).y - 150})`}>
-            <LearningBuddy mood="happy" size={150} />
-          </g>
-        </RiverGarden>
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#E7F1EC] via-[#E7F1EC]/60 to-transparent lg:hidden" />
+    <section aria-labelledby="greeting" className="mx-auto flex w-full max-w-[88rem] flex-col gap-6 px-4 pb-14 pt-4 sm:px-8 sm:pt-6">
+      <div>
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-palm-deep">{e.river}</p>
+        <h1 id="greeting" className="mt-1 font-display text-[clamp(2.4rem,1.8rem+2.4vw,3.6rem)] font-bold leading-[1.02] tracking-[-0.015em] text-tonle-950">
+          {m.home.hi(name ?? "")}
+        </h1>
+        <p className="mt-1.5 text-lg font-semibold text-ink-soft">{paths.length > 1 ? e.where : e.askOne}</p>
       </div>
-      <div className="relative mx-auto -mt-10 flex w-full max-w-6xl flex-col gap-5 px-4 pb-12 sm:px-8 lg:mt-auto lg:pb-10 lg:pt-40">
-        {/* Y38: a greeting band, then the subjects as destinations - big, illustrated, each saying what's next. */}
-        <div className="flex flex-col gap-5 rounded-[32px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 sm:p-7 lg:max-w-[44rem]">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 id="greeting" className="font-display text-[clamp(2.5rem,1.9rem+2.2vw,3.6rem)] font-bold leading-[1.02] tracking-[-0.015em] text-tonle-950">
-                {m.home.hi(name ?? "")}
-              </h1>
-              <p className="mt-2 text-xl font-semibold text-ink-soft">{paths.length > 1 ? e.where : e.askOne}</p>
+
+      {/* The world. Large screens: the places stand on their landmarks; the card and Momo sit on the painting. */}
+      <div className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
+        <PaintedWorld>
+          <div className="hidden lg:contents">
+            {paths.map((path, i) => (
+              <OnWorld key={path.enrollmentId} x={places[i].anchor.x} y={places[i].anchor.y}>
+                <PlaceMarker childId={childId} path={path} placeName={e.places[places[i].key]} here={path === current} />
+              </OnWorld>
+            ))}
+          </div>
+          <OnWorld x={current ? 41 : 30} y={97}>
+            <div className="flex items-end gap-1">
+              <LearningBuddy mood={current ? "happy" : "cheer"} size={170} className="hidden h-auto w-[clamp(96px,11vw,170px)] sm:block" />
+              <LearningBuddy mood={current ? "happy" : "cheer"} size={92} className="sm:hidden" />
+              <p className="mb-[clamp(2.5rem,6vw,5rem)] hidden max-w-[15rem] rounded-[18px] bg-white/95 px-4 py-2.5 text-sm font-semibold leading-snug text-tonle-950 shadow-paper ring-1 ring-tonle-950/5 md:block">
+                {line}
+                <span className="mt-1 block text-[0.7rem] font-bold uppercase tracking-[0.12em] text-palm-deep">{e.buddyName(b.names[kind])}</span>
+              </p>
             </div>
-            {unfinished?.nextStep && (
-              <Link to={`/learn/${childId}/play/${unfinished.enrollmentId}`} className={cn(goButton, "pl-2.5 pr-7 text-lg")}>
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
-                  <Play size={19} fill="currentColor" aria-hidden className="translate-x-px" />
-                </span>
-                <span className="flex flex-col items-start leading-tight">
-                  {e.keepGoingShort}
-                  <span className="max-w-[14rem] truncate text-sm font-semibold opacity-80">{unfinished.nextStep.title}</span>
-                </span>
-              </Link>
-            )}
+          </OnWorld>
+          {/* On a phone, Momo's line sits on the painting above him. */}
+          <p className="absolute left-3 top-3 max-w-[62%] rounded-[16px] bg-white/95 px-3.5 py-2 text-sm font-semibold leading-snug text-tonle-950 shadow-paper md:hidden">
+            {line}
+          </p>
+        </PaintedWorld>
+        {current && (
+          <div className="relative p-3 sm:p-4 lg:absolute lg:left-5 lg:top-5 lg:w-[25rem] lg:p-0">
+            <ContinueCard childId={childId} path={current} />
           </div>
-          {review?.nextStep && (
-            <Link
-              to={`/learn/${childId}/play/${review.enrollmentId}`}
-              className="flex items-center gap-3 rounded-[20px] bg-lotus-soft px-4 py-3 ring-1 ring-lotus/30 transition-colors duration-150 ease-out hover:bg-[#F8DCE3]"
-            >
-              <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-lotus-deep">
-                <RotateCcw size={18} />
-              </span>
-              <span className="flex flex-col">
-                <span className="font-bold text-tonle-950">{g.review}</span>
-                <span className="text-sm font-medium text-lotus-deep">
-                  {g.reviewNote(review.nextStep.explanation.skill?.name ?? review.nextStep.title)}
-                </span>
-              </span>
-            </Link>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to={`/learn/${childId}/shelf`}
-              className="inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
-            >
-              <Library size={16} aria-hidden /> {m.myShelf}
-            </Link>
-            <GardenGlimpse childId={childId} skills={skills.data} />
-          </div>
-        </div>
-        <ul aria-label={e.subjects} className={cn("grid gap-4", paths.length > 1 ? "sm:grid-cols-2 lg:grid-cols-3" : "lg:max-w-[44rem]")}>
-          {paths.map((path) => (
-            <SubjectDoor key={path.enrollmentId} childId={childId} path={path} wide={paths.length === 1} />
+        )}
+      </div>
+
+      {review?.nextStep && (
+        <Link
+          to={`/learn/${childId}/play/${review.enrollmentId}`}
+          className="flex items-center gap-3 rounded-[22px] bg-lotus-soft px-4 py-3.5 ring-1 ring-lotus/30 transition-colors duration-150 ease-out hover:bg-[#F8DCE3]"
+        >
+          <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-lotus-deep">
+            <RotateCcw size={19} />
+          </span>
+          <span className="flex flex-col">
+            <span className="font-bold text-tonle-950">{g.review}</span>
+            <span className="text-sm font-medium text-lotus-deep">{g.reviewNote(review.nextStep.explanation.skill?.name ?? review.nextStep.title)}</span>
+          </span>
+        </Link>
+      )}
+
+      {/* The places as big cards: the way in on phones and tablets (on a large screen they are on the painting). */}
+      <div className="flex flex-col gap-3 lg:hidden">
+        <h2 className="font-display text-2xl font-bold text-tonle-950">{e.subjects}</h2>
+        <ul aria-label={e.subjects} className="grid gap-4 sm:grid-cols-2">
+          {paths.map((path, i) => (
+            <SubjectDoor key={path.enrollmentId} childId={childId} path={path} art={places[i].art} placeName={e.places[places[i].key]} />
           ))}
         </ul>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Link
+          to={`/learn/${childId}/shelf`}
+          className="inline-flex min-h-12 w-fit items-center gap-2 rounded-pill bg-white px-5 text-sm font-bold text-tonle-800 shadow-tight ring-1 ring-tonle-950/5 transition-colors duration-150 ease-out hover:bg-tonle-50"
+        >
+          <Library size={17} aria-hidden /> {m.myShelf}
+        </Link>
+        <GardenGlimpse childId={childId} skills={skills.data} />
       </div>
     </section>
   );
 }
 
-/** One subject, as a big door into its journey: its emblem, its name, how far, and what's next. */
-function SubjectDoor({ childId, path, wide }: { childId: string; path: EnrollmentOverview; wide: boolean }) {
+/** Where the child is and what's next, with one button to carry on - only what the server's path says. */
+function ContinueCard({ childId, path }: { childId: string; path: EnrollmentOverview }) {
+  const e = useMessages(entranceMessages);
+  const m = useMessages(childMessages);
+  const next = path.nextStep!;
+  const subject = path.curriculum.subjectName ?? path.curriculum.name;
+  const chapter = path.currentChapter;
+  const chapterLine = chapter ? chapterOf(chapter, path.chapterCount) : null;
+  // Said as it is: an activity already open, a path under way, or a first step.
+  const go = next.status === "IN_PROGRESS" ? e.keepPlaying : path.completedSteps > 0 ? e.continueLearning : m.home.play;
+  return (
+    <div className="flex flex-col gap-2.5 rounded-[24px] bg-[#FFFDF8]/95 p-5 shadow-lift ring-1 ring-tonle-950/5 backdrop-blur-sm sm:p-6">
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-sky-deep">
+        <span aria-hidden className="h-2 w-2 rounded-full bg-sky" />
+        <span>
+          {e.continueEyebrow(subject, chapterLine)} · {e.youAreHere}
+        </span>
+      </p>
+      {chapter && <h2 className="font-display text-[1.75rem] font-bold leading-tight text-tonle-950">{chapter.title}</h2>}
+      <p className="text-base font-bold text-tonle-900">{e.next(next.title)}</p>
+      <p className="line-clamp-2 text-sm leading-relaxed text-ink-soft">{childReason(next)}</p>
+      {chapter && chapter.totalSteps > 0 && <ChapterDots done={chapter.completedSteps} total={chapter.totalSteps} label={e.stepsLeft(chapter.completedSteps, chapter.totalSteps)} />}
+      <Link to={`/learn/${childId}/play/${path.enrollmentId}`} className={cn(goButton, "mt-1 w-full justify-center pl-3 pr-7 text-lg")}>
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
+          <Play size={19} fill="currentColor" aria-hidden className="translate-x-px" />
+        </span>
+        {go}
+      </Link>
+    </div>
+  );
+}
+
+/** The chapter's steps as dots - done (a tick), the one now (its number), still to come - with the count in words. */
+function ChapterDots({ done, total, label }: { done: number; total: number; label: string }) {
+  const shown = Math.min(total, 8);
+  return (
+    <div className="flex flex-col gap-1.5" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={label}>
+      <div aria-hidden className="flex flex-wrap gap-1.5">
+        {Array.from({ length: shown }, (_, i) => (
+          <span
+            key={i}
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
+              i < done && "bg-palm text-white",
+              i === done && "bg-tonle-900 text-light ring-4 ring-light/40",
+              i > done && "border-2 border-dashed border-tonle-300 text-ink-faint",
+            )}
+          >
+            {i < done ? <Check size={15} strokeWidth={3} /> : i + 1}
+          </span>
+        ))}
+      </div>
+      <p className="text-xs font-semibold text-ink-soft">{label}</p>
+    </div>
+  );
+}
+
+/** A subject's place on the painting: its name, where it is, and how it stands - the way in on a large screen. */
+function PlaceMarker({ childId, path, placeName, here }: { childId: string; path: EnrollmentOverview; placeName: string; here: boolean }) {
+  const e = useMessages(entranceMessages);
+  const t = subjectTheme(path.curriculum.subjectCode, path.curriculum.subjectName);
+  const subject = path.curriculum.subjectName ?? path.curriculum.name;
+  const state = path.nextStep === null ? e.allDone : path.completedSteps === 0 ? e.start : e.booksLit(path.completedSteps, path.totalSteps);
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <Link
+        to={`/learn/${childId}?path=${path.enrollmentId}`}
+        aria-label={e.goTo(subject, placeName, state)}
+        className="group flex min-h-12 items-center gap-2.5 rounded-[16px] bg-[#FFFDF8]/95 py-2 pl-2 pr-3.5 shadow-lift ring-1 ring-tonle-950/10 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 focus-visible:-translate-y-0.5 motion-reduce:hover:translate-y-0"
+      >
+        <span aria-hidden className={cn("flex h-9 w-9 items-center justify-center rounded-[11px]", t.soft)}>
+          <SubjectEmblem code={path.curriculum.subjectCode} name={path.curriculum.subjectName} size={28} />
+        </span>
+        <span className="flex flex-col leading-tight">
+          <span className="text-sm font-bold text-tonle-950">{subject}</span>
+          <span className={cn("text-xs font-semibold", t.deep)}>
+            {placeName} · {state}
+          </span>
+        </span>
+        <ArrowRight size={16} aria-hidden className="text-tonle-700 transition-transform duration-200 group-hover:translate-x-0.5" />
+      </Link>
+      {here && (
+        <span aria-hidden className="rounded-pill bg-tonle-900 px-2.5 py-1 text-[0.7rem] font-bold uppercase tracking-[0.1em] text-light shadow-tight">
+          {e.youAreHere}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** One subject as a big card with its place's painting: how far, and what's next. */
+function SubjectDoor({ childId, path, art, placeName }: { childId: string; path: EnrollmentOverview; art: string; placeName: string }) {
   const e = useMessages(entranceMessages);
   const t = subjectTheme(path.curriculum.subjectCode, path.curriculum.subjectName);
   const subject = path.curriculum.subjectName ?? path.curriculum.name;
@@ -239,47 +333,37 @@ function SubjectDoor({ childId, path, wide }: { childId: string; path: Enrollmen
     <li className="min-w-0">
       <Link
         to={`/learn/${childId}?path=${path.enrollmentId}`}
-        aria-label={e.open(subject, state)}
-        className={cn(
-          "group flex h-full overflow-hidden rounded-[28px] bg-white shadow-lift ring-1 ring-tonle-950/5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 active:translate-y-0 motion-reduce:hover:translate-y-0",
-          wide ? "flex-col sm:flex-row" : "flex-col",
-        )}
+        aria-label={e.goTo(subject, placeName, state)}
+        className="group flex h-full items-stretch overflow-hidden rounded-[26px] bg-[#FFFDF8] shadow-lift ring-1 ring-tonle-950/5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 active:translate-y-0 motion-reduce:hover:translate-y-0"
       >
-        <span aria-hidden className={cn("relative flex shrink-0 items-end justify-center overflow-hidden", t.soft, wide ? "h-36 sm:h-auto sm:w-56" : "h-36")}>
-          {/* a hill for the emblem to stand on, in the subject's own light */}
-          <span className="absolute -bottom-10 left-1/2 h-24 w-[120%] -translate-x-1/2 rounded-[50%] bg-white/55" />
-          <SubjectEmblem
-            code={path.curriculum.subjectCode}
-            name={path.curriculum.subjectName}
-            size={wide ? 124 : 108}
-            className="relative mb-2 transition-transform duration-300 ease-out group-hover:-rotate-3 group-hover:scale-105 motion-reduce:transition-none"
-          />
+        <span aria-hidden className={cn("relative flex w-32 shrink-0 items-end justify-center sm:w-36", t.soft)}>
+          <img src={art} alt="" className="relative mb-1 w-[118%] max-w-none transition-transform duration-300 ease-out group-hover:scale-105 motion-reduce:transition-none" />
         </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-2.5 p-5 sm:p-6">
-          <span className="flex items-start justify-between gap-3">
-            <span className="font-display text-[1.9rem] font-bold leading-tight tracking-[-0.01em] text-tonle-950">{subject}</span>
-            <span aria-hidden className={cn("mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform duration-200 ease-out group-hover:translate-x-0.5", t.soft, t.deep)}>
-              <ArrowRight size={21} />
+        <span className="flex min-w-0 flex-1 flex-col gap-2 p-4 sm:p-5">
+          <span className="flex items-start justify-between gap-2">
+            <span className="flex min-w-0 flex-col">
+              <span className="font-display text-[1.65rem] font-bold leading-tight text-tonle-950">{subject}</span>
+              <span className="text-xs font-bold uppercase tracking-[0.1em] text-ink-faint">{placeName}</span>
+            </span>
+            <span aria-hidden className={cn("mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full", t.soft, t.deep)}>
+              <ArrowRight size={19} />
             </span>
           </span>
-          <span className={cn("text-base font-semibold", t.deep)}>{state}</span>
+          <span className={cn("text-[0.95rem] font-semibold", t.deep)}>{state}</span>
           {total > 0 && (
             <span aria-hidden className="flex flex-wrap items-end gap-0.5">
               {Array.from({ length: total }, (_, i) => (
-                <Bud key={i} state={i < done ? "open" : i === done && next ? "current" : "waiting"} size={24} />
+                <Bud key={i} state={i < done ? "open" : i === done && next ? "current" : "waiting"} size={22} />
               ))}
             </span>
           )}
           {next && (
-            <span className="mt-auto flex w-fit max-w-full items-center gap-2 rounded-pill bg-light-soft px-3.5 py-1.5 text-sm font-bold text-light-deep">
+            <span className="mt-auto flex w-fit max-w-full items-center gap-2 rounded-pill bg-light-soft px-3 py-1.5 text-sm font-bold text-light-deep">
               <Play size={13} fill="currentColor" aria-hidden className="shrink-0" />
               <span className="truncate">{e.next(next.title)}</span>
             </span>
           )}
-          {!next && path.completedSteps > 0 && (
-            // A finished path offers what really exists: replaying lit books from the shelf.
-            <span className="mt-auto text-sm font-semibold text-ink-soft">{e.replay}</span>
-          )}
+          {!next && path.completedSteps > 0 && <span className="mt-auto text-sm font-semibold text-ink-soft">{e.replay}</span>}
         </span>
       </Link>
     </li>
@@ -298,85 +382,76 @@ function JourneyStage({
   switcher: React.ReactNode;
 }) {
   const journey = useAsync(() => learningApi.journey(overview.enrollmentId), [overview.enrollmentId]);
-  // Y40: the child's garden grows in the world beside the path (only once the standings are read).
-  const skills = useAsync(() => learningApi.skills(childId), [childId]);
   const m = useMessages(childMessages);
+  const e = useMessages(entranceMessages);
+  const b = useMessages(buddyMessages);
+  const kind = useBuddyKind();
   const focus = journey.data ? focusChapter(journey.data) : null;
-  const playHref = `/learn/${childId}/play/${overview.enrollmentId}`;
   const next = overview.nextStep;
+  const subject = overview.curriculum.subjectName ?? overview.curriculum.name;
+  const place = placesFor([subjectTheme(overview.curriculum.subjectCode, overview.curriculum.subjectName).motif])[0];
 
   return (
     <>
-      <section aria-labelledby="greeting" className="relative -mt-[76px] sm:-mt-[88px] lg:flex lg:h-[100dvh] lg:max-h-[980px] lg:min-h-[700px] lg:flex-col">
-        {/* The world. On a phone it is a tall window with the whole path in it; on a large
-            screen it fills the stage and the page of words sits on it. */}
-        <div aria-hidden className="relative h-[60svh] min-h-[420px] overflow-hidden lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
-          <RiverGarden crop="bottom" bloom={journeyLight(overview)}>
-            {skills.data && <GardenInWorld skills={skills.data} />}
-            {focus && <PathOfBooks steps={focus.steps.map(({ step }) => step)} currentId={journey.data!.nextStepId} />}
-          </RiverGarden>
-          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#E7F1EC] via-[#E7F1EC]/60 to-transparent lg:hidden" />
+      <section aria-labelledby="greeting" className="mx-auto flex w-full max-w-[88rem] flex-col gap-5 px-4 pb-6 pt-4 sm:px-8 sm:pt-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <img src={place.art} alt="" aria-hidden className="hidden h-20 w-auto sm:block" />
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.14em] text-palm-deep">{e.places[place.key]}</p>
+              <h1 id="greeting" className="font-display text-[clamp(2.2rem,1.7rem+2vw,3.2rem)] font-bold leading-[1.04] text-tonle-950">
+                {subject}
+              </h1>
+              <p className="text-base font-semibold text-ink-soft">{m.home.hi(name ?? "")}</p>
+            </div>
+          </div>
+          {switcher}
         </div>
 
-        <div className="relative mx-auto -mt-6 w-full max-w-6xl px-4 pb-8 sm:px-8 lg:mt-auto lg:pb-10">
-          <div className="flex max-w-[30rem] flex-col gap-4 rounded-[28px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 backdrop-blur-sm sm:p-7">
-            {switcher}
-            <h1 id="greeting" className="font-display text-[clamp(2.5rem,1.9rem+2.2vw,3.6rem)] font-bold leading-[1.02] text-tonle-950">
-              {m.home.hi(name ?? "")}
-            </h1>
-            {overview.currentChapter && (
-              <p className="-mb-2 flex items-center gap-2 text-sm font-semibold text-clay-deep">
-                <BookOpen size={16} aria-hidden />
-                <span>
-                  {[chapterOf(overview.currentChapter, overview.chapterCount), overview.currentChapter.title].filter(Boolean).join(" · ")}
-                </span>
-              </p>
-            )}
-            <p className="max-w-md text-lg font-medium leading-snug text-ink-soft">{next ? childReason(next) : m.home.allDone}</p>
-            {next && (
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-                <Link to={playHref} className={cn(goButton, "min-h-[4.25rem] pl-3 pr-9 text-2xl")}>
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-tonle-900 text-light">
-                    <Play size={20} fill="currentColor" aria-hidden className="translate-x-px" />
-                  </span>
-                  {m.home.play}
-                </Link>
-                <span className="text-sm font-semibold text-ink-soft">{next.title}</span>
+        {/* The river bend, with the buddy on the bank; the card says where the child is and carries them on. */}
+        <div className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
+          <PaintedWorld scene="bend">
+            <OnWorld x={next ? 66 : 50} y={97}>
+              <div className="flex items-end gap-1">
+                <LearningBuddy mood={next ? "happy" : "cheer"} size={170} className="hidden h-auto w-[clamp(96px,11vw,170px)] sm:block" />
+                <LearningBuddy mood={next ? "happy" : "cheer"} size={92} className="sm:hidden" />
+                <p className="mb-[clamp(2.5rem,6vw,5rem)] hidden max-w-[14rem] rounded-[18px] bg-white/95 px-4 py-2.5 text-sm font-semibold leading-snug text-tonle-950 shadow-paper ring-1 ring-tonle-950/5 md:block">
+                  {next ? e.buddyGo : e.buddyAllDone}
+                  <span className="mt-1 block text-[0.7rem] font-bold uppercase tracking-[0.12em] text-palm-deep">{e.buddyName(b.names[kind])}</span>
+                </p>
               </div>
-            )}
-            {!next && (
-              <Link to={`/learn/${childId}/shelf`} className={cn(goButton, "w-fit pl-2.5 pr-7")}>
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
-                  <Library size={20} aria-hidden />
-                </span>
-                {m.home.seeShelf}
-              </Link>
-            )}
-            {focus?.chapter ? (
-              <BooksLit
-                done={focus.steps.filter(({ step }) => step.status === "COMPLETED").length}
-                total={focus.steps.length}
-                label={m.home.litInChapter(focus.chapter.position)}
-                suffix={m.home.inThisChapter}
-              />
+            </OnWorld>
+          </PaintedWorld>
+          <div className="relative p-3 sm:p-4 lg:absolute lg:left-5 lg:top-5 lg:w-[25rem] lg:p-0">
+            {next ? (
+              <ContinueCard childId={childId} path={overview} />
             ) : (
-              <BooksLit done={overview.completedSteps} total={overview.totalSteps} label={m.home.litOnPath} />
-            )}
-            {next && (
-              <Link
-                to={`/learn/${childId}/shelf`}
-                className="-mt-1 inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
-              >
-                <Library size={16} aria-hidden /> {m.myShelf}
-              </Link>
+              <div className="flex flex-col gap-3 rounded-[24px] bg-[#FFFDF8]/95 p-5 shadow-lift ring-1 ring-tonle-950/5 sm:p-6">
+                <p className="text-lg font-bold leading-snug text-tonle-950">{m.home.allDone}</p>
+                <BooksLit done={overview.completedSteps} total={overview.totalSteps} label={m.home.litOnPath} />
+                <Link to={`/learn/${childId}/shelf`} className={cn(goButton, "w-full justify-center pl-2.5 pr-7")}>
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
+                    <Library size={20} aria-hidden />
+                  </span>
+                  {m.home.seeShelf}
+                </Link>
+              </div>
             )}
           </div>
         </div>
+        {focus?.chapter && next && (
+          <BooksLit
+            done={focus.steps.filter(({ step }) => step.status === "COMPLETED").length}
+            total={focus.steps.length}
+            label={m.home.litInChapter(focus.chapter.position)}
+            suffix={m.home.inThisChapter}
+          />
+        )}
       </section>
 
-      <section aria-labelledby="journey-title-m" className="mx-auto max-w-3xl px-4 pb-16 pt-2 sm:px-8 lg:pt-10">
-        <div className="rounded-[26px] bg-white p-5 shadow-paper ring-1 ring-tonle-950/5 sm:p-7">
-          <JourneyList journey={journey} playHref={playHref} curriculumName={overview.curriculum.name} mobile />
+      <section aria-labelledby="journey-title-m" className="mx-auto max-w-3xl px-4 pb-16 pt-2 sm:px-8">
+        <div className="rounded-[26px] bg-[#FFFDF8] p-5 shadow-paper ring-1 ring-tonle-950/5 sm:p-7">
+          <JourneyList journey={journey} playHref={`/learn/${childId}/play/${overview.enrollmentId}`} curriculumName={overview.curriculum.name} mobile />
         </div>
       </section>
     </>

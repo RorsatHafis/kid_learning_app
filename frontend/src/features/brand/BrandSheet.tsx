@@ -1,5 +1,5 @@
 import { BrandMark, Logo } from "@/components/brand/Logo";
-import { RiverGarden } from "@/features/world/RiverGarden";
+import { PaintedScene } from "@/features/world/PaintedWorld";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { BUDDY_KINDS } from "@/features/buddy/kinds";
 
@@ -14,13 +14,13 @@ export function BrandSheet() {
     <div className="min-h-screen bg-paper p-6 sm:p-10">
       <div className="mx-auto flex max-w-6xl flex-col gap-12">
         <div className="relative h-[560px] overflow-hidden rounded-paper shadow-lift">
-          <RiverGarden />
+          <PaintedScene />
         </div>
-        <div className="h-[220px] overflow-hidden rounded-paper shadow-paper">
-          <RiverGarden variant="band" />
+        <div className="relative h-[220px] overflow-hidden rounded-paper shadow-paper">
+          <PaintedScene scene="bend" position="50% 80%" />
         </div>
-        <div className="h-[320px] overflow-hidden rounded-paper shadow-paper">
-          <RiverGarden variant="quiet" />
+        <div className="relative h-[320px] overflow-hidden rounded-paper shadow-paper">
+          <PaintedScene scene="bend" />
         </div>
         <section className="rounded-paper bg-white p-8 shadow-paper">
           {BUDDY_KINDS.map((kind) => (

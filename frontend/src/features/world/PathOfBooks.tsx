@@ -1,16 +1,12 @@
 import type { JourneyStep } from "@/lib/api/types";
-import { LearningBuddy } from "@/features/buddy/LearningBuddy";
-import { onPath } from "./villagePath";
 
 /** All the path drawing needs from a step: which one it is and whether it is done. */
 export type PathStep = Pick<JourneyStep, "learningPathItemId" | "status">;
 
 /**
- * The child's journey drawn into River Garden: books laid like stepping stones along the village
- * path, from the front of the plate up to the stilt house. Finished books are open-cream and warm,
- * the current one is marigold with the child's buddy standing beside it, the ones ahead wait in
- * river teal. Drawn in RiverGarden's 1200×800 space; purely visual — the readable journey is the
- * list beside it.
+ * The books of a child's journey (drawn on the completion page's strip, PathStrip): finished books open-cream and
+ * warm, the current one marigold, the ones ahead in river teal, each numbered in Khmer digits. Purely visual - the
+ * readable journey is the list beside it.
  */
 type Point = { x: number; y: number };
 
@@ -60,52 +56,6 @@ export function Book({ at, scale, state, number }: { at: Point; scale: number; s
         >
           {khmerNumber(number)} · {number}
         </text>
-      )}
-    </g>
-  );
-}
-
-export function PathOfBooks({
-  steps,
-  currentId,
-  showBuddy = true,
-}: {
-  steps: PathStep[];
-  currentId: string | null;
-  showBuddy?: boolean;
-}) {
-  const currentIndex = steps.findIndex((s) => s.learningPathItemId === currentId);
-  const shown = visibleWindow(steps, currentIndex);
-  const n = shown.length;
-  const placed = shown.map(({ step, index }, i) => {
-    // From a little way up the path (the front of the plate sits under the page on a phone) to the stair.
-    const t = n <= 1 ? 0.3 : 0.2 + Math.pow(i / (n - 1), 0.85) * 0.74;
-    const at = onPath(t);
-    const scale = 1 - 0.62 * t;
-    const state: BookState = step.status === "COMPLETED" ? "done" : index === currentIndex ? "current" : "later";
-    return { step, index, at, scale, state };
-  });
-  const current = placed.find((p) => p.state === "current");
-  // With every book done, the buddy celebrates at the last one.
-  const buddyAt = current ?? (placed.length > 0 && placed.every((p) => p.state === "done") ? placed[placed.length - 1] : undefined);
-
-  return (
-    <g>
-      <defs>
-        <radialGradient id="path-light">
-          <stop offset="0" stopColor="#FFF1C2" stopOpacity="0.95" />
-          <stop offset="0.5" stopColor="#FFD27A" stopOpacity="0.4" />
-          <stop offset="1" stopColor="#FFD27A" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {/* far books first so near ones overlap them */}
-      {[...placed].reverse().map((p) => (
-        <Book key={p.step.learningPathItemId} at={p.at} scale={p.scale} state={p.state} number={p.index + 1} />
-      ))}
-      {buddyAt && showBuddy && (
-        <g transform={`translate(${buddyAt.at.x + 66 * buddyAt.scale} ${buddyAt.at.y - 158 * buddyAt.scale})`}>
-          <LearningBuddy mood={current ? "happy" : "cheer"} size={170 * buddyAt.scale} />
-        </g>
       )}
     </g>
   );

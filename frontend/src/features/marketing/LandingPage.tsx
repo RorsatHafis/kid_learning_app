@@ -1,13 +1,12 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpenCheck, Check, Coffee, Download, Hand, Languages, ShieldCheck, Sprout } from "lucide-react";
-import { RiverGarden } from "@/features/world/RiverGarden";
+import { PaintedScene } from "@/features/world/PaintedWorld";
 import { khmerNumber } from "@/features/world/PathOfBooks";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { BUDDY_KINDS } from "@/features/buddy/kinds";
 import { buddyMessages } from "@/features/buddy/buddy.messages";
 import { EvidenceLine } from "@/features/learning/EvidenceLine";
-import { onPath } from "@/features/world/villagePath";
 import { buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import type { EvidenceLevel } from "@/lib/api/types";
@@ -75,18 +74,15 @@ function Hero() {
   const l = m.landing;
   const locale = useLocale();
   const other = locale === "km" ? "en" : "km";
-  const at = (t: number) => onPath(t);
   return (
     <section className="relative overflow-hidden bg-[#DCEDEC]">
       <div aria-hidden className="absolute inset-0">
-        <RiverGarden crop="bottom" bloom={0.8} className="absolute inset-0">
-          <g transform={`translate(${at(0.62).x - 30} ${at(0.62).y - 120})`}>
-            <LearningBuddy kind="OTTER" mood="happy" size={118} />
-          </g>
-          <g transform={`translate(${at(0.82).x - 4} ${at(0.82).y - 78})`}>
-            <LearningBuddy kind="FROG" mood="idle" size={76} />
-          </g>
-        </RiverGarden>
+        <PaintedScene position="58% 62%" />
+        {/* Momo and a friend on the stone path */}
+        <div className="absolute bottom-[6%] left-[46%] hidden items-end gap-1 lg:flex">
+          <LearningBuddy kind="OTTER" mood="happy" size={150} />
+          <LearningBuddy kind="FROG" mood="idle" size={96} className="mb-1" />
+        </div>
         {/* a morning haze behind the words, so they read on the sky */}
         <div
           className="absolute inset-0"
@@ -230,7 +226,7 @@ function HowItWorks() {
           <figcaption className="max-w-[280px] text-center text-sm text-ink-soft">{m.childSees}</figcaption>
         </figure>
         <figure className="flex flex-col gap-4">
-          <BrowserFrame src={parentChild} alt={l.shotParentChild} width={1600} height={1058} />
+          <BrowserFrame src={parentChild} alt={l.shotParentChild} width={1600} height={1300} />
           <figcaption className="text-sm text-ink-soft">{m.parentSees}</figcaption>
         </figure>
       </div>
@@ -334,7 +330,9 @@ function ForChildren() {
         </ul>
       </div>
       <div aria-hidden className="mt-6 h-40 overflow-hidden sm:h-56">
-        <RiverGarden variant="band" crop="center" frame={false} />
+        <div className="relative h-full w-full">
+          <PaintedScene scene="bend" position="50% 70%" />
+        </div>
       </div>
     </section>
   );
@@ -451,7 +449,7 @@ function Grow() {
           </ul>
         </div>
         <figure className="flex flex-col gap-3">
-          <img src={childGarden} alt={m.shot} width={1600} height={543} loading="lazy" className="w-full rounded-[24px] shadow-lift" />
+          <img src={childGarden} alt={m.shot} width={1472} height={652} loading="lazy" className="w-full rounded-[24px] shadow-lift" />
           <figcaption className="text-sm text-ink-soft">{m.caption}</figcaption>
         </figure>
       </div>
@@ -546,7 +544,7 @@ function Closing() {
     <>
       <section className="relative overflow-hidden bg-[#DCEDEC]">
         <div aria-hidden className="absolute inset-0">
-          <RiverGarden crop="center" frame={false} bloom={1} />
+          <PaintedScene scene="bend" position="60% 55%" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#F4F6F1]/95 via-[#F4F6F1]/70 to-transparent" />
         </div>
         <div className="relative mx-auto flex max-w-[1240px] flex-col items-start gap-6 px-4 py-24 sm:px-8 sm:py-32">

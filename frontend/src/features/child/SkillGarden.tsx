@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { CurriculumProgress } from "@/lib/api/types";
 import { Plant } from "@/features/world/Plant";
+import bankArt from "@/assets/world/river-path.webp";
 import { useMessages } from "@/i18n/catalog";
 import { cn } from "@/lib/utils/cn";
 import { garden, type GardenPlant } from "./garden";
@@ -27,13 +28,15 @@ export function SkillGarden({ skills }: { skills: CurriculumProgress[] | null })
         <p className="max-w-xl text-[1.05rem] font-medium text-ink-soft">{plants.length === 0 ? m.empty : m.lead}</p>
       </div>
       {/* the bed: a strip of garden ground the plants stand in */}
-      <div className="relative mt-4 bg-gradient-to-b from-[#EEF4E1] to-[#DDEBC8] px-4 pb-6 pt-4 sm:px-6">
+      <div className="relative mt-4 overflow-hidden bg-gradient-to-b from-[#F3EEDF] to-[#E6E2C8] px-4 pb-6 pt-4 sm:px-6">
+        {/* Y44: the garden grows on the painted riverbank. */}
+        <img src={bankArt} alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover object-bottom opacity-30" />
         {plants.length === 0 ? (
           <div className="flex justify-center py-4 opacity-70">
             <Plant stage="sprout" size={64} />
           </div>
         ) : (
-          <ul className="grid grid-cols-3 gap-x-2 gap-y-5 sm:gap-x-3 lg:grid-cols-5">
+          <ul className="relative grid grid-cols-3 gap-x-2 gap-y-5 sm:gap-x-3 lg:grid-cols-5">
             {plants.map((plant, i) => (
               <GardenBed key={plant.skill.skillId} plant={plant} index={i} />
             ))}

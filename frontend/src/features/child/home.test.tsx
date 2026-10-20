@@ -88,15 +88,19 @@ describe("ChildHome (X25)", () => {
     expect(await screen.findByRole("heading", { name: "Hi, Sokha!" })).toBeInTheDocument();
     const subjects = screen.getByRole("list", { name: "My subjects" });
     expect(subjects).toBeInTheDocument();
-    // The subject is a door into its journey; nothing is played from the entrance itself.
-    expect(screen.getByRole("link", { name: "Maths: All done for now" })).toHaveAttribute("href", "/learn/c1?path=e1");
+    // The subject is a door into its journey, at its place in the village (Y44: on the painting on a large screen,
+    // a card on a phone - both are in the document, CSS shows one); nothing is played from the entrance itself.
+    for (const door of screen.getAllByRole("link", { name: "Maths at the bridge: All done for now" })) {
+      expect(door).toHaveAttribute("href", "/learn/c1?path=e1");
+    }
     expect(screen.queryByRole("link", { name: "Play" })).not.toBeInTheDocument();
   });
 
   it("in a subject's journey, all lit and nothing due, offers the shelf - and a way back to every subject", async () => {
     server(() => respond(200, { placed: 0 }));
     renderHome("/learn/c1?path=e1");
-    expect(await screen.findByRole("heading", { name: "Hi, Sokha!" })).toBeInTheDocument();
+    // Y44: a subject's journey is headed by the subject, at its place.
+    expect(await screen.findByRole("heading", { name: "Maths" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /See my shelf/ })).toHaveAttribute("href", "/learn/c1/shelf");
     expect(screen.getByRole("link", { name: /All my subjects/ })).toHaveAttribute("href", "/learn/c1");
   });

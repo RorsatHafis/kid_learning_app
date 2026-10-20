@@ -151,9 +151,9 @@ export async function addChild(page: Page, name: string, dateOfBirth: string, su
   await page.waitForURL(/\/parent\/children\/[^/?#]+$/);
 }
 
-/** In the child's space: from the entrance, into one subject's journey (its door). */
+/** In the child's space: from the entrance, into one subject's journey (its place: "Maths at the bridge: ..."). */
 export async function openSubject(page: Page, subject: string) {
-  await page.getByRole("link", { name: new RegExp(`^${subject}:`) }).click();
+  await page.getByRole("link", { name: new RegExp(`^${subject}( at [^:]+)?:`) }).click();
 }
 
 // ---- Y44: school services need a confirmed payment ----

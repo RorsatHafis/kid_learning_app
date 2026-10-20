@@ -1,6 +1,6 @@
 ---
 name: Bookeyond Kid
-description: Learn Today, Build Tomorrow — a children's learning world set in a Cambodian river garden by day, with a calm, evidence-first window for parents and a precise workspace for schools.
+description: Learn Today, Build Tomorrow — a children's learning world set in a painted Cambodian river village, with a calm, evidence-first window for parents and a precise workspace for schools.
 colors:
   tonle-50: "#EFF6F6"
   tonle-100: "#DCEBEC"
@@ -143,12 +143,12 @@ components:
 
 ## Overview
 
-**Creative North Star: "River Garden"**
+**Creative North Star: "River Village"**
 
-Bookeyond Kid lives in a Cambodian village garden on a clear morning: a stilt house with a clay roof, sugar palms with fan crowns, rice paddies in bands of green, a lotus pond, a sandy path down to the Tonle river, a temple far off in the haze. It is drawn as a storybook, original from scratch, in flat, softly shaded planes. River teal is the structure; the one warm voice is marigold *light*, and it always means something: now, next, done well.
+Bookeyond Kid lives in a Cambodian river village (Y44): stilt houses along the water, a stone bridge, a gilded pavilion among sugar palms and bamboo, lotus at the bank, stepping stones on a sandy path. It is the owner's painted artwork from the Figma file, layered paper-cut in dusty blue-greens with warm sand (`brand/world/`), never redrawn or generated. River teal is the structure; the one warm voice is marigold *light*, and it always means something: now, next, done well.
 
-The same garden is seen three ways.
-- **Children** are inside it. The home is the whole scene: the learning path is a road of books, and the child's Learning Buddy waits at the current book. Activities move into a quiet field (no house, no path, no pond) so a question has nothing to compete with.
+The same village is seen three ways.
+- **Children** are inside it. The home is the painted village with each subject at its own place (Maths at the bridge, Khmer at the pavilion, English at the treehouse, any other subject at the lotus pond) and Momo on the stone path; a subject's journey opens on the river bend. Activities and the shelf keep only a faded strip of the river at the bottom, so a question has nothing to compete with.
 - **Parents** see it as a calm band at the top of each page, with their child's own buddy as a portrait. Below that are evidence-first pages on rice paper.
 - **Staff** (teachers, principals, administrators) work beside it. A white rail carries the brand, and precise tables and panels sit on quiet paper. There are no buddies in professional space.
 
@@ -290,7 +290,6 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
 ### Signature Components
 - **Activity builder (Y42)** (`features/admin/studio/ActivityBuilder`): a draft activity is one place to write a quiz, in three numbered steps. **1 Write the questions**: numbered cards (type picture, prompt, "New" or "Published"), edited in place, reordered or taken out with immediate saves; **Add a question** opens "What should children do?" - seven cards, each a picture, a plain name, what the child does and an example - and the form for that type, tagged with the activity's skills. Reusing a published question and the extra settings are tucked into disclosures. **2 Ready to publish?**: every check publishing will run, grouped by the activity and by question. **3 Publish**: one button that names how many new questions go with it, a plain-words confirmation, and an all-or-nothing publish. Where review is required, the review flow stays. After publishing: "Get it to children" says the real next step for a teacher or an admin. **New activity** is one form (name, what it practises, lesson or a new one) that lands in the builder.
 - **Hint and explanation (Y41):** educator-written, part of the question's version. The hint waits behind a "Need a hint?" pill (lightbulb) under the interaction, closed until the child asks, and goes once they answer; a hint that says a typed answer can't be published, one naming the right choice is flagged. The explanation comes only with the answer, right or wrong: a white card headed "Why" under the verdict and the right answer. Both stay in the curriculum's own language. The Studio form says when the child sees each; the preview shows the hint, and the explanation after a try.
-- **Garden in the world (Y40)** (`features/world/WorldGarden`): the child's garden is also a bed of turned earth in the River Garden, at the stages the answers support (up to eight plants, blooms in front). The cards cover different parts of the scene on different screens, so the bed has two places: the field left of the path on a phone or tablet (`spot="field"`, `lg:hidden`), the near ground right of it on a large screen (`spot="near"`). A child with no answers sees the bed freshly turned. Drawn on the home and on each journey.
 - **Verdict as a picture (Y40):** the answer bar leads with the world's own sign - an open lotus for right, a bud for "not quite" - so a child who can't read the words still knows. A wrong typed answer gets the right one beside it in the same size (`7 → 3`); a wrong order gets "The right order" laid out as tiles. Both are decorative; the words say it to a screen reader.
 - **Whole-basket sorting (Y40):** a picked tile drops into a basket wherever the child taps it, not only on its name; the name stays the keyboard and screen-reader control.
 - **Next lantern (Y40):** beside the lit lanterns, one swaying unlit lantern per path for what it is working towards (the first book, its current chapter all lit, or the whole path) with "2 more books". From path state only - never a quota or a deadline.
@@ -315,13 +314,12 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
 - **Child setup** (`/parent/add-child`): three steps - about, subjects (one card per subject from the server's catalog for the child's age, with its emblem), review. Resumable (`?child=`).
 - **Subject door** (the child's entrance): a large card per subject the family chose - emblem, name, what's next, books done in the subject's colour - opening that subject's journey.
 - **Child summary** (family home): a cream header with the child's buddy portrait and actions; subjects with progress in their colour; a standing bar; skills flagged for practice.
-- **River Garden** (`features/world/RiverGarden.tsx`): the scene, in three variants.
-  - `home`: house, path, pond and temple.
-  - `band`: a calm strip for parent pages and the landing.
-  - `quiet`: sky, hills and fields only, behind activities.
-  - `bloom` (0–1) opens the pond's five lotuses as the child's chapters finish.
-  - Art direction (iteration 2): one low sun at the upper left; volumes lighter on the left, shadows to the right; the air thickens with distance (far ridges and the temple pale and blue, colour warming and sharpening towards the front); each layer a little more detailed than the one behind; the world has life in it (egrets, a buffalo, a boat, a krama drying, a spirit house) but never a crowd of symbols.
-- **Path of Books:** the child's path as books along the village path. Lit means done, glowing means current (the buddy stands there), plain means later. Each is labelled "៥ · 5".
+- **Painted world (Y44)** (`features/world/PaintedWorld.tsx`, `places.ts`): the owner's painting, shipped as WebP at two sizes.
+  - `PaintedWorld`: the stage, at the painting's own 1584×672 proportions from a small tablet up, so anything placed on it in percent (`OnWorld`: a subject's place marker, Momo) stays on its landmark at every width; a taller 3:2 window onto its middle on a phone, where only the buddy stands on it.
+  - `PaintedScene`: the painting as a cover (landing, sign-in, the parent's scene band). `PaintedBackdrop`: cream paper with the river bend fading in at the bottom (activities, the shelf).
+  - Places come from the subject's motif, never invented: a subject with no place of its own goes to the lotus pond.
+  - The picture is decoration; what it shows is said in words beside it.
+- **Path of Books:** on the activity-complete page, the chapter's books on the painted bank. Lit means done, glowing means current (the buddy stands there), plain means later. Each is labelled "៥ · 5".
 - **Progress Buds:** an activity's questions as a row of buds that open as they are answered. They replace a percentage bar.
 - **Evidence Line:** evidence strength as line weight, with a text label always beside it.
   - Dotted hairline: none.
@@ -330,11 +328,11 @@ Depth is paper laid on paper in morning light. Shadows are soft and tinted with 
   - 5.5px: strong.
 - **Learning Buddies** (`features/buddy`): Momo the otter, Domrey the elephant, Krobey the water buffalo, Toch the gibbon and Kongkep the frog.
   - They share one pose system (arms, eyes, mouth, cheeks) with the moods idle, happy, thinking, cheer and encourage.
-  - Rendering (iteration 2): one key light from the upper left; gradient volumes, the head's shadow on the body and a rim of light on the far edge; limbs are shaped tubes ending in paws, hands, hooves or webbed feet (never single strokes); a few strokes of texture; no outlines.
+  - Rendering (Y44): Momo after the owner's Figma character (`Momo.tsx`: cocoa fur, cream face and belly, a blue plaid krama scarf, a leaf card), the others in his flat storybook style (`FlatCast.tsx`): the same seated body and short rounded arms, flat colour without outlines, small dark eyes with a glint. The approved Momo images drop in per mood at `frontend/src/assets/buddy/` and replace the drawing everywhere.
   - Authored, never conversational.
   - The child chooses one on `/learn/:childId/buddy`; parents see it as the child's portrait.
   - The names are proposals pending product review (PD-13).
-- **Village Places** (`features/marketing/Places.tsx`): subjects as places on the landing. A bridge is Maths, a pavilion Khmer, a treehouse English. Only Maths is marked ready.
+- **Village Places** (`features/marketing/Places.tsx`): subjects as places on the landing, in the same painted art the child sees. A bridge is Maths, a pavilion Khmer, a treehouse English. Only Maths is marked ready.
 - **Brand mark (Y41):** the official Bookeyond badge alone (`BrandMark`) where space is tight - the child's space, phone headers, the staff rail on a phone - with a fine light ring on dark grounds. The app icons (`frontend/public`) are the badge on warm paper; `brand/official/make_assets.py` rebuilds them. The Y33–Y38 drafted product mark is retired.
 
 ## Do's and Don'ts

@@ -52,6 +52,10 @@
     line-height: 1.4;
     letter-spacing: 0;
   }
+  /* The spaced-out capitals of Latin eyebrows (tracking-*) would pull Khmer clusters apart. */
+  [lang="km"] [class*="tracking-"] {
+    letter-spacing: 0;
+  }
 
   ::selection {
     background: theme("colors.light.soft");

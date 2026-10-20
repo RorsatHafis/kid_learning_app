@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Chapter, LearningBuddyKind } from "@/lib/api/types";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
-import { RiverGarden } from "@/features/world/RiverGarden";
+import { PaintedScene } from "@/features/world/PaintedWorld";
 import { cn } from "@/lib/utils/cn";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
@@ -42,7 +42,7 @@ export function ChildSeal({ id, name, size = "md" }: { id: string; name: string;
 export function ChildPortrait({ buddy, size = "md" }: { buddy: LearningBuddyKind; size?: "md" | "lg" }) {
   const box = size === "lg" ? "h-20 w-20 rounded-[24px]" : "h-16 w-16 rounded-[20px]";
   return (
-    <span aria-hidden className={cn("flex shrink-0 items-end justify-center overflow-hidden bg-[#E7F1EC] ring-1 ring-tonle-950/5", box)}>
+    <span aria-hidden className={cn("flex shrink-0 items-end justify-center overflow-hidden bg-[#EDE6D3] ring-1 ring-tonle-950/5", box)}>
       <LearningBuddy kind={buddy} mood="idle" size={size === "lg" ? 88 : 70} className="!animate-none -mb-1.5" />
     </span>
   );
@@ -53,7 +53,9 @@ export function SceneBand({ children, className }: { children: ReactNode; classN
   return (
     <section className={cn("relative overflow-hidden rounded-[28px] bg-tonle-50 shadow-card", className)}>
       <div aria-hidden className="absolute inset-0">
-        <RiverGarden variant="band" crop="center" frame={false} className="absolute inset-x-0 top-0 h-[62%] w-full sm:inset-y-0 sm:left-auto sm:right-0 sm:h-full sm:w-[72%]" />
+        <div className="absolute inset-x-0 top-0 h-[62%] w-full sm:inset-y-0 sm:left-auto sm:right-0 sm:h-full sm:w-[72%]">
+          <PaintedScene position="60% 55%" />
+        </div>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#fff_0%,#fff_34%,rgba(255,255,255,0.72)_52%,rgba(255,255,255,0)_78%)] max-sm:bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.1)_20%,rgba(255,255,255,0.86)_42%,#fff_64%)]" />
       </div>
       <div className="relative">{children}</div>

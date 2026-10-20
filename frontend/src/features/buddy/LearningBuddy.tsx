@@ -2,6 +2,7 @@ import { useId, type ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 import { BuddyDrawing } from "./BuddyArt";
 import { BuddyKindContext, useBuddyKind, type BuddyKind, type BuddyMood } from "./kinds";
+import { momoArt } from "./momoArt";
 
 /**
  * The Learning Buddy: an animal friend the child chooses (Momo the otter until they do), who walks
@@ -41,6 +42,9 @@ export function LearningBuddy({
 }) {
   const chosen = useBuddyKind();
   const uid = useId().replace(/:/g, "");
+  const drawn = kind ?? chosen;
+  // Y44: the owner's approved Momo image for this mood, once it is added (momoArt.ts); the drawing until then.
+  const art = drawn === "OTTER" ? momoArt(mood) : null;
   return (
     <svg
       viewBox="0 0 200 200"
@@ -53,7 +57,11 @@ export function LearningBuddy({
       // Restart the mood's one-shot motion each time the mood changes.
       key={mood}
     >
-      <BuddyDrawing kind={kind ?? chosen} mood={mood} uid={uid} />
+      {art ? (
+        <image href={art} x="0" y="0" width="200" height="200" preserveAspectRatio="xMidYMax meet" />
+      ) : (
+        <BuddyDrawing kind={drawn} mood={mood} uid={uid} />
+      )}
     </svg>
   );
 }

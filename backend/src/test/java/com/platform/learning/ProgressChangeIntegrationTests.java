@@ -53,7 +53,7 @@ class ProgressChangeIntegrationTests {
         String parent = registerParent();
         String childId = createChild(parent, "Sokha");
         UUID child = UUID.fromString(childId);
-        List<UUID> skills = jdbc.queryForList("select id from skills order by code limit 5", UUID.class);
+        List<UUID> skills = skills(5);
         Instant now = Instant.now();
         Instant fortyDaysAgo = now.minus(Duration.ofDays(40));
         Instant twoDaysAgo = now.minus(Duration.ofDays(2));
@@ -107,6 +107,20 @@ class ProgressChangeIntegrationTests {
     }
 
     // ------------------------------------------------------------------ evidence as the engine records it
+
+    /**
+     * {@code count} skills to answer on. The migrations seed only four, and what other test classes add depends on
+     * the order they ran in, so the rest are made here under the seeded skills' subject.
+     */
+    private List<UUID> skills(int count) {
+        UUID subjectId = jdbc.queryForObject("select subject_id from skills order by code limit 1", UUID.class);
+        Integer existing = jdbc.queryForObject("select count(*) from skills", Integer.class);
+        for (int i = existing; i < count; i++) {
+            jdbc.update("insert into skills (id, subject_id, code, name) values (?, ?, ?, ?)",
+                    UUID.randomUUID(), subjectId, "PROGRESS_TEST_" + UUID.randomUUID().toString().substring(0, 8), "Progress test skill");
+        }
+        return jdbc.queryForList("select id from skills order by code limit ?", UUID.class, count);
+    }
 
     /** History rows (one per answer, oldest first) and the skill's current state after the last of them. */
     private void evidence(UUID child, UUID skill, Instant at, String... masteryAfterEach) {

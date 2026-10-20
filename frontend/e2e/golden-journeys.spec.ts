@@ -53,7 +53,7 @@ test.describe("golden journeys", () => {
       const answer = answered === 0 ? "99" : answerFor(prompt);
       await page.getByRole("textbox").fill(answer);
       await page.getByRole("button", { name: "Check" }).click();
-      await expect(page.getByText(answered === 0 ? /not quite|let.s|answer is/i : /got it|right|great/i).first()).toBeVisible();
+      await expect(page.getByText(answered === 0 ? /not quite|let.s|answer is/i : /got it|right|great/i).filter({ visible: true }).first()).toBeVisible();
       answered++;
       const finish = page.getByRole("button", { name: /finish/i });
       if (await finish.isVisible()) {

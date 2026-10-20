@@ -26,6 +26,7 @@ import { afterActivity, type GardenNews } from "./garden";
 import { Explanation } from "./Explanation";
 import { gardenMessages } from "./garden.messages";
 import { Plant } from "@/features/world/Plant";
+import coverArt from "@/assets/world/river-path.webp";
 import type { CurriculumProgress } from "@/lib/api/types";
 import { childBreakMessages } from "@/features/parent/breaks.messages";
 
@@ -567,9 +568,15 @@ function Intro({
   useEffect(() => startRef.current?.focus(), []);
   const n = activity.items.length;
   return (
-    <div className="px-4 pb-16 pt-28 sm:pt-32">
-      <Page labelledBy="activity-title" className="px-6 pb-10 pt-10 text-center motion-safe:animate-page-in sm:px-14 sm:pb-12">
-        <LearningBuddy mood="happy" size={140} className="mx-auto -mt-32 sm:-mt-36" />
+    <div className="px-4 pb-16 pt-6 sm:pt-10">
+      <Page labelledBy="activity-title" className="overflow-hidden px-0 pb-10 text-center motion-safe:animate-page-in sm:pb-12">
+        {/* Y44: the book's cover - a window onto the river, with the buddy standing on the path. */}
+        <div aria-hidden className="relative h-44 overflow-hidden rounded-t-[32px] sm:h-56">
+          <img src={coverArt} alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_62%]" />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#FFFDF8] to-transparent" />
+          <LearningBuddy mood="happy" size={150} className="absolute bottom-1 left-1/2 h-auto w-[118px] -translate-x-1/2 sm:w-[150px]" />
+        </div>
+        <div className="px-6 sm:px-14">
         {reason && <p className="mx-auto mt-2 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-800">{reason()}</p>}
         <h1 id="activity-title" className="mt-4 font-display text-headline font-bold text-tonle-950">
           {activity.title}
@@ -591,6 +598,7 @@ function Intro({
           <button ref={startRef} type="button" onClick={onStart} className={goButton}>
             {m.letsGo} <ArrowRight size={22} aria-hidden />
           </button>
+        </div>
         </div>
       </Page>
     </div>
@@ -710,8 +718,16 @@ function Question({
   const total = activity.items.length;
   const answeredHere = result ? 1 : 0;
   const mood = result ? (result.correct ? "cheer" : "encourage") : isSubmitting ? "thinking" : "idle";
+  const buddyLine = result ? (result.correct ? m.buddyRight : m.buddyTogether) : isSubmitting ? m.buddyChecking : m.buddyTakeYourTime;
   return (
-    <div className="flex flex-col gap-5 px-4 pb-16 pt-1 sm:gap-7">
+    <div className="relative flex flex-col gap-5 px-4 pb-16 pt-1 sm:gap-7">
+      {/* Y44: on a large screen the buddy keeps the child company beside the page, with a word for the moment. */}
+      <div aria-hidden className="pointer-events-none absolute left-[max(1rem,calc(50%-36rem))] top-36 hidden flex-col items-center gap-2 xl:flex">
+        <p key={buddyLine} className="max-w-[11rem] rounded-[18px] bg-white/95 px-4 py-2.5 text-center text-base font-semibold leading-snug text-tonle-950 shadow-paper ring-1 ring-tonle-950/5 motion-safe:animate-pop-in">
+          {buddyLine}
+        </p>
+        <LearningBuddy mood={mood} size={170} />
+      </div>
       <div className="mx-auto grid w-full max-w-3xl grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-3">
         <Link
           to={journeyHref}
@@ -732,7 +748,7 @@ function Question({
         )}
       >
         {/* The buddy keeps the child company at the page's corner and reacts to the answer. */}
-        <div aria-hidden className="pointer-events-none absolute -top-14 right-3 sm:-top-16 sm:right-8">
+        <div aria-hidden className="pointer-events-none absolute -top-14 right-3 sm:-top-16 sm:right-8 xl:hidden">
           <LearningBuddy mood={mood} size={78} className="sm:hidden" />
           <LearningBuddy mood={mood} size={96} className="hidden sm:block" />
         </div>
@@ -919,8 +935,13 @@ function Completed({
         {phase.garden && <GardenNewsPanel news={phase.garden} />}
         {chapterSteps.length > 0 && (
           // The child's stretch of the path: the book just finished takes the light where it sits.
-          <div className={cn("mt-8 overflow-hidden bg-[#EAF3E4] px-4 pt-3", next ? "rounded-t-[22px]" : "rounded-[22px] pb-3")}>
-            <PathStrip steps={chapterSteps} justLitId={itemId} nextId={nextHere} chapterDone={finishedChapter !== null} />
+          <div className={cn("relative mt-8 overflow-hidden px-4 pt-3", next ? "rounded-t-[22px]" : "rounded-[22px] pb-3")}>
+            {/* Y44: the books rest on the painted riverbank. */}
+            <img src={coverArt} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[50%_70%] opacity-70" />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-[#FFFDF8]/30 to-[#FFFDF8]/10" />
+            <div className="relative">
+              <PathStrip steps={chapterSteps} justLitId={itemId} nextId={nextHere} chapterDone={finishedChapter !== null} />
+            </div>
           </div>
         )}
         {next && (

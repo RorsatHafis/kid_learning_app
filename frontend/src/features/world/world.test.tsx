@@ -1,10 +1,8 @@
 /**
- * The child's world (X9): the path strip lights the finished book and moves the buddy on, and the pond opens a
- * lotus per finished chapter.
+ * The child's world (X9): the path strip lights the finished book and moves the buddy on.
  */
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
-import { RiverGarden } from "./RiverGarden";
 import { PathStrip } from "./PathStrip";
 
 const steps = (statuses: ("COMPLETED" | "PENDING")[]) => statuses.map((status, i) => ({ learningPathItemId: `s${i}`, status }));
@@ -29,22 +27,5 @@ describe("PathStrip (X9)", () => {
     expect(blooms).toHaveLength(3);
     expect([...blooms].map((b) => b.style.animationDelay)).toEqual(["250ms", "390ms", "530ms"]);
     expect(container.querySelector(".motion-safe\\:animate-hop")).toBeNull();
-  });
-});
-
-describe("River Garden's lotus pond (X9)", () => {
-  // An open lotus has a golden heart; a bud has none.
-  const openLotuses = (container: HTMLElement) => container.querySelectorAll('ellipse[fill="#F2C14E"]').length;
-
-  it("opens the pond's lotuses one by one as the child's chapters finish", () => {
-    expect(openLotuses(render(<RiverGarden bloom={0} />).container)).toBe(0);
-    expect(openLotuses(render(<RiverGarden bloom={0.6} />).container)).toBe(3);
-    expect(openLotuses(render(<RiverGarden bloom={1} />).container)).toBe(5);
-  });
-
-  it("keeps the quiet field behind an activity free of the house, the path and the pond", () => {
-    const { container } = render(<RiverGarden variant="quiet" bloom={1} />);
-    expect(openLotuses(container)).toBe(0);
-    expect(container.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 });

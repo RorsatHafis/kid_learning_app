@@ -55,15 +55,15 @@ export function PathStrip({
           <stop offset="1" stopColor="#FFD27A" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="strip-path" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#E9D6AA" />
-          <stop offset="1" stopColor="#E0C995" />
+          <stop offset="0" stopColor="#EADBB8" />
+          <stop offset="1" stopColor="#DCC799" />
         </linearGradient>
       </defs>
       {/* the path the books rest on, running on past them to the panel's edges (it clips),
           with grass along its edges */}
       <rect x={-width * 3} y={WATER_Y - 14} width={width * 7} height="44" rx="22" fill="url(#strip-path)" />
-      <path d={`M${-width * 3} ${WATER_Y - 14} H${width * 4}`} stroke="#93BD5A" strokeWidth="4" opacity="0.7" />
-      <path d={`M${-width * 3} ${WATER_Y + 30} H${width * 4}`} stroke="#93BD5A" strokeWidth="4" opacity="0.7" />
+      <path d={`M${-width * 3} ${WATER_Y - 14} H${width * 4}`} stroke="#8FA88A" strokeWidth="3" opacity="0.6" />
+      <path d={`M${-width * 3} ${WATER_Y + 30} H${width * 4}`} stroke="#8FA88A" strokeWidth="3" opacity="0.6" />
 
       {shown.map(({ step, index }, i) => {
         const state: BookState = step.status === "COMPLETED" ? "done" : index === next ? "current" : "later";

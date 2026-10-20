@@ -3,8 +3,9 @@
 // Local tool only: run it against an isolated stack holding sample data - never real families.
 //
 //   node scripts/capture-marketing-shots.mjs <outDir> <familyEmail> <familyPassword> <childId> <enrollmentId>
-//        <teacherEmail> <teacherPassword> <classId>     (base URL: CAPTURE_BASE, default http://localhost:5174)
+//        [<teacherEmail> <teacherPassword> <classId>]   (base URL: CAPTURE_BASE, default http://localhost:5174)
 //
+// Without the teacher's arguments the teacher's shots are left as they are.
 // Then convert each PNG to WebP (quality ~80; desktop shots at 1600px wide) into src/features/marketing/shots.
 import { chromium } from "@playwright/test";
 import { mkdirSync } from "node:fs";
@@ -44,6 +45,15 @@ const settle = async (page) => {
   await context.close();
 }
 
+// The child's skill garden, on the shelf.
+{
+  const { context, page } = await signedIn(familyEmail, familyPassword, { width: 800, height: 900 });
+  await page.goto(`${BASE}/learn/${childId}/shelf`);
+  await settle(page);
+  await page.locator("#garden").screenshot({ path: `${OUT}/child-garden.png` });
+  await context.close();
+}
+
 // The parent: the family home and the child's learning plan and insights.
 {
   const { context, page } = await signedIn(familyEmail, familyPassword, { width: 1280, height: 860 });
@@ -58,7 +68,7 @@ const settle = async (page) => {
 }
 
 // The teacher: the class's skills and how the class moved over time.
-{
+if (teacherEmail) {
   const { context, page } = await signedIn(teacherEmail, teacherPassword, { width: 1280, height: 860 });
   await page.goto(`${BASE}/teacher/classes/${classId}`);
   await settle(page);

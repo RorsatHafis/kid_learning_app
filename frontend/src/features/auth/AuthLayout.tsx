@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { LegalLinks } from "@/features/legal/Legal";
 import { Link } from "react-router-dom";
 import { Logo } from "@/components/brand/Logo";
-import { RiverGarden } from "@/features/world/RiverGarden";
+import { PaintedScene } from "@/features/world/PaintedWorld";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
@@ -21,7 +21,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
   return (
     <div className="min-h-screen bg-paper lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(480px,1fr)]">
       <aside aria-hidden className="relative h-44 overflow-hidden bg-[#DCEDEC] sm:h-56 lg:sticky lg:top-0 lg:h-screen">
-        <RiverGarden crop="bottom" bloom={0.4} className="absolute inset-0" />
+        <PaintedScene position="35% 70%" />
         <div className="absolute bottom-10 left-10 hidden max-w-sm items-end gap-3 lg:flex">
           <LearningBuddy mood="happy" size={112} className="-mb-2 shrink-0" />
           <p className="rounded-[22px] bg-white/95 px-6 py-4 font-display text-[1.9rem] font-bold leading-[1.1] text-tonle-950 shadow-lift">
