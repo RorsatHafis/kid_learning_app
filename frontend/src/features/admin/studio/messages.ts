@@ -19,6 +19,7 @@ export const studioMessages = defineMessages(
     forbidden: "You don't have permission to change this.",
     gone: "That item no longer exists or isn't available to you.",
     uploadFailed: "The upload didn't work. Check your connection and try again.",
+    uploadTooLarge: "This file is too large to send. Make it smaller and try again.",
     types: {
       MULTIPLE_CHOICE: "Multiple choice",
       TRUE_FALSE: "True or false",
@@ -311,6 +312,7 @@ export const studioMessages = defineMessages(
     forbidden: "អ្នកមិនមានសិទ្ធិកែប្រែវាទេ។",
     gone: "ធាតុនោះលែងមាន ឬមិនអាចប្រើបានសម្រាប់អ្នក។",
     uploadFailed: "ការផ្ទុកឡើងមិនដំណើរការទេ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្ដងទៀត។",
+    uploadTooLarge: "ឯកសារនេះធំពេកមិនអាចផ្ញើបានទេ។ សូមធ្វើឱ្យវាតូចជាងនេះ ហើយព្យាយាមម្ដងទៀត។",
     types: {
       MULTIPLE_CHOICE: "ពហុជម្រើស",
       TRUE_FALSE: "ត្រូវ ឬខុស",

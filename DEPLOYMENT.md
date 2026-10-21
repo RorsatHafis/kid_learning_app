@@ -267,13 +267,16 @@ Then run `scripts/smoke-test.sh https://<domain>`.
   If the server is lost: a new server, the same settings file (from your secret store), DNS pointed at it,
   the newest off-server backup decrypted on a trusted machine and copied over, `scripts/release.sh`
   once (an empty stack), then `scripts/restore.sh` with that backup.
-- **Erased data came back with a restore.** Nothing to do: the next sweep (hourly) erases it again from
-  the ledger. Check the log for `was erased but is back`. If the ledger itself was lost, the
+- **Erased data came back with a restore.** Restart the backend (`scripts/restore.sh` does): before it
+  takes a request it erases again whatever the ledger lists (Y45; the log says `again at startup`), and the
+  hourly sweep does the same. A database restored *without* restarting the backend stays as restored
+  until that sweep. Check the log for `was erased but is back`. If the ledger itself was lost, the
   application log's `Erased CHILD/ACCOUNT <id>` lines (and the `CHILD_ERASED` / `ACCOUNT_ERASED` audit
   events in any newer backup) name what to erase.
-- **Media files are missing** (a picture or recording fails to load): copy them back from the newest
-  backup's `media.tar` into the media volume - files are only ever added, so restoring media never
-  overwrites anything newer.
+- **Media files are missing** (a picture or recording fails to load; the log says `Media file for asset
+  <id> is missing from storage`): copy them back from the newest backup's `media.tar` into the media
+  volume - files are only ever added, so restoring media never overwrites anything newer. Uploading the
+  same file again in the Studio also repairs it (Y45).
 - **A secret is exposed.** `JWT_SECRET`: replace it and restart the backend - everyone is signed out.
   `DB_PASSWORD`: change it in PostgreSQL (`ALTER ROLE bookeyond_kid PASSWORD ...`) and the settings, restart
   the backend. Mail credentials: rotate at the provider. The backup private key: make a new key pair,

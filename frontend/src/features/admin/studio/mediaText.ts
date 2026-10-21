@@ -12,5 +12,7 @@ export function uploadError(err: unknown): string {
   if (err instanceof ApiError && err.status === 409 && typeof err.problem?.limitBytes === "number" && err.problem.detail) {
     return err.problem.detail;
   }
+  // A 413 without the server's own explanation came from a proxy in front of it (its request limit).
+  if (err instanceof ApiError && err.status === 413) return messagesNow(studioMessages).uploadTooLarge;
   return messagesNow(studioMessages).uploadFailed;
 }

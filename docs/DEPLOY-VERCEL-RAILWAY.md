@@ -83,16 +83,34 @@ Run each against the deployed URLs and record the result. A failure in any of th
    (administrators only); `https://<vercel>/` serves the app and a deep link such as `/parent/account` reloads.
 2. Startup log shows Flyway migrating to V62 and `prod` active; no simulator.
 3. Register a parent, confirm the email (real delivery), sign in, refresh, sign out.
-4. **Rate limits per client.** Behind Vercel and Railway the backend must see each person's own address
-   (`server.forward-headers-strategy: native` believes only private-network proxies). Sign in wrongly from two
-   different networks and check that one network's budget doesn't block the other. If every request appears to
-   come from one Vercel address, sign-in budgets would be shared by all families: fix before release (for
-   example, call the Railway API directly with CORS and absolute media URLs, or trust a header only Vercel can
-   set).
-5. Upload a 5 MB image in the Studio through the Vercel domain (the proxy's request size limit is unverified).
+4. **Rate limits per client** (sign-in, registration, refresh and recovery budgets are keyed on the client's
+   address). The backend believes only `X-Forwarded-For` entries added by proxies it trusts: private-network
+   addresses by default (Railway's last hop), plus whatever `SERVER_TOMCAT_REMOTEIP_TRUSTED_PROXIES` lists (a Java
+   regex of the *web front's* public addresses, unset by default). Behaviour in each case is covered by
+   `ForwardedClientAddressIntegrationTests` and `TrustedFrontProxyClientAddressIntegrationTests`. On staging:
+   1. **What the backend sees.** Sign in wrongly once, then find the warning `Rate limit exceeded ... from <address>`
+      after step ii, or read the Railway request log. If `<address>` is your own public address, nothing more is
+      needed. If it is a Vercel address, every family would share one budget: either list Vercel's egress
+      addresses in `SERVER_TOMCAT_REMOTEIP_TRUSTED_PROXIES` (only if Vercel gives the project fixed ones), or have
+      the browser call the Railway domain directly (CORS, absolute media URLs and `connect-src` in the CSP).
+      Don't release until this is settled.
+   2. **Two clients, two budgets.** From one network (a phone on mobile data) sign in wrongly
+      `RATE_LIMIT_LOGIN_PER_MINUTE` + 1 times: the last answer is 429 with `Retry-After`. At once, from a second
+      network (office Wi-Fi), one wrong sign-in answers 401, not 429.
+   3. **A spoofed header doesn't help.** From the first network, while it is still limited, send
+      `curl -s -o /dev/null -w '%{http_code}' -X POST https://<vercel>/api/v1/auth/login -H 'Content-Type: application/json'
+      -H 'X-Forwarded-For: 198.51.100.7' -d '{"email":"x@example.com","password":"x"}'`: still 429.
+5. **Uploads through the real route.** In the Studio, through the Vercel domain, upload:
+   1. a 1.9 MB picture and a 4.9 MB recording: both are accepted and play back;
+   2. a 2.5 MB picture: the server's own message ("a picture at most 2 MB");
+   3. a 6 MB recording: refused. If the answer is our backend's 413, the message names the limit. If Vercel's proxy
+      refuses it first (its request limit may be below 5 MB), the Studio says "This file is too large to send";
+      then lower `spring.servlet.multipart.max-file-size` to what Vercel accepts, or upload straight to Railway.
+   Record the largest size Vercel passed.
 6. Restart the backend service: uploaded media and `/data/erasures/erasures.log` are still there.
 7. Payments: with no price set, families see "can't be bought online yet"; with manual payments on, a transfer
-   stays pending until an administrator confirms the real receipt; `/payments/{id}/simulate` answers 400.
+   stays pending until an administrator confirms the real receipt; `/payments/{id}/simulate` is refused (404 in
+   `prod`).
 8. A child plays an activity; the parent sees the evidence; a teacher and principal see only their classes.
 9. Khmer and English, desktop and phone, on the deployed site.
 
@@ -123,11 +141,29 @@ Passed:
   confirmed by an administrator, then open) 2/2, plans 4/4.
 
 Not covered by the rehearsal: Vercel's and Railway's own platforms, real SMTP, the client-address check in step 3.4
-(Vercel's proxy can't be simulated locally), Vercel's request-size limit for uploads (step 3.5), and a ledger
-*entry* surviving a restart (no erasure was due during the rehearsal; the file itself persisted).
+(Vercel's proxy can't be simulated locally) and Vercel's request-size limit for uploads (step 3.5).
 
-Found: if a stored media file is lost, uploading the same file again returns the existing record without writing the
-file back, so it stays missing. Recorded as an open finding; it matters only after storage loss.
+Found: if a stored media file is lost, uploading the same file again returned the existing record without writing the
+file back (TD-26). Fixed in Y45, below.
+
+### Erasure drill and fixes (2026-10-21, Y45)
+
+On the same rehearsal stack, with deletions due at once and a sweep every minute:
+- A family made by the golden journey (one child, 8 child-linked learning rows) deleted the child and then the
+  account through the web origin. Each erasure left the database and wrote a ledger line (`CHILD`, then `ACCOUNT`);
+  the parent's sign-in then answered 401.
+- The ledger file was byte-identical (same SHA-256) after a backend restart and after the container was replaced.
+- **Restore drill**, as `scripts/restore.sh` does it (backend stopped, a backup taken *before* the erasures restored,
+  backend started). It showed a defect: for about 70 seconds the erased parent could sign in (200) and the child's
+  rows were back, until the first sweep erased them again.
+  **Fixed**: the backend now erases again, before its server takes a request, anything the ledger lists that the
+  database holds (`ErasureStartupCatchUp`). In the repeated drill the first answer after the restore was 401, and the
+  log shows the re-erasure finished before the application reported started. A restore done without restarting the
+  backend is still only caught by the next sweep (hourly), so **restart the backend after any restore**.
+- **Media (TD-26), fixed**: re-uploading a file repairs a missing or damaged stored copy (checked by SHA-256 and
+  size, written beside it and moved into place, read back). A repair that can't be written fails and saves nothing.
+  A per-content database lock also closes two races found on the way: simultaneous uploads of the same platform
+  picture failing on the unique index, and a deletion removing a file another owner's upload was about to use.
 
 ## 4. Costs and approvals
 
