@@ -349,9 +349,11 @@ public class FamilyErasureService {
     /**
      * Restoring the database from a backup taken before an erasure brings the erased child or account
      * back. Whatever the ledger lists that exists again is erased again - no new date, no email (the
-     * family was told when it first happened) - and audited as erased after a restore.
+     * family was told when it first happened) - and audited as erased after a restore. Run by every sweep,
+     * and at startup before the server takes requests ({@link ErasureStartupCatchUp}), so a restored
+     * database never serves what was erased.
      */
-    private int eraseRestored() {
+    public int eraseRestored() {
         List<ErasureLedger.Entry> entries = ledger.entries();
         if (entries.isEmpty()) {
             return 0;

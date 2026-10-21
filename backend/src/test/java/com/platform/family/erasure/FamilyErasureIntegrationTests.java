@@ -243,6 +243,34 @@ class FamilyErasureIntegrationTests {
         assertThat(erasure.eraseDue()).as("done once").isZero();
     }
 
+    /**
+     * Y45: the restore drill showed restored data served for the minute before the first sweep. The catch-up
+     * runs when the application has started and before the server listens (a SmartInitializingSingleton), and
+     * erases on its own - no sweep - what the ledger lists and the database holds again.
+     */
+    @Test
+    void atStartupWhatARestoreBroughtBackIsErasedBeforeTheServerTakesRequests() throws Exception {
+        assertThat(context.getBean(ErasureStartupCatchUp.class)).isInstanceOf(org.springframework.beans.factory.SmartInitializingSingleton.class);
+        Parent parent = registerParent();
+        String restored = createChild(parent, "Back again");
+        playFirstActivity(parent, restored);
+        String sibling = createChild(parent, "Stays");
+        Parent gone = registerParent();
+        ledger.record(ErasureLedger.Kind.CHILD, UUID.fromString(restored));
+        ledger.record(ErasureLedger.Kind.ACCOUNT, UUID.fromString(gone.id()));
+
+        context.getBean(ErasureStartupCatchUp.class).afterSingletonsInstantiated(); // as at the next start
+
+        assertThat(count("children", "id", restored)).isZero();
+        assertThat(count("activity_attempts", "child_id", restored)).isZero();
+        assertThat(count("accounts", "id", gone.id())).isZero();
+        assertThat(post("/api/v1/auth/login", "{\"email\":\"" + gone.email() + "\",\"password\":\"" + PASSWORD + "\"}", null)
+                .statusCode()).isEqualTo(401);
+        assertThat(count("children", "id", sibling)).as("nothing else").isEqualTo(1);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'CHILD_ERASED' and resource_id = ?::uuid "
+                + "and metadata ->> 'afterRestore' = 'true'", Long.class, restored)).isEqualTo(1);
+    }
+
     @Test
     void onlyAFamilyAccountDeletesItselfHere() throws Exception {
         Account teacher = accountRepository.saveAndFlush(Account.register("erasure-teacher-" + UUID.randomUUID() + "@example.com",
