@@ -70,17 +70,15 @@ public class MediaLibraryService {
 
     private final ContentAssetRepository assets;
     private final MediaService media;
-    private final MediaStorage storage;
     private final ContentAccessGuard guard;
     private final QuestionVersionRepository questionVersions;
     private final QuestionRepository questions;
     private final AuditService audit;
 
-    public MediaLibraryService(ContentAssetRepository assets, MediaService media, MediaStorage storage, ContentAccessGuard guard,
+    public MediaLibraryService(ContentAssetRepository assets, MediaService media, ContentAccessGuard guard,
                                QuestionVersionRepository questionVersions, QuestionRepository questions, AuditService audit) {
         this.assets = assets;
         this.media = media;
-        this.storage = storage;
         this.guard = guard;
         this.questionVersions = questionVersions;
         this.questions = questions;
@@ -157,7 +155,9 @@ public class MediaLibraryService {
     /**
      * Deletes a file nothing uses, ever - in any version, draft or published (409 otherwise: archive it
      * instead). The stored bytes go too unless another owner's copy still holds them, and only once the
-     * deletion has committed, so a rollback never leaves a record without its file.
+     * deletion has committed, so a rollback never leaves a record without its file. Whether another copy
+     * holds them is decided then, under the bytes' lock (TD-26), not before: an upload of the same bytes
+     * racing this deletion keeps its file.
      */
     @Transactional
     public void delete(UUID accountId, UUID assetId) {
@@ -169,15 +169,12 @@ public class MediaLibraryService {
         assets.delete(asset);
         assets.flush();
         String sha256 = asset.getSha256();
-        String key = asset.getStorageKey();
-        if (!assets.existsBySha256(sha256)) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    storage.delete(key);
-                }
-            });
-        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                media.deleteStoredFileIfUnused(sha256);
+            }
+        });
     }
 
     // ------------------------------------------------------------------ helpers

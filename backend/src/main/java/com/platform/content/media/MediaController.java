@@ -4,6 +4,8 @@ import com.platform.common.web.PageResponse;
 import com.platform.content.entity.AssetType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
@@ -36,6 +38,8 @@ import java.util.UUID;
  */
 @RestController
 public class MediaController {
+
+    private static final Logger log = LoggerFactory.getLogger(MediaController.class);
 
     private final MediaService media;
     private final MediaLibraryService library;
@@ -107,7 +111,14 @@ public class MediaController {
     public ResponseEntity<Resource> fetch(@PathVariable UUID assetId, @RequestParam("e") long expiresAt,
                                           @RequestParam("s") String signature) {
         return media.open(assetId, expiresAt, signature)
-                .filter(served -> Files.isRegularFile(served.file()))
+                .filter(served -> {
+                    // A valid link to a file that isn't there is lost media (TD-26): the same 404, but said in the log.
+                    boolean present = Files.isRegularFile(served.file());
+                    if (!present) {
+                        log.warn("Media file for asset {} is missing from storage", assetId);
+                    }
+                    return present;
+                })
                 .map(served -> ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(served.mimeType()))
                         .cacheControl(CacheControl.maxAge(Duration.ofSeconds(Math.max(0,

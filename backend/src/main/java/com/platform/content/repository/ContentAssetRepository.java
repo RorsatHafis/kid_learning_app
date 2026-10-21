@@ -24,6 +24,14 @@ public interface ContentAssetRepository extends JpaRepository<ContentAsset, UUID
     /** Any asset still holding these bytes (the stored file is shared by every owner's copy). */
     boolean existsBySha256(String sha256);
 
+    /**
+     * Holds these bytes' lock until the transaction ends (TD-26). Everything that stores, repairs or deletes a
+     * stored file, or creates a row for one, takes it first, so a file is never deleted between another upload
+     * finding it and that upload committing its row, and two uploads of the same bytes don't both create one.
+     */
+    @Query(value = "SELECT count(*) FROM (SELECT pg_advisory_xact_lock(hashtextextended(:sha256, 0))) locked", nativeQuery = true)
+    long lockContent(@Param("sha256") String sha256);
+
     // ------------------------------------------------------------------ storage (Y35)
     // Usage is what an owner's rows say: one row per owner and file (uq_content_assets_owner_sha256),
     // so a file uploaded twice is counted once, and deleting a row frees its size at once.

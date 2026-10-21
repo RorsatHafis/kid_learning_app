@@ -8,8 +8,11 @@ import com.platform.content.service.ContentAccessGuard;
 import com.platform.content.service.ContentOwnership;
 import com.platform.identity.entity.Account;
 import com.platform.security.SecurityProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Mac;
@@ -46,6 +49,8 @@ public class MediaService {
 
     static final long URL_LIFETIME_HOURS = 7;
 
+    private static final Logger log = LoggerFactory.getLogger(MediaService.class);
+
     private final ContentAssetRepository assets;
     private final MediaStorage storage;
     private final ContentAccessGuard guard;
@@ -77,6 +82,10 @@ public class MediaService {
     /**
      * Uploads, or finds the owner's asset for the same bytes (X13: uploading a file again reuses it, and
      * brings it back to the library if it was archived). A new asset is titled after its file name.
+     *
+     * <p>TD-26: reusing an asset also makes sure its stored file is there and intact, and writes it again
+     * from these bytes if it was lost or damaged - same asset, same references, nothing charged twice. If
+     * the file can't be written and verified, the upload fails and nothing is saved.
      */
     @Transactional
     public ContentAsset uploadAsset(UUID accountId, byte[] bytes, String fileName) {
@@ -88,8 +97,18 @@ public class MediaService {
             // One upload at a time per owner (Y35): two at once can't both take the last free space.
             accounts.findForUpdate(owner);
         }
+        // Then the bytes' own lock (always after the owner's): see ContentAssetRepository.lockContent.
+        assets.lockContent(sha256);
         ContentAsset asset = (owner == null ? assets.findBySha256AndOwnerAccountIdIsNull(sha256)
                 : assets.findBySha256AndOwnerAccountId(sha256, owner))
+                .map(existing -> {
+                    if (!storage.intact(existing.getStorageKey(), sha256, bytes.length)) {
+                        storage.store(sha256, bytes);
+                        log.warn("Media file for asset {} was missing or damaged; restored from a new upload of the same bytes",
+                                existing.getId());
+                    }
+                    return existing;
+                })
                 .orElseGet(() -> {
                     // A file the owner doesn't keep yet: it must fit their allowance, checked before it is stored.
                     storageAllowance.requireRoom(owner, bytes.length);
@@ -101,6 +120,19 @@ public class MediaService {
                 });
         asset.restore();
         return assets.saveAndFlush(asset);
+    }
+
+    /**
+     * Removes the stored file for these bytes once no asset holds them (after a deletion has committed). In a
+     * transaction of its own, under the bytes' lock, and checked again there: an upload of the same bytes that
+     * committed meanwhile keeps its file, and one still running waits and then writes the file again.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deleteStoredFileIfUnused(String sha256) {
+        assets.lockContent(sha256);
+        if (!assets.existsBySha256(sha256)) {
+            storage.delete(MediaStorage.keyFor(sha256));
+        }
     }
 
     /** "three-apples_v2.png" -> "three apples v2": a readable starting title, at most 200 characters. */
