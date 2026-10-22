@@ -28,7 +28,7 @@ import { gardenMessages } from "./garden.messages";
 import { Plant } from "@/features/world/Plant";
 import coverArt from "@/assets/world/river-path.webp";
 import type { CurriculumProgress } from "@/lib/api/types";
-import { childBreakMessages } from "@/features/parent/breaks.messages";
+import { childBreakMessages, childDayMessages } from "@/features/parent/breaks.messages";
 
 /** Why loading or saving stopped: a key into the child's words, so the line follows the language. */
 type TroubleKey = "loadFailed" | "saveFailed";
@@ -41,7 +41,17 @@ type Phase =
    * PENDING/IN_PROGRESS — the child is simply caught up. */
   | { kind: "caught-up" }
   | { kind: "error"; message: TroubleKey }
-  | { kind: "intro"; attemptId: string; itemId: string; activity: ActivityVersionDetail; reason: Line | null }
+  /** M3: the parent's learning day is used, so the server didn't start a new activity (an open one always resumes). */
+  | { kind: "rest" }
+  | {
+      kind: "intro";
+      attemptId: string;
+      itemId: string;
+      activity: ActivityVersionDetail;
+      reason: Line | null;
+      /** M3: the server says only a few minutes of today's learning time are left. */
+      lastOne?: boolean;
+    }
   | {
       kind: "playing";
       attemptId: string;
@@ -215,10 +225,11 @@ export function PlaySession() {
           activityVersionId: item.activityVersionId,
           learningPathItemId: item.id,
         });
-        const [activity, answers, overview] = await Promise.all([
+        const [activity, answers, overview, today] = await Promise.all([
           activityContentApi.getVersion(item.activityVersionId, childId),
           activityAttemptApi.listAnswers(attempt.id),
           overviewOfPath(),
+          childrenApi.today(childId).catch(() => null),
         ]);
         const next = overview?.nextStep ?? null;
 
@@ -246,7 +257,7 @@ export function PlaySession() {
             : ofThis
               ? () => childReason(ofThis)
               : null;
-          setPhase({ kind: "intro", attemptId: attempt.id, itemId: item.id, activity: ordered, reason });
+          setPhase({ kind: "intro", attemptId: attempt.id, itemId: item.id, activity: ordered, reason, lastOne: today?.nearEnd ?? false });
           return;
         }
         setPhase({
@@ -258,8 +269,8 @@ export function PlaySession() {
           result: null,
           startedAt: Date.now(),
         });
-      } catch {
-        setPhase({ kind: "error", message: "loadFailed" });
+      } catch (err) {
+        setPhase(err instanceof ApiError && err.isDailyLimitReached ? { kind: "rest" } : { kind: "error", message: "loadFailed" });
       }
     } finally {
       loadInFlight.current = false;
@@ -291,6 +302,8 @@ export function PlaySession() {
       return shell(<Waiting line={m.play.saving} />);
     case "error":
       return shell(<Trouble onRetry={loadNext} line={m.play[phase.message]} />);
+    case "rest":
+      return shell(<RestForToday childId={childId} journeyHref={journeyHref} />);
     case "caught-up":
       return shell(
         <div className="flex flex-col items-center gap-8 px-6 pt-24 text-center">
@@ -308,6 +321,7 @@ export function PlaySession() {
         <Intro
           activity={phase.activity}
           reason={phase.reason}
+          lastOne={phase.lastOne}
           journeyHref={journeyHref}
           onStart={() =>
             setPhase({
@@ -368,12 +382,39 @@ function JourneyLink({ href, solid, toShelf = false }: { href: string; solid?: b
   );
 }
 
+/**
+ * M3: the learning day the parent chose is used. Calm, not a punishment: the buddy says goodbye for today, the path
+ * waits, and a grown-up can give more time from their area (the lock at the top).
+ */
+function RestForToday({ childId, journeyHref }: { childId: string; journeyHref: string }) {
+  const d = useMessages(childDayMessages);
+  return (
+    <div className="flex flex-col items-center gap-6 px-6 pt-24 text-center">
+      <LearningBuddy mood="happy" size={140} />
+      <div className="flex max-w-md flex-col gap-2 rounded-[24px] bg-white/95 px-6 py-5 shadow-tight">
+        <h1 className="font-display text-headline font-bold text-tonle-950">{d.restTitle}</h1>
+        <p className="text-lg font-medium text-ink">{d.restBody}</p>
+        <p className="text-[0.9375rem] text-ink-soft">{d.restGrownUp}</p>
+      </div>
+      <div className="flex flex-wrap justify-center gap-3">
+        <JourneyLink href={`/learn/${childId}/shelf`} toShelf />
+        <JourneyLink href={journeyHref} />
+      </div>
+    </div>
+  );
+}
+
+function LastOne() {
+  const d = useMessages(childDayMessages);
+  return <p className="mx-auto mt-6 w-fit rounded-pill bg-light-soft px-4 py-1.5 text-sm font-semibold text-light-deep">{d.lastOne}</p>;
+}
+
 // ------------------------------------------------------------------ playing a book again (X24)
 
 type PracticePhase =
   | { kind: "loading" }
   | { kind: "error"; message: TroubleKey | "startedOnPath" | "cantPlayAgain"; retry: boolean }
-  | Extract<Phase, { kind: "intro" | "playing" }>
+  | Extract<Phase, { kind: "rest" | "intro" | "playing" }>
   | { kind: "completing" }
   | { kind: "done"; title: string; correct: number; total: number };
 
@@ -414,7 +455,9 @@ export function PracticeSession() {
         // No path item: free practice. An unfinished practice of this book is resumed.
         attempt = await activityAttemptApi.start(childId, { activityVersionId });
       } catch (err) {
-        if (err instanceof ApiError && err.status === 409) {
+        if (err instanceof ApiError && err.isDailyLimitReached) {
+          setPhase({ kind: "rest" });
+        } else if (err instanceof ApiError && err.status === 409) {
           setPhase({ kind: "error", message: "startedOnPath", retry: false });
         } else if (err instanceof ApiError && err.status === 404) {
           setPhase({ kind: "error", message: "cantPlayAgain", retry: false });
@@ -423,9 +466,10 @@ export function PracticeSession() {
         }
         return;
       }
-      const [activity, answers] = await Promise.all([
+      const [activity, answers, today] = await Promise.all([
         activityContentApi.getVersion(activityVersionId, childId),
         activityAttemptApi.listAnswers(attempt.id),
+        childrenApi.today(childId).catch(() => null),
       ]);
       const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
       const ordered = { ...activity, items };
@@ -434,7 +478,8 @@ export function PracticeSession() {
       if (resumeIndex === -1) {
         await finish(attempt.id, activity.title);
       } else if (resumeIndex === 0) {
-        setPhase({ kind: "intro", attemptId: attempt.id, itemId: "", activity: ordered, reason: () => messagesNow(childMessages).play.playingAgain });
+        setPhase({ kind: "intro", attemptId: attempt.id, itemId: "", activity: ordered, reason: () => messagesNow(childMessages).play.playingAgain,
+          lastOne: today?.nearEnd ?? false });
       } else {
         setPhase({ kind: "playing", attemptId: attempt.id, itemId: "", activity: ordered, index: resumeIndex, result: null, startedAt: Date.now() });
       }
@@ -467,6 +512,8 @@ export function PracticeSession() {
       return shell(<Waiting line={m.play.gettingBook} />);
     case "completing":
       return shell(<Waiting line={m.play.saving} />);
+    case "rest":
+      return shell(<RestForToday childId={childId} journeyHref={`/learn/${childId}`} />);
     case "error":
       return shell(
         phase.retry ? (
@@ -485,6 +532,7 @@ export function PracticeSession() {
         <Intro
           activity={phase.activity}
           reason={phase.reason}
+          lastOne={phase.lastOne}
           journeyHref={shelfHref}
           onStart={() =>
             setPhase({ kind: "playing", attemptId: phase.attemptId, itemId: "", activity: phase.activity, index: 0, result: null, startedAt: Date.now() })
@@ -555,11 +603,13 @@ function Page({ children, className, labelledBy }: { children: React.ReactNode; 
 function Intro({
   activity,
   reason,
+  lastOne,
   journeyHref,
   onStart,
 }: {
   activity: ActivityVersionDetail;
   reason: Line | null;
+  lastOne?: boolean;
   journeyHref: string;
   onStart: () => void;
 }) {
@@ -592,6 +642,8 @@ function Intro({
           <p className="text-base font-semibold text-ink-soft">{m.lanterns(n)}</p>
         </div>
         <Kinds activity={activity} />
+
+        {lastOne && <LastOne />}
 
         <div className="mt-9 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
           <JourneyLink href={journeyHref} />

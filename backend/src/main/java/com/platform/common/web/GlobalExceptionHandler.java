@@ -231,6 +231,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(com.platform.child.service.DailyLimitReachedException.class)
+    public ResponseEntity<Object> handleDailyLimit(com.platform.child.service.DailyLimitReachedException ex, WebRequest request) {
+
+        // M3: today's learning time is used, so a new activity doesn't start. 409 with the day's figures, so the
+        // child's space shows a calm close and the way back tomorrow (and the family how to give more time).
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Daily Learning Time Used");
+        problem.setProperty("dailyLimitReached", true);
+        problem.setProperty("childId", ex.getChildId());
+        problem.setProperty("limitMinutes", ex.getToday().limitMinutes());
+        problem.setProperty("usedMinutes", ex.getToday().usedMinutes());
+        problem.setProperty("extraMinutes", ex.getToday().extraMinutes());
+
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
+
+    }
+
     @ExceptionHandler(com.platform.content.media.StorageLimitException.class)
     public ResponseEntity<Object> handleStorageLimit(com.platform.content.media.StorageLimitException ex, WebRequest request) {
 

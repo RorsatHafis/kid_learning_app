@@ -39,6 +39,11 @@ export class ApiError extends Error {
   }
 
   /** 402 (Y44): the school's services wait for its subscription to be paid. */
+  /** M3: today's learning time is used (a new activity doesn't start; an open one always continues). */
+  get isDailyLimitReached() {
+    return this.status === 409 && this.problem?.dailyLimitReached === true;
+  }
+
   get isSchoolPaymentRequired() {
     return this.status === 402 && this.problem?.schoolPaymentRequired === true;
   }

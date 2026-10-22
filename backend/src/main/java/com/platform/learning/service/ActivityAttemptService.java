@@ -68,6 +68,7 @@ public class ActivityAttemptService {
     private LearnerStreakService learnerStreakService;
 
     private final com.platform.content.withdrawal.WithdrawnContent withdrawn;
+    private final com.platform.child.service.DailyLearningTimeService dailyLearningTime;
 
     public ActivityAttemptService(ActivityAttemptRepository attemptRepository, AnswerRecordRepository answerRecordRepository,
                                    ActivityItemRepository activityItemRepository,
@@ -76,8 +77,10 @@ public class ActivityAttemptService {
                                    LearningPathItemRepository learningPathItemRepository,
                                    LearningPathRepository learningPathRepository, EnrollmentRepository enrollmentRepository,
                                    PostCompletionService postCompletionService, PathContentScope pathContentScope,
-                                  com.platform.content.withdrawal.WithdrawnContent withdrawn) {
+                                  com.platform.content.withdrawal.WithdrawnContent withdrawn,
+                                  com.platform.child.service.DailyLearningTimeService dailyLearningTime) {
         this.withdrawn = withdrawn;
+        this.dailyLearningTime = dailyLearningTime;
         this.attemptRepository = attemptRepository;
         this.answerRecordRepository = answerRecordRepository;
         this.activityItemRepository = activityItemRepository;
@@ -128,6 +131,8 @@ public class ActivityAttemptService {
         if (learningPathItemId == null && !pathContentScope.admitsActivityForChild(childId, version.getActivityId())) {
             throw new ResourceNotFoundException("Published ActivityVersion", activityVersionId);
         }
+        // M3: a new activity doesn't start once today's learning time is used (the open one above always continues).
+        dailyLearningTime.requireTimeLeft(childId);
 
         if (learningPathItemId != null) {
             markPathItemStartedIfPending(learningPathItemId);

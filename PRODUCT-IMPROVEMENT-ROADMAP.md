@@ -15,8 +15,8 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 |---|---|---|---|
 | M1 Research, inventory and roadmap | **done** (this document) | see git log | — |
 | M2 Landing page, ages 3–12, public demo | **done** | see log | V63 |
-| M3 Child wellbeing: daily limits and graceful stops | next | | |
-| M4 Self-service school registration and paid onboarding | planned | | |
+| M3 Child wellbeing: daily limits and graceful stops | **done** | see log | V64 |
+| M4 Self-service school registration and paid onboarding | next | | |
 | M5 Authoring UX, direct upload, content visibility | planned | | |
 | M6 Feature-specific paywall messages | planned | | |
 | M7 Pagination and information density | planned | | |
@@ -427,4 +427,40 @@ Dependencies:
     - `tsc`, ESLint;
     - browser checks: hero and statements at 375/768/1440 in EN and KM (no horizontal scroll), `/try` played
       wrong-then-right at 375 and 1280 with no page errors, admin page at 1280 and 390.
-
+- 2026-10-22: **M3 done.**
+  - **Setting**: a parent chooses a daily learning time per child (15, 20, 30, 45, 60, 90 or 120 minutes; off by
+    default) in the child's *School & settings* tab. It is stored in the existing `child_settings.daily_time_limit_minutes`
+    column (V9), which nothing had written; V64 adds a CHECK for the allowed lengths.
+  - **Time used**: computed by the server from its own timestamps (`DailyLearningTimeService`). Each attempt started
+    today counts from its start to its last answer or completion, capped at 30 minutes, so a forgotten open activity or
+    the device clock can't stretch it. An attempt with no answer yet counts 0. The learning day follows
+    `platform.learning.day-zone` (default `Asia/Phnom_Penh`). A per-family time zone is not built; there is no
+    family time-zone field yet.
+  - **Graceful stop**:
+    - once the time is used, starting a *new* activity is refused with 409 `dailyLimitReached`, with limit, used and
+      extra minutes;
+    - resuming an open activity is never refused (the check runs after the in-progress reuse), and answers are never
+      refused;
+    - the child sees a calm "That's all for today!" screen with the buddy, links to the shelf and the path, and a line
+      saying a grown-up can give more time behind the lock;
+    - the home shows a quiet notice;
+    - the activity intro says "This is the last activity for today" when 5 minutes or less are left.
+  - **More time**: the parent can give +15 or +30 minutes for today (the API also accepts 10), at most 2 hours extra a
+    day. Each grant is recorded in `child_daily_extensions` (V64) and audited as `CHILD_DAILY_TIME_EXTENDED`. Only
+    the child's family can read or change any of it.
+  - **Family data**: the export includes the limit and every extension. Erasure deletes `child_daily_extensions`
+    (CHILD_TABLES closure kept).
+  - **Not done**: the add-a-child suggestion for under-6s waits for D-08.
+  - **Tests**:
+    - `DailyLearningTimeIntegrationTests` 2/2 over HTTP and PostgreSQL. They cover setting the limit, an invalid
+      length, time used, the refused start, resume and answers still accepted, a refused bad extension, the
+      extension and its audit, the 2-hour cap, another family refused, and turning the limit off;
+    - FamilyErasure 6/6, FamilyDataExport 2/2, ActivityAttemptServiceTests 8/8, ServerTextCoverage 3/3;
+    - Vitest: full suite green, with new tests for the path and practice rest screens, the last-activity note, and the
+      parent section (set, figures, extension);
+    - `tsc`, ESLint;
+    - browser on the isolated dev stack (V64 applied):
+      - a parent set 15 minutes and a finished 16-minute activity used the day;
+      - playing again showed the rest screen and the home showed the notice;
+      - the parent gave +15 and the child could start again.
+  - **Next**: M4.

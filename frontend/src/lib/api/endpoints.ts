@@ -1,6 +1,7 @@
 import type { Locale } from "../../i18n/store";
 import { apiClient } from "./client";
 import type {
+  LearningToday,
   AccountProfile,
   ActivityAttempt,
   ActivityVersionDetail,
@@ -113,6 +114,12 @@ export const childrenApi = {
   breakReminder: (childId: string) => apiClient.get<{ minutes: number | null }>(`/children/${childId}/break-reminder`),
   setBreakReminder: (childId: string, minutes: number | null) =>
     apiClient.put<{ minutes: number | null }>(`/children/${childId}/break-reminder`, { minutes }),
+  // M3: the child's learning day, set by the parent; a new activity doesn't start once it is used.
+  dailyLimit: (childId: string) => apiClient.get<{ minutes: number | null }>(`/children/${childId}/daily-limit`),
+  setDailyLimit: (childId: string, minutes: number | null) =>
+    apiClient.put<{ minutes: number | null }>(`/children/${childId}/daily-limit`, { minutes }),
+  today: (childId: string) => apiClient.get<LearningToday>(`/children/${childId}/today`),
+  extendToday: (childId: string, minutes: 10 | 15 | 30) => apiClient.post<LearningToday>(`/children/${childId}/today/extensions`, { minutes }),
   /** The family catalog for this child: the child's age group first (curriculum/web/CurriculumController.java). */
   curricula: (childId: string) => apiClient.get<CurriculumChoice[]>(`/children/${childId}/curricula`),
 };

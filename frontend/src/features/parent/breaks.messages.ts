@@ -51,3 +51,65 @@ export const childBreakMessages = defineMessages(
     oneMore: "មួយទៀត",
   },
 );
+
+/** M3: the parent's daily learning time for a child, and "a little more today". */
+export const dailyTimeMessages = defineMessages(
+  "features/parent/dailyTime",
+  {
+    title: "Learning each day",
+    lead: (name: string) =>
+      `You can choose how long ${name} learns each day. When the time is used, the activity ${name} is doing always finishes; then their space says goodbye for today. A new day starts at midnight (Cambodia time).`,
+    label: "Each day, up to",
+    off: "No daily limit",
+    minutes: (n: number) => (n >= 60 && n % 60 === 0 ? `${n / 60} hour${n === 60 ? "" : "s"}` : `${n} minutes`),
+    today: (used: number, limit: number) => `Today: ${used} of ${limit} minutes used.`,
+    todayExtra: (extra: number) => ` ${extra} extra minutes given today.`,
+    todayNoLimit: (used: number) => `Today: about ${used} minutes of learning.`,
+    reached: "Today's learning time is used.",
+    giveMore: "Give a little more time today",
+    more: (n: number) => `+${n} minutes`,
+    given: (n: number) => `${n} more minutes for today.`,
+    moreFailed: "More time couldn't be given.",
+    saving: "Saving…",
+    saved: "Saved.",
+    failed: "That didn't save. Please try again.",
+  },
+  {
+    title: "ការរៀនរៀងរាល់ថ្ងៃ",
+    lead: (name: string) =>
+      `អ្នកអាចជ្រើសរើសថា ${name} រៀនរយៈពេលប៉ុន្មានក្នុងមួយថ្ងៃ។ នៅពេលប្រើអស់ពេល សកម្មភាពដែល ${name} កំពុងធ្វើតែងតែបញ្ចប់ បន្ទាប់មកកន្លែងរៀនរបស់ពួកគេនិយាយលាសម្រាប់ថ្ងៃនេះ។ ថ្ងៃថ្មីចាប់ផ្តើមនៅពាក់កណ្តាលអធ្រាត្រ (ម៉ោងកម្ពុជា)។`,
+    label: "ក្នុងមួយថ្ងៃ រហូតដល់",
+    off: "គ្មានដែនកំណត់ប្រចាំថ្ងៃ",
+    minutes: (n: number) => (n >= 60 && n % 60 === 0 ? `${n / 60} ម៉ោង` : `${n} នាទី`),
+    today: (used: number, limit: number) => `ថ្ងៃនេះ៖ ប្រើបាន ${used} ក្នុងចំណោម ${limit} នាទី។`,
+    todayExtra: (extra: number) => ` បានផ្តល់ពេលបន្ថែម ${extra} នាទីនៅថ្ងៃនេះ។`,
+    todayNoLimit: (used: number) => `ថ្ងៃនេះ៖ រៀនបានប្រហែល ${used} នាទី។`,
+    reached: "ពេលវេលារៀនសម្រាប់ថ្ងៃនេះបានប្រើអស់ហើយ។",
+    giveMore: "ផ្តល់ពេលបន្ថែមបន្តិចសម្រាប់ថ្ងៃនេះ",
+    more: (n: number) => `+${n} នាទី`,
+    given: (n: number) => `បន្ថែម ${n} នាទីសម្រាប់ថ្ងៃនេះ។`,
+    moreFailed: "មិនអាចផ្តល់ពេលបន្ថែមបានទេ។",
+    saving: "កំពុងរក្សាទុក…",
+    saved: "បានរក្សាទុកហើយ។",
+    failed: "មិនបានរក្សាទុកទេ។ សូមព្យាយាមម្ដងទៀត។",
+  },
+);
+
+/** M3: what the child's space says about the learning day. */
+export const childDayMessages = defineMessages(
+  "features/child/day",
+  {
+    restTitle: "That's all for today!",
+    restBody: "You learnt a lot today. Your path will be right here tomorrow.",
+    restGrownUp: "A grown-up can give a little more time with the lock at the top.",
+    lastOne: "This is the last activity for today.",
+    homeRest: "Learning time is done for today. See you tomorrow!",
+  },
+  {
+    restTitle: "សម្រាប់ថ្ងៃនេះ ប៉ុណ្ណឹងហើយ!",
+    restBody: "ថ្ងៃនេះប្អូនបានរៀនច្រើនណាស់។ ផ្លូវរបស់ប្អូននឹងនៅទីនេះថ្ងៃស្អែក។",
+    restGrownUp: "មនុស្សធំអាចផ្តល់ពេលបន្ថែមបន្តិចបាន ដោយប្រើសោនៅខាងលើ។",
+    lastOne: "នេះជាសកម្មភាពចុងក្រោយសម្រាប់ថ្ងៃនេះ។",
+    homeRest: "ពេលវេលារៀនសម្រាប់ថ្ងៃនេះចប់ហើយ។ ជួបគ្នាថ្ងៃស្អែក!",
+  },
+);

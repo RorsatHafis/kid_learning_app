@@ -87,7 +87,8 @@ class ActivityAttemptServiceTests {
         service = new ActivityAttemptService(attemptRepository, answerRecordRepository, activityItemRepository,
                 activityVersionRepository, childRepository, idempotencyService, answerSubmissionWriter,
                 learningPathItemRepository, learningPathRepository, enrollmentRepository, postCompletionService,
-                ContentScopes.admittingEverything(), NOTHING_WITHDRAWN);
+                ContentScopes.admittingEverything(), NOTHING_WITHDRAWN,
+                org.mockito.Mockito.mock(com.platform.child.service.DailyLearningTimeService.class)); // M3: no daily limit here
         lenient().when(activityVersionRepository.findById(ACTIVITY_VERSION_ID))
                 .thenReturn(Optional.of(publishedActivityVersion(ACTIVITY_VERSION_ID)));
     }

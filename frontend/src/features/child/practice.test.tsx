@@ -37,7 +37,7 @@ const ACTIVITY = {
 
 type Call = { method: string; path: string; body: unknown };
 
-function server(start: () => Response) {
+function server(start: () => Response, today?: unknown) {
   const calls: Call[] = [];
   const recorded: unknown[] = [];
   vi.stubGlobal(
@@ -48,6 +48,7 @@ function server(start: () => Response) {
       const body = init?.body ? JSON.parse(init.body as string) : undefined;
       calls.push({ method, path, body });
       if (path === "/children/c1") return respond(200, { id: "c1", displayName: "Sokha" });
+      if (path === "/children/c1/today" && today) return respond(200, today);
       if (method === "POST" && path === "/children/c1/activity-attempts") return start();
       // The content is read for this child (TD-13).
       if (path === "/activity-versions/av1?childId=c1") return respond(200, ACTIVITY);
@@ -114,6 +115,33 @@ describe("PracticeSession (X24)", () => {
     expect(await screen.findByText("You've started this book on your path. Finish it there first!")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /My shelf/ })).toHaveAttribute("href", "/learn/c1/shelf");
     vi.unstubAllGlobals();
+  });
+
+  it("M3: a used learning day is a calm goodbye for today, not the 'started on your path' conflict", async () => {
+    server(() =>
+      respond(409, { status: 409, title: "Daily Learning Time Used", dailyLimitReached: true, childId: "c1", limitMinutes: 15, usedMinutes: 16 }),
+    );
+    renderPractice();
+    expect(await screen.findByRole("heading", { name: "That's all for today!" })).toBeInTheDocument();
+    expect(screen.getByText("A grown-up can give a little more time with the lock at the top.")).toBeInTheDocument();
+    expect(screen.queryByText(/started this book on your path/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /My shelf/ })).toHaveAttribute("href", "/learn/c1/shelf");
+  });
+
+  it("M3: the intro says when this is the last activity for today", async () => {
+    const attempt = { id: "t1", childId: "c1", activityVersionId: "av1", learningPathItemId: null, status: "IN_PROGRESS" };
+    server(() => respond(201, attempt), { day: "2026-10-22", limitMinutes: 30, usedMinutes: 27, extraMinutes: 0, remainingMinutes: 3, reached: false, nearEnd: true });
+    renderPractice();
+    expect(await screen.findByText("This is the last activity for today.")).toBeInTheDocument();
+  });
+
+  it("M3: no note on the intro while there is time left", async () => {
+    const attempt = { id: "t1", childId: "c1", activityVersionId: "av1", learningPathItemId: null, status: "IN_PROGRESS" };
+    server(() => respond(201, attempt), { day: "2026-10-22", limitMinutes: 30, usedMinutes: 5, extraMinutes: 0, remainingMinutes: 25, reached: false, nearEnd: false });
+    renderPractice();
+    expect(await screen.findByText("Playing it again")).toBeInTheDocument();
+    expect(screen.queryByText("This is the last activity for today.")).not.toBeInTheDocument();
   });
 
   it("explains a book that is no longer playable", async () => {

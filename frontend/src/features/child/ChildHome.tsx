@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Play } from "lucide-react";
+import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Moon, Play } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
@@ -25,6 +25,7 @@ import { Bud } from "@/features/world/ProgressBuds";
 import { GardenGlimpse } from "./SkillGarden";
 import { gardenMessages } from "./garden.messages";
 import { RotateCcw } from "lucide-react";
+import { childDayMessages } from "@/features/parent/breaks.messages";
 import { subjectTheme } from "@/features/learning/subjectTheme";
 
 
@@ -115,6 +116,21 @@ export function ChildHome() {
   );
 }
 
+/**
+ * M3: when the learning day the parent chose is used, the home says so calmly before the child taps a book (the
+ * server is what refuses a new activity; this only tells). Nothing is shown when there's no limit or it can't be read.
+ */
+function DayDone({ childId }: { childId: string }) {
+  const d = useMessages(childDayMessages);
+  const today = useAsync(() => childrenApi.today(childId), [childId]);
+  if (!today.data?.reached) return null;
+  return (
+    <p role="status" className="flex items-center gap-3 rounded-[22px] bg-light-soft px-4 py-3.5 text-base font-semibold text-light-deep ring-1 ring-light/30">
+      <Moon size={19} aria-hidden className="shrink-0" /> {d.homeRest}
+    </p>
+  );
+}
+
 /** From a subject's journey back to the entrance, where every subject is. */
 function BackToSubjects({ childId }: { childId: string }) {
   const e = useMessages(entranceMessages);
@@ -158,6 +174,7 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
         </h1>
         <p className="mt-1.5 text-lg font-semibold text-ink-soft">{paths.length > 1 ? e.where : e.askOne}</p>
       </div>
+      <DayDone childId={childId} />
 
       {/* The world. Large screens: the places stand on their landmarks; the card and Momo sit on the painting. */}
       <div className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
@@ -407,6 +424,7 @@ function JourneyStage({
           </div>
           {switcher}
         </div>
+        <DayDone childId={childId} />
 
         {/* The river bend, with the buddy on the bank; the card says where the child is and carries them on. */}
         <div className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">

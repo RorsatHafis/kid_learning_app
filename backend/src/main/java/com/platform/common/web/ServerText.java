@@ -230,6 +230,13 @@ public final class ServerText {
             Map.entry("This plan has no price yet, so it can't be paid for", "កញ្ចប់នេះមិនទាន់មានតម្លៃនៅឡើយទេ ដូច្នេះមិនអាចបង់ប្រាក់បានទេ"),
             Map.entry("This plan wasn't paid for, so there is nothing to refund on it", "កញ្ចប់នេះមិនបានបង់ប្រាក់ទេ ដូច្នេះគ្មានអ្វីត្រូវសងវិញទេ"),
             Map.entry("This way of paying isn't available here", "វិធីបង់ប្រាក់នេះមិនមាននៅទីនេះទេ"),
+            // M3: a child's learning day.
+            Map.entry("Today's learning time is used. See you tomorrow!", "ពេលវេលារៀនសម្រាប់ថ្ងៃនេះបានប្រើអស់ហើយ។ ជួបគ្នាថ្ងៃស្អែក!"),
+            Map.entry("A learning day can be 15, 20, 30, 45, 60, 90 or 120 minutes",
+                    "ថ្ងៃរៀនមួយអាចមាន 15, 20, 30, 45, 60, 90 ឬ 120 នាទី"),
+            Map.entry("More time can be 10, 15 or 30 minutes", "ពេលវេលាបន្ថែមអាចជា 10, 15 ឬ 30 នាទី"),
+            Map.entry("There's no daily limit to extend", "មិនមានដែនកំណត់ប្រចាំថ្ងៃសម្រាប់បន្ថែមទេ"),
+            Map.entry("A learning day can be extended by 2 hours at most", "ថ្ងៃរៀនមួយអាចបន្ថែមបានយ៉ាងច្រើន 2 ម៉ោង"),
             // M2: the public demo and the landing page's statements.
             Map.entry("At most 3 activities can be tried without an account", "សកម្មភាពអាចសាកល្បងបានដោយគ្មានគណនីយ៉ាងច្រើន 3 ប៉ុណ្ណោះ"),
             Map.entry("Only platform content can be tried without an account, not an author's own content",

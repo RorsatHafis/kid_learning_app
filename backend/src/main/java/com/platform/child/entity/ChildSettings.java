@@ -27,6 +27,12 @@ public class ChildSettings extends AuditableEntity {
     @Column(name = "break_reminder_minutes")
     private Integer breakReminderMinutes;
 
+    /** M3: the lengths of a learning day a parent can choose, in minutes (V64 CHECK). */
+    public static final Set<Integer> DAILY_LIMIT_MINUTES = Set.of(15, 20, 30, 45, 60, 90, 120);
+
+    @Column(name = "daily_time_limit_minutes")
+    private Integer dailyLimitMinutes;
+
     protected ChildSettings() {
         // JPA
     }
@@ -44,6 +50,18 @@ public class ChildSettings extends AuditableEntity {
             throw new IllegalArgumentException("A break can be suggested after 10, 15, 20, 30 or 45 minutes");
         }
         this.breakReminderMinutes = minutes;
+    }
+
+    /** {@code minutes} null means no daily limit. */
+    public void setDailyLimitMinutes(Integer minutes) {
+        if (minutes != null && !DAILY_LIMIT_MINUTES.contains(minutes)) {
+            throw new IllegalArgumentException("A learning day can be 15, 20, 30, 45, 60, 90 or 120 minutes");
+        }
+        this.dailyLimitMinutes = minutes;
+    }
+
+    public Integer getDailyLimitMinutes() {
+        return dailyLimitMinutes;
     }
 
     public UUID getChildId() {

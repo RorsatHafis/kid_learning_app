@@ -12,18 +12,55 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 /**
- * Break reminders (Y36): set by the parent on the child's page, read by the child's space. Only the
- * child's family may read or change them (another family's child is 404, as everywhere).
+ * Break reminders (Y36) and the daily learning time (M3): set by the parent on the child's page, read by the child's
+ * space. Only the child's family may read or change them (another family's child is 404, as everywhere).
  */
 @RestController
 public class ChildSettingsController {
 
     private final ChildSettingsService settings;
+    private final com.platform.child.service.DailyLearningTimeService dailyTime;
     private final FamilyAccessGuard familyAccessGuard;
 
-    public ChildSettingsController(ChildSettingsService settings, FamilyAccessGuard familyAccessGuard) {
+    public ChildSettingsController(ChildSettingsService settings, com.platform.child.service.DailyLearningTimeService dailyTime,
+                                   FamilyAccessGuard familyAccessGuard) {
         this.settings = settings;
+        this.dailyTime = dailyTime;
         this.familyAccessGuard = familyAccessGuard;
+    }
+
+    /** M3: {@code minutes} null = no daily limit; otherwise 15, 20, 30, 45, 60, 90 or 120. */
+    public record DailyLimit(Integer minutes) {
+    }
+
+    public record Extension(int minutes) {
+    }
+
+    @GetMapping("/api/v1/children/{childId}/daily-limit")
+    public DailyLimit dailyLimit(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return new DailyLimit(dailyTime.limitMinutes(childId));
+    }
+
+    @PutMapping("/api/v1/children/{childId}/daily-limit")
+    public DailyLimit setDailyLimit(@PathVariable UUID childId, @RequestBody DailyLimit request, @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return new DailyLimit(dailyTime.setLimitMinutes(childId, request.minutes()));
+    }
+
+    /** Today's learning time: the limit, what is used, extra given, what is left. */
+    @GetMapping("/api/v1/children/{childId}/today")
+    public com.platform.child.service.DailyLearningTimeService.Today today(@PathVariable UUID childId,
+                                                                          @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return dailyTime.today(childId);
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/api/v1/children/{childId}/today/extensions")
+    public com.platform.child.service.DailyLearningTimeService.Today extend(@PathVariable UUID childId, @RequestBody Extension request,
+                                                                           @AuthenticationPrincipal UUID accountId) {
+        familyAccessGuard.requireChildAccess(accountId, childId);
+        return dailyTime.extend(accountId, childId, request.minutes());
     }
 
     /** {@code minutes} null = no reminder; otherwise 10, 15, 20, 30 or 45. */

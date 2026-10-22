@@ -471,6 +471,10 @@ export interface ApiProblem {
   retryAfterSeconds?: number;
   /** 402 only (Y44, SchoolPaymentRequiredException): the school's services wait for payment. */
   schoolPaymentRequired?: boolean;
+  /** M3: 409 when today's learning time is used and a new activity would start. */
+  dailyLimitReached?: boolean;
+  usedMinutes?: number;
+  limitMinutes?: number;
   schoolId?: string;
   /** 409 "Plan Limit Reached" only: which entitlement and its limit (PlanLimitException). */
   entitlement?: string;
@@ -562,3 +566,18 @@ export interface ProgressSince {
   /** Only skills answered on in the window: nothing changes without answers. */
   changes: SkillChange[];
 }
+
+// ---- child/service/DailyLearningTimeService.java (M3) ----
+
+/** A child's learning day: the parent's limit (null = none), the minutes used today (server time), extra given. */
+export interface LearningToday {
+  day: string;
+  limitMinutes: number | null;
+  usedMinutes: number;
+  extraMinutes: number;
+  remainingMinutes: number | null;
+  reached: boolean;
+  /** At most 5 minutes left: the next activity is the last for today. */
+  nearEnd: boolean;
+}
+
