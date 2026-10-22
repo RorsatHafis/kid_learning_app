@@ -111,6 +111,14 @@ public class PublicDemoService {
         List<UUID> chosen = chosenIds();
         // A typed % or _ is a character, not a wildcard (backslash is PostgreSQL's LIKE escape).
         String like = "%" + (query == null ? "" : query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")) + "%";
+        // The chosen versions themselves, whichever they are - a chosen version stays listed (so it can be removed)
+        // after a newer version of its activity is published.
+        List<Candidate> picked = chosen.isEmpty() ? List.of() : jdbc.query("""
+                SELECT av.id, a.title, av.version_number
+                FROM activity_versions av JOIN activities a ON a.id = av.activity_id
+                WHERE av.id IN (:chosen)
+                """, Map.of("chosen", chosen), (rs, i) -> new Candidate(rs.getObject(1, UUID.class), rs.getString(2), rs.getInt(3), true))
+                .stream().sorted(java.util.Comparator.comparing(c -> chosen.indexOf(c.activityVersionId()))).toList();
         List<Candidate> matches = jdbc.query("""
                 SELECT id, title, version_number FROM (
                     SELECT DISTINCT ON (a.id) av.id, a.title, av.version_number
@@ -120,21 +128,18 @@ public class PublicDemoService {
                     WHERE av.status = 'PUBLISHED' AND (a.lesson_id IS NULL OR l.owner_account_id IS NULL)
                     ORDER BY a.id, av.version_number DESC
                 ) latest
-                WHERE title ILIKE :like OR id IN (:chosen)
+                WHERE title ILIKE :like
                 ORDER BY lower(title)
                 LIMIT :limit
                 """, new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("like", like)
-                        .addValue("chosen", chosen.isEmpty() ? List.of(new UUID(0, 0)) : chosen)
                         .addValue("limit", CANDIDATES_SHOWN + chosen.size()),
                 (rs, i) -> {
                     UUID id = rs.getObject(1, UUID.class);
                     return new Candidate(id, rs.getString(2), rs.getInt(3), chosen.contains(id));
                 });
-        java.util.stream.Stream<Candidate> picked = chosen.stream()
-                .flatMap(id -> matches.stream().filter(c -> c.activityVersionId().equals(id)));
         java.util.stream.Stream<Candidate> others = matches.stream().filter(c -> !c.chosen())
                 .filter(c -> !withdrawn.activityVersion(c.activityVersionId())).limit(CANDIDATES_SHOWN);
-        return java.util.stream.Stream.concat(picked, others).toList();
+        return java.util.stream.Stream.concat(picked.stream(), others).toList();
     }
 
     /** Replaces the demo with these versions, in this order (0 to 3). Each must be published platform content. */

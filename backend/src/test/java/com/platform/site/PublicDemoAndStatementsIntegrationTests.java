@@ -87,6 +87,37 @@ class PublicDemoAndStatementsIntegrationTests {
     }
 
     @Test
+    void aChosenActivityStaysListedHoweverManyTitlesComeBeforeIt() throws Exception {
+        // CI found it: the chosen version shared the title-ordered limit with every match, so enough published
+        // platform activities sorting before it pushed it off the administrator's list.
+        String admin = staff(PlatformRole.ADMIN);
+        java.util.List<UUID> fillers = new java.util.ArrayList<>();
+        try {
+            for (int i = 0; i < 14; i++) {
+                UUID activity = UUID.randomUUID();
+                UUID version = UUID.randomUUID();
+                jdbc.update("insert into activities (id, subject_id, activity_type, title) select ?, a.subject_id, a.activity_type, ? "
+                        + "from activities a join activity_versions av on av.activity_id = a.id where av.id = ?::uuid",
+                        activity, "Aardvark count " + i, RECOGNITION);
+                jdbc.update("insert into activity_versions (id, activity_id, version_number, status, published_at) values (?, ?, 1, 'PUBLISHED', now())",
+                        version, activity);
+                fillers.add(activity);
+            }
+            json(send("PUT", "/api/v1/admin/demo-activities", "{\"activityVersionIds\":[\"" + RECOGNITION + "\"]}", admin), 200);
+            JsonNode candidates = json(send("GET", "/api/v1/admin/demo-activities", null, admin), 200);
+            assertThat(candidates.get(0).get("activityVersionId").asString()).isEqualTo(RECOGNITION);
+            assertThat(candidates.get(0).get("chosen").asBoolean()).isTrue();
+            assertThat(candidates.size()).isLessThanOrEqualTo(13);
+        } finally {
+            json(send("PUT", "/api/v1/admin/demo-activities", "{\"activityVersionIds\":[]}", admin), 200);
+            for (UUID activity : fillers) {
+                jdbc.update("delete from activity_versions where activity_id = ?", activity);
+                jdbc.update("delete from activities where id = ?", activity);
+            }
+        }
+    }
+
+    @Test
     void theDemoServesOnlyChosenPlatformActivitiesChecksAnswersAndStoresNothing() throws Exception {
         String admin = staff(PlatformRole.ADMIN);
         assertThat(send("PUT", "/api/v1/admin/demo-activities", "{\"activityVersionIds\":[\"" + RECOGNITION + "\"]}",

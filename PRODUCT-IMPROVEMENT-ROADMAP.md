@@ -463,4 +463,11 @@ Dependencies:
       - a parent set 15 minutes and a finished 16-minute activity used the day;
       - playing again showed the rest screen and the home showed the notice;
       - the parent gave +15 and the child could start again.
+  - **CI fix for M2** (found on 764d034):
+    - the admin demo picker put the chosen version in the same title-ordered `LIMIT 13` as every match, so enough
+      published platform activities with titles sorting before it pushed it off the list (the public demo still
+      served it);
+    - the chosen versions are now read on their own;
+    - regression test `aChosenActivityStaysListedHoweverManyTitlesComeBeforeIt`, failing on the old code, 4/4 with
+      the fix.
   - **Next**: M4.
