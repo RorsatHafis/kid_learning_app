@@ -1,6 +1,6 @@
 # Bookeyond Kid
 
-A learning platform for children aged 4–9 and their families, with school workspaces and a
+A learning platform for children aged 3–12 and their families, with school workspaces and a
 Content Studio for educators.
 
 - **Run it on Windows and test it:** [OWNER-GUIDE.md](OWNER-GUIDE.md) — double-click

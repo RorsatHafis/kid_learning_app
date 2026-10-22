@@ -6,6 +6,7 @@ import { StaffPage } from "./StaffPage";
 import { AccountsPage } from "./operations/AccountsPage";
 import { ActivityPage } from "./operations/ActivityPage";
 import { PlansPage } from "./operations/PlansPage";
+import { LandingContentPage } from "./operations/LandingContentPage";
 import { PaymentsPage } from "./operations/PaymentsPage";
 import { StoragePage } from "./operations/StoragePage";
 import { OverviewPage } from "./operations/OverviewPage";
@@ -35,6 +36,7 @@ export default function AdminArea() {
         <Route index element={<OverviewPage />} />
         <Route path="studio" element={<StudioIndex />} />
         <Route path="media" element={<MediaLibraryPage />} />
+        <Route path="landing" element={<LandingContentPage />} />
         {/* Where the library lived before it had its own place in the menu (X13). */}
         <Route path="studio/media" element={<Navigate to="/admin/media" replace />} />
         <Route path="studio/:subjectId" element={<StudioLayout />}>

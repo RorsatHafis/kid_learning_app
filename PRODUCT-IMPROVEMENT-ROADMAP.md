@@ -14,8 +14,8 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | Milestone | Status | Commit(s) | Migrations |
 |---|---|---|---|
 | M1 Research, inventory and roadmap | **done** (this document) | see git log | — |
-| M2 Landing page, ages 3–12, public demo | next | | |
-| M3 Child wellbeing: daily limits and graceful stops | planned | | |
+| M2 Landing page, ages 3–12, public demo | **done** | see log | V63 |
+| M3 Child wellbeing: daily limits and graceful stops | next | | |
 | M4 Self-service school registration and paid onboarding | planned | | |
 | M5 Authoring UX, direct upload, content visibility | planned | | |
 | M6 Feature-specific paywall messages | planned | | |
@@ -401,3 +401,30 @@ Dependencies:
 
 ## 5. Progress log
 - 2026-10-22: M1 done. Inventory, research and roadmap written; next M2.
+- 2026-10-22: **M2 done.**
+  - **Hero**: composed per width. On phones and tablets the words sit on paper, followed by a framed painted window
+    (bridge, village, Momo) with the child's home in a phone. Desktop is unchanged.
+  - **Quotation**: the other-language promise is shown as a quotation (“…” or «…»), without its closing `.`/`។`.
+  - **Ages**: 3–12 in landing, sign-in, README and PRODUCT copy. The seeded "Junior (4–9)" age hub is curriculum data
+    and stays.
+  - **Statements**: `site_statements` (V63), editable in Operations → Landing page. A TESTIMONIAL needs attribution,
+    a source note and confirmation that it is genuine. Changes are audited, with optimistic versioning. Three existing
+    brand lines are seeded.
+  - **Public demo**:
+    - `public_demo_activities` (V63) holds up to 3 exact published platform versions;
+    - `GET /demo/activities` and `POST /demo/check` store nothing, the check is limited to 60/min per client, and
+      anything outside the demo is refused with 404;
+    - `/try` reuses the child's question view and verdict (`AnswerVerdict` extracted from `PlaySession`; learner reads
+      go through the extracted `LearnerActivityReader`);
+    - the admin picker is searchable server-side (chosen first, then 12 matches).
+  - **Tests**:
+    - `PublicDemoAndStatementsIntegrationTests` 3/3;
+    - the learner-read suites that use the refactored reader: QuestionGuidance 3, QuestionMediaAndOrdering 4,
+      ContentWithdrawal 2, LearningJourneyApi 8, ReadQueryScaling 1, CrossFamilyAccessSweep 1;
+    - ServerTextCoverage 3, AuthRateLimit 5;
+    - Vitest: child, marketing, admin operations and i18n, 20 files / 157 tests, including `m2.test.tsx` (5) and
+      `quote.test.ts`;
+    - `tsc`, ESLint;
+    - browser checks: hero and statements at 375/768/1440 in EN and KM (no horizontal scroll), `/try` played
+      wrong-then-right at 375 and 1280 with no page errors, admin page at 1280 and 390.
+

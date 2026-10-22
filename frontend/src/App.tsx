@@ -24,6 +24,7 @@ import { common } from "@/components/ui/messages";
 const ParentArea = lazy(loadParentArea);
 const ChildArea = lazy(loadChildArea);
 const AdminArea = lazy(() => import("@/features/admin/AdminArea"));
+const TryPage = lazy(() => import("@/features/marketing/TryPage").then((m) => ({ default: m.TryPage })));
 // Design tools for development only: in a production build these imports are dead code and dropped.
 const BrandSheet = import.meta.env.DEV ? lazy(() => import("@/features/brand/BrandSheet").then((m) => ({ default: m.BrandSheet }))) : null;
 const PlayGallery = import.meta.env.DEV ? lazy(() => import("@/features/brand/PlayGallery").then((m) => ({ default: m.PlayGallery }))) : null;
@@ -66,6 +67,15 @@ export default function App() {
         <AppErrorBoundary>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            {/* M2: the public demo - real lessons, no account, nothing stored (its own chunk: the question views). */}
+            <Route
+              path="/try"
+              element={
+                <Suspense fallback={null}>
+                  <TryPage />
+                </Suspense>
+              }
+            />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />

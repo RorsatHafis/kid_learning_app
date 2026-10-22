@@ -61,16 +61,27 @@ public class AnswerFeedbackService {
     public record MatchPair(UUID leftOptionId, UUID rightOptionId) {
     }
 
-    /** Y41: the author's explanation of the answered question's version, if it has one - only ever for a recorded answer. */
+    /** Y41: the author's explanation of the answered question's version, if it has one - shown only after an answer. */
     @Transactional(readOnly = true)
     public String explanationFor(AnswerRecord answer) {
-        return questionVersionRepository.findById(answer.getQuestionVersionId()).map(QuestionVersion::getExplanation).orElse(null);
+        return explanationFor(answer.getQuestionVersionId());
+    }
+
+    /** The educator's explanation of a question version (M2: also shown after a public demo answer). */
+    public String explanationFor(UUID questionVersionId) {
+        return questionVersionRepository.findById(questionVersionId).map(QuestionVersion::getExplanation).orElse(null);
     }
 
     @Transactional(readOnly = true)
     public CorrectAnswer correctAnswerFor(AnswerRecord answer) {
-        QuestionVersion version = questionVersionRepository.findById(answer.getQuestionVersionId())
-                .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion", answer.getQuestionVersionId()));
+        return correctAnswerFor(answer.getQuestionVersionId());
+    }
+
+    /** The right answer of a question version, as feedback shows it (M2: also for a public demo answer, which has no record). */
+    @Transactional(readOnly = true)
+    public CorrectAnswer correctAnswerFor(UUID questionVersionId) {
+        QuestionVersion version = questionVersionRepository.findById(questionVersionId)
+                .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion", questionVersionId));
         Question question = questionRepository.findById(version.getQuestionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Question", version.getQuestionId()));
 

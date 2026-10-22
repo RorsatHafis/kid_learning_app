@@ -4,26 +4,15 @@ import com.platform.common.web.ResourceNotFoundException;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.platform.learning.service.LearnerContentReadGuard;
-import com.platform.content.entity.Activity;
-import com.platform.content.entity.ActivityItem;
 import com.platform.content.entity.ActivityVersion;
-import com.platform.content.entity.QuestionOption;
-import com.platform.content.entity.QuestionType;
-import com.platform.content.entity.QuestionVersion;
-import com.platform.content.media.MediaService;
-import com.platform.content.repository.ActivityItemRepository;
 import com.platform.content.service.ActivityService;
-import com.platform.content.service.QuestionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-import static com.platform.content.web.ActivityContentDtos.ActivityItemResponse;
 import static com.platform.content.web.ActivityContentDtos.ActivityVersionDetailResponse;
 
 /**
@@ -40,23 +29,18 @@ import static com.platform.content.web.ActivityContentDtos.ActivityVersionDetail
 public class ActivityContentController {
 
     private final ActivityService activityService;
-    private final QuestionService questionService;
-    private final ActivityItemRepository activityItemRepository;
-    private final MediaService mediaService;
+    private final LearnerActivityReader reader;
     private final LearnerContentReadGuard readGuard;
 
     private final com.platform.content.withdrawal.WithdrawnContent withdrawn;
 
-    public ActivityContentController(ActivityService activityService, QuestionService questionService,
-                                      ActivityItemRepository activityItemRepository, MediaService mediaService,
+    public ActivityContentController(ActivityService activityService, LearnerActivityReader reader,
                                       LearnerContentReadGuard readGuard,
                                       com.platform.content.withdrawal.WithdrawnContent withdrawn) {
         this.withdrawn = withdrawn;
         this.readGuard = readGuard;
         this.activityService = activityService;
-        this.questionService = questionService;
-        this.activityItemRepository = activityItemRepository;
-        this.mediaService = mediaService;
+        this.reader = reader;
     }
 
     @GetMapping("/api/v1/activity-versions/{activityVersionId}")
@@ -73,29 +57,7 @@ public class ActivityContentController {
         if (withdrawn.activityVersion(activityVersionId)) {
             throw new ResourceNotFoundException("ActivityVersion", activityVersionId);
         }
-        Activity activity = activityService.getActivity(version.getActivityId());
-
-        // Known Backend Fix C, extended (Battle 3): published-only, matching the ActivityVersion check
-        // above - see QuestionService#getLearnerVisibleVersionById. Media for every item in one read.
-        record Loaded(ActivityItem item, QuestionVersion version, QuestionType type, List<QuestionOption> options) {
-        }
-        List<Loaded> loaded = activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId).stream()
-                .map(item -> {
-                    QuestionVersion questionVersion = questionService.getLearnerVisibleVersionById(item.getQuestionVersionId());
-                    return new Loaded(item, questionVersion, questionService.getQuestion(questionVersion.getQuestionId()).getQuestionType(),
-                            questionService.listOptions(questionVersion.getId()));
-                })
-                .toList();
-        Map<UUID, MediaService.MediaRef> media = mediaService.refs(loaded.stream()
-                .flatMap(l -> ActivityContentDtos.mediaOf(l.version(), l.options()).stream()).toList());
-        List<ActivityItemResponse> items = loaded.stream()
-                .map(l -> ActivityItemResponse.forLearner(l.item().getId(), l.item().getSequenceOrder(), l.type(), l.version(),
-                        l.options(), media))
-                .toList();
-
-        return ResponseEntity.ok(new ActivityVersionDetailResponse(version.getId(), activity.getId(),
-                activity.getTitle(), version.getInstructions(), version.getDifficultyLevel(),
-                version.getEstimatedDurationSeconds(), items));
+        return ResponseEntity.ok(reader.read(version));
     }
 
 }

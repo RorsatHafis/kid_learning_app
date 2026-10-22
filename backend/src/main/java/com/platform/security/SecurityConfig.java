@@ -156,6 +156,10 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/media/*").permitAll()
                 // Y43: a payment provider's notice has no session; it only makes us ask the provider (PaymentService).
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payments/callbacks/*").permitAll()
+                // M2: the landing page's statements and the public demo (published platform content, nothing stored;
+                // the check is rate limited per client in AuthRateLimitFilter).
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/site/statements", "/api/v1/demo/activities").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/demo/check").permitAll()
                 .anyRequest().authenticated()
             )
             // Battle 4D: 401 for "not authenticated" (no, malformed, forged, or expired

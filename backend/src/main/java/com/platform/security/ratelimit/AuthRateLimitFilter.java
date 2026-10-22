@@ -38,6 +38,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(AuthRateLimitFilter.class);
 
+    static final int DEMO_CHECKS_PER_MINUTE = 60;
+
     private final Map<String, TokenBucketLimiter> limiters;
 
     public AuthRateLimitFilter(RateLimitProperties properties) {
@@ -59,7 +61,10 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
                 new TokenBucketLimiter(properties.recoveryPerHour(), Duration.ofHours(1), nanoClock),
                 // Logout presents a refresh token too; it shares the refresh budget.
                 "/api/v1/auth/refresh", refresh,
-                "/api/v1/auth/logout", refresh);
+                "/api/v1/auth/logout", refresh,
+                // M2: the public demo's answer check needs no account; a generous budget keeps it from being a free
+                // scoring service for scripts while a visitor never meets it.
+                "/api/v1/demo/check", new TokenBucketLimiter(DEMO_CHECKS_PER_MINUTE, Duration.ofMinutes(1), nanoClock));
     }
 
     @Override

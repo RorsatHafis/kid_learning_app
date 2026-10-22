@@ -9,7 +9,7 @@ export const authMessages = defineMessages(
     layout: {
       motto: "Learn Today,",
       motto2: "Build Tomorrow.",
-      footer: "Learning for children 4–9, with parents alongside.",
+      footer: "Learning for children 3–12, with parents alongside.",
     },
     email: "Email",
     password: "Password",
@@ -130,7 +130,7 @@ export const authMessages = defineMessages(
     layout: {
       motto: "រៀនថ្ងៃនេះ",
       motto2: "កសាងថ្ងៃស្អែក។",
-      footer: "ការរៀនសម្រាប់កុមារអាយុ 4–9 ឆ្នាំ ដោយមានឪពុកម្ដាយនៅក្បែរ។",
+      footer: "ការរៀនសម្រាប់កុមារអាយុ 3–12 ឆ្នាំ ដោយមានឪពុកម្ដាយនៅក្បែរ។",
     },
     email: "អ៊ីមែល",
     password: "ពាក្យសម្ងាត់",

@@ -8,7 +8,7 @@ web
 
 ## Users
 
-- **Children aged 4–9** (Cambodian families first), often on a parent's phone or a shared tablet, learning in short sessions at home. They can't be expected to read long instructions.
+- **Children aged 3–12** (Cambodian families first; the youngest are pre-readers), often on a parent's phone or a shared tablet, learning in short sessions at home. They can't be expected to read long instructions.
 - **Parents / guardians**, who set up the family, add children, and want to understand what their child actually understands and what to do next. Often on a phone, between other things.
 - **Teachers** invited by a school, working with classes. **Principals**, who set up a school, its classes and its staff.
 - **Administrators / educators**, who author, check and publish content in the Content Studio and operate the platform (staff, accounts, audit log).

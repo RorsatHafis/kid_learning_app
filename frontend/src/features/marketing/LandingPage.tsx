@@ -26,6 +26,9 @@ import { messagesIn, useLocale, useMessages } from "@/i18n/catalog";
 import { marketingMessages } from "./messages";
 import { common } from "@/components/ui/messages";
 import { trustMessages } from "./trust.messages";
+import { siteApi, type PublicStatement } from "@/lib/api/site";
+import { useAsync } from "@/lib/hooks/useAsync";
+import { withoutClosingStop } from "./quote";
 
 /**
  * The public front door. It shows the product as it is — early maths today, Khmer and English in
@@ -49,6 +52,7 @@ export function LandingPage() {
         <ForParents />
         <ForChildren />
         <Grow />
+        <Statements />
         <Safety />
         <Subjects />
         <Plans />
@@ -64,9 +68,13 @@ const goButton = buttonClasses("accent", "lg", "px-8 text-[1.0625rem]");
 const quietButton = buttonClasses("outline", "lg", "bg-white/90");
 
 /**
- * The first view: the promise in both languages, a way in for families and one for schools, and the
- * product itself - the child's real home in a phone, standing in the village, beside the parent's
- * page - with the buddy family waiting on the path.
+ * The first view: the promise in both languages, a way in for families, one for schools and a lesson to try, and the
+ * product itself in the River Garden.
+ *
+ * M2, composed per width rather than shrunk: on a large screen the painted village fills the band behind the words and
+ * the product stands beside them. Below that, the words sit on clean paper (the painting behind text left only a strip
+ * of bamboo on a phone) and the village follows as a framed window on the bridge and the village, with Momo on the path
+ * and the child's real home in a phone.
  */
 function Hero() {
   const m = useMessages(marketingMessages);
@@ -74,12 +82,14 @@ function Hero() {
   const l = m.landing;
   const locale = useLocale();
   const other = locale === "km" ? "en" : "km";
+  const demo = useAsync(() => siteApi.demoActivities(), []);
+  const canTry = (demo.data?.length ?? 0) > 0;
   return (
-    <section className="relative overflow-hidden bg-[#DCEDEC]">
-      <div aria-hidden className="absolute inset-0">
+    <section className="relative overflow-hidden bg-paper lg:bg-[#DCEDEC]">
+      <div aria-hidden className="absolute inset-0 hidden lg:block">
         <PaintedScene position="58% 62%" />
         {/* Momo and a friend on the stone path */}
-        <div className="absolute bottom-[6%] left-[46%] hidden items-end gap-1 lg:flex">
+        <div className="absolute bottom-[6%] left-[46%] flex items-end gap-1">
           <LearningBuddy kind="OTTER" mood="happy" size={150} />
           <LearningBuddy kind="FROG" mood="idle" size={96} className="mb-1" />
         </div>
@@ -89,15 +99,17 @@ function Hero() {
           style={{ background: "radial-gradient(ellipse 70% 96% at 16% 50%, rgba(246,243,236,0.97) 0%, rgba(246,243,236,0.86) 50%, rgba(246,243,236,0) 82%)" }}
         />
       </div>
-      <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-4 pb-16 pt-10 sm:px-8 lg:min-h-[min(calc(100svh-4.5rem),900px)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:pb-24 lg:pt-16">
+      <div className="relative mx-auto grid max-w-[1240px] items-center gap-10 px-4 pb-14 pt-8 sm:px-8 sm:pt-10 lg:min-h-[min(calc(100svh-4.5rem),900px)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12 lg:pb-24 lg:pt-16">
         <div className="flex max-w-[36rem] flex-col gap-6 motion-safe:animate-rise-in">
-          {/* The promise in the other language too: the site speaks to Cambodian families in both. */}
-          <p lang={other} className={cn("text-lg font-semibold leading-[1.6] text-clay-deep sm:text-xl", other === "km" && "font-khmer")}>
-            {messagesIn(marketingMessages, other).hero.title}
+          {/* The promise in the other language too, as a quotation (its own quotation marks, no closing stop). */}
+          <p lang={other} className={cn("text-lg font-semibold leading-[1.55] text-clay-deep sm:text-xl", other === "km" && "font-khmer")}>
+            <span aria-hidden className="text-clay">{other === "km" ? "« " : "“"}</span>
+            {withoutClosingStop(messagesIn(marketingMessages, other).hero.title)}
+            <span aria-hidden className="text-clay">{other === "km" ? " »" : "”"}</span>
           </p>
-          <h1 className="font-display text-[2.7rem] font-bold leading-[1.0] tracking-[-0.02em] text-tonle-950 sm:text-[3.8rem] lg:text-[4.5rem]">{m.hero.title}</h1>
-          <p className="max-w-[31rem] text-lg leading-relaxed text-ink-soft sm:text-[1.1875rem]">{m.hero.lead}</p>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <h1 className="font-display text-[2.45rem] font-bold leading-[1.02] tracking-[-0.02em] text-tonle-950 sm:text-[3.6rem] lg:text-[4.5rem]">{m.hero.title}</h1>
+          <p className="max-w-[31rem] text-[1.0625rem] leading-relaxed text-ink-soft sm:text-[1.1875rem]">{m.hero.lead}</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link to="/register" className={goButton}>
               {l.forFamilies} <ArrowRight size={18} aria-hidden />
             </Link>
@@ -105,6 +117,11 @@ function Hero() {
               {l.forSchools}
             </a>
           </div>
+          {canTry && (
+            <Link to="/try" className="inline-flex w-fit items-center gap-2 text-[1.0625rem] font-semibold text-tonle-800 underline decoration-light decoration-2 underline-offset-[6px] hover:text-tonle-950">
+              <Hand size={18} aria-hidden /> {l.tryLesson}
+            </Link>
+          )}
           <ul aria-label={t.proof.label} className="flex flex-col gap-2 border-t border-tonle-950/10 pt-5 text-[0.9375rem] font-medium text-tonle-900 sm:flex-row sm:flex-wrap sm:gap-x-6">
             {[
               { icon: Sprout, text: t.proof.ages },
@@ -119,7 +136,26 @@ function Hero() {
           </ul>
           <p className="text-sm font-medium text-ink-soft">{m.hero.status}</p>
         </div>
-        <div className="relative mx-auto w-full max-w-[520px] lg:mx-0 lg:justify-self-end">
+
+        {/* Below a large screen: the village as a framed window, Momo on the path, the child's home in a phone. */}
+        <figure className="relative mx-auto w-full max-w-[640px] lg:hidden">
+          <div aria-hidden className="relative aspect-[4/3] w-full overflow-hidden rounded-[28px] shadow-lift ring-1 ring-tonle-950/10 sm:aspect-[16/10]">
+            <PaintedScene position="44% 58%" />
+            <div className="absolute bottom-[5%] left-[6%] flex items-end gap-1">
+              <LearningBuddy kind="OTTER" mood="happy" size={104} className="w-[clamp(64px,19vw,112px)]" />
+              <LearningBuddy kind="FROG" mood="idle" size={66} className="mb-1 w-[clamp(40px,12vw,70px)]" />
+            </div>
+          </div>
+          <PhoneFrame
+            src={childEntrance}
+            alt={l.shotChild}
+            eager
+            className="absolute -bottom-6 right-3 w-[36%] max-w-[190px] rotate-[3deg] sm:right-6"
+          />
+          <figcaption className="mt-3 pr-[42%] text-xs font-medium text-ink-soft sm:pr-[36%]">{l.sample}</figcaption>
+        </figure>
+
+        <div className="relative mx-auto hidden w-full max-w-[520px] lg:mx-0 lg:block lg:justify-self-end">
           <BrowserFrame
             src={parentHome}
             alt={l.shotParent}
@@ -136,6 +172,55 @@ function Hero() {
           />
           <p className="mt-14 text-right text-xs font-medium text-ink-soft sm:mt-16">{l.sample}</p>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * M2: what Bookeyond says about itself, as administrators keep it (Operations → Landing page). Brand lines, or
+ * testimonials with their attribution - never an invented endorsement. Shown in the page's language with the other
+ * beneath; nothing is shown when there is nothing to show (or it can't be loaded).
+ */
+function Statements() {
+  const l = useMessages(marketingMessages).landing;
+  const locale = useLocale();
+  const statements = useAsync(() => siteApi.statements(), []);
+  const list = statements.data ?? [];
+  if (list.length === 0) return null;
+  const [first, ...rest] = list;
+  const text = (s: PublicStatement, lang: "en" | "km") => withoutClosingStop(lang === "km" ? s.textKm : s.textEn);
+  const by = (s: PublicStatement) => (locale === "km" ? s.attributionKm : s.attributionEn);
+  const other = locale === "km" ? "en" : "km";
+  return (
+    <section aria-label={l.statementsLabel} className="bg-tonle-900 px-4 py-16 text-white sm:px-8 sm:py-20">
+      <div className="mx-auto flex max-w-[1100px] flex-col gap-10">
+        <figure className="flex flex-col gap-4">
+          <blockquote className="font-display text-[clamp(2rem,1.5rem+2.4vw,3.4rem)] font-bold leading-[1.08] tracking-[-0.01em] text-balance">
+            <span aria-hidden className="text-light">{locale === "km" ? "« " : "“"}</span>
+            {text(first, locale)}
+            <span aria-hidden className="text-light">{locale === "km" ? " »" : "”"}</span>
+          </blockquote>
+          <p lang={other} className={cn("text-lg font-semibold text-white/75", other === "km" && "font-khmer")}>
+            {text(first, other)}
+          </p>
+          {first.kind === "TESTIMONIAL" && by(first) && <figcaption className="text-sm font-semibold text-light">{by(first)}</figcaption>}
+        </figure>
+        {rest.length > 0 && (
+          <ul className="grid gap-6 border-t border-white/15 pt-8 sm:grid-cols-2">
+            {rest.map((s) => (
+              <li key={s.id}>
+                <figure className="flex flex-col gap-2">
+                  <blockquote className="font-display text-[1.5rem] font-bold leading-snug text-balance">{text(s, locale)}</blockquote>
+                  <p lang={other} className={cn("text-[0.9375rem] text-white/70", other === "km" && "font-khmer")}>
+                    {text(s, other)}
+                  </p>
+                  {s.kind === "TESTIMONIAL" && by(s) && <figcaption className="text-sm font-semibold text-light">{by(s)}</figcaption>}
+                </figure>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );
