@@ -197,7 +197,7 @@ export async function ensurePricedSchoolPlan(request: APIRequestContext, token: 
 
 /** M8: answers "Enter your password again", asked before an action that moves money or access. */
 export async function enterPasswordAgain(page: Page, password: string): Promise<void> {
-  await page.getByLabel("Your password").fill(password);
+  await page.getByLabel("Your password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Continue" }).click();
 }
 
@@ -206,7 +206,7 @@ export async function confirmTransfer(page: Page, receipt: string, amount: strin
   await page.getByLabel("Receipt reference").fill(receipt);
   await page.getByLabel("Amount on the receipt").fill(amount);
   await page.getByRole("button", { name: "Confirm payment received" }).click();
-  await page.getByLabel("Your password").fill(password);
+  await page.getByLabel("Your password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Continue" }).click();
 }
 

@@ -127,6 +127,8 @@ test("plans: a family asks for an offered plan, an administrator answers it from
   await row.getByRole("link", { name: "Open the family" }).click();
   await operator.getByLabel("Plan", { exact: true }).selectOption({ label: planName });
   await operator.getByRole("button", { name: "Give this plan" }).click();
+  // M8: the page was loaded anew, so the proof of the password (kept in memory only) is asked for again.
+  await enterPasswordAgain(operator, ADMIN_PASSWORD);
   await expect(requests.getByRole("listitem").filter({ hasText: email })).toHaveCount(0);
 
   await page.reload();
