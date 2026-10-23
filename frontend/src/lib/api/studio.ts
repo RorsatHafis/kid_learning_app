@@ -610,10 +610,11 @@ export const studioApi = {
    * A picture (PNG, JPEG, WebP, ≤ 2 MB) or recording (MP3, M4A, Ogg, WAV, ≤ 5 MB), inspected by the server.
    * The same file uploaded again is the same library item (X13).
    */
-  uploadMedia: (file: File) => {
+  /** M5a: `onProgress` reports the share sent (0..1); `signal` cancels the upload. */
+  uploadMedia: (file: File, onProgress?: (fraction: number) => void, signal?: AbortSignal) => {
     const form = new FormData();
     form.append("file", file);
-    return apiClient.post<MediaItem>(`${S}/media`, form);
+    return apiClient.post<MediaItem>(`${S}/media`, form, { onUploadProgress: onProgress, signal });
   },
   /** The media library: platform media and the author's own, newest first (X13). */
   mediaLibrary: (query: MediaQuery = {}) => {

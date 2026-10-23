@@ -15,11 +15,11 @@ import { FormField } from "@/features/auth/FormField";
 import { speak, stopSpeaking, usePlaying } from "@/features/child/speaker";
 import { cn } from "@/lib/utils/cn";
 import { StatusBadge, TextAreaField } from "./shared";
-import { uploadError } from "./mediaText";
+import { uploadError, fileSize } from "./mediaText";
 import { StorageMeter } from "./StorageMeter";
 import { useStudioScope } from "./studioLogic";
 import { messagesNow, useMessages } from "@/i18n/catalog";
-import { formatDate, formatNumber } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { mediaMessages } from "./media.messages";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav,audio/x-wav";
@@ -27,10 +27,7 @@ const ACCEPT = "image/png,image/jpeg,image/webp,audio/mpeg,audio/mp4,audio/x-m4a
 type Kind = "" | "IMAGE" | "AUDIO";
 type Show = "" | "unused" | "archived";
 
-const bytes = (n: number) => {
-  const m = messagesNow(mediaMessages);
-  return n >= 1024 * 1024 ? m.megabytes(formatNumber(n / (1024 * 1024), { maximumFractionDigits: 1, minimumFractionDigits: 1 })) : m.kilobytes(Math.max(1, Math.round(n / 1024)));
-};
+const bytes = fileSize;
 const usedText = (n: number) => {
   const m = messagesNow(mediaMessages);
   return n === 0 ? m.notUsed : m.usedIn(n);

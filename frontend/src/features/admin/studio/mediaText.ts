@@ -1,6 +1,16 @@
 import { ApiError } from "@/lib/api/ApiError";
 import { messagesNow } from "@/i18n/catalog";
 import { studioMessages } from "./messages";
+import { formatNumber } from "@/i18n/format";
+import { mediaMessages } from "./media.messages";
+
+/** A file's size as the media library shows it: "1.2 MB", "84 KB". */
+export function fileSize(n: number): string {
+  const m = messagesNow(mediaMessages);
+  return n >= 1024 * 1024
+    ? m.megabytes(formatNumber(n / (1024 * 1024), { maximumFractionDigits: 1, minimumFractionDigits: 1 }))
+    : m.kilobytes(Math.max(1, Math.round(n / 1024)));
+}
 
 /**
  * The server's reason for refusing a file (its type, size or dimensions, or a full storage

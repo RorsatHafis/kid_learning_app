@@ -119,7 +119,7 @@ describe("MediaSlot in the question form", () => {
     const [imageInput, audioInput] = fileInputs(container);
     const png = new File([new Uint8Array([137, 80, 78, 71])], "apples.png", { type: "image/png" });
     await user.upload(imageInput, png);
-    expect(upload).toHaveBeenCalledWith(png);
+    expect(upload).toHaveBeenCalledWith(png, expect.any(Function), expect.any(AbortSignal));
     expect(await screen.findByRole("button", { name: "Replace the picture for the question" })).toBeInTheDocument();
     await user.type(screen.getByLabelText(/Describe the picture/), "Three red apples");
     await user.upload(audioInput, new File([new Uint8Array([73, 68, 51])], "q.mp3", { type: "audio/mpeg" }));

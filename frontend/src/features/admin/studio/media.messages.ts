@@ -97,6 +97,18 @@ export const mediaMessages = defineMessages(
       play: (name: string) => `Play the ${name}`,
       stop: (name: string) => `Stop the ${name}`,
       remove: (name: string) => `Remove the ${name}`,
+      // M5a: dropping a file, and the upload as it goes
+      dropHint: "or drop a file here",
+      dropHere: (name: string) => `Drop it here to use it as the ${name}`,
+      wrongKind: (picture: boolean) =>
+        picture ? "Choose a picture: PNG, JPEG or WebP." : "Choose a recording: MP3, M4A, Ogg or WAV.",
+      dimensions: (width: number, height: number) => `${width} × ${height} px`,
+      sending: (name: string) => `Uploading ${name}`,
+      percent: (n: number) => `${n}%`,
+      checking: "Checking the file…",
+      cancel: "Cancel upload",
+      cancelled: "Upload cancelled. Nothing was saved, and the rest of the question is as you left it.",
+      keptDraft: "The rest of the question is as you left it.",
     },
   },
   {
@@ -193,6 +205,17 @@ export const mediaMessages = defineMessages(
       play: (name: string) => `ចាក់${name}`,
       stop: (name: string) => `បញ្ឈប់${name}`,
       remove: (name: string) => `ដក${name} ចេញ`,
+      dropHint: "ឬទម្លាក់ឯកសារនៅទីនេះ",
+      dropHere: (name: string) => `ទម្លាក់វានៅទីនេះ ដើម្បីប្រើជា${name}`,
+      wrongKind: (picture: boolean) =>
+        picture ? "សូមជ្រើសរូបភាព៖ PNG, JPEG ឬ WebP។" : "សូមជ្រើសសំឡេងថត៖ MP3, M4A, Ogg ឬ WAV។",
+      dimensions: (width: number, height: number) => `${width} × ${height} ភីកសែល`,
+      sending: (name: string) => `កំពុងផ្ទុកឡើង ${name}`,
+      percent: (n: number) => `${n}%`,
+      checking: "កំពុងពិនិត្យឯកសារ…",
+      cancel: "បោះបង់ការផ្ទុកឡើង",
+      cancelled: "បានបោះបង់ការផ្ទុកឡើង។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ ហើយផ្នែកផ្សេងទៀតនៃសំណួរនៅដដែល។",
+      keptDraft: "ផ្នែកផ្សេងទៀតនៃសំណួរនៅដដែល។",
     },
   },
 );

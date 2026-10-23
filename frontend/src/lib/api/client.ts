@@ -17,6 +17,8 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   /** Skip attaching Authorization / skip the refresh-retry loop — only
    * auth endpoints themselves need this. */
   skipAuth?: boolean;
+  /** M5a: a file upload reports how much has been sent (0..1); sent over XHR, which fetch can't report. */
+  onUploadProgress?: (fraction: number) => void;
 };
 
 /** refreshed: new tokens stored. rejected: the server refused the refresh
@@ -116,11 +118,49 @@ export function onStepUpNeeded(handler: (() => Promise<boolean>) | null) {
   stepUpHandler = handler;
 }
 
+/**
+ * M5a: the same request as fetch, over XMLHttpRequest so the upload's progress can be reported; answered as a
+ * Response so refresh, step-up and errors are handled exactly as for every other request.
+ */
+function sendWithProgress(url: string, init: RequestInit, onProgress: (fraction: number) => void): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(init.method ?? "GET", url);
+    Object.entries((init.headers ?? {}) as Record<string, string>).forEach(([name, value]) => xhr.setRequestHeader(name, value));
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && e.total > 0) onProgress(e.loaded / e.total);
+    };
+    xhr.onload = () => {
+      const headers = new Headers();
+      xhr
+        .getAllResponseHeaders()
+        .trim()
+        .split(/[\r\n]+/)
+        .forEach((line) => {
+          const at = line.indexOf(":");
+          if (at > 0) headers.append(line.slice(0, at).trim(), line.slice(at + 1).trim());
+        });
+      const empty = xhr.status === 204 || xhr.status === 205 || xhr.status === 304;
+      resolve(new Response(empty ? null : xhr.responseText, { status: xhr.status, headers }));
+    };
+    xhr.onerror = () => reject(new TypeError("Network request failed"));
+    xhr.onabort = () => reject(new DOMException("", "AbortError"));
+    if (init.signal) {
+      if (init.signal.aborted) return reject(new DOMException("", "AbortError"));
+      init.signal.addEventListener("abort", () => xhr.abort(), { once: true });
+    }
+    xhr.send(init.body as XMLHttpRequestBodyInit | null);
+  });
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { skipAuth, body, headers, ...rest } = options;
+  const { skipAuth, body, headers, onUploadProgress, ...rest } = options;
+
+  const send = (url: string, init: RequestInit) =>
+    onUploadProgress && body instanceof FormData ? sendWithProgress(url, init, onUploadProgress) : fetch(url, init);
 
   const doFetch = () =>
-    fetch(`${API_BASE}${path}`, {
+    send(`${API_BASE}${path}`, {
       ...rest,
       headers: {
         // A file upload sets its own multipart content type (with the boundary).

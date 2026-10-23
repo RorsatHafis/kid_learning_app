@@ -17,7 +17,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M2 Landing page, ages 3–12, public demo | **done** | see log | V63 |
 | M3 Child wellbeing: daily limits and graceful stops | **done** | see log | V64 |
 | M4 Self-service school registration and paid onboarding | **done** | see log | — |
-| M5 Authoring UX, direct upload, content visibility | planned | | |
+| M5 Authoring UX, direct upload, content visibility | M5a done (upload in the form); M5b next (visibility, builder orientation) | | |
 | M6 Feature-specific paywall messages | **done** | see log | — |
 | M7 Pagination and information density | **done** | see log | — |
 | M8 Payment QR, manual reconciliation, secure grants | **done** (M8a step-up and reconciliation, M8b instructions and KHQR) | see log | V67 |
@@ -864,3 +864,22 @@ Dependencies:
       in the backend log, the stored secret isn't the key, the audit holds counts only; phone width has no
       horizontal scroll.
   - **Next**: M5 (authoring, upload, visibility), per the reconciliation order.
+- 2026-10-23: **M5a done: uploading inside the authoring form.**
+  - **What**: every picture or recording slot in the question form (`MediaSlot`: prompt, reading, choices,
+    matching, ordering and sorting items) takes a dropped file as well as browse and the library. While it uploads it
+    shows the file (a preview of a picture, its size and pixel size) and a progress bar (`role=progressbar`, "Checking
+    the file…" once sent), and it can be cancelled. An obvious mismatch (a recording on a picture) is said before
+    anything is sent; everything else is the server's decision, as before - the same `POST /studio/media` with its
+    ownership, allowance, deduplication and byte inspection. A refused or cancelled upload says so and that the rest
+    of the question is as it was; nothing else in the form changes.
+  - **How**: `apiClient` sends a request with `onUploadProgress` over XMLHttpRequest and answers it as a `Response`,
+    so refresh, step-up and errors take the same path as every request; `studioApi.uploadMedia(file, onProgress,
+    signal)`. The library and the payment-instructions panel upload as before.
+  - **Verified**: Vitest 366/366 (new `mediaSlot.test.tsx`: drop, progress, the server's refusal, cancel, a recording
+    never sent to a picture slot; `media.test.tsx` now expects the progress and cancel arguments); E2E Studio journeys
+    4/4 (desktop and phone; the first uploads a picture through the slot); browser: in a new question, a dropped
+    4.8 MB picture was refused by the server ("at most 2 MB") with the typed question kept, then a 640 × 480 picture
+    uploaded through the real endpoint and showed from its signed address, the typed question still there.
+  - **Not done here**: the builder's orientation (where an item sits, who will see it, what publishing does) moves to
+    M5b with visibility, since "who will see it" is what M5b decides. No client-side size limit is shown before
+    upload: the limits live on the server (2 MB pictures) and its message is shown.
