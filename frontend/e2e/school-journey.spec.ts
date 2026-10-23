@@ -17,15 +17,15 @@ import {
 } from "./support";
 
 /**
- * The school side end to end: a principal applies, an administrator approves, the principal sets
- * up the school and a class and invites a teacher by email; the teacher chooses a password from
+ * The school side end to end: a principal signs up and confirms their email (M4: no approval), sets
+ * up the school, which waits for its payment until an administrator confirms the invoice, then a class, and invites a teacher by email; the teacher chooses a password from
  * the emailed link, accepts, and is assigned to the class. Then PD-01: the class assigns a
  * curriculum and makes a code, a family looks it up, sees what the school will see and joins,
  * the teacher sees the child's learning in what the class assigns, and the family ends it.
  */
 test.use({ contextOptions: { reducedMotion: "reduce" } });
 
-test("school: principal applies, is approved, sets up the school; an invited teacher joins a class @phone", async ({
+test("school: principal signs up, confirms their email, sets up the school; an invited teacher joins a class @phone", async ({
   page,
   browser,
   request,
@@ -36,33 +36,20 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   const teacherEmail = uniqueEmail("teacher");
   const schoolName = `E2E Primary ${Date.now().toString(36)}`;
 
-  // The application: no account until approved.
+  // M4: self-service - no account to use until the address is confirmed, then no administrator's approval.
   await page.goto("/register");
   await page.getByRole("button", { name: "I'm a principal" }).click();
   await expect(page.getByRole("button", { name: "I'm a principal" })).toHaveAttribute("aria-pressed", "true");
-  await page.getByLabel("School name").fill(schoolName);
   await page.getByLabel("Email").fill(principalEmail);
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create|apply/i }).click();
-  await expect(page.getByText("Application received")).toBeVisible();
+  await page.getByRole("button", { name: /create/i }).click();
+  await expect(page.getByText("Check your email")).toBeVisible();
   await logIn(page, principalEmail, PASSWORD);
-  // Refused until approved, not merely not yet answered.
+  // Refused until the address is confirmed.
   await expect(page.getByRole("alert").first()).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
-
-  // The administrator approves it.
-  const adminContext = await browser.newContext();
-  const admin = await adminContext.newPage();
-  await logIn(admin, ADMIN_EMAIL, ADMIN_PASSWORD);
-  await workspaceLink(admin, "Staff");
-  // Among the applications - once approved, the principal is listed under all staff instead.
-  const application = admin
-    .getByRole("region", { name: /^Principal applications/ })
-    .getByRole("listitem")
-    .filter({ hasText: principalEmail });
-  await application.getByRole("button", { name: "Approve" }).click();
-  await expect(application).toHaveCount(0);
-  await adminContext.close();
+  await page.goto(linkIn(await waitForEmail(request, principalEmail, "Confirm your email"), "/verify-email"));
+  await expect(page.getByText(/confirmed/i).first()).toBeVisible();
 
   // The principal's console, loaded on demand.
   await logIn(page, principalEmail, PASSWORD);
@@ -72,7 +59,7 @@ test("school: principal applies, is approved, sets up the school; an invited tea
   await page.getByRole("button", { name: "Create school" }).click();
 
   // Y44: a new school's services wait for payment - said plainly, with the way to pay, and nothing of the school shown.
-  await expect(page.getByRole("heading", { name: `${schoolName}'s subscription needs payment` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: `Choose a plan to open ${schoolName}` })).toBeVisible();
   await expectNoViolations(page, "principal: school waiting for payment");
   // The administrator invoices the school and confirms the transfer against its receipt.
   const token = await adminToken(request);

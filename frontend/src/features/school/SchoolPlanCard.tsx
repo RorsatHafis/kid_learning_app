@@ -95,7 +95,13 @@ export function PrincipalSchoolPlan({ schoolId, version }: { schoolId: string; v
           <p className="text-sm leading-relaxed text-ink-soft">
             {m.keepsAll} {m.noPurchase}
           </p>
-          {!plan.data.access.paymentPending && <SchoolRenew schoolId={schoolId} onStarted={() => setRenewed((v) => v + 1)} />}
+          {!plan.data.access.paymentPending && (
+            <SchoolRenew
+              schoolId={schoolId}
+              first={plan.data.subscription?.source !== "PROVIDER"}
+              onStarted={() => setRenewed((v) => v + 1)}
+            />
+          )}
           <SchoolInvoices key={renewed} schoolId={schoolId} />
         </>
       )}

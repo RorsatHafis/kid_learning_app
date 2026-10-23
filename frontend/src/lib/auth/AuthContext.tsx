@@ -22,7 +22,7 @@ interface AuthContextValue {
   sessionUnavailable: boolean;
   retrySession: () => void;
   login: (email: string, password: string) => Promise<Session>;
-  register: (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL"; acceptedLegalVersion?: string }) => Promise<Session | "PENDING_APPROVAL">;
+  register: (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL"; acceptedLegalVersion?: string }) => Promise<Session | "PENDING_CONFIRMATION">;
   logout: () => Promise<void>;
   /** Changes the password (current one required). The server ends every session and
    * returns a fresh one, which this adopts so this device stays signed in. */
@@ -138,9 +138,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (input: { email: string; password: string; familyName?: string; role?: "PARENT" | "PRINCIPAL"; acceptedLegalVersion?: string }) => {
       // The language the visitor chose before signing up becomes the account's.
       const data = await authApi.register({ ...input, preferredLanguage: currentLocale() });
-      // PRINCIPAL self-registration comes back 202 with no tokens — pending
-      // ADMIN approval, per AuthController. Nothing to log in to yet.
-      if (!data.accessToken) return "PENDING_APPROVAL" as const;
+      // PRINCIPAL self-registration comes back 202 with no tokens: the account opens once
+      // its address is confirmed (M4, AuthController). Nothing to log in to yet.
+      if (!data.accessToken) return "PENDING_CONFIRMATION" as const;
       tokenStore.setSession({
         accessToken: data.accessToken,
         accessTokenExpiresAt: data.expiresAt,

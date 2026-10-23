@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { priceText, type BillingInterval } from "./subscriptions";
+import { priceText, type BillingInterval, type SchoolEntitlementKey } from "./subscriptions";
 
 // ---- payment/web/PaymentDtos.java (Y43) ----
 // A request names a plan and a way of paying, never an amount or a status: the server freezes the plan's
@@ -60,6 +60,8 @@ export interface SchoolPlanChoice {
   amountMinor: number;
   currency: string;
   billingInterval: BillingInterval;
+  /** M4: what the plan includes, by limit (null: no limit). */
+  limits: Partial<Record<SchoolEntitlementKey, number | null>>;
 }
 
 export interface PaymentOrderPage {

@@ -44,7 +44,7 @@ test("preview seed: an account for each role", async ({ page, browser, request }
   await logIn(page, principal.email, principal.password);
   await page.getByLabel("School name").fill(schoolName);
   await page.getByRole("button", { name: "Create school" }).click();
-  await expect(page.getByRole("heading", { name: `${schoolName}'s subscription needs payment` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: `Choose a plan to open ${schoolName}` })).toBeVisible();
   await ensurePricedSchoolPlan(request, token);
   const schoolId = await schoolIdByName(request, token, schoolName);
   const billing = await signedIn(browser, admin.email, admin.password);
@@ -94,7 +94,7 @@ test("preview seed: an account for each role", async ({ page, browser, request }
   const unpaidPage = await setUp(browser, request, unpaid, "Your Bookeyond Kid account is ready to set up", true);
   await unpaidPage.getByLabel("School name").fill(unpaidName);
   await unpaidPage.getByRole("button", { name: "Create school" }).click();
-  await expect(unpaidPage.getByRole("heading", { name: `${unpaidName}'s subscription needs payment` })).toBeVisible();
+  await expect(unpaidPage.getByRole("heading", { name: `Choose a plan to open ${unpaidName}` })).toBeVisible();
   await unpaidPage.context().close();
   note("Principal (unpaid)", unpaid.email, unpaid.password, `${unpaidName}: no payment yet, so its school services wait (the administrator can invoice it).`);
 

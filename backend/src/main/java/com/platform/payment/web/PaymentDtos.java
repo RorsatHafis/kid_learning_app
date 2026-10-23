@@ -48,14 +48,18 @@ public final class PaymentDtos {
     public record MethodsResponse(List<PaymentProviderType> methods) {
     }
 
-    /** A school plan a principal may pay for (Y44): its price is the plan's own, set by an administrator. */
+    /**
+     * A school plan a principal may pay for (Y44): its price is the plan's own, set by an administrator; its limits
+     * (M4: so plans can be compared before paying; null means no limit).
+     */
     public record SchoolPlanChoice(UUID id, String code, String name, String description, long amountMinor, String currency,
-                                   String billingInterval) {
+                                   String billingInterval, java.util.Map<String, Integer> limits) {
 
-        public static SchoolPlanChoice of(com.platform.subscription.entity.SubscriptionPlan plan) {
+        public static SchoolPlanChoice of(com.platform.subscription.entity.SubscriptionPlan plan,
+                                          java.util.Map<String, Integer> limits) {
 
             return new SchoolPlanChoice(plan.getId(), plan.getCode(), plan.getName(), plan.getDescription(),
-                    plan.getPriceAmountMinor(), plan.getPriceCurrency(), plan.getBillingInterval().name());
+                    plan.getPriceAmountMinor(), plan.getPriceCurrency(), plan.getBillingInterval().name(), limits);
 
         }
 

@@ -29,6 +29,26 @@ public class SchoolService {
     public SchoolService(SchoolRepository schools, SchoolClassRepository classes, TeacherAssignmentRepository assignments, ClassEnrollmentRepository enrollments, AccountRepository accounts, ChildRepository children, CurriculumRepository curricula, CurriculumService curriculumService, EnrollmentService enrollmentService, ClassCurriculumAssignmentRepository classCurricula, AuditService audit, com.platform.subscription.service.SchoolEntitlementService entitlements) { this.entitlements=entitlements; this.schools=schools;this.classes=classes;this.assignments=assignments;this.enrollments=enrollments;this.accounts=accounts;this.children=children;this.curricula=curricula;this.curriculumService=curriculumService;this.enrollmentService=enrollmentService;this.classCurricula=classCurricula;this.audit=audit; }
     static final String ARCHIVED_CLASS="This class is archived: restore it before adding to it.";
     @Transactional public School createSchool(String name, UUID principalAccountId) { return schools.save(School.create(name, principalAccountId)); }
+
+    /** A school a principal set up, and whether this request made it (false: it was already theirs). */
+    public record SetUp(School school, boolean created) {}
+
+    /**
+     * M4: a principal sets up a school themselves. A repeated request - a double submit, a retry after a lost
+     * response - returns the school they already have under that name instead of a second one (serialised on the
+     * principal's account, so two at once can't both create). Its services start only once its plan is paid (Y44).
+     */
+    @Transactional public SetUp setUpSchool(String name, UUID principalAccountId) {
+        accounts.findForUpdate(principalAccountId).orElseThrow(() -> new ResourceNotFoundException("Account", principalAccountId));
+        String trimmed = name.strip();
+        Optional<School> same = schools.findByPrincipalAccountId(principalAccountId).stream()
+                .filter(s -> !s.isArchived() && s.getName().strip().equalsIgnoreCase(trimmed)).findFirst();
+        if (same.isPresent()) return new SetUp(same.get(), false);
+        School school = schools.save(School.create(trimmed, principalAccountId));
+        audit.record(new RecordAuditEvent(null, principalAccountId, AuditActorType.PRINCIPAL, "SCHOOL_CREATED", "SCHOOL", school.getId(),
+                Map.of("name", trimmed)));
+        return new SetUp(school, true);
+    }
     @Transactional public SchoolClass createClass(UUID schoolId,String name){ School school=schools.findById(schoolId).orElseThrow(()->new ResourceNotFoundException("School",schoolId)); if(school.isArchived()) throw new IllegalStateException("This school is archived: restore it to add classes."); entitlements.requireRoomForClass(schoolId); return classes.save(SchoolClass.create(schoolId,name)); }
     /**
      * A family's child joins a class only with that family's authorization (CLAUDE.md §10, §15).

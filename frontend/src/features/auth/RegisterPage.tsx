@@ -30,7 +30,7 @@ export function RegisterPage() {
   const [familyName, setFamilyName] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [pendingApproval, setPendingApproval] = useState(false);
+  const [pendingConfirmation, setPendingConfirmation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const legal = useLegal();
   const [agreed, setAgreed] = useState(false);
@@ -46,9 +46,15 @@ export function RegisterPage() {
     }
     setIsSubmitting(true);
     try {
-      const result = await register({ email, password, familyName: familyName || undefined, role, acceptedLegalVersion: version });
-      if (result === "PENDING_APPROVAL") {
-        setPendingApproval(true);
+      const result = await register({
+        email,
+        password,
+        familyName: role === "PARENT" ? familyName || undefined : undefined,
+        role,
+        acceptedLegalVersion: version,
+      });
+      if (result === "PENDING_CONFIRMATION") {
+        setPendingConfirmation(true);
       } else {
         navigate(roleHomePath(result.platformRole), { replace: true });
       }
@@ -67,12 +73,13 @@ export function RegisterPage() {
     }
   }
 
-  if (pendingApproval) {
+  if (pendingConfirmation) {
     return (
       <AuthLayout title={r.pendingTitle} subtitle={r.pendingSubtitle}>
         <p className="text-center text-sm leading-relaxed text-ink-soft">
           {r.pendingBody} <span className="font-semibold text-ink">{email}</span>
         </p>
+        <p className="mt-3 text-center text-sm leading-relaxed text-ink-soft">{r.pendingNext}</p>
         <Link to="/" className="mt-6 block text-center text-sm font-semibold text-tonle-700">
           {r.backHome}
         </Link>
@@ -102,12 +109,10 @@ export function RegisterPage() {
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField
-          label={role === "PARENT" ? r.familyName : r.schoolName}
-          value={familyName}
-          onChange={(e) => setFamilyName(e.target.value)}
-          error={fieldErrors.familyName}
-        />
+        {/* A principal names their school after signing in (M4): the server has nowhere to keep it before. */}
+        {role === "PARENT" && (
+          <FormField label={r.familyName} value={familyName} onChange={(e) => setFamilyName(e.target.value)} error={fieldErrors.familyName} />
+        )}
         <FormField label={m.email} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} error={fieldErrors.email} />
         <FormField
           label={m.password}
@@ -120,7 +125,7 @@ export function RegisterPage() {
         <LegalAgreement checked={agreed} onChange={setAgreed} error={fieldErrors.acceptedLegalVersion} />
         {formError && <p className="text-sm font-medium text-brick-deep">{formError}</p>}
         {role === "PRINCIPAL" && (
-          <p className="text-xs text-ink-soft">{r.principalReview}</p>
+          <p className="text-xs text-ink-soft">{r.principalNext}</p>
         )}
         <Button type="submit" size="lg" disabled={isSubmitting} className="mt-2 w-full">
           {isSubmitting ? r.submitting : r.submit}

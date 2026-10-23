@@ -140,8 +140,9 @@ public class Account extends AuditableEntity {
  
     /**
      * Records that the owner proved access to the mailbox. It never changes the account's
-     * status: PENDING_VERIFICATION is the principal-awaiting-approval state, and a mailbox
-     * link must not stand in for an administrator's approval. The first proof is kept.
+     * status by itself: PENDING_VERIFICATION is the new principal's state, which
+     * AccountRecoveryService#confirmVerification ends (M4); a password reset never does. The
+     * first proof is kept.
      */
     public void markEmailVerified(Instant at) {
 

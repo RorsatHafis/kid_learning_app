@@ -104,7 +104,7 @@ public class AuthController {
         PlatformRole requestedRole = parseRole(request.role());
 
         // Public self-registration supports PARENT and PRINCIPAL. Principal accounts
-        // are created pending admin approval and receive no session until approved.
+        // are created pending and receive no session until the address is confirmed (M4).
         if (requestedRole != null && requestedRole != PlatformRole.PARENT
                 && requestedRole != PlatformRole.PRINCIPAL) {
             throw new AccessDeniedException(
@@ -121,7 +121,7 @@ public class AuthController {
                 requestedRole, legal.configured() ? legal.version() : null, request.preferredLanguage()));
 
         if (account.getStatus() != com.platform.identity.entity.AccountStatus.ACTIVE) {
-            // Pending-approval accounts (principal awaiting admin sign-off) get no
+            // Pending accounts (a principal who hasn't confirmed their address yet) get no
             // access token and no refresh-token session - there is nothing yet for
             // either to authenticate.
             return ResponseEntity.status(HttpStatus.ACCEPTED)

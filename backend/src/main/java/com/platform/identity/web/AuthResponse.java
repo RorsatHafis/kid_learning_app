@@ -7,7 +7,7 @@ import java.util.UUID;
 
 /**
  * {@code refreshToken}/{@code refreshTokenExpiresAt} are null exactly when
- * {@code accessToken} is: the PENDING_VERIFICATION (principal-awaiting-approval)
+ * {@code accessToken} is: the PENDING_VERIFICATION (principal-not-yet-confirmed)
  * registration branch in {@link AuthController} issues neither, since no
  * session should exist for an account that cannot yet authenticate.
  */

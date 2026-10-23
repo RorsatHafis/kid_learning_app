@@ -282,6 +282,75 @@ describe("PrincipalHome", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(/The payment has started/);
   });
 
+  it("lets a new school choose its first plan from those offered, each with its price and limits, and pay for it (M4)", async () => {
+    const calls = server({
+      "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/plan": respond(200, schoolPlan(SCHOOL_PLAN.entitlements, true, false)),
+      "GET /schools/s1/payment-plans": respond(200, [
+        {
+          id: "small",
+          code: "SCHOOL_SMALL",
+          name: "Small school",
+          description: "For one or two classes",
+          amountMinor: 9000,
+          currency: "USD",
+          billingInterval: "YEAR",
+          limits: { SCHOOL_CLASSES_MAX: 2, SCHOOL_TEACHERS_MAX: 2, SCHOOL_CHILDREN_MAX: 60, TEACHER_STORAGE_MB: 512 },
+        },
+        {
+          id: "whole",
+          code: "SCHOOL_WHOLE",
+          name: "Whole school",
+          description: null,
+          amountMinor: 30000,
+          currency: "USD",
+          billingInterval: "YEAR",
+          limits: { SCHOOL_CLASSES_MAX: null, SCHOOL_TEACHERS_MAX: 20, SCHOOL_CHILDREN_MAX: 600, TEACHER_STORAGE_MB: null },
+        },
+      ]),
+      "GET /payments/methods": respond(200, { methods: ["MANUAL"] }),
+      "GET /schools/s1/payments": respond(200, []),
+      "POST /schools/s1/payments": respond(201, {}),
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PrincipalHome />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Choose a plan to open Sunrise Primary" })).toBeInTheDocument();
+    expect(await screen.findByText("Choose the school's plan")).toBeInTheDocument();
+    const small = screen.getByRole("radio", { name: /Small school/ });
+    expect(small).toBeChecked();
+    expect(screen.getByText("For one or two classes")).toBeInTheDocument();
+    expect(screen.getByText("Storage: 512 MB for each teacher")).toBeInTheDocument();
+    expect(screen.getByText("Storage: no limit for each teacher")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: /Whole school/ }));
+    await user.click(screen.getByRole("button", { name: /Pay for Whole school/ }));
+    const started = calls.find((c) => c.method === "POST" && c.path === "/schools/s1/payments");
+    expect(started?.body).toMatchObject({ planId: "whole", method: "MANUAL" });
+    expect(await screen.findByRole("status")).toHaveTextContent(/The payment has started/);
+  });
+
+  it("says to ask the Bookeyond team when no plan is offered to schools", async () => {
+    server({
+      "GET /schools/mine": respond(200, [SCHOOL]),
+      "GET /schools/s1/plan": respond(200, schoolPlan(SCHOOL_PLAN.entitlements, true, false)),
+      "GET /schools/s1/payment-plans": respond(200, []),
+      "GET /payments/methods": respond(200, { methods: ["MANUAL"] }),
+      "GET /schools/s1/payments": respond(200, []),
+    });
+    render(
+      <MemoryRouter>
+        <PrincipalHome />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("To start a plan, ask the Bookeyond team for an invoice.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Pay for/ })).not.toBeInTheDocument();
+  });
+
   it("confirms before removing a teacher", async () => {
     const calls = server({
       "GET /schools/mine": respond(200, [SCHOOL]),

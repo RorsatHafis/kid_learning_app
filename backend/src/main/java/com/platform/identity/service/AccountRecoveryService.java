@@ -10,6 +10,7 @@ import com.platform.identity.entity.Account;
 import com.platform.identity.entity.AccountActionPurpose;
 import com.platform.identity.entity.AccountActionToken;
 import com.platform.identity.entity.AccountStatus;
+import com.platform.identity.entity.PlatformRole;
 import com.platform.identity.exception.InvalidActionLinkException;
 import com.platform.identity.exception.TooManyEmailsException;
 import com.platform.identity.repository.AccountActionTokenRepository;
@@ -136,6 +137,12 @@ public class AccountRecoveryService {
         account.markEmailVerified(now);
         if (firstProof) {
             audit(account, "ACCOUNT_EMAIL_VERIFIED", Map.of());
+        }
+        // M4: a principal who signed up opens their account by confirming the address - no administrator's approval.
+        // What they can do is still gated: a school's services start only once its payment is confirmed (Y44).
+        if (account.getPlatformRole() == PlatformRole.PRINCIPAL && account.getStatus() == AccountStatus.PENDING_VERIFICATION) {
+            account.approve();
+            audit(account, "PRINCIPAL_SELF_ACTIVATED", Map.of());
         }
     }
 

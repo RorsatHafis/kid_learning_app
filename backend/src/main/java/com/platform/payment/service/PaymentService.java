@@ -195,10 +195,12 @@ public class PaymentService {
     }
 
     /**
-     * A school's principal renews its plan (Y44): the plan its last confirmed payment bought, at that plan's price
-     * now; it extends from the current paid end, or starts now when the paid period is over. A school's first plan
-     * is arranged and invoiced by an administrator. Open while the school is unpaid - it is how school services
-     * come back. The same request repeated returns the same order.
+     * A school's principal pays for its plan. Renewing (Y44): the plan its last confirmed payment bought, at that
+     * plan's price now; it extends from the current paid end, or starts now when the paid period is over. Choosing
+     * (M4): a self-service, priced school plan, while no paid plan is running - a school's first plan, or a new one
+     * after the last ended; changing plans mid-period is arranged with the Bookeyond team (it is a pricing decision).
+     * Open while the school is unpaid - it is how school services start. The same request repeated returns the same
+     * order; nothing is given until the payment is confirmed.
      */
     @Transactional
     public OrderView startSchoolPayment(UUID accountId, UUID schoolId, UUID planId, PaymentProviderType method, String idempotencyKey) {
@@ -215,11 +217,16 @@ public class PaymentService {
             throw new IllegalArgumentException("Only a school plan can be invoiced to a school");
         }
 
-        boolean renewal = schoolSubscriptions.findBySchoolId(schoolId)
-                .filter(s -> s.getSource() == SubscriptionSource.PROVIDER && s.getPlanId().equals(planId))
-                .isPresent();
+        Optional<SchoolSubscription> paidPlan = schoolSubscriptions.findBySchoolId(schoolId)
+                .filter(s -> s.getSource() == SubscriptionSource.PROVIDER);
+        boolean renewal = paidPlan.filter(s -> s.getPlanId().equals(planId)).isPresent();
         if (!renewal) {
-            throw new IllegalArgumentException("This plan isn't offered for schools to choose: ask the Bookeyond team");
+            if (!plan.isSelfService()) {
+                throw new IllegalArgumentException("This plan isn't offered for schools to choose: ask the Bookeyond team");
+            }
+            if (paidPlan.filter(s -> s.grantsAccessAt(now())).isPresent()) {
+                throw new IllegalStateException("The school's paid plan is still running: to change plans, ask the Bookeyond team");
+            }
         }
 
         PaymentProvider provider = requireAvailable(method);
@@ -235,19 +242,34 @@ public class PaymentService {
 
     }
 
-    /** What a principal may renew: the school's own paid plan, while it is active and priced (empty before a first payment). */
+    /**
+     * What a principal may pay for now: the school's own paid plan (to renew it), first; and, while no paid plan is
+     * running, the self-service school plans (M4). Each one active and priced.
+     */
     @Transactional(readOnly = true)
     public List<SubscriptionPlan> schoolPlanChoices(UUID accountId, UUID schoolId) {
 
         schoolGuard.requireSchoolBilling(accountId, schoolId);
-        Optional<UUID> own = schoolSubscriptions.findBySchoolId(schoolId)
-                .filter(s -> s.getSource() == SubscriptionSource.PROVIDER)
-                .map(SchoolSubscription::getPlanId);
+        Optional<SchoolSubscription> paidPlan = schoolSubscriptions.findBySchoolId(schoolId)
+                .filter(s -> s.getSource() == SubscriptionSource.PROVIDER);
+        Optional<UUID> own = paidPlan.map(SchoolSubscription::getPlanId);
+        boolean running = paidPlan.filter(s -> s.grantsAccessAt(now())).isPresent();
         return plans.findAllByOrderByCreatedAtAsc().stream()
                 .filter(plan -> plan.getAudience() == PlanAudience.SCHOOL && plan.getPriceAmountMinor() != null)
                 .filter(plan -> plan.getStatus() == com.platform.subscription.entity.PlanStatus.ACTIVE)
-                .filter(plan -> own.filter(plan.getId()::equals).isPresent())
+                .filter(plan -> own.filter(plan.getId()::equals).isPresent() || (!running && plan.isSelfService()))
+                .sorted(java.util.Comparator.comparing((SubscriptionPlan plan) -> own.filter(plan.getId()::equals).isEmpty()))
                 .toList();
+
+    }
+
+    /** A plan's limits by key (null: no limit), as a customer compares plans. */
+    @Transactional(readOnly = true)
+    public Map<String, Integer> limitsOf(UUID planId) {
+
+        Map<String, Integer> limits = new LinkedHashMap<>();
+        entitlements.limitsOf(planId).forEach((key, limit) -> limits.put(key.name(), limit));
+        return limits;
 
     }
 

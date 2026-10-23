@@ -40,7 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * a test uses was read out of an email actually delivered to an SMTP server. Covers
  * single use, expiry, replacement by a newer link, purpose confusion, concurrent use,
  * enumeration-safe answers, per-account email limits, and account-state boundaries
- * (a pending principal stays pending; a disabled account gets nothing).
+ * (a new principal opens their account by confirming the address, M4 - a password reset doesn't; a disabled
+ * account gets nothing).
  */
 @Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
@@ -93,20 +94,25 @@ class AccountRecoveryIntegrationTests {
         assertThat(link.token()).hasSizeGreaterThanOrEqualTo(43);
     }
 
+    /** M4 replaced the administrator's approval of principals (Y-era) with self-service: the confirmed address opens it. */
     @Test
-    void confirmingTheAddressNeverApprovesAPendingPrincipal() throws Exception {
+    void confirmingTheAddressOpensANewPrincipalsAccount() throws Exception {
         String email = "principal-" + UUID.randomUUID() + "@example.com";
         HttpResponse<String> registered = post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\""
                 + PASSWORD + "\",\"role\":\"PRINCIPAL\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null);
         assertThat(registered.statusCode()).isEqualTo(202);
 
+        assertThat(loginStatus(email, PASSWORD)).as("not before the address is confirmed").isEqualTo(401);
+
         assertThat(confirmEmail(onlyLink(email, "Confirm your email").token()).statusCode()).isEqualTo(204);
 
         assertThat(jdbc.queryForObject("select status from accounts where normalized_email = ?", String.class, email))
-                .isEqualTo("PENDING_VERIFICATION");
+                .isEqualTo("ACTIVE");
         assertThat(jdbc.queryForObject("select email_verified_at is not null from accounts where normalized_email = ?",
                 Boolean.class, email)).isTrue();
-        assertThat(loginStatus(email, PASSWORD)).isEqualTo(401);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events e join accounts a on a.id = e.actor_id "
+                + "where a.normalized_email = ? and e.action = 'PRINCIPAL_SELF_ACTIVATED'", Integer.class, email)).isEqualTo(1);
+        assertThat(loginStatus(email, PASSWORD)).isEqualTo(200);
     }
 
     @Test
@@ -290,7 +296,7 @@ class AccountRecoveryIntegrationTests {
     }
 
     @Test
-    void aPendingPrincipalCanResetButStillCannotSignInUntilApproved() throws Exception {
+    void aPendingPrincipalCanResetButStillCannotSignInUntilTheAddressIsConfirmed() throws Exception {
         String email = "principal-" + UUID.randomUUID() + "@example.com";
         post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
                 + "\",\"role\":\"PRINCIPAL\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null);

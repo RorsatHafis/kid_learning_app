@@ -87,6 +87,8 @@ export const plansMessages = defineMessages(
       month: "Month",
       year: "Year",
       selfService: "Families can ask for it from their account page (nothing is bought online: you answer each request)",
+      schoolSelfService:
+        "Schools can choose it and pay for it themselves (it needs a price; a school opens only once you confirm its payment)",
       saved: "Saved.",
       saving: "Saving…",
       saveDraft: "Save draft",
@@ -233,6 +235,8 @@ export const plansMessages = defineMessages(
       month: "ខែ",
       year: "ឆ្នាំ",
       selfService: "គ្រួសារអាចស្នើសុំវាពីទំព័រគណនីរបស់ពួកគេ (គ្មានអ្វីត្រូវបានទិញតាមអ៊ីនធឺណិតទេ៖ អ្នកឆ្លើយតបសំណើនីមួយៗ)",
+      schoolSelfService:
+        "សាលាអាចជ្រើសរើស និងបង់ប្រាក់សម្រាប់វាដោយខ្លួនឯង (វាត្រូវការតម្លៃ ហើយសាលាបើកតែនៅពេលអ្នកបញ្ជាក់ការបង់ប្រាក់របស់វា)",
       saved: "បានរក្សាទុកហើយ។",
       saving: "កំពុងរក្សាទុក…",
       saveDraft: "រក្សាទុកសេចក្ដីព្រាង",

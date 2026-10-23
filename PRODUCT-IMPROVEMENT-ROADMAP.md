@@ -16,9 +16,9 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M1 Research, inventory and roadmap | **done** (this document) | see git log | — |
 | M2 Landing page, ages 3–12, public demo | **done** | see log | V63 |
 | M3 Child wellbeing: daily limits and graceful stops | **done** | see log | V64 |
-| M4 Self-service school registration and paid onboarding | next | | |
+| M4 Self-service school registration and paid onboarding | **done** | see log | — |
 | M5 Authoring UX, direct upload, content visibility | planned | | |
-| M6 Feature-specific paywall messages | planned | | |
+| M6 Feature-specific paywall messages | next | | |
 | M7 Pagination and information density | planned | | |
 | M8 Payment QR, manual reconciliation, secure grants | planned | | |
 | M9 Phone registration and verification foundations | planned | | |
@@ -26,6 +26,35 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M11 Storage-provider abstraction, school storage choice | planned | | |
 | M12 School management: foundation and first modules | planned | | |
 | M13 Integration, role verification, docs, staging readiness | planned | | |
+
+**Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
+deferred until the family experience is coherent):** M6 → M7 → M10 → M8 → M9 → M5 → M11 → M13 → M12. M12 waits
+until M6, M7, M10 and M8 are done; M13's integration pass runs before it and again at the end.
+
+### Blueprint review (2026-10-23)
+- **Dependencies**:
+  - M8's grants and payment-method changes need a re-authentication step, so M8 adds password step-up;
+  - M9's TOTP then strengthens the same gate;
+  - M10's link by SMS and phone caregivers depend on M9; its 6-character code and email paths don't, so M10 doesn't
+    wait for M9;
+  - M6's `PURCHASE_UNAVAILABLE` relies on M4's self-service school plans (done).
+- **External blockers** (no milestone waits on them; each degrades honestly):
+  - D-04 (SMS provider): the phone flow runs only with the local test sender;
+  - D-07 (genuine KHQR): no QR is shown;
+  - D-06 (DP Cloud): S3-compatible storage only.
+- **Simplifications**:
+  - M7 pages only lists that can grow, with no notification system;
+  - M11 starts with the provider interface and S3-compatible storage, and per-school storage choice follows D-06;
+  - M12 is staged as foundation, then modules.
+- **Security gaps carried as risks**:
+  - self-service principals (M4) let anyone create a principal account and an unpaid school. The register rate limit
+    applies, and an unpaid school can do nothing (402), so it is not spam-amplifying, but administrators should see
+    new schools (audited as `SCHOOL_CREATED`);
+  - the M10 child-scoped session is the largest new authorization surface. It gets its own endpoint-sweep test, like
+    the cross-family sweep.
+- **No contradictions found** between milestone designs. One correction: M4's "school name at registration" is
+  dropped, because the server had nowhere to keep it and the form was silently discarding it. The name is asked for
+  after sign-in.
 
 Baseline at the start: `master` at `db4b6c8`, CI green, V62. The owner's uncommitted edit to
 `AssessmentAnswerSubmissionWriter.java` is preserved and never staged. The coworker preview (`D:\bk-work\preview`) keeps
@@ -471,3 +500,48 @@ Dependencies:
     - regression test `aChosenActivityStaysListedHoweverManyTitlesComeBeforeIt`, failing on the old code, 4/4 with
       the fix.
   - **Next**: M4.
+- 2026-10-23: **M4 done.**
+  - **Principal sign-up**:
+    - a principal signs up, then **confirming their email opens the account** (`AccountRecoveryService.
+      confirmVerification`, audited `PRINCIPAL_SELF_ACTIVATED`), with no administrator approval;
+    - a password reset alone doesn't open it;
+    - principals still pending who had already confirmed before this change stay in the administrator's approval list,
+      which remains the fallback;
+    - the register form no longer asks a principal for a school name it silently dropped; the name is asked for after
+      sign-in.
+  - **Setting up a school**: `SchoolService.setUpSchool` is safe to repeat. The same principal and name (trimmed,
+    case-insensitive, not archived) returns the existing school with 200 instead of 201. It is serialized on the
+    principal's account row and audited `SCHOOL_CREATED`. Names are limited to 200 characters.
+  - **Plans**:
+    - SCHOOL plans may be self-service **once priced** (the Y35 rule is replaced);
+    - the administrator's plan editor has the school checkbox;
+    - a principal sees the self-service school plans, each with its price and limits, when no paid plan is running,
+      and pays by a method that is switched on;
+    - renewal of the school's own plan is unchanged;
+    - switching plans while a paid plan runs is refused (409, "ask the Bookeyond team"), because proration is a
+      pricing decision;
+    - nothing opens until the payment is confirmed (Y44 unchanged);
+    - a never-paid school is told "Choose a plan to open …" instead of "paused".
+  - **Tests**:
+    - new `SelfServiceSchoolOnboardingIntegrationTests` (2): duplicate and concurrent set-up, unpriced
+      self-service refused, choices, the arranged plan refused, two concurrent pay clicks making one order, pending
+      granting nothing, a stranger refused, confirmation opening the school with the plan's class limit, switching
+      refused while paid;
+    - `AccountRecoveryIntegrationTests.confirmingTheAddressOpensANewPrincipalsAccount`. It replaces
+      `confirmingTheAddressNeverApprovesAPendingPrincipal`, deliberately: the behaviour changed by this program's
+      design;
+    - 62 of 63 in the affected backend suites: SchoolPaymentAccess, Payment, SchoolPlanAndStorage, SchoolStaff,
+      ServerTextCoverage, PublicRegistrationRoleSecurity and AccountRecovery all pass. The one failure,
+      `SubscriptionIntegrationTests.aFamilyStops…`, saw a single curriculum in the long-lived local `bk_test`
+      database. That is environment: CI uses a fresh database, and M4 doesn't touch curricula;
+    - Vitest, including the new `register.test.tsx` and principal plan-choice tests; `tsc`, ESLint;
+    - E2E `school-journey.spec.ts` updated to the new flow (not run locally).
+  - **Runtime and browser** (isolated stack):
+    - sign-up showed "Check your email";
+    - sign-in was refused before confirming;
+    - the emailed link confirmed the address and sign-in worked with no approval;
+    - "Set up your school" led to "Choose a plan to open …" with two test plans, prices and limits;
+    - paying for the second by bank transfer created a pending order with the test instructions;
+    - the API showed the same name returning 200, a class refused while pending (402), the administrator's
+      confirmation, the school paid for a year, a class created (201), and only renewal offered.
+  - **Next**: M6.

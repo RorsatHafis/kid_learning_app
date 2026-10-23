@@ -76,7 +76,8 @@ public class PaymentController {
     @GetMapping("/api/v1/schools/{schoolId}/payment-plans")
     public List<PaymentDtos.SchoolPlanChoice> schoolPlanChoices(@AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId) {
 
-        return payments.schoolPlanChoices(accountId, schoolId).stream().map(PaymentDtos.SchoolPlanChoice::of).toList();
+        return payments.schoolPlanChoices(accountId, schoolId).stream()
+                .map(plan -> PaymentDtos.SchoolPlanChoice.of(plan, payments.limitsOf(plan.getId()))).toList();
 
     }
 

@@ -515,18 +515,16 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
                 </SelectField>
               </div>
             </details>
-            {/* Families ask for self-service plans; a school's plan is arranged by an administrator. */}
-            {plan.plan.audience === "FAMILY" && (
-              <label className="flex items-start gap-2 text-sm text-ink">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-tonle-700"
-                  checked={selfService}
-                  onChange={(e) => setSelfService(e.target.checked)}
-                />
-                {m.selfService}
-              </label>
-            )}
+            {/* Families ask for self-service plans; schools choose and pay for a priced one themselves (M4). */}
+            <label className="flex items-start gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-tonle-700"
+                checked={selfService}
+                onChange={(e) => setSelfService(e.target.checked)}
+              />
+              {plan.plan.audience === "FAMILY" ? m.selfService : m.schoolSelfService}
+            </label>
             {error && (
               <p role="alert" className="text-sm font-medium text-brick-deep">
                 {error}

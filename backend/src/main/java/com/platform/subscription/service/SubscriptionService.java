@@ -160,9 +160,10 @@ public class SubscriptionService {
                                Map<EntitlementKey, Integer> limits) {
         requireAdmin(adminId);
         SubscriptionPlan plan = plan(planId);
-        if (selfService && plan.getAudience() == PlanAudience.SCHOOL) {
-            // Families ask for self-service plans (Y11); a school's plan is arranged by an administrator.
-            throw new IllegalArgumentException("A school plan is arranged by an administrator: families can't ask for it");
+        if (selfService && plan.getAudience() == PlanAudience.SCHOOL && priceAmountMinor == null) {
+            // M4: a principal may pick a self-service school plan and pay for it, so it needs a price; an unpriced
+            // school plan is arranged by an administrator.
+            throw new IllegalArgumentException("A school plan can be chosen by schools only once it has a price");
         }
         plan.revise(name, description, selfService, priceAmountMinor, priceCurrency, interval);
         for (Map.Entry<EntitlementKey, Integer> entry : limits.entrySet()) {
