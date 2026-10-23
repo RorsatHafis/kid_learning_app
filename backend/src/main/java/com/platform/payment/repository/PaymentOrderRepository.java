@@ -34,9 +34,10 @@ public interface PaymentOrderRepository extends JpaRepository<PaymentOrder, UUID
 
     Optional<PaymentOrder> findFirstBySchoolIdAndStatus(UUID schoolId, PaymentStatus status);
 
-    List<PaymentOrder> findTop20ByFamilyIdOrderByCreatedAtDesc(UUID familyId);
+    /** M7: a customer's payments, newest first, a page at a time (the id breaks ties so pages never overlap). */
+    Page<PaymentOrder> findByFamilyIdOrderByCreatedAtDescIdDesc(UUID familyId, Pageable pageable);
 
-    List<PaymentOrder> findTop20BySchoolIdOrderByCreatedAtDesc(UUID schoolId);
+    Page<PaymentOrder> findBySchoolIdOrderByCreatedAtDescIdDesc(UUID schoolId, Pageable pageable);
 
     Page<PaymentOrder> findByStatusOrderByCreatedAtDesc(PaymentStatus status, Pageable pageable);
 

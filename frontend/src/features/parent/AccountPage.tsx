@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AtSign, CheckCircle2, Download, LogOut, MailCheck, MonitorSmartphone, ShieldCheck } from "lucide-react";
 import { deviceName } from "./deviceName";
 import { DeleteAccount } from "./Deletion";
+import { Pager } from "@/components/ui/Pager";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { accountApi } from "@/lib/api/endpoints";
 import { ApiError, waitInWords } from "@/lib/api/ApiError";
@@ -447,7 +448,8 @@ function SignOutEverywhere() {
 
 /** Where this account is signed in, with a way to sign any other device out. */
 function DeviceList() {
-  const devices = useAsync(() => accountApi.devices(), []);
+  const [page, setPage] = useState(0);
+  const devices = useAsync(() => accountApi.devices(page), [page]);
   const [working, setWorking] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "done" | "error"; text: string } | null>(null);
   const m = useMessages(accountMessages).devices;
@@ -471,7 +473,7 @@ function DeviceList() {
 
   if (devices.isLoading && !devices.data) return <LoadingState label={m.loading} />;
   if (devices.error) return <ErrorState error={devices.error} onRetry={devices.refetch} />;
-  const list = devices.data ?? [];
+  const list = devices.data?.items ?? [];
 
   return (
     <div className="flex flex-col gap-3">
@@ -508,6 +510,9 @@ function DeviceList() {
         })}
         {list.length === 0 && <li className="px-4 py-3 text-sm text-ink-soft">{m.none}</li>}
       </ul>
+      {devices.data && (
+        <Pager page={page} size={devices.data.size} total={devices.data.total} onPage={setPage} label={m.list} />
+      )}
       {notice && (
         <p role={notice.kind === "error" ? "alert" : "status"} className={notice.kind === "error" ? "text-sm font-medium text-brick-deep" : "text-sm font-semibold text-palm-deep"}>
           {notice.text}

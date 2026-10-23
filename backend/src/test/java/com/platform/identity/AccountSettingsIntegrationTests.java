@@ -136,13 +136,14 @@ class AccountSettingsIntegrationTests {
         JsonNode refreshed = json(post("/api/v1/auth/refresh", "{\"refreshToken\":\"" + laptop.refreshToken() + "\"}", null), 200);
 
         HttpResponse<String> fromPhone = get("/api/v1/account/devices", phone.accessToken());
-        JsonNode devices = json(fromPhone, 200);
+        JsonNode devices = json(fromPhone, 200).get("items");
         assertThat(devices).hasSize(3);
+        assertThat(devices.get(0).get("current").asBoolean()).as("this device first (M7)").isTrue();
         assertThat(fromPhone.body()).doesNotContainIgnoringCase("hash").doesNotContain("127.0.0.1");
         String phoneId = currentDevice(devices);
-        String laptopId = currentDevice(json(get("/api/v1/account/devices", refreshed.get("accessToken").asString()), 200));
+        String laptopId = currentDevice(json(get("/api/v1/account/devices", refreshed.get("accessToken").asString()), 200).get("items"));
         assertThat(laptopId).isNotEqualTo(phoneId);
-        assertThat(currentDevice(json(get("/api/v1/account/devices", tablet.accessToken()), 200))).isNotIn(phoneId, laptopId);
+        assertThat(currentDevice(json(get("/api/v1/account/devices", tablet.accessToken()), 200).get("items"))).isNotIn(phoneId, laptopId);
         for (JsonNode device : devices) {
             assertThat(device.get("userAgent").asString()).isNotBlank();
             assertThat(device.get("signedInAt").asString()).isNotBlank();
@@ -151,13 +152,40 @@ class AccountSettingsIntegrationTests {
         assertThat(get("/api/v1/account/devices", null).statusCode()).isEqualTo(401);
     }
 
+    /** M7: a page at a time, this device first, every device reachable, and a page size kept small. */
+    @Test
+    void theDeviceListIsPagedWithThisDeviceFirst() throws Exception {
+        Session first = register();
+        for (int i = 0; i < 6; i++) {
+            login(first.email(), PASSWORD);
+        }
+        Session last = login(first.email(), PASSWORD);
+
+        JsonNode page0 = json(get("/api/v1/account/devices?size=3", last.accessToken()), 200);
+        assertThat(page0.get("total").asInt()).isEqualTo(8);
+        assertThat(page0.get("items")).hasSize(3);
+        assertThat(page0.get("items").get(0).get("current").asBoolean()).isTrue();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (int page = 0; page < 3; page++) {
+            JsonNode items = json(get("/api/v1/account/devices?size=3&page=" + page, last.accessToken()), 200).get("items");
+            assertThat(items.size()).isEqualTo(page < 2 ? 3 : 2);
+            items.forEach(device -> assertThat(seen.add(device.get("id").asString())).as("no device on two pages").isTrue());
+        }
+        assertThat(seen).hasSize(8);
+        assertThat(json(get("/api/v1/account/devices?size=3&page=5", last.accessToken()), 200).get("items")).isEmpty();
+        assertThat(get("/api/v1/account/devices?size=21", last.accessToken()).statusCode()).isEqualTo(400);
+        // Another account's devices never appear.
+        Session other = register();
+        assertThat(json(get("/api/v1/account/devices", other.accessToken()), 200).get("total").asInt()).isEqualTo(1);
+    }
+
     @Test
     void signingOutOneDeviceEndsOnlyThatSignInAndOnlyForItsOwnAccount() throws Exception {
         Session phone = register();
         Session laptop = login(phone.email(), PASSWORD);
         Session stranger = register();
-        String laptopId = currentDevice(json(get("/api/v1/account/devices", laptop.accessToken()), 200));
-        String strangerId = currentDevice(json(get("/api/v1/account/devices", stranger.accessToken()), 200));
+        String laptopId = currentDevice(json(get("/api/v1/account/devices", laptop.accessToken()), 200).get("items"));
+        String strangerId = currentDevice(json(get("/api/v1/account/devices", stranger.accessToken()), 200).get("items"));
 
         assertThat(delete("/api/v1/account/devices/" + strangerId, phone.accessToken()).statusCode())
                 .as("someone else's device").isEqualTo(404);
@@ -168,7 +196,7 @@ class AccountSettingsIntegrationTests {
 
         assertThat(refreshStatus(laptop.refreshToken())).isEqualTo(401);
         assertThat(refreshStatus(phone.refreshToken())).isEqualTo(200);
-        assertThat(json(get("/api/v1/account/devices", phone.accessToken()), 200)).hasSize(1);
+        assertThat(json(get("/api/v1/account/devices", phone.accessToken()), 200).get("items")).hasSize(1);
         assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ACCOUNT_DEVICE_SIGNED_OUT' "
                 + "and resource_id = ?::uuid", Integer.class, laptopId)).isEqualTo(1);
         assertThat(delete("/api/v1/account/devices/" + laptopId, null).statusCode()).isEqualTo(401);
@@ -183,7 +211,7 @@ class AccountSettingsIntegrationTests {
         assertThat(get("/api/v1/account", laptop.accessToken()).statusCode()).isEqualTo(200);
 
         // One device signed out from another: its token stops working, the others don't.
-        String laptopId = currentDevice(json(get("/api/v1/account/devices", laptop.accessToken()), 200));
+        String laptopId = currentDevice(json(get("/api/v1/account/devices", laptop.accessToken()), 200).get("items"));
         assertThat(delete("/api/v1/account/devices/" + laptopId, phone.accessToken()).statusCode()).isEqualTo(204);
         HttpResponse<String> refused = get("/api/v1/account", laptop.accessToken());
         assertThat(refused.statusCode()).isEqualTo(401);

@@ -1,6 +1,8 @@
 package com.platform.identity.web;
 
+import com.platform.common.web.PageResponse;
 import java.util.List;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.security.core.Authentication;
@@ -112,12 +114,28 @@ public class AccountController {
         return ResponseEntity.accepted().build();
     }
 
+    /** M7: at most this many devices a page. */
+    static final int MAX_DEVICES_PAGE = 20;
+
+    /**
+     * Where the account is signed in, a page at a time (M7): this device first, then the most recently active. A
+     * person's live sign-ins are few (they expire), so the page is cut from the whole list, which also keeps "this
+     * device" first on page 0 however the rest sort.
+     */
     @GetMapping("/devices")
-    public List<DeviceResponse> devices(@AuthenticationPrincipal UUID accountId, Authentication authentication) {
+    public PageResponse<DeviceResponse> devices(@AuthenticationPrincipal UUID accountId, Authentication authentication,
+                                                @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
+        if (size > MAX_DEVICES_PAGE) {
+            throw new IllegalArgumentException("size must be between 1 and " + MAX_DEVICES_PAGE);
+        }
+        PageResponse.Request request = new PageResponse.Request(page, size);
         Object current = authentication.getDetails();
-        return sessions.devices(accountId).stream()
+        List<DeviceResponse> all = sessions.devices(accountId).stream()
                 .map(d -> new DeviceResponse(d.id(), d.userAgent(), d.signedInAt(), d.lastActiveAt(), d.id().equals(current)))
+                .sorted(java.util.Comparator.comparing((DeviceResponse d) -> !d.current()))
                 .toList();
+        int from = (int) Math.min(all.size(), (long) request.offset());
+        return new PageResponse<>(all.subList(from, Math.min(all.size(), from + size)), page, size, all.size());
     }
 
     /** Signs one of the account's devices out (404 for an id that isn't one of them). */

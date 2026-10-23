@@ -7,6 +7,8 @@ import { useMessages } from "@/i18n/catalog";
 import { formatDate, formatDateTime } from "@/i18n/format";
 import { familyPlanApi, priceText, type PlanOffer } from "@/lib/api/subscriptions";
 import { orderPriceText, paymentsApi, type PaymentMethod, type PaymentOrder } from "@/lib/api/payments";
+import { Pager } from "@/components/ui/Pager";
+import type { Page } from "@/lib/api/types";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { cn } from "@/lib/utils/cn";
 import { errorText } from "@/features/admin/studio/studioLogic";
@@ -29,7 +31,8 @@ export function FamilyPlanWithPayments() {
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null);
   const [justStarted, setJustStarted] = useState(false);
   const m = useMessages(paymentMessages);
-  const pending = orders.data?.find((order) => order.status === "PENDING") ?? null;
+  // A pending payment is always the newest (no new one starts while it waits), so page 0 shows it.
+  const pending = orders.data?.items.find((order) => order.status === "PENDING") ?? null;
   // Real ways of paying first; a test payment (never offered in production) last.
   const available = [...(methods.data?.methods ?? [])].sort((a, b) => Number(a === "DEV_SIMULATOR") - Number(b === "DEV_SIMULATOR"));
 
@@ -88,7 +91,7 @@ export function FamilyPlanWithPayments() {
           }}
         />
       )}
-      {orders.data && orders.data.some((order) => order.status !== "PENDING") && <History orders={orders.data} />}
+      {orders.data && orders.data.total > (pending ? 1 : 0) && <History key={version} first={orders.data} />}
     </div>
   );
 }
@@ -358,9 +361,14 @@ function PendingPayment({
   );
 }
 
-function History({ orders }: { orders: PaymentOrder[] }) {
+/** Every payment the family made, a page at a time (M7: none is cut off). */
+function History({ first }: { first: Page<PaymentOrder> }) {
   const m = useMessages(paymentMessages);
   const titleId = useId();
+  const [page, setPage] = useState(0);
+  const later = useAsync(() => (page === 0 ? Promise.resolve(first) : paymentsApi.familyOrders(page)), [page, first]);
+  const shown = page === 0 ? first : later.data;
+  const orders = shown?.items ?? [];
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-2 border-t border-line pt-4">
       <h3 id={titleId} className="text-sm font-semibold text-ink">
@@ -383,6 +391,8 @@ function History({ orders }: { orders: PaymentOrder[] }) {
             </li>
           ))}
       </ul>
+      {later.error && page > 0 && <ErrorState error={later.error} onRetry={later.refetch} />}
+      <Pager page={page} size={first.size} total={first.total} onPage={setPage} label={m.history} />
     </section>
   );
 }

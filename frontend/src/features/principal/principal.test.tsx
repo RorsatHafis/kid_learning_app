@@ -264,7 +264,7 @@ describe("PrincipalHome", () => {
         { id: "yp", code: "SCHOOL_YEAR", name: "School year", description: null, amountMinor: 12000, currency: "USD", billingInterval: "YEAR" },
       ]),
       "GET /payments/methods": respond(200, { methods: ["MANUAL"] }),
-      "GET /schools/s1/payments": respond(200, []),
+      "GET /schools/s1/payments?page=0&size=10": respond(200, { items: [], page: 0, size: 10, total: 0 }),
       "POST /schools/s1/payments": respond(201, {}),
     });
     const user = userEvent.setup();
@@ -312,7 +312,7 @@ describe("PrincipalHome", () => {
         },
       ]),
       "GET /payments/methods": respond(200, { methods: ["MANUAL"] }),
-      "GET /schools/s1/payments": respond(200, []),
+      "GET /schools/s1/payments?page=0&size=10": respond(200, { items: [], page: 0, size: 10, total: 0 }),
       "POST /schools/s1/payments": respond(201, {}),
     });
     const user = userEvent.setup();
@@ -343,7 +343,7 @@ describe("PrincipalHome", () => {
       "GET /schools/s1/plan": respond(200, schoolPlan(SCHOOL_PLAN.entitlements, true, false)),
       "GET /schools/s1/payment-plans": respond(200, []),
       "GET /payments/methods": respond(200, { methods: ["MANUAL"] }),
-      "GET /schools/s1/payments": respond(200, []),
+      "GET /schools/s1/payments?page=0&size=10": respond(200, { items: [], page: 0, size: 10, total: 0 }),
     });
     render(
       <MemoryRouter>

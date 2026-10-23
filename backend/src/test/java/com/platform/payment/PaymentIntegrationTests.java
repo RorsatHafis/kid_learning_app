@@ -121,6 +121,13 @@ class PaymentIntegrationTests {
         assertThat(forged.statusCode()).isEqualTo(200);
         assertThat(json(get("/api/v1/payments/" + cancelled, parent), 200).get("status").asString()).isEqualTo("CANCELLED");
         assertThat(json(get("/api/v1/family/plan", parent), 200).get("plan").get("id").asString()).isEqualTo(defaultPlan);
+        // M7: the family's payments a page at a time, newest first, none cut off; another family sees none of them.
+        JsonNode newest = json(get("/api/v1/family/payments?size=1", parent), 200);
+        assertThat(newest.get("total").asInt()).isEqualTo(2);
+        assertThat(newest.get("items").get(0).get("id").asString()).isEqualTo(cancelled);
+        assertThat(json(get("/api/v1/family/payments?size=1&page=1", parent), 200).get("items").get(0).get("id").asString()).isEqualTo(failed);
+        assertThat(get("/api/v1/family/payments?size=21", parent).statusCode()).isEqualTo(400);
+        assertThat(json(get("/api/v1/family/payments", registerParent()), 200).get("total").asInt()).isZero();
 
         // An unpriced plan can't be bought; a school plan isn't a family's.
         String unpriced = json(post("/api/v1/admin/plans", "{\"code\":\"UNPRICED_" + suffix() + "\",\"name\":\"Unpriced\"}", admin), 201)
@@ -184,7 +191,7 @@ class PaymentIntegrationTests {
                 principal).statusCode()).isEqualTo(403);
         String orderId = json(post("/api/v1/admin/schools/" + schoolId + "/invoices",
                 "{\"planId\":\"" + planId + "\",\"idempotencyKey\":\"i1\"}", admin), 201).get("id").asString();
-        JsonNode invoices = json(get("/api/v1/schools/" + schoolId + "/payments", principal), 200);
+        JsonNode invoices = json(get("/api/v1/schools/" + schoolId + "/payments", principal), 200).get("items");
         assertThat(invoices.get(0).get("amountMinor").asLong()).isEqualTo(25000);
         assertThat(invoices.get(0).has("admin") && !invoices.get(0).get("admin").isNull()).isFalse();
         assertThat(get("/api/v1/schools/" + schoolId + "/payments", staff(PlatformRole.PRINCIPAL)).statusCode()).isEqualTo(403);

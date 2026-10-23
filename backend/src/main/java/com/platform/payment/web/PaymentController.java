@@ -1,5 +1,6 @@
 package com.platform.payment.web;
 
+import com.platform.common.web.PageResponse;
 import com.platform.payment.entity.PaymentStatus;
 import com.platform.payment.service.PaymentService;
 import com.platform.payment.web.PaymentDtos.ConfirmRequest;
@@ -50,10 +51,14 @@ public class PaymentController {
 
     }
 
-    @GetMapping("/api/v1/family/payments")
-    public List<OrderResponse> familyPayments(@AuthenticationPrincipal UUID accountId) {
+    /** M7: at most this many a page (a customer's own payments; the list grows a few a year). */
+    static final int MAX_ORDERS_PAGE = 20;
 
-        return payments.familyPayments(accountId).stream().map(order -> OrderResponse.summary(order, false)).toList();
+    @GetMapping("/api/v1/family/payments")
+    public PageResponse<OrderResponse> familyPayments(@AuthenticationPrincipal UUID accountId,
+                                                      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+
+        return payments.familyPayments(accountId, ordersPage(page, size)).map(order -> OrderResponse.summary(order, false));
 
     }
 
@@ -66,9 +71,19 @@ public class PaymentController {
     }
 
     @GetMapping("/api/v1/schools/{schoolId}/payments")
-    public List<OrderResponse> schoolPayments(@AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId) {
+    public PageResponse<OrderResponse> schoolPayments(@AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId,
+                                                      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
 
-        return payments.schoolPayments(accountId, schoolId).stream().map(order -> OrderResponse.summary(order, false)).toList();
+        return payments.schoolPayments(accountId, schoolId, ordersPage(page, size)).map(order -> OrderResponse.summary(order, false));
+
+    }
+
+    private static PageResponse.Request ordersPage(int page, int size) {
+
+        if (size > MAX_ORDERS_PAGE) {
+            throw new IllegalArgumentException("size must be between 1 and " + MAX_ORDERS_PAGE);
+        }
+        return new PageResponse.Request(page, size);
 
     }
 

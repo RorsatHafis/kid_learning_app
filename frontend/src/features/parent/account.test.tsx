@@ -47,7 +47,10 @@ function server(onChange: (body: unknown) => Response, devices: () => unknown = 
   return vi.fn(async (url: string, init?: RequestInit) => {
     if (String(url).endsWith("/account/email") && init?.method === "POST") return onChange(JSON.parse(String(init.body)));
     if (String(url).includes("/account/devices/") && init?.method === "DELETE") return respond(204);
-    if (String(url).endsWith("/account/devices")) return respond(200, devices());
+    if (String(url).includes("/account/devices?")) {
+      const items = devices() as unknown[];
+      return respond(200, { items, page: 0, size: 6, total: items.length });
+    }
     if (String(url).endsWith("/account")) return respond(200, PROFILE);
     return respond(404, { status: 404 });
   });
@@ -148,6 +151,37 @@ describe("Signed-in devices", () => {
       fetchMock.mock.calls.some(([url, init]) => String(url).endsWith("/account/devices/dev-phone") && init?.method === "DELETE"),
     ).toBe(true);
     expect(await screen.findByRole("list", { name: "Signed-in devices" })).not.toHaveTextContent("Safari on iPhone");
+  });
+
+  it("shows the devices a page at a time and asks the server for the next page (M7)", async () => {
+    const all = Array.from({ length: 8 }, (_, i) => ({
+      ...DEVICES[1],
+      id: `dev-${i}`,
+      current: i === 0,
+      userAgent: i === 0 ? DEVICES[0].userAgent : DEVICES[1].userAgent,
+    }));
+    const asked: string[] = [];
+    const fetchMock = vi.fn(async (url: string) => {
+      const u = String(url);
+      if (u.includes("/account/devices?")) {
+        asked.push(u.slice(u.indexOf("?")));
+        const page = Number(new URL(u, "http://x").searchParams.get("page"));
+        return respond(200, { items: all.slice(page * 6, page * 6 + 6), page, size: 6, total: 8 });
+      }
+      if (u.endsWith("/account")) return respond(200, PROFILE);
+      return respond(404, { status: 404 });
+    });
+    vi.stubGlobal("fetch", withLegal(fetchMock));
+    renderAccount();
+
+    const list = await screen.findByRole("list", { name: "Signed-in devices" });
+    expect(list.querySelectorAll("li")).toHaveLength(6);
+    expect(list).toHaveTextContent("This device");
+    expect(screen.getByText("1–6 of 8")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: /Next/ }));
+    expect(await screen.findByText("7–8 of 8")).toBeInTheDocument();
+    expect(asked).toContain("?page=1&size=6");
+    expect(screen.getByRole("list", { name: "Signed-in devices" }).querySelectorAll("li")).toHaveLength(2);
   });
 });
 

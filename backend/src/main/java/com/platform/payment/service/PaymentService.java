@@ -1,5 +1,6 @@
 package com.platform.payment.service;
 
+import com.platform.common.web.PageResponse;
 import com.platform.audit.dto.RecordAuditEvent;
 import com.platform.audit.entity.AuditActorType;
 import com.platform.audit.service.AuditService;
@@ -153,13 +154,13 @@ public class PaymentService {
 
     }
 
-    /** The family's recent payments, newest first. */
+    /** The family's payments, newest first, a page at a time (M7: every one can be reached, none is cut off). */
     @Transactional
-    public List<PaymentOrder> familyPayments(UUID accountId) {
+    public PageResponse<PaymentOrder> familyPayments(UUID accountId, PageResponse.Request request) {
 
         UUID familyId = familyOf(accountId);
         expireStale(orders.findFirstByFamilyIdAndStatus(familyId, PaymentStatus.PENDING));
-        return orders.findTop20ByFamilyIdOrderByCreatedAtDesc(familyId);
+        return page(orders.findByFamilyIdOrderByCreatedAtDescIdDesc(familyId, PageRequest.of(request.page(), request.size())), request);
 
     }
 
@@ -273,13 +274,19 @@ public class PaymentService {
 
     }
 
-    /** A school's invoices, for its principal (or an administrator). */
+    /** A school's invoices, newest first, a page at a time, for its principal (or an administrator). */
     @Transactional
-    public List<PaymentOrder> schoolPayments(UUID accountId, UUID schoolId) {
+    public PageResponse<PaymentOrder> schoolPayments(UUID accountId, UUID schoolId, PageResponse.Request request) {
 
         schoolGuard.requireSchoolBilling(accountId, schoolId);
         expireStale(orders.findFirstBySchoolIdAndStatus(schoolId, PaymentStatus.PENDING));
-        return orders.findTop20BySchoolIdOrderByCreatedAtDesc(schoolId);
+        return page(orders.findBySchoolIdOrderByCreatedAtDescIdDesc(schoolId, PageRequest.of(request.page(), request.size())), request);
+
+    }
+
+    private static PageResponse<PaymentOrder> page(Page<PaymentOrder> found, PageResponse.Request request) {
+
+        return new PageResponse<>(found.getContent(), request.page(), request.size(), found.getTotalElements());
 
     }
 

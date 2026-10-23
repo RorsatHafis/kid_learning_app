@@ -27,6 +27,7 @@ import type {
   SchoolStaffMember,
   SchoolSummary,
   SignedInDevice,
+  Page,
   SkillStory,
   StreakSummary,
 } from "./types";
@@ -68,6 +69,9 @@ export const authApi = {
 };
 
 // identity/web/AccountController.java — always the signed-in account; no id in any path.
+/** M7: devices shown a page at a time. */
+export const DEVICES_PAGE = 6;
+
 export const accountApi = {
   me: () => apiClient.get<AccountProfile>("/account"),
   // The account's own interface language (en or km); never anyone else's.
@@ -78,7 +82,8 @@ export const accountApi = {
   // 202 whether or not the new address has an account; 422 wrong current password, 409 already this address, 429 too soon.
   requestEmailChange: (input: { currentPassword: string; newEmail: string }) => apiClient.post<void>("/account/email", input),
   // One entry per signed-in device; `current` is this one. Signing one out ends that sign-in (404 if it isn't yours).
-  devices: () => apiClient.get<SignedInDevice[]>("/account/devices"),
+  /** M7: this device first, then the most recently active, a page at a time. */
+  devices: (page = 0, size = DEVICES_PAGE) => apiClient.get<Page<SignedInDevice>>(`/account/devices?page=${page}&size=${size}`),
   // Y15: agree to the current terms and privacy notice (409 when that isn't the current version).
   acceptLegal: (version: string) => apiClient.post<AccountProfile>("/account/legal-acceptance", { version }),
   // family/erasure/FamilyErasureController.java — family accounts only; nothing changes until eraseAfter.

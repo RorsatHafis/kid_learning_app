@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import type { Page } from "./types";
 import { priceText, type BillingInterval, type SchoolEntitlementKey } from "./subscriptions";
 
 // ---- payment/web/PaymentDtos.java (Y43) ----
@@ -76,10 +77,14 @@ export function orderPriceText(order: PaymentOrder): string {
   return priceText({ amountMinor: order.amountMinor, currency: order.currency, interval: order.billingInterval }) ?? "";
 }
 
+/** M7: payments shown a page at a time. */
+export const ORDERS_PAGE = 10;
+
 export const paymentsApi = {
   /** The ways of paying switched on here; empty = nothing can be bought online. */
   methods: () => apiClient.get<{ methods: PaymentMethod[] }>("/payments/methods"),
-  familyOrders: () => apiClient.get<PaymentOrder[]>("/family/payments"),
+  /** M7: newest first, a page at a time (a pending payment, if any, is always the newest). */
+  familyOrders: (page = 0, size = ORDERS_PAGE) => apiClient.get<Page<PaymentOrder>>(`/family/payments?page=${page}&size=${size}`),
   /** The same `idempotencyKey` again returns the same order; 409 while another payment is in progress. */
   start: (planId: string, method: PaymentMethod, idempotencyKey: string) =>
     apiClient.post<PaymentOrder>("/family/payments", { planId, method, idempotencyKey }),
@@ -89,7 +94,8 @@ export const paymentsApi = {
   /** Development and tests only: refused unless the simulator is on, which production never allows. */
   simulate: (orderId: string, outcome: "SUCCEEDED" | "FAILED" | "CANCELLED") =>
     apiClient.post<PaymentOrder>(`/payments/${orderId}/simulate`, { outcome }),
-  schoolOrders: (schoolId: string) => apiClient.get<PaymentOrder[]>(`/schools/${schoolId}/payments`),
+  schoolOrders: (schoolId: string, page = 0, size = ORDERS_PAGE) =>
+    apiClient.get<Page<PaymentOrder>>(`/schools/${schoolId}/payments?page=${page}&size=${size}`),
   /** Y44: what the principal may renew (the school's own paid plan), and renewing it. */
   schoolRenewals: (schoolId: string) => apiClient.get<SchoolPlanChoice[]>(`/schools/${schoolId}/payment-plans`),
   renewSchool: (schoolId: string, planId: string, method: PaymentMethod, idempotencyKey: string) =>

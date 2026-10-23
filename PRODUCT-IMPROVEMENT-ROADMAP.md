@@ -19,10 +19,10 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M4 Self-service school registration and paid onboarding | **done** | see log | — |
 | M5 Authoring UX, direct upload, content visibility | planned | | |
 | M6 Feature-specific paywall messages | **done** | see log | — |
-| M7 Pagination and information density | next | | |
+| M7 Pagination and information density | **done** | see log | — |
 | M8 Payment QR, manual reconciliation, secure grants | planned | | |
 | M9 Phone registration and verification foundations | planned | | |
-| M10 Child access across devices, trusted caregivers | planned | | |
+| M10 Child access across devices, trusted caregivers | next | | |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
 | M12 School management: foundation and first modules | planned | | |
 | M13 Integration, role verification, docs, staging readiness | planned | | |
@@ -573,3 +573,30 @@ Dependencies:
     server's sentence, "nothing … changes", three plans with prices, and the link. The first build listed every
     self-service plan in the database (dozens of E2E leftovers), which is why there is now a cap of 3.
   - **Next**: M7.
+- 2026-10-23: **M7 done.**
+  - **Paged lists** (the project's `PageResponse`, page from 0; deliberate contract changes, both sides and their tests
+    updated):
+    - `GET /account/devices?page&size` (default 6, at most 20) puts this device first, then the most recently active;
+    - `GET /family/payments` and `GET /schools/{id}/payments` (default 10, at most 20) are newest first, with the id
+      as tie-break so pages never overlap. They replace a silent cut at 20, so every payment is reachable now;
+    - a size over 20 is a 400, not a silent clamp.
+  - **Devices are cut from the whole list**: a person's live sign-ins are few because they expire, and slicing keeps
+    "this device" first on page 0.
+  - **Frontend**: the existing `Pager` sits under devices, the family's payment history and the school's invoices.
+    The pending payment is read from page 0; it is always the newest, because no new payment starts while one waits.
+  - **Not paged, with reasons**:
+    - an order's event ledger is bounded by its few state changes;
+    - the admin audit log is already paged;
+    - a class's children are bounded by class size and the school plan's child limit. Revisit if schools exceed about
+      60 a class.
+  - **Notifications**: none built, because no producer needs them yet.
+  - **Tests**:
+    - `AccountSettingsIntegrationTests` 9/9, with the new `theDeviceListIsPagedWithThisDeviceFirst`: 8 sign-ins in
+      pages of 3, no overlap, all reachable, an empty page beyond, size 21 refused, another account isolated;
+    - `PaymentIntegrationTests` 4/4, now paging a family's 2 payments newest first, with size 21 refused and another
+      family seeing none;
+    - SchoolPaymentAccess 3/3;
+    - Vitest full suite (60 files, 327 tests), with a device paging test that asks the server for page 1; `tsc`.
+  - **Browser** (isolated stack): the test parent with 9 live sign-ins saw 6 devices, "This device" first, and
+    "1–6 of 9" with Previous and Next.
+  - **Next**: M10 (child access across devices, trusted caregivers).

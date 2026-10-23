@@ -90,6 +90,11 @@ const pending: PaymentOrder = {
   admin: null,
 };
 
+/** M7: the family's payments come a page at a time. */
+function page<T>(items: T[]) {
+  return { items, page: 0, size: 10, total: items.length };
+}
+
 describe("paying for a family plan", () => {
   beforeEach(() => {
     Object.values(api).forEach((fn) => fn.mockReset());
@@ -98,7 +103,7 @@ describe("paying for a family plan", () => {
   });
 
   it("offers a priced plan for payment, sends only the plan and the way of paying, and keeps asking for an unpriced one", async () => {
-    api.familyOrders.mockResolvedValueOnce([]).mockResolvedValue([pending]);
+    api.familyOrders.mockResolvedValueOnce(page([])).mockResolvedValue(page([pending]));
     api.start.mockResolvedValue(pending);
     api.order.mockResolvedValue(pending);
     const user = userEvent.setup();
@@ -127,7 +132,7 @@ describe("paying for a family plan", () => {
   });
 
   it("says plainly when a payment went through, and when it didn't", async () => {
-    api.familyOrders.mockResolvedValueOnce([pending]).mockResolvedValue([{ ...pending, status: "FAILED" }]);
+    api.familyOrders.mockResolvedValueOnce(page([pending])).mockResolvedValue(page([{ ...pending, status: "FAILED" }]));
     api.order.mockResolvedValue(pending);
     api.simulate.mockResolvedValue({ ...pending, status: "FAILED", checkout: null });
     const user = userEvent.setup();
@@ -140,7 +145,7 @@ describe("paying for a family plan", () => {
 
   it("keeps the request flow when no way of paying is switched on", async () => {
     api.methods.mockResolvedValue({ methods: [] });
-    api.familyOrders.mockResolvedValue([]);
+    api.familyOrders.mockResolvedValue(page([]));
     render(<FamilyPlanWithPayments />);
 
     expect(await screen.findByRole("button", { name: /Ask for Family Plus/ })).toBeInTheDocument();

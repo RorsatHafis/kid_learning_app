@@ -4,6 +4,7 @@ import { FormField } from "@/features/auth/FormField";
 import { useMessages } from "@/i18n/catalog";
 import { formatDate, formatDateTime } from "@/i18n/format";
 import { orderPriceText, paymentsApi, type PaymentOrder } from "@/lib/api/payments";
+import { Pager } from "@/components/ui/Pager";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { errorText } from "@/features/admin/studio/studioLogic";
 import { invoiceMessages } from "./invoices.messages";
@@ -14,11 +15,15 @@ import { invoiceMessages } from "./invoices.messages";
  */
 export function SchoolInvoices({ schoolId }: { schoolId: string }) {
   const m = useMessages(invoiceMessages);
-  const invoices = useAsync(() => paymentsApi.schoolOrders(schoolId), [schoolId]);
+  const [page, setPage] = useState(0);
+  // Page 0 also says whether a payment waits: a pending one is always the newest (only one at a time).
+  const first = useAsync(() => paymentsApi.schoolOrders(schoolId), [schoolId]);
+  const later = useAsync(() => (page === 0 ? Promise.resolve(null) : paymentsApi.schoolOrders(schoolId, page)), [schoolId, page]);
   const titleId = useId();
-  if (!invoices.data || invoices.data.length === 0) return null;
-  const pending = invoices.data.find((order) => order.status === "PENDING");
-  const settled = invoices.data.filter((order) => order.status !== "PENDING");
+  if (!first.data || first.data.total === 0) return null;
+  const pending = first.data.items.find((order) => order.status === "PENDING");
+  const shown = page === 0 ? first.data : later.data;
+  const settled = (shown?.items ?? []).filter((order) => order.status !== "PENDING");
 
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-3 border-t border-line pt-4">
@@ -43,6 +48,7 @@ export function SchoolInvoices({ schoolId }: { schoolId: string }) {
           ))}
         </ul>
       )}
+      <Pager page={page} size={first.data.size} total={first.data.total} onPage={setPage} label={m.title} />
     </section>
   );
 }
