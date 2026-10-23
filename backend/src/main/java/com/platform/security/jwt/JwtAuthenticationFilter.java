@@ -28,6 +28,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * protected ones are answered 401 by ProblemDetailAuthenticationEntryPoint.
      */
     public static final String REJECTED_TOKEN_ATTRIBUTE = JwtAuthenticationFilter.class.getName() + ".REJECTED_TOKEN";
+
+    /** M10a: the child a child's device may act for (a UUID); ChildDeviceScopeFilter enforces it. */
+    public static final String CHILD_SCOPE_ATTRIBUTE = JwtAuthenticationFilter.class.getName() + ".CHILD_SCOPE";
+
+    /** The authority of a child's device: never a role's, so no role-based rule can admit it. */
+    public static final String CHILD_DEVICE_AUTHORITY = "CHILD_DEVICE";
  
     private final JwtService jwtService;
     private final com.platform.security.session.SessionLiveness liveness;
@@ -61,8 +67,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // "@AuthenticationPrincipal UUID accountId") - only authorities are new here,
                 // spring-security's conventional "ROLE_X" prefix so hasRole("TEACHER") in
                 // @PreAuthorize matches without every call site spelling out "ROLE_TEACHER".
-                List<GrantedAuthority> authorities =
-                        List.of(new SimpleGrantedAuthority("ROLE_" + principal.platformRole().name()));
+                // M10a: a child's device acts as the parent's account (whose family gives access) but never with the
+                // parent's role; the child scope it carries is enforced by ChildDeviceScopeFilter.
+                List<GrantedAuthority> authorities = principal.childId() != null
+                        ? List.of(new SimpleGrantedAuthority(CHILD_DEVICE_AUTHORITY))
+                        : List.of(new SimpleGrantedAuthority("ROLE_" + principal.platformRole().name()));
+                if (principal.childId() != null) {
+                    request.setAttribute(CHILD_SCOPE_ATTRIBUTE, principal.childId());
+                }
                 var authentication = UsernamePasswordAuthenticationToken.authenticated(
                         principal.accountId(), null, authorities);
                 // Which sign-in this is (null for older tokens): read only by the device list.

@@ -46,8 +46,11 @@ public class AccountController {
         this.sessions = sessions;
     }
 
-    /** A signed-in device; {@code current} is the one making this request. */
-    public record DeviceResponse(UUID id, String userAgent, Instant signedInAt, Instant lastActiveAt, boolean current) {
+    /**
+     * A signed-in device; {@code current} is the one making this request; {@code childId} is set for a child's device
+     * (M10a) - a sign-in that opens only that child's space.
+     */
+    public record DeviceResponse(UUID id, String userAgent, Instant signedInAt, Instant lastActiveAt, boolean current, UUID childId) {
     }
 
     /**
@@ -131,7 +134,7 @@ public class AccountController {
         PageResponse.Request request = new PageResponse.Request(page, size);
         Object current = authentication.getDetails();
         List<DeviceResponse> all = sessions.devices(accountId).stream()
-                .map(d -> new DeviceResponse(d.id(), d.userAgent(), d.signedInAt(), d.lastActiveAt(), d.id().equals(current)))
+                .map(d -> new DeviceResponse(d.id(), d.userAgent(), d.signedInAt(), d.lastActiveAt(), d.id().equals(current), d.childId()))
                 .sorted(java.util.Comparator.comparing((DeviceResponse d) -> !d.current()))
                 .toList();
         int from = (int) Math.min(all.size(), (long) request.offset());

@@ -12,6 +12,7 @@ import { RegisterPage } from "@/features/auth/RegisterPage";
 import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { ResetPasswordPage, SetUpAccountPage } from "@/features/auth/ResetPasswordPage";
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
+import { ChildDevicePage } from "@/features/child/ChildDevicePage";
 import { roleHomePath } from "@/features/auth/roleHomePath";
 import { ConfirmEmailChangePage } from "@/features/auth/ConfirmEmailChangePage";
 import { loadChildArea, loadParentArea } from "@/routes/areas";
@@ -82,6 +83,8 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/set-up-account" element={<SetUpAccountPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
+            {/* M10a: a child's own device opens the child's space with a grown-up's code. */}
+            <Route path="/child-device" element={<ChildDevicePage />} />
             <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
 
             <Route

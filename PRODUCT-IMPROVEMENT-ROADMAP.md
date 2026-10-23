@@ -22,7 +22,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M7 Pagination and information density | **done** | see log | — |
 | M8 Payment QR, manual reconciliation, secure grants | planned | | |
 | M9 Phone registration and verification foundations | planned | | |
-| M10 Child access across devices, trusted caregivers | next | | |
+| M10 Child access across devices, trusted caregivers | **M10a done** (child devices); M10b (caregivers) next | see log | V65 |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
 | M12 School management: foundation and first modules | planned | | |
 | M13 Integration, role verification, docs, staging readiness | planned | | |
@@ -600,3 +600,59 @@ Dependencies:
   - **Browser** (isolated stack): the test parent with 9 live sign-ins saw 6 devices, "This device" first, and
     "1–6 of 9" with Previous and Next.
   - **Next**: M10 (child access across devices, trusted caregivers).
+- 2026-10-23: **M10a done: a child's own device.** M10 is split: caregivers (M10b) touch every family endpoint and
+  get their own milestone.
+  - **Flow**:
+    - a parent with access to the child makes a code (6 characters without 0/O/1/I/L, 15 minutes, one at a time per
+      child; a new code ends the last);
+    - the other device types it at `/child-device` (case, spaces and dashes ignored) and waits with a secret only it
+      holds;
+    - the parent sees which device waits (named from its user agent) and approves or cancels;
+    - the device then collects, once, a sign-in for **that child only**.
+    - Only SHA-256 digests of the code and the secret are kept.
+    - A wrong, used, replaced, expired or cancelled code fails the same way (400; 409 once it has ended) and says
+      nothing about any child.
+    - The public steps are `/api/v1/auth/child-device/{claim,collect}`, rate limited per network at 10 and 60 a
+      minute.
+  - **The child's sign-in** is the parent's account narrowed to one child:
+    - `account_sessions.child_id` (V65) is carried through refresh rotation, so the scope never widens;
+    - the access token carries `cid`; its authority is `CHILD_DEVICE`, never a role;
+    - `ChildDeviceScopeFilter` allows only that child's learner endpoints (the child, enrolments, skills, today, the
+      break setting, placing reviews, buddy and language, journey and next step of the child's own enrolments,
+      published content for that child, the child's own attempts, refresh and logout). It checks enrolment and
+      attempt ownership in the database and fails closed;
+    - refresh never returns the parent's email to the device.
+  - **Limits and revocation**:
+    - at most `CHILD_DEVICES_MAX_PER_CHILD` (3, D-05 pending) devices per child;
+    - the parent's device list labels each one "{child}'s space only" and signs it out immediately (existing
+      session liveness);
+    - a device whose sign-in ended goes back to the code page, not the grown-ups' login.
+  - **Child device UI**: on the device the grown-up gate is hidden, every other route redirects to the child's space,
+    and the rest screen says a grown-up can add time "from their own phone".
+  - **Erasure** deletes the child's codes and device sign-ins (CHILD_TABLES closure kept). Audit:
+    `CHILD_DEVICE_CODE_CREATED`, `CHILD_DEVICE_APPROVED`, `CHILD_DEVICE_SIGNED_IN`, `CHILD_DEVICE_CODE_CANCELLED`.
+  - **Tests**:
+    - new `ChildDeviceLinkIntegrationTests` (2). The flow test sweeps 26 refused calls (sibling, parent pages,
+      settings, time extensions, device codes, billing, account, export, catalogue, schools), plays a whole activity
+      through the child sign-in, checks that refresh stays scoped and the email is hidden, and that signing out is
+      immediate. The second test covers expired, replaced, cancelled and unapproved codes and the three-device limit.
+      Mutation check: without the filter the sweep fails at the first sibling read;
+    - FamilyErasure 6/6, SessionReliability 21/21, SessionLiveness 3/3, AccountRecovery 21/21, AccountSettings 9/9,
+      AuthRateLimit 5/5, CorsPolicy 10/10, Actuator 1/1, CrossFamilyAccessSweep 1/1, ServerTextCoverage 3/3,
+      DailyLearningTime 2/2;
+    - Vitest full suite (61 files, 334 tests), with the new `childDevice.test.tsx`: the parent's code and approval,
+      the device typing, waiting and landing only in the child's space, a wrong code; `tsc`, ESLint.
+  - **Browser** (isolated stack, V65 applied):
+    - the parent made a code on the child's settings page;
+    - this browser, cleared, typed it at `/child-device` and waited;
+    - the parent approved it (over the API, the parent side meanwhile);
+    - the device opened Dara's space by itself with no grown-up gate, `/parent/account` came back to the child's
+      space after a reload (the scope survived refresh), and a book opened;
+    - the parent's list showed the device as Dara's, signing it out ended it on the next load, and the device then
+      went to the code page;
+    - at 375 px there is no horizontal scroll.
+  - **Risks**:
+    - device user agents are shown to the parent as reported, so a device could misname itself; the parent approves
+      knowing a code was just typed;
+    - codes are 6 characters from 31, guarded by 15 minutes, single use, parent approval and the rate limit.
+  - **Next**: M10b (trusted caregivers).

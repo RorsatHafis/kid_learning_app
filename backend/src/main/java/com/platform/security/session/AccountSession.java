@@ -87,6 +87,10 @@ public class AccountSession extends AuditableEntity {
     @Column(name = "ip_address", length = 64)
     private String ipAddress;
 
+    /** M10a: set when this sign-in may act only for this child (a child's device); null for an ordinary sign-in. */
+    @Column(name = "child_id", updatable = false)
+    private UUID childId;
+
     protected AccountSession() {
         // JPA
     }
@@ -114,6 +118,28 @@ public class AccountSession extends AuditableEntity {
                                         String userAgent, String ipAddress) {
 
         return successor(accountId, UUID.randomUUID(), refreshTokenHash, issuedAt, expiresAt, userAgent, ipAddress);
+
+    }
+
+    /** M10a: a new sign-in in a new family that may act only for {@code childId} (a child's device). */
+    public static AccountSession issueForChild(UUID accountId, UUID childId, String refreshTokenHash, Instant issuedAt,
+                                               Instant expiresAt, String userAgent, String ipAddress) {
+
+        Assert.notNull(childId, "childId must not be null");
+        AccountSession session = successor(accountId, UUID.randomUUID(), refreshTokenHash, issuedAt, expiresAt, userAgent, ipAddress);
+        session.childId = childId;
+        return session;
+
+    }
+
+    /** The next session of the same family, keeping its child scope: a rotation never widens what a sign-in may do. */
+    public static AccountSession successor(AccountSession presented, String refreshTokenHash, Instant issuedAt,
+                                            Instant expiresAt, String userAgent, String ipAddress) {
+
+        AccountSession next = successor(presented.getAccountId(), presented.getFamilyId(), refreshTokenHash, issuedAt, expiresAt,
+                userAgent, ipAddress);
+        next.childId = presented.childId;
+        return next;
 
     }
 
@@ -160,6 +186,10 @@ public class AccountSession extends AuditableEntity {
 
     public UUID getFamilyId() {
         return familyId;
+    }
+
+    public UUID getChildId() {
+        return childId;
     }
 
     /** Whether a request's user agent matches this session's, as stored (truncated to the column). */

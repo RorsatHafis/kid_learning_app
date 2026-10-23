@@ -161,6 +161,13 @@ public final class ServerText {
             Map.entry(FILTER_UNAUTHENTICATED, "សូមចូលគណនីជាមុនសិន"),
             Map.entry(FILTER_TOKEN_REJECTED, "វគ្គចូលរបស់អ្នកផុតកំណត់ហើយ។ សូមចូលម្ដងទៀត"),
             Map.entry(FILTER_RATE_LIMITED, "មានសំណើច្រើនពេកពីបណ្ដាញនេះ។ សូមរង់ចាំបន្តិច ហើយព្យាយាមម្ដងទៀត។"),
+            Map.entry("This device can only open one child's learning space", "ឧបករណ៍នេះអាចបើកបានតែកន្លែងរៀនរបស់កុមារម្នាក់ប៉ុណ្ណោះ"),
+            Map.entry("That code doesn't work. Ask a grown-up for a new one.", "លេខកូដនោះមិនដំណើរការទេ។ សូមសុំលេខកូដថ្មីពីមនុស្សធំ។"),
+            Map.entry("This code has ended. Ask a grown-up for a new one.", "លេខកូដនេះបានបញ្ចប់ហើយ។ សូមសុំលេខកូដថ្មីពីមនុស្សធំ។"),
+            Map.entry("No device is waiting with this code: make a new one", "គ្មានឧបករណ៍ណាកំពុងរង់ចាំជាមួយលេខកូដនេះទេ៖ សូមបង្កើតលេខកូដថ្មី"),
+            Map.entry("This child already has as many devices as allowed: sign one out first",
+                    "កុមារនេះមានឧបករណ៍ច្រើនតាមដែលអនុញ្ញាតហើយ៖ សូមចាកចេញពីឧបករណ៍មួយជាមុនសិន"),
+            Map.entry("Could not make a code just now; try again", "មិនអាចបង្កើតលេខកូដនៅពេលនេះបានទេ សូមព្យាយាមម្ដងទៀត"),
             // Exception defaults
             Map.entry("Account is temporarily locked", "គណនីត្រូវបានចាក់សោបណ្ដោះអាសន្ន"),
             Map.entry("The current password is incorrect", "ពាក្យសម្ងាត់បច្ចុប្បន្នមិនត្រឹមត្រូវទេ"),

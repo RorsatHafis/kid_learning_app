@@ -23,13 +23,15 @@ export interface AuthResponse {
   accountId: string;
   email: string;
   platformRole: PlatformRole;
-  /** null on the PRINCIPAL "pending approval" registration branch */
+  /** null on the PRINCIPAL registration branch, until the address is confirmed */
   accessToken: string | null;
   expiresAt: string | null;
   refreshToken: string | null;
   refreshTokenExpiresAt: string | null;
   /** The account's interface language, applied as soon as it signs in. */
   preferredLanguage: Locale;
+  /** M10a: set when this sign-in is a child's device - it opens only this child's learning space (email is then null). */
+  childId?: string | null;
 }
 
 // ---- identity/web/AccountController.java ----
@@ -43,6 +45,8 @@ export interface SignedInDevice {
   signedInAt: string;
   lastActiveAt: string;
   current: boolean;
+  /** M10a: a child's device - a sign-in that opens only this child's space. */
+  childId?: string | null;
 }
 
 export interface AccountProfile {
@@ -467,6 +471,31 @@ export interface PlanOffer {
   priceAmountMinor: number | null;
   priceCurrency: string | null;
   billingInterval: "MONTH" | "YEAR" | null;
+}
+
+/** M10a: a child's device (lib/api/childDevices.ts). */
+export interface ChildDeviceCode {
+  id: string;
+  code: string;
+  expiresAt: string;
+}
+
+export interface ChildDeviceCodeState {
+  id: string;
+  status: "OPEN" | "CLAIMED" | "APPROVED" | "DELIVERED" | "CANCELLED" | "EXPIRED";
+  deviceUserAgent: string | null;
+  expiresAt: string;
+}
+
+export interface ChildDeviceCollected {
+  status: "WAITING" | "SIGNED_IN";
+  accountId: string | null;
+  childId: string | null;
+  childName: string | null;
+  accessToken: string | null;
+  expiresAt: string | null;
+  refreshToken: string | null;
+  refreshTokenExpiresAt: string | null;
 }
 
 export interface ApiProblem {

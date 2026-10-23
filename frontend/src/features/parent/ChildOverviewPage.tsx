@@ -19,6 +19,7 @@ import { SchoolAccessSection } from "./SchoolAccessSection";
 import { DeleteChildSection } from "./Deletion";
 import { BreakReminderSection } from "./BreakReminderSection";
 import { DailyTimeSection } from "./DailyTimeSection";
+import { ChildDeviceSection } from "./ChildDeviceSection";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
@@ -113,6 +114,7 @@ function ChildOverview({ childId }: { childId: string }) {
               <SchoolAccessSection childId={childId} childName={data.displayName} onJoined={enrollments.refetch} />
               <OwnSpace child={data} />
               <DailyTimeSection childId={childId} childName={data.displayName} />
+              <ChildDeviceSection childId={childId} childName={data.displayName} />
               <BreakReminderSection childId={childId} childName={data.displayName} />
               <DeleteChildSection child={data} />
             </div>

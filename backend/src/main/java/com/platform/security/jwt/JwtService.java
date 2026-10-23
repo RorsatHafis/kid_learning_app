@@ -38,6 +38,8 @@ public class JwtService {
 
     private static final String ROLE_CLAIM = "role";
     private static final String SESSION_CLAIM = "sid";
+    /** M10a: the one child a child's device may act for. Unlike {@code sid}, it does authorize: it narrows. */
+    private static final String CHILD_CLAIM = "cid";
 
     /**
      * {@code platformRole} is embedded as a signed claim (not looked up from the DB
@@ -57,6 +59,11 @@ public class JwtService {
      * identifies, it never authorizes: nothing is allowed or refused because of it.
      */
     public IssuedToken issueAccessToken(UUID accountId, PlatformRole platformRole, UUID sessionFamilyId) {
+        return issueAccessToken(accountId, platformRole, sessionFamilyId, null);
+    }
+
+    /** M10a: {@code childId} set for a child's device; ChildDeviceScopeFilter then allows only that child's learning. */
+    public IssuedToken issueAccessToken(UUID accountId, PlatformRole platformRole, UUID sessionFamilyId, UUID childId) {
 
         Assert.notNull(platformRole, "platformRole must not be null");
 
@@ -68,6 +75,9 @@ public class JwtService {
                 .claim(ROLE_CLAIM, platformRole.name());
         if (sessionFamilyId != null) {
             builder.claim(SESSION_CLAIM, sessionFamilyId.toString());
+        }
+        if (childId != null) {
+            builder.claim(CHILD_CLAIM, childId.toString());
         }
         String token = builder
                 .issuer(issuer)
@@ -101,7 +111,9 @@ public class JwtService {
             UUID accountId = UUID.fromString(claims.getSubject());
             PlatformRole role = PlatformRole.valueOf(claims.get(ROLE_CLAIM, String.class));
             String sid = claims.get(SESSION_CLAIM, String.class);
-            return new AuthenticatedPrincipal(accountId, role, sid == null ? null : UUID.fromString(sid));
+            String cid = claims.get(CHILD_CLAIM, String.class);
+            return new AuthenticatedPrincipal(accountId, role, sid == null ? null : UUID.fromString(sid),
+                    cid == null ? null : UUID.fromString(cid));
 
         } catch (JwtException | IllegalArgumentException | NullPointerException e) {
 
@@ -114,8 +126,8 @@ public class JwtService {
     public record IssuedToken(String token, Instant expiresAt) {
     }
 
-    /** {@code sessionFamilyId} is null for a token issued without one. */
-    public record AuthenticatedPrincipal(UUID accountId, PlatformRole platformRole, UUID sessionFamilyId) {
+    /** {@code sessionFamilyId} is null for a token issued without one; {@code childId} is set only for a child's device. */
+    public record AuthenticatedPrincipal(UUID accountId, PlatformRole platformRole, UUID sessionFamilyId, UUID childId) {
     }
     
 }

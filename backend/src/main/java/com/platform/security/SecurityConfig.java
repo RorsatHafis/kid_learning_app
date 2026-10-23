@@ -132,7 +132,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter,
                                                      CorsConfigurationSource corsConfigurationSource,
-                                                     RateLimitProperties rateLimitProperties)
+                                                     RateLimitProperties rateLimitProperties,
+                                                     org.springframework.beans.factory.ObjectProvider<org.springframework.jdbc.core.JdbcTemplate> jdbc)
             throws Exception {
  
         http
@@ -174,7 +175,10 @@ public class SecurityConfig {
             // than as a bean so Boot does not also register it as a plain servlet filter,
             // which would run it before CORS and hide the 429 from browsers.
             .addFilterAfter(new AuthRateLimitFilter(rateLimitProperties), CorsFilter.class)
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            // M10a: a child's device may act only within its one child's learning space (built here, not as a
+            // bean, for the same reason as the rate limiter).
+            .addFilterAfter(new ChildDeviceScopeFilter(jdbc), JwtAuthenticationFilter.class);
  
         return http.build();
  

@@ -19,6 +19,7 @@ import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { Trouble, Waiting } from "./ChildHome";
 import { QuestionView, type AnswerResult } from "./QuestionView";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
+import { useChildDevice } from "@/lib/auth/AuthContext";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
 import { breakDue, readSitting, sittingMinutes, useBreakReminder } from "./breaks";
@@ -388,13 +389,14 @@ function JourneyLink({ href, solid, toShelf = false }: { href: string; solid?: b
  */
 function RestForToday({ childId, journeyHref }: { childId: string; journeyHref: string }) {
   const d = useMessages(childDayMessages);
+  const onDevice = useChildDevice() !== null;
   return (
     <div className="flex flex-col items-center gap-6 px-6 pt-24 text-center">
       <LearningBuddy mood="happy" size={140} />
       <div className="flex max-w-md flex-col gap-2 rounded-[24px] bg-white/95 px-6 py-5 shadow-tight">
         <h1 className="font-display text-headline font-bold text-tonle-950">{d.restTitle}</h1>
         <p className="text-lg font-medium text-ink">{d.restBody}</p>
-        <p className="text-[0.9375rem] text-ink-soft">{d.restGrownUp}</p>
+        <p className="text-[0.9375rem] text-ink-soft">{onDevice ? d.restGrownUpDevice : d.restGrownUp}</p>
       </div>
       <div className="flex flex-wrap justify-center gap-3">
         <JourneyLink href={`/learn/${childId}/shelf`} toShelf />

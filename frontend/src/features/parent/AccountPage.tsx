@@ -5,7 +5,7 @@ import { deviceName } from "./deviceName";
 import { DeleteAccount } from "./Deletion";
 import { Pager } from "@/components/ui/Pager";
 import { useAsync } from "@/lib/hooks/useAsync";
-import { accountApi } from "@/lib/api/endpoints";
+import { accountApi, childrenApi } from "@/lib/api/endpoints";
 import { ApiError, waitInWords } from "@/lib/api/ApiError";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState, ErrorState } from "@/components/ui/States";
@@ -450,6 +450,9 @@ function SignOutEverywhere() {
 function DeviceList() {
   const [page, setPage] = useState(0);
   const devices = useAsync(() => accountApi.devices(page), [page]);
+  // M10a: a child's device is named for the child it opens.
+  const children = useAsync(() => childrenApi.list(), []);
+  const childName = (id: string | null | undefined) => (id ? children.data?.find((c) => c.id === id)?.displayName : undefined);
   const [working, setWorking] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "done" | "error"; text: string } | null>(null);
   const m = useMessages(accountMessages).devices;
@@ -488,6 +491,11 @@ function DeviceList() {
                   {name}
                   {device.current && (
                     <span className="ml-2 rounded-full bg-palm-soft px-2 py-0.5 text-xs font-semibold text-palm-deep">{m.thisDevice}</span>
+                  )}
+                  {device.childId && (
+                    <span className="ml-2 rounded-full bg-light-soft px-2 py-0.5 text-xs font-semibold text-light-deep">
+                      {m.childDevice(childName(device.childId) ?? "…")}
+                    </span>
                   )}
                 </p>
                 <p className="text-sm text-ink-soft">

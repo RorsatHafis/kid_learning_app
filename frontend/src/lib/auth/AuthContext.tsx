@@ -2,13 +2,15 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { accountApi, authApi } from "../api/endpoints";
 import { SESSION_EXPIRED_EVENT, refreshSession } from "../api/client";
 import { tokenStore } from "../api/tokenStore";
-import type { AuthResponse, PlatformRole } from "../api/types";
+import type { AuthResponse, ChildDeviceCollected, PlatformRole } from "../api/types";
 import { currentLocale, setAccountLocale } from "../../i18n/store";
 
 interface Session {
   accountId: string;
   email: string;
   platformRole: PlatformRole;
+  /** M10a: this device is a child's - it opens only this child's learning space (the server enforces it). */
+  childId: string | null;
 }
 
 interface AuthContextValue {
@@ -31,12 +33,14 @@ interface AuthContextValue {
   signOutEverywhere: () => Promise<void>;
   /** Re-reads the signed-in account (e.g. after its email changed) into the session. */
   refreshAccount: () => Promise<void>;
+  /** M10a: this device was approved by a parent: from now on it opens only that child's learning space. */
+  adoptChildDevice: (signedIn: ChildDeviceCollected) => Session;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function toSession(auth: { accountId: string; email: string; platformRole: PlatformRole }): Session {
-  return { accountId: auth.accountId, email: auth.email, platformRole: auth.platformRole };
+function toSession(auth: { accountId: string; email: string | null; platformRole: PlatformRole; childId?: string | null }): Session {
+  return { accountId: auth.accountId, email: auth.email ?? "", platformRole: auth.platformRole, childId: auth.childId ?? null };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -102,6 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshTokenExpiresAt: data.refreshTokenExpiresAt,
     });
     const nextSession = toSession(data);
+    // A grown-up signing in here makes this browser theirs again.
+    rememberChildDevice(false);
     setSession(nextSession);
     setSessionUnavailable(false);
     // The account's own language - never the previous user's or this browser's.
@@ -155,6 +161,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const adoptChildDevice = useCallback((signedIn: ChildDeviceCollected) => {
+    if (!signedIn.accessToken || !signedIn.refreshToken || !signedIn.accountId || !signedIn.childId) {
+      throw new Error("The device's sign-in is incomplete");
+    }
+    tokenStore.setSession({
+      accessToken: signedIn.accessToken,
+      accessTokenExpiresAt: signedIn.expiresAt ?? "",
+      refreshToken: signedIn.refreshToken,
+      refreshTokenExpiresAt: signedIn.refreshTokenExpiresAt ?? "",
+    });
+    const nextSession: Session = { accountId: signedIn.accountId, email: "", platformRole: "PARENT", childId: signedIn.childId };
+    rememberChildDevice(true);
+    setSession(nextSession);
+    setSessionUnavailable(false);
+    return nextSession;
+  }, []);
+
   const logout = useCallback(async () => {
     const refreshToken = tokenStore.getRefreshToken();
     tokenStore.clear();
@@ -180,11 +203,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         changePassword,
         signOutEverywhere,
         refreshAccount,
+        adoptChildDevice,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
+}
+
+const CHILD_DEVICE_KEY = "bk.childDevice";
+
+/**
+ * M10a: whether this browser was last a child's device - so when its sign-in ends (signed out by the parent) it
+ * goes back to the code page, not to the grown-ups' login. A convenience only: it grants nothing.
+ */
+export function wasChildDevice(): boolean {
+  try {
+    return localStorage.getItem(CHILD_DEVICE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberChildDevice(isChildDevice: boolean) {
+  try {
+    if (isChildDevice) localStorage.setItem(CHILD_DEVICE_KEY, "1");
+    else localStorage.removeItem(CHILD_DEVICE_KEY);
+  } catch {
+    // Remembered for this page only.
+  }
+}
+
+/** M10a: the child this device is limited to, or null (also outside an AuthProvider, as in a component's tests). */
+export function useChildDevice(): string | null {
+  return useContext(AuthContext)?.session?.childId ?? null;
 }
 
 export function useAuth() {

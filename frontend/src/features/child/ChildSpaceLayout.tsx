@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Volume2, VolumeX, Lock } from "lucide-react";
+import { useChildDevice } from "@/lib/auth/AuthContext";
 import { BrandMark } from "@/components/brand/Logo";
 import { PaintedBackdrop } from "@/features/world/PaintedWorld";
 import { BuddyKindProvider, LearningBuddy } from "@/features/buddy/LearningBuddy";
@@ -49,6 +50,7 @@ export function ChildSpaceLayout({
   backdrop?: boolean;
   focus?: boolean;
 }) {
+  const onDevice = useChildDevice() !== null;
   // The space speaks the child's language, not the grown-up's (kept on the child).
   useChildLanguage(childId, childLanguage);
   const b = useMessages(buddyMessages);
@@ -78,7 +80,8 @@ export function ChildSpaceLayout({
             <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
               <LanguageToggle className={cn(chip, "justify-center px-3 text-sm font-semibold sm:px-3.5")} />
               <SoundToggle />
-              <GrownUpGate to={`/parent/children/${childId}`} />
+              {/* M10a: a child's own device has no grown-up area to go to. */}
+              {!onDevice && <GrownUpGate to={`/parent/children/${childId}`} />}
             </div>
           </header>
         )}

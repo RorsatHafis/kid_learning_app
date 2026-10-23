@@ -257,8 +257,7 @@ public class AccountSessionService {
     private AccountSession successorOf(AccountSession presented, String rawToken, String userAgent, String ipAddress,
                                        Instant now) {
 
-        AccountSession next = AccountSession.successor(presented.getAccountId(), presented.getFamilyId(), hash(rawToken),
-                now, now.plus(refreshTokenTtl), userAgent, ipAddress);
+        AccountSession next = AccountSession.successor(presented, hash(rawToken), now, now.plus(refreshTokenTtl), userAgent, ipAddress);
         sessions.save(next);
         sessions.flush();
         return next;
@@ -276,9 +275,10 @@ public class AccountSessionService {
     private RefreshResult result(Account account, String rawToken, AccountSession session) {
 
         JwtService.IssuedToken accessToken = jwtService.issueAccessToken(account.getId(), account.getPlatformRole(),
-                session.getFamilyId());
-        return new RefreshResult(account.getId(), account.getEmail(), account.getPlatformRole(),
-                accessToken.token(), accessToken.expiresAt(), rawToken, session.getExpiresAt());
+                session.getFamilyId(), session.getChildId());
+        // M10a: a child's device is never told the parent's email address.
+        return new RefreshResult(account.getId(), session.getChildId() == null ? account.getEmail() : null, account.getPlatformRole(),
+                accessToken.token(), accessToken.expiresAt(), rawToken, session.getExpiresAt(), session.getChildId());
 
     }
 
@@ -397,7 +397,7 @@ public class AccountSessionService {
      * when that sign-in began; {@code lastActiveAt} is its latest refresh (a device in use
      * refreshes about every quarter of an hour).
      */
-    public record SignedInDevice(UUID id, String userAgent, Instant signedInAt, Instant lastActiveAt) {
+    public record SignedInDevice(UUID id, String userAgent, Instant signedInAt, Instant lastActiveAt, UUID childId) {
     }
 
     /** The account's signed-in devices, most recently active first. */
@@ -418,7 +418,7 @@ public class AccountSessionService {
         }
         return newestPerFamily.values().stream()
                 .map(s -> new SignedInDevice(s.getFamilyId(), s.getUserAgent(),
-                        began.getOrDefault(s.getFamilyId(), s.getIssuedAt()), s.getIssuedAt()))
+                        began.getOrDefault(s.getFamilyId(), s.getIssuedAt()), s.getIssuedAt(), s.getChildId()))
                 .toList();
 
     }
@@ -441,8 +441,37 @@ public class AccountSessionService {
 
     }
 
+    /** {@code childId}: set for a child's device (M10a), whose sign-in may act only for that child. */
     public record RefreshResult(UUID accountId, String email, PlatformRole platformRole, String accessToken,
-                                 Instant accessTokenExpiresAt, String refreshToken, Instant refreshTokenExpiresAt) {
+                                 Instant accessTokenExpiresAt, String refreshToken, Instant refreshTokenExpiresAt, UUID childId) {
+    }
+
+    /**
+     * M10a: a sign-in for a child's device - the parent's account, scoped to one child - with its access token. The
+     * raw refresh token is returned once, to hand straight to that device.
+     */
+    @Transactional
+    public ChildSession issueChildSession(Account account, UUID childId, String userAgent, String ipAddress) {
+
+        Instant now = Instant.now();
+        String rawToken = generateRawToken();
+        AccountSession session = AccountSession.issueForChild(account.getId(), childId, hash(rawToken), now, now.plus(refreshTokenTtl),
+                userAgent, ipAddress);
+        sessions.save(session);
+        return new ChildSession(result(account, rawToken, session), session.getFamilyId());
+
+    }
+
+    /** A child's device's new sign-in: its tokens, and which sign-in (session family) it is, for the device list. */
+    public record ChildSession(RefreshResult tokens, UUID sessionFamilyId) {
+    }
+
+    /** M10a: how many devices are signed in for this child now (live child-scoped sign-ins). */
+    @Transactional(readOnly = true)
+    public long liveChildDevices(UUID childId) {
+
+        return sessions.countLiveChildFamilies(childId, Instant.now());
+
     }
 
 }

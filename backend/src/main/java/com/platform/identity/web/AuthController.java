@@ -168,7 +168,7 @@ public class AuthController {
 
         return ResponseEntity.ok(new AuthResponse(result.accountId(), result.email(), result.platformRole(),
                 result.accessToken(), result.accessTokenExpiresAt(), result.refreshToken(),
-                result.refreshTokenExpiresAt(), languageOf(result.accountId())));
+                result.refreshTokenExpiresAt(), languageOf(result.accountId()), result.childId()));
     }
 
     /**

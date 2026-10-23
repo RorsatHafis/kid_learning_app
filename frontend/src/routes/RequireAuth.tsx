@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { WifiOff } from "lucide-react";
-import { useAuth } from "@/lib/auth/AuthContext";
+import { useAuth, wasChildDevice } from "@/lib/auth/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { useMessages } from "@/i18n/catalog";
 import { common } from "@/components/ui/messages";
@@ -19,6 +19,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   if (!session) {
+    // M10a: a child's device whose sign-in ended goes back to typing a code, not to the grown-ups' login.
+    if (wasChildDevice()) return <Navigate to="/child-device" replace />;
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 

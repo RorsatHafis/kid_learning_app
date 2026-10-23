@@ -105,7 +105,9 @@ out, so a mistake can be undone; 0s–90d), `ERASURE_SWEEP_INTERVAL` (PT1H: how 
 deletions run), `ERASURE_SWEEP_ENABLED` (true; with several instances every instance may run
 it — each deletion locks its rows), `ERASURE_LEDGER_FILE` (**required in `prod`**; e.g.
 `/var/lib/bookeyond/erasures/ledger.log` on its own volume: the file where every erasure is recorded, ids
-only, so that restoring a database backup can't bring an erased child or account back — see section 6).
+only, so that restoring a database backup can't bring an erased child or account back — see section 6),
+`LEARNING_DAY_ZONE` (Asia/Phnom_Penh: when a child's daily learning time starts again, M3),
+`CHILD_DEVICES_MAX_PER_CHILD` (3: how many devices may hold one child's sign-in, M10a - owner decision D-05).
 
 **Payments** (Y43, all off by default; see [docs/PAYMENTS.md](docs/PAYMENTS.md)):
 `PAYMENTS_MANUAL_ENABLED` and `PAYMENTS_MANUAL_INSTRUCTIONS` (bank transfer, confirmed by an administrator

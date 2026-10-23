@@ -21,7 +21,16 @@ public record AuthResponse(
         String refreshToken,
         Instant refreshTokenExpiresAt,
         /** The account's interface language (en or km), applied as soon as it signs in. */
-        String preferredLanguage
+        String preferredLanguage,
+
+        /** M10a: set for a child's device - this sign-in opens only this child's learning space (and email is null). */
+        UUID childId
 
 ) {
+
+    /** An ordinary sign-in (not a child's device). */
+    public AuthResponse(UUID accountId, String email, PlatformRole platformRole, String accessToken, Instant expiresAt,
+                        String refreshToken, Instant refreshTokenExpiresAt, String preferredLanguage) {
+        this(accountId, email, platformRole, accessToken, expiresAt, refreshToken, refreshTokenExpiresAt, preferredLanguage, null);
+    }
 }

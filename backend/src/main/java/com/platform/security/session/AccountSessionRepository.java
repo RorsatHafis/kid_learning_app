@@ -36,6 +36,15 @@ public interface AccountSessionRepository extends JpaRepository<AccountSession, 
 
     boolean existsByAccountIdAndFamilyId(UUID accountId, UUID familyId);
 
+    /** M10a: a child's signed-in devices - families with a live child-scoped session. */
+    @Query("""
+            select count(distinct s.familyId) from AccountSession s
+             where s.childId = :childId
+               and s.status = com.platform.security.session.AccountSessionStatus.ACTIVE
+               and s.expiresAt > :now
+            """)
+    long countLiveChildFamilies(@Param("childId") UUID childId, @Param("now") java.time.Instant now);
+
     long countByAccountIdAndStatus(UUID accountId, AccountSessionStatus status);
 
     /**

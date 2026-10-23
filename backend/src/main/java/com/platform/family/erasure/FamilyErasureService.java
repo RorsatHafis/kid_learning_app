@@ -107,6 +107,9 @@ public class FamilyErasureService {
             "delete from child_preferred_subjects where child_id = :c",
             "delete from child_settings where child_id = :c",
             "delete from child_daily_extensions where child_id = :c",
+            // M10a: the child's device codes, and the sign-ins of the child's devices (they open only this child).
+            "delete from child_device_codes where child_id = :c",
+            "delete from account_sessions where child_id = :c",
             "delete from class_enrollments where child_id = :c",
             "delete from consent_records where child_id = :c",
             "delete from learner_objective_states where child_id = :c",
@@ -125,9 +128,9 @@ public class FamilyErasureService {
      * through foreign keys. A test compares this with the live schema, so a new table about
      * children can't be forgotten here.
      */
-    static final Set<String> CHILD_TABLES = Set.of("activity_attempts", "activity_events", "adaptation_decisions",
+    static final Set<String> CHILD_TABLES = Set.of("account_sessions", "activity_attempts", "activity_events", "adaptation_decisions",
             "answer_records", "assessment_answers", "assessment_attempts", "assessment_results",
-            "assessment_skill_results", "child_daily_extensions", "child_goals", "child_preferences", "child_preferred_subjects", "child_settings",
+            "assessment_skill_results", "child_daily_extensions", "child_device_codes", "child_goals", "child_preferences", "child_preferred_subjects", "child_settings",
             "children", "class_enrollments", "consent_records", "enrollments", "learner_objective_states",
             "learner_profiles", "learner_skill_history", "learner_skill_states", "learner_streaks", "learning_path_items",
             "learning_paths", "learning_sessions", "parent_alerts", "parent_insights", "progress_snapshots",

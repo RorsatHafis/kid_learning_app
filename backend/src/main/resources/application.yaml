@@ -63,6 +63,13 @@ spring:
 # fails startup. Defaults are the documented values (see .env.example), and every value
 # is validated when it binds (SecurityProperties, MasteryProperties, SecurityConfig).
 platform:
+  # M10a: how many devices may hold one child's sign-in (a child's tablet, a shared phone). Owner decision D-05
+  # (3 proposed); a parent signs one out from Account > Devices to add another.
+  child-devices:
+    max-per-child: ${CHILD_DEVICES_MAX_PER_CHILD:3}
+  # M3: the time zone a child's learning day (the parent's daily time) runs in.
+  learning:
+    day-zone: ${LEARNING_DAY_ZONE:Asia/Phnom_Penh}
   security:
     jwt:
       # Required. At least 32 bytes (HS256). Only the local profile supplies a dev value.
