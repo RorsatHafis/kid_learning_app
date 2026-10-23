@@ -235,7 +235,9 @@ class EmailLanguageIntegrationTests {
     }
 
     private String token(PlatformRole role, String language) throws Exception {
-        return login(account(role, language));
+        String token = login(account(role, language));
+        // M8: an administrator's money and access actions need the password re-entered.
+        return role == PlatformRole.ADMIN ? com.platform.TestAdmin.stepUp(port, token, PASSWORD) : token;
     }
 
     private String login(String email) throws Exception {
@@ -265,6 +267,7 @@ class EmailLanguageIntegrationTests {
     private HttpResponse<String> send(HttpRequest.Builder request, String bearer) throws Exception {
         if (bearer != null) {
             request.header("Authorization", "Bearer " + bearer);
+            com.platform.TestAdmin.withStepUp(request, bearer);
         }
         return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }

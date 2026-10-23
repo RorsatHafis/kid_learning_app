@@ -443,8 +443,10 @@ class SubscriptionIntegrationTests {
     private String token(PlatformRole role) throws Exception {
         String email = role.name().toLowerCase() + "-" + UUID.randomUUID() + "@example.com";
         accountRepository.saveAndFlush(Account.register(email, passwordEncoder.encode(PASSWORD), role));
-        return json(post("/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200)
+        String token = json(post("/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200)
                 .get("accessToken").asString();
+        // M8: an administrator's money and access actions need the password re-entered.
+        return role == PlatformRole.ADMIN ? com.platform.TestAdmin.stepUp(port, token, PASSWORD) : token;
     }
 
     private static JsonNode json(HttpResponse<String> response, int expectedStatus) {
@@ -469,6 +471,7 @@ class SubscriptionIntegrationTests {
     private HttpResponse<String> send(HttpRequest.Builder request, String bearer) throws Exception {
         if (bearer != null) {
             request.header("Authorization", "Bearer " + bearer);
+            com.platform.TestAdmin.withStepUp(request, bearer);
         }
         return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }

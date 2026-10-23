@@ -236,6 +236,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         }
     }
 
+    @ExceptionHandler(com.platform.security.stepup.StepUpRequiredException.class)
+    public ResponseEntity<Object> handleStepUpRequired(com.platform.security.stepup.StepUpRequiredException ex, WebRequest request) {
+
+        // M8: the action needs the password re-entered on this sign-in; the client asks for it and tries again.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Password Needed");
+        problem.setProperty("stepUpRequired", true);
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.FORBIDDEN, request);
+
+    }
+
     @ExceptionHandler(com.platform.subscription.service.SchoolPaymentRequiredException.class)
     public ResponseEntity<Object> handleSchoolPaymentRequired(com.platform.subscription.service.SchoolPaymentRequiredException ex,
                                                               WebRequest request) {

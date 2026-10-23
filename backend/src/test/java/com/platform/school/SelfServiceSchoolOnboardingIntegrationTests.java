@@ -99,7 +99,8 @@ class SelfServiceSchoolOnboardingIntegrationTests {
         assertThat(post("/api/v1/schools/" + schoolId + "/payments", start(plan, "stranger"), stranger).statusCode()).isEqualTo(403);
 
         // Confirmed against the receipt: the school opens, with the plan's limit (one class).
-        json(post("/api/v1/admin/payments/" + orderId + "/confirm", "{\"receiptReference\":\"BANK-" + suffix() + "\"}", admin), 200);
+        json(post("/api/v1/admin/payments/" + orderId + "/confirm", com.platform.TestAdmin.receipt(port, admin, orderId, "BANK-" + suffix()),
+                admin), 200);
         assertThat(json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200).get("access").get("paid").asBoolean()).isTrue();
         assertThat(post("/api/v1/schools/" + schoolId + "/classes", "{\"name\":\"Grade 1\"}", principal).statusCode()).isEqualTo(201);
         assertThat(post("/api/v1/schools/" + schoolId + "/classes", "{\"name\":\"Grade 2\"}", principal).statusCode())
@@ -181,8 +182,10 @@ class SelfServiceSchoolOnboardingIntegrationTests {
         Account account = Account.register(email, passwordEncoder.encode(PASSWORD), role);
         account.markEmailVerified(java.time.Instant.now());
         accountRepository.saveAndFlush(account);
-        return json(post("/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200)
+        String token = json(post("/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200)
                 .get("accessToken").asString();
+        // M8: an administrator's money and access actions need the password re-entered.
+        return role == PlatformRole.ADMIN ? com.platform.TestAdmin.stepUp(port, token, PASSWORD) : token;
     }
 
     private static JsonNode json(HttpResponse<String> response, int expectedStatus) {
@@ -210,6 +213,7 @@ class SelfServiceSchoolOnboardingIntegrationTests {
         }
         if (bearer != null) {
             request.header("Authorization", "Bearer " + bearer);
+            com.platform.TestAdmin.withStepUp(request, bearer);
         }
         return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }

@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { writeFileSync } from "node:fs";
 import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
-import { addChild, adminToken, ensurePricedSchoolPlan, linkIn, logIn, openSubject, schoolIdByName, waitForEmail } from "./support";
+import { addChild, adminToken, confirmTransfer, ensurePricedSchoolPlan, linkIn, logIn, openSubject, schoolIdByName, waitForEmail } from "./support";
 
 /**
  * Y45: test accounts for a coworker preview, made through the product's own flows on an isolated stack - never a
@@ -52,8 +52,7 @@ test("preview seed: an account for each role", async ({ page, browser, request }
   await billing.getByRole("combobox", { name: "School plan" }).selectOption({ label: "E2E school year · $120.00 / year" });
   await billing.getByRole("button", { name: "Create invoice" }).click();
   await billing.getByRole("status").getByRole("link", { name: "Payments" }).click();
-  await billing.getByLabel("Receipt reference").fill(`TEST-RECEIPT-${tag}`);
-  await billing.getByRole("button", { name: "Confirm payment received" }).click();
+  await confirmTransfer(billing, `TEST-RECEIPT-${tag}`, "120.00", admin.password);
   await expect(billing.getByText("Done. The payment and the plan are up to date.")).toBeVisible();
   await billing.context().close();
 

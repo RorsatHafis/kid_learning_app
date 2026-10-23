@@ -95,7 +95,8 @@ class SchoolPaymentAccessIntegrationTests {
 
         // An administrator confirms it against the real receipt: audited, and the school's services start.
         String orderId = order.get("id").asString();
-        json(post("/api/v1/admin/payments/" + orderId + "/confirm", "{\"receiptReference\":\"BANK-S1\"}", admin), 200);
+        String receipt = com.platform.TestAdmin.receipt(port, admin, orderId, "BANK-S1-" + suffix());
+        json(post("/api/v1/admin/payments/" + orderId + "/confirm", receipt, admin), 200);
         assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'PAYMENT_CONFIRMED' and resource_id = ?::uuid",
                 Integer.class, orderId)).isEqualTo(1);
         JsonNode paid = json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200).get("access");
@@ -105,8 +106,7 @@ class SchoolPaymentAccessIntegrationTests {
         assertThat(post("/api/v1/schools/" + schoolId + "/classes", "{\"name\":\"Grade 1\"}", principal).statusCode()).isEqualTo(201);
 
         // Confirmed twice: refused, and the paid year isn't doubled.
-        assertThat(post("/api/v1/admin/payments/" + orderId + "/confirm", "{\"receiptReference\":\"BANK-S1\"}", admin).statusCode())
-                .isEqualTo(409);
+        assertThat(post("/api/v1/admin/payments/" + orderId + "/confirm", receipt, admin).statusCode()).isEqualTo(409);
         assertThat(Instant.parse(json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200).get("access").get("paidUntil")
                 .asString())).isEqualTo(end);
 
@@ -114,7 +114,8 @@ class SchoolPaymentAccessIntegrationTests {
         assertThat(json(get("/api/v1/schools/" + schoolId + "/payment-plans", principal), 200).get(0).get("id").asString()).isEqualTo(plan);
         String renewal = json(post("/api/v1/schools/" + schoolId + "/payments", start(plan, "MANUAL", "s2"), principal), 201)
                 .get("id").asString();
-        JsonNode renewed = json(post("/api/v1/admin/payments/" + renewal + "/confirm", "{\"receiptReference\":\"BANK-S2\"}", admin), 200);
+        JsonNode renewed = json(post("/api/v1/admin/payments/" + renewal + "/confirm",
+                com.platform.TestAdmin.receipt(port, admin, renewal, "BANK-S2-" + suffix()), admin), 200);
         assertThat(Instant.parse(renewed.get("periodStart").asString())).isEqualTo(end);
     }
 
@@ -211,7 +212,8 @@ class SchoolPaymentAccessIntegrationTests {
     private String invoiceAndConfirm(String admin, String schoolId, String plan) throws Exception {
         String orderId = json(post("/api/v1/admin/schools/" + schoolId + "/invoices", "{\"planId\":\"" + plan + "\",\"idempotencyKey\":\""
                 + UUID.randomUUID() + "\"}", admin), 201).get("id").asString();
-        json(post("/api/v1/admin/payments/" + orderId + "/confirm", "{\"receiptReference\":\"BANK-" + suffix() + "\"}", admin), 200);
+        json(post("/api/v1/admin/payments/" + orderId + "/confirm", com.platform.TestAdmin.receipt(port, admin, orderId, "BANK-" + suffix()),
+                admin), 200);
         return orderId;
     }
 
@@ -246,6 +248,10 @@ class SchoolPaymentAccessIntegrationTests {
         Account account = accountRepository.saveAndFlush(Account.register(email, passwordEncoder.encode(PASSWORD), role));
         String token = json(post("/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200)
                 .get("accessToken").asString();
+        // M8: an administrator's money and access actions need the password re-entered.
+        if (role == PlatformRole.ADMIN) {
+            com.platform.TestAdmin.stepUp(port, token, PASSWORD);
+        }
         return new User(account.getId().toString(), email, token);
     }
 
@@ -283,6 +289,7 @@ class SchoolPaymentAccessIntegrationTests {
     private HttpResponse<String> send(HttpRequest.Builder request, String bearer) throws Exception {
         if (bearer != null) {
             request.header("Authorization", "Bearer " + bearer);
+            com.platform.TestAdmin.withStepUp(request, bearer);
         }
         return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }

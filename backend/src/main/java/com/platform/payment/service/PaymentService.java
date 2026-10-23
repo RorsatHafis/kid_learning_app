@@ -411,9 +411,14 @@ public class PaymentService {
 
     }
 
-    /** An administrator confirms a transfer or invoice against the real receipt; only then is the plan given. */
+    /**
+     * An administrator confirms a transfer or invoice against the real receipt; only then is the plan given. M8: the
+     * amount and currency on the receipt must be the order's own (its frozen price), and one receipt settles one
+     * payment - checked under a lock on the receipt, so two confirmations quoting it can't both pass.
+     */
     @Transactional
-    public OrderView confirmManual(UUID adminId, UUID orderId, String receiptReference, String note) {
+    public OrderView confirmManual(UUID adminId, UUID orderId, String receiptReference, long amountReceivedMinor,
+                                   String currencyReceived, String note) {
 
         requireAdmin(adminId);
         PaymentOrder order = lockedOrder(orderId);
@@ -427,6 +432,16 @@ public class PaymentService {
 
         if (!order.getStatus().canStillSucceed()) {
             throw new IllegalStateException("This payment has already been settled");
+        }
+
+        if (amountReceivedMinor != order.getAmountMinor() || currencyReceived == null
+                || !currencyReceived.strip().equalsIgnoreCase(order.getCurrency())) {
+            throw new IllegalStateException("The amount received doesn't match this payment: check the receipt");
+        }
+
+        orders.lockReceipt(receiptReference);
+        if (orders.receiptUsedElsewhere(order.getProvider(), receiptReference, order.getId())) {
+            throw new IllegalStateException("This receipt was already used for another payment");
         }
 
         PaymentStatus from = order.getStatus();

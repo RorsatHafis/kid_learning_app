@@ -13,6 +13,7 @@ import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { ResetPasswordPage, SetUpAccountPage } from "@/features/auth/ResetPasswordPage";
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
 import { ChildDevicePage } from "@/features/child/ChildDevicePage";
+import { StepUpProvider } from "@/components/StepUpProvider";
 import { roleHomePath } from "@/features/auth/roleHomePath";
 import { ConfirmEmailChangePage } from "@/features/auth/ConfirmEmailChangePage";
 import { loadChildArea, loadParentArea } from "@/routes/areas";
@@ -66,6 +67,8 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppErrorBoundary>
+          {/* M8: asks for the password again when an action moves money or access. */}
+          <StepUpProvider>
           <Routes>
             <Route path="/" element={<LandingPage />} />
             {/* M2: the public demo - real lessons, no account, nothing stored (its own chunk: the question views). */}
@@ -159,6 +162,7 @@ export default function App() {
             {PlayGallery && <Route path="/__play" element={<AreaLoading><PlayGallery /></AreaLoading>} />}
             <Route path="*" element={<AppNotFound />} />
           </Routes>
+          </StepUpProvider>
         </AppErrorBoundary>
       </AuthProvider>
     </BrowserRouter>

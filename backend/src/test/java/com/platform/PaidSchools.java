@@ -34,8 +34,10 @@ public final class PaidSchools {
         UUID adminId = admin(context);
         UUID planId = plan(context, adminId);
         PaymentService payments = context.getBean(PaymentService.class);
-        UUID orderId = payments.invoiceSchool(adminId, schoolId, planId, "test-paid-school-" + UUID.randomUUID()).order().getId();
-        payments.confirmManual(adminId, orderId, "TEST-RECEIPT-" + schoolId, "Test fixture");
+        var order = payments.invoiceSchool(adminId, schoolId, planId, "test-paid-school-" + UUID.randomUUID()).order();
+        UUID orderId = order.getId();
+        // M8: the receipt's amount is the invoice's own; one receipt per payment.
+        payments.confirmManual(adminId, orderId, "TEST-RECEIPT-" + orderId, order.getAmountMinor(), order.getCurrency(), "Test fixture");
         return orderId;
 
     }

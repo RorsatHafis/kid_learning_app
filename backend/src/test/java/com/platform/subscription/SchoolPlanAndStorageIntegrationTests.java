@@ -322,6 +322,10 @@ class SchoolPlanAndStorageIntegrationTests {
         String email = "y35-" + role.name().toLowerCase() + "-" + UUID.randomUUID() + "@example.com";
         accountRepository.saveAndFlush(Account.register(email, passwordEncoder.encode(PASSWORD), role));
         JsonNode body = json(post("/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200);
+        // M8: an administrator's money and access actions need the password re-entered.
+        if (role == PlatformRole.ADMIN) {
+            com.platform.TestAdmin.stepUp(port, body.get("accessToken").asString(), PASSWORD);
+        }
         return new User(body.get("accountId").asString(), email, body.get("accessToken").asString());
     }
 
@@ -380,7 +384,8 @@ class SchoolPlanAndStorageIntegrationTests {
     private String pay(User admin, String schoolId, String planId) throws Exception {
         String orderId = json(post("/api/v1/admin/schools/" + schoolId + "/invoices", "{\"planId\":\"" + planId
                 + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", admin), 201).get("id").asString();
-        json(post("/api/v1/admin/payments/" + orderId + "/confirm", "{\"receiptReference\":\"BANK-" + suffix() + "\"}", admin), 200);
+        json(post("/api/v1/admin/payments/" + orderId + "/confirm", com.platform.TestAdmin.receipt(port, admin.token(), orderId,
+                "BANK-" + suffix()), admin), 200);
         return orderId;
     }
 
@@ -472,6 +477,7 @@ class SchoolPlanAndStorageIntegrationTests {
     private HttpResponse<String> send(HttpRequest.Builder request, User user) throws Exception {
         if (user != null && user.token() != null) {
             request.header("Authorization", "Bearer " + user.token());
+            com.platform.TestAdmin.withStepUp(request, user.token());
         }
         return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }

@@ -96,6 +96,26 @@ async function parseProblem(res: Response): Promise<ApiProblem | null> {
   }
 }
 
+/**
+ * M8: the proof that the password was just re-entered on this sign-in, for actions that move money or access
+ * (the server's RequiresStepUp). Memory only, a few minutes long; asked for by `onStepUpNeeded`'s handler.
+ */
+let stepUp: { token: string; until: number } | null = null;
+let stepUpHandler: (() => Promise<boolean>) | null = null;
+
+export function setStepUp(token: string, expiresAt: string) {
+  stepUp = { token, until: Date.parse(expiresAt) };
+}
+
+export function clearStepUp() {
+  stepUp = null;
+}
+
+/** Registers what asks the person for their password again; it resolves true once a new proof is set. */
+export function onStepUpNeeded(handler: (() => Promise<boolean>) | null) {
+  stepUpHandler = handler;
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { skipAuth, body, headers, ...rest } = options;
 
@@ -106,6 +126,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         // A file upload sets its own multipart content type (with the boundary).
         ...(body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...(skipAuth ? {} : { Authorization: `Bearer ${tokenStore.getAccessToken() ?? ""}` }),
+        ...(!skipAuth && stepUp && stepUp.until > Date.now() ? { "X-Step-Up": stepUp.token } : {}),
         // The server answers (errors, field messages) in the language on screen - read per request,
         // so a request sent after switching is answered in the new language.
         "Accept-Language": currentLocale(),
@@ -129,6 +150,14 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     }
     // "unavailable": keep the refresh token; this request fails, the next one retries.
+  }
+
+  // M8: the action needs the password again - ask once, then try again once with the new proof.
+  if (res.status === 403 && !skipAuth && stepUpHandler) {
+    const problem = await parseProblem(res.clone());
+    if (problem?.stepUpRequired && (await stepUpHandler())) {
+      res = await doFetch();
+    }
   }
 
   if (!res.ok) {

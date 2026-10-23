@@ -187,8 +187,27 @@ export async function ensurePricedSchoolPlan(request: APIRequestContext, token: 
     data: { name: "E2E school year", description: null, selfService: false, priceAmountMinor: 12000, priceCurrency: "USD", billingInterval: "YEAR", limits: {} },
   });
   expect(revised.ok(), await revised.text()).toBe(true);
-  expect((await request.post(`/api/v1/admin/plans/${id}/activate`, { headers: auth })).ok()).toBe(true);
+  // M8: activating a priced plan moves money, so the administrator re-enters the password first.
+  const stepUp = await request.post("/api/v1/account/step-up", { headers: auth, data: { password: ADMIN_PASSWORD } });
+  expect(stepUp.ok(), await stepUp.text()).toBe(true);
+  const proof = (await stepUp.json()).stepUpToken as string;
+  expect((await request.post(`/api/v1/admin/plans/${id}/activate`, { headers: { ...auth, "X-Step-Up": proof } })).ok()).toBe(true);
   return id;
+}
+
+/** M8: answers "Enter your password again", asked before an action that moves money or access. */
+export async function enterPasswordAgain(page: Page, password: string): Promise<void> {
+  await page.getByLabel("Your password").fill(password);
+  await page.getByRole("button", { name: "Continue" }).click();
+}
+
+/** M8: confirms the open transfer in the administrator's payments page - the receipt, its amount, then the password. */
+export async function confirmTransfer(page: Page, receipt: string, amount: string, password: string): Promise<void> {
+  await page.getByLabel("Receipt reference").fill(receipt);
+  await page.getByLabel("Amount on the receipt").fill(amount);
+  await page.getByRole("button", { name: "Confirm payment received" }).click();
+  await page.getByLabel("Your password").fill(password);
+  await page.getByRole("button", { name: "Continue" }).click();
 }
 
 /** The id of the school with this name (an administrator sees every school). */

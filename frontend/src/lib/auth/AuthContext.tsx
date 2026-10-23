@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { accountApi, authApi } from "../api/endpoints";
-import { SESSION_EXPIRED_EVENT, refreshSession } from "../api/client";
+import { SESSION_EXPIRED_EVENT, clearStepUp, refreshSession } from "../api/client";
 import { tokenStore } from "../api/tokenStore";
 import type { AuthResponse, ChildDeviceCollected, PlatformRole } from "../api/types";
 import { currentLocale, setAccountLocale } from "../../i18n/store";
@@ -181,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     const refreshToken = tokenStore.getRefreshToken();
     tokenStore.clear();
+    clearStepUp();
     setSession(null);
     setAccountLocale(null);
     if (refreshToken) {

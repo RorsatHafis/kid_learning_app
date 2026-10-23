@@ -513,6 +513,8 @@ export interface ApiProblem {
   retryAfterSeconds?: number;
   /** 402 only (Y44, SchoolPaymentRequiredException): the school's services wait for payment. */
   schoolPaymentRequired?: boolean;
+  /** M8: 403 when the action needs the password re-entered (a step-up). */
+  stepUpRequired?: boolean;
   /** M3: 409 when today's learning time is used and a new activity would start. */
   dailyLimitReached?: boolean;
   usedMinutes?: number;

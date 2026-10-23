@@ -101,16 +101,19 @@ public class SubscriptionController {
                 request.selfService(), request.priceAmountMinor(), request.priceCurrency(), request.billingInterval(), request.limits()));
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/plans/{planId}/activate")
     public SubscriptionDtos.PlanResponse activate(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId) {
         return SubscriptionDtos.PlanResponse.of(service.activatePlan(adminId, planId));
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/plans/{planId}/retire")
     public SubscriptionDtos.PlanResponse retire(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId) {
         return SubscriptionDtos.PlanResponse.of(service.retirePlan(adminId, planId));
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/plans/{planId}/make-default")
     public SubscriptionDtos.PlanResponse makeDefault(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId) {
         return SubscriptionDtos.PlanResponse.of(service.makeDefault(adminId, planId));
@@ -124,18 +127,21 @@ public class SubscriptionController {
                 .orElseThrow(() -> new com.platform.common.web.ResourceNotFoundException("Family for", parentEmail));
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/families/{familyId}/subscription")
     public SubscriptionDtos.FamilyResponse grant(@AuthenticationPrincipal UUID adminId, @PathVariable UUID familyId,
                                                  @Valid @RequestBody SubscriptionDtos.GrantRequest request) {
         return SubscriptionDtos.FamilyResponse.of(service.grant(adminId, familyId, request.planId(), request.periodEnd(), request.note()));
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PutMapping("/api/v1/admin/families/{familyId}/subscription/period")
     public SubscriptionDtos.FamilyResponse changePeriod(@AuthenticationPrincipal UUID adminId, @PathVariable UUID familyId,
                                                         @Valid @RequestBody SubscriptionDtos.PeriodRequest request) {
         return SubscriptionDtos.FamilyResponse.of(service.changePeriodEnd(adminId, familyId, request.periodEnd(), request.reason()));
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/families/{familyId}/subscription/end")
     public SubscriptionDtos.FamilyResponse end(@AuthenticationPrincipal UUID adminId, @PathVariable UUID familyId,
                                                @Valid @RequestBody SubscriptionDtos.EndRequest request) {
@@ -156,18 +162,21 @@ public class SubscriptionController {
         return SubscriptionDtos.SchoolPlanResponse.of(service.adminSchoolView(adminId, schoolId));
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/schools/{schoolId}/subscription")
     public SubscriptionDtos.SchoolPlanResponse grantSchool(@AuthenticationPrincipal UUID adminId, @PathVariable UUID schoolId,
                                                            @Valid @RequestBody SubscriptionDtos.GrantRequest request) {
         return SubscriptionDtos.SchoolPlanResponse.of(service.grantSchool(adminId, schoolId, request.planId(), request.periodEnd(), request.note()));
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PutMapping("/api/v1/admin/schools/{schoolId}/subscription/period")
     public SubscriptionDtos.SchoolPlanResponse changeSchoolPeriod(@AuthenticationPrincipal UUID adminId, @PathVariable UUID schoolId,
                                                                   @Valid @RequestBody SubscriptionDtos.PeriodRequest request) {
         return SubscriptionDtos.SchoolPlanResponse.of(service.changeSchoolPeriodEnd(adminId, schoolId, request.periodEnd(), request.reason()));
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/schools/{schoolId}/subscription/end")
     public SubscriptionDtos.SchoolPlanResponse endSchool(@AuthenticationPrincipal UUID adminId, @PathVariable UUID schoolId,
                                                          @Valid @RequestBody SubscriptionDtos.EndRequest request) {

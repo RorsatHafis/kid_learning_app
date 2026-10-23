@@ -708,3 +708,49 @@ Dependencies:
     (wording, follow-up). The caregiver acts under their own account, and attempts they play are the child's evidence
     as with a parent.
   - **Next**: M8 (payment QR, reconciliation, secure grants).
+- 2026-10-23: **M8a done: step-up for money and access, and reconciliation.** M8 is split: M8b
+  (administrator-configured instructions and the genuine KHQR image) is next.
+  - **Step-up authentication**:
+    - `POST /account/step-up {password}` returns a 5-minute proof. It is a JWT typed `step-up`, carrying the account
+      and this sign-in's `sid`, and it can never be used as an access token, nor an access token as a proof;
+    - a wrong password counts towards the lockout, as at sign-in (422);
+    - `@RequiresStepUp`, checked by `StepUpInterceptor` before the controller (so nothing runs first), guards:
+      - payment confirm, reject and refund;
+      - a family's or school's plan given, its period changed or ended;
+      - plan activate, retire and make-default (they change prices or every family's limits);
+    - without a valid proof for this account and sign-in, the answer is 403 `stepUpRequired`;
+    - not guarded, because none moves money or access: draft plan edits, declining a request, creating a pending
+      invoice, provider reconciliation (the provider's answer decides);
+    - audited `ACCOUNT_STEPPED_UP`;
+    - the frontend `StepUpProvider` asks for the password once and retries the original request once with
+      `X-Step-Up`. The refused attempt was stopped before the handler, so nothing doubles. The proof is held in
+      memory only, never in storage, URLs or logs (checked).
+  - **Reconciliation**:
+    - confirming a transfer now needs the receipt's amount (minor units) and currency, equal to the order's frozen
+      price, else 409;
+    - one receipt settles one payment per way of paying (case and spaces aside), else 409. This is checked under a
+      transaction advisory lock on the receipt, so concurrent confirmations can't both pass;
+    - no unique index: existing databases already hold duplicate test receipts, and a migration would fail on them;
+    - the admin form asks for the amount and currency as the receipt shows them, never filled in from the order.
+  - **Tests**:
+    - new `StepUpAndReconciliationIntegrationTests` (2): no proof, wrong password, the proof as an access token and
+      from another sign-in all refused; activate needs it; wrong amount or currency refused; receipt reuse refused;
+      two concurrent confirmations with one receipt end as 200 and 409. Mutation check: dropping the receipt rule
+      fails it;
+    - new `StepUpTokenTests` (2, unit): binding to account, sign-in and issuer, expiry, never an access token;
+    - the shared `TestAdmin` steps test administrators up and builds receipts from the order. Payment 4/4,
+      SchoolPaymentAccess 3/3, SelfService 2/2, SchoolPlanAndStorage 5/5, Subscription 9/9, EntitlementNotice 2/2,
+      EmailLanguage 6/6, AccountSettings 9/9, SessionReliability 21/21, ChildDeviceLink 2/2, ServerTextCoverage 3/3;
+    - Vitest 65 files, 349 tests, including `stepUp.test.tsx` (ask, wrong password, retry with the proof, cancel),
+      `minorUnits.test.ts` and `paymentConfirm.test.tsx` (malformed amount caught locally, mismatch shown, exactly one
+      retry with the proof, the proof reused within its window);
+    - E2E specs updated (`confirmTransfer`, `enterPasswordAgain`, step-up in `ensurePricedSchoolPlan`) and
+      type-checked, not run.
+  - **Browser** (isolated stack):
+    - an administrator confirmed a real pending $5.00 transfer with $4.99;
+    - the password dialog appeared, a wrong password was refused, and the right one retried;
+    - the server refused the amount; $5.00 then confirmed without a second prompt;
+    - the ledger shows one `MANUAL_CONFIRMED`;
+    - the Khmer refusal was checked over the API;
+    - no proof was found in storage, the URL or the server log.
+  - **Next**: M8b.

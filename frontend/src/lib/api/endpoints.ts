@@ -81,6 +81,8 @@ export const accountApi = {
   signOutEverywhere: () => apiClient.post<{ sessionsEnded: number }>("/account/sign-out-everywhere"),
   // 202 whether or not the new address has an account; 422 wrong current password, 409 already this address, 429 too soon.
   requestEmailChange: (input: { currentPassword: string; newEmail: string }) => apiClient.post<void>("/account/email", input),
+  /** M8: re-enter the password for a few minutes of actions that move money or access. */
+  stepUp: (password: string) => apiClient.post<{ stepUpToken: string; expiresAt: string }>("/account/step-up", { password }),
   // One entry per signed-in device; `current` is this one. Signing one out ends that sign-in (404 if it isn't yours).
   /** M7: this device first, then the most recently active, a page at a time. */
   devices: (page = 0, size = DEVICES_PAGE) => apiClient.get<Page<SignedInDevice>>(`/account/devices?page=${page}&size=${size}`),

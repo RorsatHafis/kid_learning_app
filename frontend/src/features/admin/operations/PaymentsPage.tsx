@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { X } from "lucide-react";
 import { adminPaymentsApi, orderPriceText, type PaymentOrder, type PaymentStatus } from "@/lib/api/payments";
+import { toMinorUnits } from "@/lib/api/subscriptions";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { usePageInRange, useUrlFilters } from "@/lib/hooks/useUrlFilters";
@@ -161,6 +162,9 @@ function PaymentDetail({ orderId, onClose, onChanged }: { orderId: string; onClo
   const loaded = useAsync(() => adminPaymentsApi.get(orderId), [orderId]);
   const order = override ?? loaded.data;
   const [receipt, setReceipt] = useState("");
+  // M8: what the receipt shows - typed from it, never filled in from the order, so the server's check means something.
+  const [received, setReceived] = useState("");
+  const [currency, setCurrency] = useState("");
   const [note, setNote] = useState("");
   const [reason, setReason] = useState("");
   const [mode, setMode] = useState<"reject" | "refund" | null>(null);
@@ -185,7 +189,14 @@ function PaymentDetail({ orderId, onClose, onChanged }: { orderId: string; onClo
 
   function confirm(e: FormEvent) {
     e.preventDefault();
-    void run(() => adminPaymentsApi.confirm(orderId, receipt.trim(), note.trim() || null));
+    if (!order) return;
+    const code = (currency.trim() || order.currency).toUpperCase();
+    const minor = toMinorUnits(received, code);
+    if (minor === null) {
+      setFeedback({ ok: false, text: m.amountInvalid });
+      return;
+    }
+    void run(() => adminPaymentsApi.confirm(orderId, receipt.trim(), minor, code, note.trim() || null));
   }
 
   function withReason(e: FormEvent) {
@@ -235,8 +246,25 @@ function PaymentDetail({ orderId, onClose, onChanged }: { orderId: string; onClo
                 <p className="text-sm text-ink-soft">{m.confirmLead}</p>
               </div>
               <FormField label={m.receipt} hint={m.receiptHint} value={receipt} maxLength={200} required onChange={(e) => setReceipt(e.target.value)} />
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_7rem]">
+                <FormField
+                  label={m.received}
+                  hint={m.receivedHint(orderPriceText(order))}
+                  value={received}
+                  inputMode="decimal"
+                  required
+                  onChange={(e) => setReceived(e.target.value)}
+                />
+                <FormField
+                  label={m.currency}
+                  value={currency}
+                  placeholder={order.currency}
+                  maxLength={3}
+                  onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                />
+              </div>
               <FormField label={m.note} value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} />
-              <Button type="submit" disabled={busy || !receipt.trim()} className="w-fit">
+              <Button type="submit" disabled={busy || !receipt.trim() || !received.trim()} className="w-fit">
                 {m.confirmAction}
               </Button>
             </form>
@@ -318,3 +346,4 @@ function Item({ label, value, wide = false }: { label: string; value: string; wi
     </div>
   );
 }
+

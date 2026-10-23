@@ -4,6 +4,7 @@ import {
   ADMIN_PASSWORD,
   PASSWORD,
   addChild,
+  confirmTransfer,
   adminToken,
   ensurePricedSchoolPlan,
   crawl,
@@ -73,8 +74,7 @@ test("school: principal signs up, confirms their email, sets up the school; an i
   await billing.getByRole("combobox", { name: "School plan" }).selectOption({ label: "E2E school year · $120.00 / year" });
   await billing.getByRole("button", { name: "Create invoice" }).click();
   await billing.getByRole("status").getByRole("link", { name: "Payments" }).click();
-  await billing.getByLabel("Receipt reference").fill(`E2E-RECEIPT-${Date.now()}`);
-  await billing.getByRole("button", { name: "Confirm payment received" }).click();
+  await confirmTransfer(billing, `E2E-RECEIPT-${Date.now()}`, "120.00", ADMIN_PASSWORD);
   await expect(billing.getByText("Done. The payment and the plan are up to date.")).toBeVisible();
   await expectNoViolations(billing, "admin: payment confirmed");
   await billingContext.close();

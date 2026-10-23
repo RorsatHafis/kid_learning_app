@@ -106,8 +106,8 @@ export const adminPaymentsApi = {
   list: (status: PaymentStatus | null, page = 0, size = 25) =>
     apiClient.get<PaymentOrderPage>(`/admin/payments?${status ? `status=${status}&` : ""}page=${page}&size=${size}`),
   get: (orderId: string) => apiClient.get<PaymentOrder>(`/admin/payments/${orderId}`),
-  confirm: (orderId: string, receiptReference: string, note: string | null) =>
-    apiClient.post<PaymentOrder>(`/admin/payments/${orderId}/confirm`, { receiptReference, note }),
+  confirm: (orderId: string, receiptReference: string, amountReceivedMinor: number, currency: string, note: string | null) =>
+    apiClient.post<PaymentOrder>(`/admin/payments/${orderId}/confirm`, { receiptReference, amountReceivedMinor, currency, note }),
   reject: (orderId: string, reason: string) => apiClient.post<PaymentOrder>(`/admin/payments/${orderId}/reject`, { reason }),
   refund: (orderId: string, reason: string) => apiClient.post<PaymentOrder>(`/admin/payments/${orderId}/refund`, { reason }),
   reconcile: (orderId: string) => apiClient.post<PaymentOrder>(`/admin/payments/${orderId}/reconcile`),

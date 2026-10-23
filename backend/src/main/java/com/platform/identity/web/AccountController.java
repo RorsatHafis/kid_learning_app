@@ -41,7 +41,11 @@ public class AccountController {
     private final AccountSettingsService accountSettingsService;
     private final AccountSessionService sessions;
 
-    public AccountController(AccountSettingsService accountSettingsService, AccountSessionService sessions) {
+    private final com.platform.security.stepup.StepUpService stepUp;
+
+    public AccountController(AccountSettingsService accountSettingsService, AccountSessionService sessions,
+                             com.platform.security.stepup.StepUpService stepUp) {
+        this.stepUp = stepUp;
         this.accountSettingsService = accountSettingsService;
         this.sessions = sessions;
     }
@@ -139,6 +143,24 @@ public class AccountController {
                 .toList();
         int from = (int) Math.min(all.size(), (long) request.offset());
         return new PageResponse<>(all.subList(from, Math.min(all.size(), from + size)), page, size, all.size());
+    }
+
+    public record StepUpRequest(@jakarta.validation.constraints.NotBlank String password) {
+    }
+
+    public record StepUpResponse(String stepUpToken, Instant expiresAt) {
+    }
+
+    /**
+     * M8: re-enter the password for a few minutes of actions that move money or access (RequiresStepUp). Bound to this
+     * sign-in; a wrong password counts towards the lockout.
+     */
+    @org.springframework.web.bind.annotation.PostMapping("/step-up")
+    public StepUpResponse stepUp(@AuthenticationPrincipal UUID accountId, Authentication authentication,
+                                 @Valid @RequestBody StepUpRequest request) {
+        UUID sessionFamilyId = authentication.getDetails() instanceof UUID sid ? sid : null;
+        var issued = stepUp.stepUp(accountId, sessionFamilyId, request.password());
+        return new StepUpResponse(issued.token(), issued.expiresAt());
     }
 
     /** Signs one of the account's devices out (404 for an id that isn't one of them). */

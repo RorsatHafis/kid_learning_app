@@ -155,14 +155,17 @@ public class PaymentController {
 
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/payments/{orderId}/confirm")
     public OrderResponse confirm(@AuthenticationPrincipal UUID adminId, @PathVariable UUID orderId,
                                  @Valid @RequestBody ConfirmRequest request) {
 
-        return OrderResponse.of(payments.confirmManual(adminId, orderId, request.receiptReference(), request.note()), true);
+        return OrderResponse.of(payments.confirmManual(adminId, orderId, request.receiptReference(), request.amountReceivedMinor(),
+                request.currency(), request.note()), true);
 
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/payments/{orderId}/reject")
     public OrderResponse reject(@AuthenticationPrincipal UUID adminId, @PathVariable UUID orderId,
                                 @Valid @RequestBody ReasonRequest request) {
@@ -171,6 +174,7 @@ public class PaymentController {
 
     }
 
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/api/v1/admin/payments/{orderId}/refund")
     public OrderResponse refund(@AuthenticationPrincipal UUID adminId, @PathVariable UUID orderId,
                                 @Valid @RequestBody ReasonRequest request) {

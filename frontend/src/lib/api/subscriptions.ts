@@ -224,3 +224,13 @@ export const schoolPlansApi = {
   end: (schoolId: string, reason: string) =>
     apiClient.post<SchoolPlan>(`/admin/schools/${schoolId}/subscription/end`, { reason }),
 };
+
+/** M8: "120.00" in USD is 12000, "40000" in KHR is 40000; null for anything that isn't an amount in that currency's units. */
+export function toMinorUnits(text: string, currency: string): number | null {
+  const digits = currencyDigits(currency);
+  const value = text.trim().replace(/,/g, "");
+  if (digits === null || !new RegExp(`^\\d+(\\.\\d{1,${Math.max(digits, 1)}})?$`).test(value)) return null;
+  const [whole, fraction = ""] = value.split(".");
+  if (digits === 0 && fraction.length > 0) return null;
+  return Number(whole) * 10 ** digits + Number((fraction + "0".repeat(digits)).slice(0, digits) || "0");
+}

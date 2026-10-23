@@ -40,6 +40,9 @@ public class JwtService {
     private static final String SESSION_CLAIM = "sid";
     /** M10a: the one child a child's device may act for. Unlike {@code sid}, it does authorize: it narrows. */
     private static final String CHILD_CLAIM = "cid";
+    /** M8: marks a step-up token (a recent re-entry of the password), never usable as an access token. */
+    private static final String TYPE_CLAIM = "typ";
+    private static final String STEP_UP = "step-up";
 
     /**
      * {@code platformRole} is embedded as a signed claim (not looked up from the DB
@@ -108,6 +111,9 @@ public class JwtService {
                     .parseSignedClaims(token)
                     .getPayload();
  
+            if (STEP_UP.equals(claims.get(TYPE_CLAIM, String.class))) {
+                throw new InvalidTokenException("A step-up token is not an access token", null);
+            }
             UUID accountId = UUID.fromString(claims.getSubject());
             PlatformRole role = PlatformRole.valueOf(claims.get(ROLE_CLAIM, String.class));
             String sid = claims.get(SESSION_CLAIM, String.class);
@@ -119,6 +125,45 @@ public class JwtService {
 
             throw new InvalidTokenException("Invalid or expired access token", e);
 
+        }
+
+    }
+
+    /**
+     * M8: proof that the account re-entered its password just now, on this sign-in ({@code sid}), for a few minutes.
+     * Signed like an access token but typed {@code step-up}, so neither can stand in for the other.
+     */
+    public IssuedToken issueStepUp(UUID accountId, UUID sessionFamilyId, java.time.Duration ttl) {
+
+        Assert.notNull(sessionFamilyId, "sessionFamilyId must not be null");
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(ttl);
+        String token = Jwts.builder()
+                .subject(accountId.toString())
+                .claim(TYPE_CLAIM, STEP_UP)
+                .claim(SESSION_CLAIM, sessionFamilyId.toString())
+                .issuer(issuer)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiresAt))
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
+        return new IssuedToken(token, expiresAt);
+
+    }
+
+    /** True only for an unexpired step-up token of this account and this sign-in. */
+    public boolean isValidStepUp(String token, UUID accountId, UUID sessionFamilyId) {
+
+        if (token == null || token.isBlank() || accountId == null || sessionFamilyId == null) {
+            return false;
+        }
+        try {
+            Claims claims = Jwts.parser().verifyWith(key).requireIssuer(issuer).build().parseSignedClaims(token).getPayload();
+            return STEP_UP.equals(claims.get(TYPE_CLAIM, String.class))
+                    && accountId.toString().equals(claims.getSubject())
+                    && sessionFamilyId.toString().equals(claims.get(SESSION_CLAIM, String.class));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
         }
 
     }

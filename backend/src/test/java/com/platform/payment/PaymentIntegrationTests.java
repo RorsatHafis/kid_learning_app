@@ -156,8 +156,10 @@ class PaymentIntegrationTests {
         assertThat(post("/api/v1/payments/" + orderId + "/simulate", "{\"outcome\":\"SUCCEEDED\"}", parent).statusCode()).isEqualTo(400);
         assertThat(post("/api/v1/admin/payments/" + orderId + "/confirm", "{\"receiptReference\":\" \"}", admin).statusCode()).isEqualTo(400);
 
+        String bankRef = "BANK-REF-" + suffix();
+        String receipt = com.platform.TestAdmin.receipt(port, admin, orderId, bankRef);
         JsonNode confirmed = json(post("/api/v1/admin/payments/" + orderId + "/confirm",
-                "{\"receiptReference\":\"BANK-REF-77\",\"note\":\"Seen on the statement\"}", admin), 200);
+                receipt.substring(0, receipt.length() - 1) + ",\"note\":\"Seen on the statement\"}", admin), 200);
         assertThat(confirmed.get("status").asString()).isEqualTo("SUCCEEDED");
         assertThat(confirmed.get("admin").get("ledger").toString()).contains("MANUAL_CONFIRMED").contains("CUSTOMER_NOTE");
         // Each line - including the one just written - carries its time.
@@ -167,8 +169,7 @@ class PaymentIntegrationTests {
         assertThat(json(get("/api/v1/family/plan", parent), 200).get("plan").get("id").asString()).isEqualTo(planId);
 
         // Confirmed twice: refused, nothing doubled.
-        assertThat(post("/api/v1/admin/payments/" + orderId + "/confirm", "{\"receiptReference\":\"BANK-REF-77\"}", admin).statusCode())
-                .isEqualTo(409);
+        assertThat(post("/api/v1/admin/payments/" + orderId + "/confirm", receipt, admin).statusCode()).isEqualTo(409);
 
         // Refunded: the paid month is taken back - here all of it, so the plan ends now.
         assertThat(post("/api/v1/admin/payments/" + orderId + "/refund", "{\"reason\":\" \"}", admin).statusCode()).isEqualTo(400);
@@ -196,7 +197,7 @@ class PaymentIntegrationTests {
         assertThat(invoices.get(0).has("admin") && !invoices.get(0).get("admin").isNull()).isFalse();
         assertThat(get("/api/v1/schools/" + schoolId + "/payments", staff(PlatformRole.PRINCIPAL)).statusCode()).isEqualTo(403);
 
-        json(post("/api/v1/admin/payments/" + orderId + "/confirm", "{\"receiptReference\":\"INV-1\"}", admin), 200);
+        json(post("/api/v1/admin/payments/" + orderId + "/confirm", com.platform.TestAdmin.receipt(port, admin, orderId, "INV-" + suffix()), admin), 200);
         assertThat(json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200).get("plan").get("id").asString()).isEqualTo(planId);
     }
 
@@ -231,8 +232,10 @@ class PaymentIntegrationTests {
     private String staff(PlatformRole role) throws Exception {
         String email = "pay-" + role.name().toLowerCase() + "-" + UUID.randomUUID() + "@example.com";
         Account account = accountRepository.saveAndFlush(Account.register(email, passwordEncoder.encode(PASSWORD), role));
-        return json(post("/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200)
+        String token = json(post("/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200)
                 .get("accessToken").asString();
+        // M8: an administrator's money and access actions need the password re-entered.
+        return role == PlatformRole.ADMIN ? com.platform.TestAdmin.stepUp(port, token, PASSWORD) : token;
     }
 
     private String registerParent() throws Exception {
@@ -262,6 +265,7 @@ class PaymentIntegrationTests {
     private HttpResponse<String> send(HttpRequest.Builder request, String bearer) throws Exception {
         if (bearer != null) {
             request.header("Authorization", "Bearer " + bearer);
+            com.platform.TestAdmin.withStepUp(request, bearer);
         }
         return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }

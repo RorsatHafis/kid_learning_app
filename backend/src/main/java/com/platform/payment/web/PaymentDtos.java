@@ -39,7 +39,11 @@ public final class PaymentDtos {
     public record SimulateRequest(@NotNull PaymentStatus outcome) {
     }
 
-    public record ConfirmRequest(@NotBlank @Size(max = 200) String receiptReference, @Size(max = 300) String note) {
+    /** M8: the amount and currency as the receipt shows them (minor units), checked against the order. */
+    public record ConfirmRequest(@NotBlank @Size(max = 200) String receiptReference,
+                                 @jakarta.validation.constraints.NotNull @jakarta.validation.constraints.PositiveOrZero Long amountReceivedMinor,
+                                 @NotBlank @Size(min = 3, max = 3) String currency,
+                                 @Size(max = 300) String note) {
     }
 
     public record ReasonRequest(@NotBlank @Size(max = 300) String reason) {

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, uniqueEmail, workspaceLink } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, enterPasswordAgain, expectNoViolations, logIn, uniqueEmail, workspaceLink } from "./support";
 
 const isoDay = (daysFromNow: number) => {
   const d = new Date();
@@ -36,6 +36,7 @@ test("plans: an administrator gives a dated plan, the family sees its end and wh
   await operator.getByRole("button", { name: "Create draft plan" }).click();
   await operator.getByRole("button", { name: "Activate…" }).click();
   await operator.getByRole("button", { name: "Yes, activate" }).click();
+  await enterPasswordAgain(operator, ADMIN_PASSWORD);
   await expect(operator.getByRole("list", { name: "Plans" }).getByRole("button", { name: new RegExp(planName) })).toContainText(
     "Active",
   );
@@ -102,6 +103,7 @@ test("plans: a family asks for an offered plan, an administrator answers it from
   await expect(operator.getByText("Saved.")).toBeVisible();
   await operator.getByRole("button", { name: "Activate…" }).click();
   await operator.getByRole("button", { name: "Yes, activate" }).click();
+  await enterPasswordAgain(operator, ADMIN_PASSWORD);
 
   const email = uniqueEmail("plan-asker");
   await page.goto("/register");
