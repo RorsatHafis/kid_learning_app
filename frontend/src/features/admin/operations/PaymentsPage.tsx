@@ -13,6 +13,7 @@ import { useMessages } from "@/i18n/catalog";
 import { formatDate, formatDateTime } from "@/i18n/format";
 import { cn } from "@/lib/utils/cn";
 import { Panel } from "../studio/shared";
+import { PaymentInstructionsPanel } from "./PaymentInstructionsPanel";
 import { errorText } from "../studio/studioLogic";
 import { adminPaymentMessages } from "./payments.messages";
 
@@ -134,6 +135,8 @@ export function PaymentsPage() {
           />
         )}
       </div>
+      {/* M8b: what customers are told to do to pay by bank transfer. */}
+      <PaymentInstructionsPanel />
     </div>
   );
 }

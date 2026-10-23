@@ -112,7 +112,8 @@ only, so that restoring a database backup can't bring an erased child or account
 
 **Payments** (Y43, all off by default; see [docs/PAYMENTS.md](docs/PAYMENTS.md)):
 `PAYMENTS_MANUAL_ENABLED` and `PAYMENTS_MANUAL_INSTRUCTIONS` (bank transfer, confirmed by an administrator
-against the real receipt; only with the owner's real instructions), `PAYMENTS_PENDING_LIFETIME` (PT30M),
+against the real receipt; only with the owner's real instructions - M8b: or set in Admin → Payments, which takes over
+once saved, with an optional KHQR image), `PAYMENTS_PENDING_LIFETIME` (PT30M),
 `ABA_PAYWAY_ENABLED`, `ABA_PAYWAY_BASE_URL`, `ABA_PAYWAY_MERCHANT_ID`, `ABA_PAYWAY_API_KEY`,
 `ABA_PAYWAY_RETURN_URL`, `ABA_PAYWAY_SUCCESS_URL` (only after sandbox testing with ABA's credentials).
 `PAYMENTS_DEV_SIMULATOR_ENABLED` must stay unset or `false`: production refuses to start with test payments on.

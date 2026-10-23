@@ -119,7 +119,7 @@ All under `platform.payments` in `application.yaml`, set through the environment
 | `PAYMENTS_PENDING_LIFETIME` | `PT30M` | How long a test or online payment may stay pending |
 | `PAYMENTS_DEV_SIMULATOR_ENABLED` | `false` (`true` in the `local` profile) | Test payments. Production refuses to start when `true` |
 | `PAYMENTS_MANUAL_ENABLED` | `false` | Bank transfer / invoice |
-| `PAYMENTS_MANUAL_INSTRUCTIONS` | empty | The owner's own instructions shown to the payer (account name and number, what to quote). Manual payment is not offered while this is empty |
+| `PAYMENTS_MANUAL_INSTRUCTIONS` | empty | The owner's own instructions shown to the payer (account name and number, what to quote). Manual payment is not offered while this is empty. M8b: an administrator can set the instructions in the app instead (Admin → Payments → "How customers pay by bank transfer", English and Khmer, with the bank's own KHQR image); once a version is saved there it takes over from these two variables |
 | `ABA_PAYWAY_ENABLED` | `false` | ABA PayWay |
 | `ABA_PAYWAY_BASE_URL` | ABA's sandbox | Switch to ABA's production host only after sandbox testing |
 | `ABA_PAYWAY_MERCHANT_ID`, `ABA_PAYWAY_API_KEY` | none | Issued by ABA. Secrets: environment only, never in the repository, logs or responses |

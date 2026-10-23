@@ -158,4 +158,8 @@ public interface ContentAssetRepository extends JpaRepository<ContentAsset, UUID
             """)
     List<Use> usesOf(@Param("id") UUID assetId);
 
+    /** M8b: the asset is (or was) the KHQR image of a version of the payment instructions. */
+    @Query(value = "select exists (select 1 from payment_instruction_versions where qr_asset_id = :id)", nativeQuery = true)
+    boolean usedForPayments(@Param("id") UUID assetId);
+
 }

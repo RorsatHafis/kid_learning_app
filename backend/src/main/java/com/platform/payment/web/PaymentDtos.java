@@ -98,11 +98,12 @@ public final class PaymentDtos {
     }
 
     /** {@code action} and {@code fields}: a form the browser posts to the provider's hosted checkout. */
-    public record Checkout(String instructions, String action, Map<String, String> fields) {
+    public record Checkout(String instructions, String action, Map<String, String> fields, String instructionsKm, String qrImageUrl) {
 
         static Checkout of(PaymentProvider.Checkout checkout) {
 
-            return new Checkout(checkout.instructions(), checkout.action(), checkout.fields());
+            return new Checkout(checkout.instructions(), checkout.action(), checkout.fields(), checkout.instructionsKm(),
+                    checkout.qrImageUrl());
 
         }
 

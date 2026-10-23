@@ -51,11 +51,22 @@ class PaymentContractTests {
     void aMethodIsOfferedOnlyWhenConfigured() {
         assertThat(new DevSimulatorProvider(properties(false, false, null)).available()).isFalse();
         // Manual payment without the owner's own instructions isn't offered: no invented payee details.
-        assertThat(new ManualPaymentProvider(properties(false, true, "  ")).available()).isFalse();
-        assertThat(new ManualPaymentProvider(properties(false, true, "Pay to: (owner's account)")).available()).isTrue();
+        // (M8b: until an administrator saves instructions in the app, the environment's apply.)
+        assertThat(manual(properties(false, true, "  ")).available()).isFalse();
+        assertThat(manual(properties(false, true, "Pay to: (owner's account)")).available()).isTrue();
         // ABA PayWay can't be switched on without its merchant id, key and return address.
         assertThatThrownBy(() -> new PaymentProperties.AbaPayway(true, "https://checkout-sandbox.payway.com.kh", "", "", "", null))
                 .hasMessageContaining("ABA_PAYWAY_MERCHANT_ID");
+    }
+
+    /** The manual method with no instructions saved in the app yet. */
+    private static ManualPaymentProvider manual(PaymentProperties properties) {
+        var instructions = new com.platform.payment.service.PaymentInstructionsService(
+                org.mockito.Mockito.mock(org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate.class),
+                org.mockito.Mockito.mock(com.platform.identity.repository.AccountRepository.class),
+                org.mockito.Mockito.mock(com.platform.content.repository.ContentAssetRepository.class),
+                org.mockito.Mockito.mock(com.platform.audit.service.AuditService.class), properties);
+        return new ManualPaymentProvider(properties, instructions, org.mockito.Mockito.mock(com.platform.content.media.MediaService.class));
     }
 
     @Test

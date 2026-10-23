@@ -8,6 +8,7 @@ import { formatDate, formatDateTime } from "@/i18n/format";
 import { familyPlanApi, priceText, type PlanOffer } from "@/lib/api/subscriptions";
 import { orderPriceText, paymentsApi, type PaymentMethod, type PaymentOrder } from "@/lib/api/payments";
 import { Pager } from "@/components/ui/Pager";
+import { TransferInstructions } from "@/features/payments/TransferInstructions";
 import type { Page } from "@/lib/api/types";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { cn } from "@/lib/utils/cn";
@@ -286,11 +287,7 @@ function PendingPayment({
       {data.method === "MANUAL" && (
         <>
           <p className="text-sm leading-relaxed text-ink">{m.manualLead}</p>
-          {checkout?.instructions && (
-            <p className="whitespace-pre-line rounded-[12px] bg-paper px-4 py-3 text-sm leading-relaxed text-ink ring-1 ring-line">
-              {checkout.instructions}
-            </p>
-          )}
+          {checkout?.instructions && <TransferInstructions order={data} />}
           <form onSubmit={saveNote} className="flex flex-col items-start gap-2">
             <div className="w-full">
               <FormField

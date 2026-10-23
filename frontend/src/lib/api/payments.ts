@@ -14,6 +14,22 @@ export interface PaymentCheckout {
   instructions: string | null;
   action: string | null;
   fields: Record<string, string> | null;
+  /** M8b: the same instructions in Khmer, when the owner wrote them. */
+  instructionsKm?: string | null;
+  /** M8b: a short-lived signed link to the owner's genuine KHQR image, when there is one. */
+  qrImageUrl?: string | null;
+}
+
+/** M8b: one version of the bank-transfer instructions (the environment's when `fromEnvironment`). */
+export interface PaymentInstructions {
+  version: number | null;
+  enabled: boolean;
+  instructionsEn: string | null;
+  instructionsKm: string | null;
+  qrAssetId: string | null;
+  qrImageUrl: string | null;
+  savedAt: string | null;
+  fromEnvironment: boolean;
 }
 
 export interface LedgerEntry {
@@ -103,6 +119,16 @@ export const paymentsApi = {
 };
 
 export const adminPaymentsApi = {
+  /** M8b: how customers pay by bank transfer - what applies now, and every saved version. */
+  instructions: () => apiClient.get<{ current: PaymentInstructions; history: PaymentInstructions[] }>("/admin/payment-instructions"),
+  /** Needs the password again (step-up); 409 when another administrator saved first. */
+  saveInstructions: (input: {
+    expectedVersion: number | null;
+    enabled: boolean;
+    instructionsEn: string | null;
+    instructionsKm: string | null;
+    qrAssetId: string | null;
+  }) => apiClient.put<{ current: PaymentInstructions; history: PaymentInstructions[] }>("/admin/payment-instructions", input),
   list: (status: PaymentStatus | null, page = 0, size = 25) =>
     apiClient.get<PaymentOrderPage>(`/admin/payments?${status ? `status=${status}&` : ""}page=${page}&size=${size}`),
   get: (orderId: string) => apiClient.get<PaymentOrder>(`/admin/payments/${orderId}`),

@@ -81,13 +81,16 @@ public class PaymentService {
     private final SchoolAccessGuard schoolGuard;
     private final PlanRequestService planRequests;
     private final AuditService audit;
+    private final PaymentInstructionsService instructions;
 
     public PaymentService(PaymentOrderRepository orders, PaymentEventRepository events, List<PaymentProvider> providers,
                           SubscriptionPlanRepository plans, EntitlementService entitlements, FamilyRepository families,
                           MembershipRepository memberships, SchoolRepository schools,
                           FamilySubscriptionRepository familySubscriptions, SchoolSubscriptionRepository schoolSubscriptions,
                           AccountRepository accounts, SchoolAccessGuard schoolGuard, PlanRequestService planRequests,
-                          AuditService audit) {
+                          AuditService audit, PaymentInstructionsService instructions) {
+
+        this.instructions = instructions;
 
         this.orders = orders;
         this.events = events;
@@ -673,6 +676,9 @@ public class PaymentService {
                 plan.getPriceAmountMinor(), plan.getPriceCurrency(), plan.getBillingInterval(), limits);
         PaymentOrder order = PaymentOrder.open(newReference(), type, familyId, schoolId, createdBy, offer, provider.type(),
                 idempotencyKey, now().plus(provider.lifetime()));
+        if (provider.type() == PaymentProviderType.MANUAL) {
+            order.withInstructions(instructions.current().id());
+        }
         try {
             return orders.saveAndFlush(order);
         } catch (DataIntegrityViolationException raced) {

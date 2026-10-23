@@ -99,6 +99,10 @@ public class PaymentOrder extends AuditableEntity {
     @Column(name = "customer_note", length = 300)
     private String customerNote;
 
+    /** M8b: the payment instructions this order was started with (null: before M8b, or the environment's). */
+    @Column(name = "instructions_version_id", updatable = false)
+    private UUID instructionsVersionId;
+
     protected PaymentOrder() {
 
         // JPA
@@ -350,6 +354,16 @@ public class PaymentOrder extends AuditableEntity {
 
         return failureReason;
 
+    }
+
+    public UUID getInstructionsVersionId() {
+        return instructionsVersionId;
+    }
+
+    /** M8b: set once, as the order is opened. */
+    public PaymentOrder withInstructions(UUID versionId) {
+        this.instructionsVersionId = versionId;
+        return this;
     }
 
     public String getCustomerNote() {

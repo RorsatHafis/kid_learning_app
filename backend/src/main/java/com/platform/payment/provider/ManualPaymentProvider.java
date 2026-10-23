@@ -17,10 +17,15 @@ import java.util.Optional;
 public class ManualPaymentProvider implements PaymentProvider {
 
     private final PaymentProperties properties;
+    private final com.platform.payment.service.PaymentInstructionsService instructions;
+    private final com.platform.content.media.MediaService media;
 
-    public ManualPaymentProvider(PaymentProperties properties) {
+    public ManualPaymentProvider(PaymentProperties properties, com.platform.payment.service.PaymentInstructionsService instructions,
+                                 com.platform.content.media.MediaService media) {
 
         this.properties = properties;
+        this.instructions = instructions;
+        this.media = media;
 
     }
 
@@ -34,7 +39,8 @@ public class ManualPaymentProvider implements PaymentProvider {
     @Override
     public boolean available() {
 
-        return properties.manual().available();
+        // M8b: the administrator's latest saved instructions, or the environment's until one is saved.
+        return instructions.current().available();
 
     }
 
@@ -48,7 +54,12 @@ public class ManualPaymentProvider implements PaymentProvider {
     @Override
     public Checkout checkout(PaymentOrder order) {
 
-        return Checkout.instructions(properties.manual().instructions().strip());
+        // M8b: the instructions this order was started with - a later change never rewrites an issued invoice.
+        var used = instructions.forOrder(order.getInstructionsVersionId());
+        String qr = used.qrAssetId() == null ? null
+                : java.util.Optional.ofNullable(media.refs(java.util.Set.of(used.qrAssetId())).get(used.qrAssetId()))
+                .map(com.platform.content.media.MediaService.MediaRef::url).orElse(null);
+        return new Checkout(used.instructionsEn(), null, java.util.Map.of(), used.instructionsKm(), qr);
 
     }
 

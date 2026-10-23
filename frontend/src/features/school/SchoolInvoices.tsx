@@ -5,6 +5,7 @@ import { useMessages } from "@/i18n/catalog";
 import { formatDate, formatDateTime } from "@/i18n/format";
 import { orderPriceText, paymentsApi, type PaymentOrder } from "@/lib/api/payments";
 import { Pager } from "@/components/ui/Pager";
+import { TransferInstructions } from "@/features/payments/TransferInstructions";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { errorText } from "@/features/admin/studio/studioLogic";
 import { invoiceMessages } from "./invoices.messages";
@@ -87,9 +88,7 @@ function PendingInvoice({ orderId }: { orderId: string }) {
         <span className="text-ink-soft">{m.payBy(formatDateTime(data.expiresAt))}</span>
       </p>
       <p className="text-sm text-ink-soft">{m.lead}</p>
-      {data.checkout?.instructions && (
-        <p className="whitespace-pre-line rounded-[10px] bg-white px-3 py-2 text-sm text-ink ring-1 ring-line">{data.checkout.instructions}</p>
-      )}
+      {data.checkout?.instructions && <TransferInstructions order={data} />}
       <form onSubmit={save} className="flex flex-col items-start gap-2">
         <div className="w-full">
           <FormField label={m.noteLabel} hint={m.noteHint} value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} />

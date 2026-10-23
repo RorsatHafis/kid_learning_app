@@ -31,11 +31,19 @@ public interface PaymentProvider {
     Optional<TrustedStatus> check(PaymentOrder order);
 
     /**
-     * @param instructions words for the customer (manual payment's payee details, or the simulator's warning)
-     * @param action       where the customer's browser posts {@code fields} to pay (a hosted checkout), or null
-     * @param fields       the signed form for {@code action}; never contains a secret
+     * @param instructions   words for the customer (manual payment's payee details, or the simulator's warning)
+     * @param action         where the customer's browser posts {@code fields} to pay (a hosted checkout), or null
+     * @param fields         the signed form for {@code action}; never contains a secret
+     * @param instructionsKm the same words in Khmer, when the owner wrote them (M8b), or null
+     * @param qrImageUrl     a short-lived signed link to the owner's genuine KHQR image (M8b), or null
      */
-    record Checkout(String instructions, String action, Map<String, String> fields) {
+    record Checkout(String instructions, String action, Map<String, String> fields, String instructionsKm, String qrImageUrl) {
+
+        public Checkout(String instructions, String action, Map<String, String> fields) {
+
+            this(instructions, action, fields, null, null);
+
+        }
 
         public static Checkout instructions(String text) {
 

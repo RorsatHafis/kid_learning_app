@@ -20,7 +20,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M5 Authoring UX, direct upload, content visibility | planned | | |
 | M6 Feature-specific paywall messages | **done** | see log | — |
 | M7 Pagination and information density | **done** | see log | — |
-| M8 Payment QR, manual reconciliation, secure grants | next | | |
+| M8 Payment QR, manual reconciliation, secure grants | **done** (M8a step-up and reconciliation, M8b instructions and KHQR) | see log | V67 |
 | M9 Phone registration and verification foundations | planned | | |
 | M10 Child access across devices, trusted caregivers | **done** (M10a child devices, M10b caregivers) | see log | V65, V66 |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
@@ -754,3 +754,52 @@ Dependencies:
     - the Khmer refusal was checked over the API;
     - no proof was found in storage, the URL or the server log.
   - **Next**: M8b.
+- 2026-10-23: **M8b done: bank-transfer instructions set in the app, with the owner's KHQR.**
+  - **Versions**: `payment_instruction_versions` (V67) is append-only, one version per save: enabled, English and
+    Khmer instructions (≤ 2000 characters each), and an optional KHQR image (a platform media-library picture,
+    restrict foreign key).
+    - Until the first version is saved, `PAYMENTS_MANUAL_*` apply, shown as "set by the server's environment". There
+      is no write at startup.
+    - Each new MANUAL order records its version (`payment_orders.instructions_version_id`), so a change never
+      rewrites an issued invoice.
+  - **Saving**:
+    - an administrator saves through `PUT /admin/payment-instructions` (`@RequiresStepUp`) with `expectedVersion`. A
+      stale or concurrent save is a 409, serialized by an advisory lock;
+    - offering without English words is a 400;
+    - the image must be the platform's own (no teacher's picture), not archived, and a picture. Upload type and size
+      are the existing media inspection (PNG, JPEG, WebP, ≤ 2 MB);
+    - audited `PAYMENT_INSTRUCTIONS_CHANGED` with version, flags and lengths, never the account text;
+    - a QR in any version can't be deleted from the media library (409, "archive it instead").
+  - **Customers**:
+    - the checkout of their own pending order carries `instructionsKm` and a short-lived signed `qrImageUrl`;
+    - `TransferInstructions` shows the words in the reader's language (English when there is no Khmer) and the QR
+      beside the exact amount and the reference;
+    - it says paying or a screenshot doesn't start the plan. Nothing in M8b confirms or grants: confirmation is still
+      M8a's administrator check against the receipt.
+    - Switching it off removes bank transfer from the offered methods and refuses new transfers (409). Instructions
+      for pending orders are shown only while the method is offered (the existing rule).
+  - **Not built**: the customer screenshot upload ("evidence for review"), deferred. The customer's own payment note
+    remains. ABA PayWay is untouched and still unverified against ABA.
+  - **Tests**:
+    - new `PaymentInstructionsIntegrationTests`:
+      - the environment fallback; teacher and parent refused; step-up required;
+      - a teacher's picture refused (400), a missing one 404, a non-picture rejected at upload; blank or long text
+        refused;
+      - a stale version 409; the family checkout in both languages with a working signed QR and still PENDING;
+      - an issued invoice keeps version 1 after version 2; a new order gets version 2;
+      - the QR can't be deleted; two concurrent saves end as 200 and 409; switching off removes MANUAL and refuses
+        new transfers; four audit rows without the account text;
+      - it cleans up, so other tests keep the environment's instructions.
+      Mutation check: serving the latest version to every order fails it;
+    - PaymentContract 4/4 (the manual method over an instructions service with no saved version), MediaLibrary 1/1,
+      MediaRecovery 4/4, Payment 4/4, StepUpAndReconciliation 2/2, FamilyErasure 6/6, FamilyDataExport 2/2,
+      ServerTextCoverage 3/3;
+    - Vitest 66 files, 356 tests, with `transfer.test.tsx` (QR beside amount and reference, Khmer words or the English
+      fallback, the panel taking over from the environment with an uploaded picture).
+  - **Browser** (isolated stack, V67 applied):
+    - the administrator saw "set by the server's environment", wrote both languages, uploaded a picture through the
+      real media endpoint, and saved with the password prompt as version 1;
+    - after a backend restart, version 1 was still current;
+    - a family's new transfer showed the QR (it loaded), the amount, the reference and the words, still PENDING.
+  - **Next**: per the parent-and-child-first order, M9 (phone registration foundations, admin TOTP) or M5
+    (authoring/upload/visibility). See the reconciliation note in the next entry.
