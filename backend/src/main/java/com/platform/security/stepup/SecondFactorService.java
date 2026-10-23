@@ -58,6 +58,9 @@ public class SecondFactorService {
     static final String ENTER_CODE = "Enter the 6-digit code from your authenticator app";
     static final String WRONG_CODE = "That code isn't right. Use the newest code from your authenticator app";
     static final String SELF_RESET = "Another administrator turns off your authenticator app";
+    /** The key was sealed under another JWT_SECRET (DEPLOYMENT.md: a lost authenticator). */
+    static final String UNREADABLE = "Your authenticator app can't be checked since the server's keys changed: "
+            + "ask another administrator to turn it off, then set it up again";
 
     /** What setup shows once: the key to type into an authenticator app, and the same as an otpauth:// link. */
     public record Setup(String secret, String otpauthUri) {
@@ -295,7 +298,7 @@ public class SecondFactorService {
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new GCMParameterSpec(128, in, 0, 12));
             return cipher.doFinal(in, 12, in.length - 12);
         } catch (GeneralSecurityException e) {
-            throw new IllegalStateException("An authenticator secret can't be read: has JWT_SECRET changed?", e);
+            throw new IllegalStateException(UNREADABLE, e);
         }
     }
 

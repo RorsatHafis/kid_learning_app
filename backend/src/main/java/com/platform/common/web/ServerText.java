@@ -175,6 +175,10 @@ public final class ServerText {
             Map.entry("That code isn't right. Use the newest code from your authenticator app",
                     "លេខកូដនោះមិនត្រឹមត្រូវទេ។ សូមប្រើលេខកូដថ្មីបំផុតពីកម្មវិធីផ្ទៀងផ្ទាត់របស់អ្នក"),
             Map.entry("Another administrator turns off your authenticator app", "អ្នកគ្រប់គ្រងម្នាក់ទៀតជាអ្នកបិទកម្មវិធីផ្ទៀងផ្ទាត់របស់អ្នក"),
+            Map.entry("Your authenticator app can't be checked since the server's keys changed: "
+                    + "ask another administrator to turn it off, then set it up again",
+                    "មិនអាចពិនិត្យកម្មវិធីផ្ទៀងផ្ទាត់របស់អ្នកបានទេ ដោយសារសោរបស់ម៉ាស៊ីនមេបានផ្លាស់ប្ដូរ៖ "
+                            + "សូមឱ្យអ្នកគ្រប់គ្រងម្នាក់ទៀតបិទវា រួចរៀបចំវាម្ដងទៀត"),
             Map.entry("Write the instructions in English before offering bank transfer",
                     "សូមសរសេរការណែនាំជាភាសាអង់គ្លេស មុនពេលផ្ដល់ការផ្ទេរប្រាក់តាមធនាគារ"),
             Map.entry("Payment instructions can be at most 2000 characters", "ការណែនាំអំពីការបង់ប្រាក់អាចមានយ៉ាងច្រើន 2000 តួអក្សរ"),

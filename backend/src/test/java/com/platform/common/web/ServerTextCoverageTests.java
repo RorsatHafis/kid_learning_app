@@ -30,6 +30,8 @@ class ServerTextCoverageTests {
             "Bootstrap admin requires email and password",
             "SHA-256 unavailable",
             "HmacSHA256 unavailable",
+            "HMAC-SHA1 is not available",
+            "not base32",
             "Registration for this email was marked complete but no matching account exists");
 
     @Test
