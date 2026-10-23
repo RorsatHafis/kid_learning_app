@@ -25,10 +25,12 @@ public class ParentInsightController {
 
     private final ParentInsightService parentInsightService;
     private final FamilyAccessGuard familyAccessGuard;
+    private final com.platform.family.service.ChildAccess childAccess;
 
-    public ParentInsightController(ParentInsightService parentInsightService, FamilyAccessGuard familyAccessGuard) {
+    public ParentInsightController(ParentInsightService parentInsightService, FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess) {
         this.parentInsightService = parentInsightService;
         this.familyAccessGuard = familyAccessGuard;
+        this.childAccess = childAccess;
     }
 
     /** Recomputes insights from the child's current LearnerObjectiveState/ReviewItem data and persists the new batch. */
@@ -52,7 +54,7 @@ public class ParentInsightController {
     @GetMapping("/api/v1/children/{childId}/parent-insights")
     public ResponseEntity<List<ParentInsightResponse>> current(@PathVariable UUID childId,
                                                                  @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireViewer(accountId, childId);
 
         List<ParentInsight> insights = parentInsightService.currentInsights(childId);
 
@@ -63,7 +65,7 @@ public class ParentInsightController {
     @GetMapping("/api/v1/children/{childId}/parent-insights/history")
     public ResponseEntity<List<ParentInsightResponse>> history(@PathVariable UUID childId,
                                                                  @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireViewer(accountId, childId);
 
         List<ParentInsight> insights = parentInsightService.listRecent(childId);
 

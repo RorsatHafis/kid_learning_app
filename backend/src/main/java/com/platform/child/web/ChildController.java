@@ -39,15 +39,20 @@ public class ChildController {
 
     private final ChildService childService;
     private final FamilyAccessGuard familyAccessGuard;
+    private final com.platform.family.service.ChildAccess childAccess;
 
-    public ChildController(ChildService childService, FamilyAccessGuard familyAccessGuard) {
+    public ChildController(ChildService childService, FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess) {
         this.childService = childService;
         this.familyAccessGuard = familyAccessGuard;
+        this.childAccess = childAccess;
     }
 
     @GetMapping("/{childId}")
     public ResponseEntity<ChildResponse> getChild(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
-        return ResponseEntity.ok(ChildResponse.from(familyAccessGuard.requireChildAccess(accountId, childId)));
+        // M10b: a caregiver sees the child as the child's space needs it - not the family's details.
+        var access = childAccess.requireViewer(accountId, childId);
+        return ResponseEntity.ok(access.family() ? ChildResponse.from(access.child())
+                : ChildResponse.forCaregiver(access.child(), access.caregiverScope()));
     }
 
     @PatchMapping("/{childId}")
@@ -66,7 +71,7 @@ public class ChildController {
     public ResponseEntity<ChildResponse> changeLanguage(@PathVariable UUID childId,
                                                         @Valid @RequestBody ChildLanguageChange request,
                                                         @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireLearner(accountId, childId);
         return ResponseEntity.ok(ChildResponse.from(childService.changeLanguage(childId, request.language())));
     }
 
@@ -78,7 +83,7 @@ public class ChildController {
     public ResponseEntity<ChildResponse> chooseBuddy(@PathVariable UUID childId,
                                                      @Valid @RequestBody ChildBuddyChange request,
                                                      @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireLearner(accountId, childId);
         return ResponseEntity.ok(ChildResponse.from(childService.chooseBuddy(childId, request.buddy())));
     }
 

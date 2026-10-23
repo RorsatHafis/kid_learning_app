@@ -109,6 +109,8 @@ public class FamilyErasureService {
             "delete from child_daily_extensions where child_id = :c",
             // M10a: the child's device codes, and the sign-ins of the child's devices (they open only this child).
             "delete from child_device_codes where child_id = :c",
+            // M10b: the child's caregivers and invitations.
+            "delete from child_caregivers where child_id = :c",
             "delete from account_sessions where child_id = :c",
             "delete from class_enrollments where child_id = :c",
             "delete from consent_records where child_id = :c",
@@ -130,7 +132,7 @@ public class FamilyErasureService {
      */
     static final Set<String> CHILD_TABLES = Set.of("account_sessions", "activity_attempts", "activity_events", "adaptation_decisions",
             "answer_records", "assessment_answers", "assessment_attempts", "assessment_results",
-            "assessment_skill_results", "child_daily_extensions", "child_device_codes", "child_goals", "child_preferences", "child_preferred_subjects", "child_settings",
+            "assessment_skill_results", "child_caregivers", "child_daily_extensions", "child_device_codes", "child_goals", "child_preferences", "child_preferred_subjects", "child_settings",
             "children", "class_enrollments", "consent_records", "enrollments", "learner_objective_states",
             "learner_profiles", "learner_skill_history", "learner_skill_states", "learner_streaks", "learning_path_items",
             "learning_paths", "learning_sessions", "parent_alerts", "parent_insights", "progress_snapshots",
@@ -146,6 +148,8 @@ public class FamilyErasureService {
             "delete from account_sessions where account_id = :a",
             "delete from account_action_tokens where account_id = :a",
             "delete from idempotency_records where actor_id = :a",
+            // M10b: whom this person helped with, and invitations to their address.
+            "delete from child_caregivers where account_id = :a or invited_email = (select normalized_email from accounts where id = :a)",
             // Y43: payment records stay (financial facts), without the person: their name leaves the ledger.
             "update payment_orders set created_by_account_id = null, customer_note = null where created_by_account_id = :a",
             "update payment_events set actor_account_id = null where actor_account_id = :a",

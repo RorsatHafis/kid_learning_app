@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, CreditCard, Play, Plus, School, Sparkles } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
+import { CaringSection } from "./Caregivers";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { buttonClasses } from "@/components/ui/Button";
 import { ageFromDateOfBirth } from "@/lib/utils/date";
@@ -53,6 +54,9 @@ export function ParentHome() {
           <p className="max-w-md text-[1.0625rem] leading-relaxed text-ink-soft">{count === 0 ? m.leadEmpty : m.lead}</p>
         </div>
       </SceneBand>
+
+      {/* M10b: children this adult helps with in another family, and invitations to. */}
+      <CaringSection />
 
       {isLoading && !children && <LoadingState label={m.loading} />}
       {error && <ErrorState error={error} onRetry={refetch} />}

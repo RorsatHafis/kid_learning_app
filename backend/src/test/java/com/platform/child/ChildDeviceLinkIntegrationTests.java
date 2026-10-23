@@ -139,7 +139,7 @@ class ChildDeviceLinkIntegrationTests {
                 {"POST", "/api/v1/account/sign-out-everywhere"},
                 {"GET", "/api/v1/family/plan"},
                 {"GET", "/api/v1/family/payments"},
-                {"GET", "/api/v1/family/export"},
+                {"GET", "/api/v1/account/data-export"},
                 {"GET", "/api/v1/curricula"},
                 {"GET", "/api/v1/schools/mine"},
         };

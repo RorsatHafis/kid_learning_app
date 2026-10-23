@@ -67,11 +67,21 @@ public final class ChildDtos {
             /** The language the child's own space is shown in (en or km). */
             String preferredLanguage,
             /** The Learning Buddy the child chose. */
-            com.platform.child.entity.LearningBuddy learningBuddy
+            com.platform.child.entity.LearningBuddy learningBuddy,
+            /**
+             * M10b: how the reader relates to the child - FAMILY, or a caregiver's scope (VIEW_PROGRESS: progress only;
+             * OPEN_SPACE: also the child's space). A caregiver isn't shown the date of birth or a deletion date.
+             */
+            String access
     ) {
         public static ChildResponse from(Child child) {
             return new ChildResponse(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getStatus(),
-                    child.getEraseAfter(), child.getPreferredLanguage(), child.getLearningBuddy());
+                    child.getEraseAfter(), child.getPreferredLanguage(), child.getLearningBuddy(), "FAMILY");
+        }
+
+        public static ChildResponse forCaregiver(Child child, String scope) {
+            return new ChildResponse(child.getId(), child.getDisplayName(), null, child.getStatus(), null,
+                    child.getPreferredLanguage(), child.getLearningBuddy(), scope);
         }
     }
 

@@ -8,6 +8,7 @@ import { ChildOverviewPage } from "./ChildOverviewPage";
 import { SkillPage } from "./SkillPage";
 import { AccountPage } from "./AccountPage";
 import { AddChildFlow } from "./AddChildFlow";
+import { HelpingPage } from "./Caregivers";
 
 /** Everything under /parent, loaded only when a parent signs in (App.tsx). */
 export default function ParentArea() {
@@ -21,6 +22,7 @@ export default function ParentArea() {
         <Route path="children/:childId/*" element={<ChildOverviewPage />} />
         <Route path="children/:childId/skills/:skillId" element={<SkillPage />} />
         <Route path="account" element={<AccountPage />} />
+        <Route path="helping/:childId" element={<HelpingPage />} />
         <Route path="*" element={<NotFound home="/parent" homeLabel={m.goToFamily} />} />
       </Route>
     </Routes>

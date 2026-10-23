@@ -46,14 +46,16 @@ public class ActivityAttemptController {
     private final ActivityAttemptService activityAttemptService;
     private final PostCompletionService postCompletionService;
     private final FamilyAccessGuard familyAccessGuard;
+    private final com.platform.family.service.ChildAccess childAccess;
     private final AnswerFeedbackService answerFeedbackService;
 
     public ActivityAttemptController(ActivityAttemptService activityAttemptService,
-                                      PostCompletionService postCompletionService, FamilyAccessGuard familyAccessGuard,
+                                      PostCompletionService postCompletionService, FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess,
                                       AnswerFeedbackService answerFeedbackService) {
         this.activityAttemptService = activityAttemptService;
         this.postCompletionService = postCompletionService;
         this.familyAccessGuard = familyAccessGuard;
+        this.childAccess = childAccess;
         this.answerFeedbackService = answerFeedbackService;
     }
 
@@ -66,7 +68,7 @@ public class ActivityAttemptController {
     public ResponseEntity<AttemptResponse> startAttempt(@PathVariable UUID childId,
                                                           @Valid @RequestBody StartAttemptRequest request,
                                                           @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireLearner(accountId, childId);
 
         ActivityAttempt attempt = activityAttemptService.startAttempt(
                 childId, request.activityVersionId(), request.learningPathItemId(), request.learningSessionId());
@@ -78,7 +80,7 @@ public class ActivityAttemptController {
     public ResponseEntity<AttemptResponse> getAttempt(@PathVariable UUID attemptId,
                                                         @AuthenticationPrincipal UUID accountId) {
         ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
-        familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
+        childAccess.requireLearner(accountId, attempt.getChildId());
 
         return ResponseEntity.ok(AttemptResponse.from(attempt));
     }
@@ -87,7 +89,7 @@ public class ActivityAttemptController {
     public ResponseEntity<List<AnswerRecordResponse>> listAnswers(@PathVariable UUID attemptId,
                                                                     @AuthenticationPrincipal UUID accountId) {
         ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
-        familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
+        childAccess.requireLearner(accountId, attempt.getChildId());
 
         List<AnswerRecordResponse> answers = activityAttemptService.listAnswers(attemptId).stream()
                 .map(this::toResponse)
@@ -101,7 +103,7 @@ public class ActivityAttemptController {
                                                                @Valid @RequestBody SubmitAnswerRequest request,
                                                                @AuthenticationPrincipal UUID accountId) {
         ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
-        familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
+        childAccess.requireLearner(accountId, attempt.getChildId());
 
         AnswerRecord record = activityAttemptService.submitAnswer(attemptId, request.questionVersionId(),
                 request.submittedAnswer(), request.timeSpentSeconds(), request.idempotencyKey());
@@ -120,7 +122,7 @@ public class ActivityAttemptController {
     public ResponseEntity<AttemptResponse> completeAttempt(@PathVariable UUID attemptId,
                                                              @AuthenticationPrincipal UUID accountId) {
         ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
-        familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
+        childAccess.requireLearner(accountId, attempt.getChildId());
 
         ActivityAttempt completed = activityAttemptService.completeAttempt(attemptId);
 
@@ -131,7 +133,7 @@ public class ActivityAttemptController {
     public ResponseEntity<AttemptResponse> abandonAttempt(@PathVariable UUID attemptId,
                                                             @AuthenticationPrincipal UUID accountId) {
         ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
-        familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
+        childAccess.requireLearner(accountId, attempt.getChildId());
 
         ActivityAttempt abandoned = activityAttemptService.abandonAttempt(attemptId);
 
@@ -150,7 +152,7 @@ public class ActivityAttemptController {
     public ResponseEntity<AdaptiveRecommendationResponse> getAdaptiveNext(@PathVariable UUID attemptId,
                                                                             @AuthenticationPrincipal UUID accountId) {
         ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
-        familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
+        childAccess.requireLearner(accountId, attempt.getChildId());
 
         return postCompletionService.findPlacedAdaptiveStep(attemptId)
                 .map(step -> ResponseEntity.ok(new AdaptiveRecommendationResponse(
@@ -169,7 +171,7 @@ public class ActivityAttemptController {
     public ResponseEntity<SmartReviewCheckResponse> getSmartReviewCheck(@PathVariable UUID attemptId,
                                                                           @AuthenticationPrincipal UUID accountId) {
         ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
-        familyAccessGuard.requireChildAccess(accountId, attempt.getChildId());
+        childAccess.requireLearner(accountId, attempt.getChildId());
 
         return postCompletionService.findReviewState(attempt)
                 .map(state -> ResponseEntity.ok(new SmartReviewCheckResponse(

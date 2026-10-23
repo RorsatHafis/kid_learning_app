@@ -83,6 +83,7 @@ public class FamilyDataExportService {
     private final SubscriptionService subscriptions;
     private final com.platform.child.service.ChildSettingsService childSettings;
     private final com.platform.child.service.DailyLearningTimeService dailyTime;
+    private final com.platform.child.caregiver.CaregiverService caregivers;
 
     public FamilyDataExportService(AccountRepository accounts, ChildService childService, FamilyAccessGuard familyAccessGuard,
                                    LearningJourneyService journeys, SkillProgressService skills, ParentInsightService insights,
@@ -92,7 +93,9 @@ public class FamilyDataExportService {
                                    AuditService auditService, SchoolJoinService schoolAccess,
                                    SubscriptionService subscriptions,
                                    com.platform.child.service.ChildSettingsService childSettings,
-                                   com.platform.child.service.DailyLearningTimeService dailyTime) {
+                                   com.platform.child.service.DailyLearningTimeService dailyTime,
+                                   com.platform.child.caregiver.CaregiverService caregivers) {
+        this.caregivers = caregivers;
         this.childSettings = childSettings;
         this.dailyTime = dailyTime;
         this.accounts = accounts;
@@ -124,6 +127,7 @@ public class FamilyDataExportService {
     public record ChildData(UUID id, String displayName, LocalDate dateOfBirth, Instant addedAt, String interfaceLanguage,
                             String learningBuddy, Integer breakReminderMinutes, Integer dailyLimitMinutes,
                             List<com.platform.child.service.DailyLearningTimeService.Extension> dailyTimeExtensions,
+                            List<com.platform.child.caregiver.CaregiverService.Caregiver> caregivers,
                             List<EnrollmentOverview> learningPaths, List<CurriculumProgress> skills,
                             List<CompletedActivity> completedActivities, List<AnswerData> answers,
                             List<ParentInsightResponse> insightHistory, List<SchoolAccessRecord> schoolAccess) {
@@ -158,7 +162,7 @@ public class FamilyDataExportService {
         return new ChildData(child.getId(), child.getDisplayName(), child.getDateOfBirth(), child.getCreatedAt(),
                 child.getPreferredLanguage(), child.getLearningBuddy().name(),
                 childSettings.breakReminderMinutes(child.getId()), dailyTime.limitMinutes(child.getId()),
-                dailyTime.extensionsOf(child.getId()), journeys.enrollmentsFor(child.getId()),
+                dailyTime.extensionsOf(child.getId()), caregivers.historyOf(child.getId()), journeys.enrollmentsFor(child.getId()),
                 skills.progressFor(child.getId()),
                 journeys.completedActivities(child.getId(), ALL), answersOf(child.getId()),
                 insights.listRecent(child.getId()).stream().map(ParentInsightResponse::from).toList(),

@@ -21,12 +21,14 @@ public class ChildSettingsController {
     private final ChildSettingsService settings;
     private final com.platform.child.service.DailyLearningTimeService dailyTime;
     private final FamilyAccessGuard familyAccessGuard;
+    private final com.platform.family.service.ChildAccess childAccess;
 
     public ChildSettingsController(ChildSettingsService settings, com.platform.child.service.DailyLearningTimeService dailyTime,
-                                   FamilyAccessGuard familyAccessGuard) {
+                                   FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess) {
         this.settings = settings;
         this.dailyTime = dailyTime;
         this.familyAccessGuard = familyAccessGuard;
+        this.childAccess = childAccess;
     }
 
     /** M3: {@code minutes} null = no daily limit; otherwise 15, 20, 30, 45, 60, 90 or 120. */
@@ -52,7 +54,7 @@ public class ChildSettingsController {
     @GetMapping("/api/v1/children/{childId}/today")
     public com.platform.child.service.DailyLearningTimeService.Today today(@PathVariable UUID childId,
                                                                           @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireLearner(accountId, childId);
         return dailyTime.today(childId);
     }
 
@@ -69,7 +71,7 @@ public class ChildSettingsController {
 
     @GetMapping("/api/v1/children/{childId}/break-reminder")
     public BreakReminder get(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireLearner(accountId, childId);
         return new BreakReminder(settings.breakReminderMinutes(childId));
     }
 

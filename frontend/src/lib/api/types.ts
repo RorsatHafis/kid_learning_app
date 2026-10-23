@@ -73,13 +73,16 @@ export type ChildStatus = "ACTIVE" | "ARCHIVED" | "DELETION_PENDING";
 export interface Child {
   id: string;
   displayName: string;
-  dateOfBirth: string; // ISO date (LocalDate)
+  /** ISO date (LocalDate). Null for a caregiver (M10b), whose pages never read it. */
+  dateOfBirth: string;
   status: ChildStatus;
   eraseAfter: string | null;
   /** The language the child's own space is shown in - the child's, not the parent's. */
   preferredLanguage: Locale;
   /** The Learning Buddy the child chose (child/web/ChildDtos.java); Momo the otter until they choose. */
   learningBuddy: LearningBuddyKind;
+  /** M10b: how the reader relates to the child - the family, or a caregiver's scope. */
+  access?: "FAMILY" | "VIEW_PROGRESS" | "OPEN_SPACE";
 }
 
 /** child/entity/LearningBuddy.java */

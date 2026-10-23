@@ -35,14 +35,16 @@ public class EnrollmentController {
     private final EnrollmentService enrollmentService;
     private final LearningPathService learningPathService;
     private final FamilyAccessGuard familyAccessGuard;
+    private final com.platform.family.service.ChildAccess childAccess;
     private final com.platform.learning.service.JourneyStopService journeyStops;
 
     public EnrollmentController(EnrollmentService enrollmentService, LearningPathService learningPathService,
-                                 FamilyAccessGuard familyAccessGuard, com.platform.learning.service.JourneyStopService journeyStops) {
+                                 FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess, com.platform.learning.service.JourneyStopService journeyStops) {
         this.journeyStops = journeyStops;
         this.enrollmentService = enrollmentService;
         this.learningPathService = learningPathService;
         this.familyAccessGuard = familyAccessGuard;
+        this.childAccess = childAccess;
     }
 
     @PostMapping("/api/v1/children/{childId}/enrollments")
@@ -60,7 +62,7 @@ public class EnrollmentController {
     public ResponseEntity<EnrollmentResponse> getEnrollment(@PathVariable UUID enrollmentId,
                                                               @AuthenticationPrincipal UUID accountId) {
         Enrollment enrollment = enrollmentService.getEnrollment(enrollmentId);
-        familyAccessGuard.requireChildAccess(accountId, enrollment.getChildId());
+        childAccess.requireLearner(accountId, enrollment.getChildId());
 
         return ResponseEntity.ok(EnrollmentResponse.from(enrollment));
     }
@@ -70,7 +72,7 @@ public class EnrollmentController {
     public ResponseEntity<LearningPathItemResponse> getNextActivity(@PathVariable UUID enrollmentId,
                                                                       @AuthenticationPrincipal UUID accountId) {
         Enrollment enrollment = enrollmentService.getEnrollment(enrollmentId);
-        familyAccessGuard.requireChildAccess(accountId, enrollment.getChildId());
+        childAccess.requireLearner(accountId, enrollment.getChildId());
 
         if (enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.WITHDRAWN) {
             throw new IllegalStateException("This path has been stopped.");

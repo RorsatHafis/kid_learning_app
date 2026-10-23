@@ -20,9 +20,9 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M5 Authoring UX, direct upload, content visibility | planned | | |
 | M6 Feature-specific paywall messages | **done** | see log | — |
 | M7 Pagination and information density | **done** | see log | — |
-| M8 Payment QR, manual reconciliation, secure grants | planned | | |
+| M8 Payment QR, manual reconciliation, secure grants | next | | |
 | M9 Phone registration and verification foundations | planned | | |
-| M10 Child access across devices, trusted caregivers | **M10a done** (child devices); M10b (caregivers) next | see log | V65 |
+| M10 Child access across devices, trusted caregivers | **done** (M10a child devices, M10b caregivers) | see log | V65, V66 |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
 | M12 School management: foundation and first modules | planned | | |
 | M13 Integration, role verification, docs, staging readiness | planned | | |
@@ -656,3 +656,55 @@ Dependencies:
       knowing a code was just typed;
     - codes are 6 characters from 31, guarded by 15 minutes, single use, parent approval and the rate limit.
   - **Next**: M10b (trusted caregivers).
+- 2026-10-23: **M10b done: trusted caregivers.**
+  - **Inviting**:
+    - a member of a child's family invites an adult by email **for that one child**, as either "see progress"
+      (VIEW_PROGRESS) or "see progress and open the learning space" (OPEN_SPACE) (`child_caregivers`, V66);
+    - the person sees the invitation on their home page after signing in with that address, and accepting needs the
+      address **confirmed** (the teacher-invitation pattern, with no link token);
+    - not yourself, not a family member, one live invitation per child and address, at most
+      `CAREGIVERS_MAX_PER_FAMILY` (2, D-05) distinct people per family, serialized on the family row;
+    - the invitation email names the child, never the parent's address.
+  - **Access**: a caregiver is **not a family member**, so `FamilyAccessGuard` still refuses them everywhere it
+    applies. The new `ChildAccess` admits them only where named:
+    - viewer: the child, enrolments, journey, skills and one skill, changes, activity history, insights and their
+      history, progress;
+    - learner: viewer plus placing reviews, buddy and language, today's time and the break setting, next step,
+      content, and attempts;
+    - parent-only: editing the child, the daily limit and extensions, break settings, starting and stopping subjects,
+      generating insights, caregivers, device codes, streak, export and lists.
+    - A caregiver sees the child without date of birth or deletion date (`access` on the child response).
+    - The family changes the scope or removes them at once; a caregiver can stop helping.
+  - **Data**: the family's export lists each child's caregivers. Erasure deletes a child's caregiver rows, and an
+    account's erasure deletes its caregiving and the invitations to its address. Audit: `CAREGIVER_INVITED`,
+    `_ACCEPTED`, `_DECLINED`, `_SCOPE_CHANGED`, `_REMOVED`, `_LEFT`.
+  - **UI**:
+    - "People who help" on the child's settings (invite, scope, remove);
+    - "Children you help with" on the home (accept, decline, see progress, open the space, stop helping);
+    - `/parent/helping/:childId` (the family's progress sections, read-only, plus "Open {child}'s space");
+    - the family's child pages send a caregiver to it.
+  - **Fixed on the way**:
+    - a `ChildAccess` that caught the family guard's refusal left the transaction rollback-only (500); it now asks
+      directly;
+    - a duplicate ServerText entry broke its map;
+    - the M10a sweep's export call used a wrong path, which the scope filter hid; it now uses the real one.
+  - **Tests**:
+    - new `CaregiverIntegrationTests`: invite rules, confirmation, a stranger refused, viewer reads, 16 refused calls
+      plus a valid start refused for viewers, a whole activity played by an OPEN_SPACE caregiver, the per-family
+      limit, removal ending access at once, export contents, audit. Mutation check: letting viewers act as learners
+      fails it at the first learner read;
+    - ChildDeviceLink 2/2, FamilyErasure 6/6, FamilyDataExport 2/2, CrossFamilyAccessSweep 1/1, LearningJourneyApi
+      8/8, ParentInsightTruthfulness 5/5, DailyLearningTime 2/2, ContentWithdrawal 2/2, QuestionGuidance 3/3,
+      ServerTextCoverage 3/3;
+    - Vitest: full suite plus `caregivers.test.tsx` (6); `tsc`, ESLint.
+  - **Browser** (isolated stack, V66 applied):
+    - the parent invited a second adult from Dara's settings;
+    - the invitation email arrived;
+    - signed in as that adult, the home showed the invitation and accepting turned it into "Dara" with progress and
+      the space;
+    - the helping page showed Dara's real progress, a book opened in Dara's space, and the family's settings URL
+      redirected to the helping page.
+  - **Risks**: the reused progress sections and server-written insights still say "your child" to a caregiver
+    (wording, follow-up). The caregiver acts under their own account, and attempts they play are the child's evidence
+    as with a parent.
+  - **Next**: M8 (payment QR, reconciliation, secure grants).

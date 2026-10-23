@@ -35,16 +35,18 @@ public class LearnerContentReadGuard {
 
     private final AccountRepository accounts;
     private final FamilyAccessGuard familyGuard;
+    private final com.platform.family.service.ChildAccess childAccess;
     private final PathContentScope scope;
     private final LearningPathItemRepository pathItems;
     private final ActivityAttemptRepository attempts;
     private final ContentAccessGuard contentGuard;
 
-    public LearnerContentReadGuard(AccountRepository accounts, FamilyAccessGuard familyGuard, PathContentScope scope,
+    public LearnerContentReadGuard(AccountRepository accounts, FamilyAccessGuard familyGuard, com.platform.family.service.ChildAccess childAccess, PathContentScope scope,
                                    LearningPathItemRepository pathItems, ActivityAttemptRepository attempts,
                                    ContentAccessGuard contentGuard) {
         this.accounts = accounts;
         this.familyGuard = familyGuard;
+        this.childAccess = childAccess;
         this.scope = scope;
         this.pathItems = pathItems;
         this.attempts = attempts;
@@ -58,7 +60,7 @@ public class LearnerContentReadGuard {
             if (childId == null) {
                 throw notFound(version);
             }
-            familyGuard.requireChildAccess(accountId, childId);
+            childAccess.requireLearner(accountId, childId);
             boolean playable = scope.admitsActivityForChild(childId, version.getActivityId())
                     || pathItems.childHasVersionOnAPath(childId, version.getId())
                     || attempts.existsByChildIdAndActivityVersionId(childId, version.getId());

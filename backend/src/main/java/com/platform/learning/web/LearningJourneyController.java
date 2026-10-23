@@ -44,18 +44,20 @@ public class LearningJourneyController {
     private final SkillProgressService skillProgressService;
     private final EnrollmentService enrollmentService;
     private final FamilyAccessGuard familyAccessGuard;
+    private final com.platform.family.service.ChildAccess childAccess;
     private final ProgressChangeService progressChangeService;
     private final SkillStoryService skillStoryService;
     private final DueReviewService dueReviewService;
 
     public LearningJourneyController(LearningJourneyService learningJourneyService,
                                      SkillProgressService skillProgressService, EnrollmentService enrollmentService,
-                                     FamilyAccessGuard familyAccessGuard, ProgressChangeService progressChangeService,
+                                     FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess, ProgressChangeService progressChangeService,
                                      SkillStoryService skillStoryService, DueReviewService dueReviewService) {
         this.learningJourneyService = learningJourneyService;
         this.skillProgressService = skillProgressService;
         this.enrollmentService = enrollmentService;
         this.familyAccessGuard = familyAccessGuard;
+        this.childAccess = childAccess;
         this.progressChangeService = progressChangeService;
         this.skillStoryService = skillStoryService;
         this.dueReviewService = dueReviewService;
@@ -70,25 +72,25 @@ public class LearningJourneyController {
      */
     @PostMapping("/api/v1/children/{childId}/reviews/place-due")
     public PlacedReviews placeDueReviews(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireLearner(accountId, childId);
         return new PlacedReviews(dueReviewService.placeDueReviews(childId));
     }
 
     @GetMapping("/api/v1/children/{childId}/enrollments")
     public List<EnrollmentOverview> enrollments(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireViewer(accountId, childId);
         return learningJourneyService.enrollmentsFor(childId);
     }
 
     @GetMapping("/api/v1/enrollments/{enrollmentId}/journey")
     public Journey journey(@PathVariable UUID enrollmentId, @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, enrollmentService.getEnrollment(enrollmentId).getChildId());
+        childAccess.requireViewer(accountId, enrollmentService.getEnrollment(enrollmentId).getChildId());
         return learningJourneyService.journeyFor(enrollmentId);
     }
 
     @GetMapping("/api/v1/children/{childId}/skills")
     public List<CurriculumProgress> skills(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireViewer(accountId, childId);
         return skillProgressService.progressFor(childId);
     }
 
@@ -96,7 +98,7 @@ public class LearningJourneyController {
     @GetMapping("/api/v1/children/{childId}/skills/{skillId}")
     public SkillStoryService.SkillStory skill(@PathVariable UUID childId, @PathVariable UUID skillId,
                                               @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireViewer(accountId, childId);
         return skillStoryService.story(childId, skillId);
     }
 
@@ -104,7 +106,7 @@ public class LearningJourneyController {
     @GetMapping("/api/v1/children/{childId}/changes")
     public ProgressChangeService.ProgressSince changes(@PathVariable UUID childId, @RequestParam(defaultValue = "28") int days,
                                                         @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireViewer(accountId, childId);
         return progressChangeService.since(childId, days);
     }
 
@@ -114,7 +116,7 @@ public class LearningJourneyController {
                                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant before,
                                            @RequestParam(required = false) UUID beforeId,
                                            @AuthenticationPrincipal UUID accountId) {
-        familyAccessGuard.requireChildAccess(accountId, childId);
+        childAccess.requireViewer(accountId, childId);
         if (limit < 1 || limit > MAX_HISTORY) {
             throw new IllegalArgumentException("limit must be between 1 and " + MAX_HISTORY);
         }

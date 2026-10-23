@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { Link, NavLink, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ChevronRight, ExternalLink, Pencil, Play } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
@@ -20,6 +20,7 @@ import { DeleteChildSection } from "./Deletion";
 import { BreakReminderSection } from "./BreakReminderSection";
 import { DailyTimeSection } from "./DailyTimeSection";
 import { ChildDeviceSection } from "./ChildDeviceSection";
+import { CaregiversSection } from "./Caregivers";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
@@ -68,6 +69,8 @@ function ChildOverview({ childId }: { childId: string }) {
     );
   }
   if (!child.data) return null;
+  // M10b: a caregiver's view of this child is the read-only one.
+  if (child.data.access && child.data.access !== "FAMILY") return <Navigate to={`/parent/helping/${childId}`} replace />;
   const data = child.data;
   const base = `/parent/children/${childId}`;
   return (
@@ -115,6 +118,7 @@ function ChildOverview({ childId }: { childId: string }) {
               <OwnSpace child={data} />
               <DailyTimeSection childId={childId} childName={data.displayName} />
               <ChildDeviceSection childId={childId} childName={data.displayName} />
+              <CaregiversSection childId={childId} childName={data.displayName} />
               <BreakReminderSection childId={childId} childName={data.displayName} />
               <DeleteChildSection child={data} />
             </div>

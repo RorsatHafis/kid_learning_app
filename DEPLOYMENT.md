@@ -107,7 +107,8 @@ it — each deletion locks its rows), `ERASURE_LEDGER_FILE` (**required in `prod
 `/var/lib/bookeyond/erasures/ledger.log` on its own volume: the file where every erasure is recorded, ids
 only, so that restoring a database backup can't bring an erased child or account back — see section 6),
 `LEARNING_DAY_ZONE` (Asia/Phnom_Penh: when a child's daily learning time starts again, M3),
-`CHILD_DEVICES_MAX_PER_CHILD` (3: how many devices may hold one child's sign-in, M10a - owner decision D-05).
+`CHILD_DEVICES_MAX_PER_CHILD` (3: how many devices may hold one child's sign-in, M10a - owner decision D-05),
+`CAREGIVERS_MAX_PER_FAMILY` (2: how many people outside the family may help with its children, M10b - D-05).
 
 **Payments** (Y43, all off by default; see [docs/PAYMENTS.md](docs/PAYMENTS.md)):
 `PAYMENTS_MANUAL_ENABLED` and `PAYMENTS_MANUAL_INSTRUCTIONS` (bank transfer, confirmed by an administrator
