@@ -13,6 +13,7 @@ export const principalWorkspaceMessages = defineMessages(
     planSummary: (plan: string) => `Plan: ${plan}`,
     planFull: (n: number) => (n === 1 ? "One limit is full: new ones wait." : `${n} limits are full: new ones wait.`),
     planSee: "See the plan",
+    limitKeeps: "Nothing the school already has is removed: only what it adds next waits for room in its plan.",
     goClasses: "Go to classes",
   },
   {
@@ -25,6 +26,7 @@ export const principalWorkspaceMessages = defineMessages(
     planSummary: (plan: string) => `កញ្ចប់៖ ${plan}`,
     planFull: (n: number) => (n === 1 ? "ដែនកំណត់មួយពេញហើយ៖ អ្វីដែលថ្មីត្រូវរង់ចាំ។" : `ដែនកំណត់ ${n} ពេញហើយ៖ អ្វីដែលថ្មីត្រូវរង់ចាំ។`),
     planSee: "មើលកញ្ចប់",
+    limitKeeps: "គ្មានអ្វីដែលសាលាមានរួចហើយត្រូវបានដកចេញទេ៖ មានតែអ្វីដែលវាបន្ថែមបន្ទាប់ទៀតប៉ុណ្ណោះ ដែលត្រូវរង់ចាំកន្លែងនៅក្នុងកញ្ចប់របស់វា។",
     goClasses: "ទៅកាន់ថ្នាក់",
   },
 );

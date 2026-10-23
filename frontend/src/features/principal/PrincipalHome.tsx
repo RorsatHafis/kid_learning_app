@@ -4,6 +4,7 @@ import { CheckCircle2, ChevronRight, MailPlus, Plus, School as SchoolIcon, UserM
 import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { problemMessage } from "@/lib/api/problemMessage";
+import { ApiError } from "@/lib/api/ApiError";
 import type { SchoolStaffMember, SchoolSummary } from "@/lib/api/types";
 import { staffOverviewApi, type ClassOverview, type SchoolOverview, type StaffOverview } from "@/lib/api/schoolAccess";
 import { ClassSummary } from "@/features/school/ClassSummary";
@@ -293,6 +294,7 @@ function Classes({
   const [name, setName] = useState("");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [limitHit, setLimitHit] = useState(false);
   const m = useMessages(staffMessages).principal;
 
   const active = (classes.data ?? []).filter((c) => !c.archived);
@@ -302,6 +304,7 @@ function Classes({
     e.preventDefault();
     setAdding(true);
     setError(null);
+    setLimitHit(false);
     try {
       await schoolApi.createClass(school.id, name.trim());
       setName("");
@@ -309,6 +312,7 @@ function Classes({
       onChanged();
     } catch (err) {
       setError(problemMessage(err, m.addClassFailed));
+      setLimitHit(err instanceof ApiError && err.isPlanLimit);
     } finally {
       setAdding(false);
     }
@@ -352,7 +356,21 @@ function Classes({
           {error}
         </p>
       )}
+      {limitHit && <SchoolLimitNote />}
     </section>
+  );
+}
+
+/** M6: under a refusal from the school's plan - nothing the school has is removed, and where its plan is. */
+function SchoolLimitNote() {
+  const w = useMessages(principalWorkspaceMessages);
+  return (
+    <p className="flex flex-wrap gap-x-2 text-sm text-ink">
+      {w.limitKeeps}
+      <Link to="/principal/plan" className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+        {w.planSee}
+      </Link>
+    </p>
   );
 }
 
@@ -429,7 +447,7 @@ function Teachers({ school, onChanged }: { school: SchoolSummary; onChanged: () 
   const ws = useMessages(principalWorkspaceMessages);
   const [email, setEmail] = useState("");
   const [inviting, setInviting] = useState(false);
-  const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string; limit?: boolean } | null>(null);
   const [confirmingRemove, setConfirmingRemove] = useState<string | null>(null);
   const w = useMessages(staffMessages).principal;
 
@@ -443,7 +461,7 @@ function Teachers({ school, onChanged }: { school: SchoolSummary; onChanged: () 
       staff.refetch();
       onChanged();
     } catch (err) {
-      setNotice({ kind: "error", text: problemMessage(err, w.inviteFailed) });
+      setNotice({ kind: "error", text: problemMessage(err, w.inviteFailed), limit: err instanceof ApiError && err.isPlanLimit });
     } finally {
       setInviting(false);
     }
@@ -540,6 +558,7 @@ function Teachers({ school, onChanged }: { school: SchoolSummary; onChanged: () 
           {notice.text}
         </p>
       )}
+      {notice?.limit && <SchoolLimitNote />}
     </section>
   );
 }

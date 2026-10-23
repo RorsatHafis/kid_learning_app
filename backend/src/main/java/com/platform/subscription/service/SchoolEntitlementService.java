@@ -102,7 +102,8 @@ public class SchoolEntitlementService {
     public void requirePaid(UUID schoolId) {
 
         if (paidSubscription(schoolId, Instant.now()).isEmpty()) {
-            throw new SchoolPaymentRequiredException(schoolId);
+            boolean paidBefore = subscriptions.findBySchoolId(schoolId).filter(s -> s.getSource() == SubscriptionSource.PROVIDER).isPresent();
+            throw new SchoolPaymentRequiredException(schoolId, paidBefore);
         }
 
     }

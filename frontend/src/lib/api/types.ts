@@ -459,6 +459,16 @@ export interface ParentInsight {
 
 /** RFC-7807 ProblemDetail — the shape of every error response. `errors` is
  * only present on 400 validation failures; `lockedUntil` only on 423. */
+/** M6: a plan that lifts a family's limit, as the server's catalogue has it (a price only when one is set). */
+export interface PlanOffer {
+  planId: string;
+  name: string;
+  limit: number | null;
+  priceAmountMinor: number | null;
+  priceCurrency: string | null;
+  billingInterval: "MONTH" | "YEAR" | null;
+}
+
 export interface ApiProblem {
   type?: string;
   title: string;
@@ -479,6 +489,12 @@ export interface ApiProblem {
   /** 409 "Plan Limit Reached" only: which entitlement and its limit (PlanLimitException). */
   entitlement?: string;
   limit?: number;
+  /** M6: why a plan refused, whose plan it is, and that nothing already there is lost. */
+  reason?: "PLAN_LIMIT" | "SCHOOL_UNPAID" | "SUBSCRIPTION_EXPIRED";
+  audience?: "FAMILY" | "SCHOOL";
+  dataKept?: boolean;
+  /** M6, a family's limit only: the real plans a family may choose that include more (limit null: no limit). */
+  unlockedBy?: PlanOffer[];
   /** 409 "Storage Limit Reached" only (StorageLimitException): nothing was stored. */
   usedBytes?: number;
   limitBytes?: number;

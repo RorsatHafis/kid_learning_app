@@ -67,8 +67,10 @@ class SchoolPaymentAccessIntegrationTests {
         assertThat(get("/api/v1/schools/" + schoolId + "/learning", principal).statusCode()).isEqualTo(402);
         assertThat(json(get("/api/v1/schools/" + schoolId + "/plan", principal), 200).get("access").get("paid").asBoolean()).isFalse();
         assertThat(get("/api/v1/schools/" + schoolId + "/payments", principal).statusCode()).isEqualTo(200);
-        // Its first plan is arranged by an administrator: nothing to renew yet, and no plan to pick for itself.
-        assertThat(json(get("/api/v1/schools/" + schoolId + "/payment-plans", principal), 200).size()).isZero();
+        // An arranged (not self-service) plan isn't offered to the school and can't be paid for by it (M4: only
+        // self-service school plans are; other tests' may exist in this database).
+        assertThat(json(get("/api/v1/schools/" + schoolId + "/payment-plans", principal), 200).valueStream()
+                .map(p -> p.get("id").asString())).doesNotContain(plan);
         assertThat(post("/api/v1/schools/" + schoolId + "/payments", start(plan, "MANUAL", "s0"), principal).statusCode()).isEqualTo(400);
         // Someone else's school: still 403, never a hint about its payment.
         String stranger = staff(PlatformRole.PRINCIPAL).token();

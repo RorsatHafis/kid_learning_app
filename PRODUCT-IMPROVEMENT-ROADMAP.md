@@ -18,8 +18,8 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M3 Child wellbeing: daily limits and graceful stops | **done** | see log | V64 |
 | M4 Self-service school registration and paid onboarding | **done** | see log | — |
 | M5 Authoring UX, direct upload, content visibility | planned | | |
-| M6 Feature-specific paywall messages | next | | |
-| M7 Pagination and information density | planned | | |
+| M6 Feature-specific paywall messages | **done** | see log | — |
+| M7 Pagination and information density | next | | |
 | M8 Payment QR, manual reconciliation, secure grants | planned | | |
 | M9 Phone registration and verification foundations | planned | | |
 | M10 Child access across devices, trusted caregivers | planned | | |
@@ -545,3 +545,31 @@ Dependencies:
     - the API showed the same name returning 200, a class refused while pending (402), the administrator's
       confirmation, the school paid for a year, a class created (201), and only renewal offered.
   - **Next**: M6.
+- 2026-10-23: **M6 done.**
+  - **Refusals carry a reason**:
+    - a plan-limit refusal (409) now carries `reason: PLAN_LIMIT`, `audience` (FAMILY or SCHOOL) and `dataKept`;
+    - for a **family's** limit it carries `unlockedBy`: up to 3 real plans a family may choose (active, self-service,
+      family) that include more or have no limit, smallest step up first, with a price only when the plan has one
+      (`PlanOffers`);
+    - a school's limit never lists plans: a family can reach it by giving a school access to a child, and the school's
+      plans are its principal's (shown on the access-checked plan page);
+    - a school payment refusal (402) carries `SCHOOL_UNPAID` or `SUBSCRIPTION_EXPIRED`.
+  - **Not built**: `FEATURE_NOT_IN_PLAN` and `PURCHASE_UNAVAILABLE`. Plans have only counted limits, with no feature
+    flags to report, and an empty `unlockedBy` already says no plan with more is offered.
+  - **Offers never decide the refusal**: if the plans can't be read, the refusal is answered without them (logged).
+  - **Frontend**:
+    - `PlanLimitNote` shows what is kept, the offers (name, what it includes, price) or "no plan with more is offered
+      right now", and the link to the plan, in the add-child, review and choose-subject flows;
+    - the principal's add-class and invite-teacher refusals add "nothing the school has is removed" and the plan link.
+  - **CI fix**: `SchoolPaymentAccessIntegrationTests` asserted that no school plan is offered anywhere. Since M4, other
+    tests' self-service school plans are offered to every unpaid school, so it now asserts the intent: the arranged
+    plan isn't offered or payable.
+  - **Tests**:
+    - `PlanOffersTests` (2, unit): choice, order, cap, school and empty cases;
+    - `EntitlementNoticeIntegrationTests` (2): family refusal shape and exclusions, school 402 reason with no plans;
+    - SchoolPaymentAccess 3/3, SelfServiceSchoolOnboarding 2/2, ServerTextCoverage 3/3;
+    - Vitest full suite, with the new `planLimit.test.tsx` and the principal limit-note assertion; `tsc`, ESLint.
+  - **Browser** (isolated stack): the M3 test family on a one-child plan tried to add a second child and saw the
+    server's sentence, "nothing … changes", three plans with prices, and the link. The first build listed every
+    self-service plan in the database (dozens of E2E leftovers), which is why there is now a cap of 3.
+  - **Next**: M7.

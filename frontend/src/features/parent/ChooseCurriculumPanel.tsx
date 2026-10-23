@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, enrollmentApi } from "@/lib/api/endpoints";
-import type { CurriculumChoice } from "@/lib/api/types";
+import type { ApiProblem, CurriculumChoice } from "@/lib/api/types";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { ApiError } from "@/lib/api/ApiError";
@@ -42,7 +42,7 @@ export function ChooseCurriculumPanel({
   const { data, error, isLoading, refetch } = useAsync(() => childrenApi.curricula(childId), [childId]);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [enrollError, setEnrollError] = useState<string | null>(null);
-  const [planLimited, setPlanLimited] = useState(false);
+  const [planLimit, setPlanLimit] = useState<ApiProblem | null>(null);
   const m = useMessages(familyMessages).choose;
   const curricula = data?.filter((curriculum) => !excludeCurriculumIds.includes(curriculum.id));
   const forAge = curricula?.filter((c) => c.forChildAge) ?? [];
@@ -50,14 +50,14 @@ export function ChooseCurriculumPanel({
 
   async function onChoose(curriculumId: string) {
     setEnrollError(null);
-    setPlanLimited(false);
+    setPlanLimit(null);
     setEnrollingId(curriculumId);
     try {
       const enrollment = await enrollmentApi.enroll(childId, curriculumId);
       onEnrolled(enrollment.id);
     } catch (err) {
       setEnrollError(err instanceof ApiError ? (err.problem?.detail ?? m.startFailed) : m.somethingWrong);
-      setPlanLimited(err instanceof ApiError && err.isPlanLimit);
+      setPlanLimit(err instanceof ApiError && err.isPlanLimit ? err.problem : null);
     } finally {
       setEnrollingId(null);
     }
@@ -122,7 +122,7 @@ export function ChooseCurriculumPanel({
           {enrollError}
         </p>
       )}
-      {planLimited && <PlanLimitNote />}
+      {planLimit && <PlanLimitNote problem={planLimit} />}
     </div>
   );
 }

@@ -251,6 +251,9 @@ describe("PrincipalHome", () => {
     await user.type(screen.getByLabelText("New class"), "Grade 4");
     await user.click(screen.getByRole("button", { name: "Add class" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Your school's plan includes up to 3 classes in use.");
+    // M6: what stays, and where the school's plan is.
+    expect(screen.getByText(/Nothing the school already has is removed/)).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "See the plan" }).some((l) => l.getAttribute("href") === "/principal/plan")).toBe(true);
   });
 
   it("shows an unpaid school's way to pay instead of its classes, and reads nothing of them (Y44)", async () => {

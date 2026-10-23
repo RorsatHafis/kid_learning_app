@@ -48,6 +48,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /** M6: the plans that would lift a family's limit (absent in a slice without the subscription module). */
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.beans.factory.ObjectProvider<com.platform.subscription.service.PlanOffers> planOffers;
+
     static final String NOT_FOUND_DETAIL = "We couldn't find that. It may have been removed, or it isn't available to you.";
 
     @Override
@@ -211,9 +215,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problem.setTitle("Plan Limit Reached");
         problem.setProperty("entitlement", ex.getEntitlement().name());
         problem.setProperty("limit", ex.getLimit());
+        // M6: what kind of plan, that nothing already there is lost, and the real plans that include more.
+        problem.setProperty("reason", "PLAN_LIMIT");
+        problem.setProperty("audience", ex.getEntitlement().audience().name());
+        problem.setProperty("dataKept", true);
+        problem.setProperty("unlockedBy", unlocking(ex));
 
         return createResponseEntity(problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
 
+    }
+
+    /** The offers never decide the refusal: if they can't be read, the refusal is still answered, without them. */
+    private java.util.List<com.platform.subscription.service.PlanOffers.Offer> unlocking(com.platform.subscription.service.PlanLimitException ex) {
+        try {
+            com.platform.subscription.service.PlanOffers offers = planOffers == null ? null : planOffers.getIfAvailable();
+            return offers == null ? java.util.List.of() : offers.unlocking(ex.getEntitlement(), ex.getLimit());
+        } catch (RuntimeException e) {
+            log.warn("Couldn't read the plans that lift {}: {}", ex.getEntitlement(), e.toString());
+            return java.util.List.of();
+        }
     }
 
     @ExceptionHandler(com.platform.subscription.service.SchoolPaymentRequiredException.class)
@@ -226,6 +246,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problem.setTitle("School Payment Required");
         problem.setProperty("schoolPaymentRequired", true);
         problem.setProperty("schoolId", ex.getSchoolId());
+        problem.setProperty("reason", ex.isExpired() ? "SUBSCRIPTION_EXPIRED" : "SCHOOL_UNPAID");
+        problem.setProperty("audience", "SCHOOL");
+        problem.setProperty("dataKept", true);
 
         return createResponseEntity(problem, new HttpHeaders(), HttpStatus.PAYMENT_REQUIRED, request);
 

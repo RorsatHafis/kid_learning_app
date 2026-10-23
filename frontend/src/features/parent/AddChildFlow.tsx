@@ -6,7 +6,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { ApiError } from "@/lib/api/ApiError";
 import { childrenApi, enrollmentApi } from "@/lib/api/endpoints";
-import type { Child, CurriculumChoice } from "@/lib/api/types";
+import type { ApiProblem, Child, CurriculumChoice } from "@/lib/api/types";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils/cn";
@@ -106,13 +106,13 @@ function AboutStep({ onCreated }: { onCreated: (child: Child) => void }) {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [planLimited, setPlanLimited] = useState(false);
+  const [planLimit, setPlanLimit] = useState<ApiProblem | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setFormError(null);
-    setPlanLimited(false);
+    setPlanLimit(null);
     setFieldErrors({});
     setBusy(true);
     try {
@@ -121,7 +121,7 @@ function AboutStep({ onCreated }: { onCreated: (child: Child) => void }) {
       if (err instanceof ApiError && err.validationErrors) setFieldErrors(err.validationErrors);
       else if (err instanceof ApiError) {
         setFormError(err.problem?.detail ?? m.failed);
-        setPlanLimited(err.isPlanLimit);
+        setPlanLimit(err.isPlanLimit ? err.problem : null);
       } else setFormError(m.somethingWrong);
     } finally {
       setBusy(false);
@@ -162,7 +162,7 @@ function AboutStep({ onCreated }: { onCreated: (child: Child) => void }) {
           {formError}
         </p>
       )}
-      {planLimited && <PlanLimitNote />}
+      {planLimit && <PlanLimitNote problem={planLimit} />}
       <div className="flex flex-wrap gap-3">
         <Button type="submit" size="lg" disabled={busy}>
           {busy ? m.creating : m.next}
@@ -353,7 +353,7 @@ function ReviewStep({ child, chosen, onBack }: { child: Child; chosen: string[];
   const catalog = useAsync(() => childrenApi.curricula(child.id), [child.id]);
   const picked = useMemo(() => (catalog.data ?? []).filter((c) => chosen.includes(c.id)), [catalog.data, chosen]);
   const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState<{ choice: CurriculumChoice; reason: string; planLimit: boolean }[]>([]);
+  const [failed, setFailed] = useState<{ choice: CurriculumChoice; reason: string; planLimit: ApiProblem | null }[]>([]);
   const [started, setStarted] = useState<string[]>([]);
 
   async function start(only: CurriculumChoice[]) {
@@ -369,7 +369,7 @@ function ReviewStep({ child, chosen, onBack }: { child: Child; chosen: string[];
         problems.push({
           choice,
           reason: err instanceof ApiError ? (err.problem?.detail ?? choice.name) : choice.name,
-          planLimit: err instanceof ApiError && err.isPlanLimit,
+          planLimit: err instanceof ApiError && err.isPlanLimit ? err.problem : null,
         });
       }
     }
@@ -417,7 +417,7 @@ function ReviewStep({ child, chosen, onBack }: { child: Child; chosen: string[];
               </li>
             ))}
           </ul>
-          {failed.some((f) => f.planLimit) && <PlanLimitNote />}
+          {failed.some((f) => f.planLimit) && <PlanLimitNote problem={failed.find((f) => f.planLimit)?.planLimit} />}
         </div>
       )}
       <div className="flex flex-wrap gap-3 border-t border-line pt-5">
