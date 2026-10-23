@@ -72,7 +72,7 @@ when a required value is missing or unsafe (`ConfigurationContractTests`).
 | Variable | Meaning |
 |---|---|
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | PostgreSQL JDBC URL and credentials |
-| `JWT_SECRET` | Signing key for sign-in tokens, **at least 32 bytes**, random, never reused between environments. Changing it signs everyone out. |
+| `JWT_SECRET` | Signing key for sign-in tokens, **at least 32 bytes**, random, never reused between environments. Changing it signs everyone out, and (M9a) makes administrators' authenticator apps unreadable: each administrator then sets theirs up again (see "An administrator loses their authenticator"). |
 | `JWT_ISSUER` | A name for this environment, e.g. `bookeyond-kid-prod` |
 | `CORS_ALLOWED_ORIGINS` | The exact public origin, e.g. `https://app.example.org` (no `*`) |
 | `APP_PUBLIC_URL` | The same origin; links in emails point here |
@@ -281,7 +281,16 @@ Then run `scripts/smoke-test.sh https://<domain>`.
   <id> is missing from storage`): copy them back from the newest backup's `media.tar` into the media
   volume - files are only ever added, so restoring media never overwrites anything newer. Uploading the
   same file again in the Studio also repairs it (Y45).
-- **A secret is exposed.** `JWT_SECRET`: replace it and restart the backend - everyone is signed out.
+- **An administrator loses their authenticator** (M9a: confirming payments, giving plans, changing payment
+  instructions and adding staff need the password and a code from an authenticator app). A recovery code works
+  once instead of a code. Without one, another administrator turns the app off (Account → Authenticator app is
+  the person's own; the colleague's is turned off with `POST /api/v1/admin/accounts/{id}/second-factor/reset`,
+  behind their own password and code), and the person sets up a new one. If no administrator can step up
+  (one administrator, phone and codes lost, or `JWT_SECRET` replaced), an operator with database access removes
+  that account's rows from `account_recovery_codes` and `account_second_factors`, and the administrator sets up
+  a new app at once; note who did it and why.
+- **A secret is exposed.** `JWT_SECRET`: replace it and restart the backend - everyone is signed out, and
+  administrators set up their authenticator apps again (the operator step above).
   `DB_PASSWORD`: change it in PostgreSQL (`ALTER ROLE bookeyond_kid PASSWORD ...`) and the settings, restart
   the backend. Mail credentials: rotate at the provider. The backup private key: make a new key pair,
   re-encrypt what you keep, destroy the old copies.

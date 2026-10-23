@@ -15,7 +15,8 @@ import java.util.UUID;
 
 /**
  * M8: step-up authentication. An account re-enters its password and gets a short proof, bound to this sign-in, that
- * actions marked {@link RequiresStepUp} require. A wrong password counts towards the account's lockout, like signing in.
+ * actions marked {@link RequiresStepUp} require. A wrong password counts towards the account's lockout, like signing in;
+ * an administrator also gives a code from their authenticator app (M9a, {@link SecondFactorService}).
  */
 @Service
 public class StepUpService {
@@ -24,21 +25,26 @@ public class StepUpService {
     public static final Duration WINDOW = Duration.ofMinutes(5);
 
     private final PasswordConfirmation passwords;
+    private final SecondFactorService secondFactor;
     private final JwtService jwt;
     private final AuditService audit;
 
-    public StepUpService(PasswordConfirmation passwords, JwtService jwt, AuditService audit) {
+    public StepUpService(PasswordConfirmation passwords, SecondFactorService secondFactor, JwtService jwt, AuditService audit) {
         this.passwords = passwords;
+        this.secondFactor = secondFactor;
         this.jwt = jwt;
         this.audit = audit;
     }
 
-    @Transactional(noRollbackFor = com.platform.identity.exception.CurrentPasswordMismatchException.class)
-    public JwtService.IssuedToken stepUp(UUID accountId, UUID sessionFamilyId, String password) {
+    /** M9a: an administrator also gives a code from their authenticator app (or a recovery code). */
+    @Transactional(noRollbackFor = {com.platform.identity.exception.CurrentPasswordMismatchException.class,
+            SecondFactorMismatchException.class})
+    public JwtService.IssuedToken stepUp(UUID accountId, UUID sessionFamilyId, String password, String code) {
         if (sessionFamilyId == null) {
             throw new StepUpRequiredException();
         }
         Account account = passwords.confirm(accountId, password);
+        secondFactor.requireForStepUp(account, code);
         audit.record(new RecordAuditEvent(null, accountId, AuditActorType.valueOf(account.getPlatformRole().name()),
                 "ACCOUNT_STEPPED_UP", "ACCOUNT", accountId, Map.of("minutes", WINDOW.toMinutes())));
         return jwt.issueStepUp(accountId, sessionFamilyId, WINDOW);

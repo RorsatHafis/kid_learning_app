@@ -147,6 +147,9 @@ public class FamilyErasureService {
             "delete from memberships where account_id = :a",
             "delete from account_sessions where account_id = :a",
             "delete from account_action_tokens where account_id = :a",
+            // M9a: an authenticator app and its recovery codes.
+            "delete from account_recovery_codes where account_id = :a",
+            "delete from account_second_factors where account_id = :a",
             "delete from idempotency_records where actor_id = :a",
             // M10b: whom this person helped with, and invitations to their address.
             "delete from child_caregivers where account_id = :a or invited_email = (select normalized_email from accounts where id = :a)",

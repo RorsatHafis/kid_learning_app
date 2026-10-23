@@ -90,6 +90,11 @@ class AdminProvisioningIntegrationTests {
                 .statusCode()).isEqualTo(201);
         assertThat(post("/api/v1/admin/staff", "{\"email\":\"p-" + UUID.randomUUID() + "@example.com\",\"role\":\"PARENT\"}", admin)
                 .statusCode()).isEqualTo(400);
+        // M9a: creating staff gives access, so an administrator re-enters the password (with a code) first.
+        HttpResponse<String> notSteppedUp = post("/api/v1/admin/staff", "{\"email\":\"z-" + UUID.randomUUID()
+                + "@example.com\",\"role\":\"ADMIN\"}", signIn(PlatformRole.ADMIN));
+        assertThat(notSteppedUp.statusCode()).isEqualTo(403);
+        assertThat(notSteppedUp.body()).contains("stepUpRequired");
         for (PlatformRole role : new PlatformRole[] {PlatformRole.PRINCIPAL, PlatformRole.TEACHER, PlatformRole.PARENT}) {
             assertThat(post("/api/v1/admin/staff", "{\"email\":\"y-" + UUID.randomUUID() + "@example.com\",\"role\":\"TEACHER\"}",
                     token(role)).statusCode()).as(role.name()).isEqualTo(403);
@@ -128,7 +133,13 @@ class AdminProvisioningIntegrationTests {
 
     // ------------------------------------------------------------------ helpers
 
+    /** Signed in; an administrator has re-entered the password with an authenticator code (M8, M9a). */
     private String token(PlatformRole role) throws Exception {
+        String token = signIn(role);
+        return role == PlatformRole.ADMIN ? com.platform.TestAdmin.stepUp(port, token, PASSWORD) : token;
+    }
+
+    private String signIn(PlatformRole role) throws Exception {
         String email = role.name().toLowerCase() + "-" + UUID.randomUUID() + "@example.com";
         accountRepository.saveAndFlush(Account.register(email, passwordEncoder.encode(PASSWORD), role));
         return json(post("/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200)
@@ -172,7 +183,7 @@ class AdminProvisioningIntegrationTests {
         if (bearer != null) {
             req.header("Authorization", "Bearer " + bearer);
         }
-        return http.send(req.build(), HttpResponse.BodyHandlers.ofString());
+        return http.send(com.platform.TestAdmin.withStepUp(req, bearer).build(), HttpResponse.BodyHandlers.ofString());
     }
 
 }

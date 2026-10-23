@@ -21,7 +21,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M6 Feature-specific paywall messages | **done** | see log | — |
 | M7 Pagination and information density | **done** | see log | — |
 | M8 Payment QR, manual reconciliation, secure grants | **done** (M8a step-up and reconciliation, M8b instructions and KHQR) | see log | V67 |
-| M9 Phone registration and verification foundations | planned | | |
+| M9 Phone registration and verification foundations | M9a done (administrator authenticator app); M9b (phone) after M5 | | |
 | M10 Child access across devices, trusted caregivers | **done** (M10a child devices, M10b caregivers) | see log | V65, V66 |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
 | M12 School management: foundation and first modules | planned | | |
@@ -803,3 +803,64 @@ Dependencies:
     - a family's new transfer showed the QR (it loaded), the amount, the reference and the words, still PENDING.
   - **Next**: per the parent-and-child-first order, M9 (phone registration foundations, admin TOTP) or M5
     (authoring/upload/visibility). See the reconciliation note in the next entry.
+- 2026-10-23: **Roadmap reconciliation after M8.**
+  - **Done and in CI**: M1–M4, M6, M7, M8 (a, b), M10 (a, b). CI on M8a failed in E2E, a locator ambiguity and a
+    step-up after a page load; fixed in `da71a83`, with the full E2E suite 39/39 locally.
+  - **Remaining, by the parent-and-child-first rule and dependencies**:
+    1. **M9a: administrator TOTP**. M8 says grants and payment-method changes need a second factor. No external
+       dependency.
+    2. **M5: authoring UX, upload, visibility**. Form uploads exist (`MediaSlot`, the media library). Missing:
+       drag-and-drop with progress and preview, orientation in the builder, and PRIVATE/SCHOOL/PUBLIC visibility.
+       Content quality is what children see.
+    3. **M9b: phone registration foundations**. Normalization, the `SmsSender` abstraction with a test sender
+       refused in prod, codes. It can't run for real until D-04 (SMS provider).
+    4. **M11**: storage-provider abstraction (BYOS waits for D-06).
+    5. **M13**: integration and readiness pass.
+    6. **M12**: school management, deferred until the family milestone is agreed.
+  - **Age targeting**: curriculum-driven age targeting exists (age hubs, `forChildAge` in the family catalogue).
+    Content for ages 3 and 10–12 waits for D-09.
+  - **Backlog** (small, folded into a fitting milestone):
+    - caregiver wording ("your child" in reused progress sections and server insights);
+    - the duplicate reference line in a pending payment (header plus transfer box);
+    - the customer payment-screenshot upload (deferred from M8b);
+    - a per-family learning-day time zone (M3).
+    - the account-setup page and its sign-in note speak of "your teacher account" and "your school's invitation"
+      to every provisioned role, administrators included (seen in the M9a browser check).
+- 2026-10-23: **M9a done: an administrator's authenticator app (TOTP) for step-up.**
+  - **What**:
+    - RFC 6238 codes (HMAC-SHA1, 6 digits, 30 s, one step of drift), no new library (`Totp`, checked against the
+      RFC's test vectors).
+    - V68: `account_second_factors` (secret encrypted with AES-GCM under a key derived from `JWT_SECRET` for this
+      purpose; PENDING until a first code; `last_used_step`; `failed_attempts`) and `account_recovery_codes`
+      (8 per activation, SHA-256 digests only).
+    - An administrator's step-up (M8) needs the password **and** a code or an unused recovery code; without an app
+      on, it is refused (403 `secondFactorSetupRequired`) - the roadmap's rule that grants and payment changes need a
+      second factor. Families' step-ups are unchanged.
+    - A code is never accepted twice; wrong codes are counted apart from the sign-in count (the right password with
+      each one resets that) and lock the account at the same limit (`SECOND_FACTOR_LOCKED`).
+    - Account page → "Authenticator app" (administrators only): password, then the key (grouped, copyable, and an
+      `otpauth://` link for a phone), then a first code; the recovery codes are shown once (download as text).
+      Turning it off needs the password and a code. Another administrator, stepped up, can turn a colleague's off
+      (`SECOND_FACTOR_RESET`); never their own.
+    - The step-up dialog asks an administrator for the code at once (and anyone the server asks), in English and
+      Khmer; it points an administrator without an app to setting one up.
+    - Adding staff (`POST /admin/staff`, which can create administrators) now needs a step-up: it gives access.
+    - Erasure removes the two tables' rows; DEPLOYMENT.md covers a lost authenticator and `JWT_SECRET` rotation.
+  - **Not done (decisions)**: a QR code for setup (needs a QR library, D-12; the key and the `otpauth://` link work
+    in every authenticator app); a second factor at sign-in itself (the roadmap asks it for grants and payment
+    changes; sign-in stays password-only); listing which administrators have an app on.
+  - **Verified**:
+    - integration: `SecondFactorIntegrationTests` (4: setup, pending not in force, wrong code, recovery codes as
+      digests, replay refused, recovery code once, lockout at the limit, families unaffected, turn off, colleague
+      reset with step-up, never own, audit without the key) plus every suite that steps up an administrator - 19
+      suites, 82 tests; `TotpTests` (RFC vectors, drift, replay, base32);
+    - mutation: removing the code check from step-up fails 3 of the 4 new tests;
+    - Vitest 362/362 (new: the dialog's code prompt and setup pointer; the account section's setup and turn-off);
+    - E2E locally against the isolated stack (V68 applied): language (Khmer staff creation with the dialog in
+      Khmer), plans (3 step-ups), school invoice payment - 6/6; the helpers turn on the E2E administrator's app
+      and keep its key in the git-ignored `frontend/.e2e-auth/`;
+    - browser: a new administrator set up the app on the account page with a code computed from the key shown,
+      saw 8 recovery codes once, then added a staff member through the dialog's password and code; the key isn't
+      in the backend log, the stored secret isn't the key, the audit holds counts only; phone width has no
+      horizontal scroll.
+  - **Next**: M5 (authoring, upload, visibility), per the reconciliation order.

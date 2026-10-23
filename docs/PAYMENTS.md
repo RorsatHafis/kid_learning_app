@@ -107,7 +107,7 @@ records must be kept is a **legal decision for the owner** (accounting retention
 | Start a family payment, see its own orders, cancel, add a note ("how I paid") | A parent of that family |
 | See a school's invoices, add a note | That school's principal |
 | Simulate an outcome | The customer, **only** when the simulator is on (never in production) |
-| List all payments, see the ledger, confirm a transfer (receipt reference required), reject, record a refund, ask PayWay | Platform administrators; every action is audited (`PAYMENT_CONFIRMED`, …) |
+| List all payments, see the ledger, confirm a transfer (receipt reference required), reject, record a refund, ask PayWay | Platform administrators; every action is audited (`PAYMENT_CONFIRMED`, …). Confirming, rejecting and refunding need the password again and a code from the administrator's authenticator app (M8, M9a) |
 | Invoice a school (a bank-transfer order at the school plan's price) | Platform administrators |
 
 ## Configuration

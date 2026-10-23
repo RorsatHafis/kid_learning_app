@@ -247,6 +247,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(com.platform.security.stepup.SecondFactorMismatchException.class)
+    public ResponseEntity<Object> handleSecondFactor(com.platform.security.stepup.SecondFactorMismatchException ex, WebRequest request) {
+
+        // M9a: a code from the authenticator app is missing or wrong (422, like a wrong password, with a field error),
+        // or an administrator has to turn one on first (403).
+        HttpStatus status = ex.isSetupRequired() ? HttpStatus.FORBIDDEN : HttpStatus.UNPROCESSABLE_ENTITY;
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        problem.setTitle(ex.isSetupRequired() ? "Authenticator App Needed" : "Code Needed");
+        if (ex.isSetupRequired()) {
+            problem.setProperty("secondFactorSetupRequired", true);
+        } else {
+            problem.setProperty("secondFactorRequired", true);
+            problem.setProperty("errors", java.util.Map.of("code", ex.getMessage()));
+        }
+        return createResponseEntity(problem, new HttpHeaders(), status, request);
+
+    }
+
     @ExceptionHandler(com.platform.subscription.service.SchoolPaymentRequiredException.class)
     public ResponseEntity<Object> handleSchoolPaymentRequired(com.platform.subscription.service.SchoolPaymentRequiredException ex,
                                                               WebRequest request) {

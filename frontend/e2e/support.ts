@@ -1,5 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { createHmac } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { expect, request as playwrightRequest, type APIRequestContext, type Page } from "@playwright/test";
 
 export const MAILPIT = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 export const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "";
@@ -187,27 +190,124 @@ export async function ensurePricedSchoolPlan(request: APIRequestContext, token: 
     data: { name: "E2E school year", description: null, selfService: false, priceAmountMinor: 12000, priceCurrency: "USD", billingInterval: "YEAR", limits: {} },
   });
   expect(revised.ok(), await revised.text()).toBe(true);
-  // M8: activating a priced plan moves money, so the administrator re-enters the password first.
-  const stepUp = await request.post("/api/v1/account/step-up", { headers: auth, data: { password: ADMIN_PASSWORD } });
-  expect(stepUp.ok(), await stepUp.text()).toBe(true);
-  const proof = (await stepUp.json()).stepUpToken as string;
+  // M8: activating a priced plan moves money, so the administrator re-enters the password (M9a: and a code) first.
+  const proof = await stepUpProof(request, token, ADMIN_EMAIL, ADMIN_PASSWORD);
   expect((await request.post(`/api/v1/admin/plans/${id}/activate`, { headers: { ...auth, "X-Step-Up": proof } })).ok()).toBe(true);
   return id;
 }
 
-/** M8: answers "Enter your password again", asked before an action that moves money or access. */
-export async function enterPasswordAgain(page: Page, password: string): Promise<void> {
-  await page.getByLabel("Your password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Continue" }).click();
+/** M8/M9a: a step-up proof for this signed-in administrator - the password and a code from their authenticator app. */
+export async function stepUpProof(request: APIRequestContext, token: string, email: string, password: string): Promise<string> {
+  const code = await authenticatorCode(email, password);
+  const res = await request.post("/api/v1/account/step-up", { headers: { Authorization: `Bearer ${token}` }, data: { password, code } });
+  expect(res.ok(), await res.text()).toBe(true);
+  return (await res.json()).stepUpToken as string;
 }
 
-/** M8: confirms the open transfer in the administrator's payments page - the receipt, its amount, then the password. */
-export async function confirmTransfer(page: Page, receipt: string, amount: string, password: string): Promise<void> {
+/**
+ * M8: answers "Enter your password again", asked before an action that moves money or access - in English or Khmer.
+ * M9a: an administrator also gives the next code from their authenticator app, which `email`'s key computes.
+ */
+export async function enterPasswordAgain(page: Page, password: string, email = ADMIN_EMAIL): Promise<void> {
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel(/^(Your password|ពាក្យសម្ងាត់របស់អ្នក)$/).fill(password);
+  const code = dialog.getByLabel(/^(Code from your authenticator app|លេខកូដពីកម្មវិធីផ្ទៀងផ្ទាត់របស់អ្នក)$/);
+  if (await code.isVisible()) await code.fill(await authenticatorCode(email, password));
+  await dialog.getByRole("button", { name: /^(Continue|បន្ត)$/ }).click();
+}
+
+/** M8: confirms the open transfer in the administrator's payments page - the receipt, its amount, then the step-up. */
+export async function confirmTransfer(page: Page, receipt: string, amount: string, password: string, email = ADMIN_EMAIL): Promise<void> {
   await page.getByLabel("Receipt reference").fill(receipt);
   await page.getByLabel("Amount on the receipt").fill(amount);
   await page.getByRole("button", { name: "Confirm payment received" }).click();
-  await page.getByLabel("Your password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Continue" }).click();
+  await enterPasswordAgain(page, password, email);
+}
+
+/*
+ * M9a: administrators' authenticator apps, simulated. The first time an administrator needs a code, their app is
+ * turned on through the API (as they would on their account page) and its key is kept: in memory, and for the
+ * bootstrapped administrator also in a git-ignored file, since that account outlives one run against a kept stack.
+ */
+const AUTHENTICATOR_FILE = resolve(process.env.E2E_AUTHENTICATOR_FILE ?? ".e2e-auth/authenticators.json");
+const authenticators = new Map<string, { secret: string; lastStep: number }>();
+
+function savedKeys(): Record<string, string> {
+  return existsSync(AUTHENTICATOR_FILE) ? (JSON.parse(readFileSync(AUTHENTICATOR_FILE, "utf-8")) as Record<string, string>) : {};
+}
+
+/** The next code `email`'s authenticator app shows that hasn't been used, turning the app on first if needed. */
+export async function authenticatorCode(email: string, password: string): Promise<string> {
+  const key = email.toLowerCase();
+  const saved = savedKeys()[key];
+  if (!authenticators.has(key) && saved) authenticators.set(key, { secret: saved, lastStep: -Infinity });
+  if (!authenticators.has(key)) await turnOnAuthenticator(email, password);
+  const app = authenticators.get(key)!;
+  const now = () => Math.floor(Date.now() / 30_000);
+  const step = Math.max(now() - 1, app.lastStep + 1);
+  while (step > now() + 1) await new Promise((r) => setTimeout(r, 500));
+  app.lastStep = step;
+  return totp(app.secret, step);
+}
+
+/**
+ * Turns on `email`'s authenticator app through the API, signed in on a context of its own (so no page's sign-in
+ * cookie changes); returns the recovery codes.
+ */
+export async function turnOnAuthenticator(email: string, password: string): Promise<string[]> {
+  const request = await playwrightRequest.newContext({
+    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:5173",
+    ignoreHTTPSErrors: process.env.E2E_IGNORE_HTTPS_ERRORS === "1",
+  });
+  try {
+    return await turnOn(request, email, password);
+  } finally {
+    await request.dispose();
+  }
+}
+
+async function turnOn(request: APIRequestContext, email: string, password: string): Promise<string[]> {
+  const login = await request.post("/api/v1/auth/login", { data: { email, password } });
+  expect(login.ok(), await login.text()).toBe(true);
+  const auth = { Authorization: `Bearer ${(await login.json()).accessToken as string}` };
+  const status = await (await request.get("/api/v1/account/second-factor", { headers: auth })).json();
+  if (status.enabled) {
+    throw new Error(
+      `${email} already has an authenticator app whose key isn't in ${AUTHENTICATOR_FILE}: have another administrator ` +
+        "turn it off (POST /api/v1/admin/accounts/{id}/second-factor/reset), or put its key in that file.",
+    );
+  }
+  const setup = await request.post("/api/v1/account/second-factor/setup", { headers: auth, data: { password } });
+  expect(setup.ok(), await setup.text()).toBe(true);
+  const secret = (await setup.json()).secret as string;
+  const key = email.toLowerCase();
+  if (key === ADMIN_EMAIL.toLowerCase()) {
+    mkdirSync(dirname(AUTHENTICATOR_FILE), { recursive: true });
+    writeFileSync(AUTHENTICATOR_FILE, JSON.stringify({ ...savedKeys(), [key]: secret }, null, 2), { encoding: "utf-8", mode: 0o600 });
+  }
+  const step = Math.floor(Date.now() / 30_000);
+  authenticators.set(key, { secret, lastStep: step });
+  const activated = await request.post("/api/v1/account/second-factor/activate", { headers: auth, data: { code: totp(secret, step) } });
+  expect(activated.ok(), await activated.text()).toBe(true);
+  return (await activated.json()).recoveryCodes as string[];
+}
+
+/** The authenticator key (base32) turned on for `email` in this run - for a seed that hands the account over. */
+export function authenticatorKey(email: string): string | undefined {
+  return authenticators.get(email.toLowerCase())?.secret;
+}
+
+/** RFC 6238: HMAC-SHA1 over the 30-second step, 6 digits. */
+function totp(base32: string, step: number): string {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const c of base32.replace(/=+$/, "").toUpperCase()) bits += alphabet.indexOf(c).toString(2).padStart(5, "0");
+  const secret = Buffer.from((bits.match(/.{8}/g) ?? []).map((b) => parseInt(b, 2)));
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(step));
+  const hash = createHmac("sha1", secret).update(counter).digest();
+  const offset = hash[hash.length - 1] & 0x0f;
+  return String((hash.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).padStart(6, "0");
 }
 
 /** The id of the school with this name (an administrator sees every school). */

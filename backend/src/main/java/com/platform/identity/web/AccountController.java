@@ -145,7 +145,8 @@ public class AccountController {
         return new PageResponse<>(all.subList(from, Math.min(all.size(), from + size)), page, size, all.size());
     }
 
-    public record StepUpRequest(@jakarta.validation.constraints.NotBlank String password) {
+    public record StepUpRequest(@jakarta.validation.constraints.NotBlank String password,
+                                @Size(max = 20) String code) {
     }
 
     public record StepUpResponse(String stepUpToken, Instant expiresAt) {
@@ -153,13 +154,13 @@ public class AccountController {
 
     /**
      * M8: re-enter the password for a few minutes of actions that move money or access (RequiresStepUp). Bound to this
-     * sign-in; a wrong password counts towards the lockout.
+     * sign-in; a wrong password counts towards the lockout. An administrator also gives an authenticator code (M9a).
      */
     @org.springframework.web.bind.annotation.PostMapping("/step-up")
     public StepUpResponse stepUp(@AuthenticationPrincipal UUID accountId, Authentication authentication,
                                  @Valid @RequestBody StepUpRequest request) {
         UUID sessionFamilyId = authentication.getDetails() instanceof UUID sid ? sid : null;
-        var issued = stepUp.stepUp(accountId, sessionFamilyId, request.password());
+        var issued = stepUp.stepUp(accountId, sessionFamilyId, request.password(), request.code());
         return new StepUpResponse(issued.token(), issued.expiresAt());
     }
 

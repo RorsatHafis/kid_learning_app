@@ -16,6 +16,8 @@ import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { downloadFile } from "@/lib/utils/download";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { accountMessages } from "./account.messages";
+import { AuthenticatorApp } from "./AuthenticatorApp";
+import { authenticatorMessages } from "./authenticator.messages";
 import { formatDate, formatTime } from "@/i18n/format";
 import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 
@@ -29,6 +31,7 @@ const MIN_PASSWORD = 12; // identity/service/PasswordPolicy.MIN_LENGTH
 export function AccountPage() {
   const profile = useAsync(() => accountApi.me(), []);
   const m = useMessages(accountMessages);
+  const authenticator = useMessages(authenticatorMessages);
   const { hash } = useLocation();
   // A link like /parent/account#plan lands on that section once the page has drawn it.
   useEffect(() => {
@@ -55,6 +58,7 @@ export function AccountPage() {
             { id: "profile", label: m.details },
             { id: "language", label: m.language.title },
             { id: "password", label: m.password.title },
+            ...(profile.data?.platformRole === "ADMIN" ? [{ id: "authenticator", label: authenticator.title }] : []),
             { id: "devices", label: m.devices.title },
             ...(profile.data?.platformRole === "PARENT"
               ? [
@@ -106,6 +110,11 @@ export function AccountPage() {
           </p>
         </SettingsRow>
         <ChangePassword />
+        {profile.data?.platformRole === "ADMIN" && (
+          <SettingsRow id="authenticator" title={authenticator.title} subtitle={authenticator.subtitle}>
+            <AuthenticatorApp />
+          </SettingsRow>
+        )}
         <SignOutEverywhere />
         {profile.data?.platformRole === "PARENT" && <YourPlan />}
         {profile.data?.platformRole === "PARENT" && <YourData />}

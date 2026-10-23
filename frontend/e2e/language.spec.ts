@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, enterPasswordAgain, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail } from "./support";
 
 /**
  * Khmer and English end to end. The browser asks for English (Playwright's en-US), so every Khmer
@@ -186,6 +186,8 @@ test("language: each member of staff chooses their own; a new account starts in 
       await page.getByLabel("អ៊ីមែល", { exact: true }).fill(person.email);
       await page.getByLabel("តួនាទី").last().selectOption({ label: person.role });
       await page.getByRole("button", { name: "បង្កើតគណនី" }).click();
+      // M9a: creating staff gives access - the password again, and a code (asked in Khmer too).
+      await enterPasswordAgain(page, ADMIN_PASSWORD);
       await expect(page.getByRole("status").filter({ hasText: person.email })).toBeVisible();
     }
 

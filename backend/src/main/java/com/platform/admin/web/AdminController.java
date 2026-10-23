@@ -26,6 +26,8 @@ public class AdminController {
         this.service = service;
     }
 
+    /** M9a: creating a staff (possibly administrator) account gives access, so it needs a step-up. */
+    @com.platform.security.stepup.RequiresStepUp
     @PostMapping("/staff")
     @ResponseStatus(HttpStatus.CREATED)
     public AdminDtos.StaffAccountResponse createStaff(

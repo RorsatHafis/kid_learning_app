@@ -240,6 +240,11 @@ export function useChildDevice(): string | null {
   return useContext(AuthContext)?.session?.childId ?? null;
 }
 
+/** The signed-in session, or null - also outside an AuthProvider (for components that only adapt to it). */
+export function useOptionalSession() {
+  return useContext(AuthContext)?.session ?? null;
+}
+
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");

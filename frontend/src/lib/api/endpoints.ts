@@ -3,6 +3,7 @@ import { apiClient } from "./client";
 import type {
   LearningToday,
   AccountProfile,
+  SecondFactorStatus,
   ActivityAttempt,
   ActivityVersionDetail,
   AnswerRecord,
@@ -82,7 +83,18 @@ export const accountApi = {
   // 202 whether or not the new address has an account; 422 wrong current password, 409 already this address, 429 too soon.
   requestEmailChange: (input: { currentPassword: string; newEmail: string }) => apiClient.post<void>("/account/email", input),
   /** M8: re-enter the password for a few minutes of actions that move money or access. */
-  stepUp: (password: string) => apiClient.post<{ stepUpToken: string; expiresAt: string }>("/account/step-up", { password }),
+  /** M9a: an administrator also gives a code from their authenticator app (or a recovery code). */
+  stepUp: (password: string, code?: string) =>
+    apiClient.post<{ stepUpToken: string; expiresAt: string }>("/account/step-up", code ? { password, code } : { password }),
+  /** M9a: an administrator's authenticator app. */
+  secondFactor: () => apiClient.get<SecondFactorStatus>("/account/second-factor"),
+  // 422 wrong password, 403 not an administrator, 409 already on. The key is shown this once.
+  setUpSecondFactor: (password: string) =>
+    apiClient.post<{ secret: string; otpauthUri: string }>("/account/second-factor/setup", { password }),
+  // 422 wrong code (counts towards the lockout), 409 not started. The recovery codes are shown this once.
+  activateSecondFactor: (code: string) =>
+    apiClient.post<{ recoveryCodes: string[] }>("/account/second-factor/activate", { code }),
+  turnOffSecondFactor: (password: string, code: string) => apiClient.post<void>("/account/second-factor/off", { password, code }),
   // One entry per signed-in device; `current` is this one. Signing one out ends that sign-in (404 if it isn't yours).
   /** M7: this device first, then the most recently active, a page at a time. */
   devices: (page = 0, size = DEVICES_PAGE) => apiClient.get<Page<SignedInDevice>>(`/account/devices?page=${page}&size=${size}`),

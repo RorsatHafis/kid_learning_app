@@ -58,6 +58,8 @@ class StepUpAndReconciliationIntegrationTests {
         Account admin = accountRepository.saveAndFlush(Account.register(email, passwordEncoder.encode(PASSWORD), PlatformRole.ADMIN));
         String laptop = login(email);
         String phone = login(email);
+        // M9a: an administrator's step-up also needs an authenticator code.
+        com.platform.TestAdmin.turnOnAuthenticator(port, laptop, PASSWORD);
         String plan = familyPlan(phone, stepUp(phone));
         String parentEmail = "stepup-parent-" + UUID.randomUUID() + "@example.com";
         json(send("POST", "/api/v1/auth/register", "{\"email\":\"" + parentEmail + "\",\"password\":\"" + PASSWORD
@@ -75,8 +77,7 @@ class StepUpAndReconciliationIntegrationTests {
         // (422: the existing answer to a wrong current password, as when changing it.)
         assertThat(send("POST", "/api/v1/account/step-up", "{\"password\":\"wrong-" + PASSWORD + "\"}", laptop, null).statusCode())
                 .isEqualTo(422);
-        JsonNode proof = json(send("POST", "/api/v1/account/step-up", "{\"password\":\"" + PASSWORD + "\"}", laptop, null), 200);
-        String stepUp = proof.get("stepUpToken").asString();
+        String stepUp = stepUp(laptop);
 
         // The proof isn't an access token, and it belongs to the sign-in that made it.
         assertThat(send("GET", "/api/v1/account", null, stepUp, null).statusCode()).isEqualTo(401);
@@ -91,8 +92,8 @@ class StepUpAndReconciliationIntegrationTests {
         String email = "recon-admin-" + UUID.randomUUID() + "@example.com";
         accountRepository.saveAndFlush(Account.register(email, passwordEncoder.encode(PASSWORD), PlatformRole.ADMIN));
         String admin = login(email);
-        String stepUp = json(send("POST", "/api/v1/account/step-up", "{\"password\":\"" + PASSWORD + "\"}", admin, null), 200)
-                .get("stepUpToken").asString();
+        com.platform.TestAdmin.turnOnAuthenticator(port, admin, PASSWORD);
+        String stepUp = stepUp(admin);
         String plan = familyPlan(admin, stepUp);
 
         String first = transfer(plan);
@@ -149,8 +150,9 @@ class StepUpAndReconciliationIntegrationTests {
     }
 
     private String stepUp(String token) throws Exception {
-        return json(send("POST", "/api/v1/account/step-up", "{\"password\":\"" + PASSWORD + "\"}", token, null), 200)
-                .get("stepUpToken").asString();
+        String accountId = json(send("GET", "/api/v1/account", null, token, null), 200).get("id").asString();
+        return json(send("POST", "/api/v1/account/step-up", "{\"password\":\"" + PASSWORD + "\",\"code\":\""
+                + com.platform.TestAdmin.code(accountId) + "\"}", token, null), 200).get("stepUpToken").asString();
     }
 
     private String familyPlan(String admin, String stepUp) throws Exception {

@@ -1,7 +1,22 @@
 import { randomBytes } from "node:crypto";
 import { writeFileSync } from "node:fs";
 import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
-import { addChild, adminToken, confirmTransfer, ensurePricedSchoolPlan, linkIn, logIn, openSubject, schoolIdByName, waitForEmail } from "./support";
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  addChild,
+  adminToken,
+  confirmTransfer,
+  ensurePricedSchoolPlan,
+  linkIn,
+  logIn,
+  openSubject,
+  schoolIdByName,
+  authenticatorKey,
+  stepUpProof,
+  turnOnAuthenticator,
+  waitForEmail,
+} from "./support";
 
 /**
  * Y45: test accounts for a coworker preview, made through the product's own flows on an isolated stack - never a
@@ -12,6 +27,9 @@ import { addChild, adminToken, confirmTransfer, ensurePricedSchoolPlan, linkIn, 
  *
  *   PREVIEW_SEED_OUT=D:/bk-work/preview/accounts.txt E2E_BASE_URL=... E2E_MAILPIT_URL=... E2E_ADMIN_EMAIL=...
  *   E2E_ADMIN_PASSWORD=... npx playwright test e2e/preview-seed.spec.ts --project=desktop
+ *
+ * M9a: the coworkers' administrator gets an authenticator app (it confirms the test receipt); its key and recovery
+ * codes are written to the same file, to add to an authenticator app.
  *
  * Made: an administrator; a principal whose school is paid (by invoice, confirmed against a test receipt), with a
  * class, an assigned teacher, a curriculum and a class code; a second principal whose school is unpaid (the
@@ -34,7 +52,10 @@ test("preview seed: an account for each role", async ({ page, browser, request }
   const admin = { email: `admin-${tag}@bk-preview.test`, password: password() };
   await provision(request, auth, admin.email, "ADMIN");
   await setUp(browser, request, admin, "Your Bookeyond Kid account is ready to set up");
+  const recoveryCodes = await turnOnAuthenticator(admin.email, admin.password);
   note("Administrator", admin.email, admin.password, "Staff, schools and invoices, payments (confirm test receipts), plans, Content Studio, reports.");
+  lines.push(`${"".padEnd(17)}Authenticator key (add to an authenticator app, time-based): ${authenticatorKey(admin.email)}`);
+  lines.push(`${"".padEnd(17)}Recovery codes (each works once): ${recoveryCodes.join("  ")}`);
 
   // The paid school: its principal creates it, the administrator invoices it and confirms the test receipt.
   const principal = { email: `principal-${tag}@bk-preview.test`, password: password() };
@@ -52,7 +73,7 @@ test("preview seed: an account for each role", async ({ page, browser, request }
   await billing.getByRole("combobox", { name: "School plan" }).selectOption({ label: "E2E school year · $120.00 / year" });
   await billing.getByRole("button", { name: "Create invoice" }).click();
   await billing.getByRole("status").getByRole("link", { name: "Payments" }).click();
-  await confirmTransfer(billing, `TEST-RECEIPT-${tag}`, "120.00", admin.password);
+  await confirmTransfer(billing, `TEST-RECEIPT-${tag}`, "120.00", admin.password, admin.email);
   await expect(billing.getByText("Done. The payment and the plan are up to date.")).toBeVisible();
   await billing.context().close();
 
@@ -158,8 +179,14 @@ function password(): string {
   return `Bk-${randomBytes(9).toString("base64url")}-26`;
 }
 
+/** M9a: creating staff needs a step-up; one proof lasts five minutes, so a fresh one is taken after four. */
+let proof: { token: string; at: number } | null = null;
+
 async function provision(request: APIRequestContext, auth: Record<string, string>, email: string, role: string) {
-  const res = await request.post("/api/v1/admin/staff", { headers: auth, data: { email, role } });
+  if (!proof || Date.now() - proof.at > 240_000) {
+    proof = { token: await stepUpProof(request, auth.Authorization.replace("Bearer ", ""), ADMIN_EMAIL, ADMIN_PASSWORD), at: Date.now() };
+  }
+  const res = await request.post("/api/v1/admin/staff", { headers: { ...auth, "X-Step-Up": proof.token }, data: { email, role } });
   expect(res.status(), await res.text()).toBe(201);
 }
 

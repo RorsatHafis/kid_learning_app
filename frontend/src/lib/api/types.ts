@@ -38,6 +38,14 @@ export interface AuthResponse {
 
 export type AccountStatus = "ACTIVE" | "DISABLED" | "PENDING_VERIFICATION";
 
+/** security/stepup/SecondFactorService.Status — an administrator's authenticator app (M9a). */
+export interface SecondFactorStatus {
+  enabled: boolean;
+  /** Set up but not yet confirmed with a first code (not in force). */
+  pending: boolean;
+  recoveryCodesLeft: number;
+}
+
 /** identity/web/AccountController.DeviceResponse — a sign-in on some device. */
 export interface SignedInDevice {
   id: string;
@@ -515,6 +523,10 @@ export interface ApiProblem {
   schoolPaymentRequired?: boolean;
   /** M8: 403 when the action needs the password re-entered (a step-up). */
   stepUpRequired?: boolean;
+  /** M9a: 422 when a step-up needs a code from the authenticator app (none, wrong or used). */
+  secondFactorRequired?: boolean;
+  /** M9a: 403 when an administrator has to turn an authenticator app on before stepping up. */
+  secondFactorSetupRequired?: boolean;
   /** M3: 409 when today's learning time is used and a new activity would start. */
   dailyLimitReached?: boolean;
   usedMinutes?: number;
