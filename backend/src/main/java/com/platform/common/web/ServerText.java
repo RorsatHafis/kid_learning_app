@@ -163,6 +163,11 @@ public final class ServerText {
             Map.entry(FILTER_RATE_LIMITED, "មានសំណើច្រើនពេកពីបណ្ដាញនេះ។ សូមរង់ចាំបន្តិច ហើយព្យាយាមម្ដងទៀត។"),
             Map.entry("This device can only open one child's learning space", "ឧបករណ៍នេះអាចបើកបានតែកន្លែងរៀនរបស់កុមារម្នាក់ប៉ុណ្ណោះ"),
             Map.entry("Enter your password again to do this", "សូមបញ្ចូលពាក្យសម្ងាត់របស់អ្នកម្ដងទៀត ដើម្បីធ្វើការនេះ"),
+            // M5b: lessons shared with a school
+            Map.entry("Platform lessons reach every family already, so they aren't shared with a school",
+                    "មេរៀនរបស់វេទិកាបានទៅដល់គ្រប់គ្រួសាររួចហើយ ដូច្នេះវាមិនត្រូវបានចែករំលែកជាមួយសាលាទេ"),
+            Map.entry("This lesson has no published activity to copy yet", "មេរៀននេះមិនទាន់មានសកម្មភាពដែលបានបោះពុម្ពផ្សាយសម្រាប់ចម្លងនៅឡើយទេ"),
+            Map.entry("Only its author shares a lesson", "មានតែអ្នកនិពន្ធប៉ុណ្ណោះដែលចែករំលែកមេរៀន"),
             // M9a: an administrator's authenticator app
             Map.entry("Authenticator apps are for administrator accounts", "កម្មវិធីផ្ទៀងផ្ទាត់គឺសម្រាប់គណនីអ្នកគ្រប់គ្រង"),
             Map.entry("Your authenticator app is already on: turn it off first to set up another",

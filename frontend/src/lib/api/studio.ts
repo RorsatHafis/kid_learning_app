@@ -179,6 +179,22 @@ export interface LessonSummary {
   /** Every activity in the lesson. */
   activityCount: number;
   archived?: boolean;
+  /** M5b: who besides its author can find it. */
+  visibility?: LessonVisibility;
+  /** M5b: copied from a colleague's shared lesson. */
+  copied?: boolean;
+}
+
+/** M5b (content/entity/LessonVisibility.java): PUBLIC is deferred. */
+export type LessonVisibility = "PRIVATE" | "SCHOOL";
+
+/** M5b (LessonSharingService.SharedLesson): a colleague's shared lesson and its published activities. */
+export interface SharedLesson {
+  id: string;
+  title: string;
+  subjectId: string;
+  schools: string[];
+  activities: { id: string; title: string; questions: number }[];
 }
 
 export interface ItemDetail {
@@ -555,6 +571,13 @@ export const studioApi = {
     return apiClient.get<Page<LessonSummary>>(`${S}/lessons?${params}`);
   },
   createLesson: (body: { subjectId: string; title: string }) => apiClient.post<LessonSummary>(`${S}/lessons`, body),
+  /** M5b: the author shares their lesson with their school's teachers (403 for anyone else, 409 a platform lesson). */
+  setLessonVisibility: (lessonId: string, visibility: LessonVisibility) =>
+    apiClient.put<void>(`${S}/lessons/${lessonId}/visibility`, { visibility }),
+  /** M5b: colleagues' shared lessons in a subject. */
+  sharedLessons: (subjectId: string) => apiClient.get<SharedLesson[]>(`${S}/shared-lessons?subjectId=${encodeURIComponent(subjectId)}`),
+  /** M5b: copies one into your own lessons, as drafts (404 when it isn't shared with you, 409 no storage room). */
+  copySharedLesson: (lessonId: string) => apiClient.post<LessonSummary>(`${S}/shared-lessons/${lessonId}/copy`),
   createActivity: (lessonId: string, body: { title: string; skillIds: string[] }) =>
     apiClient.post<ActivityDetail>(`${S}/lessons/${lessonId}/activities`, body),
   activity: (id: string) => apiClient.get<ActivityDetail>(`${S}/activities/${id}`),

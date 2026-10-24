@@ -416,7 +416,8 @@ public class StudioService {
                             skillsOf.getOrDefault(activity.getId(), List.of()), versionsOf.getOrDefault(activity.getId(), List.of()),
                             activity.getStatus() == CatalogStatus.ARCHIVED))
                     .toList();
-            return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), shown, own.size(), lessonArchived);
+            return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), shown, own.size(), lessonArchived,
+                    lesson.getVisibility().name(), lesson.getCopiedFromLessonId() != null || lesson.getCopiedFromAccountId() != null);
         }).toList();
         return new PageResponse<>(page, request.page(), request.size(), total);
     }
@@ -426,7 +427,8 @@ public class StudioService {
         Account author = guard.requireAuthor(accountId);
         subjectService.getById(request.subjectId());
         Lesson lesson = lessonService.createOwnedLesson(request.subjectId(), request.title().strip(), guard.authoringOwner(author));
-        return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), List.of(), 0, false);
+        return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), List.of(), 0, false,
+                lesson.getVisibility().name(), false);
     }
 
     /** An activity with its skills and a first draft, in one step. Activities are PRACTICE: no other type is defined yet. */

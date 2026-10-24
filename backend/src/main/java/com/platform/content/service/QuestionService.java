@@ -335,6 +335,33 @@ public class QuestionService {
         return draft;
     }
 
+    /**
+     * M5b: the first draft of {@code targetQuestionId} (a new question) made from {@code source} - prompt, answer,
+     * difficulty, media, hint, explanation, choices and skills - with each media id passed through {@code media}
+     * (the copier's own asset for the same file).
+     */
+    @Transactional
+    public QuestionVersion copyAsDraft(QuestionVersion source, UUID targetQuestionId, java.util.function.UnaryOperator<UUID> media) {
+        QuestionVersion draft = createDraftVersion(targetQuestionId, source.getPrompt(), source.getCorrectAnswer(),
+                source.getDifficultyLevel());
+        if (source.getPromptImageAssetId() != null || source.getPromptAudioAssetId() != null) {
+            draft.setPromptMedia(media.apply(source.getPromptImageAssetId()), source.getPromptImageDescription(),
+                    media.apply(source.getPromptAudioAssetId()));
+        }
+        if (source.getHint() != null || source.getExplanation() != null) {
+            draft.setGuidance(source.getHint(), source.getExplanation());
+        }
+        questionVersionRepository.saveAndFlush(draft);
+        for (QuestionOption option : listOptions(source.getId())) {
+            questionOptionRepository.save(option.copyFor(draft.getId())
+                    .withMedia(media.apply(option.getImageAssetId()), media.apply(option.getAudioAssetId())));
+        }
+        for (UUID skillId : skillsOf(source.getId())) {
+            tagSkill(draft.getId(), skillId);
+        }
+        return draft;
+    }
+
     @Transactional(readOnly = true)
     public List<QuestionVersion> listVersions(UUID questionId) {
         return questionVersionRepository.findByQuestionIdOrderByVersionNumberAsc(questionId);

@@ -11,7 +11,8 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, Panel, SkillChips, StatusBadge } from "./shared";
-import { currentStatus, errorText, useStudio, useComposer, useArchivedView } from "./studioLogic";
+import { currentStatus, errorText, useStudio, useStudioScope, useComposer, useArchivedView } from "./studioLogic";
+import { CopiedBadge, LessonVisibilityControl, SharedByColleagues } from "./LessonSharing";
 import { ArchivedBadge, ArchivedSwitch, ManageButton } from "./Lifecycle";
 import { useMessages } from "@/i18n/catalog";
 import { editorMessages } from "./editor.messages";
@@ -42,6 +43,8 @@ export function ActivitiesPage() {
   usePageInRange(data, setPage);
   const m = useMessages(editorMessages).activities;
   const b = useMessages(builderMessages);
+  // M5b: a teacher's own lessons can be shared with their school; an administrator's are platform content.
+  const { catalogAdmin } = useStudioScope();
 
   return (
     <div className="flex flex-col gap-5">
@@ -109,12 +112,14 @@ export function ActivitiesPage() {
           <Pager label={m.lessons} page={data.page} size={data.size} total={data.total} onPage={setPage} />
         </div>
       )}
+      {!catalogAdmin && !archived && <SharedByColleagues subjectId={catalog.subject.id} onCopied={lessons.refetch} />}
     </div>
   );
 }
 
 function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: () => void }) {
   const { catalog } = useStudio();
+  const { catalogAdmin } = useStudioScope();
   const [adding, setAdding] = useState(false);
   const m = useMessages(editorMessages).activities;
   return (
@@ -122,8 +127,10 @@ function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: 
       title={lesson.title}
       bare
       action={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center justify-end gap-2">
+          {lesson.copied && <CopiedBadge />}
           {lesson.archived && <ArchivedBadge />}
+          {!catalogAdmin && !lesson.archived && <LessonVisibilityControl lesson={lesson} onChanged={onChanged} />}
           <ManageButton kind="lessons" id={lesson.id} name={lesson.title} archived={lesson.archived} onChanged={onChanged} />
           {!adding && !lesson.archived && (
             <Button variant="outline" size="sm" onClick={() => setAdding(true)} disabled={catalog.skills.length === 0}>

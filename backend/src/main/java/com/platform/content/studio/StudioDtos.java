@@ -98,10 +98,11 @@ public final class StudioDtos {
 
     /**
      * A lesson and its activities. When a search found the lesson through some of its activities,
-     * {@code activities} holds only those, and {@code activityCount} still counts them all.
+     * {@code activities} holds only those, and {@code activityCount} still counts them all. M5b: {@code visibility}
+     * PRIVATE or SCHOOL; {@code copied} when it was copied from a colleague's shared lesson.
      */
     public record LessonSummary(UUID id, String title, UUID subjectId, List<ActivitySummary> activities, int activityCount,
-                                boolean archived) {
+                                boolean archived, String visibility, boolean copied) {
     }
 
     public record ItemDetail(UUID questionVersionId, UUID questionId, QuestionType questionType, String prompt,
