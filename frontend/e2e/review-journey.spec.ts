@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail, workspaceLink } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, enterPasswordAgain, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail, workspaceLink } from "./support";
 
 /**
  * PD-20's mechanism (Y14), run only against a server started with CONTENT_REVIEW_REQUIRED=true:
@@ -26,6 +26,8 @@ test("review: platform content is published by a second administrator's approval
   await page.getByLabel("Role", { exact: true }).last().selectOption({ label: "Administrator" });
   await expect(page.getByText(/An administrator can do everything here/)).toBeVisible();
   await page.getByRole("button", { name: "Create account" }).click();
+  // M9a: adding staff gives access - the password again and an authenticator code.
+  await enterPasswordAgain(page, ADMIN_PASSWORD);
   const setup = linkIn(await waitForEmail(request, reviewerEmail, "ready to set up"), "/set-up-account");
   const reviewerContext = await browser.newContext({ reducedMotion: "reduce" });
   const reviewer = await reviewerContext.newPage();

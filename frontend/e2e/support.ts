@@ -228,25 +228,39 @@ export async function confirmTransfer(page: Page, receipt: string, amount: strin
  * M9a: administrators' authenticator apps, simulated. The first time an administrator needs a code, their app is
  * turned on through the API (as they would on their account page) and its key is kept: in memory, and for the
  * bootstrapped administrator also in a git-ignored file, since that account outlives one run against a kept stack.
+ * The file also keeps the last time step used: Playwright runs each project in a new worker, and the server never
+ * accepts a code twice, so a worker must know which codes an earlier one has already spent.
  */
 const AUTHENTICATOR_FILE = resolve(process.env.E2E_AUTHENTICATOR_FILE ?? ".e2e-auth/authenticators.json");
 const authenticators = new Map<string, { secret: string; lastStep: number }>();
 
-function savedKeys(): Record<string, string> {
-  return existsSync(AUTHENTICATOR_FILE) ? (JSON.parse(readFileSync(AUTHENTICATOR_FILE, "utf-8")) as Record<string, string>) : {};
+type Saved = { secret: string; lastStep: number };
+
+function savedKeys(): Record<string, Saved> {
+  if (!existsSync(AUTHENTICATOR_FILE)) return {};
+  const raw = JSON.parse(readFileSync(AUTHENTICATOR_FILE, "utf-8")) as Record<string, string | Saved>;
+  // Files written before the step was kept hold the key alone.
+  return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, typeof v === "string" ? { secret: v, lastStep: -1 } : v]));
+}
+
+function save(key: string, saved: Saved) {
+  mkdirSync(dirname(AUTHENTICATOR_FILE), { recursive: true });
+  writeFileSync(AUTHENTICATOR_FILE, JSON.stringify({ ...savedKeys(), [key]: saved }, null, 2), { encoding: "utf-8", mode: 0o600 });
 }
 
 /** The next code `email`'s authenticator app shows that hasn't been used, turning the app on first if needed. */
 export async function authenticatorCode(email: string, password: string): Promise<string> {
   const key = email.toLowerCase();
   const saved = savedKeys()[key];
-  if (!authenticators.has(key) && saved) authenticators.set(key, { secret: saved, lastStep: -Infinity });
+  if (!authenticators.has(key) && saved) authenticators.set(key, { ...saved });
   if (!authenticators.has(key)) await turnOnAuthenticator(email, password);
   const app = authenticators.get(key)!;
+  if (saved) app.lastStep = Math.max(app.lastStep, saved.lastStep);
   const now = () => Math.floor(Date.now() / 30_000);
   const step = Math.max(now() - 1, app.lastStep + 1);
   while (step > now() + 1) await new Promise((r) => setTimeout(r, 500));
   app.lastStep = step;
+  if (saved) save(key, { secret: app.secret, lastStep: step });
   return totp(app.secret, step);
 }
 
@@ -281,11 +295,8 @@ async function turnOn(request: APIRequestContext, email: string, password: strin
   expect(setup.ok(), await setup.text()).toBe(true);
   const secret = (await setup.json()).secret as string;
   const key = email.toLowerCase();
-  if (key === ADMIN_EMAIL.toLowerCase()) {
-    mkdirSync(dirname(AUTHENTICATOR_FILE), { recursive: true });
-    writeFileSync(AUTHENTICATOR_FILE, JSON.stringify({ ...savedKeys(), [key]: secret }, null, 2), { encoding: "utf-8", mode: 0o600 });
-  }
   const step = Math.floor(Date.now() / 30_000);
+  if (key === ADMIN_EMAIL.toLowerCase()) save(key, { secret, lastStep: step });
   authenticators.set(key, { secret, lastStep: step });
   const activated = await request.post("/api/v1/account/second-factor/activate", { headers: auth, data: { code: totp(secret, step) } });
   expect(activated.ok(), await activated.text()).toBe(true);
