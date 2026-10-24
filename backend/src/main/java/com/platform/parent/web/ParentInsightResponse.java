@@ -25,8 +25,14 @@ public record ParentInsightResponse(
 
     /** For reading on screen: the sentence in the reader's interface language (InsightText). */
     public static ParentInsightResponse from(ParentInsight insight, String language) {
+        return from(insight, language, null);
+    }
+
+    /** As {@link #from(ParentInsight, String)}, naming the child for a reader outside the family (a caregiver). */
+    public static ParentInsightResponse from(ParentInsight insight, String language, String childName) {
         return new ParentInsightResponse(insight.getId(), insight.getInsightType(),
-                InsightText.translate(insight.getHeadline(), language), InsightText.translate(insight.getDetail(), language),
+                InsightText.translate(insight.getHeadline(), language, childName),
+                InsightText.translate(insight.getDetail(), language, childName),
                 insight.getSupportingData(), insight.getOccurredAt());
     }
 }

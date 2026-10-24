@@ -54,22 +54,27 @@ public class ParentInsightController {
     @GetMapping("/api/v1/children/{childId}/parent-insights")
     public ResponseEntity<List<ParentInsightResponse>> current(@PathVariable UUID childId,
                                                                  @AuthenticationPrincipal UUID accountId) {
-        childAccess.requireViewer(accountId, childId);
+        String name = readerName(childAccess.requireViewer(accountId, childId));
 
         List<ParentInsight> insights = parentInsightService.currentInsights(childId);
 
-        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest())).toList());
+        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest(), name)).toList());
     }
 
     /** Every recorded snapshot, most recent first - historical events, not the child's current state. */
     @GetMapping("/api/v1/children/{childId}/parent-insights/history")
     public ResponseEntity<List<ParentInsightResponse>> history(@PathVariable UUID childId,
                                                                  @AuthenticationPrincipal UUID accountId) {
-        childAccess.requireViewer(accountId, childId);
+        String name = readerName(childAccess.requireViewer(accountId, childId));
 
         List<ParentInsight> insights = parentInsightService.listRecent(childId);
 
-        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest())).toList());
+        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest(), name)).toList());
+    }
+
+    /** The child's name for a caregiver, so insights don't call the child theirs; null for the family. */
+    private static String readerName(com.platform.family.service.ChildAccess.Access access) {
+        return access.family() ? null : access.child().getDisplayName();
     }
 
 }

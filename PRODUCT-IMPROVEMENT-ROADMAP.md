@@ -17,7 +17,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M2 Landing page, ages 3–12, public demo | **done** | see log | V63 |
 | M3 Child wellbeing: daily limits and graceful stops | **done** | see log | V64 |
 | M4 Self-service school registration and paid onboarding | **done** | see log | — |
-| M5 Authoring UX, direct upload, content visibility | M5a done (upload in the form); M5b next (visibility, builder orientation) | | |
+| M5 Authoring UX, direct upload, content visibility | M5a done (upload in the form); M5b done (school sharing by copy, D-13); PUBLIC deferred (D-14) | | |
 | M6 Feature-specific paywall messages | **done** | see log | — |
 | M7 Pagination and information density | **done** | see log | — |
 | M8 Payment QR, manual reconciliation, secure grants | **done** (M8a step-up and reconciliation, M8b instructions and KHQR) | see log | V67 |
@@ -425,6 +425,8 @@ Dependencies:
 | D-10 | Genuine testimonials (with permission) | Only brand statements |
 | D-11 | PDP law status, child-safety page, consent for school student records (PD-31, PD-32) | Minimal data; school records stay school-scoped |
 | D-12 | New third-party libraries (e.g. libphonenumber, an S3 client) and container images (S3-compatible test server) | Asked at the milestone that needs them |
+| D-13 | How a co-teacher uses a lesson shared with their school (decided 2026-10-23) | **Copy to own**: the colleague copies it into their own content (drafts, crediting the original); children's paths still draw only on their curriculum owner's and platform content |
+| D-14 | PUBLIC content for every teacher (decided 2026-10-23) | **Deferred** until it is decided who reviews teachers' content before the whole platform sees it |
 
 ---
 
@@ -820,7 +822,7 @@ Dependencies:
   - **Age targeting**: curriculum-driven age targeting exists (age hubs, `forChildAge` in the family catalogue).
     Content for ages 3 and 10–12 waits for D-09.
   - **Backlog** (small, folded into a fitting milestone):
-    - caregiver wording ("your child" in reused progress sections and server insights);
+    - ~~caregiver wording~~ (done with M5b, 2026-10-24);
     - the duplicate reference line in a pending payment (header plus transfer box);
     - the customer payment-screenshot upload (deferred from M8b);
     - a per-family learning-day time zone (M3).
@@ -883,3 +885,54 @@ Dependencies:
   - **Not done here**: the builder's orientation (where an item sits, who will see it, what publishing does) moves to
     M5b with visibility, since "who will see it" is what M5b decides. No client-side size limit is shown before
     upload: the limits live on the server (2 MB pictures) and its message is shown.
+- 2026-10-24: **M5b done: a lesson shared with a school, copied to own (D-13; PUBLIC deferred, D-14).**
+  - **What**:
+    - V69: `lessons.visibility` (PRIVATE | SCHOOL; platform lessons can't be SCHOOL, by a CHECK) and the credit
+      `copied_from_lesson_id` / `copied_from_account_id` (SET NULL if either goes). Forward-only: existing lessons
+      become PRIVATE, which is what they were.
+    - Only a lesson's author shares it (an administrator or a principal who may edit it can't). Colleagues are the
+      active staff and principal of a school both belong to that is open and paid (Y44: school services need a paid
+      school); anyone else gets 404 for the lesson, as if it weren't there.
+    - "Shared by colleagues" in a teacher's Studio lists colleagues' shared lessons with a published activity (titles,
+      the school, question counts; no answers). "Copy to my lessons" makes a private lesson of drafts: each published
+      activity's current version, its skills, its exact question versions (prompt, answer, choices, pairs/items/groups,
+      media, hint, explanation, skills, translations). Pictures and recordings become the colleague's own media
+      rows over the same stored file, counted in their storage allowance; a copy that wouldn't fit is refused whole.
+      The copy is published through the same checks as anything the teacher writes; nothing reaches a class until
+      they do. Sharing never changes a child's path (N7 is unchanged).
+    - Audited: `LESSON_VISIBILITY_CHANGED`, `LESSON_COPIED` (counts only). English and Khmer.
+  - **Verified**:
+    - `LessonSharingIntegrationTests` (2): private until shared; only the author shares; PUBLIC refused (400);
+      a colleague at the paid school and its principal find it, a teacher at another school, a teacher sharing only
+      an unpaid school and an administrator don't, and can't copy it (404), nor can the author copy their own;
+      the copy is the colleague's, private, credited, drafts, with the same content, their own media (one row per
+      file), the Khmer translation; they publish it; the source is untouched and keeps its media; editing and
+      publishing the source afterwards leaves the copy as copied; unshared or the school archived → not found;
+      no storage room → 409 with nothing created; a platform lesson can't be shared (409);
+    - mutation: dropping the paid-school condition fails the first test;
+    - Vitest 373/373 (new `sharing.test.tsx`); full backend suite (see the commit);
+    - browser, on the isolated stack after the preview seed: a teacher set "Teachers at your school" (kept after a
+      reload); a second teacher at that school saw it under "Shared by colleagues" and copied it: "Copied", "Only
+      you", the activity a draft, the message saying so; phone width without overflow; the same screen in Khmer.
+      (The second teacher's school membership was a fixture row in the isolated dev database; the rule itself is
+      covered by the integration test.)
+  - **Not done**: builder orientation beyond what Y42 already shows (where an item sits and what publishing does
+    are already on the activity page; "who will see it" is now the lesson's control). PUBLIC (D-14).
+  - **Fixed alongside**:
+    - the review journey (CI runs it with review on) adds an administrator through the Staff page, which since M9a
+      asks for the password and a code; the spec now answers it. Running it on desktop then phone also showed that
+      Playwright starts each project in a new worker, which forgot the codes already spent, so the server (rightly)
+      refused a replayed code: the E2E helper now keeps the last time step used beside the key;
+    - **caregiver wording** (backlog since M10b): a caregiver's page no longer calls the child "your child". Insight
+      sentences name the child for a reader outside the family (server-side, by `ChildAccess`; English and Khmer, the
+      name followed by a space in Khmer, which writes "your child" joined to the next word); the skills section names
+      the child for everyone; the skill page's fallbacks say "this child". `InsightTextTests` covers it.
+- 2026-10-24: **Recorded risk (M9a): authenticator keys are sealed with a key derived from `JWT_SECRET`.**
+  - Rotating `JWT_SECRET` (e.g. after a leak) also makes every administrator's authenticator unreadable; they set it
+    up again (DEPLOYMENT.md says how, including the operator step when no administrator can step up).
+  - Safer before production: a dedicated `SECOND_FACTOR_KEY` (or a KMS key) with a key id stored beside each
+    ciphertext, so keys rotate on their own schedule (old ids kept for reading, new writes on the new key, an explicit
+    re-encryption job). Not done now: it needs a deliberate migration plan for existing secrets and a deployment
+    secret the owner provides; the current behaviour is documented, not hidden.
+  - The administrator second-factor policy stays as built in M9a: step-up actions need an authenticator code;
+    sign-in itself is password-only. Changing either is a product decision.

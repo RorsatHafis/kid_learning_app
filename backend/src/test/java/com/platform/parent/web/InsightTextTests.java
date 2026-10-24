@@ -62,4 +62,18 @@ class InsightTextTests {
         assertThat(missing).as("sentences without Khmer").isEmpty();
     }
 
+    @Test
+    void aCaregiverReadsTheChildsNameRatherThanYourChild() {
+        assertThat(InsightText.translate("Your child has mastered Add within 10.", "en", "Sophea"))
+                .isEqualTo("Sophea has mastered Add within 10.");
+        assertThat(InsightText.translate("Your child has mastered Add within 10.", "km", "Sophea"))
+                .isEqualTo("Sophea បានស្ទាត់ជំនាញ Add within 10 ហើយ។");
+        assertThat(InsightText.translate("Counting may benefit from additional practice.", "en", "Sophea"))
+                .isEqualTo("Counting may benefit from additional practice.");
+        assertThat(InsightText.translate("Your child has mastered Add within 10.", "en", null))
+                .as("the family keeps its wording").isEqualTo("Your child has mastered Add within 10.");
+        assertThat(InsightText.translate("Your child has mastered $1.", "en", "A$1\b"))
+                .as("a name is text, never a pattern").isEqualTo("A$1\b has mastered $1.");
+    }
+
 }

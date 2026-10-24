@@ -104,7 +104,7 @@ function ChildOverview({ childId }: { childId: string }) {
           path="progress"
           element={
             <div className="flex flex-col gap-12">
-              <SkillsSection childId={childId} />
+              <SkillsSection childId={childId} childName={data.displayName} />
               <RecentActivitySection childId={childId} />
             </div>
           }

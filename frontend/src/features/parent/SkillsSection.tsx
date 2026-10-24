@@ -19,13 +19,13 @@ import { familyMessages } from "./messages";
  * never presented as weakness, and a claim about performance only appears once
  * there is enough evidence for it (the server's EvidenceStandard).
  */
-export function SkillsSection({ childId }: { childId: string }) {
+export function SkillsSection({ childId, childName }: { childId: string; childName: string }) {
   const { data, error, isLoading, refetch } = useAsync(() => learningApi.skills(childId), [childId]);
   const m = useMessages(familyMessages).skills;
 
   return (
     <section aria-labelledby="skills" className="flex flex-col gap-5">
-      <SectionTitle id="skills" title={m.title} subtitle={m.subtitle} />
+      <SectionTitle id="skills" title={m.title} subtitle={m.subtitle(childName)} />
 
       {isLoading && !data && <LoadingState label={m.loading} />}
       {error && <ErrorState error={error} onRetry={refetch} />}

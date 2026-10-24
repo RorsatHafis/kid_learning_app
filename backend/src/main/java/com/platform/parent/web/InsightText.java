@@ -41,11 +41,24 @@ final class InsightText {
     }
 
     static String translate(String english, String language) {
-        if (english == null || !UiLanguage.isKhmer(language)) {
-            return english;
+        return translate(english, language, null);
+    }
+
+    /**
+     * M10b follow-up: for a reader who isn't the child's family (a caregiver), {@code childName} replaces "your child"
+     * ("Sophea has mastered ..."; in Khmer, which writes "your child" joined to the next word, the name is followed by
+     * a space); null keeps the family's wording.
+     */
+    static String translate(String english, String language, String childName) {
+        if (english == null) {
+            return null;
         }
-        String khmer = khmer(english);
-        return khmer != null ? khmer : english;
+        String khmer = UiLanguage.isKhmer(language) ? khmer(english) : null;
+        if (childName == null) {
+            return khmer != null ? khmer : english;
+        }
+        return khmer != null ? khmer.replaceFirst("^កូនរបស់អ្នក", java.util.regex.Matcher.quoteReplacement(childName + " "))
+                : english.replaceFirst("^Your child\\b", java.util.regex.Matcher.quoteReplacement(childName));
     }
 
     /** The Khmer for one of ParentInsightService's sentences, or null for any other text. */

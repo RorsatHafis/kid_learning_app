@@ -146,6 +146,6 @@ describe("SkillPage (X19)", () => {
   it("explains a skill that isn't the family's", async () => {
     serve(respond(404, { status: 404, detail: "Skill not found" }));
     renderPage();
-    expect(await screen.findByText(/isn't part of your child's learning paths/)).toBeInTheDocument();
+    expect(await screen.findByText(/isn't part of this child's learning paths/)).toBeInTheDocument();
   });
 });

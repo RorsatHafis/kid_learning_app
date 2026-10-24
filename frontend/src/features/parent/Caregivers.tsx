@@ -218,7 +218,7 @@ export function HelpingPage() {
         )}
       </div>
       <ChangesSection childId={childId} childName={name} />
-      <SkillsSection childId={childId} />
+      <SkillsSection childId={childId} childName={name} />
       <InsightsSection childId={childId} />
       <RecentActivitySection childId={childId} />
     </div>
