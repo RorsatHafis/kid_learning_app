@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { parentReason, stepTag } from "@/features/learning/explain";
 import { cn } from "@/lib/utils/cn";
 import { ChooseCurriculumPanel } from "./ChooseCurriculumPanel";
+import { AgeFitNote } from "./AgeFitNote";
 import { SectionTitle } from "./SectionTitle";
 import { ChapterTrack } from "./ui";
 import { chapterRuns } from "@/features/learning/chapters";
@@ -81,6 +82,7 @@ export function LearningNowSection({
         <EnrollmentCard
           key={enrollment.enrollmentId}
           enrollment={enrollment}
+          childId={childId}
           childName={childName}
           onStopped={enrollments.refetch}
         />
@@ -91,10 +93,12 @@ export function LearningNowSection({
 
 function EnrollmentCard({
   enrollment,
+  childId,
   childName,
   onStopped,
 }: {
   enrollment: EnrollmentOverview;
+  childId: string;
   childName: string;
   onStopped: () => void;
 }) {
@@ -119,6 +123,10 @@ function EnrollmentCard({
             {m.completed(completedSteps, totalSteps)}
           </p>
         </div>
+
+        {enrollment.ageFit && !enrollment.ageFit.forChildAge && (
+          <AgeFitNote childId={childId} childName={childName} curriculumName={curriculum.name} fit={enrollment.ageFit} onChosen={onStopped} />
+        )}
 
         <ChapterTrack chapters={enrollment.chapters} label={ch.label(curriculum.name)} />
 

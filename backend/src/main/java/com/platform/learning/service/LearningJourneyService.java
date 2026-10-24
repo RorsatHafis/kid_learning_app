@@ -84,6 +84,7 @@ public class LearningJourneyService {
     private final LearningObjectiveRepository learningObjectiveRepository;
     private final LearningObjectiveSkillService learningObjectiveSkillService;
     private final PlacementNames placementNames;
+    private final com.platform.child.repository.ChildRepository childRepository;
 
     public LearningJourneyService(EnrollmentRepository enrollmentRepository, LearningPathRepository learningPathRepository,
                                   LearningPathItemRepository learningPathItemRepository,
@@ -97,7 +98,9 @@ public class LearningJourneyService {
                                   AgeHubRepository ageHubRepository,
                                   com.platform.review.repository.ReviewItemRepository reviewItemRepository,
                                   LearningObjectiveRepository learningObjectiveRepository,
-                                  LearningObjectiveSkillService learningObjectiveSkillService, PlacementNames placementNames) {
+                                  LearningObjectiveSkillService learningObjectiveSkillService, PlacementNames placementNames,
+                                  com.platform.child.repository.ChildRepository childRepository) {
+        this.childRepository = childRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.learningPathRepository = learningPathRepository;
         this.learningPathItemRepository = learningPathItemRepository;
@@ -205,9 +208,20 @@ public class LearningJourneyService {
      * @param chapterCount   how many chapters the journey has
      * @param chapters       every chapter with its state, in curriculum order
      */
+    /** {@code ageFit}: for a family (platform) path, whether it is for the child's age now; null for a class's path. */
     public record EnrollmentOverview(UUID enrollmentId, CurriculumRef curriculum, EnrollmentStatus status,
                                      Instant enrolledAt, int completedSteps, int totalSteps, JourneyStep nextStep,
-                                     Chapter currentChapter, int chapterCount, List<Chapter> chapters) {
+                                     Chapter currentChapter, int chapterCount, List<Chapter> chapters, AgeFit ageFit) {
+    }
+
+    /**
+     * Whether a family path's age group is the child's now (the rule automatic enrolment and the family catalog use:
+     * the age group the child's age falls in). When it isn't, {@code suggested} names a published platform path in
+     * the same subject for the child's age that the child isn't on, if there is one. The family decides; nothing
+     * changes on its own.
+     */
+    public record AgeFit(boolean forChildAge, int childAge, int minAge, Integer maxAge, UUID suggestedCurriculumId,
+                         String suggestedCurriculumName) {
     }
 
     /** What the platform decided after a completed activity, as recorded. */
@@ -226,10 +240,16 @@ public class LearningJourneyService {
     @Transactional(readOnly = true)
     public List<EnrollmentOverview> enrollmentsFor(UUID childId) {
         Lookups lookups = new Lookups(childId);
-        return enrollmentRepository.findByChildId(childId).stream()
+        List<Enrollment> active = enrollmentRepository.findByChildId(childId).stream()
                 // Y19: a stopped journey is not one the child is on; choosing it again brings it back.
                 .filter(enrollment -> enrollment.getStatus() != EnrollmentStatus.WITHDRAWN)
                 .sorted(Comparator.comparing(Enrollment::getEnrolledAt))
+                .toList();
+        java.util.Set<UUID> onCurricula = active.stream()
+                .map(enrollment -> curriculumService.getVersion(enrollment.getCurriculumVersionId()).getCurriculumId())
+                .collect(java.util.stream.Collectors.toSet());
+        Integer childAge = childRepository.findById(childId).map(child -> child.ageInYears(java.time.LocalDate.now())).orElse(null);
+        return active.stream()
                 .map(enrollment -> {
                     Journey journey = journey(enrollment, lookups);
                     JourneyStep next = journey.steps().stream()
@@ -239,7 +259,8 @@ public class LearningJourneyService {
                             .filter(chapter -> chapter.state() == ChapterState.CURRENT).findFirst().orElse(null);
                     return new EnrollmentOverview(enrollment.getId(), journey.curriculum(), enrollment.getStatus(),
                             enrollment.getEnrolledAt(), journey.completedSteps(), journey.totalSteps(), next,
-                            current, journey.chapters().size(), journey.chapters());
+                            current, journey.chapters().size(), journey.chapters(),
+                            ageFit(enrollment.getCurriculumVersionId(), childAge, onCurricula));
                 })
                 .toList();
     }
@@ -516,6 +537,27 @@ public class LearningJourneyService {
         return new CompletedActivity(attempt.getId(), version.getId(), activity.getTitle(), subjectName, source,
                 attempt.getScore(), correct, answers.size(), attempt.getStartedAt(), attempt.getCompletedAt(),
                 lookups.skillsOf(version.getId()), decision);
+    }
+
+    /** Null for a class's (teacher-owned) path, whose fit is the school's to judge, or when the child's age is unknown. */
+    private AgeFit ageFit(UUID curriculumVersionId, Integer childAge, java.util.Set<UUID> onCurricula) {
+        Curriculum curriculum = curriculumService.getCurriculum(curriculumService.getVersion(curriculumVersionId).getCurriculumId());
+        if (curriculum.getOwnerAccountId() != null || childAge == null) {
+            return null;
+        }
+        AgeHub hub = ageHubRepository.findById(curriculum.getAgeHubId()).orElse(null);
+        if (hub == null) {
+            return null;
+        }
+        java.util.Optional<AgeHub> childHub = ageHubRepository.findForAge(childAge);
+        boolean fits = childHub.map(h -> h.getId().equals(hub.getId())).orElse(false);
+        Curriculum suggested = fits || childHub.isEmpty() ? null : curriculumService.listActiveForAgeHub(childHub.get().getId()).stream()
+                .filter(other -> other.getOwnerAccountId() == null && other.getSubjectId().equals(curriculum.getSubjectId()))
+                .filter(other -> !onCurricula.contains(other.getId()) && curriculumService.hasPublishedVersion(other.getId()))
+                .min(Comparator.comparing(Curriculum::getName, String.CASE_INSENSITIVE_ORDER))
+                .orElse(null);
+        return new AgeFit(fits, childAge, hub.getMinAge(), hub.getMaxAge(), suggested == null ? null : suggested.getId(),
+                suggested == null ? null : suggested.getName());
     }
 
     @Transactional(readOnly = true)
