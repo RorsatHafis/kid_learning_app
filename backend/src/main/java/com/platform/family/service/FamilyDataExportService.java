@@ -115,9 +115,12 @@ public class FamilyDataExportService {
         this.subscriptions = subscriptions;
     }
 
-    /** {@code plan}: the family's plan as the parent sees it (no administrator's note), when the account has a family. */
+    /**
+     * {@code plan}: the family's plan as the parent sees it (no administrator's note), when the account has a family.
+     * {@code learningDayZone}: the time zone the family chose for its learning day (null: the platform's).
+     */
     public record Export(String format, Instant exportedAt, AccountData account, OwnFamilyPlanResponse plan,
-                         List<ChildData> children) {
+                         String learningDayZone, List<ChildData> children) {
     }
 
     public record AccountData(UUID id, String email, String role, Instant createdAt, Instant emailConfirmedAt,
@@ -153,7 +156,12 @@ public class FamilyDataExportService {
         return new Export(FORMAT, Instant.now(),
                 new AccountData(account.getId(), account.getEmail(), account.getPlatformRole().name(), account.getCreatedAt(),
                         account.getEmailVerifiedAt(), account.getPreferredLanguage()),
-                plan, children);
+                plan, plan == null ? null : chosenZone(accountId), children);
+    }
+
+    private String chosenZone(UUID accountId) {
+        com.platform.child.service.DailyLearningTimeService.FamilyDay day = dailyTime.familyDay(accountId);
+        return day.familyChoice() ? day.zone() : null;
     }
 
     private ChildData childData(UUID accountId, Child child) {

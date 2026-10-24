@@ -2,6 +2,7 @@ import type { Locale } from "../../i18n/store";
 import { apiClient } from "./client";
 import type {
   LearningToday,
+  FamilyLearningDay,
   AccountProfile,
   SecondFactorStatus,
   ActivityAttempt,
@@ -111,6 +112,13 @@ export const accountApi = {
 };
 
 // child/web/ChildController.java
+/** The time zone the family's learning day follows (set by a parent; null puts back the platform's). */
+export const familyDayApi = {
+  get: () => apiClient.get<FamilyLearningDay>("/family/learning-day"),
+  // 400 for a zone that isn't one of the known IANA ids.
+  set: (zone: string | null) => apiClient.put<FamilyLearningDay>("/family/learning-day", { zone }),
+};
+
 export const childrenApi = {
   list: () => apiClient.get<Child[]>("/children"),
   get: (childId: string) => apiClient.get<Child>(`/children/${childId}`),

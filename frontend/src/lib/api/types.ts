@@ -332,6 +332,19 @@ export interface EnrollmentOverview {
   chapterCount: number;
   /** Every chapter with its state, in curriculum order. */
   chapters: Chapter[];
+  /** A family path's fit with the child's age now; null for a class's path. */
+  ageFit: AgeFit | null;
+}
+
+/** learning/service/LearningJourneyService.AgeFit: whether a family path is for the child's age now. */
+export interface AgeFit {
+  forChildAge: boolean;
+  childAge: number;
+  minAge: number;
+  maxAge: number | null;
+  /** A published platform path in the same subject for the child's age, which they aren't on. */
+  suggestedCurriculumId: string | null;
+  suggestedCurriculumName: string | null;
 }
 
 export type AdaptationDecisionType = "CONTINUE" | "INCREASE_DIFFICULTY" | "REMEDIATE" | "SCHEDULE_REVIEW";
@@ -641,5 +654,15 @@ export interface LearningToday {
   reached: boolean;
   /** At most 5 minutes left: the next activity is the last for today. */
   nearEnd: boolean;
+  /** The IANA time zone the learning day follows (the family's choice, else the platform's). */
+  zone: string;
+}
+
+/** child/service/DailyLearningTimeService.FamilyDay: the zone a family's learning day follows. */
+export interface FamilyLearningDay {
+  zone: string;
+  /** Chosen by a parent (else the platform's zone). */
+  familyChoice: boolean;
+  platformZone: string;
 }
 

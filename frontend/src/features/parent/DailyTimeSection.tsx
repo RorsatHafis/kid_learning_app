@@ -61,7 +61,7 @@ export function DailyTimeSection({ childId, childName }: { childId: string; chil
         <h2 id="daily-time" className="font-display text-title font-bold text-tonle-950">
           {m.title}
         </h2>
-        <p className="mt-1 max-w-prose text-[0.9375rem] leading-relaxed text-ink-soft">{m.lead(childName)}</p>
+        <p className="mt-1 max-w-prose text-[0.9375rem] leading-relaxed text-ink-soft">{m.lead(childName, today?.zone)}</p>
       </div>
       {limit.error ? (
         <ErrorState error={limit.error} onRetry={limit.refetch} />

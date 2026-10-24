@@ -823,11 +823,10 @@ Dependencies:
     Content for ages 3 and 10–12 waits for D-09.
   - **Backlog** (small, folded into a fitting milestone):
     - ~~caregiver wording~~ (done with M5b, 2026-10-24);
-    - the duplicate reference line in a pending payment (header plus transfer box);
+    - ~~the duplicate reference line in a pending payment~~ (done in the family pass, 2026-10-24);
     - the customer payment-screenshot upload (deferred from M8b);
-    - a per-family learning-day time zone (M3).
-    - the account-setup page and its sign-in note speak of "your teacher account" and "your school's invitation"
-      to every provisioned role, administrators included (seen in the M9a browser check).
+    - ~~a per-family learning-day time zone (M3)~~ (done in the family pass, 2026-10-24);
+    - ~~the account-setup page's role wording~~ (done in the family pass, 2026-10-24).
 - 2026-10-23: **M9a done: an administrator's authenticator app (TOTP) for step-up.**
   - **What**:
     - RFC 6238 codes (HMAC-SHA1, 6 digits, 30 s, one step of drift), no new library (`Totp`, checked against the
@@ -936,3 +935,36 @@ Dependencies:
     secret the owner provides; the current behaviour is documented, not hidden.
   - The administrator second-factor policy stays as built in M9a: step-up actions need an authenticator code;
     sign-in itself is password-only. Changing either is a product decision.
+- 2026-10-24: **Family-first pass (owner's brief: parents and children first).** CI green on `4f93014` (M5b closed).
+  - **Walked through in a browser** as a seeded parent and child on the isolated stack: the family home, a child's
+    learning plan (why the next step), skills and evidence, school and settings (daily time, breaks, another device,
+    people who help, deletion), the child's space, an activity with a right and a wrong answer (gentle feedback, the
+    right answer shown), the end screen. No coercive mechanics found. Curriculum-driven learning is already in place
+    (age groups are data with min/max ages; a child's age is separate from the path; the family chooses, with other
+    ages offered separately; enrolment and the planner drive what is played) - not rebuilt.
+  - **Found and done**:
+    - **The learning day per family** (V70 `families.learning_day_zone`, null = the platform's, so every existing
+      family keeps its day): a parent sets it on the account page ("Your family's day", every IANA zone the browser
+      knows; "Use this device's" only when that device's midnight differs); the server validates the id, counts each
+      child's day from midnight there (limit, used time, extensions), audits the change and includes it in the
+      family's data export; "Learning each day" names the place ("midnight (New York time)"). A child device can't
+      reach it (the M10a allow-list). A staff account with no family gets 404.
+    - **A path for another age** says so on the child's learning plan: "Maths - Junior is for ages 4-9, and Sophea is
+      11 now", naming the published platform path in the same subject for the child's age when there is one ("Start
+      ..."), else that there is none yet and this one carries on. Server-side, by the same age-group rule automatic
+      enrolment uses; for family paths only (a class's path is the school's); nothing changes on its own.
+    - A bank transfer's reference shows once, in the transfer box beside the QR (it was also in the header).
+    - The family home's "Join a class with a code" named and linked only the first child; with several children it
+      now offers each ("Sophea · Rithy"), since a code is joined from the page of the child in that class.
+    - The account-setup page and its sign-in note no longer say "teacher account" / "your school's invitation" to
+      every invited role (neutral wording, English and Khmer).
+  - **Verified**: `DailyLearningTimeIntegrationTests` (+2: the zone, its day boundary at New York midnight - 0 minutes
+    before it, 20 after - export, audit, reset, no family → 404; a mutation ignoring the family's zone fails it),
+    `AgeFitIntegrationTests` (repeatable, also on a fresh database: automatic enrolment taken into account), export,
+    journey, payment suites; full backend 477 (3 proxy-test errors from the local connection limit, passing alone);
+    Vitest 379 + new; browser: the zone saved and named in the child's settings, reset; the age note on a child made
+    11 (then restored); E2E (see the commit).
+  - **Checked, no change**: "Recognize addition may benefit from additional practice" beside "too early to tell" on
+    2 answers is consistent: it is the Smart Review recommendation for a review that was actually scheduled
+    (`ParentInsightService.reviewInsight`, shown as a Suggestion), not a mastery claim, which needs sufficient
+    evidence (Battle 2C).

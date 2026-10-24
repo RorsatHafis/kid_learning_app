@@ -1,3 +1,4 @@
+import { zonePlace } from "@/i18n/zones";
 import { defineMessages } from "@/i18n/catalog";
 
 /** Break reminders (Y36): the parent's setting and the child's suggestion. */
@@ -57,8 +58,8 @@ export const dailyTimeMessages = defineMessages(
   "features/parent/dailyTime",
   {
     title: "Learning each day",
-    lead: (name: string) =>
-      `You can choose how long ${name} learns each day. When the time is used, the activity ${name} is doing always finishes; then their space says goodbye for today. A new day starts at midnight (Cambodia time).`,
+    lead: (name: string, zone?: string) =>
+      `You can choose how long ${name} learns each day. When the time is used, the activity ${name} is doing always finishes; then their space says goodbye for today. A new day starts at midnight${zone ? ` (${zonePlace(zone, "en")} time)` : ""}.`,
     label: "Each day, up to",
     off: "No daily limit",
     minutes: (n: number) => (n >= 60 && n % 60 === 0 ? `${n / 60} hour${n === 60 ? "" : "s"}` : `${n} minutes`),
@@ -76,8 +77,8 @@ export const dailyTimeMessages = defineMessages(
   },
   {
     title: "ការរៀនរៀងរាល់ថ្ងៃ",
-    lead: (name: string) =>
-      `អ្នកអាចជ្រើសរើសថា ${name} រៀនរយៈពេលប៉ុន្មានក្នុងមួយថ្ងៃ។ នៅពេលប្រើអស់ពេល សកម្មភាពដែល ${name} កំពុងធ្វើតែងតែបញ្ចប់ បន្ទាប់មកកន្លែងរៀនរបស់ពួកគេនិយាយលាសម្រាប់ថ្ងៃនេះ។ ថ្ងៃថ្មីចាប់ផ្តើមនៅពាក់កណ្តាលអធ្រាត្រ (ម៉ោងកម្ពុជា)។`,
+    lead: (name: string, zone?: string) =>
+      `អ្នកអាចជ្រើសរើសថា ${name} រៀនរយៈពេលប៉ុន្មានក្នុងមួយថ្ងៃ។ នៅពេលប្រើអស់ពេល សកម្មភាពដែល ${name} កំពុងធ្វើតែងតែបញ្ចប់ បន្ទាប់មកកន្លែងរៀនរបស់ពួកគេនិយាយលាសម្រាប់ថ្ងៃនេះ។ ថ្ងៃថ្មីចាប់ផ្តើមនៅពាក់កណ្តាលអធ្រាត្រ${zone ? ` (ម៉ោង${zonePlace(zone, "km")})` : ""}។`,
     label: "ក្នុងមួយថ្ងៃ រហូតដល់",
     off: "គ្មានដែនកំណត់ប្រចាំថ្ងៃ",
     minutes: (n: number) => (n >= 60 && n % 60 === 0 ? `${n / 60} ម៉ោង` : `${n} នាទី`),

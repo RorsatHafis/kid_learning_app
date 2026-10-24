@@ -32,8 +32,8 @@ import java.util.UUID;
  * open always finishes, and answers are never refused. Off unless the parent sets it. A parent can give a little more
  * time for today (10, 15 or 30 minutes, at most 2 hours extra a day), recorded and audited.
  *
- * <p>The learning day follows {@code platform.learning.day-zone} (Cambodia by default); families in other zones are a
- * later per-family setting.
+ * <p>The learning day follows the family's own time zone when a parent has set one, else
+ * {@code platform.learning.day-zone} (Cambodia by default).
  */
 @Service
 public class DailyLearningTimeService {
@@ -47,9 +47,16 @@ public class DailyLearningTimeService {
     public record Extension(LocalDate learningDay, int minutes, Instant grantedAt) {
     }
 
+    /** {@code zone}: the IANA time zone the learning day follows (midnight there starts a new day). */
     public record Today(LocalDate day, Integer limitMinutes, int usedMinutes, int extraMinutes, Integer remainingMinutes,
-                        boolean reached, boolean nearEnd) {
+                        boolean reached, boolean nearEnd, String zone) {
     }
+
+    /** A family's learning day: the zone it follows, and whether that is the family's own choice or the platform's. */
+    public record FamilyDay(String zone, boolean familyChoice, String platformZone) {
+    }
+
+    static final String UNKNOWN_ZONE = "Choose a time zone from the list";
 
     private final NamedParameterJdbcTemplate jdbc;
     private final ChildRepository children;
@@ -90,15 +97,48 @@ public class DailyLearningTimeService {
 
     @Transactional(readOnly = true)
     public Today today(UUID childId) {
+        ZoneId zone = zoneOf(childId);
         LocalDate day = LocalDate.now(clock.withZone(zone));
         Integer limit = limitMinutes(childId);
-        int used = usedMinutes(childId, day);
+        int used = usedMinutes(childId, day, zone);
         int extra = extraMinutes(childId, day);
         if (limit == null) {
-            return new Today(day, null, used, extra, null, false, false);
+            return new Today(day, null, used, extra, null, false, false, zone.getId());
         }
         int remaining = Math.max(0, limit + extra - used);
-        return new Today(day, limit, used, extra, remaining, remaining == 0, remaining > 0 && remaining <= NEAR_END_MINUTES);
+        return new Today(day, limit, used, extra, remaining, remaining == 0, remaining > 0 && remaining <= NEAR_END_MINUTES,
+                zone.getId());
+    }
+
+    /** The learning day of the family this parent belongs to. */
+    @Transactional(readOnly = true)
+    public FamilyDay familyDay(UUID accountId) {
+        String chosen = jdbc.queryForObject("SELECT learning_day_zone FROM families WHERE id = :f", Map.of("f", familyOf(accountId)),
+                String.class);
+        return new FamilyDay(chosen != null ? chosen : zone.getId(), chosen != null, zone.getId());
+    }
+
+    /**
+     * A parent sets the zone their family's learning day follows (null: the platform's again). Only known IANA zone
+     * ids are stored; today's learning time is then counted from midnight there.
+     */
+    @Transactional
+    public FamilyDay setFamilyZone(UUID accountId, String zoneId) {
+        UUID familyId = familyOf(accountId);
+        String clean = zoneId == null || zoneId.isBlank() ? null : zoneId.strip();
+        if (clean != null && (clean.length() > 64 || !ZoneId.getAvailableZoneIds().contains(clean))) {
+            throw new IllegalArgumentException(UNKNOWN_ZONE);
+        }
+        String before = jdbc.queryForObject("SELECT learning_day_zone FROM families WHERE id = :f FOR UPDATE", Map.of("f", familyId),
+                String.class);
+        jdbc.update("UPDATE families SET learning_day_zone = :z WHERE id = :f", new MapSqlParameterSource("z", clean).addValue("f", familyId));
+        if (!java.util.Objects.equals(before, clean)) {
+            Map<String, Object> details = new java.util.HashMap<>();
+            details.put("zone", clean == null ? "platform" : clean);
+            audit.record(new RecordAuditEvent(null, accountId, AuditActorType.PARENT, "FAMILY_LEARNING_DAY_ZONE_CHANGED", "FAMILY",
+                    familyId, details));
+        }
+        return familyDay(accountId);
     }
 
     /** Refuses a new activity once today's time is used (the caller has let an open one continue already). */
@@ -120,7 +160,7 @@ public class DailyLearningTimeService {
         if (limitMinutes(childId) == null) {
             throw new IllegalStateException("There's no daily limit to extend");
         }
-        LocalDate day = LocalDate.now(clock.withZone(zone));
+        LocalDate day = LocalDate.now(clock.withZone(zoneOf(childId)));
         if (extraMinutes(childId, day) + minutes > MAX_EXTRA_MINUTES_PER_DAY) {
             throw new IllegalStateException("A learning day can be extended by 2 hours at most");
         }
@@ -143,7 +183,27 @@ public class DailyLearningTimeService {
 
     // ------------------------------------------------------------------ helpers
 
-    private int usedMinutes(UUID childId, LocalDate day) {
+    /** The zone this child's learning day follows: their family's choice, else the platform's. */
+    private ZoneId zoneOf(UUID childId) {
+        String chosen = jdbc.query("SELECT f.learning_day_zone FROM children c JOIN families f ON f.id = c.family_id WHERE c.id = :c",
+                Map.of("c", childId), rs -> rs.next() ? rs.getString(1) : null);
+        if (chosen == null) {
+            return zone;
+        }
+        try {
+            return ZoneId.of(chosen);
+        } catch (java.time.DateTimeException e) {
+            return zone;
+        }
+    }
+
+    private UUID familyOf(UUID accountId) {
+        return jdbc.queryForList("SELECT family_id FROM memberships WHERE account_id = :a AND status = 'ACTIVE' ORDER BY created_at LIMIT 1",
+                Map.of("a", accountId), UUID.class).stream().findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Family for account", accountId));
+    }
+
+    private int usedMinutes(UUID childId, LocalDate day, ZoneId zone) {
         Instant start = day.atStartOfDay(zone).toInstant();
         Instant end = day.plusDays(1).atStartOfDay(zone).toInstant();
         Double seconds = jdbc.queryForObject("""

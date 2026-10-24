@@ -18,6 +18,8 @@ import { messagesNow, useMessages } from "@/i18n/catalog";
 import { accountMessages } from "./account.messages";
 import { AuthenticatorApp } from "./AuthenticatorApp";
 import { authenticatorMessages } from "./authenticator.messages";
+import { FamilyDaySection } from "./FamilyDaySection";
+import { familyDayMessages } from "./familyDay.messages";
 import { formatDate, formatTime } from "@/i18n/format";
 import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 
@@ -32,6 +34,7 @@ export function AccountPage() {
   const profile = useAsync(() => accountApi.me(), []);
   const m = useMessages(accountMessages);
   const authenticator = useMessages(authenticatorMessages);
+  const familyDay = useMessages(familyDayMessages);
   const { hash } = useLocation();
   // A link like /parent/account#plan lands on that section once the page has drawn it.
   useEffect(() => {
@@ -62,6 +65,7 @@ export function AccountPage() {
             { id: "devices", label: m.devices.title },
             ...(profile.data?.platformRole === "PARENT"
               ? [
+                  { id: "family-day", label: familyDay.title },
                   { id: "plan", label: m.plan.title },
                   { id: "your-data", label: m.data.title },
                   { id: "delete-account", label: m.deletion.title },
@@ -116,6 +120,11 @@ export function AccountPage() {
           </SettingsRow>
         )}
         <SignOutEverywhere />
+        {profile.data?.platformRole === "PARENT" && (
+          <SettingsRow id="family-day" title={familyDay.title} subtitle={familyDay.subtitle}>
+            <FamilyDaySection />
+          </SettingsRow>
+        )}
         {profile.data?.platformRole === "PARENT" && <YourPlan />}
         {profile.data?.platformRole === "PARENT" && <YourData />}
         {profile.data?.platformRole === "PARENT" && (

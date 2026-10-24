@@ -163,6 +163,8 @@ public final class ServerText {
             Map.entry(FILTER_RATE_LIMITED, "មានសំណើច្រើនពេកពីបណ្ដាញនេះ។ សូមរង់ចាំបន្តិច ហើយព្យាយាមម្ដងទៀត។"),
             Map.entry("This device can only open one child's learning space", "ឧបករណ៍នេះអាចបើកបានតែកន្លែងរៀនរបស់កុមារម្នាក់ប៉ុណ្ណោះ"),
             Map.entry("Enter your password again to do this", "សូមបញ្ចូលពាក្យសម្ងាត់របស់អ្នកម្ដងទៀត ដើម្បីធ្វើការនេះ"),
+            // The family's learning day
+            Map.entry("Choose a time zone from the list", "សូមជ្រើសរើសតំបន់ម៉ោងពីបញ្ជី"),
             // M5b: lessons shared with a school
             Map.entry("Platform lessons reach every family already, so they aren't shared with a school",
                     "មេរៀនរបស់វេទិកាបានទៅដល់គ្រប់គ្រួសាររួចហើយ ដូច្នេះវាមិនត្រូវបានចែករំលែកជាមួយសាលាទេ"),

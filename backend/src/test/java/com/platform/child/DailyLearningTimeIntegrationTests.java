@@ -40,6 +40,8 @@ class DailyLearningTimeIntegrationTests {
 
     @Value("${local.server.port}") private int port;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private com.platform.identity.repository.AccountRepository accountRepository;
+    @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     private final HttpClient http = HttpClient.newHttpClient();
 
@@ -119,6 +121,57 @@ class DailyLearningTimeIntegrationTests {
         String attempt = start(parent, child, steps.get("activityVersionId").asString(), steps.get("learningPathItemId").asString(), 201);
         jdbc.update("update activity_attempts set started_at = started_at - interval '5 hours' where id = ?::uuid", attempt);
         assertThat(json(send("GET", "/api/v1/children/" + child + "/today", null, parent), 200).get("reached").asBoolean()).isFalse();
+    }
+
+    @Test
+    void aFamilysLearningDayFollowsTheTimeZoneAParentChose() throws Exception {
+        String parent = registerParent();
+        String child = createChild(parent);
+        JsonNode day = json(send("GET", "/api/v1/family/learning-day", null, parent), 200);
+        assertThat(day.get("zone").asString()).isEqualTo("Asia/Phnom_Penh");
+        assertThat(day.get("familyChoice").asBoolean()).isFalse();
+
+        assertThat(send("PUT", "/api/v1/family/learning-day", "{\"zone\":\"Mars/Olympus\"}", parent).statusCode()).isEqualTo(400);
+        ZoneId newYork = ZoneId.of("America/New_York");
+        Assumptions.assumeTrue(java.time.LocalTime.now(newYork).isAfter(LocalTime.of(1, 0)), "too close to midnight in New York");
+        day = json(send("PUT", "/api/v1/family/learning-day", "{\"zone\":\"America/New_York\"}", parent), 200);
+        assertThat(day.get("zone").asString()).isEqualTo("America/New_York");
+        assertThat(day.get("familyChoice").asBoolean()).isTrue();
+
+        // The day, and the time counted in it, start at midnight in New York.
+        JsonNode today = json(send("GET", "/api/v1/children/" + child + "/today", null, parent), 200);
+        assertThat(today.get("zone").asString()).isEqualTo("America/New_York");
+        assertThat(today.get("day").asString()).isEqualTo(LocalDate.now(newYork).toString());
+        JsonNode steps = json(send("GET", "/api/v1/children/" + child + "/enrollments", null, parent), 200).get(0).get("nextStep");
+        String attempt = start(parent, child, steps.get("activityVersionId").asString(), steps.get("learningPathItemId").asString(), 201);
+        java.time.Instant newYorkMidnight = LocalDate.now(newYork).atStartOfDay(newYork).toInstant();
+        jdbc.update("update activity_attempts set started_at = ?, completed_at = ?, status = 'COMPLETED' where id = ?::uuid",
+                java.sql.Timestamp.from(newYorkMidnight.minusSeconds(3600)), java.sql.Timestamp.from(newYorkMidnight.minusSeconds(1800)), attempt);
+        assertThat(json(send("GET", "/api/v1/children/" + child + "/today", null, parent), 200).get("usedMinutes").asInt())
+                .as("learning before midnight in New York belongs to yesterday").isZero();
+        jdbc.update("update activity_attempts set started_at = ?, completed_at = ? where id = ?::uuid",
+                java.sql.Timestamp.from(newYorkMidnight.plusSeconds(60)), java.sql.Timestamp.from(newYorkMidnight.plusSeconds(60 + 20 * 60)), attempt);
+        assertThat(json(send("GET", "/api/v1/children/" + child + "/today", null, parent), 200).get("usedMinutes").asInt()).isEqualTo(20);
+
+        // In the family's data export, and audited; back to the platform's day on request.
+        assertThat(json(send("GET", "/api/v1/account/data-export", null, parent), 200).get("learningDayZone").asString())
+                .isEqualTo("America/New_York");
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'FAMILY_LEARNING_DAY_ZONE_CHANGED' "
+                + "and resource_id = (select family_id from children where id = ?::uuid)", Integer.class, child)).isEqualTo(1);
+        assertThat(json(send("PUT", "/api/v1/family/learning-day", "{\"zone\":null}", parent), 200).get("familyChoice").asBoolean()).isFalse();
+        assertThat(json(send("GET", "/api/v1/children/" + child + "/today", null, parent), 200).get("zone").asString())
+                .isEqualTo("Asia/Phnom_Penh");
+    }
+
+    @Test
+    void someoneInNoFamilyHasNoLearningDayToSet() throws Exception {
+        String email = "daily-teacher-" + UUID.randomUUID() + "@example.com";
+        accountRepository.saveAndFlush(com.platform.identity.entity.Account.register(email, passwordEncoder.encode(PASSWORD),
+                com.platform.identity.entity.PlatformRole.TEACHER));
+        String teacher = json(send("POST", "/api/v1/auth/login", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\"}", null), 200)
+                .get("accessToken").asString();
+        assertThat(send("GET", "/api/v1/family/learning-day", null, teacher).statusCode()).isEqualTo(404);
+        assertThat(send("PUT", "/api/v1/family/learning-day", "{\"zone\":\"Asia/Bangkok\"}", teacher).statusCode()).isEqualTo(404);
     }
 
     // ------------------------------------------------------------------ helpers
