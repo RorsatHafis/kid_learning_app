@@ -62,7 +62,9 @@ export const setupMessages = defineMessages(
       account: "Your plan and account",
       accountLead: "Plan, sign-in, language and your family's data.",
       school: "Join a class with a code",
-      schoolLead: (name: string) => `Share ${name}'s school-assigned learning with a teacher.`,
+      schoolLead: (name: string) => `Enter the code ${name}'s teacher gave you to join their class.`,
+      schoolLeadMany: "Enter the code a teacher gave you, from the page of the child in that class:",
+      schoolFor: (name: string) => `Join a class for ${name}`,
     },
     child: {
       tabs: "Sections",
@@ -142,7 +144,9 @@ export const setupMessages = defineMessages(
       account: "គម្រោង និងគណនីរបស់អ្នក",
       accountLead: "គម្រោង ការចូលគណនី ភាសា និងទិន្នន័យគ្រួសាររបស់អ្នក។",
       school: "ចូលរួមថ្នាក់ដោយប្រើលេខកូដ",
-      schoolLead: (name: string) => `ចែករំលែកការរៀនដែលសាលាកំណត់របស់ ${name} ជាមួយគ្រូ។`,
+      schoolLead: (name: string) => `បញ្ចូលលេខកូដដែលគ្រូរបស់ ${name} បានផ្ដល់ឱ្យអ្នក ដើម្បីចូលរួមថ្នាក់របស់ពួកគេ។`,
+      schoolLeadMany: "បញ្ចូលលេខកូដដែលគ្រូបានផ្ដល់ឱ្យអ្នក ពីទំព័ររបស់កុមារដែលនៅក្នុងថ្នាក់នោះ៖",
+      schoolFor: (name: string) => `ចូលរួមថ្នាក់សម្រាប់ ${name}`,
     },
     child: {
       tabs: "ផ្នែក",

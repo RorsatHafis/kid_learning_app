@@ -27,7 +27,7 @@ export const authMessages = defineMessages(
     notices: {
       signedOutEverywhere: "You've been signed out on every device.",
       passwordReset: "Your password has been changed and every device was signed out. Log in with your new password.",
-      accountReady: "Your account is ready. Log in to see your school's invitation.",
+      accountReady: "Your account is ready. Log in to continue: if a school invited you, its invitation is waiting there.",
     },
     login: {
       title: "Welcome back",
@@ -94,11 +94,11 @@ export const authMessages = defineMessages(
       },
       setup: {
         title: "Set up your account",
-        subtitle: "Choose a password for your teacher account. You'll use it with your email address to log in.",
+        subtitle: "Choose a password for your account. You'll use it with your email address to log in.",
         submit: "Create password",
         submitting: "Creating…",
         unusable:
-          "It may have expired (invitation links last 7 days), already been used, or been replaced by a newer invitation. Ask the school to invite you again.",
+          "It may have expired (invitation links last 7 days), already been used, or been replaced by a newer invitation. Ask whoever invited you to send a new one.",
         incomplete: "The link is incomplete. Open it straight from the invitation email.",
         recovery: "I already chose a password — reset it",
       },
@@ -148,7 +148,7 @@ export const authMessages = defineMessages(
     notices: {
       signedOutEverywhere: "អ្នកត្រូវបានចាកចេញពីគ្រប់ឧបករណ៍ហើយ។",
       passwordReset: "ពាក្យសម្ងាត់របស់អ្នកត្រូវបានប្ដូរ ហើយឧបករណ៍ទាំងអស់ត្រូវបានចាកចេញ។ សូមចូលគណនីដោយប្រើពាក្យសម្ងាត់ថ្មីរបស់អ្នក។",
-      accountReady: "គណនីរបស់អ្នករួចរាល់ហើយ។ សូមចូលគណនី ដើម្បីមើលការអញ្ជើញពីសាលារបស់អ្នក។",
+      accountReady: "គណនីរបស់អ្នករួចរាល់ហើយ។ សូមចូលគណនី ដើម្បីបន្ត៖ ប្រសិនបើសាលាមួយបានអញ្ជើញអ្នក ការអញ្ជើញរបស់វាកំពុងរង់ចាំនៅទីនោះ។",
     },
     login: {
       title: "សូមស្វាគមន៍ការត្រឡប់មកវិញ",
@@ -215,11 +215,11 @@ export const authMessages = defineMessages(
       },
       setup: {
         title: "រៀបចំគណនីរបស់អ្នក",
-        subtitle: "សូមជ្រើសរើសពាក្យសម្ងាត់សម្រាប់គណនីគ្រូរបស់អ្នក។ អ្នកនឹងប្រើវាជាមួយអាសយដ្ឋានអ៊ីមែលរបស់អ្នក ដើម្បីចូលគណនី។",
+        subtitle: "សូមជ្រើសរើសពាក្យសម្ងាត់សម្រាប់គណនីរបស់អ្នក។ អ្នកនឹងប្រើវាជាមួយអាសយដ្ឋានអ៊ីមែលរបស់អ្នក ដើម្បីចូលគណនី។",
         submit: "បង្កើតពាក្យសម្ងាត់",
         submitting: "កំពុងបង្កើត…",
         unusable:
-          "វាប្រហែលជាផុតកំណត់ (តំណអញ្ជើញប្រើបាន 7 ថ្ងៃ) ត្រូវបានប្រើរួចហើយ ឬត្រូវបានជំនួសដោយការអញ្ជើញថ្មីជាងនេះ។ សូមស្នើឱ្យសាលាអញ្ជើញអ្នកម្ដងទៀត។",
+          "វាប្រហែលជាផុតកំណត់ (តំណអញ្ជើញប្រើបាន 7 ថ្ងៃ) ត្រូវបានប្រើរួចហើយ ឬត្រូវបានជំនួសដោយការអញ្ជើញថ្មីជាងនេះ។ សូមស្នើឱ្យអ្នកដែលបានអញ្ជើញអ្នក ផ្ញើការអញ្ជើញថ្មីមួយ។",
         incomplete: "តំណនេះមិនពេញលេញទេ។ សូមបើកវាដោយផ្ទាល់ពីអ៊ីមែលអញ្ជើញ។",
         recovery: "ខ្ញុំបានជ្រើសរើសពាក្យសម្ងាត់រួចហើយ — កំណត់វាឡើងវិញ",
       },

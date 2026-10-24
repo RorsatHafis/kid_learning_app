@@ -45,6 +45,8 @@ export function ParentHome() {
   useDocumentTitle(m.title);
   const count = children?.length ?? 0;
   const first = children?.find((c) => c.status !== "DELETION_PENDING");
+  // A class code is joined from one child's page: with several children, each is offered (never just the first).
+  const learners = children?.filter((c) => c.status !== "DELETION_PENDING") ?? [];
 
   return (
     <div className="flex flex-col gap-10">
@@ -92,7 +94,7 @@ export function ParentHome() {
             </h2>
             <div className="flex flex-col divide-y divide-line overflow-hidden rounded-[22px] bg-white shadow-card">
             <Action to="/parent/add-child" icon={<Plus size={18} aria-hidden />} tone="bg-coral-soft text-coral-deep" title={s.addChild} lead={s.addChildLead} />
-            {first && (
+            {first && learners.length === 1 && (
               <Action
                 to={`/parent/children/${first.id}/settings`}
                 icon={<School size={18} aria-hidden />}
@@ -100,6 +102,29 @@ export function ParentHome() {
                 title={s.school}
                 lead={s.schoolLead(first.displayName)}
               />
+            )}
+            {learners.length > 1 && (
+              <div className="flex items-start gap-3 p-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-sky-soft text-sky-deep">
+                  <School size={18} aria-hidden />
+                </span>
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className="font-semibold text-tonle-950">{s.school}</span>
+                  <span className="text-sm text-ink-soft">{s.schoolLeadMany}</span>
+                  <span className="flex flex-wrap gap-x-3 gap-y-1">
+                    {learners.map((child) => (
+                      <Link
+                        key={child.id}
+                        to={`/parent/children/${child.id}/settings`}
+                        aria-label={s.schoolFor(child.displayName)}
+                        className="text-sm font-semibold text-tonle-700 underline-offset-4 hover:underline"
+                      >
+                        {child.displayName}
+                      </Link>
+                    ))}
+                  </span>
+                </span>
+              </div>
             )}
             <Action to="/parent/account" icon={<CreditCard size={18} aria-hidden />} tone="bg-palm-soft text-palm-deep" title={s.account} lead={s.accountLead} />
             </div>

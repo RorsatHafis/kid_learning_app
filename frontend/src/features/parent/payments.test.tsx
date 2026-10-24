@@ -143,6 +143,15 @@ describe("paying for a family plan", () => {
     expect(screen.queryByRole("heading", { name: "Payment in progress" })).not.toBeInTheDocument();
   });
 
+  it("shows a bank transfer's reference once, in the transfer box beside the amount", async () => {
+    const transfer = { ...pending, method: "MANUAL" as const, checkout: { instructions: "Pay to: TEST BANK 000", action: null, fields: null } };
+    api.familyOrders.mockResolvedValue(page([transfer]));
+    api.order.mockResolvedValue(transfer);
+    render(<FamilyPlanWithPayments />);
+    expect(await screen.findByText("Pay to: TEST BANK 000")).toBeInTheDocument();
+    expect(screen.getAllByText("BKTEST000001")).toHaveLength(1);
+  });
+
   it("keeps the request flow when no way of paying is switched on", async () => {
     api.methods.mockResolvedValue({ methods: [] });
     api.familyOrders.mockResolvedValue(page([]));

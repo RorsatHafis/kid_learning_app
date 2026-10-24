@@ -260,6 +260,7 @@ function PendingPayment({
   if (order.error) return <ErrorState error={order.error} onRetry={order.refetch} />;
   if (!data) return <LoadingState label={m.loading} />;
   const checkout = data.checkout;
+  const transferBox = data.method === "MANUAL" && Boolean(checkout?.instructions);
 
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-4 rounded-[16px] bg-white p-5 ring-1 ring-light/50 sm:p-6">
@@ -269,15 +270,18 @@ function PendingPayment({
         </h3>
         <span className="text-sm text-ink-soft">{m.payBy(formatDateTime(data.expiresAt))}</span>
       </div>
-      <dl className="grid gap-3 sm:grid-cols-3">
+      <dl className={transferBox ? "grid gap-3 sm:grid-cols-2" : "grid gap-3 sm:grid-cols-3"}>
         <div>
           <dt className="text-sm text-ink-faint">{data.planName}</dt>
           <dd className="tabular font-semibold text-ink">{orderPriceText(data)}</dd>
         </div>
-        <div>
-          <dt className="text-sm text-ink-faint">{m.reference}</dt>
-          <dd className="font-mono text-base font-semibold tracking-wider text-tonle-950">{data.reference}</dd>
-        </div>
+        {/* A bank transfer's reference is shown once, in the transfer box beside the QR, where it is copied from. */}
+        {!transferBox && (
+          <div>
+            <dt className="text-sm text-ink-faint">{m.reference}</dt>
+            <dd className="font-mono text-base font-semibold tracking-wider text-tonle-950">{data.reference}</dd>
+          </div>
+        )}
         <div>
           <dt className="text-sm text-ink-faint">{m.payingBy}</dt>
           <dd className="font-semibold text-ink">{m.method[data.method]}</dd>
@@ -287,7 +291,7 @@ function PendingPayment({
       {data.method === "MANUAL" && (
         <>
           <p className="text-sm leading-relaxed text-ink">{m.manualLead}</p>
-          {checkout?.instructions && <TransferInstructions order={data} />}
+          {transferBox && <TransferInstructions order={data} />}
           <form onSubmit={saveNote} className="flex flex-col items-start gap-2">
             <div className="w-full">
               <FormField
