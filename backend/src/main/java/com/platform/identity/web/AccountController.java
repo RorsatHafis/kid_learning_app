@@ -60,14 +60,16 @@ public class AccountController {
     /**
      * {@code eraseAfter}: when the account will be erased, if its owner asked; null otherwise.
      * {@code legalVersionAccepted}: the version of the terms and privacy notice it agreed to (Y15).
+     * {@code phone}: its verified phone number (E.164), M9b; null when it has none.
      */
     public record AccountResponse(UUID id, String email, PlatformRole platformRole, AccountStatus status,
                                   Instant emailVerifiedAt, Instant createdAt, Instant eraseAfter, String legalVersionAccepted,
-                                  String preferredLanguage) {
+                                  String preferredLanguage, String phone, Instant phoneVerifiedAt) {
         static AccountResponse of(Account account) {
             return new AccountResponse(account.getId(), account.getEmail(), account.getPlatformRole(),
                     account.getStatus(), account.getEmailVerifiedAt(), account.getCreatedAt(), account.getEraseAfter(),
-                    account.getLegalVersionAccepted(), account.getPreferredLanguage());
+                    account.getLegalVersionAccepted(), account.getPreferredLanguage(), account.getPhoneE164(),
+                    account.getPhoneVerifiedAt());
         }
     }
 

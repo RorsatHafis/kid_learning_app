@@ -51,6 +51,12 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
+		<!-- M9b (owner decision D-12, 2026-10-24): phone numbers validated and normalized to E.164, Cambodia first. -->
+		<dependency>
+			<groupId>com.googlecode.libphonenumber</groupId>
+			<artifactId>libphonenumber</artifactId>
+			<version>9.0.38</version>
+		</dependency>
 
 		<!-- Boot's autoconfiguration glue for Flyway, separate from the engine and dialect. -->
 		<dependency>

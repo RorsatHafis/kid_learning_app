@@ -106,7 +106,11 @@ deletions run), `ERASURE_SWEEP_ENABLED` (true; with several instances every inst
 it — each deletion locks its rows), `ERASURE_LEDGER_FILE` (**required in `prod`**; e.g.
 `/var/lib/bookeyond/erasures/ledger.log` on its own volume: the file where every erasure is recorded, ids
 only, so that restoring a database backup can't bring an erased child or account back — see section 6),
-`LEARNING_DAY_ZONE` (Asia/Phnom_Penh: when a child's daily learning time starts again, M3),
+`LEARNING_DAY_ZONE` (Asia/Phnom_Penh: when a child's daily learning time starts again, M3; a family may choose its
+own zone on the parent's account page),
+`SMS_SENDER` (none: phone numbers can't be verified and the account page says texts aren't set up; `local-test`
+writes each text to the mail catcher for development and is **refused in `prod`**. A real provider is owner decision
+D-04 - M9b),
 `CHILD_DEVICES_MAX_PER_CHILD` (3: how many devices may hold one child's sign-in, M10a - owner decision D-05),
 `CAREGIVERS_MAX_PER_FAMILY` (2: how many people outside the family may help with its children, M10b - D-05).
 

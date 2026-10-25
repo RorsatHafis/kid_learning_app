@@ -17,6 +17,9 @@ spring:
       "[mail.smtp.starttls.required]": false
 
 platform:
+  # M9b: phone codes go to the test mail server, never to a phone.
+  sms:
+    sender: local-test
   # Y43: tests drive the whole payment lifecycle with the simulator and a manual method whose
   # "instructions" are plainly not a real account.
   payments:

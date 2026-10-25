@@ -147,6 +147,8 @@ public class FamilyErasureService {
             "delete from memberships where account_id = :a",
             "delete from account_sessions where account_id = :a",
             "delete from account_action_tokens where account_id = :a",
+            // M9b: codes sent to the account's phone.
+            "delete from phone_verifications where account_id = :a",
             // M9a: an authenticator app and its recovery codes.
             "delete from account_recovery_codes where account_id = :a",
             "delete from account_second_factors where account_id = :a",

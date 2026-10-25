@@ -163,6 +163,22 @@ public final class ServerText {
             Map.entry(FILTER_RATE_LIMITED, "មានសំណើច្រើនពេកពីបណ្ដាញនេះ។ សូមរង់ចាំបន្តិច ហើយព្យាយាមម្ដងទៀត។"),
             Map.entry("This device can only open one child's learning space", "ឧបករណ៍នេះអាចបើកបានតែកន្លែងរៀនរបស់កុមារម្នាក់ប៉ុណ្ណោះ"),
             Map.entry("Enter your password again to do this", "សូមបញ្ចូលពាក្យសម្ងាត់របស់អ្នកម្ដងទៀត ដើម្បីធ្វើការនេះ"),
+            // M9b: a phone number on the account
+            Map.entry("Enter a phone number that can receive a text message, with its country code if it isn't Cambodian",
+                    "សូមបញ្ចូលលេខទូរសព្ទដែលអាចទទួលសារបាន ជាមួយលេខកូដប្រទេស ប្រសិនបើវាមិនមែនជាលេខកម្ពុជា"),
+            Map.entry("Phone numbers can't be verified yet: text messages aren't set up",
+                    "មិនទាន់អាចផ្ទៀងផ្ទាត់លេខទូរសព្ទបាននៅឡើយទេ៖ ការផ្ញើសារមិនទាន់បានរៀបចំ"),
+            Map.entry("That's already your verified number", "នោះជាលេខដែលបានផ្ទៀងផ្ទាត់របស់អ្នករួចហើយ"),
+            Map.entry("Wait a minute before asking for another code", "សូមរង់ចាំមួយនាទី មុនពេលស្នើលេខកូដមួយទៀត"),
+            Map.entry("Too many codes asked for in the last hour: try again later",
+                    "បានស្នើលេខកូដច្រើនពេកក្នុងមួយម៉ោងចុងក្រោយ៖ សូមព្យាយាមម្ដងទៀតនៅពេលក្រោយ"),
+            Map.entry("Ask for a code first", "សូមស្នើលេខកូដជាមុនសិន"),
+            Map.entry("That code has expired: ask for a new one", "លេខកូដនោះបានផុតកំណត់ហើយ៖ សូមស្នើលេខកូដថ្មី"),
+            Map.entry("Too many wrong tries: ask for a new code", "ព្យាយាមខុសច្រើនដងពេក៖ សូមស្នើលេខកូដថ្មី"),
+            Map.entry("That code isn't right", "លេខកូដនោះមិនត្រឹមត្រូវទេ"),
+            Map.entry("This number is verified on another account, so it can't be added here",
+                    "លេខនេះត្រូវបានផ្ទៀងផ្ទាត់នៅលើគណនីមួយផ្សេងទៀត ដូច្នេះមិនអាចបន្ថែមនៅទីនេះបានទេ"),
+            Map.entry("There's no phone number on this account", "គណនីនេះមិនមានលេខទូរសព្ទទេ"),
             // The family's learning day
             Map.entry("Choose a time zone from the list", "សូមជ្រើសរើសតំបន់ម៉ោងពីបញ្ជី"),
             // M5b: lessons shared with a school

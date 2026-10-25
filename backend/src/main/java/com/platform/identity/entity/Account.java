@@ -45,6 +45,13 @@ public class Account extends AuditableEntity {
     @Column(name = "email_verified_at")
     private Instant emailVerifiedAt;
 
+    /** M9b: the account's phone number (E.164), and when a code sent to it was confirmed. */
+    @Column(name = "phone_e164", length = 16)
+    private String phoneE164;
+
+    @Column(name = "phone_verified_at")
+    private Instant phoneVerifiedAt;
+
     /** The version of the terms and privacy notice this account agreed to, and when (V54, Y15). */
     /** The language the app's own words are shown in (en or km; V56). Never the content's language. */
     @Column(name = "preferred_language", nullable = false, length = 5)
@@ -257,6 +264,27 @@ public class Account extends AuditableEntity {
         return status;
     }
  
+    /** M9b: the number a code sent to it proved this account holds. */
+    public void verifyPhone(String e164, Instant at) {
+        Assert.hasText(e164, "e164 must not be blank");
+        this.phoneE164 = e164;
+        this.phoneVerifiedAt = at;
+    }
+
+    /** M9b: the account no longer has a phone number. */
+    public void removePhone() {
+        this.phoneE164 = null;
+        this.phoneVerifiedAt = null;
+    }
+
+    public String getPhoneE164() {
+        return phoneE164;
+    }
+
+    public Instant getPhoneVerifiedAt() {
+        return phoneVerifiedAt;
+    }
+
     public Instant getEmailVerifiedAt() {
         return emailVerifiedAt;
     }

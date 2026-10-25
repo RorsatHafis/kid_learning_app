@@ -73,6 +73,10 @@ platform:
   # M3: the time zone a child's learning day (the parent's daily time) runs in.
   learning:
     day-zone: ${LEARNING_DAY_ZONE:Asia/Phnom_Penh}
+  # M9b: where text messages (phone codes) go. none: phone verification says it isn't set up. local-test: each text is
+  # written to the local mail catcher (development only; refused in production). A real provider is decision D-04.
+  sms:
+    sender: ${SMS_SENDER:none}
   security:
     jwt:
       # Required. At least 32 bytes (HS256). Only the local profile supplies a dev value.

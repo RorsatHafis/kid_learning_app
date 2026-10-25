@@ -5,6 +5,7 @@ import type {
   FamilyLearningDay,
   AccountProfile,
   SecondFactorStatus,
+  PhoneStatus,
   ActivityAttempt,
   ActivityVersionDetail,
   AnswerRecord,
@@ -87,6 +88,15 @@ export const accountApi = {
   /** M9a: an administrator also gives a code from their authenticator app (or a recovery code). */
   stepUp: (password: string, code?: string) =>
     apiClient.post<{ stepUpToken: string; expiresAt: string }>("/account/step-up", code ? { password, code } : { password }),
+  /** M9b: the account's phone number, verified by a code sent by text message. */
+  phone: () => apiClient.get<PhoneStatus>("/account/phone"),
+  // 202 sent (or, for a number verified elsewhere, answered the same); 422 wrong password; 400 not a textable number;
+  // 429 asked too soon or too often (retryAfterSeconds); 503 texts aren't set up here.
+  requestPhoneCode: (password: string, phone: string) =>
+    apiClient.post<{ phone: string; expiresAt: string }>("/account/phone/code", { password, phone }),
+  // 422 wrong code; 409 none asked for, expired, out of tries, or the number is verified on another account.
+  confirmPhone: (code: string) => apiClient.post<PhoneStatus>("/account/phone/confirm", { code }),
+  removePhone: (password: string) => apiClient.post<PhoneStatus>("/account/phone/remove", { password }),
   /** M9a: an administrator's authenticator app. */
   secondFactor: () => apiClient.get<SecondFactorStatus>("/account/second-factor"),
   // 422 wrong password, 403 not an administrator, 409 already on. The key is shown this once.

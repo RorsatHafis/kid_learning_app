@@ -38,6 +38,17 @@ export interface AuthResponse {
 
 export type AccountStatus = "ACTIVE" | "DISABLED" | "PENDING_VERIFICATION";
 
+/** identity/phone/PhoneController.PhoneStatus: the account's phone (M9b). */
+export interface PhoneStatus {
+  /** Whether text messages can be sent here at all (a provider is set up). */
+  available: boolean;
+  /** E.164, e.g. +85512345678; null when the account has none. */
+  phone: string | null;
+  /** The same number as people write it: +855 12 345 678. */
+  display: string | null;
+  verifiedAt: string | null;
+}
+
 /** security/stepup/SecondFactorService.Status — an administrator's authenticator app (M9a). */
 export interface SecondFactorStatus {
   enabled: boolean;

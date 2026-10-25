@@ -247,6 +247,28 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(com.platform.identity.phone.PhoneCodeMismatchException.class)
+    public ResponseEntity<Object> handlePhoneCode(com.platform.identity.phone.PhoneCodeMismatchException ex, WebRequest request) {
+
+        // M9b: a wrong code for the phone being verified - 422 with a field error, like a wrong password.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        problem.setTitle("Code Not Right");
+        problem.setProperty("errors", java.util.Map.of("code", ex.getMessage()));
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
+
+    }
+
+    @ExceptionHandler(com.platform.identity.phone.PhoneUnavailableException.class)
+    public ResponseEntity<Object> handlePhoneUnavailable(com.platform.identity.phone.PhoneUnavailableException ex, WebRequest request) {
+
+        // M9b: no text-message provider is set up (D-04), so phone verification can't run here.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Text Messages Not Set Up");
+        problem.setProperty("phoneUnavailable", true);
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.SERVICE_UNAVAILABLE, request);
+
+    }
+
     @ExceptionHandler(com.platform.security.stepup.SecondFactorMismatchException.class)
     public ResponseEntity<Object> handleSecondFactor(com.platform.security.stepup.SecondFactorMismatchException ex, WebRequest request) {
 

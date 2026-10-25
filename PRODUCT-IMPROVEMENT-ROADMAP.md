@@ -21,7 +21,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M6 Feature-specific paywall messages | **done** | see log | — |
 | M7 Pagination and information density | **done** | see log | — |
 | M8 Payment QR, manual reconciliation, secure grants | **done** (M8a step-up and reconciliation, M8b instructions and KHQR) | see log | V67 |
-| M9 Phone registration and verification foundations | M9a done (administrator authenticator app); M9b (phone) after M5 | | |
+| M9 Phone registration and verification foundations | M9a done (administrator authenticator app); M9b-1 done (a verified phone on an account, V71); M9b-2 (sign in and recover by phone) next | | |
 | M10 Child access across devices, trusted caregivers | **done** (M10a child devices, M10b caregivers) | see log | V65, V66 |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
 | M12 School management: foundation and first modules | planned | | |
@@ -424,7 +424,7 @@ Dependencies:
 | D-09 | Content for ages 3 and 10–12 | Copy says 3–12; subjects follow the age hubs the admins configure |
 | D-10 | Genuine testimonials (with permission) | Only brand statements |
 | D-11 | PDP law status, child-safety page, consent for school student records (PD-31, PD-32) | Minimal data; school records stay school-scoped |
-| D-12 | New third-party libraries (e.g. libphonenumber, an S3 client) and container images (S3-compatible test server) | Asked at the milestone that needs them |
+| D-12 | New third-party libraries (e.g. libphonenumber, an S3 client) and container images (S3-compatible test server) | Asked at the milestone that needs them. **libphonenumber approved 2026-10-24** (M9b; pinned 9.0.38, two months old when added) |
 | D-13 | How a co-teacher uses a lesson shared with their school (decided 2026-10-23) | **Copy to own**: the colleague copies it into their own content (drafts, crediting the original); children's paths still draw only on their curriculum owner's and platform content |
 | D-14 | PUBLIC content for every teacher (decided 2026-10-23) | **Deferred** until it is decided who reviews teachers' content before the whole platform sees it |
 
@@ -968,3 +968,30 @@ Dependencies:
     2 answers is consistent: it is the Smart Review recommendation for a review that was actually scheduled
     (`ParentInsightService.reviewInsight`, shown as a Suggestion), not a mastery claim, which needs sufficient
     evidence (Battle 2C).
+- 2026-10-24: **M9b-1 done: a verified phone number on an account** (D-12: libphonenumber approved; D-04 SMS provider
+  still open).
+  - **What**:
+    - V71: `accounts.phone_e164` + `phone_verified_at` (E.164 by a CHECK; one account per verified number by a
+      partial unique index) and `phone_verifications` (codes as SHA-256 digests of the challenge id and the code, 10
+      minutes, 5 tries, ended once: confirmed or replaced).
+    - Numbers are normalized with libphonenumber: Cambodian numbers without a country code, any country's with it;
+      only numbers that can receive a text (mobile) are accepted.
+    - Asking for a code needs the password; once a minute and 5 an hour per account, 5 texts an hour per number
+      (429 with retryAfterSeconds). A number verified on another account is answered the same but gets no text and
+      can't be verified here (no enumeration); confirming decides one account per number under a lock on the number.
+      Removing the number needs the password.
+    - `SmsSender`: `none` (default: the account page says texts aren't set up; 503 for a code) or `local-test`
+      (each text written to the mail catcher; the app refuses to start with it in `prod`). No provider, no cost.
+    - Account page → "Phone number" for every account (add, code, send another, remove), English and Khmer; the
+      number shown as people write it. Audited with the last three digits only; in the family's data export; erased
+      with the account.
+  - **Verified**: `PhoneNumbersTests` (3: Cambodian and other numbers, landlines and junk refused, the production
+    guard), `PhoneVerificationIntegrationTests` (2: password, landline, code digest, once a minute, wrong code,
+    confirm, once only, export, another account gets no text and can't verify, remove needs the password, audit
+    without the number; five tries, ten minutes, five an hour); a mutation sending to a number verified elsewhere
+    fails the first; Vitest (new `phone.test.tsx`); browser: a parent added a test number, the code arrived in the
+    local mail catcher (never a phone), and confirming made it the account's number.
+  - **Next (M9b-2)**: signing in and recovering by a verified phone. Before building, two product questions: may an
+    account be phone-only (no email), given that several flows rely on a confirmed email (school access, receipts,
+    erasure notices)?; and is a text code enough to reset a password? Asked at that step.
+

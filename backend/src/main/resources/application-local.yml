@@ -29,6 +29,9 @@ spring:
 # Local-only fallbacks for the values application.yaml requires. The same variables
 # still override them; TTL, lockout and mastery defaults come from application.yaml.
 platform:
+  # M9b: phone codes go to the local mail catcher (sms-<digits>@sms.test), never to a phone.
+  sms:
+    sender: ${SMS_SENDER:local-test}
   # Y43: development payments are simulated here (labelled TEST PAYMENT; never real money).
   payments:
     dev-simulator:

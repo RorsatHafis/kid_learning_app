@@ -123,8 +123,9 @@ public class FamilyDataExportService {
                          String learningDayZone, List<ChildData> children) {
     }
 
+    /** {@code phone}: the account's verified phone number (M9b), or null. */
     public record AccountData(UUID id, String email, String role, Instant createdAt, Instant emailConfirmedAt,
-                              String interfaceLanguage) {
+                              String interfaceLanguage, String phone, Instant phoneVerifiedAt) {
     }
 
     public record ChildData(UUID id, String displayName, LocalDate dateOfBirth, Instant addedAt, String interfaceLanguage,
@@ -155,7 +156,8 @@ public class FamilyDataExportService {
                 ? subscriptions.familyPlanOf(accountId).map(OwnFamilyPlanResponse::of).orElse(null) : null;
         return new Export(FORMAT, Instant.now(),
                 new AccountData(account.getId(), account.getEmail(), account.getPlatformRole().name(), account.getCreatedAt(),
-                        account.getEmailVerifiedAt(), account.getPreferredLanguage()),
+                        account.getEmailVerifiedAt(), account.getPreferredLanguage(), account.getPhoneE164(),
+                        account.getPhoneVerifiedAt()),
                 plan, plan == null ? null : chosenZone(accountId), children);
     }
 

@@ -19,6 +19,8 @@ import { accountMessages } from "./account.messages";
 import { AuthenticatorApp } from "./AuthenticatorApp";
 import { authenticatorMessages } from "./authenticator.messages";
 import { FamilyDaySection } from "./FamilyDaySection";
+import { PhoneSection } from "./PhoneSection";
+import { phoneMessages } from "./phone.messages";
 import { familyDayMessages } from "./familyDay.messages";
 import { formatDate, formatTime } from "@/i18n/format";
 import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
@@ -35,6 +37,7 @@ export function AccountPage() {
   const m = useMessages(accountMessages);
   const authenticator = useMessages(authenticatorMessages);
   const familyDay = useMessages(familyDayMessages);
+  const phone = useMessages(phoneMessages);
   const { hash } = useLocation();
   // A link like /parent/account#plan lands on that section once the page has drawn it.
   useEffect(() => {
@@ -60,6 +63,7 @@ export function AccountPage() {
           {[
             { id: "profile", label: m.details },
             { id: "language", label: m.language.title },
+            { id: "phone", label: phone.title },
             { id: "password", label: m.password.title },
             ...(profile.data?.platformRole === "ADMIN" ? [{ id: "authenticator", label: authenticator.title }] : []),
             { id: "devices", label: m.devices.title },
@@ -112,6 +116,9 @@ export function AccountPage() {
             {m.language.note}
             {profile.data?.platformRole === "PARENT" && ` ${m.language.childNote}`}
           </p>
+        </SettingsRow>
+        <SettingsRow id="phone" title={phone.title} subtitle={phone.subtitle}>
+          <PhoneSection />
         </SettingsRow>
         <ChangePassword />
         {profile.data?.platformRole === "ADMIN" && (
