@@ -133,7 +133,85 @@ class PhoneVerificationIntegrationTests {
         assertThat(JSON.readTree(capped.body()).get("retryAfterSeconds").asLong()).isPositive();
     }
 
+    @Test
+    void aVerifiedNumberSignsInAndResetsAForgottenPasswordAndNothingSaysWhoseANumberIs() throws Exception {
+        String email = "phone-" + UUID.randomUUID() + "@example.com";
+        String parent = json(send("POST", "/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
+                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201).get("accessToken").asString();
+        String typed = "012 " + digits(6);
+        String phone = PhoneNumbers.normalize(typed);
+
+        // Not verified yet: signing in with it reads like an unknown address.
+        json(send("POST", "/api/v1/account/phone/code", body(PASSWORD, typed), parent), 202);
+        assertThat(send("POST", "/api/v1/auth/login", login(typed, PASSWORD), null).statusCode()).isEqualTo(401);
+        json(send("POST", "/api/v1/account/phone/confirm", "{\"code\":\"" + codeSentTo(phone) + "\"}", parent), 200);
+
+        // Verified: it signs in, written either way; a wrong password, junk or another number don't.
+        assertThat(send("POST", "/api/v1/auth/login", login(typed, PASSWORD), null).statusCode()).isEqualTo(200);
+        assertThat(send("POST", "/api/v1/auth/login", login(phone, PASSWORD), null).statusCode()).isEqualTo(200);
+        assertThat(send("POST", "/api/v1/auth/login", login(typed, "wrong-" + PASSWORD), null).statusCode()).isEqualTo(401);
+        assertThat(send("POST", "/api/v1/auth/login", login("not a number", PASSWORD), null).statusCode()).isEqualTo(401);
+
+        // Asking for a reset answers the same for any number; only the real one gets a text.
+        String unknown = "+85512" + digits(6);
+        assertThat(send("POST", "/api/v1/auth/password-reset/phone", "{\"phone\":\"" + unknown + "\"}", null).statusCode()).isEqualTo(202);
+        assertThat(messagesTo(unknown)).isEmpty();
+        assertThat(send("POST", "/api/v1/auth/password-reset/phone", "{\"phone\":\"junk\"}", null).statusCode()).isEqualTo(202);
+        assertThat(send("POST", "/api/v1/auth/password-reset/phone", "{\"phone\":\"" + typed + "\"}", null).statusCode()).isEqualTo(202);
+        String code = resetCodeSentTo(phone);
+
+        // One refusal for any wrong code; a weak password keeps the code usable; the code works once.
+        String newPassword = "Phone-Reset-New-2026";
+        HttpResponse<String> wrong = send("POST", "/api/v1/auth/password-reset/phone/confirm", reset(typed, code.equals("000000") ? "111111" : "000000", newPassword), null);
+        assertThat(wrong.statusCode()).isEqualTo(422);
+        HttpResponse<String> nobody = send("POST", "/api/v1/auth/password-reset/phone/confirm", reset(unknown, code, newPassword), null);
+        assertThat(JSON.readTree(nobody.body()).get("detail").asString()).isEqualTo(JSON.readTree(wrong.body()).get("detail").asString());
+        assertThat(send("POST", "/api/v1/auth/password-reset/phone/confirm", reset(typed, code, "short"), null).statusCode()).isEqualTo(422);
+        assertThat(send("POST", "/api/v1/auth/password-reset/phone/confirm", reset(typed, code, newPassword), null).statusCode()).isEqualTo(204);
+        assertThat(send("POST", "/api/v1/auth/password-reset/phone/confirm", reset(typed, code, newPassword), null).statusCode()).isEqualTo(422);
+
+        // Every session ended; the new password works; the changed-password email went to the account's address.
+        assertThat(send("GET", "/api/v1/account", null, parent).statusCode()).isEqualTo(401);
+        assertThat(send("POST", "/api/v1/auth/login", login(email, PASSWORD), null).statusCode()).isEqualTo(401);
+        assertThat(send("POST", "/api/v1/auth/login", login(email, newPassword), null).statusCode()).isEqualTo(200);
+        long deadline = System.currentTimeMillis() + 10_000;
+        boolean noticed = false;
+        while (!noticed && System.currentTimeMillis() < deadline) {
+            for (MimeMessage message : greenMail.getReceivedMessages()) {
+                noticed |= message.getRecipients(Message.RecipientType.TO)[0].toString().equalsIgnoreCase(email)
+                        && message.getSubject().contains("password was changed");
+            }
+            Thread.sleep(50);
+        }
+        assertThat(noticed).as("changed-password email").isTrue();
+    }
+
     // ------------------------------------------------------------------ helpers
+
+    private static String login(String name, String password) {
+        return "{\"email\":\"" + name + "\",\"password\":\"" + password + "\"}";
+    }
+
+    private static String reset(String phone, String code, String newPassword) {
+        return "{\"phone\":\"" + phone + "\",\"code\":\"" + code + "\",\"newPassword\":\"" + newPassword + "\"}";
+    }
+
+    /** The newest password-reset code texted to this number. */
+    private String resetCodeSentTo(String phone) throws Exception {
+        Pattern reset = Pattern.compile("reset code is (\\d{6})");
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (System.currentTimeMillis() < deadline) {
+            for (MimeMessage message : messagesTo(phone)) {
+                Matcher matcher = reset.matcher(message.getContent().toString());
+                if (matcher.find()) {
+                    return matcher.group(1);
+                }
+            }
+            Thread.sleep(50);
+        }
+        throw new AssertionError("No reset text to " + phone);
+    }
+
 
     private static String digits(int n) {
         StringBuilder out = new StringBuilder();

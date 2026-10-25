@@ -1003,7 +1003,7 @@ Dependencies:
     unknown address (same 401, same password-hash timing). Login page label "Email or phone number" (EN/KM).
     Verified at runtime on the isolated stack (typed both ways 200; unknown number, junk, wrong password 401; email
     still 200) and by the existing auth suites (43 tests). **No new automated test for it yet** (owner's instruction
-    this session) - add one: phone sign-in, unverified number refused, lockout counts the same.
+    this session) - added later the same day (see the reset entry).
   - **Child learning cycle**: checked, no change needed - completion reads the persisted answers (and hides the score
     if that read fails, never "0 of 0"); the child space shows the path, what's next, the shelf and the garden; the
     parent pages show evidence and why the next step.
@@ -1025,7 +1025,9 @@ Dependencies:
   - **Verified**: runtime on the isolated stack (202 for unknown/junk/real; wrong code 422; weak password 422 keeps
     the code; reset 204; the code once; old password 401, new 200; seed restored); suites AccountRecovery 21,
     AuthRateLimit 5, Phone 5, ServerTextCoverage, FamilyErasure; Vitest 388.
-  - **Not yet tested automatically** (owner: no new test classes this session): phone sign-in; phone reset (request
-    silence for unknown numbers, one refusal message, policy before the code, sessions ended, email notice).
-  - **Next**: CI check; those tests; then M13 (integration/readiness) - M11 waits on D-06/D-12 (S3 client).
+  - **Tested** (a method added to the existing `PhoneVerificationIntegrationTests`, no new class): unverified number
+    can't sign in; verified signs in written either way; wrong password/junk 401; reset request 202 for unknown, junk
+    and real numbers with a text only to the real one; the same refusal for a wrong code and an unknown number; weak
+    password keeps the code; the code once; sessions ended; new password works; changed-password email sent.
+  - **Next**: CI check; then M13 (role journeys EN/KM, readiness docs) - M11 waits on D-06/D-12 (S3 client).
 
