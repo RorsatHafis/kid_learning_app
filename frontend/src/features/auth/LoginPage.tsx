@@ -69,9 +69,12 @@ export function LoginPage() {
       )}
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField
-          label={m.email}
-          type="email"
-          autoComplete="email"
+          label={m.signInName}
+          type="text"
+          inputMode="email"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}

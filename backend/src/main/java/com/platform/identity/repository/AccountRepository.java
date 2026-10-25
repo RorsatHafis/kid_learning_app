@@ -26,6 +26,9 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
      Optional<Account> findByNormalizedEmail(String normalizedEmail);
 
+     /** M9b: the account that verified this number (at most one: uq_accounts_verified_phone). */
+     Optional<Account> findByPhoneE164AndPhoneVerifiedAtIsNotNull(String phoneE164);
+
      /** Row-locked: serializes decisions that read then write one account (resend limits, password reset). */
      @Lock(LockModeType.PESSIMISTIC_WRITE)
      @Query("select a from Account a where a.id = :id")

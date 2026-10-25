@@ -60,11 +60,26 @@ public class LoginService {
 
     }
 
+    /**
+     * M9b: an email address, or a verified phone number (anything without "@" is read as a phone number, Cambodian
+     * without a country code). Not a number, or no account verified it: the same as an unknown address.
+     */
+    private Optional<Account> findBySignInName(String typed) {
+        if (typed != null && !typed.contains("@")) {
+            try {
+                return accountRepository.findByPhoneE164AndPhoneVerifiedAtIsNotNull(
+                        com.platform.identity.phone.PhoneNumbers.normalize(typed));
+            } catch (IllegalArgumentException notANumber) {
+                return Optional.empty();
+            }
+        }
+        return accountRepository.findByNormalizedEmail(Account.normalize(typed));
+    }
+
     @Transactional(noRollbackFor = {InvalidCredentialsException.class, AccountLockedException.class})
     public LoginResult login(LoginCommand command) {
 
-        String normalizedEmail = Account.normalize(command.email());
-        Optional<Account> found = accountRepository.findByNormalizedEmail(normalizedEmail);
+        Optional<Account> found = findBySignInName(command.email());
  
         if (found.isEmpty()) {
 

@@ -21,7 +21,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M6 Feature-specific paywall messages | **done** | see log | — |
 | M7 Pagination and information density | **done** | see log | — |
 | M8 Payment QR, manual reconciliation, secure grants | **done** (M8a step-up and reconciliation, M8b instructions and KHQR) | see log | V67 |
-| M9 Phone registration and verification foundations | M9a done (administrator authenticator app); M9b-1 done (a verified phone on an account, V71); M9b-2 (sign in and recover by phone) next | | |
+| M9 Phone registration and verification foundations | M9a done (administrator authenticator app); M9b-1 done (a verified phone on an account, V71); sign-in by verified phone done; recovery by phone and phone-only accounts next (D-15) | | |
 | M10 Child access across devices, trusted caregivers | **done** (M10a child devices, M10b caregivers) | see log | V65, V66 |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
 | M12 School management: foundation and first modules | planned | | |
@@ -994,4 +994,23 @@ Dependencies:
   - **Next (M9b-2)**: signing in and recovering by a verified phone. Before building, two product questions: may an
     account be phone-only (no email), given that several flows rely on a confirmed email (school access, receipts,
     erasure notices)?; and is a text code enough to reset a password? Asked at that step.
+- 2026-10-25: **CHECKPOINT (session context nearly used up).** Commits: `204815c` (test codes from the current TOTP
+  window - fixes an intermittent E2E plan-journey failure), `bdfd7c2` (M9b-1), and the phone sign-in commit below.
+  - **Sign in with a verified phone** (blueprint: "sign in by email or phone"): the login `email` field (name kept for
+    clients) may hold a phone number; anything without "@" is read as a phone number (Cambodian without a country
+    code) and matched only against verified numbers; unknown, unverified or junk input answers exactly like an
+    unknown address (same 401, same password-hash timing). Login page label "Email or phone number" (EN/KM).
+    Verified at runtime on the isolated stack (typed both ways 200; unknown number, junk, wrong password 401; email
+    still 200) and by the existing auth suites (43 tests). **No new automated test for it yet** (owner's instruction
+    this session) - add one: phone sign-in, unverified number refused, lockout counts the same.
+  - **Child learning cycle**: checked, no change needed - completion reads the persisted answers (and hides the score
+    if that read fails, never "0 of 0"); the child space shows the path, what's next, the shelf and the garden; the
+    parent pages show evidence and why the next step.
+  - **Open decision D-15 (ask the owner)**: may an account be phone-only (no email)? 41 code paths read an account's
+    email and notices (receipts, erasure, plan changes) go by email; phone-only would mean texts for those (cost once
+    D-04 picks a provider). Also: is a text code enough to reset a password (blueprint says "recover by either
+    verified channel")?
+  - **Exact next actions**: (1) CI check for the last commits; (2) automated test for phone sign-in; (3) password
+    recovery by verified phone (code by SMS -> reset), mirroring AccountRecoveryService's limits and no-enumeration,
+    if D-15 confirms; (4) then M13 integration/readiness; M11 needs D-06/D-12 (S3 client).
 

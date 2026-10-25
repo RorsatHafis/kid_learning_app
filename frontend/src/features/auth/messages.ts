@@ -12,6 +12,8 @@ export const authMessages = defineMessages(
       footer: "Learning for children 3–12, with parents alongside.",
     },
     email: "Email",
+    // M9b: an account's verified phone number signs in too.
+    signInName: "Email or phone number",
     password: "Password",
     logIn: "Log in",
     backToLogIn: "Back to log in",
@@ -133,6 +135,7 @@ export const authMessages = defineMessages(
       footer: "ការរៀនសម្រាប់កុមារអាយុ 3–12 ឆ្នាំ ដោយមានឪពុកម្ដាយនៅក្បែរ។",
     },
     email: "អ៊ីមែល",
+    signInName: "អ៊ីមែល ឬលេខទូរសព្ទ",
     password: "ពាក្យសម្ងាត់",
     logIn: "ចូលគណនី",
     backToLogIn: "ត្រឡប់ទៅទំព័រចូលគណនី",
