@@ -273,6 +273,31 @@ people at once (e.g. the administrator and a parent).
 
 ---
 
+### 16. Added in October 2026 (product improvement program)
+
+The details, with what was verified, are in [PRODUCT-IMPROVEMENT-ROADMAP.md](PRODUCT-IMPROVEMENT-ROADMAP.md).
+
+- **Your family's day** (parent → Account): choose the time zone your family lives in; a child's daily learning
+  time starts again at midnight there (Cambodia unless you choose). The child's **Learning each day** says which.
+- **A path for another age** (parent → a child → Learning plan): when a path's age group isn't the child's any more,
+  a calm note says so and offers the path for their age if there is one. Nothing changes unless you choose.
+- **Phone number** (any account → Account): add a number that can receive texts; a 6-digit code confirms it. Then
+  you can **log in with the phone number** instead of the email, and **Forgot your password? → Use my phone number
+  instead** resets it with a texted code (email stays required on every account - decision D-15).
+  **No text message is really sent yet**: there is no SMS provider (decision D-04). With `SMS_SENDER=local-test`
+  (the local stack) each "text" appears in the mail catcher addressed `sms-<number>@sms.test`; with the default
+  `none`, the page says texts aren't set up. Production refuses to start with `local-test`.
+- **Administrators' authenticator app** (admin → My account → Authenticator app): actions that move money or access
+  (confirming payments, giving plans, payment instructions, adding staff) ask for your password **and** a code from
+  an authenticator app; set one up first. Keep the recovery codes; another administrator can turn your app off if
+  you lose your phone. Changing `JWT_SECRET` makes everyone set it up again (see DEPLOYMENT.md).
+- **Bank transfer instructions** (admin → Payments): write them in English and Khmer and add your bank's KHQR image;
+  families see them beside the amount and their payment reference. Never invent account details.
+- **Sharing lessons in a school** (teacher → Content Studio → a lesson → "Teachers at your school"): colleagues at the
+  same paid school find it under **Shared by colleagues** and copy it into their own lessons as drafts; your lesson
+  stays yours. Sharing with every teacher on the platform is not offered yet (decision D-14).
+- **Uploading pictures**: drop a picture or recording onto a question's slot; it shows progress and can be cancelled.
+
 ## Part 4 — What this version does not do yet
 
 These need **your decision** (numbers refer to the engineering progress document). The code
