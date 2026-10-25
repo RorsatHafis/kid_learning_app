@@ -8,6 +8,8 @@ import { authApi } from "@/lib/api/endpoints";
 import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
 import { useMessages } from "@/i18n/catalog";
 import { authMessages } from "./messages";
+import { PhoneReset } from "./PhoneReset";
+import { phoneResetMessages } from "./phoneReset.messages";
 
 /**
  * Asks for a password-reset link. The server answers the same way whether or not the
@@ -21,6 +23,9 @@ export function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // M9b (D-15): or a code texted to the account's verified phone.
+  const [byPhone, setByPhone] = useState(false);
+  const p = useMessages(phoneResetMessages);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -67,6 +72,19 @@ export function ForgotPasswordPage() {
     );
   }
 
+  if (byPhone) {
+    return (
+      <AuthLayout title={f.title} subtitle={p.subtitle}>
+        <PhoneReset />
+        <p className="mt-6 text-center text-sm">
+          <button type="button" onClick={() => setByPhone(false)} className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+            {p.useEmail}
+          </button>
+        </p>
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout title={f.title} subtitle={f.subtitle}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -88,6 +106,11 @@ export function ForgotPasswordPage() {
           {isSubmitting ? f.submitting : f.submit}
         </Button>
       </form>
+      <p className="mt-4 text-center text-sm">
+        <button type="button" onClick={() => setByPhone(true)} className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+          {p.usePhone}
+        </button>
+      </p>
       <p className="mt-6 text-center text-sm text-ink-soft">
         {f.remembered}{" "}
         <Link to="/login" className="font-semibold text-tonle-700">

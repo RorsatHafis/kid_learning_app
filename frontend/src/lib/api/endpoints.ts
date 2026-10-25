@@ -59,6 +59,11 @@ export const authApi = {
   logout: (refreshToken: string) => apiClient.post<void>("/auth/logout", { refreshToken }, { skipAuth: true }),
   // identity/web/AccountRecoveryController.java — always 202, whether or not the address has an account.
   requestPasswordReset: (email: string) => apiClient.post<void>("/auth/password-reset", { email }, { skipAuth: true }),
+  // M9b (D-15): a reset code texted to the account's verified phone. Always 202 (503 when texts aren't set up).
+  requestPhoneReset: (phone: string) => apiClient.post<void>("/auth/password-reset/phone", { phone }, { skipAuth: true }),
+  // 204 the password is set and every session ended; 422 for any wrong, used or expired code (or a weak password).
+  resetWithPhoneCode: (phone: string, code: string, newPassword: string) =>
+    apiClient.post<void>("/auth/password-reset/phone/confirm", { phone, code, newPassword }, { skipAuth: true }),
   resetPassword: (input: { token: string; newPassword: string }) =>
     apiClient.post<void>("/auth/password-reset/confirm", input, { skipAuth: true }),
   confirmEmail: (token: string) => apiClient.post<void>("/auth/email-verification/confirm", { token }, { skipAuth: true }),

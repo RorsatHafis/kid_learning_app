@@ -1,0 +1,42 @@
+import { defineMessages } from "@/i18n/catalog";
+
+/** M9b (D-15): resetting a forgotten password with a code texted to the account's verified phone. */
+export const phoneResetMessages = defineMessages(
+  "features/auth/phoneReset",
+  {
+    subtitle: "We'll text a code to the phone number verified on your account.",
+    usePhone: "Use my phone number instead",
+    useEmail: "Use my email address instead",
+    phone: "Your phone number",
+    phoneHint: "The number you verified on your account. Cambodian numbers need no country code.",
+    send: "Text me a code",
+    sending: "Sending…",
+    sent: "If that number is verified on a Bookeyond Kid account, a 6-digit code is on its way. It works for 10 minutes.",
+    code: "Code from the text message",
+    newPassword: (min: number) => `New password (at least ${min} characters)`,
+    confirm: "Confirm new password",
+    mismatch: "The two passwords don't match.",
+    reset: "Set new password",
+    resetting: "Saving…",
+    unavailable: "Text messages aren't set up yet: use your email address instead.",
+    failed: "That didn't work just now. Please try again.",
+  },
+  {
+    subtitle: "យើងនឹងផ្ញើលេខកូដតាមសារ ទៅលេខទូរសព្ទដែលបានផ្ទៀងផ្ទាត់នៅលើគណនីរបស់អ្នក។",
+    usePhone: "ប្រើលេខទូរសព្ទរបស់ខ្ញុំជំនួសវិញ",
+    useEmail: "ប្រើអាសយដ្ឋានអ៊ីមែលរបស់ខ្ញុំជំនួសវិញ",
+    phone: "លេខទូរសព្ទរបស់អ្នក",
+    phoneHint: "លេខដែលអ្នកបានផ្ទៀងផ្ទាត់នៅលើគណនីរបស់អ្នក។ លេខកម្ពុជាមិនត្រូវការលេខកូដប្រទេសទេ។",
+    send: "ផ្ញើលេខកូដមកខ្ញុំ",
+    sending: "កំពុងផ្ញើ…",
+    sent: "ប្រសិនបើលេខនោះត្រូវបានផ្ទៀងផ្ទាត់នៅលើគណនី Bookeyond Kid នោះលេខកូដ 6 ខ្ទង់កំពុងផ្ញើទៅ។ វាប្រើបាន 10 នាទី។",
+    code: "លេខកូដពីសារ",
+    newPassword: (min: number) => `ពាក្យសម្ងាត់ថ្មី (យ៉ាងហោចណាស់ ${min} តួអក្សរ)`,
+    confirm: "បញ្ជាក់ពាក្យសម្ងាត់ថ្មី",
+    mismatch: "ពាក្យសម្ងាត់ទាំងពីរមិនដូចគ្នាទេ។",
+    reset: "កំណត់ពាក្យសម្ងាត់ថ្មី",
+    resetting: "កំពុងរក្សាទុក…",
+    unavailable: "ការផ្ញើសារមិនទាន់បានរៀបចំនៅឡើយទេ៖ សូមប្រើអាសយដ្ឋានអ៊ីមែលរបស់អ្នកជំនួសវិញ។",
+    failed: "មិនដំណើរការនៅពេលនេះទេ។ សូមព្យាយាមម្ដងទៀត។",
+  },
+);

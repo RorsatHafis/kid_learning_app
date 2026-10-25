@@ -21,7 +21,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M6 Feature-specific paywall messages | **done** | see log | — |
 | M7 Pagination and information density | **done** | see log | — |
 | M8 Payment QR, manual reconciliation, secure grants | **done** (M8a step-up and reconciliation, M8b instructions and KHQR) | see log | V67 |
-| M9 Phone registration and verification foundations | M9a done (administrator authenticator app); M9b-1 done (a verified phone on an account, V71); sign-in by verified phone done; recovery by phone and phone-only accounts next (D-15) | | |
+| M9 Phone registration and verification foundations | M9a done (administrator authenticator app); M9b-1 done (a verified phone on an account, V71); sign-in and password reset by verified phone done (V72); email stays required (D-15) | | |
 | M10 Child access across devices, trusted caregivers | **done** (M10a child devices, M10b caregivers) | see log | V65, V66 |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
 | M12 School management: foundation and first modules | planned | | |
@@ -427,6 +427,7 @@ Dependencies:
 | D-12 | New third-party libraries (e.g. libphonenumber, an S3 client) and container images (S3-compatible test server) | Asked at the milestone that needs them. **libphonenumber approved 2026-10-24** (M9b; pinned 9.0.38, two months old when added) |
 | D-13 | How a co-teacher uses a lesson shared with their school (decided 2026-10-23) | **Copy to own**: the colleague copies it into their own content (drafts, crediting the original); children's paths still draw only on their curriculum owner's and platform content |
 | D-14 | PUBLIC content for every teacher (decided 2026-10-23) | **Deferred** until it is decided who reviews teachers' content before the whole platform sees it |
+| D-15 | Phone-only accounts; resetting a password by text (decided 2026-10-25) | **Email stays required** on every account; a code texted to the verified phone can also reset a forgotten password |
 
 ---
 
@@ -1013,4 +1014,18 @@ Dependencies:
   - **Exact next actions**: (1) CI check for the last commits; (2) automated test for phone sign-in; (3) password
     recovery by verified phone (code by SMS -> reset), mirroring AccountRecoveryService's limits and no-enumeration,
     if D-15 confirms; (4) then M13 integration/readiness; M11 needs D-06/D-12 (S3 client).
+- 2026-10-25: **Password reset by text (D-15: email stays required).** V72 `phone_verifications.purpose` (VERIFY |
+  RESET; existing codes VERIFY). `POST /auth/password-reset/phone` always 202 (unknown, unverified or junk numbers,
+  disabled accounts, too soon or too often: nothing sent, nothing said; 503 only when texts aren't set up);
+  `.../phone/confirm` {phone, code, newPassword}: one refusal message for any wrong, used or expired code (5 tries,
+  10 minutes), the password policy checked before the code is used, then as an email reset: other reset links
+  withdrawn, lockout cleared, every session ended, "your password was changed" emailed to the account's address
+  (the address is not marked confirmed). Rate limits: the request shares the email reset's per-network budget, the
+  confirm the login budget. "Forgot your password?" offers "Use my phone number instead" (EN/KM).
+  - **Verified**: runtime on the isolated stack (202 for unknown/junk/real; wrong code 422; weak password 422 keeps
+    the code; reset 204; the code once; old password 401, new 200; seed restored); suites AccountRecovery 21,
+    AuthRateLimit 5, Phone 5, ServerTextCoverage, FamilyErasure; Vitest 388.
+  - **Not yet tested automatically** (owner: no new test classes this session): phone sign-in; phone reset (request
+    silence for unknown numbers, one refusal message, policy before the code, sessions ended, email notice).
+  - **Next**: CI check; those tests; then M13 (integration/readiness) - M11 waits on D-06/D-12 (S3 client).
 

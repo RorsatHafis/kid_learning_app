@@ -51,15 +51,20 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     AuthRateLimitFilter(RateLimitProperties properties, LongSupplier nanoClock) {
         TokenBucketLimiter login = new TokenBucketLimiter(properties.loginPerMinute(), Duration.ofMinutes(1), nanoClock);
         TokenBucketLimiter refresh = new TokenBucketLimiter(properties.refreshPerMinute(), Duration.ofMinutes(1), nanoClock);
+        // Asking for a reset, by email or by text, draws on one budget per network.
+        TokenBucketLimiter recovery = new TokenBucketLimiter(properties.recoveryPerHour(), Duration.ofHours(1), nanoClock);
         this.limiters = Map.ofEntries(
                 Map.entry("/api/v1/auth/login", login),
                 // Using an emailed link is a sign-in-like step: it shares the login budget.
                 Map.entry("/api/v1/auth/password-reset/confirm", login),
+                // M9b: a texted reset code is a sign-in-like step too.
+                Map.entry("/api/v1/auth/password-reset/phone/confirm", login),
                 Map.entry("/api/v1/auth/email-verification/confirm", login),
                 Map.entry("/api/v1/auth/account-setup/confirm", login),
                 Map.entry("/api/v1/auth/email-change/confirm", login),
                 Map.entry("/api/v1/auth/register", new TokenBucketLimiter(properties.registerPerHour(), Duration.ofHours(1), nanoClock)),
-                Map.entry("/api/v1/auth/password-reset", new TokenBucketLimiter(properties.recoveryPerHour(), Duration.ofHours(1), nanoClock)),
+                Map.entry("/api/v1/auth/password-reset", recovery),
+                Map.entry("/api/v1/auth/password-reset/phone", recovery),
                 // Logout presents a refresh token too; it shares the refresh budget.
                 Map.entry("/api/v1/auth/refresh", refresh),
                 Map.entry("/api/v1/auth/logout", refresh),

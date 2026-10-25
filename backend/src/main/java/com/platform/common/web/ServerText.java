@@ -179,6 +179,8 @@ public final class ServerText {
             Map.entry("This number is verified on another account, so it can't be added here",
                     "លេខនេះត្រូវបានផ្ទៀងផ្ទាត់នៅលើគណនីមួយផ្សេងទៀត ដូច្នេះមិនអាចបន្ថែមនៅទីនេះបានទេ"),
             Map.entry("There's no phone number on this account", "គណនីនេះមិនមានលេខទូរសព្ទទេ"),
+            Map.entry("That code isn't right, or it has expired: ask for a new one",
+                    "លេខកូដនោះមិនត្រឹមត្រូវ ឬបានផុតកំណត់ហើយ៖ សូមស្នើលេខកូដថ្មី"),
             // The family's learning day
             Map.entry("Choose a time zone from the list", "សូមជ្រើសរើសតំបន់ម៉ោងពីបញ្ជី"),
             // M5b: lessons shared with a school

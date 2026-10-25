@@ -25,9 +25,33 @@ import java.util.UUID;
 public class AccountRecoveryController {
 
     private final AccountRecoveryService recovery;
+    private final com.platform.identity.phone.PhonePasswordReset phoneReset;
 
-    public AccountRecoveryController(AccountRecoveryService recovery) {
+    public AccountRecoveryController(AccountRecoveryService recovery, com.platform.identity.phone.PhonePasswordReset phoneReset) {
         this.recovery = recovery;
+        this.phoneReset = phoneReset;
+    }
+
+    /** M9b (D-15): a reset code by text, to the account's verified phone. */
+    public record PhoneResetRequest(@NotBlank @Size(max = 40) String phone) {
+    }
+
+    public record PhoneResetConfirmRequest(@NotBlank @Size(max = 40) String phone, @NotBlank @Size(max = 12) String code,
+                                           @NotBlank String newPassword) {
+    }
+
+    /** Always 202, whether or not the number belongs to an account (503 only when texts aren't set up at all). */
+    @PostMapping("/auth/password-reset/phone")
+    public ResponseEntity<Void> requestPhoneReset(@Valid @RequestBody PhoneResetRequest request) {
+        phoneReset.request(request.phone());
+        return ResponseEntity.accepted().build();
+    }
+
+    /** 204 with the new password set and every session ended; 422 for any wrong, used or expired code. */
+    @PostMapping("/auth/password-reset/phone/confirm")
+    public ResponseEntity<Void> resetWithPhoneCode(@Valid @RequestBody PhoneResetConfirmRequest request) {
+        phoneReset.reset(request.phone(), request.code(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 
     public record PasswordResetRequest(@NotBlank @Email @Size(max = 320) String email) {

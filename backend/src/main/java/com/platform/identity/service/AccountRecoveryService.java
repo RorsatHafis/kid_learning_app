@@ -382,7 +382,31 @@ public class AccountRecoveryService {
         Account account = setPasswordWithLink(rawToken, AccountActionPurpose.PASSWORD_RESET, newPassword,
                 "ACCOUNT_PASSWORD_RESET");
 
-        events.publishEvent(UiLanguage.isKhmer(account.getPreferredLanguage())
+        events.publishEvent(passwordChangedNotice(account));
+    }
+
+    /**
+     * M9b (owner decision D-15): a new password after a code texted to the account's verified phone. The caller has
+     * checked the code and holds the account row. As with a link: other open reset links are withdrawn, the lockout is
+     * cleared, every session ends, and the "your password was changed" email goes to the account's address (email
+     * stays required). The address is not marked confirmed: the phone, not the mailbox, proved the request.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void resetPasswordAfterPhoneCode(Account account, String newPassword) {
+        passwordPolicy.validate(newPassword, account.getEmail());
+        Instant now = Instant.now();
+        tokens.findByAccountIdAndPurposeAndConsumedAtIsNullAndInvalidatedAtIsNull(account.getId(), AccountActionPurpose.PASSWORD_RESET)
+                .forEach(open -> open.invalidate(now));
+        account.changePasswordHash(passwordEncoder.encode(newPassword));
+        account.resetFailedLogins();
+        int ended = sessions.revokeAllSessions(account.getId());
+        audit(account, "ACCOUNT_PASSWORD_RESET", Map.of("sessionsEnded", ended, "channel", "phone"));
+        events.publishEvent(passwordChangedNotice(account));
+    }
+
+    /** The email saying the password was changed and every device signed out. */
+    private EmailMessage passwordChangedNotice(Account account) {
+        return UiLanguage.isKhmer(account.getPreferredLanguage())
                 ? new EmailMessage(account.getEmail(), "ពាក្យសម្ងាត់ Bookeyond Kid របស់អ្នកត្រូវបានផ្លាស់ប្ដូរ", """
                 សួស្ដី,
 
@@ -406,7 +430,7 @@ public class AccountRecoveryService {
 
                 If it wasn't, reset your password straight away at %s/forgot-password - and \
                 check who can read this mailbox.
-                """.formatted(mail.publicUrl())));
+                """.formatted(mail.publicUrl()));
     }
 
     // ------------------------------------------------------------------ account setup (invitations)

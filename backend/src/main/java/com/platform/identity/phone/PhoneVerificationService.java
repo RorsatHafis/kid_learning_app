@@ -106,8 +106,10 @@ public class PhoneVerificationService {
         if ((byAccount != null && byAccount >= PER_HOUR) || (byNumber != null && byNumber >= PER_HOUR)) {
             throw new TooManyAttemptsException(TOO_MANY, Duration.ofHours(1));
         }
-        jdbc.update("UPDATE phone_verifications SET superseded_at = :n WHERE account_id = :a AND confirmed_at IS NULL AND superseded_at IS NULL",
-                new MapSqlParameterSource("n", Timestamp.from(now)).addValue("a", accountId));
+        jdbc.update("""
+                UPDATE phone_verifications SET superseded_at = :n
+                 WHERE account_id = :a AND purpose = 'VERIFY' AND confirmed_at IS NULL AND superseded_at IS NULL
+                """, new MapSqlParameterSource("n", Timestamp.from(now)).addValue("a", accountId));
         boolean takenElsewhere = verifiedElsewhere(phone, accountId);
         UUID id = UUID.randomUUID();
         String code = String.format("%06d", random.nextInt(1_000_000));
@@ -130,7 +132,8 @@ public class PhoneVerificationService {
         Account account = accounts.findForUpdate(accountId).orElseThrow(() -> new ResourceNotFoundException("Account", accountId));
         List<Map<String, Object>> open = jdbc.queryForList("""
                 SELECT id, phone_e164, code_hash, expires_at, attempts, sent FROM phone_verifications
-                 WHERE account_id = :a AND confirmed_at IS NULL AND superseded_at IS NULL ORDER BY issued_at DESC LIMIT 1
+                 WHERE account_id = :a AND purpose = 'VERIFY' AND confirmed_at IS NULL AND superseded_at IS NULL
+                 ORDER BY issued_at DESC LIMIT 1
                 """, Map.of("a", accountId));
         if (open.isEmpty()) {
             throw new IllegalStateException(NO_CODE);
