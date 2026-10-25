@@ -178,7 +178,7 @@ class SecondFactorIntegrationTests {
 
     /** The next code an authenticator app would show that hasn't been used yet. */
     private String nextCode(byte[] secret) throws InterruptedException {
-        long step = Math.max(Totp.step(Instant.now()) - 1, lastStep + 1);
+        long step = Math.max(Totp.step(Instant.now()), lastStep + 1);
         while (step > Totp.step(Instant.now()) + 1) {
             Thread.sleep(500);
         }

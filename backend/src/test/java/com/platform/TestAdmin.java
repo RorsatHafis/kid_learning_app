@@ -71,7 +71,8 @@ public final class TestAdmin {
             throw new IllegalStateException("no authenticator app was turned on for " + accountId + " in this test run");
         }
         synchronized (secret) {
-            long step = Math.max(com.platform.security.stepup.Totp.step(java.time.Instant.now()) - 1, LAST_STEPS.getOrDefault(accountId, Long.MIN_VALUE) + 1);
+            // Never the previous window's code: if the window turns before the server checks it, it is refused.
+            long step = Math.max(com.platform.security.stepup.Totp.step(java.time.Instant.now()), LAST_STEPS.getOrDefault(accountId, Long.MIN_VALUE) + 1);
             while (step > com.platform.security.stepup.Totp.step(java.time.Instant.now()) + 1) {
                 Thread.sleep(500);
             }

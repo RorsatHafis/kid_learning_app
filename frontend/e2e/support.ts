@@ -257,7 +257,8 @@ export async function authenticatorCode(email: string, password: string): Promis
   const app = authenticators.get(key)!;
   if (saved) app.lastStep = Math.max(app.lastStep, saved.lastStep);
   const now = () => Math.floor(Date.now() / 30_000);
-  const step = Math.max(now() - 1, app.lastStep + 1);
+  // Never the previous window's code: if the window turns before the server checks it, it is two windows old and refused.
+  const step = Math.max(now(), app.lastStep + 1);
   while (step > now() + 1) await new Promise((r) => setTimeout(r, 500));
   app.lastStep = step;
   if (saved) save(key, { secret: app.secret, lastStep: step });
