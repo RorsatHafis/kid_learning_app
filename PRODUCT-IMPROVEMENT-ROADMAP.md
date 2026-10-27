@@ -1235,4 +1235,13 @@ Dependencies:
     `journey-check.mjs` should click "Finish" so it doesn't leave an activity fully answered but unfinished.
   - **Risks**: Quick Tunnels have no uptime guarantee - if cloudflared exits, the URL is gone (a new one must be
     sent); the gate password is unchanged; the admin preview account's language was left in Khmer by an earlier run.
+- 2026-10-27: **L11 parents learn the two-day rule and how to help at home.** "How we describe progress" now says
+  why strong answers can still read "progressing" (D-17: secure needs strong answers from two different days).
+  The child's overview has a short "Helping at home" card under the insights: sit with the youngest and read the
+  questions aloud together, praise effort and method, practise a skill that needs it with real things, stop at the
+  end of an activity. General guidance from the report (co-use, process praise [Promising]; concrete before
+  symbolic [Strong]; ending on purpose [Promising]) - not curriculum; a per-skill home activity, as the report
+  suggests, would be educator content (D-19). EN/KM (Khmer drafted, PD-14). Verified in the browser at 360 px (fits);
+  tsc, eslint, Vitest 396. Also checked: an activity fully answered but not finished is completed on return (designed
+  behaviour, `finishAttempt`) - the preview journey script's failure there was the script's assumption.
 

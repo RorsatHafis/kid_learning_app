@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils/cn";
 import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
 import { buddyMessages } from "@/features/buddy/buddy.messages";
 import type { EnrollmentOverview } from "@/lib/api/types";
+import { HelpAtHome } from "./HelpAtHome";
 
 export function ChildOverviewPage() {
   // key={childId} forces a full remount when switching children, so no state from
@@ -94,8 +95,9 @@ function ChildOverview({ childId }: { childId: string }) {
                 {/* "What is improving?": change over time, right after what is happening now. */}
                 <ChangesSection childId={childId} childName={data.displayName} />
               </div>
-              <aside className="lg:sticky lg:top-24 lg:self-start">
+              <aside className="flex flex-col gap-8 lg:sticky lg:top-24 lg:self-start">
                 <InsightsSection childId={childId} />
+                <HelpAtHome childName={data.displayName} />
               </aside>
             </div>
           }

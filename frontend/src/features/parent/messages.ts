@@ -254,6 +254,9 @@ export const familyMessages = defineMessages(
       everyAnswer:
         "Every answer given without the hint is evidence (with the hint, it is practice). We only describe how a skill is going once there are at least three such answers on it — before that it is",
       tooEarly: "too early to tell",
+      // D-17: why strong answers can still read "progressing"
+      secureTwoDays:
+        "A skill is called secure only when strong answers come from at least two different days: right answers in one sitting show your child can do it today, not yet that it has stayed.",
       notWeak: ", not weak.",
       chapter: (position: number) => `Chapter ${position} · `,
       practised: (practised: number, mapped: number, enough: number) =>
@@ -626,6 +629,8 @@ export const familyMessages = defineMessages(
       everyAnswer:
         "ចម្លើយនីមួយៗដែលឆ្លើយដោយមិនប្រើតម្រុយ គឺជាភស្តុតាង (បើប្រើតម្រុយ វាជាការហាត់រៀន)។ យើងពិពណ៌នាថាជំនាញមួយកំពុងទៅយ៉ាងណា លុះត្រាតែមានចម្លើយបែបនេះយ៉ាងតិចបីលើវា — មុននោះ វានៅ",
       tooEarly: "ដើមពេកដើម្បីដឹង",
+      secureTwoDays:
+        "ជំនាញមួយត្រូវបានហៅថារឹងមាំ តែនៅពេលចម្លើយល្អមកពីយ៉ាងហោចណាស់ពីរថ្ងៃផ្សេងគ្នាប៉ុណ្ណោះ៖ ចម្លើយត្រូវក្នុងពេលតែមួយ បង្ហាញថាកូនរបស់អ្នកអាចធ្វើវាបាននៅថ្ងៃនេះ ប៉ុន្តែមិនទាន់បង្ហាញថាវានៅជាប់ទេ។",
       notWeak: " មិនមែនខ្សោយទេ។",
       chapter: (position: number) => `ជំពូកទី ${position} · `,
       practised: (practised: number, mapped: number, enough: number) =>

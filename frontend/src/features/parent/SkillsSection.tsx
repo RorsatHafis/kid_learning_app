@@ -56,6 +56,7 @@ export function SkillsSection({ childId, childName }: { childId: string; childNa
               {m.everyAnswer} <strong className="text-ink">{m.tooEarly}</strong>
               {m.notWeak}
             </p>
+            <p>{m.secureTwoDays}</p>
             <ul className="flex flex-col gap-2">
               {(Object.keys(evidenceDots) as EvidenceLevel[]).map((level) => (
                 <li key={level} className="flex items-center gap-3">
