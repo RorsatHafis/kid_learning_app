@@ -57,15 +57,19 @@ public class LearnerActivityReader {
                             questionService.listOptions(questionVersion.getId()));
                 })
                 .toList();
-        Map<UUID, MediaService.MediaRef> media = mediaService.refs(loaded.stream()
+        List<UUID> mediaIds = new java.util.ArrayList<>(loaded.stream()
                 .flatMap(l -> ActivityContentDtos.mediaOf(l.version(), l.options()).stream()).toList());
+        java.util.stream.Stream.of(version.getIntroductionImageAssetId(), version.getIntroductionAudioAssetId())
+                .filter(java.util.Objects::nonNull).forEach(mediaIds::add);
+        Map<UUID, MediaService.MediaRef> media = mediaService.refs(mediaIds);
         List<ActivityItemResponse> items = loaded.stream()
                 .map(l -> ActivityItemResponse.forLearner(l.item().getId(), l.item().getSequenceOrder(), l.type(), l.version(),
                         l.options(), media))
                 .toList();
 
         return new ActivityVersionDetailResponse(version.getId(), activity.getId(), activity.getTitle(), version.getInstructions(),
-                version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items);
+                version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items,
+                ActivityContentDtos.LearnerIntroduction.of(version, media));
     }
 
 }

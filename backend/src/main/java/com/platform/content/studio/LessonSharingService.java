@@ -191,6 +191,11 @@ public class LessonSharingService {
             ActivityVersion draft = activityService.createDraftVersion(newActivity.getId(), version.getInstructions(),
                     version.getDifficultyLevel(), version.getEstimatedDurationSeconds());
             activityService.skillsOf(version.getId()).forEach(skillId -> activityService.tagSkill(draft.getId(), skillId));
+            if (version.hasIntroduction()) {
+                activityService.setIntroduction(draft.getId(), version.getIntroduction(),
+                        mediaFor(version.getIntroductionImageAssetId(), copier.getId(), mediaCopies), version.getIntroductionImageDescription(),
+                        mediaFor(version.getIntroductionAudioAssetId(), copier.getId(), mediaCopies));
+            }
             List<ActivityService.ItemDraft> items = new ArrayList<>();
             for (ActivityItem item : activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(version.getId())) {
                 UUID copied = questionCopies.get(item.getQuestionVersionId());

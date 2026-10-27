@@ -76,6 +76,7 @@ export const studioMessages = defineMessages(
       ACTIVITY_NO_SKILL: () =>
         "Tag at least one skill: learning paths choose activities by skill, so without one it is never placed.",
       NO_QUESTIONS: () => "Add at least one question.",
+      INTRODUCTION_IMAGE_UNDESCRIBED: () => "Describe the introduction's picture: a child using a screen reader hears the description.",
       QUESTION_MISSING: (v) => `Question ${v.question} no longer exists.`,
       QUESTION_NOT_PUBLISHED: (v) =>
         v.state === "DRAFT"
@@ -369,6 +370,7 @@ export const studioMessages = defineMessages(
       ACTIVITY_NO_SKILL: () =>
         "សូមភ្ជាប់ជំនាញយ៉ាងតិចមួយ៖ ផ្លូវរៀនជ្រើសសកម្មភាពតាមជំនាញ ដូច្នេះបើគ្មានជំនាញ វាមិនត្រូវបានដាក់ឡើយ។",
       NO_QUESTIONS: () => "សូមបន្ថែមសំណួរយ៉ាងតិចមួយ។",
+      INTRODUCTION_IMAGE_UNDESCRIBED: () => "សូមពិពណ៌នារូបភាពនៃសេចក្ដីផ្ដើម៖ កុមារដែលប្រើកម្មវិធីអានអេក្រង់ ស្ដាប់ការពិពណ៌នានោះ។",
       QUESTION_MISSING: (v) => `សំណួរទី ${v.question} លែងមានទៀតហើយ។`,
       QUESTION_NOT_PUBLISHED: (v) =>
         v.state === "DRAFT"

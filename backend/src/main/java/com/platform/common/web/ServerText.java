@@ -210,6 +210,8 @@ public final class ServerText {
             Map.entry("The QR code must be a picture in the platform's media library", "លេខកូដ QR ត្រូវតែជារូបភាពនៅក្នុងបណ្ណាល័យមេឌៀរបស់វេទិកា"),
             Map.entry("These payment instructions were changed meanwhile: reload them before saving",
                     "ការណែនាំអំពីការបង់ប្រាក់ទាំងនេះត្រូវបានផ្លាស់ប្ដូរក្នុងពេលនេះ៖ សូមផ្ទុកវាឡើងវិញ មុនពេលរក្សាទុក"),
+            Map.entry("This file is used by an activity's introduction, so it can't be deleted. Archive it instead.",
+                    "ឯកសារនេះត្រូវបានប្រើក្នុងសេចក្ដីផ្ដើមនៃសកម្មភាពមួយ ដូច្នេះមិនអាចលុបបានទេ។ សូមទុកវាក្នុងបណ្ណសារជំនួសវិញ។"),
             Map.entry("This picture is a payment QR code, so it can't be deleted. Archive it instead.",
                     "រូបភាពនេះជាលេខកូដ QR សម្រាប់បង់ប្រាក់ ដូច្នេះវាមិនអាចលុបបានទេ។ សូមដាក់វាក្នុងបណ្ណសារជំនួសវិញ។"),
             Map.entry("The amount received doesn't match this payment: check the receipt",

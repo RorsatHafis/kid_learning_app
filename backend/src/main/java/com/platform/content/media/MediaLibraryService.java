@@ -165,6 +165,9 @@ public class MediaLibraryService {
         if (!assets.usesOf(asset.getId()).isEmpty()) {
             throw new IllegalStateException("This file is used by questions, so it can't be deleted. Archive it instead.");
         }
+        if (assets.usedByIntroductions(asset.getId())) {
+            throw new IllegalStateException("This file is used by an activity's introduction, so it can't be deleted. Archive it instead.");
+        }
         if (assets.usedForPayments(asset.getId())) {
             throw new IllegalStateException("This picture is a payment QR code, so it can't be deleted. Archive it instead.");
         }

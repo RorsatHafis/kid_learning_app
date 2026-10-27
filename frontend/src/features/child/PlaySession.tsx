@@ -25,6 +25,7 @@ import { childMessages } from "./messages";
 import { breakDue, readSitting, sittingMinutes, useBreakReminder } from "./breaks";
 import { afterActivity, type GardenNews } from "./garden";
 import { AnswerVerdict } from "./AnswerVerdict";
+import { LearnCard, LookAgain } from "./Learn";
 import { gardenMessages } from "./garden.messages";
 import { Plant } from "@/features/world/Plant";
 import coverArt from "@/assets/world/river-path.webp";
@@ -634,6 +635,11 @@ function Intro({
           {activity.title}
         </h1>
         {activity.instructions && <p className="mx-auto mt-3 max-w-lg text-lg font-medium leading-relaxed text-ink-soft">{activity.instructions}</p>}
+        {activity.introduction && (
+          <div className="mt-6">
+            <LearnCard introduction={activity.introduction} />
+          </div>
+        )}
 
         <div className="mx-auto mt-7 flex w-fit flex-col items-center gap-2">
           <div className="flex flex-wrap justify-center gap-1.5" aria-hidden>
@@ -789,6 +795,11 @@ function Question({
         <ProgressBuds total={total} done={index + answeredHere} current={result ? null : index} label={m.questionOf(index + 1, total)} />
         <span aria-hidden />
       </div>
+      {activity.introduction && (
+        <div className="mx-auto -mb-2 flex w-full max-w-3xl justify-center">
+          <LookAgain introduction={activity.introduction} />
+        </div>
+      )}
 
       <Page
         labelledBy="question-prompt"

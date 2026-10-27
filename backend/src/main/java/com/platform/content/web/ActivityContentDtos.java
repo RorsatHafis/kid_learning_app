@@ -139,6 +139,7 @@ public final class ActivityContentDtos {
         return ids;
     }
 
+    /** {@code introduction}: what the activity teaches before it asks; null when it has none. */
     public record ActivityVersionDetailResponse(
             UUID activityVersionId,
             UUID activityId,
@@ -146,8 +147,24 @@ public final class ActivityContentDtos {
             String instructions,
             Integer difficultyLevel,
             Integer estimatedDurationSeconds,
-            List<ActivityItemResponse> items
+            List<ActivityItemResponse> items,
+            LearnerIntroduction introduction
     ) {
+    }
+
+    /** An activity's introduction as a learner sees it: the text, a picture with its description, a recording. */
+    public record LearnerIntroduction(String text, com.platform.content.media.MediaService.MediaRef image, String imageDescription,
+                                      com.platform.content.media.MediaService.MediaRef audio) {
+
+        /** Null when the version has none; its media from {@code refs} (already signed). */
+        public static LearnerIntroduction of(com.platform.content.entity.ActivityVersion version,
+                                             Map<UUID, com.platform.content.media.MediaService.MediaRef> refs) {
+            if (!version.hasIntroduction()) {
+                return null;
+            }
+            return new LearnerIntroduction(version.getIntroduction(), refs.get(version.getIntroductionImageAssetId()),
+                    version.getIntroductionImageDescription(), refs.get(version.getIntroductionAudioAssetId()));
+        }
     }
 
 }

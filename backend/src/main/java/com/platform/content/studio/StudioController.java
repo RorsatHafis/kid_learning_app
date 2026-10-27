@@ -203,6 +203,13 @@ public class StudioController {
         return studio.reviseActivityDraft(accountId, versionId, request);
     }
 
+    /** What the activity teaches before it asks (its draft). */
+    @PutMapping("/activity-versions/{versionId}/introduction")
+    public ActivityDetail setActivityIntroduction(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId,
+                                                  @Valid @RequestBody StudioDtos.IntroductionRequest request) {
+        return studio.setActivityIntroduction(accountId, versionId, request);
+    }
+
     @PutMapping("/activity-versions/{versionId}/items")
     public ActivityDetail replaceActivityItems(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId,
                                                @Valid @RequestBody ReplaceItemsRequest request) {

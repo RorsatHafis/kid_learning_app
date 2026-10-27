@@ -450,7 +450,8 @@ public class StudioService {
                         version.getPublishedAt(), version.getInstructions(), version.getDifficultyLevel(),
                         version.getEstimatedDurationSeconds(),
                         activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(version.getId()).stream()
-                                .map(this::itemDetail).toList(), activityService.skillsOf(version.getId())))
+                                .map(this::itemDetail).toList(), activityService.skillsOf(version.getId()),
+                        introductionOf(version)))
                 .toList();
         return new ActivityDetail(activity.getId(), activity.getTitle(), activity.getActivityType(), activity.getLessonId(),
                 activity.getSubjectId(), activitySkillIds(activityId), versions, activity.getStatus() == CatalogStatus.ARCHIVED);
@@ -484,6 +485,38 @@ public class StudioService {
                 .filter(version -> version.getStatus() == PublicationStatus.DRAFT)
                 .orElseThrow(() -> new IllegalStateException("Start a new version to change the skills this activity practises: a published version keeps the skills it was published with."))
                 .getId();
+    }
+
+    /** An activity version's introduction for the Studio, its media as signed links; null when it has none. */
+    private StudioDtos.IntroductionDetail introductionOf(ActivityVersion version) {
+        if (!version.hasIntroduction()) {
+            return null;
+        }
+        Map<UUID, MediaService.MediaRef> refs = media.refs(java.util.stream.Stream.of(version.getIntroductionImageAssetId(),
+                version.getIntroductionAudioAssetId()).filter(Objects::nonNull).toList());
+        return new StudioDtos.IntroductionDetail(version.getIntroduction(), refs.get(version.getIntroductionImageAssetId()),
+                version.getIntroductionImageDescription(), refs.get(version.getIntroductionAudioAssetId()));
+    }
+
+    /**
+     * What an activity teaches before it asks, on its draft: text, a picture (with its description) and a recording,
+     * each optional. Its media follow the same rule as a question's: the activity's owner may use them, of the kind
+     * the field needs, not archived (unless the draft already had it).
+     */
+    @Transactional
+    public ActivityDetail setActivityIntroduction(UUID accountId, UUID activityVersionId, StudioDtos.IntroductionRequest request) {
+        ActivityVersion version = activityService.getVersion(activityVersionId);
+        Activity activity = guard.requireActivityWrite(accountId, version.getActivityId());
+        // An activity's content belongs to its lesson's owner (N7); one without a lesson is platform content.
+        UUID owner = activity.getLessonId() == null ? null
+                : lessons.findById(activity.getLessonId()).map(Lesson::getOwnerAccountId).orElse(null);
+        java.util.Set<UUID> onDraft = java.util.stream.Stream.of(version.getIntroductionImageAssetId(), version.getIntroductionAudioAssetId())
+                .filter(Objects::nonNull).collect(java.util.stream.Collectors.toSet());
+        media.requireAttachable(request.imageAssetId(), AssetType.IMAGE, owner, onDraft);
+        media.requireAttachable(request.audioAssetId(), AssetType.AUDIO, owner, onDraft);
+        activityService.setIntroduction(activityVersionId, request.text(), request.imageAssetId(), request.imageDescription(),
+                request.audioAssetId());
+        return activity(accountId, version.getActivityId());
     }
 
     @Transactional
@@ -575,8 +608,11 @@ public class StudioService {
         List<ActivityItemResponse> items = activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId).stream()
                 .map(item -> learnerItem(item.getId(), item.getSequenceOrder(), questionService.getVersion(item.getQuestionVersionId())))
                 .toList();
+        Map<UUID, MediaService.MediaRef> introMedia = media.refs(java.util.stream.Stream.of(version.getIntroductionImageAssetId(),
+                version.getIntroductionAudioAssetId()).filter(Objects::nonNull).toList());
         return new ActivityVersionDetailResponse(version.getId(), activity.getId(), activity.getTitle(),
-                version.getInstructions(), version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items);
+                version.getInstructions(), version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items,
+                com.platform.content.web.ActivityContentDtos.LearnerIntroduction.of(version, introMedia));
     }
 
     // ================================================================== questions

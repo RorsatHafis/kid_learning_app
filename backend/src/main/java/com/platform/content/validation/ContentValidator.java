@@ -224,6 +224,11 @@ public class ContentValidator {
         if (items.isEmpty()) {
             errors.add(new Issue("NO_QUESTIONS", "Add at least one question."));
         }
+        // Teaching before asking: an introduction's picture is described for screen readers.
+        if (version.getIntroductionImageAssetId() != null && version.getIntroductionImageDescription() == null) {
+            errors.add(new Issue("INTRODUCTION_IMAGE_UNDESCRIBED",
+                    "Describe the introduction's picture: a child using a screen reader hears the description."));
+        }
         Set<UUID> evidenced = new LinkedHashSet<>();
         for (ActivityItem item : items) {
             QuestionVersion questionVersion = questionVersions.findById(item.getQuestionVersionId()).orElse(null);

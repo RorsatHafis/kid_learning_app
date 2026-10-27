@@ -1,0 +1,40 @@
+import { defineMessages } from "@/i18n/catalog";
+
+/** An activity's introduction: teaching before asking. */
+export const introductionMessages = defineMessages(
+  "features/admin/studio/introduction",
+  {
+    title: "Teach it first",
+    lead: "Show the idea before the questions: a short explanation or a worked example. Children see it first and can open it again while they answer.",
+    text: "Explanation or example",
+    placeholder: "For example: 2 apples and 1 more apple make 3 apples. We write 2 + 1 = 3.",
+    textHint: (n: number) => `${n} of 1200 characters. Short sentences, one idea.`,
+    picture: "Picture (optional)",
+    pictureName: "picture for the introduction",
+    describe: "Describe the picture",
+    describeHint: 'Read to children who use a screen reader, e.g. "Two red apples and one green apple".',
+    recording: "Read aloud (optional)",
+    recordingName: "recording of the introduction",
+    recordingHint: "For children who don't read yet: record the explanation in your own voice.",
+    save: "Save introduction",
+    saving: "Saving…",
+    saved: "Introduction saved with this draft.",
+  },
+  {
+    title: "បង្រៀនជាមុនសិន",
+    lead: "បង្ហាញគំនិតមុនសំណួរ៖ ការពន្យល់ខ្លី ឬឧទាហរណ៍ដែលបានដោះស្រាយ។ កុមារឃើញវាមុនគេ ហើយអាចបើកវាម្ដងទៀតនៅពេលកំពុងឆ្លើយ។",
+    text: "ការពន្យល់ ឬឧទាហរណ៍",
+    placeholder: "ឧទាហរណ៍៖ ផ្លែប៉ោម 2 ផ្លែ និងផ្លែប៉ោម 1 ផ្លែទៀត ស្មើនឹងផ្លែប៉ោម 3 ផ្លែ។ យើងសរសេរ 2 + 1 = 3។",
+    textHint: (n: number) => `${n} ក្នុងចំណោម 1200 តួអក្សរ។ ប្រយោគខ្លីៗ មួយគំនិត។`,
+    picture: "រូបភាព (ស្រេចចិត្ត)",
+    pictureName: "រូបភាពសម្រាប់សេចក្ដីផ្ដើម",
+    describe: "ពិពណ៌នារូបភាព",
+    describeHint: 'អានឱ្យកុមារដែលប្រើកម្មវិធីអានអេក្រង់ស្ដាប់ ឧ. "ផ្លែប៉ោមក្រហមពីរ និងផ្លែប៉ោមបៃតងមួយ"។',
+    recording: "អានឮៗ (ស្រេចចិត្ត)",
+    recordingName: "សំឡេងថតនៃសេចក្ដីផ្ដើម",
+    recordingHint: "សម្រាប់កុមារដែលមិនទាន់ចេះអាន៖ ថតការពន្យល់ដោយសំឡេងរបស់អ្នកផ្ទាល់។",
+    save: "រក្សាទុកសេចក្ដីផ្ដើម",
+    saving: "កំពុងរក្សាទុក…",
+    saved: "បានរក្សាទុកសេចក្ដីផ្ដើមជាមួយសេចក្ដីព្រាងនេះ។",
+  },
+);

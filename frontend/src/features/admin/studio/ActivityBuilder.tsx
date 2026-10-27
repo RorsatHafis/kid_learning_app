@@ -27,6 +27,8 @@ import { IconButton, Panel } from "./shared";
 import { useMessages } from "@/i18n/catalog";
 import { builderMessages } from "./builder.messages";
 import { editorMessages } from "./editor.messages";
+import { IntroductionEditor } from "./IntroductionEditor";
+import { LearnCard } from "@/features/child/Learn";
 
 export type Message = { tone: "error" | "ok"; text: string } | null;
 
@@ -92,6 +94,15 @@ export function ActivityBuilder({
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
+          {/* Teaching before asking: the introduction children see before the first question. */}
+          <IntroductionEditor
+            key={`intro-${latest.id}`}
+            version={latest}
+            onSaved={(detail) => {
+              onChange(detail);
+              setRevision((r) => r + 1);
+            }}
+          />
           <section aria-labelledby="build-questions" className="flex flex-col gap-4 rounded-[20px] bg-white p-5 shadow-card sm:p-6">
             <StepTitle id="build-questions" step={1} title={b.steps.write} detail={items.length > 0 ? b.questionsTitle(items.length) : undefined} />
             {items.length === 0 && adding === "closed" && <p className="text-sm text-ink-soft">{b.noQuestionsYet}</p>}
@@ -615,12 +626,13 @@ function TryIt({ versionId, revision }: { versionId: string; revision: number })
       cancelled = true;
     };
   }, [versionId, revision]);
-  if (!preview || preview.items.length === 0) return null;
+  if (!preview || (preview.items.length === 0 && !preview.introduction)) return null;
   return (
     <Panel title={b.tryIt}>
       <div className="flex flex-col gap-4">
         <p className="-mt-2 text-sm text-ink-soft">{b.tryItLead}</p>
         {preview.instructions && <p className="text-sm font-semibold text-ink">“{preview.instructions}”</p>}
+        {preview.introduction && <LearnCard introduction={preview.introduction} />}
         {preview.items.map((item, index) => (
           <ChildPreview key={item.activityItemId} item={item} index={index} total={preview.items.length} />
         ))}

@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { ActivityItem, MediaRef, Page, PlatformRole, QuestionType } from "./types";
+import type { ActivityIntroduction, ActivityItem, MediaRef, Page, PlatformRole, QuestionType } from "./types";
 
 // ---- content/studio/StudioDtos.java ----
 // Author-facing contract: carries answer keys, and every read is limited server-side
@@ -215,6 +215,16 @@ export interface ActivityVersionDetail extends VersionSummary {
   items: ItemDetail[];
   /** What this version practises / gives evidence for (PD-08); frozen once it is published. */
   skillIds: string[];
+  /** What the version teaches before it asks; null when it has none. */
+  introduction: ActivityIntroduction | null;
+}
+
+/** Sets a draft's introduction; every field optional. */
+export interface IntroductionInput {
+  text: string | null;
+  imageAssetId: string | null;
+  imageDescription: string | null;
+  audioAssetId: string | null;
 }
 
 export interface ActivityDetail {
@@ -348,6 +358,7 @@ export interface LearnerActivityPreview {
   difficultyLevel: number | null;
   estimatedDurationSeconds: number | null;
   items: ActivityItem[];
+  introduction: ActivityIntroduction | null;
 }
 
 /** Media fields are asset ids from `uploadMedia`; left out when there is none. */
@@ -585,6 +596,9 @@ export const studioApi = {
   tagActivitySkill: (id: string, skillId: string) => apiClient.post<ActivityDetail>(`${S}/activities/${id}/skills/${skillId}`),
   untagActivitySkill: (id: string, skillId: string) =>
     apiClient.delete<ActivityDetail>(`${S}/activities/${id}/skills/${skillId}`),
+  /** What the activity teaches before it asks (its draft). */
+  setActivityIntroduction: (versionId: string, body: IntroductionInput) =>
+    apiClient.put<ActivityDetail>(`${S}/activity-versions/${versionId}/introduction`, body),
   reviseActivityDraft: (
     versionId: string,
     body: { instructions: string | null; difficultyLevel: number | null; estimatedDurationSeconds: number | null },

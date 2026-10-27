@@ -29,6 +29,21 @@ public class ActivityVersion extends PublishableVersion {
     @Column(name = "estimated_duration_seconds")
     private Integer estimatedDurationSeconds;
 
+    /** What the activity teaches before it asks: a short explanation or worked example, shown to the child first. */
+    @Column(name = "introduction", columnDefinition = "text")
+    private String introduction;
+
+    @Column(name = "introduction_image_asset_id")
+    private UUID introductionImageAssetId;
+
+    /** What a screen reader says for the introduction's picture. */
+    @Column(name = "introduction_image_description", length = 300)
+    private String introductionImageDescription;
+
+    /** The introduction read aloud, for children who don't read yet. */
+    @Column(name = "introduction_audio_asset_id")
+    private UUID introductionAudioAssetId;
+
     protected ActivityVersion() {
         // JPA
     }
@@ -62,6 +77,38 @@ public class ActivityVersion extends PublishableVersion {
         this.instructions = newInstructions;
         this.difficultyLevel = newDifficultyLevel;
         this.estimatedDurationSeconds = newEstimatedDurationSeconds;
+    }
+
+    /** The introduction, on a draft only (published versions are what learners hold). Blank text is none. */
+    public void setIntroduction(String text, UUID imageAssetId, String imageDescription, UUID audioAssetId) {
+        requireStatus(com.platform.common.entity.PublicationStatus.DRAFT, "edited");
+        String clean = text == null || text.isBlank() ? null : text.strip();
+        Assert.isTrue(clean == null || clean.length() <= 1200, "introduction must be at most 1200 characters");
+        this.introduction = clean;
+        this.introductionImageAssetId = imageAssetId;
+        this.introductionImageDescription = imageAssetId == null || imageDescription == null || imageDescription.isBlank()
+                ? null : imageDescription.strip();
+        this.introductionAudioAssetId = audioAssetId;
+    }
+
+    public String getIntroduction() {
+        return introduction;
+    }
+
+    public UUID getIntroductionImageAssetId() {
+        return introductionImageAssetId;
+    }
+
+    public String getIntroductionImageDescription() {
+        return introductionImageDescription;
+    }
+
+    public UUID getIntroductionAudioAssetId() {
+        return introductionAudioAssetId;
+    }
+
+    public boolean hasIntroduction() {
+        return introduction != null || introductionImageAssetId != null || introductionAudioAssetId != null;
     }
 
     public UUID getActivityId() {

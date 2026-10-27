@@ -26,6 +26,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M11 Storage-provider abstraction, school storage choice | planned | | |
 | M12 School management: foundation and first modules | planned | | |
 | M13 Integration, role verification, docs, staging readiness | planned | | |
+| L1 Learning experience: "Learn first" activity introductions (owner brief 2026-10-25) | **done** | see log | V73 |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
 deferred until the family experience is coherent):** M6 → M7 → M10 → M8 → M9 → M5 → M11 → M13 → M12. M12 waits
@@ -1030,4 +1031,36 @@ Dependencies:
     and real numbers with a text only to the real one; the same refusal for a wrong code and an unknown number; weak
     password keeps the code; the code once; sessions ended; new password works; changed-password email sent.
   - **Next**: CI check; then M13 (role journeys EN/KM, readiness docs) - M11 waits on D-06/D-12 (S3 client).
+- 2026-10-27: **L1 "Learn first": an activity can teach before it asks** (owner brief: learning experience first;
+  research report [Strong]: explicit model -> guided -> independent; worked examples before practice). V73 adds an
+  optional introduction to `activity_versions`: text (<=1200), a picture with its screen-reader description, a
+  recording (FKs to `content_assets`, ON DELETE RESTRICT). Draft-only like the rest of a version; a new draft copies
+  it; copy-to-own (M5b) carries it with the media remapped; deleting a library file an introduction uses is refused
+  ("archive it instead"). Studio: a "Teach it first" panel on the activity (text, picture + description, recording,
+  same media rules as questions), shown in "Try it as a child"; publishing is blocked while the picture is
+  undescribed (`INTRODUCTION_IMAGE_UNDESCRIBED`). Child: a "Let's learn" card on the activity's first page (picture,
+  text, Listen when recorded) and "Show me again" while answering (a dialog; Escape, outside tap or the button close
+  it; focus returns; nothing is sent or scored). Activities without one look exactly as before. EN/KM labels; the
+  content itself stays in its authored language (no localization layer, unchanged).
+  - **Decision taken**: no "no introduction" publish tip - it would flag every review/fluency activity where teaching
+    first is not wanted, and the existing exact-warnings contract (`ContentStudioIntegrationTests`) says a minimal
+    activity has only `NOT_ON_ANY_PATH`. The panel itself is the prompt.
+  - **Browser verified** (isolated stack): admin authored + saved (status shown, readiness and preview refresh without
+    reload), undescribed picture blocks publish, described one publishes (v2, v1 retired as usual); new child Dara
+    enrolled in Maths - Junior got v2 (the path pins the version current at enrollment; Sophea keeps v1 - unchanged
+    behaviour); card shown before questions, signed image 200 with the authored alt; "Show me again" kept a
+    half-typed answer, made no API calls; 2 answers recorded, attempt COMPLETED, "2 of 2" from the saved answers; the
+    next activity (no introduction) shows no card or button; phone width and Khmer chrome checked. Fixed during
+    verification: tiny pictures rendered 1 px (now a fixed frame), card too tall on phones, Escape didn't return focus
+    or stop the recording, Studio didn't refresh after saving.
+  - **Tested**: Vitest 392; tsc; integration suites ActivityBuilder 3, ContentLifecycle 8, ContentLifecycleStudio 2,
+    ContentStudio 9, ContentTenancy 9, LessonSharing 2, MediaLibrary 1, QuestionMediaAndOrdering 4, LearningJourneyApi
+    8, ContentWithdrawal 2, ServerTextCoverage 3.
+  - **Tests still needed** (no new tests this session, owner's instruction): Studio set/clear introduction incl. media
+    rules (other owner's file, archived file, wrong kind) and draft-only; validator error; learner read returns it
+    with signed media and never for a draft; new draft copies it; copy-to-own remaps its media; library delete refused;
+    Vitest for LearnCard/LookAgain (focus return, Escape, no answer loss).
+  - **Content dependency**: only 4 of 524 published questions have an explanation and no activity has an
+    introduction yet; the feature is only as good as the content. Khmer introductions need native review (PD-14).
+  - **Next**: Priority B (feedback) - see the next entry.
 

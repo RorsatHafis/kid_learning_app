@@ -226,6 +226,15 @@ public class ActivityService {
         return activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId);
     }
 
+    /** What the activity teaches before it asks (a draft only). */
+    @Transactional
+    public ActivityVersion setIntroduction(UUID activityVersionId, String text, UUID imageAssetId, String imageDescription,
+                                           UUID audioAssetId) {
+        ActivityVersion version = getVersion(activityVersionId);
+        version.setIntroduction(text, imageAssetId, imageDescription, audioAssetId);
+        return activityVersionRepository.saveAndFlush(version);
+    }
+
     @Transactional
     public ActivityVersion reviseDraft(UUID activityVersionId, String instructions, Integer difficultyLevel,
                                        Integer estimatedDurationSeconds) {
@@ -252,6 +261,11 @@ public class ActivityService {
         ActivityVersion source = latest.get();
         ActivityVersion draft = createDraftVersion(activityId, source.getInstructions(), source.getDifficultyLevel(),
                 source.getEstimatedDurationSeconds());
+        if (source.hasIntroduction()) {
+            draft.setIntroduction(source.getIntroduction(), source.getIntroductionImageAssetId(), source.getIntroductionImageDescription(),
+                    source.getIntroductionAudioAssetId());
+            activityVersionRepository.saveAndFlush(draft);
+        }
         int order = 0;
         for (ActivityItem item : activityItemRepository.findByActivityVersionIdOrderBySequenceOrderAsc(source.getId())) {
             UUID questionId = questionVersionRepository.findById(item.getQuestionVersionId()).orElseThrow().getQuestionId();

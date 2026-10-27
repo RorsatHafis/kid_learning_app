@@ -111,9 +111,20 @@ public final class StudioDtos {
     }
 
     /** {@code skillIds}: what this version practises (PD-08); frozen once it is published. */
+    /** {@code introduction}: what the version teaches before it asks; null when it has none. */
     public record ActivityVersionDetail(UUID id, int versionNumber, PublicationStatus status, Instant publishedAt,
                                         String instructions, Integer difficultyLevel, Integer estimatedDurationSeconds,
-                                        List<ItemDetail> items, List<UUID> skillIds) {
+                                        List<ItemDetail> items, List<UUID> skillIds, IntroductionDetail introduction) {
+    }
+
+    /** An activity's introduction: text, a picture with its description, a recording. */
+    public record IntroductionDetail(String text, com.platform.content.media.MediaService.MediaRef image, String imageDescription,
+                                     com.platform.content.media.MediaService.MediaRef audio) {
+    }
+
+    /** Sets a draft's introduction; every field optional, blank text is none. */
+    public record IntroductionRequest(@Size(max = 1200) String text, UUID imageAssetId, @Size(max = 300) String imageDescription,
+                                      UUID audioAssetId) {
     }
 
     public record ActivityDetail(UUID id, String title, String activityType, UUID lessonId, UUID subjectId,

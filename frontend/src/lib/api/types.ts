@@ -204,6 +204,16 @@ export interface ActivityVersionDetail {
   difficultyLevel: number | null;
   estimatedDurationSeconds: number | null;
   items: ActivityItem[];
+  /** What the activity teaches before it asks; null when it has none. */
+  introduction: ActivityIntroduction | null;
+}
+
+/** content/web/ActivityContentDtos.LearnerIntroduction: an explanation or worked example, a picture, a recording. */
+export interface ActivityIntroduction {
+  text: string | null;
+  image: MediaRef | null;
+  imageDescription: string | null;
+  audio: MediaRef | null;
 }
 
 // ---- learning/entity/ActivityAttemptStatus.java, learning/web/ActivityAttemptDtos.java ----

@@ -57,7 +57,9 @@ public interface ContentAssetRepository extends JpaRepository<ContentAsset, UUID
     @Query(nativeQuery = true, value = """
             SELECT a.asset_type AS assetType, (a.archived_at IS NOT NULL) AS archived,
                    NOT (EXISTS (SELECT 1 FROM question_versions v WHERE v.prompt_image_asset_id = a.id OR v.prompt_audio_asset_id = a.id)
-                        OR EXISTS (SELECT 1 FROM question_options o WHERE o.image_asset_id = a.id OR o.audio_asset_id = a.id)) AS unused,
+                        OR EXISTS (SELECT 1 FROM question_options o WHERE o.image_asset_id = a.id OR o.audio_asset_id = a.id)
+                        OR EXISTS (SELECT 1 FROM activity_versions av
+                                    WHERE av.introduction_image_asset_id = a.id OR av.introduction_audio_asset_id = a.id)) AS unused,
                    count(*) AS files, COALESCE(SUM(a.size_bytes), 0) AS bytes
             FROM content_assets a
             WHERE a.sha256 IS NOT NULL AND a.owner_account_id IS NOT DISTINCT FROM CAST(:ownerId AS uuid)
@@ -112,7 +114,9 @@ public interface ContentAssetRepository extends JpaRepository<ContentAsset, UUID
               AND (:archived = (a.archived_at IS NOT NULL))
               AND (:unused = false OR NOT (
                    EXISTS (SELECT 1 FROM question_versions v WHERE v.prompt_image_asset_id = a.id OR v.prompt_audio_asset_id = a.id)
-                   OR EXISTS (SELECT 1 FROM question_options o WHERE o.image_asset_id = a.id OR o.audio_asset_id = a.id)))
+                   OR EXISTS (SELECT 1 FROM question_options o WHERE o.image_asset_id = a.id OR o.audio_asset_id = a.id)
+                   OR EXISTS (SELECT 1 FROM activity_versions av
+                               WHERE av.introduction_image_asset_id = a.id OR av.introduction_audio_asset_id = a.id)))
             """;
 
     @Query(value = "SELECT a.id " + LIBRARY_FROM + " ORDER BY a.created_at DESC, a.id LIMIT :limit OFFSET :offset", nativeQuery = true)
@@ -157,6 +161,12 @@ public interface ContentAssetRepository extends JpaRepository<ContentAsset, UUID
             ) u
             """)
     List<Use> usesOf(@Param("id") UUID assetId);
+
+    /** The asset is the picture or recording of an activity version's introduction. */
+    @Query(value = """
+            select exists (select 1 from activity_versions where introduction_image_asset_id = :id or introduction_audio_asset_id = :id)
+            """, nativeQuery = true)
+    boolean usedByIntroductions(@Param("id") UUID assetId);
 
     /** M8b: the asset is (or was) the KHQR image of a version of the payment instructions. */
     @Query(value = "select exists (select 1 from payment_instruction_versions where qr_asset_id = :id)", nativeQuery = true)
