@@ -375,11 +375,23 @@ export function PlaySession() {
   }
 }
 
-function JourneyLink({ href, solid, toShelf = false }: { href: string; solid?: boolean; toShelf?: boolean }) {
+function JourneyLink({
+  href,
+  solid,
+  toShelf = false,
+  compactOnPhone = false,
+}: {
+  href: string;
+  solid?: boolean;
+  toShelf?: boolean;
+  /** On a phone, a round icon button (its name still read out), so it fits beside the go button. */
+  compactOnPhone?: boolean;
+}) {
   const m = useMessages(childMessages);
   return (
-    <Link to={href} className={cn(quietButton, solid && "bg-tonle-50 ring-tonle-200")}>
-      {toShelf ? <Library size={19} aria-hidden /> : <BookOpen size={19} aria-hidden />} {toShelf ? m.myShelf : m.myPath}
+    <Link to={href} className={cn(quietButton, solid && "bg-tonle-50 ring-tonle-200", compactOnPhone && "max-sm:w-14 max-sm:shrink-0 max-sm:px-0")}>
+      {toShelf ? <Library size={19} aria-hidden /> : <BookOpen size={19} aria-hidden />}{" "}
+      <span className={cn(compactOnPhone && "max-sm:sr-only")}>{toShelf ? m.myShelf : m.myPath}</span>
     </Link>
   );
 }
@@ -622,7 +634,8 @@ function Intro({
   const n = activity.items.length;
   return (
     <div className="px-4 pb-16 pt-6 sm:pt-10">
-      <Page labelledBy="activity-title" className="overflow-hidden px-0 pb-10 text-center motion-safe:animate-page-in sm:pb-12">
+      {/* Not overflow-hidden: the start button below sticks to the bottom of a phone's screen (the cover clips itself). */}
+      <Page labelledBy="activity-title" className="px-0 pb-10 text-center motion-safe:animate-page-in sm:pb-12">
         {/* Y44: the book's cover - a window onto the river, with the buddy standing on the path. */}
         <div aria-hidden className="relative h-44 overflow-hidden rounded-t-[32px] sm:h-56">
           <img src={coverArt} alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_62%]" />
@@ -653,9 +666,11 @@ function Intro({
 
         {lastOne && <LastOne />}
 
-        <div className="mt-9 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
-          <JourneyLink href={journeyHref} />
-          <button ref={startRef} type="button" onClick={onStart} className={goButton}>
+        {/* On a phone the way forward stays on screen: pinned to the bottom until the page reaches it, so a child
+            never has to discover that the button is further down. */}
+        <div className="sticky bottom-0 z-10 -mx-6 mt-9 flex items-center justify-center gap-3 bg-gradient-to-t from-[#FFFDF8] from-70% to-[#FFFDF8]/0 px-6 pb-4 pt-6 sm:static sm:mx-0 sm:gap-4 sm:bg-none sm:p-0">
+          <JourneyLink href={journeyHref} compactOnPhone />
+          <button ref={startRef} type="button" onClick={onStart} className={cn(goButton, "max-sm:px-8")}>
             {m.letsGo} <ArrowRight size={22} aria-hidden />
           </button>
         </div>
@@ -1034,10 +1049,11 @@ function Completed({
             </div>
           </section>
         ) : (
-          <div className="mt-8 flex flex-col-reverse items-center justify-center gap-4 sm:flex-row">
-            <JourneyLink href={journeyHref} />
+          // As on the book's first page: on a phone the way on stays on screen below the celebration.
+          <div className="sticky bottom-0 z-10 -mx-6 mt-8 flex items-center justify-center gap-3 bg-gradient-to-t from-[#FFFDF8] from-70% to-[#FFFDF8]/0 px-6 pb-4 pt-6 sm:static sm:mx-0 sm:gap-4 sm:bg-none sm:p-0">
+            <JourneyLink href={journeyHref} compactOnPhone={next !== null} />
             {next !== null && (
-              <button ref={keepGoingRef} type="button" onClick={onKeepGoing} className={goButton}>
+              <button ref={keepGoingRef} type="button" onClick={onKeepGoing} className={cn(goButton, "max-sm:px-8")}>
                 {m.keepGoing} <ArrowRight size={22} aria-hidden />
               </button>
             )}

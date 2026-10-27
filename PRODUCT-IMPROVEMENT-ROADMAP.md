@@ -1161,4 +1161,22 @@ Dependencies:
   - **Tests still needed**: one-day vs two-day standing; zone boundary (an answer at 23:30 and 00:30 local); fixed
     offset zone; objective and "mastered" gated.
   - **Gap, proposed as D-18**: nothing brings the skill back on another day by itself.
+- 2026-10-27: **L7 child screens at phone sizes: the way forward is always on screen.** Walked Dara's real journey
+  (path -> "Addition Within 10 Practice - Easy" -> questions -> a wrong answer -> completion -> "Medium" -> leave and
+  resume "Hard") at 360x640 and 320x568 (browser emulation, not a device), EN and KM, and the tablet preset.
+  - **Found**: on the book's first page the only way on ("Let's go") started at y=654 of a 669 px viewport - a child
+    saw the cover, title and question count but not the button (worse with an introduction, and real phones lose
+    more height to browser bars); the completion page's "Keep going" was at y=945 of 640. Both had focus but focus
+    doesn't scroll there.
+  - **Fixed**: below the `sm` breakpoint both action rows stick to the bottom of the screen until the page reaches
+    them (a fading paper bar), with "My path" as a round icon button (its name still read out) beside the go button so
+    the bar stays one row (fits 320 px, Khmer "តោះទៅ" included). The intro card lost `overflow-hidden` (it stopped
+    sticky; the cover clips its own corners). Tablet/desktop unchanged (static row, full labels).
+  - **Checked and fine**: home (one big "Continue learning"), question + keypad + Check within 640 px, wrong-answer
+    verdict and focused "Next" on screen, path/shelf/buddy without overflow at 320 px in EN and KM, resume returns to
+    the next unanswered question. Not a product issue: a 16 px overflow seen only in emulation (a `fixed inset-0`
+    background sized to the emulator's desktop scrollbar; phones use overlay scrollbars); screenshots of emulated
+    sizes in the browser pane come out cropped, so measurements were used instead.
+  - **Verified**: browser (measured positions above), Vitest 392, tsc, eslint. **Not verified**: physical phones.
+  - **Tests still needed**: Vitest that the start/keep-going controls are the sticky row's children on small screens.
 
