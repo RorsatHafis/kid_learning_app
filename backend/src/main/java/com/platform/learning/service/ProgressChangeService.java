@@ -48,8 +48,12 @@ public class ProgressChangeService {
         MOVED_DOWN
     }
 
+    /**
+     * {@code onPlan}: the skill is in one of the child's learning paths, so it has a skill page; a skill practised only
+     * outside them (a class's own practice, free practice of other content) is told here but has none.
+     */
     public record SkillChange(UUID skillId, String name, ChangeKind kind, SkillStanding then, SkillStanding now,
-                              int answersSince, Instant lastPracticedAt) {
+                              int answersSince, Instant lastPracticedAt, boolean onPlan) {
     }
 
     public record ProgressSince(Instant since, int days, int answersSince, List<SkillChange> changes) {
@@ -60,14 +64,16 @@ public class ProgressChangeService {
     private final StandingHistory standingHistory;
     private final EvidenceStandard evidenceStandard;
     private final LearningDays learningDays;
+    private final SkillProgressService skillProgress;
 
     public ProgressChangeService(LearnerSkillStateRepository skillStates, SkillRepository skills, StandingHistory standingHistory,
-                                 EvidenceStandard evidenceStandard, LearningDays learningDays) {
+                                 EvidenceStandard evidenceStandard, LearningDays learningDays, SkillProgressService skillProgress) {
         this.skillStates = skillStates;
         this.skills = skills;
         this.standingHistory = standingHistory;
         this.evidenceStandard = evidenceStandard;
         this.learningDays = learningDays;
+        this.skillProgress = skillProgress;
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +87,12 @@ public class ProgressChangeService {
                 .filter(state -> state.getEvidenceCount() > then.getOrDefault(state.getSkillId(), StandingHistory.Moment.NONE).evidence())
                 .toList();
         Map<UUID, Integer> evidenceDays = learningDays.evidenceDays(childId);
+        // The same skills the skill page serves (SkillStoryService reads them from here too).
+        java.util.Set<UUID> onPlan = skillProgress.progressFor(childId).stream()
+                .flatMap(curriculum -> curriculum.objectives().stream())
+                .flatMap(objective -> objective.skills().stream())
+                .map(SkillProgressService.SkillProgress::skillId)
+                .collect(Collectors.toSet());
         Map<UUID, Skill> names = skills.findAllById(practised.stream().map(LearnerSkillState::getSkillId).toList()).stream()
                 .collect(Collectors.toMap(Skill::getId, Function.identity()));
 
@@ -90,7 +102,7 @@ public class ProgressChangeService {
                     SkillStanding now = evidenceStandard.standingFor(state, evidenceDays.getOrDefault(state.getSkillId(), 0));
                     Skill skill = names.get(state.getSkillId());
                     return new SkillChange(state.getSkillId(), skill == null ? "A skill" : skill.getName(), kind(before.standing(), now),
-                            before.standing(), now, state.getEvidenceCount() - before.evidence(), state.getLastEvidenceAt());
+                            before.standing(), now, state.getEvidenceCount() - before.evidence(), state.getLastEvidenceAt(), onPlan.contains(state.getSkillId()));
                 })
                 .sorted(Comparator.comparing(SkillChange::kind).thenComparing(SkillChange::name))
                 .toList();

@@ -663,6 +663,8 @@ export interface SkillChange {
   now: SkillStanding;
   answersSince: number;
   lastPracticedAt: string | null;
+  /** In one of the child's learning paths, so it has a skill page (false: practised only outside them). */
+  onPlan?: boolean;
 }
 
 export interface ProgressSince {

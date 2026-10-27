@@ -109,12 +109,20 @@ function ChangeRow({ childId, change }: { childId: string; change: SkillChange }
   const m = useMessages(familyMessages).changes;
   return (
     <li className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-      <Link
-        to={`/parent/children/${childId}/skills/${change.skillId}`}
-        className="font-medium text-tonle-800 underline-offset-4 hover:underline"
-      >
-        {change.name}
-      </Link>
+      {/* A skill practised only outside the child's paths (a class's own practice) has no skill page to open. */}
+      {change.onPlan === false ? (
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          <span className="font-medium text-ink">{change.name}</span>
+          <span className="text-xs text-ink-faint">{m.outsidePlan}</span>
+        </span>
+      ) : (
+        <Link
+          to={`/parent/children/${childId}/skills/${change.skillId}`}
+          className="font-medium text-tonle-800 underline-offset-4 hover:underline"
+        >
+          {change.name}
+        </Link>
+      )}
       <span className="flex flex-col gap-1 text-sm text-ink-soft sm:flex-row sm:items-center sm:gap-2">
         <span className="flex flex-wrap items-center gap-2">
           {moved ? (

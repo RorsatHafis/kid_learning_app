@@ -320,6 +320,7 @@ export const familyMessages = defineMessages(
       freePractice: "free practice",
     },
     changes: {
+      outsidePlan: "practised outside the learning plan",
       week: "This week",
       weekPhrase: "this week",
       fourWeeks: "4 weeks",
@@ -692,6 +693,7 @@ export const familyMessages = defineMessages(
       freePractice: "ការហាត់ដោយសេរី",
     },
     changes: {
+      outsidePlan: "បានហាត់ក្រៅផែនការរៀន",
       week: "សប្ដាហ៍នេះ",
       weekPhrase: "ក្នុងសប្ដាហ៍នេះ",
       fourWeeks: "4 សប្ដាហ៍",

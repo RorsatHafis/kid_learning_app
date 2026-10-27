@@ -288,9 +288,14 @@ function Lately({ childId, progress }: { childId: string; progress: CurriculumPr
             <li key={change.skillId} className="flex flex-wrap items-center gap-x-2 text-sm">
               <StandingMark standing={change.now} />
               <span className="text-ink-soft">{heading[change.kind]}:</span>
-              <Link to={`/parent/children/${childId}/skills/${change.skillId}`} className="font-semibold text-tonle-900 underline-offset-4 hover:underline">
-                {change.name}
-              </Link>
+              {change.onPlan === false ? (
+                // Practised only outside the child's paths: no skill page to open.
+                <span className="font-semibold text-tonle-900">{change.name}</span>
+              ) : (
+                <Link to={`/parent/children/${childId}/skills/${change.skillId}`} className="font-semibold text-tonle-900 underline-offset-4 hover:underline">
+                  {change.name}
+                </Link>
+              )}
             </li>
           ))}
         </ul>

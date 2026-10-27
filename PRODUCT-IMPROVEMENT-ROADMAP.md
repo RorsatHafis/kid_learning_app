@@ -1196,4 +1196,14 @@ Dependencies:
     support counts per latest version.
   - **Not done (decisions)**: D-19 (who authors, languages, review); D-18 still open; no machine speech (see
     `.claude/research/README.md`).
+- 2026-10-27: **L9 parent journey on phones; no dead links to skills outside the plan.** Walked the parent's family
+  home, Dara's overview, Skills & progress and a skill page at 360x640 (emulation): no overflow (the tab bar
+  scrolls sideways by design); every number checked against the data reconciles (12 evidence answers of 14 given,
+  2 hinted; "4 of 5" = Easy 1/2 + Medium 2/2 + 1 in the unfinished Hard; Progressing everywhere per D-17).
+  **Fixed**: "What changed" (overview and family home) linked every skill to its skill page, but the skill page
+  (deliberately) serves only skills in the child's paths - a skill practised elsewhere (a class's own practice, free
+  practice of other content) led to "This skill isn't part of this child's learning paths". `SkillChange.onPlan`
+  (same source as the skill page); off-plan skills show as text with "practised outside the learning plan".
+  Verified in the browser; ProgressChange, LearningJourneyApi, SkillStory suites; Vitest parent 70; tsc.
+  **Next**: Studio educator guidance for young learners (D-19 stays open), then parent pages in Khmer at 320 px.
 
