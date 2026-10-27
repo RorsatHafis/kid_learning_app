@@ -1095,4 +1095,27 @@ Dependencies:
   - **Tests still needed**: hinted answer moves no mastery (right and wrong); unaided does; review outcome ignores
     hinted right answers; fingerprint/idempotent retry with the hint; export field; Vitest for the hint flag sent.
   - **Not changed**: the public demo (its answers are not evidence); `ActivityEvent` hint telemetry (unused here).
+- 2026-10-27: **L4 educators can record a question or an introduction in the Studio.** Investigation (Priority C):
+  the only real audience today is the Junior hub (ages 4-9) with one real curriculum, "Maths - Junior"; many 4-6
+  year olds don't read, and **0 of its 13 published questions had a recording** - so a pre-reader met "2 mangoes and
+  3 mangoes make how many?" as text. The child side already plays a recording when a question appears and on
+  "Listen"; the gap was authoring: a recording had to be made in another app and uploaded. Every audio slot in the
+  Studio (question read aloud, a choice's sound, an introduction's recording) now has **Record**: the microphone is
+  read with the Web Audio API and written as a mono 16-bit 22.05 kHz WAV in the browser (Chrome's own recorder makes
+  WebM, which the server refuses; WAV it accepts and every browser plays), listen back, "Use this recording" (an
+  ordinary upload - the server's byte checks, storage allowance and library apply), "Record again", discard. Stops
+  by itself at 60 s (~2.6 MB of the 5 MB allowed). Refused, missing or failing microphones say so and leave upload
+  available; the button is hidden where recording can't work (no getUserMedia, insecure page). The library titles a
+  recording after its use and time ("recording of the introduction 27 Oct, 10:19"). "Add a recording" became
+  "Upload a recording". EN/KM (Khmer drafted, PD-14).
+  - **Browser verified** (isolated stack; the pane has no microphone, so `getUserMedia` was stood in for by a
+    generated tone - capture, encoding, upload, server check and playback were real): question prompt recorded,
+    listened back, uploaded (201, `audio/wav`, 436 KB for ~10 s), saved on the draft; refused microphone shows its
+    message; an introduction recorded, saved, published (v3); as Dara the introduction's **Listen** played the 2.1 s
+    recording to the end - the check that could not be done last session. Vitest 392, tsc, eslint clean.
+  - **Not verified**: a real microphone and real devices (Android Chrome, iOS Safari) - the owner or an educator
+    should record one prompt on a phone. **Tests still needed**: WAV encoder (header, resampling), recorder states and
+    failures (Vitest).
+  - **Not done, decision for the owner**: device text-to-speech for prompts without a recording (no content language
+    tag; Khmer voice quality unproven; some devices send the text online). Research index: `.claude/research/README.md`.
 

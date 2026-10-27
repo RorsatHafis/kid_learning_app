@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent } from "react";
-import { ImagePlus, Library, Mic, Play, Square, X } from "lucide-react";
+import { ImagePlus, Library, Mic, Play, Square, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import type { MediaRef } from "@/lib/api/types";
 import { studioApi } from "@/lib/api/studio";
@@ -9,6 +9,7 @@ import { fileSize, uploadError } from "./mediaText";
 import { MediaPicker } from "./MediaLibrary";
 import { useMessages } from "@/i18n/catalog";
 import { mediaMessages } from "./media.messages";
+import { VoiceRecorder } from "./VoiceRecorder";
 
 const ACCEPT = {
   IMAGE: "image/png,image/jpeg,image/webp",
@@ -25,7 +26,8 @@ interface Sending {
 }
 
 /**
- * A picture or recording on a question (X11): add one (uploaded and checked by the server) or choose
+ * A picture or recording on a question (X11): add one (uploaded and checked by the server), record one with the
+ * microphone (L4, audio only - it becomes an ordinary upload), or choose
  * one already in the media library (X13), see or hear it, replace or remove it. `compact` fits in a
  * row of answer choices. `onChange` also hands over the library item, so a form can offer its
  * description (screen-reader text) where it is used.
@@ -125,7 +127,7 @@ export function MediaSlot({
 
   const iconButton =
     "flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-ink-soft ring-1 ring-inset ring-line hover:bg-tonle-50 hover:text-ink disabled:opacity-50";
-  const Icon = kind === "IMAGE" ? ImagePlus : Mic;
+  const Icon = kind === "IMAGE" ? ImagePlus : Upload;
   const percent = sending ? Math.round(sending.fraction * 100) : 0;
 
   return (
@@ -220,6 +222,7 @@ export function MediaSlot({
             <Icon size={compact ? 18 : 16} aria-hidden />
             {!compact && (kind === "IMAGE" ? m.addPicture : m.addRecording)}
           </button>
+          {kind === "AUDIO" && <VoiceRecorder name={name} compact={compact} disabled={busy} onRecorded={(file) => void upload(file)} />}
           <button
             type="button"
             onClick={() => setPicking(true)}
