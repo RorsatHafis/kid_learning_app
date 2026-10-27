@@ -127,6 +127,8 @@ export function RegisterPage() {
         {role === "PRINCIPAL" && (
           <p className="text-xs text-ink-soft">{r.principalNext}</p>
         )}
+        {/* What a family is asked for - true to docs/legal/DATA-INVENTORY.md; nothing about a child before registering. */}
+        {role === "PARENT" && <p className="text-xs text-ink-soft">{r.parentNext}</p>}
         <Button type="submit" size="lg" disabled={isSubmitting} className="mt-2 w-full">
           {isSubmitting ? r.submitting : r.submit}
         </Button>

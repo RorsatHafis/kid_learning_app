@@ -58,6 +58,8 @@ export const authMessages = defineMessages(
       principal: "I'm a principal",
       familyName: "Family name (optional)",
       principalNext: "You'll confirm your email, then set up your school and choose its plan.",
+      parentNext:
+        "We ask for your email and a password; a family name is optional. You'll add each child afterwards - the name they're called in the app and their date of birth. No payment details.",
       submit: "Create account",
       submitting: "Creating account…",
       haveAccount: "Already have an account?",
@@ -180,6 +182,8 @@ export const authMessages = defineMessages(
       principal: "ខ្ញុំជានាយកសាលា",
       familyName: "ឈ្មោះគ្រួសារ (មិនចាំបាច់)",
       principalNext: "អ្នកនឹងបញ្ជាក់អ៊ីមែលរបស់អ្នក បន្ទាប់មករៀបចំសាលារបស់អ្នក និងជ្រើសរើសកញ្ចប់របស់វា។",
+      parentNext:
+        "យើងសុំអ៊ីមែល និងពាក្យសម្ងាត់របស់អ្នក ហើយឈ្មោះគ្រួសារមិនចាំបាច់ទេ។ អ្នកនឹងបន្ថែមកូនម្នាក់ៗនៅពេលក្រោយ - ឈ្មោះដែលគេហៅក្នុងកម្មវិធី និងថ្ងៃខែឆ្នាំកំណើត។ មិនសុំព័ត៌មានបង់ប្រាក់ទេ។",
       submit: "បង្កើតគណនី",
       submitting: "កំពុងបង្កើតគណនី…",
       haveAccount: "មានគណនីរួចហើយមែនទេ?",

@@ -1476,4 +1476,11 @@ Dependencies:
     narrowing the hero is withdrawn. Public copy now separates the two: the proof line says "Made for ages 3 to 12"
     (was "Short lessons for ages 3 to 12", which read as lessons existing across the range) and the status line says
     "Early maths (ages 4–9) today · Khmer and English lessons in preparation". Both stay editable (F1a).
+- 2026-10-27: **Registration says what a family is asked for.** With "I'm a parent" selected, the form now says: email
+  and a password, a family name optional; each child is added afterwards with the name they're called in the app and
+  their date of birth; no payment details - true to `docs/legal/DATA-INVENTORY.md`, and nothing is asked about a child
+  before registering. **Browser verified (headless Chromium, 360px, EN and KM)**: note shown, no overflow, axe clean;
+  the hero's new audience/availability lines render in both languages. **Tested**: Vitest 400, tsc, eslint. Khmer
+  added to the review list below (PD-14): `features/auth/messages.ts` `register.parentNext`; `trust.proof.ages`,
+  `hero.status`.
 

@@ -302,3 +302,7 @@ public pages"), so a reviewer's corrections can also be entered there; the catal
 
 Checked in Khmer in a browser: `/try/parent` and the "How it works", "For parents" and "A world of their own" sections
 at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe violations.
+- Also 2026-10-27: `frontend/src/features/auth/messages.ts` `register.parentNext` (what a family is asked for);
+  `marketing/trust.messages.ts` `proof.ages` ("Made for ages 3 to 12") and `marketing/messages.ts` `hero.status`
+  ("Early maths (ages 4-9) today ...").
+
