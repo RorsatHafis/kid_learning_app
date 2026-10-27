@@ -1244,4 +1244,13 @@ Dependencies:
   suggests, would be educator content (D-19). EN/KM (Khmer drafted, PD-14). Verified in the browser at 360 px (fits);
   tsc, eslint, Vitest 396. Also checked: an activity fully answered but not finished is completed on return (designed
   behaviour, `finishAttempt`) - the preview journey script's failure there was the script's assumption.
+- 2026-10-27: **CHECKPOINT - preview final update blocked by a permission prompt (owner action needed).** The
+  original link (`room-convenience-balloon-rights.trycloudflare.com`, gated) serves the `6ab3005` build, verified
+  through it after the 14:28 `preview.sh update` (17/17 anonymous probes refused; all five roles; bundle = local build;
+  a child answers a question, 0 server errors). Since then only `5160cde` (L11: parent explainer sentence and
+  "Helping at home" card - frontend only) is newer. Running `preview.sh update` again was refused by Claude Code's
+  auto-mode classifier as a production deploy; nothing ran (no `build-5160cde` artefacts). **To finish** (owner, or
+  with permission): `bash /d/bk-work/preview/preview.sh update`, then from `D:/bk-work/preview`:
+  `node browser-check.mjs "$(cat tunnel.url)"` and `node journey-check.mjs "$(cat tunnel.url)"` (with
+  `PLAYWRIGHT_BROWSERS_PATH=D:/bk-work/pw-browsers`). The journey check now finishes an activity it completes.
 
