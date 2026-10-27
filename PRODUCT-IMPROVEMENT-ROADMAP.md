@@ -429,6 +429,7 @@ Dependencies:
 | D-13 | How a co-teacher uses a lesson shared with their school (decided 2026-10-23) | **Copy to own**: the colleague copies it into their own content (drafts, crediting the original); children's paths still draw only on their curriculum owner's and platform content |
 | D-14 | PUBLIC content for every teacher (decided 2026-10-23) | **Deferred** until it is decided who reviews teachers' content before the whole platform sees it |
 | D-15 | Phone-only accounts; resetting a password by text (decided 2026-10-25) | **Email stays required** on every account; a code texted to the verified phone can also reset a forgotten password |
+| D-16 | Does a right answer given after opening the hint count as evidence the child "showed it on their own"? (found 2026-10-27) | **Open.** Today `answer_records` has no hint flag, so a hinted right answer counts exactly like an unaided one (the research report's evidence ladder separates "worked through with help" from "showed on their own"). Recommended: record `hint_used` per answer (migration + answer contract; the client already knows when the hint opens) and count hinted right answers as practice, not independent evidence, in mastery and parent insight. Needs the owner's yes because it changes mastery outcomes for every child |
 
 ---
 
