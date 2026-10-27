@@ -32,7 +32,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | F1a Landing page: every word editable without code | **done** 2026-10-27 | see log | V75 |
 | F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | **done** 2026-10-27 (teach-first, account explanation, Not now, demo picker shows replaced versions) | see log | - |
 | F1c Parent demo with representative sample data (progress, evidence, how to help) | **done** 2026-10-27: `/try/parent`, a fictional sample child labelled on the page, static, nothing fetched or stored | see log | V76 |
-| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | planned - study the owner's samples and research, Duolingo / Khan Academy Kids, audience and storytelling; no unsupported testimonials | | |
+| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; further slices next | see log | |
 | F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | **F2a done** 2026-10-27: `docs/legal/DATA-INVENTORY.md` (facts from the code + 10 questions for a lawyer); drafts of the notice and terms next - near launch - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
@@ -1360,3 +1360,23 @@ Dependencies:
   - **Tests still needed**: the parent demo page (renders the sample label and no request), the V76 namespace in the
     site copy service tests listed under F1a.
   - **Next**: F1d landing redesign, then F2b drafts.
+- 2026-10-27: **F1d-1 the landing page shows the learning loop instead of describing it.** Research used as evidence:
+  motion must explain, not decorate (seductive details reduce learning, Sundararajan & Adesope 2020 [Strong]);
+  marketing establishes features, not effectiveness (no outcome claims). "How it works" replaced its two screenshots
+  and the static five-step list with one demonstration: a child answers 3 + 2 (the buddy cheers, "That's right!"),
+  the answer is "kept as evidence for Add within 10", the parent's skill row lights up, the third answer turns "Too
+  early to tell / partial evidence" into "Progressing / sufficient evidence" with "Secure comes once your child shows it
+  again on another day" (D-17), and "Why this next?" gives the app's own CHALLENGE reason. Built from the real
+  `Standing`, `EvidenceLine` and `LearningBuddy`; the five loop sentences are its captions and step buttons
+  (`aria-current="step"`). Plays only while on screen, pausable (WCAG 2.2.2); under reduced motion nothing plays and the
+  whole story is shown, each step still selectable; lines not yet shown are hidden from screen readers. All words in
+  the landing catalog (editable through F1a); unused keys removed (two shot captions, `progressing`, `enoughToJudge`)
+  and the sample stats corrected to fit the rules ("3 of 3 right · all today", was "4 of 6" beside a "consistently
+  correct" reason). The two screenshots it replaced are deleted (no other reference; the capture script can remake
+  them).
+  - **Browser verified (headless Chromium via Playwright against the dev server)**: at 1280x900 and 360x740 the steps
+    advance 1->5 in ~12 s, the parent row reaches "Progressing", Pause holds the step, a step button jumps to it, no
+    page errors, no horizontal overflow; reduced motion: starts on step 5, does not advance, button reads "Play";
+    Khmer at 360px renders with no overflow. Screenshots reviewed (phone: buddy moved above the question after it
+    overlapped). **Tested**: Vitest 400, tsc, eslint.
+  - **Not verified**: a screen reader; a physical phone.

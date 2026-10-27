@@ -2,7 +2,6 @@ import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpenCheck, Check, Coffee, Download, Hand, Languages, ShieldCheck, Sprout } from "lucide-react";
 import { PaintedScene } from "@/features/world/PaintedWorld";
-import { khmerNumber } from "@/features/world/PathOfBooks";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { BUDDY_KINDS } from "@/features/buddy/kinds";
 import { buddyMessages } from "@/features/buddy/buddy.messages";
@@ -16,9 +15,7 @@ import { Footer } from "./sections/Footer";
 import { Place, type PlaceKind } from "./Places";
 import { BrowserFrame, PhoneFrame } from "./Frames";
 import childEntrance from "./shots/child-entrance.webp";
-import childQuestion from "./shots/child-question.webp";
 import parentHome from "./shots/parent-home.webp";
-import parentChild from "./shots/parent-child.webp";
 import teacherTrend from "./shots/teacher-trend.webp";
 import childGarden from "./shots/child-garden.webp";
 import { Plant } from "@/features/world/Plant";
@@ -30,6 +27,7 @@ import { siteApi, type PublicStatement } from "@/lib/api/site";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { withoutClosingStop } from "./quote";
 import { usePublicCopy } from "./publicCopy";
+import { LoopDemo } from "./LoopDemo";
 
 /**
  * The public front door. It shows the product as it is — early maths today, Khmer and English in
@@ -301,40 +299,12 @@ function Heading({ id, title, lead }: { id?: string; title: string; lead?: strin
 
 function HowItWorks() {
   const m = useMessages(marketingMessages).how;
-  const l = useMessages(marketingMessages).landing;
-  const loop = [m.loop1, m.loop2, m.loop3, m.loop4, m.loop5];
   return (
     <Section id="how-it-works">
       <Heading title={m.title} lead={m.lead} />
 
-      <div className="mt-14 grid items-center gap-10 lg:grid-cols-[minmax(0,0.55fr)_minmax(0,1.45fr)] lg:gap-12">
-        <figure className="flex flex-col items-center gap-4">
-          <PhoneFrame src={childQuestion} alt={l.shotQuestion} className="w-full max-w-[280px]" />
-          <figcaption className="max-w-[280px] text-center text-sm text-ink-soft">{m.childSees}</figcaption>
-        </figure>
-        <figure className="flex flex-col gap-4">
-          <BrowserFrame src={parentChild} alt={l.shotParentChild} width={1600} height={1300} />
-          <figcaption className="text-sm text-ink-soft">{m.parentSees}</figcaption>
-        </figure>
-      </div>
-
-      <ol className="relative mt-16 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-5">
-        {/* The loop is one line: each step hands on to the next. */}
-        <span aria-hidden className="absolute left-[22px] right-[22px] top-[22px] hidden h-px bg-gradient-to-r from-light via-tonle-300 to-palm lg:block" />
-        {loop.map((text, i) => (
-          <li key={text} className="relative flex flex-col gap-4">
-            <span className="flex items-center gap-3">
-              <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-clay-deep shadow-card">
-                <span lang="km" className="font-khmer text-xl font-semibold leading-none">
-                  {khmerNumber(i + 1)}
-                </span>
-              </span>
-              <span className="relative bg-paper px-1.5 text-sm font-semibold text-ink-faint">{i + 1}</span>
-            </span>
-            <p className="text-[0.9375rem] leading-relaxed text-ink">{text}</p>
-          </li>
-        ))}
-      </ol>
+      {/* F1d: the loop played through once, from the child's answer to the parent's reason for the next step. */}
+      <LoopDemo />
     </Section>
   );
 }
