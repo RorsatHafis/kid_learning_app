@@ -33,7 +33,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | **done** 2026-10-27 (teach-first, account explanation, Not now, demo picker shows replaced versions) | see log | - |
 | F1c Parent demo with representative sample data (progress, evidence, how to help) | **done** 2026-10-27: `/try/parent`, a fictional sample child labelled on the page, static, nothing fetched or stored | see log | V76 |
 | F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; **F1d-2**: closing headline and footer line editable, parent demo linked from "For parents" | see log | |
-| F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | **F2a done** 2026-10-27: `docs/legal/DATA-INVENTORY.md` (facts from the code + 10 questions for a lawyer); drafts of the notice and terms next - near launch - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
+| F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | **F2a done** 2026-10-27: `docs/legal/DATA-INVENTORY.md` (facts from the code + 10 questions for a lawyer); **F2b drafts done**: `PRIVACY-NOTICE-DRAFT.md`, `TERMS-DRAFT.md` (unpublished, owner/lawyer placeholders); next: owner facts + qualified review - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
 deferred until the family experience is coherent):** M6 → M7 → M10 → M8 → M9 → M5 → M11 → M13 → M12. M12 waits
@@ -1390,3 +1390,16 @@ Dependencies:
     product.
   - **Runtime verified**: admin override of `promises.closingTitle` showed as the closing headline (headless Chromium),
     reset restored the original; footer line and the new link render. **Tested**: Vitest 400, tsc, eslint.
+- 2026-10-27: **F2b draft privacy notice and terms, from the inventory - not published.**
+  `docs/legal/PRIVACY-NOTICE-DRAFT.md` (who we are, what is collected about adults / children / learning / devices,
+  why, cookies and storage, who can see it, keeping, choices, children, changes, contact) and `docs/legal/TERMS-DRAFT.md`
+  (what the product is, accounts for adults, families - nothing to pay in early access, schools - arranged with the
+  team and family-granted access, lessons and educator uploads, what progress means - not an assessment or a promised
+  result, acceptable use, availability, ending, liability and law). Every statement traced to the code or the public
+  page; `[OWNER: ...]` for operator identity, contacts, providers, retention and two commitments to confirm;
+  `[REVIEW n]` tied to the inventory's ten lawyer questions. No compliance claimed; English only until a native legal
+  translation (question 10). Publishing stays the owner's step: host the reviewed texts, set `LEGAL_*` (Y15).
+  - **Checked against the code while writing**: no child age range is enforced (date of birth must not be in the
+    future) - so the drafts don't state one; sign-out removes the refresh token; a child's sitting lives in
+    **sessionStorage** (the inventory said localStorage - corrected); "Sign out everywhere", family-revocable school
+    access, child detail edits and account suspension exist.

@@ -38,8 +38,9 @@ parents; the daily learning time used (M3 limits). Schools see a child's learnin
   code are served by Bookeyond Kid itself.
 - **Browser storage (localStorage)**, needed for the app to work: the sign-in refresh token and its expiry
   (`bk_refresh_token`), the interface language (`bk-locale`), sound on/off (`bk_sound_muted`), a linked child device
-  (`bk.childDevice`), a principal's chosen school (`bk.principal.school`), and a child's current sitting for break
-  reminders. Nothing here is shared with anyone.
+  (`bk.childDevice`), a principal's chosen school (`bk.principal.school`); and in **sessionStorage** (gone when the
+  tab closes) a child's current sitting for break reminders. Signing out removes the refresh token. Nothing here is
+  shared with anyone.
 - **Third parties that receive data** (only once the owner configures them): the **email provider** (SMTP: addresses
   and the emails' content); the **SMS provider** if one is chosen (D-04: phone numbers and codes; none today); the
   **hosting provider** of the server, database and backups (all data). The coworker preview's gate is the owner's
