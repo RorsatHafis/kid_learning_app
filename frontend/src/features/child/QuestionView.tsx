@@ -41,6 +41,8 @@ type QuestionProps = {
   result: AnswerResult | null;
   headingLevel?: 1 | 3;
   autoFocus?: boolean;
+  /** D-16: told when the child opens the hint, so the answer can be recorded as given with help. */
+  onHintOpened?: () => void;
 };
 
 /**
@@ -52,7 +54,7 @@ export function QuestionView(props: QuestionProps) {
   return (
     <div className="flex flex-col gap-6">
       <QuestionBody {...props} />
-      {hint && !props.result && <Hint key={props.item.questionVersionId} text={hint} />}
+      {hint && !props.result && <Hint key={props.item.questionVersionId} text={hint} onOpened={props.onHintOpened} />}
     </div>
   );
 }
@@ -61,7 +63,7 @@ export function QuestionView(props: QuestionProps) {
  * A hint the child opens when they want it: closed by default, so the question stays theirs to try. The
  * words are the educator's, in the curriculum's own language.
  */
-function Hint({ text }: { text: string }) {
+function Hint({ text, onOpened }: { text: string; onOpened?: () => void }) {
   const [open, setOpen] = useState(false);
   const q = useMessages(childMessages).question;
   const id = useId();
@@ -71,7 +73,10 @@ function Hint({ text }: { text: string }) {
         type="button"
         aria-expanded={open}
         aria-controls={id}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (!open) onOpened?.();
+          setOpen(!open);
+        }}
         className="inline-flex min-h-12 items-center gap-2 rounded-pill bg-light-soft py-1.5 pl-1.5 pr-5 text-base font-bold text-light-deep ring-1 ring-light/40 transition-colors duration-150 ease-out hover:bg-[#FCE6BC]"
       >
         <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-light-deep shadow-tight">

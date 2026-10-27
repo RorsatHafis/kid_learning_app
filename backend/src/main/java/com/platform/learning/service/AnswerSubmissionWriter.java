@@ -63,7 +63,7 @@ class AnswerSubmissionWriter {
 
     @Transactional
     AnswerRecord write(UUID childId, UUID activityAttemptId, UUID questionVersionId, String submittedAnswer,
-                       Integer timeSpentSeconds, UUID guardId) {
+                       Integer timeSpentSeconds, boolean hintUsed, UUID guardId) {
         // Known Backend Fix B (duplicate answer integrity): a request reusing the exact
         // same idempotency key never reaches this method at all - ActivityAttemptService
         // .submitAnswer() already returns the existing AnswerRecord for that case via
@@ -99,12 +99,17 @@ class AnswerSubmissionWriter {
         boolean correct = scoringService.score(question.getQuestionType(), version, submittedAnswer);
 
         AnswerRecord record = answerRecordRepository.save(
-                AnswerRecord.record(activityAttemptId, questionVersionId, submittedAnswer, correct, timeSpentSeconds));
+                AnswerRecord.record(activityAttemptId, questionVersionId, submittedAnswer, correct, timeSpentSeconds, hintUsed));
 
-        // The version answered decides the skills (PD-08): its tags were frozen when it was published.
-        List<QuestionVersionSkill> taggedSkills = questionSkillRepository.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(questionVersionId);
-        for (QuestionVersionSkill taggedSkill : taggedSkills) {
-            masteryEngine.recordEvidence(childId, taggedSkill.getSkillId(), correct, activityAttemptId);
+        // D-16: an answer given after opening the hint is practice ("worked through with help"), not evidence the child
+        // showed the skill on their own - so it is recorded and scored but moves no mastery, right or wrong (counting
+        // only hinted mistakes would teach children that asking for help costs them).
+        if (!hintUsed) {
+            // The version answered decides the skills (PD-08): its tags were frozen when it was published.
+            List<QuestionVersionSkill> taggedSkills = questionSkillRepository.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(questionVersionId);
+            for (QuestionVersionSkill taggedSkill : taggedSkills) {
+                masteryEngine.recordEvidence(childId, taggedSkill.getSkillId(), correct, activityAttemptId);
+            }
         }
 
         // Called last, inside this same transaction: the evidence row, the mastery

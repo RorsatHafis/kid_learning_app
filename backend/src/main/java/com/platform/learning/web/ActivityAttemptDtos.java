@@ -28,11 +28,13 @@ public final class ActivityAttemptDtos {
     ) {
     }
 
+    /** {@code hintUsed} (D-16): the child opened the question's hint before answering; absent means no. */
     public record SubmitAnswerRequest(
             @NotNull UUID questionVersionId,
             @NotBlank String submittedAnswer,
             Integer timeSpentSeconds,
-            @NotBlank String idempotencyKey
+            @NotBlank String idempotencyKey,
+            Boolean hintUsed
     ) {
     }
 
@@ -66,13 +68,14 @@ public final class ActivityAttemptDtos {
             Integer timeSpentSeconds,
             Instant occurredAt,
             AnswerFeedbackService.CorrectAnswer correctAnswer,
-            String explanation
+            String explanation,
+            boolean hintUsed
     ) {
         public static AnswerRecordResponse from(AnswerRecord record, AnswerFeedbackService.CorrectAnswer correctAnswer,
                                                 String explanation) {
             return new AnswerRecordResponse(
                     record.getId(), record.getQuestionVersionId(), record.isCorrect(),
-                    record.getTimeSpentSeconds(), record.getOccurredAt(), correctAnswer, explanation);
+                    record.getTimeSpentSeconds(), record.getOccurredAt(), correctAnswer, explanation, record.isHintUsed());
         }
     }
 

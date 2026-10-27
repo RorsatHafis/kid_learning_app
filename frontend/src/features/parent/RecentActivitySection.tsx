@@ -100,6 +100,7 @@ function ActivityRow({ activity }: { activity: CompletedActivity }) {
             </span>
             <span className="tabular">{m.correct(activity.correctAnswers, activity.totalAnswers)}</span>
           </span>
+          {(activity.hintedAnswers ?? 0) > 0 && <span className="text-ink-soft">{m.withHint(activity.hintedAnswers!)}</span>}
           {activity.skills.length > 0 && <span className="text-ink-soft">{activity.skills.map((s) => s.name).join(", ")}</span>}
           {activity.source === "REVIEW" && <span className="font-semibold text-light-deep">{m.smartReview}</span>}
           {activity.source === null && <span className="text-ink-soft">{m.freePractice}</span>}

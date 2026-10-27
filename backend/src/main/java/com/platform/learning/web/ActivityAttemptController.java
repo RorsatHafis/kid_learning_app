@@ -106,7 +106,8 @@ public class ActivityAttemptController {
         childAccess.requireLearner(accountId, attempt.getChildId());
 
         AnswerRecord record = activityAttemptService.submitAnswer(attemptId, request.questionVersionId(),
-                request.submittedAnswer(), request.timeSpentSeconds(), request.idempotencyKey());
+                request.submittedAnswer(), request.timeSpentSeconds(), request.idempotencyKey(),
+                Boolean.TRUE.equals(request.hintUsed()));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(record));
     }

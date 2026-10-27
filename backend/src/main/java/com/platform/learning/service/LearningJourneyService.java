@@ -229,10 +229,11 @@ public class LearningJourneyService {
                                   String placedActivityTitle) {
     }
 
+    /** {@code hintedAnswers} (D-16): answers given after opening the hint - practice, not shown on their own. */
     public record CompletedActivity(UUID attemptId, UUID activityVersionId, String title, String subjectName,
                                     LearningPathItemSource source, BigDecimal score, int correctAnswers,
                                     int totalAnswers, Instant startedAt, Instant completedAt, List<SkillRef> skills,
-                                    DecisionSummary decision) {
+                                    DecisionSummary decision, int hintedAnswers) {
     }
 
     // ------------------------------------------------------------------ queries
@@ -536,7 +537,7 @@ public class LearningJourneyService {
         String subjectName = lookups.subjectName(activity.getSubjectId());
         return new CompletedActivity(attempt.getId(), version.getId(), activity.getTitle(), subjectName, source,
                 attempt.getScore(), correct, answers.size(), attempt.getStartedAt(), attempt.getCompletedAt(),
-                lookups.skillsOf(version.getId()), decision);
+                lookups.skillsOf(version.getId()), decision, (int) answers.stream().filter(AnswerRecord::isHintUsed).count());
     }
 
     /** Null for a class's (teacher-owned) path, whose fit is the school's to judge, or when the child's age is unknown. */

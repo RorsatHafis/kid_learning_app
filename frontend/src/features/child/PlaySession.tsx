@@ -720,8 +720,10 @@ function Question({
   const m = useMessages(childMessages).play;
   // One idempotency key per distinct answer to this question: retrying the same
   // answer after a lost response replays the original result server-side; a
-  // different answer gets a fresh key.
-  const idempotencyKeys = useRef(new Map<string, string>());
+  // different answer gets a fresh key. Whether the hint was open is part of that
+  // first send and is resent unchanged with the key (D-16).
+  const idempotencyKeys = useRef(new Map<string, { key: string; hintUsed: boolean }>());
+  const [hintOpenedFor, setHintOpenedFor] = useState<string | null>(null);
   const continueRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -739,17 +741,18 @@ function Question({
     if (isSubmitting) return; // a rapid double-tap must not fire two submits
     setIsSubmitting(true);
     setSubmitError(null);
-    let idempotencyKey = idempotencyKeys.current.get(submittedAnswer);
-    if (!idempotencyKey) {
-      idempotencyKey = crypto.randomUUID();
-      idempotencyKeys.current.set(submittedAnswer, idempotencyKey);
+    let sent = idempotencyKeys.current.get(submittedAnswer);
+    if (!sent) {
+      sent = { key: crypto.randomUUID(), hintUsed: hintOpenedFor === item.questionVersionId };
+      idempotencyKeys.current.set(submittedAnswer, sent);
     }
     try {
       const record = await activityAttemptApi.submitAnswer(attemptId, {
         questionVersionId: item.questionVersionId,
         submittedAnswer,
         timeSpentSeconds: Math.max(1, Math.round((Date.now() - startedAt) / 1000)),
-        idempotencyKey,
+        idempotencyKey: sent.key,
+        hintUsed: sent.hintUsed,
       });
       reveal(record, submittedAnswer);
     } catch (err) {
@@ -815,7 +818,13 @@ function Question({
         </div>
 
         <div className="flex flex-col gap-8 px-5 pb-9 pt-10 sm:px-12 sm:pb-11 sm:pt-12">
-          <QuestionView item={item} onAnswer={handleAnswer} disabled={isSubmitting} result={result} />
+          <QuestionView
+            item={item}
+            onAnswer={handleAnswer}
+            disabled={isSubmitting}
+            result={result}
+            onHintOpened={() => setHintOpenedFor(item.questionVersionId)}
+          />
           {submitError && (
             <p role="alert" className="text-center text-base font-semibold text-brick-deep">
               {m[submitError]}

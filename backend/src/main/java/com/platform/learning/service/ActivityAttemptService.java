@@ -402,6 +402,15 @@ public class ActivityAttemptService {
      */
     public AnswerRecord submitAnswer(UUID activityAttemptId, UUID questionVersionId, String submittedAnswer,
                                       Integer timeSpentSeconds, String idempotencyKey) {
+        return submitAnswer(activityAttemptId, questionVersionId, submittedAnswer, timeSpentSeconds, idempotencyKey, false);
+    }
+
+    /**
+     * As above; {@code hintUsed} (D-16) records that the child opened the hint first, which makes the answer
+     * practice rather than independent evidence (see {@link AnswerSubmissionWriter}).
+     */
+    public AnswerRecord submitAnswer(UUID activityAttemptId, UUID questionVersionId, String submittedAnswer,
+                                      Integer timeSpentSeconds, String idempotencyKey, boolean hintUsed) {
         ActivityAttempt attempt = getAttempt(activityAttemptId);
         if (attempt.getStatus() != ActivityAttemptStatus.IN_PROGRESS) {
             throw new IllegalStateException(
@@ -416,7 +425,8 @@ public class ActivityAttemptService {
                         attempt.getActivityVersionId()));
 
         String fingerprint = RequestFingerprint.sha256Hex(
-                activityAttemptId + "\u0000" + questionVersionId + "\u0000" + submittedAnswer + "\u0000" + timeSpentSeconds);
+                activityAttemptId + "\u0000" + questionVersionId + "\u0000" + submittedAnswer + "\u0000" + timeSpentSeconds
+                        + (hintUsed ? "\u0000hint" : ""));
 
         IdempotencyOutcome outcome = idempotencyService.begin(
                 attempt.getChildId(), SUBMIT_ANSWER_OPERATION, idempotencyKey, fingerprint, SUBMIT_ANSWER_VALIDITY);
@@ -451,7 +461,7 @@ public class ActivityAttemptService {
         // never be blocked by a guard describing a submission that didn't happen.
         try {
             return answerSubmissionWriter.write(
-                    attempt.getChildId(), activityAttemptId, questionVersionId, submittedAnswer, timeSpentSeconds, guardId);
+                    attempt.getChildId(), activityAttemptId, questionVersionId, submittedAnswer, timeSpentSeconds, hintUsed, guardId);
         } catch (RuntimeException failure) {
             idempotencyService.fail(guardId);
             throw failure;

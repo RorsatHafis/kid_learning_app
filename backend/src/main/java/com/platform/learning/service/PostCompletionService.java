@@ -197,10 +197,13 @@ public class PostCompletionService {
         return List.copyOf(skillIds);
     }
 
-    /** Same rule the review outcome always used: at least half of the answers correct. */
+    /**
+     * Same rule the review outcome always used: at least half of the answers correct - counting only answers given
+     * without the hint (D-16), since a review asks whether the child remembers it on their own.
+     */
     private boolean wasSuccessful(ActivityAttempt attempt) {
         List<AnswerRecord> answers = answerRecordRepository.findByActivityAttemptId(attempt.getId());
-        return !answers.isEmpty() && answers.stream().filter(AnswerRecord::isCorrect).count() * 2 >= answers.size();
+        return !answers.isEmpty() && answers.stream().filter(AnswerRecord::isCorrectUnaided).count() * 2 >= answers.size();
     }
 
     // ------------------------------------------------------------------ read-only views

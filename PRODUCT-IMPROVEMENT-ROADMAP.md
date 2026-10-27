@@ -429,7 +429,7 @@ Dependencies:
 | D-13 | How a co-teacher uses a lesson shared with their school (decided 2026-10-23) | **Copy to own**: the colleague copies it into their own content (drafts, crediting the original); children's paths still draw only on their curriculum owner's and platform content |
 | D-14 | PUBLIC content for every teacher (decided 2026-10-23) | **Deferred** until it is decided who reviews teachers' content before the whole platform sees it |
 | D-15 | Phone-only accounts; resetting a password by text (decided 2026-10-25) | **Email stays required** on every account; a code texted to the verified phone can also reset a forgotten password |
-| D-16 | Does a right answer given after opening the hint count as evidence the child "showed it on their own"? (found 2026-10-27) | **Open.** Today `answer_records` has no hint flag, so a hinted right answer counts exactly like an unaided one (the research report's evidence ladder separates "worked through with help" from "showed on their own"). Recommended: record `hint_used` per answer (migration + answer contract; the client already knows when the hint opens) and count hinted right answers as practice, not independent evidence, in mastery and parent insight. Needs the owner's yes because it changes mastery outcomes for every child |
+| D-16 | Does a right answer given after opening the hint count as evidence the child "showed it on their own"? (decided 2026-10-27) | **Record it; count as practice.** Each answer records whether the hint was opened (V74); a hinted answer, right or wrong, is practice: scored and shown, but it moves no mastery and does not count as a remembered review. Answers from before V74 stay "not recorded" |
 
 ---
 
@@ -1077,4 +1077,22 @@ Dependencies:
     ServerTextCoverage 3; Studio Vitest 74; tsc. **Test still needed**: validator emits/clears `NO_EXPLANATION`.
   - **Content gap (owner/educators)**: the platform's Maths seed needs explanations and introductions written and
     reviewed; the code can only prompt for them.
+- 2026-10-27: **L3 (D-16) hinted answers are practice, not "shown on their own".** Owner chose "record it; count as
+  practice". V74 `answer_records.hint_used` (nullable: older answers stay "not recorded", the immutability trigger is
+  untouched). The child's client tells the server when the hint was opened (sent with the answer, pinned to the
+  answer's idempotency key; the fingerprint is unchanged when no hint was used). `AnswerSubmissionWriter`: a hinted
+  answer is saved and scored as before but calls no `MasteryEngine.recordEvidence` - right **or** wrong (judgment:
+  counting only hinted mistakes would teach children that asking for help costs them). Everything that reads
+  mastery follows (adaptive choices, Smart Review triggers, parent skill pages' "x of y answers correct"). Smart
+  Review's outcome counts only unaided right answers. Parents' recent activity adds "n with a hint - practice, not
+  counted as shown on their own"; "How we describe progress" no longer says every answer is evidence. The family
+  data export includes `hintUsed`. The child still sees "3 of 3 right" (true) - nothing changes for them.
+  - **Runtime/browser verified** (isolated stack, V74 applied): Dara practised "Count the stars": hint opened then
+    3 -> stored `hint_used=true`, no skill evidence; next answer without the hint -> `false`, evidence 1/1 on "Count to
+    5"; parent recent activity shows the hint line. **Tested** (existing suites, 25 classes incl. LearningLoopCompletion
+    9, GoldenLearningJourney, ParentInsightTruthfulness 5, ObjectiveInsightTruthfulness 14, DueReview 3, Idempotency
+    11+3, FamilyDataExport 2, FamilyErasure 6, ActivityAttemptService 8); Vitest 392; tsc.
+  - **Tests still needed**: hinted answer moves no mastery (right and wrong); unaided does; review outcome ignores
+    hinted right answers; fingerprint/idempotent retry with the hint; export field; Vitest for the hint flag sent.
+  - **Not changed**: the public demo (its answers are not evidence); `ActivityEvent` hint telemetry (unused here).
 

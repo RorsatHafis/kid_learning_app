@@ -252,6 +252,8 @@ export interface AnswerRecord {
   correctAnswer: CorrectAnswer | null;
   /** Y41: the author's explanation, only ever with a recorded answer; null when there is none. */
   explanation?: string | null;
+  /** D-16: the child opened the hint before answering - practice, not evidence they showed it on their own. */
+  hintUsed?: boolean;
 }
 
 // ---- learning/service/LearningJourneyService.java (records served as-is by LearningJourneyController) ----
@@ -391,6 +393,8 @@ export interface CompletedActivity {
   completedAt: string;
   skills: SkillRef[];
   decision: DecisionSummary | null;
+  /** D-16: how many of the answers were given after opening the hint. */
+  hintedAnswers?: number;
 }
 
 // ---- learner/service/EvidenceStandard.java, learning/service/SkillProgressService.java ----

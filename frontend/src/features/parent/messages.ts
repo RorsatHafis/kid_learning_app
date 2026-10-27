@@ -245,7 +245,7 @@ export const familyMessages = defineMessages(
       noneLead: "Choose a learning path to see the skills it builds.",
       howWeDescribe: "How we describe progress",
       everyAnswer:
-        "Every answer is evidence. We only describe how a skill is going once there are at least three scored answers on it — before that it is",
+        "Every answer given without the hint is evidence (with the hint, it is practice). We only describe how a skill is going once there are at least three such answers on it — before that it is",
       tooEarly: "too early to tell",
       notWeak: ", not weak.",
       chapter: (position: number) => `Chapter ${position} · `,
@@ -308,6 +308,7 @@ export const familyMessages = defineMessages(
       shown: (n: number) => `${n} activities shown`,
       minutes: (n: number) => `about ${n} min`,
       correct: (right: number, total: number) => `${right} of ${total} answers correct`,
+      withHint: (n: number) => (n === 1 ? "1 with a hint - practice, not counted as shown on their own" : `${n} with a hint - practice, not counted as shown on their own`),
       smartReview: "Smart Review",
       freePractice: "free practice",
     },
@@ -610,7 +611,7 @@ export const familyMessages = defineMessages(
       noneLead: "ជ្រើសរើសផ្លូវរៀនមួយ ដើម្បីមើលជំនាញដែលវាកសាង។",
       howWeDescribe: "របៀបដែលយើងពិពណ៌នាវឌ្ឍនភាព",
       everyAnswer:
-        "ចម្លើយនីមួយៗគឺជាភស្តុតាង។ យើងពិពណ៌នាថាជំនាញមួយកំពុងទៅយ៉ាងណា លុះត្រាតែមានចម្លើយដែលបានដាក់ពិន្ទុយ៉ាងតិចបីលើវា — មុននោះ វានៅ",
+        "ចម្លើយនីមួយៗដែលឆ្លើយដោយមិនប្រើតម្រុយ គឺជាភស្តុតាង (បើប្រើតម្រុយ វាជាការហាត់រៀន)។ យើងពិពណ៌នាថាជំនាញមួយកំពុងទៅយ៉ាងណា លុះត្រាតែមានចម្លើយបែបនេះយ៉ាងតិចបីលើវា — មុននោះ វានៅ",
       tooEarly: "ដើមពេកដើម្បីដឹង",
       notWeak: " មិនមែនខ្សោយទេ។",
       chapter: (position: number) => `ជំពូកទី ${position} · `,
@@ -674,6 +675,7 @@ export const familyMessages = defineMessages(
       shown: (n: number) => `កំពុងបង្ហាញសកម្មភាព ${n}`,
       minutes: (n: number) => `ប្រហែល ${n} នាទី`,
       correct: (right: number, total: number) => `ចម្លើយត្រូវ ${right} ក្នុងចំណោម ${total}`,
+      withHint: (n: number) => `${n} ដោយប្រើតម្រុយ - ជាការហាត់រៀន មិនរាប់ថាបានបង្ហាញដោយខ្លួនឯងទេ`,
       smartReview: "ការរំលឹកឆ្លាតវៃ",
       freePractice: "ការហាត់ដោយសេរី",
     },

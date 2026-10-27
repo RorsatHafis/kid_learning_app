@@ -37,26 +37,39 @@ public class AnswerRecord extends ImmutableEvent {
     @Column(name = "time_spent_seconds")
     private Integer timeSpentSeconds;
 
+    /**
+     * D-16: whether the child opened the hint before answering. Null on answers recorded before V74 (never asked).
+     * A hinted answer is practice, not independent evidence: it does not move mastery (see AnswerSubmissionWriter).
+     */
+    @Column(name = "hint_used", updatable = false)
+    private Boolean hintUsed;
+
     protected AnswerRecord() {
         // JPA
     }
 
     private AnswerRecord(UUID activityAttemptId, UUID questionVersionId, String submittedAnswer, boolean correct,
-                          Integer timeSpentSeconds) {
+                          Integer timeSpentSeconds, boolean hintUsed) {
         this.activityAttemptId = activityAttemptId;
         this.questionVersionId = questionVersionId;
         this.submittedAnswer = submittedAnswer;
         this.correct = correct;
         this.timeSpentSeconds = timeSpentSeconds;
+        this.hintUsed = hintUsed;
     }
 
     public static AnswerRecord record(UUID activityAttemptId, UUID questionVersionId, String submittedAnswer,
                                        boolean correct, Integer timeSpentSeconds) {
+        return record(activityAttemptId, questionVersionId, submittedAnswer, correct, timeSpentSeconds, false);
+    }
+
+    public static AnswerRecord record(UUID activityAttemptId, UUID questionVersionId, String submittedAnswer,
+                                       boolean correct, Integer timeSpentSeconds, boolean hintUsed) {
         Assert.notNull(activityAttemptId, "activityAttemptId must not be null");
         Assert.notNull(questionVersionId, "questionVersionId must not be null");
         Assert.notNull(submittedAnswer, "submittedAnswer must not be null");
         Assert.isTrue(timeSpentSeconds == null || timeSpentSeconds >= 0, "timeSpentSeconds must not be negative");
-        return new AnswerRecord(activityAttemptId, questionVersionId, submittedAnswer, correct, timeSpentSeconds);
+        return new AnswerRecord(activityAttemptId, questionVersionId, submittedAnswer, correct, timeSpentSeconds, hintUsed);
     }
 
     public UUID getActivityAttemptId() {
@@ -77,6 +90,16 @@ public class AnswerRecord extends ImmutableEvent {
 
     public Integer getTimeSpentSeconds() {
         return timeSpentSeconds;
+    }
+
+    /** True only when the child opened the hint; false for "no hint" and for answers recorded before V74. */
+    public boolean isHintUsed() {
+        return Boolean.TRUE.equals(hintUsed);
+    }
+
+    /** A right answer the child gave without opening the hint (D-16): what counts as showing it on their own. */
+    public boolean isCorrectUnaided() {
+        return correct && !isHintUsed();
     }
 
 }

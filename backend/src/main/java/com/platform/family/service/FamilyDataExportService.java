@@ -138,8 +138,9 @@ public class FamilyDataExportService {
     }
 
     /** One answer as the child gave it. {@code answer} is readable text; {@code submitted} is the raw value stored. */
+    /** {@code hintUsed} (D-16): the child opened the hint first; false also for answers from before it was recorded. */
     public record AnswerData(Instant answeredAt, UUID attemptId, String activity, String question, String answer,
-                             String submitted, boolean correct) {
+                             String submitted, boolean correct, boolean hintUsed) {
     }
 
     @Transactional
@@ -219,7 +220,8 @@ public class FamilyDataExportService {
                                         questionOptions::findByQuestionVersionIdOrderByDisplayOrderAsc);
                                 return new AnswerData(record.getOccurredAt(), attempt.getId(), title,
                                         question.map(QuestionVersion::getPrompt).orElse(null),
-                                        readable(record.getSubmittedAnswer(), choices), record.getSubmittedAnswer(), record.isCorrect());
+                                        readable(record.getSubmittedAnswer(), choices), record.getSubmittedAnswer(), record.isCorrect(),
+                                        record.isHintUsed());
                             });
                 })
                 .toList();

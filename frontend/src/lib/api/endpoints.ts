@@ -228,7 +228,14 @@ export const activityAttemptApi = {
    * answer can reuse it and get the original result back instead of a conflict. */
   submitAnswer: (
     attemptId: string,
-    input: { questionVersionId: string; submittedAnswer: string; timeSpentSeconds?: number; idempotencyKey: string },
+    input: {
+      questionVersionId: string;
+      submittedAnswer: string;
+      timeSpentSeconds?: number;
+      idempotencyKey: string;
+      /** D-16: the child opened the hint first. */
+      hintUsed?: boolean;
+    },
   ) => apiClient.post<AnswerRecord>(`/activity-attempts/${attemptId}/answers`, input),
   complete: (attemptId: string) => apiClient.post<ActivityAttempt>(`/activity-attempts/${attemptId}/complete`),
   abandon: (attemptId: string) => apiClient.post<ActivityAttempt>(`/activity-attempts/${attemptId}/abandon`),
