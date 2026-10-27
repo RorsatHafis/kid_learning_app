@@ -1306,4 +1306,13 @@ Dependencies:
     **Tested**: PublicDemoAndStatements 4, ServerTextCoverage 3, Vitest 398, tsc, eslint. **Tests still needed**:
     try page intro phase and ending; candidate `shown`.
   - **Next**: F1c (parent demo with sample data) or, in roadmap order, whatever the owner unblocks among M11/M12.
+- 2026-10-27: **CHECKPOINT - coworker preview, end of this usage cycle.** The original link
+  (`room-convenience-balloon-rights.trycloudflare.com`, gate and password unchanged) serves **`c0206b7`** (L1-L11):
+  `preview.sh update` ran at 14:57 - not by Claude (its attempts were refused by the auto-mode classifier as a
+  production deploy, and left no artefacts); the build log, `src-c0206b7`, the bundle and the backend container all
+  date from 14:57. Verified through the link afterwards: 17/17 anonymous probes refused, all five roles sign in, the
+  served bundle is that build, a child answers ("You got it!", 0 server errors). **Not live**: `8681bf8` (F1a editable
+  public words, V75; F1b demo teach-first and ending; demo picker note) - CI green. **To finish**: run
+  `bash /d/bk-work/preview/preview.sh update`, then `browser-check.mjs` and `journey-check.mjs` against
+  `$(cat tunnel.url)` from `D:/bk-work/preview` (with `PLAYWRIGHT_BROWSERS_PATH=D:/bk-work/pw-browsers`).
 
