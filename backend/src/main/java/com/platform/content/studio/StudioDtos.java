@@ -105,9 +105,13 @@ public final class StudioDtos {
                                 boolean archived, String visibility, boolean copied) {
     }
 
+    /**
+     * {@code currentVersionId}/{@code currentVersionNumber}: the question's published version now, when it isn't the one
+     * this item holds (the item's was retired by a newer one) - so the builder can offer to use it; null otherwise.
+     */
     public record ItemDetail(UUID questionVersionId, UUID questionId, QuestionType questionType, String prompt,
                              int questionVersionNumber, PublicationStatus questionVersionStatus, BigDecimal points,
-                             List<UUID> questionSkillIds) {
+                             List<UUID> questionSkillIds, UUID currentVersionId, Integer currentVersionNumber) {
     }
 
     /** {@code skillIds}: what this version practises (PD-08); frozen once it is published. */

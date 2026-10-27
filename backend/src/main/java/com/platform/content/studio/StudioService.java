@@ -850,8 +850,13 @@ public class StudioService {
         QuestionVersion version = questionVersions.findById(item.getQuestionVersionId())
                 .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion", item.getQuestionVersionId()));
         Question question = questionService.getQuestion(version.getQuestionId());
+        QuestionVersion current = version.getStatus() == PublicationStatus.RETIRED
+                ? questionVersions.findFirstByQuestionIdAndStatusOrderByVersionNumberDesc(question.getId(), PublicationStatus.PUBLISHED)
+                        .orElse(null)
+                : null;
         return new ItemDetail(version.getId(), question.getId(), question.getQuestionType(), version.getPrompt(),
-                version.getVersionNumber(), version.getStatus(), item.getPoints(), questionService.skillsOf(version.getId()));
+                version.getVersionNumber(), version.getStatus(), item.getPoints(), questionService.skillsOf(version.getId()),
+                current == null ? null : current.getId(), current == null ? null : current.getVersionNumber());
     }
 
     private ActivityItemResponse learnerItem(UUID itemId, int sequenceOrder, QuestionVersion version) {

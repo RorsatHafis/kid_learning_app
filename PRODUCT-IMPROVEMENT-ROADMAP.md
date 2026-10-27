@@ -430,6 +430,7 @@ Dependencies:
 | D-14 | PUBLIC content for every teacher (decided 2026-10-23) | **Deferred** until it is decided who reviews teachers' content before the whole platform sees it |
 | D-15 | Phone-only accounts; resetting a password by text (decided 2026-10-25) | **Email stays required** on every account; a code texted to the verified phone can also reset a forgotten password |
 | D-16 | Does a right answer given after opening the hint count as evidence the child "showed it on their own"? (decided 2026-10-27) | **Record it; count as practice.** Each answer records whether the hint was opened (V74); a hinted answer, right or wrong, is practice: scored and shown, but it moves no mastery and does not count as a remembered review. Answers from before V74 stay "not recorded" |
+| D-17 | Can a skill read "Secure" after one sitting? (found 2026-10-27) | **Open.** Today "Secure" = at least 3 scored answers and mastery at the objective threshold - three easy right answers in one sitting are enough (seen: Dara, "Recognize addition", day one). The research report's strongest learning finding is that immediate correctness is a weak signal and retention needs a delayed check. Options: (a) keep; (b) **recommended**: "Secure" also needs evidence on two different days - until then the parent sees "Progressing" with "we'll check again another day" (no schema change: the skill history has dates; adaptive choices keep using mastery as now); (c) the report's full ladder (Shown -> Retained -> Secure, transfer items, versioned rules) - a new mastery model, separate project. Changes what every parent reads, so it needs the owner |
 
 ---
 
@@ -1118,4 +1119,25 @@ Dependencies:
     failures (Vitest).
   - **Not done, decision for the owner**: device text-to-speech for prompts without a recording (no content language
     tag; Khmer voice quality unproven; some devices send the text online). Research index: `.claude/research/README.md`.
+- 2026-10-27: **L5 parent skill page tells the hint story; the builder fixes its own "superseded version" error.**
+  - **Parent (Priority D)**: after D-16 the skill page's standing ("3 of 3 answers right", evidence = unaided
+    answers) and its per-activity history (all answers, raw from `answer_records`) disagreed without saying why. The
+    skill story API now returns `withHint` per activity and `hintedAnswers` for the skill; the page adds "Not counted
+    above: n answers given after opening the hint. That's practice, not something shown on their own." and "· n with a
+    hint" on history rows. Numbers unchanged (the tests pin them); the meaning is now stated. Pre-V74 answers have no
+    hint record and count as before (only 4 published questions had hints then).
+  - **Authoring (found during E2E)**: publishing a new version of a question retires the old one, and every activity
+    draft still holding it was blocked ("uses a superseded version; use the current published version") while the
+    builder labelled the row "Published" and offered no way to switch - the only route was remove, re-add from the
+    library, reorder. Item details now carry the question's current published version when the held one was retired;
+    the row shows "Version 1 - replaced" (with why) and **Use version 2**, which swaps it in place through the
+    existing replace-items call (server checks unchanged, order kept).
+  - **Browser verified** (isolated stack): new hinted version of "1 + 1 = ?" published; the activity draft showed the
+    replaced badge, one click switched it ("Everything is ready"), v4 published; Dara practised v4 with the hint on
+    question 1: stored hinted/unaided correctly, "Recognize addition" evidence 2 -> 3 (unaided only); the skill page
+    shows the note and the history row. Also checked: Dara's retired-but-pinned v2 (holding a retired question)
+    is still served exactly. **Tested**: SkillStory, ParentInsightTruthfulness 5, LearningJourneyApi 8,
+    CrossFamilyAccessSweep; Vitest parent 70 + Studio 74; tsc.
+  - **Found, recorded as D-17**: "Secure" after one sitting (see decisions).
+  - **Tests still needed**: skill story hint counts; ItemDetail current version for a retired item; builder switch.
 

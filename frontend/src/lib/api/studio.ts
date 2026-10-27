@@ -206,6 +206,9 @@ export interface ItemDetail {
   questionVersionStatus: PublicationStatus;
   points: number;
   questionSkillIds: string[];
+  /** When this item's version was retired by a newer one: the question's published version now (else null). */
+  currentVersionId?: string | null;
+  currentVersionNumber?: number | null;
 }
 
 export interface ActivityVersionDetail extends VersionSummary {

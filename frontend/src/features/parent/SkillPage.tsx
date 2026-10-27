@@ -112,6 +112,7 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
                 </span>
               </div>
               <p className="max-w-2xl text-[1.0625rem] leading-relaxed text-ink">{summary(story, childName)}</p>
+              {(story.hintedAnswers ?? 0) > 0 && <p className="max-w-2xl text-sm text-ink-soft">{m.hintedNote(story.hintedAnswers!)}</p>}
               <p className="max-w-2xl text-sm text-ink-soft">{standingHelp(now.standing)}</p>
               {now.inReview && (
                 <p className="flex items-center gap-2 text-sm font-semibold text-light-deep">
@@ -262,6 +263,7 @@ function ActivityRow({ activity }: { activity: ActivityOnSkill }) {
             ))}
           </span>
           {m.ofAnswersRight(activity.correct, activity.answers)}
+          {(activity.withHint ?? 0) > 0 && <span>· {m.withHint(activity.withHint!)}</span>}
         </span>
       </span>
       <span className="flex items-center gap-2 text-sm text-ink-soft">

@@ -441,6 +441,8 @@ export interface ActivityOnSkill {
   /** Where the skill stood after this activity (same rule as today's standing); null if not recorded. */
   standingAfter: SkillStanding | null;
   evidenceAfter: number;
+  /** D-16: answers here given after opening the hint (counted in answers/correct, but practice, not evidence). */
+  withHint?: number;
 }
 
 export interface WaitingStep {
@@ -463,6 +465,8 @@ export interface SkillStory {
   activities: ActivityOnSkill[];
   activitiesInAll: number;
   waiting: WaitingStep[];
+  /** D-16: answers on the skill given with the hint, which `now`'s counts leave out. */
+  hintedAnswers?: number;
 }
 
 export interface CurriculumProgress {

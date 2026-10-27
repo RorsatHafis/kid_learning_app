@@ -235,6 +235,10 @@ export const familyMessages = defineMessages(
         `Nothing on ${child}'s path practises this skill right now. A few more answers are needed before we can say how it's going.`,
       nothingPlanned: (child: string) => `Nothing on ${child}'s path practises this skill right now.`,
       ofAnswersRight: (right: number, n: number) => `${right} of ${n} ${plural(n, "answer", "answers")} right`,
+      // D-16: answers given with the hint are practice, so the standing above leaves them out
+      hintedNote: (n: number) =>
+        `Not counted above: ${n} ${plural(n, "answer", "answers")} given after opening the hint. That's practice, not something shown on their own.`,
+      withHint: (n: number) => `${n} with a hint`,
       then: "Then: ",
     },
     skills: {
@@ -601,6 +605,9 @@ export const familyMessages = defineMessages(
         `គ្មានអ្វីនៅលើផ្លូវរៀនរបស់ ${child} កំពុងហាត់ជំនាញនេះនៅពេលនេះទេ។ ត្រូវការចម្លើយបន្ថែមបន្តិចទៀត មុននឹងយើងអាចប្រាប់ថាវាកំពុងទៅយ៉ាងណា។`,
       nothingPlanned: (child: string) => `គ្មានអ្វីនៅលើផ្លូវរៀនរបស់ ${child} កំពុងហាត់ជំនាញនេះនៅពេលនេះទេ។`,
       ofAnswersRight: (right: number, n: number) => `ត្រូវ ${right} ក្នុងចំណោមចម្លើយ ${n}`,
+      hintedNote: (n: number) =>
+        `មិនបានរាប់ខាងលើ៖ ចម្លើយ ${n} ដែលឆ្លើយក្រោយពីបើកតម្រុយ។ នោះជាការហាត់រៀន មិនមែនជាអ្វីដែលបានបង្ហាញដោយខ្លួនឯងទេ។`,
+      withHint: (n: number) => `${n} ដោយប្រើតម្រុយ`,
       then: "ក្រោយមក៖ ",
     },
     skills: {

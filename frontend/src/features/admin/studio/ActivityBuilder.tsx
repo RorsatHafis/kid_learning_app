@@ -118,6 +118,11 @@ export function ActivityBuilder({
                       editing={editing === item.questionVersionId}
                       onEdit={() => setEditing(editing === item.questionVersionId ? null : item.questionVersionId)}
                       onMove={(by) => move(index, by)}
+                      onUseCurrent={() => {
+                        if (!item.currentVersionId) return;
+                        const next = ids.map((id) => (id === item.questionVersionId ? item.currentVersionId! : id));
+                        void replace(next, b.usedCurrent(item.currentVersionNumber ?? 0));
+                      }}
                       onRemove={() => {
                         setEditing(null);
                         void replace(ids.filter((id) => id !== item.questionVersionId), b.removed);
@@ -218,6 +223,7 @@ function QuestionCard({
   editing,
   onEdit,
   onMove,
+  onUseCurrent,
   onRemove,
 }: {
   item: ItemDetail;
@@ -227,11 +233,13 @@ function QuestionCard({
   editing: boolean;
   onEdit: () => void;
   onMove: (by: number) => void;
+  onUseCurrent: () => void;
   onRemove: () => void;
 }) {
   const b = useMessages(builderMessages);
   const Icon = KIND_PICTURE[item.questionType];
   const isNew = item.questionVersionStatus === "DRAFT";
+  const isOlder = item.questionVersionStatus === "RETIRED";
   return (
     <div className={cn("flex flex-wrap items-start gap-x-3 gap-y-2 rounded-[16px] p-3.5 ring-1", editing ? "bg-tonle-50 ring-tonle-300" : "bg-paper/60 ring-line")}>
       <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-tonle-800 shadow-tight">
@@ -248,10 +256,25 @@ function QuestionCard({
               {b.stateNew}
               <span className="sr-only">: {b.stateNewNote}</span>
             </span>
+          ) : isOlder ? (
+            <span className="inline-flex items-center gap-1 rounded-pill bg-brick-soft px-2 py-0.5 font-semibold text-brick-deep" title={b.stateOlderNote}>
+              {b.stateOlder(item.questionVersionNumber)}
+              <span className="sr-only">: {b.stateOlderNote}</span>
+            </span>
           ) : (
             <span className="rounded-pill bg-palm-soft px-2 py-0.5 font-semibold text-palm-deep">{b.statePublished}</span>
           )}
         </p>
+        {isOlder && item.currentVersionId && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onUseCurrent}
+            className="mt-1 w-fit rounded-[10px] px-3 py-1.5 text-sm font-semibold text-tonle-700 ring-1 ring-inset ring-tonle-200 hover:bg-tonle-50 disabled:opacity-50"
+          >
+            {b.useCurrent(item.currentVersionNumber ?? 0)}
+          </button>
+        )}
       </div>
       {/* On a narrow screen the actions wrap under the question rather than squeeze it. */}
       <div className="ml-auto flex shrink-0 items-center gap-0.5">
