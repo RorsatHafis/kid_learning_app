@@ -21,7 +21,6 @@ import childGarden from "./shots/child-garden.webp";
 import { Plant } from "@/features/world/Plant";
 import { messagesIn, useLocale, useMessages } from "@/i18n/catalog";
 import { marketingMessages } from "./messages";
-import { common } from "@/components/ui/messages";
 import { trustMessages } from "./trust.messages";
 import { siteApi, type PublicStatement } from "@/lib/api/site";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -353,6 +352,10 @@ function ForParents() {
             ))}
           </dl>
           <p className="text-sm leading-relaxed text-ink-soft">{m.dataNote}</p>
+          {/* F1c: the parent view itself, with a sample child - before any account. */}
+          <Link to="/try/parent" className="inline-flex w-fit items-center gap-2 font-semibold text-tonle-800 underline decoration-light decoration-2 underline-offset-[6px] hover:text-tonle-950">
+            {m.seeSample} <ArrowRight size={16} aria-hidden />
+          </Link>
         </div>
       </div>
     </Section>
@@ -596,7 +599,6 @@ function Plans() {
 function Closing() {
   const all = useMessages(marketingMessages);
   const m = all.promises;
-  const c = useMessages(common);
   return (
     <>
       <section className="relative overflow-hidden bg-[#DCEDEC]">
@@ -605,7 +607,7 @@ function Closing() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#F4F6F1]/95 via-[#F4F6F1]/70 to-transparent" />
         </div>
         <div className="relative mx-auto flex max-w-[1240px] flex-col items-start gap-6 px-4 py-24 sm:px-8 sm:py-32">
-          <p className="max-w-xl font-display text-[2.4rem] font-bold leading-[1.05] text-tonle-950 sm:text-[3.4rem]">{c.tagline}</p>
+          <p className="max-w-xl font-display text-[2.4rem] font-bold leading-[1.05] text-tonle-950 sm:text-[3.4rem]">{m.closingTitle}</p>
           <p className="max-w-md text-lg text-ink-soft">{m.closingLead}</p>
           <Link to="/register" className={goButton}>
             {all.nav.getStarted}

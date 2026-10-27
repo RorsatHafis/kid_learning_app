@@ -32,7 +32,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | F1a Landing page: every word editable without code | **done** 2026-10-27 | see log | V75 |
 | F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | **done** 2026-10-27 (teach-first, account explanation, Not now, demo picker shows replaced versions) | see log | - |
 | F1c Parent demo with representative sample data (progress, evidence, how to help) | **done** 2026-10-27: `/try/parent`, a fictional sample child labelled on the page, static, nothing fetched or stored | see log | V76 |
-| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; further slices next | see log | |
+| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; **F1d-2**: closing headline and footer line editable, parent demo linked from "For parents" | see log | |
 | F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | **F2a done** 2026-10-27: `docs/legal/DATA-INVENTORY.md` (facts from the code + 10 questions for a lawyer); drafts of the notice and terms next - near launch - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
@@ -1380,3 +1380,13 @@ Dependencies:
     Khmer at 360px renders with no overflow. Screenshots reviewed (phone: buddy moved above the question after it
     overlapped). **Tested**: Vitest 400, tsc, eslint.
   - **Not verified**: a screen reader; a physical phone.
+- 2026-10-27: **F1d-2 the last fixed words on the landing page, and a way to the parent demo.** The closing headline
+  and the footer line came from the app-wide `common.tagline`, so they could not be changed in Operations -> Landing
+  page; they are now `promises.closingTitle` and `nav.tagline` in the landing catalog (same words by default). "For
+  parents" ends with "See a sample parent view" -> `/try/parent` (F1c was reachable only from the Try page).
+  - **Deliberately not editable from the landing editor**: the product's own vocabulary shown on public pages - the
+    buddies' names and characters, standing and evidence labels, "Helping at home", language names, the legal links.
+    Changing them there would make the public pages disagree with what families find inside; they change with the
+    product.
+  - **Runtime verified**: admin override of `promises.closingTitle` showed as the closing headline (headless Chromium),
+    reset restored the original; footer line and the new link render. **Tested**: Vitest 400, tsc, eslint.

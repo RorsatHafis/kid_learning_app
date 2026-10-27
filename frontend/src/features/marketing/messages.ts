@@ -12,6 +12,7 @@ export const marketingMessages = defineMessages(
   {
     documentTitle: "Bookeyond Kid — Learn Today, Build Tomorrow",
     nav: {
+      tagline: "Learn Today, Build Tomorrow.",
       how: "How it works",
       parents: "For parents",
       children: "For children",
@@ -75,6 +76,7 @@ export const marketingMessages = defineMessages(
       rule4When: "A skill that looked secure starts slipping",
       rule4Then: "Smart Review brings it back into the path",
       dataNote: "Your family's learning data belongs to your family: you can download all of it from your account at any time.",
+      seeSample: "See a sample parent view",
     },
     children: {
       title: "A world of their own.",
@@ -143,12 +145,14 @@ export const marketingMessages = defineMessages(
       windowText: "Parents always see clearly what and how their child is learning.",
       data: "Your family's data",
       dataText: "Learning data belongs to the family, and we treat it with the care it deserves.",
+      closingTitle: "Learn Today, Build Tomorrow.",
       closingLead: "Create a family account with just an email address, and add your first child.",
     },
   },
   {
     documentTitle: "Bookeyond Kid — រៀនថ្ងៃនេះ កសាងថ្ងៃស្អែក",
     nav: {
+      tagline: "រៀនថ្ងៃនេះ កសាងថ្ងៃស្អែក។",
       how: "របៀបដំណើរការ",
       parents: "ឪពុកម្ដាយ",
       children: "កុមារ",
@@ -211,6 +215,7 @@ export const marketingMessages = defineMessages(
       rule4When: "ជំនាញដែលហាក់ដូចជារឹងមាំ ចាប់ផ្ដើមធ្លាក់ចុះ",
       rule4Then: "ការរំលឹកឆ្លាតវៃនាំវាត្រឡប់មកក្នុងដំណើររៀនវិញ",
       dataNote: "ទិន្នន័យការរៀនរបស់គ្រួសារអ្នក ជាកម្មសិទ្ធិរបស់គ្រួសារអ្នក៖ អ្នកអាចទាញយកវាទាំងអស់ពីគណនីរបស់អ្នកបានគ្រប់ពេល។",
+      seeSample: "មើលទំព័រឪពុកម្ដាយគំរូ",
     },
     children: {
       title: "ពិភពផ្ទាល់ខ្លួនរបស់ពួកគេ។",
@@ -279,6 +284,7 @@ export const marketingMessages = defineMessages(
       windowText: "ឪពុកម្ដាយតែងតែឃើញយ៉ាងច្បាស់ថា កូនរបស់ពួកគេកំពុងរៀនអ្វី និងរៀនយ៉ាងដូចម្ដេច។",
       data: "ទិន្នន័យរបស់គ្រួសារអ្នក",
       dataText: "ទិន្នន័យការរៀនជាកម្មសិទ្ធិរបស់គ្រួសារ ហើយយើងថែរក្សាវាដោយយកចិត្តទុកដាក់ ដូចដែលវាសមនឹងទទួលបាន។",
+      closingTitle: "រៀនថ្ងៃនេះ កសាងថ្ងៃស្អែក។",
       closingLead: "បង្កើតគណនីគ្រួសារដោយគ្រាន់តែប្រើអាសយដ្ឋានអ៊ីមែល ហើយបន្ថែមកូនដំបូងរបស់អ្នក។",
     },
   },

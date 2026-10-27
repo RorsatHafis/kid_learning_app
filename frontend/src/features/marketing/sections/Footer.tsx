@@ -3,7 +3,6 @@ import { LegalLinks } from "@/features/legal/Legal";
 import { Logo } from "@/components/brand/Logo";
 import { sectionLinks, useSectionLabel } from "./links";
 import { useMessages } from "@/i18n/catalog";
-import { common } from "@/components/ui/messages";
 import { marketingMessages } from "../messages";
 import { trustMessages } from "../trust.messages";
 import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
@@ -12,7 +11,6 @@ import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 export function Footer() {
   const m = useMessages(marketingMessages).nav;
   const label = useSectionLabel();
-  const c = useMessages(common);
   const t = useMessages(trustMessages);
   return (
     <footer className="on-night bg-tonle-900 px-4 pb-10 pt-14 text-tonle-100 sm:px-8">
@@ -20,7 +18,7 @@ export function Footer() {
         <div className="flex flex-col justify-between gap-10 sm:flex-row">
           <div className="flex flex-col gap-4">
             <Logo tone="paper" size="md" />
-            <p className="font-display text-xl text-white">{c.tagline}</p>
+            <p className="font-display text-xl text-white">{m.tagline}</p>
             <p className="max-w-xs text-sm leading-relaxed text-tonle-200">{t.family}</p>
           </div>
           <nav aria-label={m.footer} className="grid grid-cols-2 gap-x-12 gap-y-3 text-[0.9375rem]">
