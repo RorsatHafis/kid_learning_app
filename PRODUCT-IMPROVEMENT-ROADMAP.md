@@ -1448,3 +1448,18 @@ Dependencies:
   360x740)**: steps 1->5, pause, manual step, no errors, no overflow; screenshot shows step 5's sentence pinned above
   the child panel. Khmer drafted this session listed for native review in `KHMER-REVIEW-Y33.md` (PD-14); the Khmer
   parent demo re-checked at 360px (no overflow, axe clean).
+- 2026-10-27: **CHECKPOINT - coworker preview updated to `093e4da` (code of `ba0ea1c`, CI green on all four jobs);
+  the link is the owner's new one after the laptop restart: `virtual-remain-framework-notre.trycloudflare.com`.**
+  Before: the link served `index-B22l6RN7.js` (the `1e90cbf` build) with no `/try/parent` route - F1c, F1d and V76 were
+  not live. `preview.sh update` (run as is; the existing tunnel, URL, gate and password kept; the script re-checked the
+  gate locally and through the URL). **Verified through the link**: anonymous 401; `browser-check.mjs` - all five roles
+  sign in (parent: family home, Sophea's progress, child space, Khmer and back; teacher class + Studio; both
+  principals; administrator payments page); `journey-check.mjs` - served bundle = the new local build
+  (`index--FWIlrRV.js`), "Let's go" fully on screen at 360x640, the child answered "7 + 3 = ?" -> "You got it!", 0
+  server errors (this run answered one question mid-activity; the activity is left resumable, it was not finished);
+  this session's pages through the gate - `/try/parent` with the sample child, the How-it-works demonstration
+  advancing on its own (step 3 after ~6 s), the For-parents link, public site copy 200, no 5xx; preview DB at **V76**
+  (read-only query of `flyway_schema_history`).
+  - **Next, in order**: owner decisions (ages claim on the hero, `[OWNER]` items in the legal drafts, the inventory's
+    ten lawyer questions, D-18, D-19, M11/M12 inputs); native Khmer review of the F1c/F1d text (KHMER-REVIEW-Y33.md);
+    further F1d only where the landing page still disagrees with the product.
