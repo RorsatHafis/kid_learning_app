@@ -18,6 +18,7 @@ import { AnswerVerdict } from "@/features/child/AnswerVerdict";
 import { play as playCue } from "@/features/buddy/sound";
 import { Nav } from "./sections/Nav";
 import { tryMessages } from "./try.messages";
+import { usePublicCopy } from "./publicCopy";
 
 const goButton = buttonClasses("accent", "lg", "px-8 text-[1.0625rem]");
 const quietButton = buttonClasses("outline", "lg", "bg-white/90");
@@ -33,6 +34,7 @@ type Phase =
  * evidence a family can read - and offers to create one. No trial or price is promised here.
  */
 export function TryPage() {
+  usePublicCopy();
   const t = useMessages(tryMessages);
   useDocumentTitle(t.documentTitle);
   const activities = useAsync(() => siteApi.demoActivities(), []);

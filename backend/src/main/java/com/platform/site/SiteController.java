@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,9 +24,39 @@ import java.util.UUID;
 public class SiteController {
 
     private final SiteStatementService statements;
+    private final SiteCopyService copy;
 
-    public SiteController(SiteStatementService statements) {
+    public SiteController(SiteStatementService statements, SiteCopyService copy) {
         this.statements = statements;
+        this.copy = copy;
+    }
+
+    /** F1a: one entry's words; a blank language keeps its default. {@code version}: absent to create. */
+    public record CopyRequest(@Size(max = 600) String textEn, @Size(max = 600) String textKm, Long version) {
+    }
+
+    /** The public pages' word overrides (F1a), read by anyone - the pages lay them over their defaults. */
+    @GetMapping("/api/v1/site/copy")
+    public List<SiteCopyService.PublicCopy> publishedCopy() {
+        return copy.published();
+    }
+
+    @GetMapping("/api/v1/admin/site-copy")
+    public List<SiteCopyService.Copy> allCopy(@AuthenticationPrincipal UUID adminId) {
+        return copy.all(adminId);
+    }
+
+    // The namespace has slashes (features/marketing/try), so it travels as a query parameter.
+    @PutMapping("/api/v1/admin/site-copy")
+    public SiteCopyService.Copy putCopy(@AuthenticationPrincipal UUID adminId, @RequestParam String namespace,
+                                        @RequestParam String key, @Valid @RequestBody CopyRequest request) {
+        return copy.put(adminId, namespace, key, request.textEn(), request.textKm(), request.version());
+    }
+
+    @DeleteMapping("/api/v1/admin/site-copy")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetCopy(@AuthenticationPrincipal UUID adminId, @RequestParam String namespace, @RequestParam String key) {
+        copy.reset(adminId, namespace, key);
     }
 
     public record StatementRequest(@NotNull SiteStatementService.Kind kind, @NotNull @Size(max = 280) String textEn,

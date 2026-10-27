@@ -159,7 +159,7 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payments/callbacks/*").permitAll()
                 // M2: the landing page's statements and the public demo (published platform content, nothing stored;
                 // the check is rate limited per client in AuthRateLimitFilter).
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/site/statements", "/api/v1/demo/activities").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/site/statements", "/api/v1/site/copy", "/api/v1/demo/activities").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/demo/check").permitAll()
                 .anyRequest().authenticated()
             )

@@ -29,6 +29,7 @@ import { trustMessages } from "./trust.messages";
 import { siteApi, type PublicStatement } from "@/lib/api/site";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { withoutClosingStop } from "./quote";
+import { usePublicCopy } from "./publicCopy";
 
 /**
  * The public front door. It shows the product as it is — early maths today, Khmer and English in
@@ -36,6 +37,7 @@ import { withoutClosingStop } from "./quote";
  * uses, so nothing here promises more than a family will find inside.
  */
 export function LandingPage() {
+  usePublicCopy();
   const m = useMessages(marketingMessages);
   // The front door keeps the full name and promise (other pages set "Page · Bookeyond Kid").
   useEffect(() => {

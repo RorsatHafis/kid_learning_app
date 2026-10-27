@@ -11,6 +11,7 @@ import { FormField } from "@/features/auth/FormField";
 import { Panel, SelectField, TextAreaField } from "../studio/shared";
 import { errorText } from "../studio/studioLogic";
 import { landingContentMessages } from "./landingContent.messages";
+import { SiteCopyPanel } from "./SiteCopyPanel";
 
 /**
  * Operations → Landing page (M2): the statements the public page shows, and the lessons anyone may try without an
@@ -22,6 +23,7 @@ export function LandingContentPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t.title} description={t.description} />
+      <SiteCopyPanel />
       <StatementsPanel />
       <DemoPanel />
     </div>

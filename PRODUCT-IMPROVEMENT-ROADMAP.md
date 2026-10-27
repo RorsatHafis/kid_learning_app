@@ -27,7 +27,13 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M12 School management: foundation and first modules | planned | | |
 | M13 Integration, role verification, docs, staging readiness | planned | | |
 | L1 Learning experience: "Learn first" activity introductions (owner brief 2026-10-25) | **done** | see log | V73 |
-| F1 Landing page as marketing (owner, 2026-10-27) | **future** - not started on purpose: editable copy, meaningful Learning Buddy/character motion, real product demonstrations; study the owner's samples and research, Duolingo / Khan Academy Kids, audience and storytelling - evaluate when the learning product's more immediate needs allow | | |
+| L2-L11 Learning experience follow-ups (explanation tip, D-16 hints, recorder, D-17 two days, phone layouts, Studio gaps/guide, parent fixes and help) | **done** | see log | V74 |
+| M13 Integration, role journeys | role journeys on phone (360 px) EN/KM for all five roles **done** 2026-10-27; readiness docs remain | | |
+| F1a Landing page: every word editable without code | **done** 2026-10-27 | see log | V75 |
+| F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | planned - builds on the existing Try page and V63 demo activities; demo answers stay out of learner records and mastery; no personal data before registration | | |
+| F1c Parent demo with representative sample data (progress, evidence, how to help) | planned - clearly labelled sample, never a real child | | |
+| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | planned - study the owner's samples and research, Duolingo / Khan Academy Kids, audience and storytelling; no unsupported testimonials | | |
+| F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | planned near launch - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
 deferred until the family experience is coherent):** M6 → M7 → M10 → M8 → M9 → M5 → M11 → M13 → M12. M12 waits
@@ -1253,4 +1259,23 @@ Dependencies:
   with permission): `bash /d/bk-work/preview/preview.sh update`, then from `D:/bk-work/preview`:
   `node browser-check.mjs "$(cat tunnel.url)"` and `node journey-check.mjs "$(cat tunnel.url)"` (with
   `PLAYWRIGHT_BROWSERS_PATH=D:/bk-work/pw-browsers`). The journey check now finishes an activity it completes.
+- 2026-10-27: **M13 role journeys on phones; F1a every word of the public pages editable.**
+  - **M13**: at 360x640 (emulation) every page of the teacher (classes, a class, Studio, media, account), the
+    principal (overview, classes, teachers, plan, account) and the administrator (20 pages incl. the Studio activities
+    list and the activity builder) - no overflow or load errors; Khmer pass on the admin dashboard, activities list and
+    builder (this session's Studio texts render in Khmer). Child and parent were covered in L7/L9/L10.
+  - **F1a**: V75 `site_copy` (namespace + entry key, EN and/or KM, version, who changed it); the frontend's message
+    catalogs stay the defaults and administrators' words are laid over them (`setCopyOverrides` in i18n/catalog; an
+    entry that takes values uses {1}, {2}...). Only the three public catalogs (landing, trust, try) are accepted
+    (service and DB check); plain text up to 600 characters, control characters refused; optimistic version check;
+    every change and reset audited. Public `GET /api/v1/site/copy` (read-only, anonymous), admin
+    `GET/PUT/DELETE /api/v1/admin/site-copy`. Operations -> Landing page has "Words on the public pages": all 188
+    entries by page and section, searchable in both languages, original shown beside yours, reset to the original;
+    loaded on demand. The public pages fetch the overrides once per visit and keep their defaults if that fails.
+  - **Browser verified**: changed the hero headline and the footer line ("{1}" -> 2026) in English; the landing page
+    showed both; Khmer visitors still saw the original Khmer; reset both -> originals back, the public list empty;
+    four audit events. Anonymous admin endpoint 401. **Tested**: PublicDemoAndStatements 4, ServerTextCoverage 3;
+    Vitest 398, tsc, eslint. **Tests still needed**: site copy service (namespace/key/length/version/audit), overlay
+    (string/template/locale fallback), the editor panel.
+  - **Integrated the owner's 2026-10-27 directions** as F1b-F1d and F2 in the status table (no new plan).
 

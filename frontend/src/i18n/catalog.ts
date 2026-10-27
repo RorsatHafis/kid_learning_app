@@ -43,9 +43,70 @@ export function registeredCatalogs(): readonly Catalog<CatalogShape>[] {
   return registry;
 }
 
-/** The catalog's words in `locale`. */
+// ---- F1a: administrators' words laid over a catalog's defaults (the public pages only; the server keeps the list) ----
+
+export interface CopyOverride {
+  namespace: string;
+  key: string;
+  textEn: string | null;
+  textKm: string | null;
+}
+
+let overrides = new Map<string, Map<string, { en: string | null; km: string | null }>>();
+let overridesVersion = 0;
+const overrideListeners = new Set<() => void>();
+const merged = new Map<string, { version: number; value: CatalogShape }>();
+
+/** Replaces the overrides (from GET /api/v1/site/copy); pages using those catalogs re-render. */
+export function setCopyOverrides(list: CopyOverride[]) {
+  const next = new Map<string, Map<string, { en: string | null; km: string | null }>>();
+  for (const o of list) {
+    if (!next.has(o.namespace)) next.set(o.namespace, new Map());
+    next.get(o.namespace)!.set(o.key, { en: o.textEn, km: o.textKm });
+  }
+  overrides = next;
+  overridesVersion++;
+  overrideListeners.forEach((listener) => listener());
+}
+
+function subscribeOverrides(listener: () => void) {
+  overrideListeners.add(listener);
+  return () => overrideListeners.delete(listener);
+}
+
+/** An override for an entry that takes values: {1}, {2}... stand for them, in order. */
+function template(text: string) {
+  return (...args: unknown[]) => text.replace(/\{(\d+)\}/g, (_, n: string) => String(args[Number(n) - 1] ?? ""));
+}
+
+function overlay(shape: CatalogShape, entries: Map<string, string>, prefix = ""): CatalogShape {
+  const out: CatalogShape = {};
+  for (const [key, value] of Object.entries(shape)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    const text = entries.get(path);
+    if (typeof value === "object") out[key] = overlay(value, entries, path);
+    else if (text === undefined) out[key] = value;
+    else out[key] = typeof value === "function" ? (template(text) as Entry) : text;
+  }
+  return out;
+}
+
+/** The catalog's words in `locale`, with any administrator's words for that language laid over them. */
 export function messagesIn<T extends CatalogShape>(catalog: Catalog<T>, locale: Locale): T {
-  return (locale === "km" ? catalog.km : catalog.en) as T;
+  const base = (locale === "km" ? catalog.km : catalog.en) as T;
+  const own = overrides.get(catalog.name);
+  if (!own) return base;
+  const cacheKey = `${catalog.name}|${locale}`;
+  const cached = merged.get(cacheKey);
+  if (cached && cached.version === overridesVersion) return cached.value as T;
+  const entries = new Map<string, string>();
+  own.forEach((o, key) => {
+    const text = locale === "km" ? o.km : o.en;
+    if (text) entries.set(key, text);
+  });
+  const value = overlay(base, entries);
+  merged.set(cacheKey, { version: overridesVersion, value });
+  return value as T;
 }
 
 /** The catalog's words in the current language, outside React (error helpers, the API client). */
@@ -58,8 +119,9 @@ export function useLocale(): Locale {
   return useSyncExternalStore(subscribe, currentLocale, currentLocale);
 }
 
-/** The catalog's words in the current language; re-renders when the language changes. */
+/** The catalog's words in the current language; re-renders when the language or the administrators' words change. */
 export function useMessages<T extends CatalogShape>(catalog: Catalog<T>): T {
+  useSyncExternalStore(subscribeOverrides, () => overridesVersion, () => overridesVersion);
   return messagesIn(catalog, useLocale());
 }
 
