@@ -429,7 +429,7 @@ Dependencies:
 | D-06 | Bring-your-own storage offering; who pays for hosted storage; DP Cloud API | Abstraction + local + S3-compatible built and tested; no DP Cloud claim |
 | D-07 | Genuine KHQR image and payment instructions (your account) | Manual method shows "not configured"; no QR is invented |
 | D-08 | Default daily limit or break reminder for young children | Off by default, suggested in the add-a-child flow |
-| D-09 | Content for ages 3 and 10–12 | Copy says 3–12; subjects follow the age hubs the admins configure |
+| D-09 | Content for ages 3 and 10–12 | Copy says 3–12; subjects follow the age hubs the admins configure. **Owner, 2026-10-27: the platform audience is deliberately 3–12 - never narrowed to the current content; public copy states the audience and what is available separately** (BRD section 2) |
 | D-10 | Genuine testimonials (with permission) | Only brand statements |
 | D-11 | PDP law status, child-safety page, consent for school student records (PD-31, PD-32) | Minimal data; school records stay school-scoped |
 | D-12 | New third-party libraries (e.g. libphonenumber, an S3 client) and container images (S3-compatible test server) | Asked at the milestone that needs them. **libphonenumber approved 2026-10-24** (M9b; pinned 9.0.38, two months old when added) |
@@ -1463,3 +1463,17 @@ Dependencies:
   - **Next, in order**: owner decisions (ages claim on the hero, `[OWNER]` items in the legal drafts, the inventory's
     ten lawyer questions, D-18, D-19, M11/M12 inputs); native Khmer review of the F1c/F1d text (KHMER-REVIEW-Y33.md);
     further F1d only where the landing page still disagrees with the product.
+- 2026-10-27: **Business requirements document; the 3-12 audience kept as decided.** New
+  [`docs/BUSINESS-REQUIREMENTS.md`](docs/BUSINESS-REQUIREMENTS.md): purpose, customers and business model as
+  implemented, the audience vs curriculum age range vs available content, roles and permissions, a feature inventory
+  with status labels (Live / Built, limited / Partial / Planned / Blocked / Undecided), end-to-end workflows, the
+  learning model with the server's actual thresholds (evidence 3 / saturation 10; standing 0.6 / 0.8 + two days;
+  adaptive 0.4 with 2 answers / 0.8 with 3; Smart Review below 0.5 with 2), business rules, integrations and
+  operations, open decisions and known gaps. Facts taken from the code and the records (constants read from
+  `EvidenceStandard`, `AdaptiveEngine`, `SmartReviewService`, `application.yaml`, migrations), not from intentions;
+  it links to the roadmap, progress record, product brief and data inventory instead of repeating them.
+  - **Owner decision recorded (D-09)**: ages 3-12 is the platform's intended audience. My earlier question about
+    narrowing the hero is withdrawn. Public copy now separates the two: the proof line says "Made for ages 3 to 12"
+    (was "Short lessons for ages 3 to 12", which read as lessons existing across the range) and the status line says
+    "Early maths (ages 4–9) today · Khmer and English lessons in preparation". Both stay editable (F1a).
+

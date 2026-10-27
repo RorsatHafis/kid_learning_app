@@ -29,7 +29,7 @@ export const marketingMessages = defineMessages(
       title: "Help your child learn. Know what they really understand.",
       lead: "Short, friendly lessons for children aged 3 to 12 — and for you, an honest picture of the skills they are building and why each next step was chosen.",
       seeHow: "See how it works",
-      status: "Early maths today · Khmer and English lessons in preparation",
+      status: "Early maths (ages 4–9) today · Khmer and English lessons in preparation",
     },
     how: {
       title: "A finished lesson doesn't tell the whole story.",
@@ -170,7 +170,7 @@ export const marketingMessages = defineMessages(
       title: "ជួយកូនរបស់អ្នករៀន។ ដឹងពីអ្វីដែលពួកគេពិតជាយល់។",
       lead: "មេរៀនខ្លីៗ និងរួសរាយ សម្រាប់កុមារអាយុពី 3 ដល់ 12 ឆ្នាំ — ហើយសម្រាប់អ្នក គឺទិដ្ឋភាពស្មោះត្រង់អំពីជំនាញដែលពួកគេកំពុងកសាង និងហេតុផលដែលជំហានបន្ទាប់នីមួយៗត្រូវបានជ្រើសរើស។",
       seeHow: "មើលពីរបៀបដែលវាដំណើរការ",
-      status: "គណិតវិទ្យាដំបូងនៅថ្ងៃនេះ · មេរៀនភាសាខ្មែរ និងភាសាអង់គ្លេសកំពុងរៀបចំ",
+      status: "គណិតវិទ្យាដំបូង (អាយុ 4–9 ឆ្នាំ) នៅថ្ងៃនេះ · មេរៀនភាសាខ្មែរ និងភាសាអង់គ្លេសកំពុងរៀបចំ",
     },
     how: {
       title: "មេរៀនដែលបានបញ្ចប់ មិនបានប្រាប់រឿងទាំងស្រុងទេ។",

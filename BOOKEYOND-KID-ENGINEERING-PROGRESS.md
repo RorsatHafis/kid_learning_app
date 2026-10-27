@@ -638,9 +638,9 @@ the open product decisions PD-01 to PD-10.
    curriculum, languages, review - the shipped content is the V29 seed of 12 bare sums), M12's school-record and
    consent model (Battle 4C), D-06/D-12 (storage provider and an S3 client) for M11; Khmer review of Claude-drafted
    text (PD-14).
-2. **Owner, for the public pages and legal**: whether the landing page keeps "ages 3 to 12" (only Junior maths, 4-9,
-   exists); the operator facts and two commitments marked `[OWNER]` in `docs/legal/*-DRAFT.md`; qualified review of
-   the ten questions in `docs/legal/DATA-INVENTORY.md` (incl. how long to keep expired sign-in records).
+2. **Owner, for legal**: the operator facts and two commitments marked `[OWNER]` in `docs/legal/*-DRAFT.md`;
+   qualified review of the ten questions in `docs/legal/DATA-INVENTORY.md` (incl. how long to keep expired sign-in
+   records). The 3-12 audience is decided (D-09, 2026-10-27). Business reference: `docs/BUSINESS-REQUIREMENTS.md`.
 3. **Product**: further F1d slices only where the landing page still says less than the product does or more than it
    can; M11/M12 when the decisions above land.
 4. **Coworker preview** (`docs/COWORKER-PREVIEW.md`): `preview.sh update` brings the link to the latest verified

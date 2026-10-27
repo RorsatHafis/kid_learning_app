@@ -22,7 +22,7 @@ export const trustMessages = defineMessages(
     },
     proof: {
       label: "In short",
-      ages: "Short lessons for ages 3 to 12",
+      ages: "Made for ages 3 to 12",
       evidence: "Progress from real answers",
       safe: "No ads, no chat, no strangers",
     },
@@ -102,7 +102,7 @@ export const trustMessages = defineMessages(
     },
     proof: {
       label: "ដោយសង្ខេប",
-      ages: "មេរៀនខ្លីៗសម្រាប់អាយុ 3 ដល់ 12 ឆ្នាំ",
+      ages: "បង្កើតឡើងសម្រាប់អាយុ 3 ដល់ 12 ឆ្នាំ",
       evidence: "វឌ្ឍនភាពពីចម្លើយពិតប្រាកដ",
       safe: "គ្មានពាណិជ្ជកម្ម គ្មានការជជែក គ្មានមនុស្សចម្លែក",
     },
