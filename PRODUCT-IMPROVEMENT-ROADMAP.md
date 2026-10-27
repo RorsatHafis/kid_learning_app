@@ -27,6 +27,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M12 School management: foundation and first modules | planned | | |
 | M13 Integration, role verification, docs, staging readiness | planned | | |
 | L1 Learning experience: "Learn first" activity introductions (owner brief 2026-10-25) | **done** | see log | V73 |
+| F1 Landing page as marketing (owner, 2026-10-27) | **future** - not started on purpose: editable copy, meaningful Learning Buddy/character motion, real product demonstrations; study the owner's samples and research, Duolingo / Khan Academy Kids, audience and storytelling - evaluate when the learning product's more immediate needs allow | | |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
 deferred until the family experience is coherent):** M6 → M7 → M10 → M8 → M9 → M5 → M11 → M13 → M12. M12 waits
@@ -1206,4 +1207,13 @@ Dependencies:
   (same source as the skill page); off-plan skills show as text with "practised outside the learning plan".
   Verified in the browser; ProgressChange, LearningJourneyApi, SkillStory suites; Vitest parent 70; tsc.
   **Next**: Studio educator guidance for young learners (D-19 stays open), then parent pages in Khmer at 320 px.
+- 2026-10-27: **L10 parent pages in Khmer at 320 px; a writing guide for authors.** Parent family home, overview,
+  Skills & progress and a skill page at 320x568 in Khmer: no overflow or clipping; this session's new sentences
+  (two-day rule, hint note, outside-the-plan) render in Khmer; only authored content (skill and activity names)
+  stays English, as designed. Test parent switched back to English. **Built**: a closed "Writing for young children"
+  guide at the top of the activity builder - seven points (teach first, show it, say it, explain after answering,
+  hints guide, one idea with familiar things, several questions per skill because 3 answers / two days are needed).
+  Craft guidance from the report's strongest findings and the platform's own evidence rules - not curriculum content
+  (D-19 stays open). Khmer drafted (PD-14 review). Verified in the browser (renders above "Teach it first" on a
+  draft); tsc, eslint, Vitest 394 (the 2 new cases are the catalogue parity checks). Landing page recorded as F1.
 

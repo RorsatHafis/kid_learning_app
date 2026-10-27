@@ -29,6 +29,7 @@ import { builderMessages } from "./builder.messages";
 import { editorMessages } from "./editor.messages";
 import { IntroductionEditor } from "./IntroductionEditor";
 import { LearnCard } from "@/features/child/Learn";
+import { writingMessages } from "./writing.messages";
 
 export type Message = { tone: "error" | "ok"; text: string } | null;
 
@@ -94,6 +95,7 @@ export function ActivityBuilder({
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
+          <WritingGuide />
           {/* Teaching before asking: the introduction children see before the first question. */}
           <IntroductionEditor
             key={`intro-${latest.id}`}
@@ -212,6 +214,24 @@ function StepTitle({ id, step, title, detail }: { id: string; step: number; titl
       </h2>
       {detail && <span className="ml-auto text-sm font-medium text-ink-soft">{detail}</span>}
     </div>
+  );
+}
+
+/** L10: what makes a good activity for young children - closed until an author wants it. */
+function WritingGuide() {
+  const w = useMessages(writingMessages);
+  return (
+    <details className="rounded-[20px] bg-white shadow-card">
+      <summary className="cursor-pointer list-none px-5 py-4 sm:px-6">
+        <span className="font-display text-[1.1rem] font-bold text-tonle-950">{w.title}</span>
+        <span className="mt-0.5 block text-sm text-ink-soft">{w.lead}</span>
+      </summary>
+      <ol className="flex list-decimal flex-col gap-2 px-5 pb-5 pl-10 text-sm leading-relaxed text-ink sm:px-6 sm:pl-11">
+        {(["p1", "p2", "p3", "p4", "p5", "p6", "p7"] as const).map((key) => (
+          <li key={key}>{w.points[key]}</li>
+        ))}
+      </ol>
+    </details>
   );
 }
 
