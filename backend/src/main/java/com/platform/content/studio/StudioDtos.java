@@ -92,8 +92,16 @@ public final class StudioDtos {
 
     // ------------------------------------------------------------------ lessons & activities
 
+    /**
+     * {@code support} (L8): how much help a child gets in the latest version - so an author sees, across a lesson,
+     * where children meet bare questions. Null when the activity has no version.
+     */
     public record ActivitySummary(UUID id, String title, String activityType, List<UUID> skillIds,
-                                  List<VersionSummary> versions, boolean archived) {
+                                  List<VersionSummary> versions, boolean archived, Support support) {
+    }
+
+    /** Questions in a version, how many are read aloud, explained after answering and hinted, and whether it teaches first. */
+    public record Support(int questions, int readAloud, int explained, int hinted, boolean introduction) {
     }
 
     /**

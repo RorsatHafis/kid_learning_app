@@ -111,6 +111,7 @@ public class StudioService {
     private final ActivityVersionRepository activityVersions;
     private final MediaService media;
     private final com.platform.content.review.ContentReviewService reviews;
+    private final org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc;
 
     public StudioService(ContentAccessGuard guard, AuditService audit, ContentValidator validator,
                          SubjectRepository subjects, SubjectService subjectService, AgeHubRepository ageHubs,
@@ -124,8 +125,10 @@ public class StudioService {
                          QuestionRepository questions, QuestionService questionService,
                          QuestionVersionSkillRepository questionSkills, QuestionVersionRepository questionVersions,
                          ActivityVersionRepository activityVersions, MediaService media,
-                         com.platform.content.review.ContentReviewService reviews) {
+                         com.platform.content.review.ContentReviewService reviews,
+                         org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc) {
         this.reviews = reviews;
+        this.jdbc = jdbc;
         this.guard = guard;
         this.audit = audit;
         this.validator = validator;
@@ -401,6 +404,7 @@ public class StudioService {
         Map<UUID, List<UUID>> skillsOf = new java.util.HashMap<>();
         latestVersionOf.forEach((activityId, versionId) -> skillsOf.put(activityId, tagsOfVersion.getOrDefault(versionId, List.of())));
         Map<UUID, List<Activity>> byLesson = all.stream().collect(java.util.stream.Collectors.groupingBy(Activity::getLessonId));
+        Map<UUID, StudioDtos.Support> supportOf = supportOf(allVersions, latestVersionOf);
         String needle = pattern == null ? null : text.strip().toLowerCase(java.util.Locale.ROOT);
         List<LessonSummary> page = ids.stream().map(byId::get).filter(Objects::nonNull).map(lesson -> {
             boolean lessonArchived = lesson.getStatus() == CatalogStatus.ARCHIVED;
@@ -414,7 +418,7 @@ public class StudioService {
                     .sorted(Comparator.comparing(Activity::getTitle, String.CASE_INSENSITIVE_ORDER))
                     .map(activity -> new ActivitySummary(activity.getId(), activity.getTitle(), activity.getActivityType(),
                             skillsOf.getOrDefault(activity.getId(), List.of()), versionsOf.getOrDefault(activity.getId(), List.of()),
-                            activity.getStatus() == CatalogStatus.ARCHIVED))
+                            activity.getStatus() == CatalogStatus.ARCHIVED, supportOf.get(activity.getId())))
                     .toList();
             return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), shown, own.size(), lessonArchived,
                     lesson.getVisibility().name(), lesson.getCopiedFromLessonId() != null || lesson.getCopiedFromAccountId() != null);
@@ -485,6 +489,31 @@ public class StudioService {
                 .filter(version -> version.getStatus() == PublicationStatus.DRAFT)
                 .orElseThrow(() -> new IllegalStateException("Start a new version to change the skills this activity practises: a published version keeps the skills it was published with."))
                 .getId();
+    }
+
+    /** L8: each activity's latest version, as the help a child gets in it. One statement for the page. */
+    private Map<UUID, StudioDtos.Support> supportOf(List<ActivityVersion> allVersions, Map<UUID, UUID> latestVersionOf) {
+        if (latestVersionOf.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, int[]> counts = new java.util.HashMap<>();
+        jdbc.query("""
+                SELECT ai.activity_version_id, count(*), count(qv.prompt_audio_asset_id), count(qv.explanation), count(qv.hint)
+                FROM activity_items ai JOIN question_versions qv ON qv.id = ai.question_version_id
+                WHERE ai.activity_version_id IN (:versions)
+                GROUP BY ai.activity_version_id
+                """, Map.of("versions", latestVersionOf.values()), rs -> {
+            counts.put(rs.getObject(1, UUID.class), new int[] {rs.getInt(2), rs.getInt(3), rs.getInt(4), rs.getInt(5)});
+        });
+        Map<UUID, ActivityVersion> byId = allVersions.stream()
+                .collect(java.util.stream.Collectors.toMap(ActivityVersion::getId, version -> version));
+        Map<UUID, StudioDtos.Support> support = new java.util.HashMap<>();
+        latestVersionOf.forEach((activityId, versionId) -> {
+            int[] c = counts.getOrDefault(versionId, new int[4]);
+            ActivityVersion version = byId.get(versionId);
+            support.put(activityId, new StudioDtos.Support(c[0], c[1], c[2], c[3], version != null && version.hasIntroduction()));
+        });
+        return support;
     }
 
     /** An activity version's introduction for the Studio, its media as signed links; null when it has none. */

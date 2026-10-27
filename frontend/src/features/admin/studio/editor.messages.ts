@@ -31,6 +31,15 @@ export const editorMessages = defineMessages(
       evidenceFor: "Skills this question gives evidence for",
     },
     activities: {
+      // L8: the help a child gets in each activity, so gaps show across a lesson
+      supportLabel: "Help for children in the latest version",
+      teachesFirst: "Teaches first",
+      noIntroduction: "No introduction",
+      readAloud: (n: number, of: number) => `Read aloud ${n} of ${of}`,
+      explained: (n: number, of: number) => `Explained ${n} of ${of}`,
+      hinted: (n: number, of: number) => `Hints ${n} of ${of}`,
+      supportNote:
+        "Read aloud: children who can't read yet hear the question. Explained: after answering, children see why. Hints: help before answering, if they ask.",
       lead: "Lessons group activities. An activity is what a learning path places and a child plays.",
       newLesson: "New lesson",
       find: "Find activities",
@@ -157,6 +166,14 @@ export const editorMessages = defineMessages(
       evidenceFor: "ជំនាញដែលសំណួរនេះផ្ដល់ភស្តុតាង",
     },
     activities: {
+      supportLabel: "ជំនួយសម្រាប់កុមារ ក្នុងកំណែចុងក្រោយ",
+      teachesFirst: "បង្រៀនជាមុន",
+      noIntroduction: "គ្មានសេចក្ដីផ្ដើម",
+      readAloud: (n: number, of: number) => `អានឮៗ ${n} ក្នុងចំណោម ${of}`,
+      explained: (n: number, of: number) => `មានការពន្យល់ ${n} ក្នុងចំណោម ${of}`,
+      hinted: (n: number, of: number) => `តម្រុយ ${n} ក្នុងចំណោម ${of}`,
+      supportNote:
+        "អានឮៗ៖ កុមារដែលមិនទាន់ចេះអានបានស្ដាប់សំណួរ។ មានការពន្យល់៖ ក្រោយឆ្លើយ កុមារឃើញហេតុផល។ តម្រុយ៖ ជំនួយមុនឆ្លើយ ប្រសិនបើពួកគេសុំ។",
       lead: "មេរៀនប្រមូលផ្ដុំសកម្មភាព។ សកម្មភាពគឺជាអ្វីដែលផ្លូវរៀនដាក់ ហើយកុមារលេង។",
       newLesson: "មេរៀនថ្មី",
       find: "ស្វែងរកសកម្មភាព",

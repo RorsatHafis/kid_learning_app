@@ -432,6 +432,7 @@ Dependencies:
 | D-16 | Does a right answer given after opening the hint count as evidence the child "showed it on their own"? (decided 2026-10-27) | **Record it; count as practice.** Each answer records whether the hint was opened (V74); a hinted answer, right or wrong, is practice: scored and shown, but it moves no mastery and does not count as a remembered review. Answers from before V74 stay "not recorded" |
 | D-17 | Can a skill read "Secure" after one sitting? (decided 2026-10-27) | **Two different days.** "Secure" (skill), a secure objective and the "has mastered" insight all need the evidence to span at least two learning days (the family's day zone); before that a skill at the mastery level reads "Progressing" and the parent is told it is waiting for another day. Mastery numbers and every decision made from them are unchanged |
 | D-18 | Should something bring a skill back on another day so it can be confirmed? (proposed 2026-10-27) | **Open, recommended.** After D-17 a skill can wait for "another day" with nothing on the path practising it (Smart Review only reacts to low mastery). Proposal: a light "check it again" review item for a skill at the mastery level whose evidence is from one day, due the next learning day, shown to parents as such. Changes what children are given - owner's call |
+| D-19 | Who writes the real curriculum, and in which languages? (raised 2026-10-27) | **Open - not a code task.** Every installation starts from the V29 developer seed: one English "Maths - Junior" (ages 4-9) of 6 activities x 2 questions, all bare symbolic sums ("3 + 4 = ?") typed on a keypad - no pictures, recordings, explanations, hints or introductions. For 4-6 year olds (many not reading) that is symbols without concrete grounding. The Studio can now carry everything a good item needs (picture choices, counting images, recordings made in the browser, introductions, hints, explanations, a per-activity gap line); what is missing is educator-authored content, a Khmer edition, and native review (PD-14). Needs the owner: who authors (educators/partners), first scope (e.g. counting and addition to 10 with pictures and voice, EN + KM), and review before families see it |
 
 ---
 
@@ -1179,4 +1180,20 @@ Dependencies:
     sizes in the browser pane come out cropped, so measurements were used instead.
   - **Verified**: browser (measured positions above), Vitest 392, tsc, eslint. **Not verified**: physical phones.
   - **Tests still needed**: Vitest that the start/keep-going controls are the sticky row's children on small screens.
+- 2026-10-27: **L8 the content bottleneck, measured; authors now see each activity's gaps.** Checked against the
+  data, not last session's numbers: every installation's real content is the V29 seed (OWNER-GUIDE part 2): 6
+  activities x 2 NUMERIC questions, English, all "a + b = ?" on the keypad, 0 pictures, 0 recordings, 0 explanations,
+  0 hints, 0 introductions (the 1 hint and 1 introduction on the dev stack are my test edits). The Studio tools for
+  every one of those now exist (L1, L2, L4, Y41, X11) - the obstacle is content availability and authorship (D-19),
+  then guidance and Khmer review, not missing features.
+  - **Built**: the Studio's activities list shows, for each activity's latest version, the help a child gets - "No
+    introduction / Teaches first · Read aloud n of m · Explained n of m · Hints n of m" - missing introductions,
+    recordings and explanations in the warm ink (7.2:1 contrast), hints neutral (optional by design); one grouped
+    query per page (`ActivitySummary.support`). An author scanning a lesson now sees where children meet bare
+    questions, instead of opening each activity.
+  - **Verified**: browser (admin Studio, the seed's six activities listed with their real gaps), ContentStudio 9,
+    ActivityBuilder 3, ContentLifecycleStudio 2, LessonSharing 2, ContentTenancy 9; tsc. **Test still needed**: the
+    support counts per latest version.
+  - **Not done (decisions)**: D-19 (who authors, languages, review); D-18 still open; no machine speech (see
+    `.claude/research/README.md`).
 

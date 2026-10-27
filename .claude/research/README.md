@@ -22,7 +22,10 @@ families' reality; the decision and its reason go in `PRODUCT-IMPROVEMENT-ROADMA
 | Brief explicit model before practice; worked examples ([Strong]) | L1 "Learn first": an activity can teach before it asks |
 | Elaborated feedback beats right/wrong (Van der Kleij 2015, [Strong]) | L2: authors are told when a question has no explanation (only 4 of 524 had one) |
 | Separate "worked through with help" from "showed on their own" ([Design judgment]) | L3 / owner decision D-16: answers given with the hint are practice, not mastery evidence |
-| Pre-readers need every instruction spoken ([Promising]) | L4: educators can record a question or introduction in the Studio (0 of 13 real prompts had audio) |
+| Pre-readers need every instruction spoken ([Promising]) | L4: educators can record a question or introduction in the Studio (0 of 12 real prompts had audio) |
+| Immediate correctness is weak evidence; retention needs a delay ([Strong]) | L6 / owner decision D-17: "Secure" needs two different learning days |
+| One task per screen, no reading needed to proceed (3-5, [Promising]) | L7: on phones the way forward is always on screen (it was below the fold on the first and last pages) |
+| Concrete before symbolic; worked examples (6-8, [Strong]) | Not a code change: the shipped seed is 12 bare "a + b = ?" items - recorded as D-19 (who authors real content); L8 shows authors each activity's gaps |
 
 ## Considered and not adopted (yet)
 

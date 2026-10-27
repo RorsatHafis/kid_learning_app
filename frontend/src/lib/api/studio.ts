@@ -168,6 +168,16 @@ export interface ActivitySummary {
   skillIds: string[];
   versions: VersionSummary[];
   archived?: boolean;
+  /** L8: the help a child gets in the latest version; null without a version. */
+  support?: ActivitySupport | null;
+}
+
+export interface ActivitySupport {
+  questions: number;
+  readAloud: number;
+  explained: number;
+  hinted: number;
+  introduction: boolean;
 }
 
 export interface LessonSummary {

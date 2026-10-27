@@ -1,7 +1,7 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, Plus } from "lucide-react";
-import { studioApi, type LessonSummary } from "@/lib/api/studio";
+import { studioApi, type ActivitySupport, type LessonSummary } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { usePageInRange, useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { ListCount, Pager } from "@/components/ui/Pager";
@@ -159,6 +159,7 @@ function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: 
                 <span className="flex min-w-0 flex-col gap-1.5">
                   <span className="truncate font-semibold text-ink">{activity.title}</span>
                   <SkillChips skillIds={activity.skillIds} catalog={catalog} />
+                  {activity.support && activity.support.questions > 0 && <SupportLine support={activity.support} />}
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
                   {activity.archived && <ArchivedBadge />}
@@ -172,6 +173,31 @@ function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: 
         })}
       </ul>
     </Panel>
+  );
+}
+
+/**
+ * L8: how much help a child gets in an activity - teaching first, questions read aloud, explained and hinted - so an
+ * author scanning a lesson sees where children meet bare questions. Facts, not a score; the gaps are in the warmer ink.
+ */
+function SupportLine({ support }: { support: ActivitySupport }) {
+  const m = useMessages(editorMessages).activities;
+  const part = (text: string, missing: boolean) => (
+    <span className={missing ? "font-semibold text-clay-deep" : undefined}>{text}</span>
+  );
+  const of = support.questions;
+  return (
+    <span className="flex flex-wrap gap-x-2 text-xs text-ink-soft" title={m.supportNote}>
+      <span className="sr-only">{m.supportLabel}: </span>
+      {part(support.introduction ? m.teachesFirst : m.noIntroduction, !support.introduction)}
+      <span aria-hidden>·</span>
+      {part(m.readAloud(support.readAloud, of), support.readAloud < of)}
+      <span aria-hidden>·</span>
+      {part(m.explained(support.explained, of), support.explained < of)}
+      <span aria-hidden>·</span>
+      {/* Hints are optional by design (not every question needs one), so their count is told but not marked as a gap. */}
+      {part(m.hinted(support.hinted, of), false)}
+    </span>
   );
 }
 
