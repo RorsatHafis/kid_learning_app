@@ -6,6 +6,7 @@ import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { BUDDY_KINDS } from "@/features/buddy/kinds";
 import { buddyMessages } from "@/features/buddy/buddy.messages";
 import { EvidenceLine } from "@/features/learning/EvidenceLine";
+import { evidenceLabel } from "@/features/learning/explain";
 import { buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import type { EvidenceLevel } from "@/lib/api/types";
@@ -329,7 +330,8 @@ function ForParents() {
               <li key={s.level} className="grid grid-cols-[132px_minmax(0,1fr)] items-center gap-5 py-5">
                 <EvidenceLine level={s.level} width={120} />
                 <div>
-                  <p className="font-semibold text-ink">{s.title}</p>
+                  {/* The app's own words for the line, so a parent reads it the same way inside. */}
+                  <p className="font-semibold text-ink">{evidenceLabel(s.level)}</p>
                   <p className="text-sm text-ink-soft">{s.text}</p>
                 </div>
               </li>

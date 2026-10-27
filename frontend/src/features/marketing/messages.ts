@@ -5,7 +5,7 @@
 import { defineMessages } from "@/i18n/catalog";
 import type { EvidenceLevel } from "@/lib/api/types";
 
-type Strength = { title: string; text: string };
+type Strength = { text: string };
 
 export const marketingMessages = defineMessages(
   "features/marketing",
@@ -57,23 +57,23 @@ export const marketingMessages = defineMessages(
     },
     parents: {
       title: "Evidence has a strength. We show it.",
-      lead: "Three answers are not a verdict. Every skill shows how much evidence stands behind it, and we only describe how it is going once there is enough to say so.",
+      lead: "One right answer is not a verdict. Every skill shows how much evidence stands behind it: we say how it is going only from the third answer, and call a skill secure only once it has been shown on two different days.",
       strengths: {
-        NONE: { title: "Not started", text: "The skill is on the path; there are no answers yet." },
-        PARTIAL: { title: "Too early to tell", text: "A few answers — not enough to judge, so we don't." },
-        SUFFICIENT: { title: "Growing", text: "Enough answers to see how the skill is going." },
-        STRONG: { title: "Secure", text: "Consistently right answers across enough questions." },
+        NONE: { text: "The skill is on the path; there are no answers yet." },
+        PARTIAL: { text: "One or two answers - not enough to judge, so we don't." },
+        SUFFICIENT: { text: "Three answers or more: enough to say how the skill is going." },
+        STRONG: { text: "Many answers: more would hardly change the picture." },
       } satisfies Record<EvidenceLevel, Strength>,
       nextTitle: "The next step should make sense.",
       nextBody:
         "What comes next is decided by clear rules from your child's own answers — never by guesswork, and never to keep them on a screen longer. Each decision is explained to you in plain words.",
-      rule1When: "Several answers show a skill isn't secure yet",
-      rule1Then: "an easier step, or the skill it builds on",
-      rule2When: "The evidence is mixed or still thin",
-      rule2Then: "more practice on the same skill",
-      rule3When: "Answers are consistently strong",
+      rule1When: "Answers on a skill are mostly wrong",
+      rule1Then: "practice on the skill it builds on, or more on the skill itself",
+      rule2When: "Too few answers yet, or a mixed picture",
+      rule2Then: "the planned path continues",
+      rule3When: "Answers are consistently right",
       rule3Then: "a harder activity on the same skill",
-      rule4When: "A skill that looked secure starts slipping",
+      rule4When: "Recent answers on a skill start going wrong",
       rule4Then: "Smart Review brings it back into the path",
       dataNote: "Your family's learning data belongs to your family: you can download all of it from your account at any time.",
       seeSample: "See a sample parent view",
@@ -196,23 +196,23 @@ export const marketingMessages = defineMessages(
     },
     parents: {
       title: "ភស្តុតាងមានកម្រិតភាពរឹងមាំ។ យើងបង្ហាញវា។",
-      lead: "ចម្លើយបីមិនមែនជាការសន្និដ្ឋានទេ។ ជំនាញនីមួយៗបង្ហាញថាមានភស្តុតាងប៉ុណ្ណានៅពីក្រោយវា ហើយយើងពិពណ៌នាពីដំណើររបស់វា តែនៅពេលមានភស្តុតាងគ្រប់គ្រាន់ប៉ុណ្ណោះ។",
+      lead: "ចម្លើយត្រូវមួយ មិនមែនជាការសន្និដ្ឋានទេ។ ជំនាញនីមួយៗបង្ហាញថាមានភស្តុតាងប៉ុណ្ណានៅពីក្រោយវា៖ យើងនិយាយពីដំណើររបស់វា ចាប់ពីចម្លើយទីបីប៉ុណ្ណោះ ហើយហៅជំនាញមួយថារឹងមាំ តែនៅពេលវាត្រូវបានបង្ហាញនៅពីរថ្ងៃផ្សេងគ្នា។",
       strengths: {
-        NONE: { title: "មិនទាន់ចាប់ផ្ដើម", text: "ជំនាញនេះស្ថិតនៅលើដំណើររៀន ប៉ុន្តែមិនទាន់មានចម្លើយនៅឡើយទេ។" },
-        PARTIAL: { title: "នៅដើមពេកដើម្បីដឹង", text: "មានចម្លើយតិចតួច — មិនគ្រប់គ្រាន់ដើម្បីវាយតម្លៃ ដូច្នេះយើងមិនវាយតម្លៃទេ។" },
-        SUFFICIENT: { title: "កំពុងលូតលាស់", text: "មានចម្លើយគ្រប់គ្រាន់ ដើម្បីមើលថាជំនាញនេះកំពុងទៅយ៉ាងណា។" },
-        STRONG: { title: "រឹងមាំ", text: "ចម្លើយត្រឹមត្រូវជាប់លាប់ លើសំណួរគ្រប់គ្រាន់។" },
+        NONE: { text: "ជំនាញនេះស្ថិតនៅលើដំណើររៀន ប៉ុន្តែមិនទាន់មានចម្លើយនៅឡើយទេ។" },
+        PARTIAL: { text: "ចម្លើយមួយ ឬពីរ - មិនគ្រប់គ្រាន់ដើម្បីវាយតម្លៃ ដូច្នេះយើងមិនវាយតម្លៃទេ។" },
+        SUFFICIENT: { text: "ចម្លើយបី ឬច្រើនជាងនេះ៖ គ្រប់គ្រាន់ដើម្បីនិយាយថាជំនាញនេះកំពុងទៅយ៉ាងណា។" },
+        STRONG: { text: "ចម្លើយច្រើន៖ ចម្លើយបន្ថែមស្ទើរតែមិនផ្លាស់ប្ដូររូបភាពទេ។" },
       },
       nextTitle: "ជំហានបន្ទាប់គួរតែសមហេតុផល។",
       nextBody:
         "អ្វីដែលមកបន្ទាប់ ត្រូវបានសម្រេចដោយច្បាប់ច្បាស់លាស់ ផ្អែកលើចម្លើយផ្ទាល់របស់កូនអ្នក — មិនមែនដោយការទស្សន៍ទាយ ហើយក៏មិនមែនដើម្បីទុកពួកគេនៅមុខអេក្រង់ឱ្យយូរនោះដែរ។ ការសម្រេចចិត្តនីមួយៗត្រូវបានពន្យល់ជូនអ្នកជាពាក្យសាមញ្ញ។",
-      rule1When: "ចម្លើយជាច្រើនបង្ហាញថាជំនាញមួយមិនទាន់រឹងមាំ",
-      rule1Then: "ជំហានងាយជាង ឬជំនាញដែលវាផ្អែកលើ",
-      rule2When: "ភស្តុតាងចម្រុះ ឬនៅមានតិចនៅឡើយ",
-      rule2Then: "ហាត់បន្ថែមលើជំនាញដដែល",
-      rule3When: "ចម្លើយល្អជាប់លាប់",
+      rule1When: "ចម្លើយលើជំនាញមួយ ភាគច្រើនខុស",
+      rule1Then: "ហាត់លើជំនាញដែលវាផ្អែកលើ ឬហាត់បន្ថែមលើជំនាញនោះផ្ទាល់",
+      rule2When: "ចម្លើយនៅតិចនៅឡើយ ឬលទ្ធផលចម្រុះ",
+      rule2Then: "ដំណើររៀនដែលបានគ្រោងទុក បន្តទៅមុខ",
+      rule3When: "ចម្លើយត្រូវជាប់លាប់",
       rule3Then: "សកម្មភាពពិបាកជាង លើជំនាញដដែល",
-      rule4When: "ជំនាញដែលហាក់ដូចជារឹងមាំ ចាប់ផ្ដើមធ្លាក់ចុះ",
+      rule4When: "ចម្លើយថ្មីៗលើជំនាញមួយ ចាប់ផ្ដើមខុស",
       rule4Then: "ការរំលឹកឆ្លាតវៃនាំវាត្រឡប់មកក្នុងដំណើររៀនវិញ",
       dataNote: "ទិន្នន័យការរៀនរបស់គ្រួសារអ្នក ជាកម្មសិទ្ធិរបស់គ្រួសារអ្នក៖ អ្នកអាចទាញយកវាទាំងអស់ពីគណនីរបស់អ្នកបានគ្រប់ពេល។",
       seeSample: "មើលទំព័រឪពុកម្ដាយគំរូ",

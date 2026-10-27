@@ -123,7 +123,7 @@ export function LoopDemo() {
       </figure>
 
       <div className="flex flex-col gap-4">
-        <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <ol className="grid gap-1.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-5">
           {loop.map((text, i) => (
             <li key={text}>
               <button
@@ -134,7 +134,7 @@ export function LoopDemo() {
                   setStep(i);
                 }}
                 className={cn(
-                  "flex h-full w-full items-start gap-3 rounded-[16px] p-4 text-left text-[0.9375rem] leading-relaxed transition-colors duration-300",
+                  "flex h-full w-full items-start gap-3 rounded-[16px] p-3 text-left sm:p-4 text-[0.9375rem] leading-relaxed transition-colors duration-300",
                   i === step ? "bg-white text-ink shadow-card ring-1 ring-tonle-200" : "text-ink-soft hover:bg-white/70",
                 )}
               >

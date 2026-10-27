@@ -32,7 +32,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | F1a Landing page: every word editable without code | **done** 2026-10-27 | see log | V75 |
 | F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | **done** 2026-10-27 (teach-first, account explanation, Not now, demo picker shows replaced versions) | see log | - |
 | F1c Parent demo with representative sample data (progress, evidence, how to help) | **done** 2026-10-27: `/try/parent`, a fictional sample child labelled on the page, static, nothing fetched or stored | see log | V76 |
-| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; **F1d-2**: closing headline and footer line editable, parent demo linked from "For parents" | see log | |
+| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; **F1d-2**: closing headline and footer line editable, parent demo linked from "For parents"; **F1d-3**: "For parents" says what the product actually does | see log | |
 | F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | **F2a done** 2026-10-27: `docs/legal/DATA-INVENTORY.md` (facts from the code + 10 questions for a lawyer); **F2b drafts done**: `PRIVACY-NOTICE-DRAFT.md`, `TERMS-DRAFT.md` (unpublished, owner/lawyer placeholders); next: owner facts + qualified review - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
@@ -1403,3 +1403,25 @@ Dependencies:
     future) - so the drafts don't state one; sign-out removes the refresh token; a child's sitting lives in
     **sessionStorage** (the inventory said localStorage - corrected); "Sign out everywhere", family-revocable school
     access, child detail edits and account suspension exist.
+- 2026-10-27: **F1d-3 "For parents" corrected to what the product does (found in a full-page phone review).**
+  - **Defect: the evidence ladder used standing words.** The four line weights were titled "Not started / Too early to
+    tell / Growing / Secure", while inside the app the same lines read "No evidence yet / Partial / Sufficient / Strong
+    evidence" and a strong line can sit beside "Needs practice" - a parent taught by the landing page would misread
+    their child's page. The titles now come from the app's own `evidenceLabel` (product vocabulary, as decided in
+    F1d-2); the explanations stay editable and now match EvidenceStandard: one or two answers partial, three or more
+    sufficient, "many answers" strong (the saturation count is configurable, so no number is promised).
+  - **Defect: the lead contradicted the rules** ("Three answers are not a verdict" - the product judges from the third
+    answer). Now: one right answer is not a verdict; how it is going from the third answer; secure only once shown on
+    two different days (D-17).
+  - **Defect: the "next step" rules didn't match AdaptiveEngine.** "Evidence mixed or still thin -> more practice" is
+    not what happens: below the evidence minimum or between the thresholds the path continues as planned
+    (`Direction.CONTINUE`); reinforcement (mostly wrong answers) practises the skill's first prerequisite or, without
+    one, the skill itself. Rules rewritten to: mostly wrong -> the skill it builds on or more of the skill; too few or
+    mixed -> the planned path continues; consistently right -> harder activity; recent answers going wrong -> Smart
+    Review. Khmer updated alongside (Claude-drafted, PD-14).
+  - The How-it-works step list is more compact on phones.
+  - **For the owner (not changed - a claim only the owner can make)**: the hero says "lessons for children aged 3 to
+    12" / "Short lessons for ages 3 to 12", while the only real content is Junior maths (4-9) and no age range is
+    enforced. Editable in Operations -> Landing page if the owner wants it narrower.
+  - **Browser verified (headless Chromium, 360px, EN and KM)**: labels read as in the app, no overflow; screenshot
+    reviewed. **Tested**: Vitest 400, tsc, eslint.
