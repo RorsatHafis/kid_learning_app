@@ -33,7 +33,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | **done** 2026-10-27 (teach-first, account explanation, Not now, demo picker shows replaced versions) | see log | - |
 | F1c Parent demo with representative sample data (progress, evidence, how to help) | planned - clearly labelled sample, never a real child | | |
 | F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | planned - study the owner's samples and research, Duolingo / Khan Academy Kids, audience and storytelling; no unsupported testimonials | | |
-| F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | planned near launch - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
+| F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | **F2a done** 2026-10-27: `docs/legal/DATA-INVENTORY.md` (facts from the code + 10 questions for a lawyer); drafts of the notice and terms next - near launch - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
 deferred until the family experience is coherent):** M6 → M7 → M10 → M8 → M9 → M5 → M11 → M13 → M12. M12 waits
@@ -1322,4 +1322,20 @@ Dependencies:
   admin); served bundle `index-B22l6RN7.js` = the new build; a child answers and finishes an activity ("That's
   right!", completion screen, 0 server errors); preview DB at V75; F1a's new public endpoint answers 200 through the
   gate and 401 without it.
+- 2026-10-27: **F2a what the product really collects - the basis for any policy.** Chosen first because F1c's sample
+  data and F1d's landing copy may only claim what this confirms. Legal plumbing already exists (Y15): the privacy
+  notice and terms are external links with a version that every account agrees to at registration (asked again on
+  change), shown only once the owner configures them - no placeholder. Inventory from the code and schema: accounts
+  (email, password hash, optional verified phone, admin authenticator secret); children have no account - a display
+  name and date of birth; every answer incl. hint use, evidence, mastery, reviews, insights; sessions keep IP and user
+  agent, action tokens the requesting IP; caregiver invites (email); payments (no card/bank data); educator media;
+  audit events by id. **No cookies, no analytics or third-party scripts; fonts bundled (@fontsource)**; localStorage
+  keys listed. Third parties only once configured: email (SMTP), SMS (none, D-04), hosting. Export and deletion with a
+  7-day grace (max 90) and a sweep that erases everything but id-only audit events.
+  - **Findings for the owner**: (1) expired sessions/used tokens with IP and user agent are never cleaned up -
+    recommended rule recorded (keeps Battle 4A reuse detection); (2) the per-child consent model (`ConsentService`) is
+    built but not wired - today the parent's account-level agreement covers children; (3) nothing is agreed at all
+    until the owner publishes texts and sets `LEGAL_*`. Ten questions for qualified review are in the file (Cambodia
+    PDP draft, parental consent, ages 3-12, retention, backups, schools' role, payments, educator licence, hosting
+    transfer, governing language). **Not legal advice; no compliance claimed.**
 
