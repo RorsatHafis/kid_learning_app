@@ -27,6 +27,7 @@ const ParentArea = lazy(loadParentArea);
 const ChildArea = lazy(loadChildArea);
 const AdminArea = lazy(() => import("@/features/admin/AdminArea"));
 const TryPage = lazy(() => import("@/features/marketing/TryPage").then((m) => ({ default: m.TryPage })));
+const ParentDemoPage = lazy(() => import("@/features/marketing/ParentDemoPage").then((m) => ({ default: m.ParentDemoPage })));
 // Design tools for development only: in a production build these imports are dead code and dropped.
 const BrandSheet = import.meta.env.DEV ? lazy(() => import("@/features/brand/BrandSheet").then((m) => ({ default: m.BrandSheet }))) : null;
 const PlayGallery = import.meta.env.DEV ? lazy(() => import("@/features/brand/PlayGallery").then((m) => ({ default: m.PlayGallery }))) : null;
@@ -77,6 +78,15 @@ export default function App() {
               element={
                 <Suspense fallback={null}>
                   <TryPage />
+                </Suspense>
+              }
+            />
+            {/* F1c: what a parent sees, with a fictional sample child - static, nothing fetched or stored. */}
+            <Route
+              path="/try/parent"
+              element={
+                <Suspense fallback={null}>
+                  <ParentDemoPage />
                 </Suspense>
               }
             />

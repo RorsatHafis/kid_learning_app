@@ -32,7 +32,8 @@ import java.util.regex.Pattern;
 public class SiteCopyService {
 
     /** The catalogs of the landing page, the trust page and the public demo. */
-    static final Set<String> NAMESPACES = Set.of("features/marketing", "features/marketing/trust", "features/marketing/try");
+    static final Set<String> NAMESPACES = Set.of("features/marketing", "features/marketing/trust", "features/marketing/try",
+            "features/marketing/parentDemo");
     static final int MAX_TEXT = 600;
     private static final Pattern KEY = Pattern.compile("^[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)*$");
     private static final Pattern CONTROL = Pattern.compile("[\\p{Cntrl}&&[^\\n]]");

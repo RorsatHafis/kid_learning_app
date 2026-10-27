@@ -31,7 +31,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M13 Integration, role journeys | role journeys on phone (360 px) EN/KM for all five roles **done** 2026-10-27; readiness docs remain | | |
 | F1a Landing page: every word editable without code | **done** 2026-10-27 | see log | V75 |
 | F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | **done** 2026-10-27 (teach-first, account explanation, Not now, demo picker shows replaced versions) | see log | - |
-| F1c Parent demo with representative sample data (progress, evidence, how to help) | planned - clearly labelled sample, never a real child | | |
+| F1c Parent demo with representative sample data (progress, evidence, how to help) | **done** 2026-10-27: `/try/parent`, a fictional sample child labelled on the page, static, nothing fetched or stored | see log | V76 |
 | F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | planned - study the owner's samples and research, Duolingo / Khan Academy Kids, audience and storytelling; no unsupported testimonials | | |
 | F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | **F2a done** 2026-10-27: `docs/legal/DATA-INVENTORY.md` (facts from the code + 10 questions for a lawyer); drafts of the notice and terms next - near launch - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
 
@@ -1338,4 +1338,25 @@ Dependencies:
     until the owner publishes texts and sets `LEGAL_*`. Ten questions for qualified review are in the file (Cambodia
     PDP draft, parental consent, ages 3-12, retention, backups, schools' role, payments, educator licence, hosting
     transfer, governing language). **Not legal advice; no compliance claimed.**
-
+- 2026-10-27: **F1c what a parent sees, before registering.** New public page `/try/parent` ("Parents: see what you'd
+  see", linked under the Try page's lead): a fictional sample child, Mealea (6), inside a dashed "Sample" frame, with
+  the lead "Mealea is not a real child, and nothing here is saved". Built from the parent area's own pieces - the
+  standing marker and evidence line (L-series), the four "Helping at home" ideas (L11) - plus recent activity, "What
+  we can say" with its basis, and "What comes next, and why"; ends with "Create a family account", "Try a lesson
+  first" and "Not now". **Static and client-side**: no API call, no learner record, no mastery touched. The sample
+  numbers follow the server's own rules (EvidenceStandard): three answers before any judgement, SUFFICIENT below the
+  saturation count of 10, "Secure" only across two days (D-17: "5 of 6 right, all today" reads Progressing), hinted
+  answers left out of the evidence (D-16: "1 of 3 right on her own" plus one hinted right answer), and the insight
+  names only what the standings support. Every word is editable through F1a: catalog `features/marketing/parentDemo`
+  added to `SiteCopyService.NAMESPACES` and to the DB check (**V76**, constraint replaced, no data change) and shown in
+  the editor as "What parents see (sample)". "Not now" on the Try and parent-demo pages got a 44px touch target.
+  - **Runtime verified (dev stack, 8092 + Vite)**: V76 applied; `/try/parent` anonymous at 360px - all sections, no
+    horizontal overflow, CTA links to /register, /try, /; the Try page shows the link. An administrator's English
+    override of the title (admin API) appeared on the page; Khmer visitors still saw the Khmer original; a namespace
+    outside the public pages is refused (400); reset (204) emptied the public list; SITE_COPY_CHANGED and
+    SITE_COPY_RESET audited. **Tested**: PublicDemoAndStatements 4, ServerTextCoverage 3; Vitest 400; tsc; eslint.
+  - **Not verified**: the editor panel's new group in a browser (type-checked only); a screenshot (the pane was
+    hidden - checked through the page text and layout measurements). Khmer copy is Claude-drafted (PD-14 review).
+  - **Tests still needed**: the parent demo page (renders the sample label and no request), the V76 namespace in the
+    site copy service tests listed under F1a.
+  - **Next**: F1d landing redesign, then F2b drafts.

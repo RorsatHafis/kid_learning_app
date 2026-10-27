@@ -9,6 +9,7 @@ import { errorText } from "../studio/studioLogic";
 import { marketingMessages } from "@/features/marketing/messages";
 import { trustMessages } from "@/features/marketing/trust.messages";
 import { tryMessages } from "@/features/marketing/try.messages";
+import { parentDemoMessages } from "@/features/marketing/parentDemo.messages";
 import { siteCopyMessages } from "./siteCopy.messages";
 
 /** The public pages' catalogs, as the server accepts them (SiteCopyService.NAMESPACES). */
@@ -16,6 +17,7 @@ const CATALOGS = [
   { group: "landing", catalog: marketingMessages },
   { group: "trust", catalog: trustMessages },
   { group: "tryLesson", catalog: tryMessages },
+  { group: "parentDemo", catalog: parentDemoMessages },
 ] as const;
 
 interface Entry {

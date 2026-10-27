@@ -105,6 +105,10 @@ function Choose({
         <p className="text-sm font-bold uppercase tracking-[0.14em] text-palm-deep">{t.eyebrow}</p>
         <h1 className="font-display text-[clamp(2.1rem,1.6rem+2vw,3.2rem)] font-bold leading-[1.05] text-tonle-950">{t.title}</h1>
         <p className="max-w-2xl text-lg leading-relaxed text-ink-soft">{t.lead}</p>
+        {/* F1c: the other half of the product - what a parent reads afterwards, with a sample child. */}
+        <Link to="/try/parent" className="inline-flex w-fit items-center gap-1.5 font-semibold text-tonle-800 underline-offset-4 hover:underline">
+          {t.parentDemo} <ArrowRight size={16} aria-hidden />
+        </Link>
       </header>
       {gone && (
         <p role="alert" className="rounded-[14px] bg-light-soft px-4 py-3 font-semibold text-light-deep">
@@ -295,7 +299,7 @@ function Done({ phase, onAnother }: { phase: Extract<Phase, { kind: "done" }>; o
         </button>
       </div>
       {/* No pressure: "Not now" goes back to exploring the site, nothing asked. */}
-      <Link to="/" className="text-sm font-semibold text-tonle-800 underline-offset-4 hover:underline">
+      <Link to="/" className="inline-block py-3 text-sm font-semibold text-tonle-800 underline-offset-4 hover:underline">
         {t.notNow}
       </Link>
     </section>
