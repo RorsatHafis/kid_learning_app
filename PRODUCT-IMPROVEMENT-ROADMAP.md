@@ -1483,4 +1483,14 @@ Dependencies:
   the hero's new audience/availability lines render in both languages. **Tested**: Vitest 400, tsc, eslint. Khmer
   added to the review list below (PD-14): `features/auth/messages.ts` `register.parentNext`; `trust.proof.ages`,
   `hero.status`.
+- 2026-10-27: **Finding - two order-dependent backend tests (test defect, not a product regression).** CI on
+  `e7952d0` (frontend copy and docs only; backend identical to the green `ba0ea1c`) failed in
+  `DueReviewIntegrationTests.aDueReviewReachesAChildWhoHasFinishedEveryStep:57` ("a skill this curriculum doesn't
+  teach": expected 1 row, 0) and `SubscriptionIntegrationTests.aFamilyStopsAJourneyToChangeSubjectAndChoosingItAgain
+  CarriesOnWhereItStopped:129` ("two subjects to choose between": >= 2 curricula). A fresh database holds only the V29
+  seed (one subject, one curriculum), so both pass only when another test class has created more content first -
+  and Surefire's class order follows the runner's file-system order, which differs between CI machines. **Not fixed:
+  test files may not be changed without the owner's authorisation.** Proposed fix (needs that authorisation): each
+  test creates the extra skill / second published curriculum it needs in its own setup. Failed jobs re-run to
+  confirm.
 
