@@ -574,9 +574,13 @@ reuses the container name of another local project.
 > `PRODUCT-IMPROVEMENT-ROADMAP.md`, and that is where current state lives. In short: M2-M10 done (landing and public
 > demo, wellbeing limits, school onboarding and payments, child devices and caregivers, phone sign-in), the learning-
 > experience series L1-L11 done (teach-first introductions V73, hinted answers are practice D-16 V74, "Secure" needs
-> two days D-17, in-browser recording, phone layouts, Studio gap line and writing guide, parent explanations), F1a done
-> (every word of the public pages editable, V75). CI (backend, frontend, deployment files, E2E + accessibility) runs on
-> every push to `master` and is green through `cf6a6b0`; Flyway is at V75. Several sections below (e.g. "no CI", "no
+> two days D-17, in-browser recording, phone layouts, Studio gap line and writing guide, parent explanations), F1a-F1c
+> done (every word of the public pages editable V75-V76; the public lesson teaches first and ends with "Not now"; a
+> parent demo with a labelled sample child at `/try/parent`), F1d-1..5 (the landing page plays the learning loop with
+> the real components, its parent section matches the evidence rules and the adaptive engine, buddies can be chosen),
+> F2a-F2b (`docs/legal/`: data inventory from the code, draft privacy notice and terms for owner and lawyer review -
+> unpublished). CI (backend, frontend, deployment files, E2E + accessibility) runs on every push to `master` and is
+> green through `ba0ea1c`; Flyway is at V76. Several sections below (e.g. "no CI", "no
 > frontend tests") describe September and are superseded.
 
 - **Backend foundation integrity baseline: established.** Accepted and evidenced: 2A, 2B
@@ -634,9 +638,10 @@ the open product decisions PD-01 to PD-10.
    curriculum, languages, review - the shipped content is the V29 seed of 12 bare sums), M12's school-record and
    consent model (Battle 4C), D-06/D-12 (storage provider and an S3 client) for M11; Khmer review of Claude-drafted
    text (PD-14).
-2. **Product, in order**: F1b public demo journey for families (try a real activity, then "Create a parent account" or
-   "Not now"), F1c parent demo with sample data, F1d landing redesign with purposeful Learning Buddy motion.
-3. **Near launch**: F2 legal and trust (Terms, Privacy, Cookies if used, children's data and parental consent,
-   deletion, media, third parties) written from what the product does, with jurisdiction questions for qualified review.
-4. **Coworker preview** (`docs/COWORKER-PREVIEW.md`): the original link serves `6ab3005`; `preview.sh update` brings
-   it to the latest verified commit and keeps the link.
+2. **Owner, for the public pages and legal**: whether the landing page keeps "ages 3 to 12" (only Junior maths, 4-9,
+   exists); the operator facts and two commitments marked `[OWNER]` in `docs/legal/*-DRAFT.md`; qualified review of
+   the ten questions in `docs/legal/DATA-INVENTORY.md` (incl. how long to keep expired sign-in records).
+3. **Product**: further F1d slices only where the landing page still says less than the product does or more than it
+   can; M11/M12 when the decisions above land.
+4. **Coworker preview** (`docs/COWORKER-PREVIEW.md`): `preview.sh update` brings the link to the latest verified
+   commit and keeps it; the link changes only when the owner restarts the tunnel (see the roadmap's latest entry).
