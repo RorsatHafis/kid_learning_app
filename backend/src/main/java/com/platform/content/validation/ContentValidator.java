@@ -155,6 +155,11 @@ public class ContentValidator {
             warnings.add(new Issue("NO_DIFFICULTY", "No difficulty is set."));
         }
         checkHint(question.getQuestionType(), version, options, errors, warnings);
+        // L2: feedback that explains helps far more than right/wrong alone; a tip, so existing content still publishes.
+        if (version.getExplanation() == null) {
+            warnings.add(new Issue("NO_EXPLANATION",
+                    "No explanation yet: after answering, a child sees only whether they were right. A short \"why\" helps most when they weren't."));
+        }
         return new ValidationReport(errors, warnings);
     }
 

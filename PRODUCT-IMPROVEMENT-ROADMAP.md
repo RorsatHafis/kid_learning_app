@@ -1063,4 +1063,17 @@ Dependencies:
   - **Content dependency**: only 4 of 524 published questions have an explanation and no activity has an
     introduction yet; the feature is only as good as the content. Khmer introductions need native review (PD-14).
   - **Next**: Priority B (feedback) - see the next entry.
+- 2026-10-27: **L2 feedback: authors are told when a question has no explanation.** Research [Strong]: elaborated
+  feedback (ES 0.49) far outperforms right/wrong (0.05) and showing the answer (0.32) (Van der Kleij 2015). The
+  product already shows an author's explanation after every answer (Y41), but only 4 of 524 published questions have
+  one. A question's publish check now lists `NO_EXPLANATION` under "worth a look" - a tip, never a block, so existing
+  content still publishes. EN/KM (Khmer drafted, PD-14 review).
+  - **Considered, not done**: a second "Show me again" inside the wrong-answer verdict (the button already sits above
+    the question; a duplicate adds clutter); "repeated errors -> simpler example / drop a tier" needs the open owner
+    decision PD-16 and authored easier variants - not invented here.
+  - **Browser verified**: a draft Maths question shows the tip; writing an explanation and saving clears it ("Ready to
+    publish"). **Tested**: ContentStudio 9, QuestionGuidance 3, ActivityBuilder 3, QuestionMediaAndOrdering 4,
+    ServerTextCoverage 3; Studio Vitest 74; tsc. **Test still needed**: validator emits/clears `NO_EXPLANATION`.
+  - **Content gap (owner/educators)**: the platform's Maths seed needs explanations and introductions written and
+    reviewed; the code can only prompt for them.
 
