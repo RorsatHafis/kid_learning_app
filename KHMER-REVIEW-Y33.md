@@ -278,3 +278,27 @@ for staff (principals, teachers, administrators). None of them is shown to a chi
 
 Uncertain: whether កន្លែងផ្ទុក is the right word for storage in this sense, and whether "arranged with
 the Bookeyond team" (បានរៀបចំជាមួយក្រុម Bookeyond) reads naturally.
+
+## Added 2026-10-27 (F1c, F1d) - public pages
+
+Drafted by Claude, not reviewed (PD-14). All are editable without code in Operations -> Landing page ("Words on the
+public pages"), so a reviewer's corrections can also be entered there; the catalog file is the default.
+
+- `frontend/src/features/marketing/parentDemo.messages.ts` - the whole page `/try/parent` ("What parents see"): a
+  fictional sample child, **មាលា (Mealea)** - please check the name is natural and not a well-known person; the notes
+  explain "secure needs another day" and "an answer after the hint is practice" - the two rules most likely to read
+  awkwardly.
+- `frontend/src/features/marketing/messages.ts`:
+  - `how.*` new entries (`twoSoFar`, `secureNote`, `demoLabel`, `question`, `answerKept`, `play`, `pause`) and the
+    changed `sampleStats` - the "How it works" demonstration.
+  - `parents.lead`, `parents.strengths.*.text`, `parents.rule1When`...`rule4Then` (rewritten to match the adaptive
+    engine), `parents.seeSample`.
+  - `children.tryChoose` - introduces tapping a buddy. The buddy then answers with the child's own sentence
+    (`buddy.chosen`, addressing the child as ប្អូន) although the reader of the landing page is usually a parent: please
+    say whether that reads as intended ("this is what your child would hear") or needs a different line.
+  - `promises.closingTitle`, `nav.tagline` - the same words as `common.tagline`, now editable for the public pages.
+- `frontend/src/features/marketing/try.messages.ts`: `parentDemo` ("Parents: see what you'd see").
+- `frontend/src/features/admin/operations/siteCopy.messages.ts`: `groups.parentDemo`.
+
+Checked in Khmer in a browser: `/try/parent` and the "How it works", "For parents" and "A world of their own" sections
+at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe violations.
