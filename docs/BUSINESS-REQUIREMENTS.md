@@ -300,6 +300,8 @@ scheduled for review and placed on the path. Deterministic - no AI decides learn
 - Expired sign-in sessions and used tokens are not purged (retention question 4 in the data inventory).
 - Phone verification cannot run in production without a provider.
 - Tests still missing for some recent work (listed per entry in the roadmap; test files need authorisation).
+- Two backend integration tests depend on data other test classes create, so CI can fail by test order
+  (roadmap, 2026-10-27); a fix needs authorisation to change test files.
 - No physical-device or screen-reader verification has been recorded.
 - PRODUCT.md's "Capabilities" section predates several milestones; this document is the current inventory.
 
