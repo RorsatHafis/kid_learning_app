@@ -1216,4 +1216,23 @@ Dependencies:
   Craft guidance from the report's strongest findings and the platform's own evidence rules - not curriculum content
   (D-19 stays open). Khmer drafted (PD-14 review). Verified in the browser (renders above "Teach it first" on a
   draft); tsc, eslint, Vitest 394 (the 2 new cases are the catalogue parity checks). Landing page recorded as F1.
+- 2026-10-27: **CHECKPOINT - coworker preview (Cloudflare) paused by the owner; product work resumes.** State left
+  safe and running (outside the repo, `D:/bk-work/preview`, see docs/COWORKER-PREVIEW.md):
+  - **Why the link was stale**: the preview served a backend image and frontend bundle built on 2026-10-21 (nothing
+    rebuilt them), and `preview.sh` recorded the bash wrapper's PID instead of cloudflared's, so `stop` left the
+    tunnel running (pointing at a stopped or stale stack) and `status` said "not running".
+  - **Done**: rebuilt from `6ab3005` (backend from `git archive`, so the uncommitted owner edit is not shipped;
+    frontend bundle `index-C11XCiG2.js`); preview DB migrated to V74; **the original link was kept** (its hostname
+    recovered from cloudflared's metrics endpoint; the backend's allowed origin / public URL point at it); a
+    duplicate tunnel I had started was stopped. `preview.sh`: new `update` command (rebuild + swap backend, keeps
+    gate and tunnel/URL), PID fix (records cloudflared itself; `stop` kills the tree and any orphan of ours), help
+    text; backup `preview.sh.bak-2026-10-27`; rollback image `bk-rr-backend:before-6ab3005`, bundle
+    `rr/dist-before-6ab3005`. Kit checks updated (`browser-check.mjs` heading) and added (`journey-check.mjs`).
+  - **Verified through the original link**: 17/17 anonymous probes refused (401); all five roles sign in (parent ->
+    child space, Khmer and back; teacher; both principals; admin); served bundle = local build; a child answers a
+    question ("That's right!", 0 server errors).
+  - **Unfinished**: final pass after the last product commits (run `preview.sh update`, then the two checks);
+    `journey-check.mjs` should click "Finish" so it doesn't leave an activity fully answered but unfinished.
+  - **Risks**: Quick Tunnels have no uptime guarantee - if cloudflared exits, the URL is gone (a new one must be
+    sent); the gate password is unchanged; the admin preview account's language was left in Khmer by an earlier run.
 
