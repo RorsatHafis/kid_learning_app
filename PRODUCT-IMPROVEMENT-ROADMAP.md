@@ -32,7 +32,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | F1a Landing page: every word editable without code | **done** 2026-10-27 | see log | V75 |
 | F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | **done** 2026-10-27 (teach-first, account explanation, Not now, demo picker shows replaced versions) | see log | - |
 | F1c Parent demo with representative sample data (progress, evidence, how to help) | **done** 2026-10-27: `/try/parent`, a fictional sample child labelled on the page, static, nothing fetched or stored | see log | V76 |
-| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; **F1d-2**: closing headline and footer line editable, parent demo linked from "For parents"; **F1d-3**: "For parents" says what the product actually does | see log | |
+| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; **F1d-2**: closing headline and footer line editable, parent demo linked from "For parents"; **F1d-3**: "For parents" says what the product actually does; **F1d-4**: the buddies can be chosen on the page, as a child does | see log | |
 | F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | **F2a done** 2026-10-27: `docs/legal/DATA-INVENTORY.md` (facts from the code + 10 questions for a lawyer); **F2b drafts done**: `PRIVACY-NOTICE-DRAFT.md`, `TERMS-DRAFT.md` (unpublished, owner/lawyer placeholders); next: owner facts + qualified review - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
@@ -1434,3 +1434,11 @@ Dependencies:
     360px to the ending, followed the new link, the parent demo loaded; **axe (WCAG 2.0-2.2 A/AA tags, as the E2E
     suite uses)**: no violations on / (1280 and 360), /try (360), /try/parent (360 and 1280). **Tested**: Vitest,
     tsc, eslint.
+- 2026-10-27: **F1d-4 the buddy choice, tried on the landing page.** In "A world of their own" the five buddies are now
+  buttons (`aria-pressed`): tapping one plays the child app's own moment - the buddy's cheer and its words ("Domrey
+  is your buddy now!", from the buddy catalog, so it reads exactly as inside) in a polite status line; nothing is
+  saved. One new editable line introduces it ("Tap a buddy: this is the choice a child makes in their own space.
+  Nothing here is saved."). Motion is the existing cheer, which stops under reduced motion (index.css).
+  - **Browser verified (headless Chromium)**: EN at 360px and KM at 1280px - choosing Domrey sets only its
+    `aria-pressed`, the status reads the product's sentence, no overflow, axe no violations; screenshot reviewed.
+    **Tested**: Vitest 400, tsc, eslint.

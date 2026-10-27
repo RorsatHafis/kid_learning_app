@@ -1,9 +1,9 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpenCheck, Check, Coffee, Download, Hand, Languages, ShieldCheck, Sprout } from "lucide-react";
 import { PaintedScene } from "@/features/world/PaintedWorld";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
-import { BUDDY_KINDS } from "@/features/buddy/kinds";
+import { BUDDY_KINDS, type BuddyKind } from "@/features/buddy/kinds";
 import { buddyMessages } from "@/features/buddy/buddy.messages";
 import { EvidenceLine } from "@/features/learning/EvidenceLine";
 import { evidenceLabel } from "@/features/learning/explain";
@@ -367,6 +367,7 @@ function ForParents() {
 function ForChildren() {
   const m = useMessages(marketingMessages).children;
   const b = useMessages(buddyMessages);
+  const [chosen, setChosen] = useState<BuddyKind | null>(null);
   return (
     <section id="for-children" className="relative scroll-mt-16 overflow-hidden bg-[#E7F1EC]">
       <div className="relative mx-auto max-w-[1240px] px-4 pb-0 pt-20 sm:px-8 sm:pt-28">
@@ -380,16 +381,31 @@ function ForChildren() {
             ))}
           </ul>
         </div>
-        {/* The buddy family, standing on the field: the child chooses one. */}
-        <ul className="relative mt-16 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
-          {BUDDY_KINDS.map((kind, i) => (
-            <li key={kind} className="flex flex-col items-center text-center">
-              <LearningBuddy kind={kind} mood={i === 0 ? "happy" : "idle"} size={150} />
-              <p className="mt-1 font-display text-xl font-bold text-tonle-950">{b.names[kind]}</p>
-              <p className="max-w-[14rem] text-sm leading-snug text-ink-soft">{b.characters[kind]}</p>
+        {/* F1d: the buddy family, standing on the field - tap one and it answers as it does when a child chooses it
+            in their own space (the same cheer and words). Nothing is saved. */}
+        <p className="mt-14 text-[0.9375rem] font-medium text-tonle-900">{m.tryChoose}</p>
+        <ul className="relative mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
+          {BUDDY_KINDS.map((kind) => (
+            <li key={kind}>
+              <button
+                type="button"
+                aria-pressed={chosen === kind}
+                onClick={() => setChosen(kind)}
+                className={cn(
+                  "flex w-full flex-col items-center rounded-[24px] px-2 pb-4 pt-2 text-center transition-colors duration-300",
+                  chosen === kind ? "bg-white/80 ring-2 ring-palm" : "hover:bg-white/50",
+                )}
+              >
+                <LearningBuddy kind={kind} mood={chosen === kind ? "cheer" : "idle"} size={150} />
+                <span className="mt-1 font-display text-xl font-bold text-tonle-950">{b.names[kind]}</span>
+                <span className="max-w-[14rem] text-sm leading-snug text-ink-soft">{b.characters[kind]}</span>
+              </button>
             </li>
           ))}
         </ul>
+        <p role="status" className="mt-4 min-h-[1.75rem] text-center font-display text-xl font-bold text-palm-deep">
+          {chosen && b.chosen(b.names[chosen])}
+        </p>
       </div>
       <div aria-hidden className="mt-6 h-40 overflow-hidden sm:h-56">
         <div className="relative h-full w-full">

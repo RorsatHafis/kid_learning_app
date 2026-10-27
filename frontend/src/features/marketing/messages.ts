@@ -85,6 +85,7 @@ export const marketingMessages = defineMessages(
       point2: "Their buddy is a character we wrote — not a chatbot.",
       point3: "No points to chase, no streaks to lose, no leaderboards.",
       point4: "No ads, no chat, no strangers. Grown-ups hold a button to leave.",
+      tryChoose: "Tap a buddy: this is the choice a child makes in their own space. Nothing here is saved.",
     },
     subjects: {
       title: "Starting with early maths.",
@@ -224,6 +225,7 @@ export const marketingMessages = defineMessages(
       point2: "មិត្តរបស់ពួកគេគឺជាតួអង្គដែលយើងបានសរសេរ — មិនមែនជាកម្មវិធីជជែកទេ។",
       point3: "គ្មានពិន្ទុត្រូវដេញតាម គ្មានការរាប់ថ្ងៃជាប់ៗដែលអាចបាត់បង់ គ្មានតារាងចំណាត់ថ្នាក់ទេ។",
       point4: "គ្មានការផ្សាយពាណិជ្ជកម្ម គ្មានការជជែក គ្មានមនុស្សចម្លែក។ មនុស្សពេញវ័យចុចសង្កត់ប៊ូតុងដើម្បីចាកចេញ។",
+      tryChoose: "ចុចលើមិត្តម្នាក់៖ នេះជាការជ្រើសរើសដែលកុមារធ្វើនៅក្នុងកន្លែងរបស់ខ្លួន។ គ្មានអ្វីនៅទីនេះត្រូវបានរក្សាទុកទេ។",
     },
     subjects: {
       title: "ចាប់ផ្ដើមជាមួយគណិតវិទ្យាដំបូង។",
