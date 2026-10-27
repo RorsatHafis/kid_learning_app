@@ -1442,3 +1442,9 @@ Dependencies:
   - **Browser verified (headless Chromium)**: EN at 360px and KM at 1280px - choosing Domrey sets only its
     `aria-pressed`, the status reads the product's sentence, no overflow, axe no violations; screenshot reviewed.
     **Tested**: Vitest 400, tsc, eslint.
+- 2026-10-27: **F1d-5 the demonstration names its step on phones.** Below 640px the five step captions sit under both
+  panels, so the step being played was out of sight; the current step now stays under the site header while the
+  panels scroll (`aria-hidden` - the step list remains the accessible version). **Browser verified (headless Chromium,
+  360x740)**: steps 1->5, pause, manual step, no errors, no overflow; screenshot shows step 5's sentence pinned above
+  the child panel. Khmer drafted this session listed for native review in `KHMER-REVIEW-Y33.md` (PD-14); the Khmer
+  parent demo re-checked at 360px (no overflow, axe clean).

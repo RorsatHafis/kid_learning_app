@@ -51,6 +51,12 @@ export function LoopDemo() {
 
   return (
     <div ref={root} className="mt-14 flex flex-col gap-8">
+      {/* On a phone the step list is below both panels: the current step stays named under the header while the
+          panels scroll by (the list is the accessible version, so this copy is hidden from screen readers). */}
+      <p aria-hidden className="sticky top-16 z-10 -mx-4 -mb-3 flex items-start gap-3 bg-paper/95 px-4 py-2.5 text-[0.9375rem] font-semibold leading-relaxed text-tonle-900 shadow-[0_1px_0_rgba(15,40,50,0.08)] backdrop-blur sm:hidden">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-tonle-800 text-sm font-bold text-white">{step + 1}</span>
+        <span key={step} className="motion-safe:animate-rise-in">{loop[step]}</span>
+      </p>
       <figure aria-label={m.demoLabel} className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-8">
         {/* The child's side: one question, the buddy, gentle feedback. */}
         <div className="flex flex-col gap-3">
