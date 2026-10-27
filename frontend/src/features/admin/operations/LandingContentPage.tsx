@@ -325,6 +325,9 @@ function DemoPanel() {
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold text-ink">{c.title}</span>
                       <span className="text-xs text-ink-soft">{t.version(c.versionNumber)}</span>
+                      {c.chosen && c.shown === false && (
+                        <span className="block text-xs font-semibold text-brick-deep">{t.notShown}</span>
+                      )}
                     </span>
                     {position >= 0 && <span className="font-display text-lg font-bold text-light-deep">{position + 1}</span>}
                   </label>

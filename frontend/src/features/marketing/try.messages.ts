@@ -29,7 +29,12 @@ export const tryMessages = defineMessages(
       "With an account, every answer becomes evidence: your family sees which skills are growing, how sure we can be, and why the next lesson was chosen.",
     signUp: "Create a family account",
     another: "Try another lesson",
-    home: "Back to the home page",
+    // F1b: teach first, and what an account adds (only what the product really does)
+    letsGo: "Let's go",
+    accountTitle: "With a family account",
+    accountSaved: "Your child's answers are kept, and each next lesson is chosen from them.",
+    accountSetUp: "You set up each child: their subjects, a daily time limit if you want one, and a space of their own with their buddy.",
+    notNow: "Not now",
   },
   {
     documentTitle: "សាកល្បងមេរៀន",
@@ -57,6 +62,10 @@ export const tryMessages = defineMessages(
       "ពេលមានគណនី ចម្លើយនីមួយៗក្លាយជាភស្តុតាង៖ គ្រួសាររបស់អ្នកឃើញថាជំនាញណាកំពុងរីកចម្រើន យើងអាចប្រាកដបានប៉ុណ្ណា និងហេតុអ្វីបានជាជ្រើសរើសមេរៀនបន្ទាប់។",
     signUp: "បង្កើតគណនីគ្រួសារ",
     another: "សាកល្បងមេរៀនផ្សេងទៀត",
-    home: "ត្រឡប់ទៅទំព័រដើម",
+    letsGo: "តោះទៅ",
+    accountTitle: "ជាមួយគណនីគ្រួសារ",
+    accountSaved: "ចម្លើយរបស់កូនអ្នកត្រូវបានរក្សាទុក ហើយមេរៀនបន្ទាប់នីមួយៗត្រូវបានជ្រើសរើសពីចម្លើយទាំងនោះ។",
+    accountSetUp: "អ្នករៀបចំកូននីមួយៗ៖ មុខវិជ្ជារបស់ពួកគេ ពេលវេលាកំណត់ប្រចាំថ្ងៃប្រសិនបើអ្នកចង់ និងកន្លែងផ្ទាល់ខ្លួនជាមួយមិត្តរបស់ពួកគេ។",
+    notNow: "មិនមែនឥឡូវនេះទេ",
   },
 );

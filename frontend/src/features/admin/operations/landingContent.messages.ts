@@ -45,6 +45,7 @@ export const landingContentMessages = defineMessages(
     demoSave: "Save the lessons to try",
     demoSaved: "Saved. The landing page now offers these lessons.",
     version: (n: number) => `version ${n}`,
+    notShown: "Not shown to visitors any more: a newer version replaced it, or it was withdrawn. Choose the current version instead.",
   },
   {
     title: "ទំព័រដើម",
@@ -87,5 +88,6 @@ export const landingContentMessages = defineMessages(
     demoSave: "រក្សាទុកមេរៀនសម្រាប់សាកល្បង",
     demoSaved: "បានរក្សាទុក។ ឥឡូវនេះទំព័រដើមផ្តល់មេរៀនទាំងនេះ។",
     version: (n: number) => `កំណែ ${n}`,
+    notShown: "លែងបង្ហាញដល់អ្នកទស្សនាហើយ៖ កំណែថ្មីជាងបានជំនួសវា ឬវាត្រូវបានដកចេញ។ សូមជ្រើសរើសកំណែបច្ចុប្បន្នជំនួសវិញ។",
   },
 );

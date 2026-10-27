@@ -19,12 +19,14 @@ import { play as playCue } from "@/features/buddy/sound";
 import { Nav } from "./sections/Nav";
 import { tryMessages } from "./try.messages";
 import { usePublicCopy } from "./publicCopy";
+import { LearnCard, LookAgain } from "@/features/child/Learn";
 
 const goButton = buttonClasses("accent", "lg", "px-8 text-[1.0625rem]");
 const quietButton = buttonClasses("outline", "lg", "bg-white/90");
 
 type Phase =
   | { kind: "choosing" }
+  | { kind: "intro"; activity: ActivityVersionDetail }
   | { kind: "playing"; activity: ActivityVersionDetail; index: number; result: AnswerResult | null; right: number }
   | { kind: "done"; activity: ActivityVersionDetail; right: number };
 
@@ -54,9 +56,13 @@ export function TryPage() {
               gone={gone}
               onStart={(activity) => {
                 setGone(false);
-                setPhase({ kind: "playing", activity, index: 0, result: null, right: 0 });
+                // F1b: an activity that teaches first opens with its introduction, as it does for a child.
+                setPhase(activity.introduction ? { kind: "intro", activity } : { kind: "playing", activity, index: 0, result: null, right: 0 });
               }}
             />
+          )}
+          {phase.kind === "intro" && (
+            <Intro activity={phase.activity} onStart={() => setPhase({ kind: "playing", activity: phase.activity, index: 0, result: null, right: 0 })} />
           )}
           {phase.kind === "playing" && (
             <Play
@@ -151,6 +157,32 @@ function Choose({
   );
 }
 
+/** F1b: the activity's "Learn first" page, with the buddy - the same card a child sees before the first question. */
+function Intro({ activity, onStart }: { activity: ActivityVersionDetail; onStart: () => void }) {
+  const t = useMessages(tryMessages);
+  const start = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => start.current?.focus(), []);
+  return (
+    <section aria-labelledby="intro-title" className="mx-auto flex w-full max-w-2xl flex-col items-center gap-5 rounded-[32px] bg-[#FFFDF8] px-5 py-8 text-center shadow-lift ring-1 ring-tonle-950/5 sm:px-10">
+      <p className="flex items-center gap-2 rounded-pill bg-white/95 px-4 py-2 text-sm font-semibold text-tonle-900 shadow-tight ring-1 ring-tonle-950/10">
+        <Info size={16} aria-hidden /> {t.banner}
+      </p>
+      <LearningBuddy mood="happy" size={110} />
+      <h1 id="intro-title" className="font-display text-[clamp(1.75rem,1.4rem+1.6vw,2.4rem)] font-bold leading-tight text-tonle-950">
+        {activity.title}
+      </h1>
+      {activity.instructions && <p className="max-w-lg text-lg text-ink-soft">{activity.instructions}</p>}
+      {activity.introduction && <LearnCard introduction={activity.introduction} />}
+      {/* As in the child's app (L7): on a phone the way on stays on screen below a long introduction. */}
+      <div className="sticky bottom-0 z-10 -mx-5 flex w-[calc(100%+2.5rem)] justify-center bg-gradient-to-t from-[#FFFDF8] from-70% to-[#FFFDF8]/0 px-5 pb-4 pt-6 sm:static sm:mx-0 sm:w-auto sm:bg-none sm:p-0">
+        <button ref={start} type="button" onClick={onStart} className={goButton}>
+          {t.letsGo} <ArrowRight size={18} aria-hidden />
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function Play({
   phase,
   onAnswered,
@@ -201,6 +233,11 @@ function Play({
         <Info size={16} aria-hidden /> {t.banner}
       </p>
       <ProgressBuds total={activity.items.length} done={index + (result ? 1 : 0)} current={result ? null : index} label={t.questionOf(index + 1, activity.items.length)} />
+      {activity.introduction && (
+        <div className="flex justify-center">
+          <LookAgain introduction={activity.introduction} />
+        </div>
+      )}
       <section
         aria-labelledby="question-prompt"
         className={cn(
@@ -241,6 +278,14 @@ function Done({ phase, onAnother }: { phase: Extract<Phase, { kind: "done" }>; o
       </h1>
       <p className="text-lg font-semibold text-tonle-900">{t.doneScore(phase.right, phase.activity.items.length)}</p>
       <p className="max-w-lg text-[1.0625rem] leading-relaxed text-ink-soft">{t.doneLead}</p>
+      {/* F1b: what creating an account actually enables - nothing promised that the product doesn't do. */}
+      <div className="w-full max-w-lg rounded-[20px] bg-white p-5 text-left ring-1 ring-line">
+        <h2 className="font-display text-lg font-bold text-tonle-950">{t.accountTitle}</h2>
+        <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-5 text-[0.9375rem] leading-relaxed text-ink">
+          <li>{t.accountSaved}</li>
+          <li>{t.accountSetUp}</li>
+        </ul>
+      </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Link to="/register" className={goButton}>
           {t.signUp} <ArrowRight size={18} aria-hidden />
@@ -249,8 +294,9 @@ function Done({ phase, onAnother }: { phase: Extract<Phase, { kind: "done" }>; o
           {t.another}
         </button>
       </div>
+      {/* No pressure: "Not now" goes back to exploring the site, nothing asked. */}
       <Link to="/" className="text-sm font-semibold text-tonle-800 underline-offset-4 hover:underline">
-        {t.home}
+        {t.notNow}
       </Link>
     </section>
   );

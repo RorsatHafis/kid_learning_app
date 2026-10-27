@@ -30,7 +30,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | L2-L11 Learning experience follow-ups (explanation tip, D-16 hints, recorder, D-17 two days, phone layouts, Studio gaps/guide, parent fixes and help) | **done** | see log | V74 |
 | M13 Integration, role journeys | role journeys on phone (360 px) EN/KM for all five roles **done** 2026-10-27; readiness docs remain | | |
 | F1a Landing page: every word editable without code | **done** 2026-10-27 | see log | V75 |
-| F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | planned - builds on the existing Try page and V63 demo activities; demo answers stay out of learner records and mastery; no personal data before registration | | |
+| F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | **done** 2026-10-27 (teach-first, account explanation, Not now, demo picker shows replaced versions) | see log | - |
 | F1c Parent demo with representative sample data (progress, evidence, how to help) | planned - clearly labelled sample, never a real child | | |
 | F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | planned - study the owner's samples and research, Duolingo / Khan Academy Kids, audience and storytelling; no unsupported testimonials | | |
 | F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | planned near launch - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
@@ -1287,4 +1287,23 @@ Dependencies:
   server-checked, saved nowhere, ending with "Create a family account". Gaps to build: the activity's "Learn first"
   introduction and the Learning Buddy at the start, a fuller completion moment, an explicit "Not now", and a short
   "what an account gives you".
+- 2026-10-27: **F1b the public demo teaches first and ends without pressure.** On the Try page (M2: real lessons
+  played as a child plays them, server-checked, saved nowhere): an activity with an introduction opens with it - the
+  buddy, the "Let's learn" card (picture, text, Listen) and "Let's go" (pinned on phones, as in L7) - and "Show me
+  again" stays available during the questions. The ending keeps "That's how a lesson goes" and adds "With a family
+  account": the child's answers are kept and each next lesson is chosen from them; you set up each child (subjects, a
+  daily time limit if wanted, their own space and buddy) - only what the product does, no price or trial promised; then
+  "Create a family account", "Try another lesson", and "Not now" (back to exploring, nothing asked). All new words are
+  editable through F1a.
+  - **Defect fixed (found while testing)**: publishing a newer version retires the one chosen for the demo, which then
+    silently left the public page while the admin picker still showed it chosen (the dev demo showed 1 lesson of 2).
+    Candidates now carry `shown`; a chosen but no-longer-shown version reads "Not shown to visitors any more: a newer
+    version replaced it, or it was withdrawn. Choose the current version instead."
+  - **Browser verified** (anonymous visitor, 360x640): teach-first page (card, Listen, focus on Let's go, Let's go at
+    572-624 of 640, no overflow), Show me again, both questions answered, completion with the account points, Create a
+    family account and Not now; learner records unchanged (answers 1442, attempts 688, evidence 1440 before and after).
+    Admin picker: the note on a replaced version (recreated in the dev DB for the check), removed through the picker.
+    **Tested**: PublicDemoAndStatements 4, ServerTextCoverage 3, Vitest 398, tsc, eslint. **Tests still needed**:
+    try page intro phase and ending; candidate `shown`.
+  - **Next**: F1c (parent demo with sample data) or, in roadmap order, whatever the owner unblocks among M11/M12.
 

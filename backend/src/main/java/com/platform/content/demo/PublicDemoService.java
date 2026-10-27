@@ -70,7 +70,11 @@ public class PublicDemoService {
     public record DemoAnswer(boolean correct, AnswerFeedbackService.CorrectAnswer correctAnswer, String explanation) {
     }
 
-    public record Candidate(UUID activityVersionId, String title, int versionNumber, boolean chosen) {
+    /**
+     * {@code shown}: visitors are offered it now. A chosen version stops being shown when a newer version of its
+     * activity is published (or it is withdrawn) - it stays listed so the administrator sees that and can swap it.
+     */
+    public record Candidate(UUID activityVersionId, String title, int versionNumber, boolean chosen, boolean shown) {
     }
 
     /** The demo activities as a visitor plays them, in order; any that stopped being eligible are left out. */
@@ -117,7 +121,10 @@ public class PublicDemoService {
                 SELECT av.id, a.title, av.version_number
                 FROM activity_versions av JOIN activities a ON a.id = av.activity_id
                 WHERE av.id IN (:chosen)
-                """, Map.of("chosen", chosen), (rs, i) -> new Candidate(rs.getObject(1, UUID.class), rs.getString(2), rs.getInt(3), true))
+                """, Map.of("chosen", chosen), (rs, i) -> {
+                    UUID id = rs.getObject(1, UUID.class);
+                    return new Candidate(id, rs.getString(2), rs.getInt(3), true, eligible(id));
+                })
                 .stream().sorted(java.util.Comparator.comparing(c -> chosen.indexOf(c.activityVersionId()))).toList();
         List<Candidate> matches = jdbc.query("""
                 SELECT id, title, version_number FROM (
@@ -135,7 +142,7 @@ public class PublicDemoService {
                         .addValue("limit", CANDIDATES_SHOWN + chosen.size()),
                 (rs, i) -> {
                     UUID id = rs.getObject(1, UUID.class);
-                    return new Candidate(id, rs.getString(2), rs.getInt(3), chosen.contains(id));
+                    return new Candidate(id, rs.getString(2), rs.getInt(3), chosen.contains(id), true);
                 });
         java.util.stream.Stream<Candidate> others = matches.stream().filter(c -> !c.chosen())
                 .filter(c -> !withdrawn.activityVersion(c.activityVersionId())).limit(CANDIDATES_SHOWN);

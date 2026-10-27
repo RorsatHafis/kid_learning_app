@@ -50,6 +50,8 @@ export interface DemoCandidate {
   title: string;
   versionNumber: number;
   chosen: boolean;
+  /** Offered to visitors now (a chosen version replaced by a newer one isn't). */
+  shown?: boolean;
 }
 
 /** F1a: an administrator's words for one entry of the public pages' catalogs (a null language keeps the default). */
