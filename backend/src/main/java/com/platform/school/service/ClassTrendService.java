@@ -1,6 +1,7 @@
 package com.platform.school.service;
 
 import com.platform.learner.service.EvidenceStandard;
+import com.platform.learner.service.LearningDays;
 import com.platform.learner.service.EvidenceStandard.SkillStanding;
 import com.platform.learning.service.ProgressChangeService;
 import com.platform.learning.service.SkillProgressService.CurriculumProgress;
@@ -63,14 +64,16 @@ public class ClassTrendService {
     private final SchoolAccessGuard guard;
     private final SchoolLearningService learning;
     private final EvidenceStandard evidenceStandard;
+    private final LearningDays learningDays;
     private final NamedParameterJdbcTemplate jdbc;
 
     public ClassTrendService(SchoolAccessGuard guard, SchoolLearningService learning, EvidenceStandard evidenceStandard,
-                             NamedParameterJdbcTemplate jdbc) {
+                             NamedParameterJdbcTemplate jdbc, LearningDays learningDays) {
         this.guard = guard;
         this.learning = learning;
         this.evidenceStandard = evidenceStandard;
         this.jdbc = jdbc;
+        this.learningDays = learningDays;
     }
 
     private record Row(UUID childId, UUID skillId, Instant at, BigDecimal mastery, boolean evidence) {
@@ -80,6 +83,7 @@ public class ClassTrendService {
     private static final class Running {
         int evidence;
         BigDecimal mastery;
+        final Set<java.time.LocalDate> days = new HashSet<>();
     }
 
     @Transactional(readOnly = true)
@@ -118,6 +122,7 @@ public class ClassTrendService {
 
         // Replay the history once, oldest first, taking each point as it is passed.
         Map<UUID, Map<UUID, Running>> state = new HashMap<>();
+        Map<UUID, java.time.ZoneId> zones = learningDays.zonesOf(joined.keySet());
         List<Map<SkillStanding, Integer>> standings = new ArrayList<>();
         int[] answers = new int[weeks];
         List<Set<UUID>> answering = new ArrayList<>();
@@ -140,6 +145,7 @@ public class ClassTrendService {
             Running running = state.computeIfAbsent(row.childId(), id -> new HashMap<>()).computeIfAbsent(row.skillId(), id -> new Running());
             if (row.evidence()) {
                 running.evidence++;
+                running.days.add(LearningDays.dayOf(row.at(), zones.get(row.childId())));
                 Instant since = joined.get(row.childId());
                 if (next > 0 && !row.at().isBefore(since)) {
                     answers[next - 1]++;
@@ -235,7 +241,7 @@ public class ClassTrendService {
 
     private SkillStanding standingOf(Running running) {
         return running == null || running.evidence == 0 ? SkillStanding.NOT_STARTED
-                : evidenceStandard.standingFor(running.evidence, running.mastery);
+                : evidenceStandard.standingFor(running.evidence, running.mastery, running.days.size());
     }
 
     private static Instant later(Instant a, Instant b) {

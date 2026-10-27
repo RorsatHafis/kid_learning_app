@@ -62,6 +62,8 @@ class ObjectiveInsightTruthfulnessTests {
     private static final List<UUID> SKILLS = List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
 
     @Mock private LearnerSkillStateRepository skillStateRepository;
+    // D-17's "more than one day" rule is covered by the integration tests; here every skill's evidence spans two days.
+    @Mock private com.platform.learner.service.LearningDays learningDays;
     @Mock private LearnerSkillHistoryRepository skillHistoryRepository;
     @Mock private LearnerObjectiveStateRepository objectiveStateRepository;
     @Mock private LearningObjectiveSkillRepository learningObjectiveSkillRepository;
@@ -108,8 +110,10 @@ class ObjectiveInsightTruthfulnessTests {
 
         masteryEngine = new MasteryEngine(skillStateRepository, skillHistoryRepository, objectiveStateRepository,
                 learningObjectiveSkillRepository, new MasteryProperties(new BigDecimal("0.2"), 10, new BigDecimal("0.8")));
+        when(learningDays.evidenceDays(CHILD)).thenAnswer(i -> SKILLS.stream()
+                .collect(java.util.stream.Collectors.toMap(skill -> skill, skill -> 2)));
         insights = new ParentInsightService(objectiveStateRepository, learningObjectiveService, smartReviewService,
-                skillService, parentInsightRepository, masteryEngine);
+                skillService, parentInsightRepository, masteryEngine, learningDays);
     }
 
     @Test

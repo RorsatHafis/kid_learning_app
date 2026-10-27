@@ -430,7 +430,8 @@ Dependencies:
 | D-14 | PUBLIC content for every teacher (decided 2026-10-23) | **Deferred** until it is decided who reviews teachers' content before the whole platform sees it |
 | D-15 | Phone-only accounts; resetting a password by text (decided 2026-10-25) | **Email stays required** on every account; a code texted to the verified phone can also reset a forgotten password |
 | D-16 | Does a right answer given after opening the hint count as evidence the child "showed it on their own"? (decided 2026-10-27) | **Record it; count as practice.** Each answer records whether the hint was opened (V74); a hinted answer, right or wrong, is practice: scored and shown, but it moves no mastery and does not count as a remembered review. Answers from before V74 stay "not recorded" |
-| D-17 | Can a skill read "Secure" after one sitting? (found 2026-10-27) | **Open.** Today "Secure" = at least 3 scored answers and mastery at the objective threshold - three easy right answers in one sitting are enough (seen: Dara, "Recognize addition", day one). The research report's strongest learning finding is that immediate correctness is a weak signal and retention needs a delayed check. Options: (a) keep; (b) **recommended**: "Secure" also needs evidence on two different days - until then the parent sees "Progressing" with "we'll check again another day" (no schema change: the skill history has dates; adaptive choices keep using mastery as now); (c) the report's full ladder (Shown -> Retained -> Secure, transfer items, versioned rules) - a new mastery model, separate project. Changes what every parent reads, so it needs the owner |
+| D-17 | Can a skill read "Secure" after one sitting? (decided 2026-10-27) | **Two different days.** "Secure" (skill), a secure objective and the "has mastered" insight all need the evidence to span at least two learning days (the family's day zone); before that a skill at the mastery level reads "Progressing" and the parent is told it is waiting for another day. Mastery numbers and every decision made from them are unchanged |
+| D-18 | Should something bring a skill back on another day so it can be confirmed? (proposed 2026-10-27) | **Open, recommended.** After D-17 a skill can wait for "another day" with nothing on the path practising it (Smart Review only reacts to low mastery). Proposal: a light "check it again" review item for a skill at the mastery level whose evidence is from one day, due the next learning day, shown to parents as such. Changes what children are given - owner's call |
 
 ---
 
@@ -1140,4 +1141,24 @@ Dependencies:
     CrossFamilyAccessSweep; Vitest parent 70 + Studio 74; tsc.
   - **Found, recorded as D-17**: "Secure" after one sitting (see decisions).
   - **Tests still needed**: skill story hint counts; ItemDetail current version for a retired item; builder switch.
+- 2026-10-27: **L6 (D-17) "Secure" needs two different days.** Owner chose "two different days" and approved the
+  minimal updates to the tests that encoded the old rule. `LearningDays` (new): a child's learning-day zone (the
+  family's, V70, else `platform.learning.day-zone`) and the number of distinct days a skill's evidence came from (one
+  query per distinct zone; fixed offsets handled explicitly because PostgreSQL reads "+07:00" with the POSIX sign).
+  `EvidenceStandard.standingFor` now takes the day count: at the mastery level with evidence from one day -> PROGRESSING.
+  Applied everywhere a standing is told: the parent's skills and skill page (`secureAfterAnotherDay` + "all strong so
+  far, but all from one day..."), the skill history replay, "what changed" (then and now), the class trend replay, the
+  standing history used for school views; an objective is secure only when all its skills are; the "has mastered"
+  parent insight needs every skill on two days (else the existing "good progress" sentence).
+  - **Tests changed (authorized)**: `ProgressChangeIntegrationTests` and `SchoolAccessIntegrationTests` - the
+    "secure" evidence now spans two days (data and comment only, same assertions); `ObjectiveInsightTruthfulnessTests`
+    - the new constructor argument, a `LearningDays` mock reporting two days (that test is about evidence strength).
+    The golden journey already accepted STRENGTH or PROGRESS - unchanged.
+  - **Tested**: 40 suites incl. ProgressChange 2, SchoolAccess 11, ObjectiveInsightTruthfulness 14,
+    ParentInsightTruthfulness 5, GoldenLearningJourney, LearningJourneyApi 8, SkillStory, ClassTrend/School*,
+    ColdStart, DueReview, AdaptiveEngine, CrossFamilyAccessSweep; Vitest parent 70; tsc. **Browser verified**: Dara's
+    "Recognize addition" (all answers today) now reads Progressing with the another-day sentence; history agrees.
+  - **Tests still needed**: one-day vs two-day standing; zone boundary (an answer at 23:30 and 00:30 local); fixed
+    offset zone; objective and "mastered" gated.
+  - **Gap, proposed as D-18**: nothing brings the skill back on another day by itself.
 

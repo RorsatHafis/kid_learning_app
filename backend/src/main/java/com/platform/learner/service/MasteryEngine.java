@@ -144,6 +144,13 @@ public class MasteryEngine {
         return objectiveEvidence(childId, learningObjectiveId, 1).minEvidenceCount();
     }
 
+    /** The skills an objective is made of (its mappings). */
+    @Transactional(readOnly = true)
+    public List<UUID> skillIdsOf(UUID learningObjectiveId) {
+        return learningObjectiveSkillRepository.findByLearningObjectiveId(learningObjectiveId).stream()
+                .map(LearningObjectiveSkill::getSkillId).toList();
+    }
+
     private void recalculateObjectivesForSkill(UUID childId, UUID skillId) {
         List<LearningObjectiveSkill> mappings = learningObjectiveSkillRepository.findBySkillId(skillId);
         for (LearningObjectiveSkill mapping : mappings) {

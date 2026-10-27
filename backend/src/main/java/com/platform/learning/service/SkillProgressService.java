@@ -14,6 +14,7 @@ import com.platform.learner.entity.LearnerSkillState;
 import com.platform.learner.repository.LearnerObjectiveStateRepository;
 import com.platform.learner.repository.LearnerSkillStateRepository;
 import com.platform.learner.service.EvidenceStandard;
+import com.platform.learner.service.LearningDays;
 import com.platform.learner.service.EvidenceStandard.EvidenceLevel;
 import com.platform.learner.service.EvidenceStandard.SkillStanding;
 import com.platform.learning.entity.Enrollment;
@@ -64,6 +65,7 @@ public class SkillProgressService {
     private final ReviewScheduleRepository reviewScheduleRepository;
     private final LearningJourneyService learningJourneyService;
     private final EvidenceStandard evidenceStandard;
+    private final LearningDays learningDays;
 
     public SkillProgressService(EnrollmentRepository enrollmentRepository, CurriculumService curriculumService,
                                 LearningObjectiveService learningObjectiveService,
@@ -72,7 +74,8 @@ public class SkillProgressService {
                                 LearnerObjectiveStateRepository objectiveStateRepository,
                                 ReviewItemRepository reviewItemRepository,
                                 ReviewScheduleRepository reviewScheduleRepository,
-                                LearningJourneyService learningJourneyService, EvidenceStandard evidenceStandard) {
+                                LearningJourneyService learningJourneyService, EvidenceStandard evidenceStandard,
+                                LearningDays learningDays) {
         this.enrollmentRepository = enrollmentRepository;
         this.curriculumService = curriculumService;
         this.learningObjectiveService = learningObjectiveService;
@@ -84,6 +87,7 @@ public class SkillProgressService {
         this.reviewScheduleRepository = reviewScheduleRepository;
         this.learningJourneyService = learningJourneyService;
         this.evidenceStandard = evidenceStandard;
+        this.learningDays = learningDays;
     }
 
     public enum ObjectiveStanding {
@@ -93,9 +97,19 @@ public class SkillProgressService {
     }
 
     /** {@code reviewDueAt} is set while Smart Review has the skill flagged. */
+    /**
+     * {@code secureAfterAnotherDay} (D-17): the answers are at the "Secure" level but all from one learning day, so the
+     * skill reads progressing until another day confirms it.
+     */
     public record SkillProgress(UUID skillId, String name, String description, EvidenceLevel evidenceLevel,
                                 SkillStanding standing, int scoredAnswers, int correctAnswers,
-                                Instant lastPracticedAt, boolean inReview, Instant reviewDueAt) {
+                                Instant lastPracticedAt, boolean inReview, Instant reviewDueAt, boolean secureAfterAnotherDay) {
+
+        public SkillProgress(UUID skillId, String name, String description, EvidenceLevel evidenceLevel, SkillStanding standing,
+                             int scoredAnswers, int correctAnswers, Instant lastPracticedAt, boolean inReview, Instant reviewDueAt) {
+            this(skillId, name, description, evidenceLevel, standing, scoredAnswers, correctAnswers, lastPracticedAt, inReview,
+                    reviewDueAt, false);
+        }
     }
 
     public record ObjectiveProgress(UUID objectiveId, String title, String description, ObjectiveStanding standing,
@@ -137,6 +151,7 @@ public class SkillProgressService {
             reviewScheduleRepository.findByReviewItemIdIn(reviews.stream().map(ReviewItem::getId).toList())
                     .forEach(schedule -> dueByReview.put(schedule.getReviewItemId(), schedule.getDueAt()));
         }
+        Map<UUID, Map<UUID, Integer>> evidenceDays = learningDays.evidenceDaysForAll(childIds);
         Map<UUID, List<Enrollment>> enrollments = enrollmentRepository.findByChildIdIn(childIds).stream()
                 .collect(Collectors.groupingBy(Enrollment::getChildId));
 
@@ -146,13 +161,15 @@ public class SkillProgressService {
             Map<UUID, LearnerSkillState> childSkills = skillStates.getOrDefault(childId, Map.of());
             Map<UUID, LearnerObjectiveState> childObjectives = objectiveStates.getOrDefault(childId, Map.of());
             Map<UUID, ReviewItem> childReviews = activeReviews.getOrDefault(childId, Map.of());
+            Map<UUID, Integer> childDays = evidenceDays.getOrDefault(childId, Map.of());
             result.put(childId, enrollments.getOrDefault(childId, List.of()).stream()
                     .sorted(Comparator.comparing(Enrollment::getEnrolledAt))
                     .map(enrollment -> {
                         CurriculumStructure structure = structures.computeIfAbsent(enrollment.getCurriculumVersionId(),
                                 versionId -> structure(versionId, objectives));
                         return new CurriculumProgress(enrollment.getId(), structure.curriculum(), structure.objectives().stream()
-                                .map(objective -> objectiveProgress(objective, childSkills, childObjectives, childReviews, dueByReview))
+                                .map(objective -> objectiveProgress(objective, childSkills, childObjectives, childReviews, dueByReview,
+                                        childDays))
                                 .toList());
                     })
                     .toList());
@@ -186,10 +203,12 @@ public class SkillProgressService {
 
     private ObjectiveProgress objectiveProgress(ObjectiveStructure structure, Map<UUID, LearnerSkillState> skillStates,
                                                 Map<UUID, LearnerObjectiveState> objectiveStates,
-                                                Map<UUID, ReviewItem> activeReviews, Map<UUID, Instant> dueByReview) {
+                                                Map<UUID, ReviewItem> activeReviews, Map<UUID, Instant> dueByReview,
+                                                Map<UUID, Integer> evidenceDays) {
         LearningObjective objective = structure.objective();
         List<SkillProgress> skills = structure.skills().stream()
-                .map(skill -> skillProgress(skill, skillStates.get(skill.getId()), activeReviews.get(skill.getId()), dueByReview))
+                .map(skill -> skillProgress(skill, skillStates.get(skill.getId()), activeReviews.get(skill.getId()), dueByReview,
+                        evidenceDays.getOrDefault(skill.getId(), 0)))
                 .toList();
 
         int practised = (int) skills.stream().filter(skill -> skill.evidenceLevel() != EvidenceLevel.NONE).count();
@@ -199,6 +218,8 @@ public class SkillProgressService {
         LearnerObjectiveState state = objectiveStates.get(objective.getId());
         ObjectiveStanding standing = practised == 0 ? ObjectiveStanding.NOT_STARTED
                 : state != null && state.getStatus() == LearnerObjectiveStatus.MASTERED && sufficient == skills.size()
+                        // D-17: never "secure" while one of its skills is still waiting for another day
+                        && skills.stream().allMatch(skill -> skill.standing() == SkillStanding.SECURE)
                         ? ObjectiveStanding.SECURE
                         : ObjectiveStanding.IN_PROGRESS;
 
@@ -206,13 +227,15 @@ public class SkillProgressService {
                 skills.size(), practised, sufficient, skills);
     }
 
-    private SkillProgress skillProgress(Skill skill, LearnerSkillState state, ReviewItem review, Map<UUID, Instant> dueByReview) {
+    private SkillProgress skillProgress(Skill skill, LearnerSkillState state, ReviewItem review, Map<UUID, Instant> dueByReview,
+                                        int evidenceDays) {
         int evidence = state == null ? 0 : state.getEvidenceCount();
         Instant reviewDueAt = review == null ? null : dueByReview.get(review.getId());
         return new SkillProgress(skill.getId(), skill.getName(), skill.getDescription(),
-                evidenceStandard.levelFor(evidence), evidenceStandard.standingFor(state), evidence,
+                evidenceStandard.levelFor(evidence), evidenceStandard.standingFor(state, evidenceDays), evidence,
                 state == null ? 0 : state.getCorrectCount(), state == null ? null : state.getLastEvidenceAt(),
-                review != null, reviewDueAt);
+                review != null, reviewDueAt,
+                state != null && evidenceStandard.waitingForAnotherDay(evidence, state.getMasteryProbability(), evidenceDays));
     }
 
 }

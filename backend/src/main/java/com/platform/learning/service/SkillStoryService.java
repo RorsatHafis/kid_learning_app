@@ -4,6 +4,7 @@ import com.platform.common.web.ResourceNotFoundException;
 import com.platform.learner.entity.LearnerSkillHistory;
 import com.platform.learner.repository.LearnerSkillHistoryRepository;
 import com.platform.learner.service.EvidenceStandard;
+import com.platform.learner.service.LearningDays;
 import com.platform.learner.service.EvidenceStandard.SkillStanding;
 import com.platform.learning.service.SkillProgressService.CurriculumProgress;
 import com.platform.learning.service.SkillProgressService.ObjectiveProgress;
@@ -58,13 +59,15 @@ public class SkillStoryService {
     private final LearnerSkillHistoryRepository history;
     private final EvidenceStandard evidenceStandard;
     private final NamedParameterJdbcTemplate jdbc;
+    private final LearningDays learningDays;
 
     public SkillStoryService(SkillProgressService skillProgress, LearnerSkillHistoryRepository history,
-                             EvidenceStandard evidenceStandard, NamedParameterJdbcTemplate jdbc) {
+                             EvidenceStandard evidenceStandard, NamedParameterJdbcTemplate jdbc, LearningDays learningDays) {
         this.skillProgress = skillProgress;
         this.history = history;
         this.evidenceStandard = evidenceStandard;
         this.jdbc = jdbc;
+        this.learningDays = learningDays;
     }
 
     @Transactional(readOnly = true)
@@ -116,19 +119,23 @@ public class SkillStoryService {
         java.util.Collections.reverse(rows);
         Map<UUID, int[]> evidenceAfter = new HashMap<>();
         Map<UUID, BigDecimal> masteryAfter = new HashMap<>();
+        java.time.ZoneId zone = learningDays.zoneOf(childId);
+        java.util.Set<java.time.LocalDate> days = new java.util.HashSet<>();
         int evidence = 0;
         for (LearnerSkillHistory row : rows) {
             if (row.getTriggeredByType() != null) {
                 evidence++;
+                days.add(LearningDays.dayOf(row.getOccurredAt(), zone));
             }
             if (row.getTriggeredById() != null) {
-                evidenceAfter.put(row.getTriggeredById(), new int[]{evidence});
+                evidenceAfter.put(row.getTriggeredById(), new int[]{evidence, days.size()});
                 masteryAfter.put(row.getTriggeredById(), row.getMasteryProbability());
             }
         }
         List<ActivityOnSkill> activities = tallies.stream().map(t -> {
             int[] after = evidenceAfter.get(t.attemptId());
-            SkillStanding standing = after == null ? null : evidenceStandard.standingFor(after[0], masteryAfter.get(t.attemptId()));
+            SkillStanding standing = after == null ? null
+                    : evidenceStandard.standingFor(after[0], masteryAfter.get(t.attemptId()), after[1]);
             return new ActivityOnSkill(t.attemptId(), t.title(), t.at(), t.answers(), t.correct(), standing, after == null ? 0 : after[0],
                     t.withHint());
         }).toList();

@@ -8,6 +8,8 @@ import com.platform.learner.entity.LearnerObjectiveState;
 import com.platform.learner.entity.LearnerObjectiveStatus;
 import com.platform.learner.repository.LearnerObjectiveStateRepository;
 import com.platform.learner.service.MasteryEngine;
+import com.platform.learner.service.LearningDays;
+import com.platform.learner.service.EvidenceStandard;
 import com.platform.learner.service.MasteryEngine.ObjectiveEvidence;
 import com.platform.parent.entity.ParentInsight;
 import com.platform.parent.entity.ParentInsightType;
@@ -89,17 +91,20 @@ public class ParentInsightService {
     private final SkillService skillService;
     private final ParentInsightRepository parentInsightRepository;
     private final MasteryEngine masteryEngine;
+    private final LearningDays learningDays;
 
     public ParentInsightService(LearnerObjectiveStateRepository learnerObjectiveStateRepository,
                                  LearningObjectiveService learningObjectiveService,
                                  SmartReviewService smartReviewService, SkillService skillService,
-                                 ParentInsightRepository parentInsightRepository, MasteryEngine masteryEngine) {
+                                 ParentInsightRepository parentInsightRepository, MasteryEngine masteryEngine,
+                                 LearningDays learningDays) {
         this.learnerObjectiveStateRepository = learnerObjectiveStateRepository;
         this.learningObjectiveService = learningObjectiveService;
         this.smartReviewService = smartReviewService;
         this.skillService = skillService;
         this.parentInsightRepository = parentInsightRepository;
         this.masteryEngine = masteryEngine;
+        this.learningDays = learningDays;
     }
 
     /**
@@ -184,8 +189,9 @@ public class ParentInsightService {
     private List<ParentInsight> buildInsights(UUID childId) {
         List<ParentInsight> insights = new ArrayList<>();
 
+        Map<UUID, Integer> evidenceDays = learningDays.evidenceDays(childId);
         for (LearnerObjectiveState state : learnerObjectiveStateRepository.findByChildId(childId)) {
-            objectiveInsight(childId, state).ifPresent(insights::add);
+            objectiveInsight(childId, state, evidenceDays).ifPresent(insights::add);
         }
 
         for (ReviewItem reviewItem : smartReviewService.listActive(childId)) {
@@ -195,7 +201,7 @@ public class ParentInsightService {
         return insights;
     }
 
-    private Optional<ParentInsight> objectiveInsight(UUID childId, LearnerObjectiveState state) {
+    private Optional<ParentInsight> objectiveInsight(UUID childId, LearnerObjectiveState state, Map<UUID, Integer> evidenceDays) {
         if (state.getStatus() == LearnerObjectiveStatus.NOT_STARTED) {
             return Optional.empty();
         }
@@ -205,9 +211,12 @@ public class ParentInsightService {
                 masteryEngine.objectiveEvidence(childId, objective.getId(), MIN_EVIDENCE_FOR_PERFORMANCE_CLAIM);
         Map<String, Object> supportingData = evidenceMap(objective.getId(), state.getMasteryProbability(), evidence);
 
-        // A mastery claim is about the whole objective, so every skill needs sufficient evidence.
+        // A mastery claim is about the whole objective, so every skill needs sufficient evidence - and (D-17) evidence
+        // from more than one learning day: one sitting shows the child can do it now, not that it has stayed.
         if (state.getStatus() == LearnerObjectiveStatus.MASTERED
-                && evidence.minEvidenceCount() >= MIN_EVIDENCE_FOR_MASTERY_CLAIM) {
+                && evidence.minEvidenceCount() >= MIN_EVIDENCE_FOR_MASTERY_CLAIM
+                && masteryEngine.skillIdsOf(objective.getId()).stream()
+                        .allMatch(skillId -> evidenceDays.getOrDefault(skillId, 0) >= EvidenceStandard.SECURE_DAYS)) {
             return Optional.of(ParentInsight.generate(childId, ParentInsightType.STRENGTH,
                     "Your child has mastered " + objective.getTitle() + ".", null, supportingData));
         }

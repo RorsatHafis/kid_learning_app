@@ -416,6 +416,8 @@ export interface SkillProgress {
   lastPracticedAt: string | null;
   inReview: boolean;
   reviewDueAt: string | null;
+  /** D-17: answers are at the "Secure" level but all from one day - it reads progressing until another day confirms it. */
+  secureAfterAnotherDay?: boolean;
 }
 
 export interface ObjectiveProgress {

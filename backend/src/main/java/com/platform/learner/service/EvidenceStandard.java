@@ -29,6 +29,8 @@ public class EvidenceStandard {
 
     public static final int SUFFICIENT_EVIDENCE = 3;
     public static final BigDecimal GOOD_PROGRESS = BigDecimal.valueOf(0.6);
+    /** D-17: different learning days the evidence must span before a skill reads "Secure". */
+    public static final int SECURE_DAYS = 2;
 
     /** Evidence strength, kept separate from performance: "not assessed" is never "weak". */
     public enum EvidenceLevel {
@@ -69,16 +71,25 @@ public class EvidenceStandard {
                 : EvidenceLevel.SUFFICIENT;
     }
 
-    /** {@code state} may be null: a skill the child has never been scored on. */
-    public SkillStanding standingFor(LearnerSkillState state) {
-        return state == null ? SkillStanding.NOT_STARTED : standingFor(state.getEvidenceCount(), state.getMasteryProbability());
+    /**
+     * {@code state} may be null: a skill the child has never been scored on. {@code evidenceDays}: on how many different
+     * learning days that evidence was given ({@link LearningDays#evidenceDays}).
+     */
+    public SkillStanding standingFor(LearnerSkillState state, int evidenceDays) {
+        return state == null ? SkillStanding.NOT_STARTED
+                : standingFor(state.getEvidenceCount(), state.getMasteryProbability(), evidenceDays);
     }
 
     /**
      * The same rule for evidence as it stood at any moment (StandingHistory): {@code mastery} is the
      * estimate after the last of {@code evidence} answers, and is not read when there are too few.
+     *
+     * <p>D-17 (owner decision 2026-10-27): "Secure" also needs the evidence to come from at least {@link #SECURE_DAYS}
+     * different learning days. Right answers in one sitting show the child can do it now, not that it lasts; until
+     * another day confirms it, a skill at the mastery threshold reads as progressing. The mastery estimate itself, and
+     * every decision made from it (adaptive choices, Smart Review), is unchanged.
      */
-    public SkillStanding standingFor(int evidence, BigDecimal mastery) {
+    public SkillStanding standingFor(int evidence, BigDecimal mastery, int evidenceDays) {
         EvidenceLevel level = levelFor(evidence);
         if (level == EvidenceLevel.NONE) {
             return SkillStanding.NOT_STARTED;
@@ -87,9 +98,15 @@ public class EvidenceStandard {
             return SkillStanding.TOO_EARLY_TO_TELL;
         }
         if (mastery.compareTo(masteryProperties.objectiveMasteryThreshold()) >= 0) {
-            return SkillStanding.SECURE;
+            return evidenceDays >= SECURE_DAYS ? SkillStanding.SECURE : SkillStanding.PROGRESSING;
         }
         return mastery.compareTo(GOOD_PROGRESS) >= 0 ? SkillStanding.PROGRESSING : SkillStanding.NEEDS_PRACTICE;
+    }
+
+    /** Whether a standing of "progressing" is only waiting for another day to read "secure" (D-17). */
+    public boolean waitingForAnotherDay(int evidence, BigDecimal mastery, int evidenceDays) {
+        return levelFor(evidence) != EvidenceLevel.NONE && levelFor(evidence) != EvidenceLevel.PARTIAL
+                && mastery.compareTo(masteryProperties.objectiveMasteryThreshold()) >= 0 && evidenceDays < SECURE_DAYS;
     }
 
 }

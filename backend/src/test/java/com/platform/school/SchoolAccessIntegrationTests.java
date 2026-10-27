@@ -655,13 +655,14 @@ class SchoolAccessIntegrationTests {
                 join curriculum_objectives co on co.curriculum_version_id = v.id
                 join learning_objective_skills los on los.learning_objective_id = co.learning_objective_id
                 where v.curriculum_id = ?""", UUID.class, assigned.getId());
-        // In the class for three weeks; three answers two days ago make the skill secure.
+        // In the class for three weeks; three answers over the last few days (two days - D-17) make the skill secure.
         java.time.Instant now = java.time.Instant.now();
         jdbc.update("delete from class_enrollments where child_id = ?", child);
         jdbc.update("insert into class_enrollments (id, school_class_id, child_id, status, created_at, updated_at) values (?, ?, ?, 'ACTIVE', ?, ?)",
                 UUID.randomUUID(), taught.getId(), child, java.sql.Timestamp.from(now.minus(java.time.Duration.ofDays(21))),
                 java.sql.Timestamp.from(now.minus(java.time.Duration.ofDays(21))));
-        history(child, skill, now.minus(java.time.Duration.ofDays(2)), "0.85", "0.90", "0.95");
+        history(child, skill, now.minus(java.time.Duration.ofDays(3)), "0.85", "0.90");
+        history(child, skill, now.minus(java.time.Duration.ofDays(2)), "0.95");
 
         String path = "/api/v1/schools/" + taught.getSchoolId() + "/learning";
         HttpResponse<String> response = get(path, principal.token());

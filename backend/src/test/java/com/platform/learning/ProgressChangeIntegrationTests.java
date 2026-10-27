@@ -56,6 +56,7 @@ class ProgressChangeIntegrationTests {
         List<UUID> skills = skills(5);
         Instant now = Instant.now();
         Instant fortyDaysAgo = now.minus(Duration.ofDays(40));
+        Instant fortyOneDaysAgo = now.minus(Duration.ofDays(41));
         Instant twoDaysAgo = now.minus(Duration.ofDays(2));
 
         // Needs practice before the window (3 answers), progressing now (3 more inside it).
@@ -65,8 +66,9 @@ class ProgressChangeIntegrationTests {
         evidence(child, skills.get(1), twoDaysAgo, "0.6000");
         // Answered only before the window: nothing changed, not listed.
         evidence(child, skills.get(2), fortyDaysAgo, "0.4000", "0.5000", "0.6500");
-        // Secure before, progressing after two wrong answers inside the window.
-        evidence(child, skills.get(3), fortyDaysAgo, "0.7000", "0.8000", "0.9000");
+        // Secure before (over two days - D-17: one sitting is never secure), progressing after two wrong answers inside the window.
+        evidence(child, skills.get(3), fortyOneDaysAgo, "0.7000", "0.8000");
+        evidence(child, skills.get(3), fortyDaysAgo, "0.9000");
         evidence(child, skills.get(3), twoDaysAgo, "0.7000", "0.6200");
         // None before, three inside: a first reading.
         evidence(child, skills.get(4), twoDaysAgo, "0.3000", "0.3500", "0.4000");

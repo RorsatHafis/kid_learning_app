@@ -239,6 +239,9 @@ export const familyMessages = defineMessages(
       hintedNote: (n: number) =>
         `Not counted above: ${n} ${plural(n, "answer", "answers")} given after opening the hint. That's practice, not something shown on their own.`,
       withHint: (n: number) => `${n} with a hint`,
+      // D-17: "Secure" needs more than one sitting
+      anotherDay: (child: string) =>
+        `${child}'s answers on this skill are all strong so far, but all from one day. It reads "secure" once ${child} shows it again on another day.`,
       then: "Then: ",
     },
     skills: {
@@ -608,6 +611,8 @@ export const familyMessages = defineMessages(
       hintedNote: (n: number) =>
         `មិនបានរាប់ខាងលើ៖ ចម្លើយ ${n} ដែលឆ្លើយក្រោយពីបើកតម្រុយ។ នោះជាការហាត់រៀន មិនមែនជាអ្វីដែលបានបង្ហាញដោយខ្លួនឯងទេ។`,
       withHint: (n: number) => `${n} ដោយប្រើតម្រុយ`,
+      anotherDay: (child: string) =>
+        `ចម្លើយរបស់ ${child} លើជំនាញនេះ សុទ្ធតែល្អរហូតមកដល់ពេលនេះ ប៉ុន្តែទាំងអស់មកពីថ្ងៃតែមួយ។ វានឹងបង្ហាញថា "រឹងមាំ" នៅពេល ${child} បង្ហាញវាម្ដងទៀតនៅថ្ងៃផ្សេង។`,
       then: "ក្រោយមក៖ ",
     },
     skills: {

@@ -113,7 +113,9 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
               </div>
               <p className="max-w-2xl text-[1.0625rem] leading-relaxed text-ink">{summary(story, childName)}</p>
               {(story.hintedAnswers ?? 0) > 0 && <p className="max-w-2xl text-sm text-ink-soft">{m.hintedNote(story.hintedAnswers!)}</p>}
-              <p className="max-w-2xl text-sm text-ink-soft">{standingHelp(now.standing)}</p>
+              <p className="max-w-2xl text-sm text-ink-soft">
+                {now.secureAfterAnotherDay ? m.anotherDay(childName) : standingHelp(now.standing)}
+              </p>
               {now.inReview && (
                 <p className="flex items-center gap-2 text-sm font-semibold text-light-deep">
                   <RotateCcw size={15} aria-hidden /> {m.inReview}

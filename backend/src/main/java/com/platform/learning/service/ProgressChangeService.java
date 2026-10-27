@@ -5,6 +5,7 @@ import com.platform.knowledge.repository.SkillRepository;
 import com.platform.learner.entity.LearnerSkillState;
 import com.platform.learner.repository.LearnerSkillStateRepository;
 import com.platform.learner.service.EvidenceStandard;
+import com.platform.learner.service.LearningDays;
 import com.platform.learner.service.EvidenceStandard.SkillStanding;
 import com.platform.learner.service.StandingHistory;
 import org.springframework.stereotype.Service;
@@ -58,13 +59,15 @@ public class ProgressChangeService {
     private final SkillRepository skills;
     private final StandingHistory standingHistory;
     private final EvidenceStandard evidenceStandard;
+    private final LearningDays learningDays;
 
     public ProgressChangeService(LearnerSkillStateRepository skillStates, SkillRepository skills, StandingHistory standingHistory,
-                                 EvidenceStandard evidenceStandard) {
+                                 EvidenceStandard evidenceStandard, LearningDays learningDays) {
         this.skillStates = skillStates;
         this.skills = skills;
         this.standingHistory = standingHistory;
         this.evidenceStandard = evidenceStandard;
+        this.learningDays = learningDays;
     }
 
     @Transactional(readOnly = true)
@@ -77,13 +80,14 @@ public class ProgressChangeService {
         List<LearnerSkillState> practised = skillStates.findByChildId(childId).stream()
                 .filter(state -> state.getEvidenceCount() > then.getOrDefault(state.getSkillId(), StandingHistory.Moment.NONE).evidence())
                 .toList();
+        Map<UUID, Integer> evidenceDays = learningDays.evidenceDays(childId);
         Map<UUID, Skill> names = skills.findAllById(practised.stream().map(LearnerSkillState::getSkillId).toList()).stream()
                 .collect(Collectors.toMap(Skill::getId, Function.identity()));
 
         List<SkillChange> changes = practised.stream()
                 .map(state -> {
                     StandingHistory.Moment before = then.getOrDefault(state.getSkillId(), StandingHistory.Moment.NONE);
-                    SkillStanding now = evidenceStandard.standingFor(state);
+                    SkillStanding now = evidenceStandard.standingFor(state, evidenceDays.getOrDefault(state.getSkillId(), 0));
                     Skill skill = names.get(state.getSkillId());
                     return new SkillChange(state.getSkillId(), skill == null ? "A skill" : skill.getName(), kind(before.standing(), now),
                             before.standing(), now, state.getEvidenceCount() - before.evidence(), state.getLastEvidenceAt());

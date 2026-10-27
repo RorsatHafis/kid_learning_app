@@ -32,19 +32,23 @@ public class StandingHistory {
 
     private final LearnerSkillHistoryRepository history;
     private final EvidenceStandard evidenceStandard;
+    private final LearningDays learningDays;
 
-    public StandingHistory(LearnerSkillHistoryRepository history, EvidenceStandard evidenceStandard) {
+    public StandingHistory(LearnerSkillHistoryRepository history, EvidenceStandard evidenceStandard, LearningDays learningDays) {
         this.history = history;
         this.evidenceStandard = evidenceStandard;
+        this.learningDays = learningDays;
     }
 
     /** Each skill the child had evidence on by {@code at}; a skill not in the map had none. One query. */
     @Transactional(readOnly = true)
     public Map<UUID, Moment> at(UUID childId, Instant at) {
         Map<UUID, Moment> moments = new HashMap<>();
+        Map<UUID, Integer> days = learningDays.evidenceDaysAt(childId, at);
         for (LearnerSkillHistoryRepository.EvidenceAt row : history.evidenceAt(childId, at)) {
             int evidence = (int) row.getEvidence();
-            moments.put(row.getSkillId(), new Moment(evidence, evidenceStandard.standingFor(evidence, row.getMastery())));
+            moments.put(row.getSkillId(), new Moment(evidence,
+                    evidenceStandard.standingFor(evidence, row.getMastery(), days.getOrDefault(row.getSkillId(), 0))));
         }
         return moments;
     }
@@ -58,6 +62,8 @@ public class StandingHistory {
         }
         Map<UUID, int[]> evidence = new HashMap<>();
         Map<UUID, BigDecimal> mastery = new HashMap<>();
+        Map<UUID, java.util.Set<java.time.LocalDate>> days = new HashMap<>();
+        Map<UUID, java.time.ZoneId> zones = learningDays.zonesOf(atByChild.keySet());
         List<LearnerSkillHistory> rows = history.findBySkillIdAndChildIdInOrderByOccurredAtAsc(skillId, atByChild.keySet());
         for (LearnerSkillHistory row : rows) {
             Instant at = atByChild.get(row.getChildId());
@@ -66,12 +72,15 @@ public class StandingHistory {
             }
             if (row.getTriggeredByType() != null) {
                 evidence.computeIfAbsent(row.getChildId(), id -> new int[1])[0]++;
+                days.computeIfAbsent(row.getChildId(), id -> new java.util.HashSet<>())
+                        .add(LearningDays.dayOf(row.getOccurredAt(), zones.get(row.getChildId())));
             }
             mastery.put(row.getChildId(), row.getMasteryProbability());
         }
         atByChild.keySet().forEach(childId -> {
             int count = evidence.containsKey(childId) ? evidence.get(childId)[0] : 0;
-            moments.put(childId, count == 0 ? Moment.NONE : new Moment(count, evidenceStandard.standingFor(count, mastery.get(childId))));
+            moments.put(childId, count == 0 ? Moment.NONE : new Moment(count, evidenceStandard.standingFor(count, mastery.get(childId),
+                    days.getOrDefault(childId, java.util.Set.of()).size())));
         });
         return moments;
     }
