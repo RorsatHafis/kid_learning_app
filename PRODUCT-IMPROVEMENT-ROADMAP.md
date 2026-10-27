@@ -1315,4 +1315,11 @@ Dependencies:
   public words, V75; F1b demo teach-first and ending; demo picker note) - CI green. **To finish**: run
   `bash /d/bk-work/preview/preview.sh update`, then `browser-check.mjs` and `journey-check.mjs` against
   `$(cat tunnel.url)` from `D:/bk-work/preview` (with `PLAYWRIGHT_BROWSERS_PATH=D:/bk-work/pw-browsers`).
+- 2026-10-27: **Coworker preview updated - the original link serves `8681bf8`'s code (built from `1e90cbf`, which only
+  adds the roadmap).** The owner approved `preview.sh update` through the permission prompt; the tunnel, URL, gate and
+  password were kept. Verified through `room-convenience-balloon-rights.trycloudflare.com`: gate holds (anonymous 401,
+  re-checked by the update); all five roles sign in (parent -> child space, Khmer and back; teacher; both principals;
+  admin); served bundle `index-B22l6RN7.js` = the new build; a child answers and finishes an activity ("That's
+  right!", completion screen, 0 server errors); preview DB at V75; F1a's new public endpoint answers 200 through the
+  gate and 401 without it.
 
