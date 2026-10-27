@@ -24,7 +24,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M9 Phone registration and verification foundations | M9a done (administrator authenticator app); M9b-1 done (a verified phone on an account, V71); sign-in and password reset by verified phone done (V72); email stays required (D-15) | | |
 | M10 Child access across devices, trusted caregivers | **done** (M10a child devices, M10b caregivers) | see log | V65, V66 |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
-| M12 School management: foundation and first modules | planned | | |
+| M12 School management: foundation and first modules | planned - **needs the owner first**: linking a school's student record to a family's child (consent, Battle 4C "school <-> child authorization" is not designed) and whether school administration (attendance, exams, report cards) is in scope now - CLAUDE.md keeps children and parents first and warns against premature school-ERP | | |
 | M13 Integration, role verification, docs, staging readiness | planned | | |
 | L1 Learning experience: "Learn first" activity introductions (owner brief 2026-10-25) | **done** | see log | V73 |
 | L2-L11 Learning experience follow-ups (explanation tip, D-16 hints, recorder, D-17 two days, phone layouts, Studio gaps/guide, parent fixes and help) | **done** | see log | V74 |
@@ -1278,4 +1278,13 @@ Dependencies:
     Vitest 398, tsc, eslint. **Tests still needed**: site copy service (namespace/key/length/version/audit), overlay
     (string/template/locale fallback), the editor panel.
   - **Integrated the owner's 2026-10-27 directions** as F1b-F1d and F2 in the status table (no new plan).
+- 2026-10-27: **Sequencing after F1a, and M13 documents.** Next in the execution order is M11 (blocked: the S3
+  provider needs D-12's library approval and an abstraction with one implementation would be speculative) then M12
+  (needs the owner's school-record/consent model - recorded in the status table). M13's documents done: the canonical
+  progress record gets a dated current-state pointer and a current "Immediate next work"; `docs/COWORKER-PREVIEW.md`
+  documents `preview.sh update` (keeps the link) and the PID fix. **Next product item: F1b** - the highest-priority
+  unblocked children-and-parents work. Existing base (Try page, M2): real lessons played exactly as a child plays them,
+  server-checked, saved nowhere, ending with "Create a family account". Gaps to build: the activity's "Learn first"
+  introduction and the Learning Buddy at the start, a fuller completion moment, an explicit "Not now", and a short
+  "what an account gives you".
 

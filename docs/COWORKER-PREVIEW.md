@@ -67,12 +67,20 @@ bash /d/bk-work/preview/preview.sh status
 | Command | What it does |
 |---|---|
 | `preview.sh tunnel` | Checks that the gate refuses every anonymous probe locally, starts the tunnel, checks again through the public URL (and stops the tunnel at once if anything gets through), then prints the URL. Each start gives a new URL. |
+| `preview.sh update` | Rebuilds the app from the repository's committed HEAD (the backend from exactly the committed tree; refused if the frontend has uncommitted changes), swaps the backend container and keeps the data, the gate and its password, and - if it is running - the tunnel, so **the URL stays the same**. Checks the gate again, locally and through the URL. Use it to bring coworkers the latest build. |
 | `preview.sh rotate-gate` | Makes a new gate password and cookie and reloads the web server. Everyone must pass the gate again; the URL stays the same. Use it when someone should no longer have access. |
 | `preview.sh stop` | Ends the tunnel and stops the stack. Data is kept. |
 | `preview.sh start` | Starts the stack again after a stop (same data), without the tunnel. |
 | `preview.sh reset` | **Deletes** the preview data, makes fresh role accounts and puts the gate back. |
 
 Adding a coworker needs no new tunnel: send them the URL, the gate password and a test account privately.
+
+**Keeping the link.** A Quick Tunnel's URL lives as long as its `cloudflared` process: `preview.sh tunnel` (and a
+`stop` then `tunnel`) gives a new one. To ship a new build, use `preview.sh update`, which leaves the tunnel running.
+Before 2026-10-27 the script recorded the wrapper shell's process id instead of `cloudflared`'s, so `stop` could leave
+the tunnel open and `status` said "not running"; it now records `cloudflared` itself and `stop` also ends any
+`cloudflared` it started that was left behind. A backend image and frontend bundle from before an update are kept
+(`bk-rr-backend:previous`, and the first update's copies) for rolling back.
 
 ## Limits
 

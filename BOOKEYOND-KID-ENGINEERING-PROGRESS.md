@@ -569,6 +569,16 @@ reuses the container name of another local project.
 
 # CURRENT VERIFIED PROJECT STATE
 
+> **Update 2026-10-27.** Since the September baseline below, work has run under the post-testing improvement program;
+> its record (status table, decisions D-01..D-19, a dated log with what was verified at which level) is
+> `PRODUCT-IMPROVEMENT-ROADMAP.md`, and that is where current state lives. In short: M2-M10 done (landing and public
+> demo, wellbeing limits, school onboarding and payments, child devices and caregivers, phone sign-in), the learning-
+> experience series L1-L11 done (teach-first introductions V73, hinted answers are practice D-16 V74, "Secure" needs
+> two days D-17, in-browser recording, phone layouts, Studio gap line and writing guide, parent explanations), F1a done
+> (every word of the public pages editable, V75). CI (backend, frontend, deployment files, E2E + accessibility) runs on
+> every push to `master` and is green through `cf6a6b0`; Flyway is at V75. Several sections below (e.g. "no CI", "no
+> frontend tests") describe September and are superseded.
+
 - **Backend foundation integrity baseline: established.** Accepted and evidenced: 2A, 2B
   (inspected only), 2C, 2D, 3, 4A, 4B (partial), 4.1, 5A, 5B, 5C, 4D, N5, N6, 3R
   (L4/L5 core), **5D (server-authoritative learning loop)**, and **W1.1 (child & parent
@@ -618,9 +628,15 @@ the open product decisions PD-01 to PD-10.
 
 # IMMEDIATE NEXT WORK
 
-1. **Owner testing** with OWNER-GUIDE.md.
-2. **Owner decisions**, in order of what they unblock: PD-09 (plans), PD-14/PD-15 (Khmer UI copy and curriculum authors), PD-18 and PD-24
-   (legal text, deletion/retention), PD-20 (content review), PD-02, PD-13, PD-16, PD-23.
-3. **Production dependencies**: a repository remote (activates CI), a host, domain and TLS, a
-   transactional mail provider with SPF/DKIM/DMARC, database backups — see DEPLOYMENT.md.
-4. **Then**: paid plans on PD-09; Studio localization and media on PD-14.
+(Updated 2026-10-27 - details and verification levels in `PRODUCT-IMPROVEMENT-ROADMAP.md`.)
+
+1. **Owner decisions**: D-18 (bring a skill back on another day so it can read "secure"), D-19 (who authors the real
+   curriculum, languages, review - the shipped content is the V29 seed of 12 bare sums), M12's school-record and
+   consent model (Battle 4C), D-06/D-12 (storage provider and an S3 client) for M11; Khmer review of Claude-drafted
+   text (PD-14).
+2. **Product, in order**: F1b public demo journey for families (try a real activity, then "Create a parent account" or
+   "Not now"), F1c parent demo with sample data, F1d landing redesign with purposeful Learning Buddy motion.
+3. **Near launch**: F2 legal and trust (Terms, Privacy, Cookies if used, children's data and parental consent,
+   deletion, media, third parties) written from what the product does, with jurisdiction questions for qualified review.
+4. **Coworker preview** (`docs/COWORKER-PREVIEW.md`): the original link serves `6ab3005`; `preview.sh update` brings
+   it to the latest verified commit and keeps the link.
