@@ -1425,3 +1425,12 @@ Dependencies:
     enforced. Editable in Operations -> Landing page if the owner wants it narrower.
   - **Browser verified (headless Chromium, 360px, EN and KM)**: labels read as in the app, no overflow; screenshot
     reviewed. **Tested**: Vitest 400, tsc, eslint.
+- 2026-10-27: **F1 public journey joined up, and checked for accessibility.** The Try page's ending ("That's how a
+  lesson goes") now also offers "Parents: see what you'd see" -> `/try/parent`, so a visitor who just played a lesson
+  can see the parent side of those answers; both parent links on the Try page have 44px targets. The rest of the
+  landing page was read for accuracy against the code: break reminders (10/15/20/30/45 min, V60 check), the grown-up
+  gate, no ads/chat/rankings, export and deletion, family-revocable school access - all true as written.
+  - **Browser verified (headless Chromium against the dev stack)**: played "Addition Within 5 Practice" on /try at
+    360px to the ending, followed the new link, the parent demo loaded; **axe (WCAG 2.0-2.2 A/AA tags, as the E2E
+    suite uses)**: no violations on / (1280 and 360), /try (360), /try/parent (360 and 1280). **Tested**: Vitest,
+    tsc, eslint.
