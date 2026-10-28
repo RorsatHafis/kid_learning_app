@@ -579,8 +579,12 @@ reuses the container name of another local project.
 > parent demo with a labelled sample child at `/try/parent`), F1d-1..5 (the landing page plays the learning loop with
 > the real components, its parent section matches the evidence rules and the adaptive engine, buddies can be chosen),
 > F2a-F2b (`docs/legal/`: data inventory from the code, draft privacy notice and terms for owner and lawyer review -
-> unpublished). CI (backend, frontend, deployment files, E2E + accessibility) runs on every push to `master` and is
-> green through `ba0ea1c`; Flyway is at V76. Several sections below (e.g. "no CI", "no
+> unpublished). 2026-10-28: `docs/BUSINESS-REQUIREMENTS.md` is the business reference (audience 3-12 decided, D-09);
+> fixes from walking real journeys - an answer from another tab shows the recorded answer, long names wrap, a child
+> whose age has no path is told so, path decisions are dated; F1d-6 shorter landing page; team test guide and launch
+> checklist current. CI (backend, frontend, deployment files, E2E + accessibility) runs on every push to `master`;
+> last full green run `e7952d0` (its first run failed on two order-dependent tests - recorded, test files unchanged);
+> Flyway is at V76. Several sections below (e.g. "no CI", "no
 > frontend tests") describe September and are superseded.
 
 - **Backend foundation integrity baseline: established.** Accepted and evidenced: 2A, 2B
