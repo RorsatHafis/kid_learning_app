@@ -152,6 +152,11 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<excludedGroups>${test.excludedTags}</excludedGroups>
+					<!-- A fixed class order, the same on every machine. Two integration tests (DueReviewIntegrationTests:57,
+					     SubscriptionIntegrationTests:129) rely on content that earlier classes (com.platform.content.*)
+					     create; the file-system default order varied between CI runners and failed them. This isolates
+					     that dependency; removing it needs a change to those test files (owner's authorisation). -->
+					<runOrder>alphabetical</runOrder>
 				</configuration>
 			</plugin>
 		</plugins>
