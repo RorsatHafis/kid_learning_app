@@ -310,4 +310,5 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - 2026-10-28: `frontend/src/features/learning/messages.ts` `parent.decided` ("Decided {day}." after a path decision).
 - 2026-10-28: `frontend/src/features/auth/messages.ts` `register.principalSubtitle`; `school/plan.messages.ts`
   `chooseLead` shortened.
+- 2026-10-28: `frontend/src/features/auth/messages.ts` `login.subtitle` (now role-neutral).
 

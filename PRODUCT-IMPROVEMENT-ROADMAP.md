@@ -1604,4 +1604,10 @@ Dependencies:
   The plan screen said "once its payment is confirmed" three times in a row; the plan picker's lead now only says
   who sets prices (the shared "hasn't paid" status line stays - the admin view uses it too). **Browser verified**;
   **Tested**: Vitest 400, tsc, eslint. Khmer `register.principalSubtitle` drafted (PD-14).
+- 2026-10-28: **Invited teacher on a phone - the sign-in page spoke only to parents.** Walked the paid seed school's
+  principal inviting a new teacher -> the invitation email ("You're invited to teach at ...") -> "Set up your account"
+  -> "Your account is ready" -> sign in -> the invitation on the teacher's home -> Accept -> "You've joined ..." (0 px
+  overflow at 360 px throughout). The sign-in page, used by every role, said "Log in to continue your child's learning
+  journey" - now "Log in to your Bookeyond Kid account - families, teachers and schools alike." **Browser verified**;
+  **Tested**: Vitest 400, tsc. Khmer `login.subtitle` drafted (PD-14).
 

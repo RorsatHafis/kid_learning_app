@@ -33,7 +33,7 @@ export const authMessages = defineMessages(
     },
     login: {
       title: "Welcome back",
-      subtitle: "Log in to continue your child's learning journey.",
+      subtitle: "Log in to your Bookeyond Kid account - families, teachers and schools alike.",
       lockedUntil: (time: string) => `Too many attempts. Try again after ${time}.`,
       lockedShort: "Too many attempts. Try again after a short wait.",
       failed: "Couldn't log you in with those details.",
@@ -158,7 +158,7 @@ export const authMessages = defineMessages(
     },
     login: {
       title: "សូមស្វាគមន៍ការត្រឡប់មកវិញ",
-      subtitle: "ចូលគណនី ដើម្បីបន្តដំណើររៀនរបស់កូនអ្នក។",
+      subtitle: "ចូលគណនី Bookeyond Kid របស់អ្នក - សម្រាប់គ្រួសារ គ្រូ និងសាលារៀន។",
       lockedUntil: (time: string) => `ព្យាយាមច្រើនដងពេក។ សូមព្យាយាមម្ដងទៀតបន្ទាប់ពីម៉ោង ${time}។`,
       lockedShort: "ព្យាយាមច្រើនដងពេក។ សូមរង់ចាំបន្តិច រួចព្យាយាមម្ដងទៀត។",
       failed: "មិនអាចចូលគណនីដោយប្រើព័ត៌មានទាំងនេះបានទេ។",
