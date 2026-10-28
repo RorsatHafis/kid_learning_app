@@ -1,6 +1,6 @@
 # Bookeyond Kid - Business requirements (living document)
 
-**First written 2026-10-27, from the code at `master` and the project's records.** It explains what the platform is
+**First written 2026-10-27, last reviewed 2026-10-28, from the code at `master` and the project's records.** It explains what the platform is
 for, who uses it, what it does today, the rules that govern it, and what is still undecided or unbuilt. It is the
 business reference for the team; it does not replace:
 
@@ -79,6 +79,10 @@ Three different things, kept apart:
 **Rule for public claims:** say *who it is for* (3-12) and *what is available* separately and truthfully - e.g. "Made
 for ages 3 to 12" plus "Early maths today; Khmer and English in preparation". Never imply lessons exist for an age or
 subject that has none.
+
+**Rule inside the product:** a child of any age 3-12 can be added. When no curriculum covers their age, adding the
+child says so first, then offers paths made for other ages or "decide later"; the child's own space then has the
+buddy explain that a grown-up needs to choose. No curriculum is assigned by default (Battle 2B).
 
 ---
 
@@ -229,6 +233,9 @@ items come from the curriculum, the adaptive engine, Smart Review or a teacher.
 - **Standing**: Not started; Too early to tell (<3 answers); Needs practice (mastery <0.6); Progressing; **Secure**
   (mastery >= 0.8 *and* evidence on **two different learning days**, D-17).
 - Completion is never mastery; insights need sufficient evidence.
+- **One answer per question per attempt.** A second answer to an already-answered question (another tab, a retry
+  with a new key) is refused (409) and never becomes evidence; the screen then shows the answer that was recorded,
+  with its verdict. Retries of the same submission are idempotent.
 
 **Adaptive decision after an activity** (`AdaptiveEngine`; the weakest exercised skill governs, PD-11):
 
