@@ -1614,4 +1614,19 @@ Dependencies:
     the principal assigns you"); the notice is now just "You've joined <school>." (the E2E check `joined <school>` still
     matches). Swept all-role surfaces for parent-only wording: sign-in fixed above; register, reset, verify and the
     account emails are role-neutral. **Tested**: Vitest 400, tsc.
+- 2026-10-28: **Caregiver journey; a helper's home no longer tells them twice to add a child.** Walked M10b on the
+  dev stack (390px): a parent invites an address with no account -> the email ("You're invited to follow Mealea's
+  learning") says to sign in, or create an account with that address and confirm it -> the invitee signs up and sees
+  "You're invited to see progress for Mealea" -> Accept is refused until the email is confirmed (correct: "Confirm
+  your email address before accepting an invitation"). But a grandparent who only helps landed on "Add your first
+  child to start their learning journey" plus a large "No children yet / Add your first child" card. Now, when the
+  adult helps with (or is invited to help with) another family's child and has none of their own, the lead says "The
+  children you help with, and your own if you add them" and the card becomes one quiet line, "No children of your own
+  here yet. Add a child of your own". `CaringSection` reports its count to the home (no second request). A new
+  parent with no caregiving still gets the full welcome. **Browser verified** (both cases); **Tested**: Vitest 400,
+  tsc, eslint. Khmer `home.leadHelping/ownNone/addOwn` drafted (PD-14).
+- 2026-10-28: **Settings coverage.** Every `${...}` setting `application.yaml` reads is named in the deployment or
+  payments docs except two - `PAYMENTS_MANUAL_LIFETIME` (P14D) and `PAYMENTS_SWEEP_INTERVAL` (PT5M), now in
+  `docs/PAYMENTS.md`; the frontend reads no build-time settings. Bundle check: entry 113 KB gzip, admin/Studio/account
+  split into their own chunks, hero art in WebP with small variants - nothing to change.
 

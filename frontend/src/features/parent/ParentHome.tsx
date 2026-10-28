@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CreditCard, Play, Plus, School, Sparkles } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -47,23 +47,36 @@ export function ParentHome() {
   const first = children?.find((c) => c.status !== "DELETION_PENDING");
   // A class code is joined from one child's page: with several children, each is offered (never just the first).
   const learners = children?.filter((c) => c.status !== "DELETION_PENDING") ?? [];
+  // M10b: an adult who only helps with another family's child isn't told, twice, to add a child of their own.
+  const [helping, setHelping] = useState(0);
 
   return (
     <div className="flex flex-col gap-10">
       <SceneBand>
         <div className="flex min-h-[200px] flex-col justify-end gap-2 px-6 pb-7 pt-12 sm:min-h-[210px] sm:px-10">
           <h1 className="font-display text-[2.4rem] font-bold leading-[1.05] tracking-[-0.015em] text-tonle-950 sm:text-[2.9rem]">{m.title}</h1>
-          <p className="max-w-md text-[1.0625rem] leading-relaxed text-ink-soft">{count === 0 ? m.leadEmpty : m.lead}</p>
+          <p className="max-w-md text-[1.0625rem] leading-relaxed text-ink-soft">
+            {count === 0 ? (helping > 0 ? m.leadHelping : m.leadEmpty) : m.lead}
+          </p>
         </div>
       </SceneBand>
 
       {/* M10b: children this adult helps with in another family, and invitations to. */}
-      <CaringSection />
+      <CaringSection onCount={setHelping} />
 
       {isLoading && !children && <LoadingState label={m.loading} />}
       {error && <ErrorState error={error} onRetry={refetch} />}
 
-      {children && children.length === 0 && (
+      {children && children.length === 0 && helping > 0 && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.9375rem] text-ink-soft">
+          {m.ownNone}
+          <Link to="/parent/add-child" className="inline-flex items-center gap-1.5 py-2 font-semibold text-tonle-800 underline-offset-4 hover:underline">
+            <Plus size={16} aria-hidden /> {m.addOwn}
+          </Link>
+        </p>
+      )}
+
+      {children && children.length === 0 && helping === 0 && (
         <section className="flex flex-col items-center gap-4 rounded-[28px] bg-white px-6 py-14 text-center shadow-card">
           <LearningBuddy mood="happy" size={120} />
           <h2 className="font-display text-2xl font-bold text-tonle-950">{m.noChildren}</h2>

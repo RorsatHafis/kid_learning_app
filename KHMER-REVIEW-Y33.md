@@ -311,4 +311,6 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - 2026-10-28: `frontend/src/features/auth/messages.ts` `register.principalSubtitle`; `school/plan.messages.ts`
   `chooseLead` shortened.
 - 2026-10-28: `frontend/src/features/auth/messages.ts` `login.subtitle` (now role-neutral).
+- 2026-10-28: `frontend/src/features/parent/messages.ts` `home.leadHelping`, `home.ownNone`, `home.addOwn` (an adult who
+  helps with another family's child); `school/staff.messages.ts` `joined` shortened.
 

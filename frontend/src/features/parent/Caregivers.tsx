@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { HeartHandshake } from "lucide-react";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -124,10 +124,16 @@ export function CaregiversSection({ childId, childName }: { childId: string; chi
  * M10b, the caregiver's side on their home page: invitations to accept or decline, and the children they help with.
  * Nothing shows when there are none.
  */
-export function CaringSection() {
+/** {@code onCount}: how many children (or invitations) this adult helps with, once known - the family home words its
+ * empty state for a helper differently. */
+export function CaringSection({ onCount }: { onCount?: (count: number) => void } = {}) {
   const m = useMessages(caregiverMessages);
   const caring = useAsync(() => caregiversApi.caring(), []);
   const [error, setError] = useState<string | null>(null);
+  const count = caring.data?.length;
+  useEffect(() => {
+    if (count !== undefined) onCount?.(count);
+  }, [count, onCount]);
   if (!caring.data || caring.data.length === 0) return null;
 
   async function act(run: () => Promise<unknown>) {
