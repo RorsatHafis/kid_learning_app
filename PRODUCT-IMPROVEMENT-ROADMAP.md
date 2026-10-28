@@ -1539,4 +1539,10 @@ Dependencies:
     payments, schools, learning and the teacher home at 1280 and 360 px with 0 overflow; landing, Try and parent demo
     axe clean; the demonstration's play/pause/step checks unchanged. Long names on school pages themselves were not
     exercised (needs a family to join a class).
+- 2026-10-28: **Network failures while a child answers - checked, behaving correctly (no change).** On the dev stack
+  with headless Chromium (390px), the seed child mid-lesson: (1) **reply lost** (the answer reached the server, the
+  connection dropped before the reply): the screen recovered from the recorded answer - "2 + 1" with 3, "That's
+  right!" - and the database holds that answer **once**; (2) **never sent** (offline at "Check"): "We couldn't send
+  that answer. Please try again.", the typed answer kept, "Check" again recorded it ("3 + 4" with 7) - **once**. Also:
+  one confirmation email per registration (a duplicate count earlier came from the local mail catcher's search).
 
