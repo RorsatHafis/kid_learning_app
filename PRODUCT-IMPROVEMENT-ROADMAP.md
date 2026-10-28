@@ -1507,4 +1507,17 @@ Dependencies:
   show the note, age 6 shows "Made for Six's age" as before, no 5xx. **Tested**: parent Vitest 70, tsc, eslint.
   Khmer `subjects.noneForAge` drafted (PD-14). (The dev database holds ~160 E2E-made curricula - test data, not shown
   on a real installation.)
+- 2026-10-28: **Defect fixed: a lesson open in two tabs could show a child their own answer beside the other tab's
+  verdict.** Found by testing what the team guide asks testers to try (two tabs on one lesson). The server is right:
+  the second answer to an already-answered question gets 409 and is not recorded, and the screen recovers by fetching
+  the recorded answer - but it showed the recorded **verdict** with the answer typed **in this tab**: tab A answers
+  "1 + 1" with 2, tab B then types 3 and saw "3 ... You got it!" - feedback that contradicts the child's own answer.
+  Fix at the contract: the answer response (`AnswerRecordResponse`) now carries `submittedAnswer`, exactly as recorded
+  (additive; the list endpoint stays behind `requireLearner` for the attempt's child), and the recovery shows that
+  answer with its verdict. Evidence was never affected (the stale answer was refused).
+  - **Runtime + browser verified (dev stack, headless Chromium, 390px)**: tab A answered 2, tab B typed 3 ->
+    409 for B's answer, B shows **2** and "You got it!" (screenshot reviewed). **Tested**: backend unit + 12
+    integration classes that call the answers endpoint (45 tests, incl. the cross-family access sweep) and 3 more,
+    all green; frontend Vitest full suite, tsc, eslint.
+  - **Test still needed** (test files frozen): the recovery path showing the recorded answer, not the local one.
 

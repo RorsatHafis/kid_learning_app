@@ -775,7 +775,8 @@ function Question({
       // (lost response, answered in another tab) — if so, carry on with it.
       const recorded = await findRecordedAnswer(attemptId, item.questionVersionId);
       if (recorded) {
-        reveal(recorded, submittedAnswer);
+        // Show the answer that was recorded with its verdict: answered in another tab, it may not be this one.
+        reveal(recorded, recorded.submittedAnswer ?? submittedAnswer);
         return;
       }
       if (err instanceof ApiError && err.status === 409) {

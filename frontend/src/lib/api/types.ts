@@ -254,6 +254,8 @@ export interface AnswerRecord {
   explanation?: string | null;
   /** D-16: the child opened the hint before answering - practice, not evidence they showed it on their own. */
   hintUsed?: boolean;
+  /** The answer as recorded, exactly as it was sent. */
+  submittedAnswer?: string;
 }
 
 // ---- learning/service/LearningJourneyService.java (records served as-is by LearningJourneyController) ----

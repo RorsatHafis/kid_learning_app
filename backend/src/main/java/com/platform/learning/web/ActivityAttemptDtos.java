@@ -60,6 +60,8 @@ public final class ActivityAttemptDtos {
      * {@link com.platform.learning.service.AnswerFeedbackService}), so a mistake can be
      * explained. It is only ever returned for a recorded answer. {@code explanation} (Y41): the author's
      * reasoning for the answer, likewise only after answering; null when the question has none.
+     * {@code submittedAnswer}: what was recorded as the answer, exactly as it was sent - so a screen that finds the
+     * question already answered (another tab, a lost response) shows that answer beside its verdict, not its own.
      */
     public record AnswerRecordResponse(
             UUID id,
@@ -69,13 +71,15 @@ public final class ActivityAttemptDtos {
             Instant occurredAt,
             AnswerFeedbackService.CorrectAnswer correctAnswer,
             String explanation,
-            boolean hintUsed
+            boolean hintUsed,
+            String submittedAnswer
     ) {
         public static AnswerRecordResponse from(AnswerRecord record, AnswerFeedbackService.CorrectAnswer correctAnswer,
                                                 String explanation) {
             return new AnswerRecordResponse(
                     record.getId(), record.getQuestionVersionId(), record.isCorrect(),
-                    record.getTimeSpentSeconds(), record.getOccurredAt(), correctAnswer, explanation, record.isHintUsed());
+                    record.getTimeSpentSeconds(), record.getOccurredAt(), correctAnswer, explanation, record.isHintUsed(),
+                    record.getSubmittedAnswer());
         }
     }
 
