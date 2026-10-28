@@ -32,6 +32,7 @@ export const learningMessages = defineMessages(
       challenge: (after: string, skill: string) =>
         `${after}answers on ${skill} were consistently correct, so the path steps up the difficulty.`,
       review: (skill: string) => `Smart Review: recent answers on ${skill} were mostly incorrect, so it is scheduled for review.`,
+      decided: (day: string) => `Decided ${day}.`,
       assigned: (skill: string | null, className: string | null) =>
         `${skill ? `Practice on ${skill}, assigned` : "Assigned"} by ${className ? `a teacher of ${className}` : "a teacher"}.`,
       added: "Added to the learning path.",
@@ -102,6 +103,7 @@ export const learningMessages = defineMessages(
         `${after}ចម្លើយលើ ${skill} ត្រឹមត្រូវជាប់លាប់ ដូច្នេះដំណើររៀនបង្កើនកម្រិតពិបាក។`,
       review: (skill: string) =>
         `ការរំលឹកឆ្លាតវៃ៖ ចម្លើយថ្មីៗលើ ${skill} ភាគច្រើនមិនត្រឹមត្រូវ ដូច្នេះវាត្រូវបានកំណត់ពេលសម្រាប់រំលឹកឡើងវិញ។`,
+      decided: (day: string) => `បានសម្រេច ${day}។`,
       assigned: (skill: string | null, className: string | null) =>
         `${skill ? `ការហាត់លើ ${skill} ដែល` : ""}ត្រូវបានចាត់ឱ្យដោយ${className ? `គ្រូនៃថ្នាក់ ${className}` : "គ្រូម្នាក់"}។`,
       added: "បានបន្ថែមទៅក្នុងដំណើររៀន។",

@@ -13,6 +13,7 @@ import type {
 // the server derived from persisted learner state — nothing here decides anything. The words are
 // in the interface language (learningMessages), read when called: callers re-render on a change.
 import { messagesNow } from "@/i18n/catalog";
+import { formatDay } from "@/lib/utils/date";
 import { learningMessages } from "./messages";
 
 const m = () => messagesNow(learningMessages);
@@ -40,6 +41,12 @@ export function childReason(step: JourneyStep): string {
 
 const percent = (score: number | null) => (score === null ? null : `${Math.round(score)}%`);
 
+/** A decision's sentence, starting with a capital (it can begin "answers on ..." when no activity precedes it), and dated. */
+const dated = (text: string, decidedAt: string | null) => {
+  const sentence = text.charAt(0).toUpperCase() + text.slice(1);
+  return decidedAt ? `${sentence} ${m().parent.decided(formatDay(decidedAt))}` : sentence;
+};
+
 /** A calm, evidence-grounded sentence for the parent: why this step is on the path. */
 export function parentReason(step: JourneyStep, curriculumName: string, chapter?: Chapter | null): string {
   const e = step.explanation;
@@ -48,14 +55,16 @@ export function parentReason(step: JourneyStep, curriculumName: string, chapter?
   switch (e.reason) {
     case "CURRICULUM":
       return chapter ? p.chapterStep(chapter.position, chapter.title, curriculumName) : p.curriculumStep(curriculumName);
+    // Decisions read from the answers at a moment: say when, so a parent can square "mostly incorrect" with a skill
+    // that has since improved.
     case "REINFORCE_PREREQUISITE":
-      return p.prerequisite(after, skillName(e), e.targetSkill?.name ?? m().aPrerequisite);
+      return dated(p.prerequisite(after, skillName(e), e.targetSkill?.name ?? m().aPrerequisite), e.decidedAt);
     case "REINFORCE_SKILL":
-      return p.reinforce(after, skillName(e));
+      return dated(p.reinforce(after, skillName(e)), e.decidedAt);
     case "CHALLENGE":
-      return p.challenge(after, skillName(e));
+      return dated(p.challenge(after, skillName(e)), e.decidedAt);
     case "REVIEW":
-      return p.review(skillName(e));
+      return dated(p.review(skillName(e)), e.decidedAt);
     case "TEACHER_ASSIGNED":
       // Which class asked (X10); practice placed before classes were recorded reads as before.
       return p.assigned(e.skill?.name ?? null, e.assignedBy ?? null);

@@ -1558,4 +1558,17 @@ Dependencies:
   demo's 4 entries (`lead`, `childName`, `childLine`, `insight`); axe clean. Also: `LAUNCH-CHECKLIST.md` reviewed
   against this program (legal drafts, administrators' authenticator, payment instructions, Khmer review list,
   retention of sign-in records, PDP status; PD-29 is built).
+- 2026-10-28: **"Why this next?" says when an evidence-based decision was made.** On the test family's page a skill
+  read "Progressing" beside "Smart Review: recent answers on Recognize addition were mostly incorrect" - both true
+  (the review was decided before later right answers lifted the skill), but without a time it reads as a
+  contradiction. The server already sent `explanation.decidedAt`; it was never shown. Reinforce, prerequisite,
+  challenge and review reasons now end with "Decided today / yesterday / Oct 20." (curriculum and teacher-assigned
+  steps unchanged - a test pins the latter's text). Also fixed: with no preceding activity the sentence began in lower
+  case ("answers on ... were consistently correct").
+  - **Checked**: `parentReason` run directly with sample steps (vite-node against the real module and catalogs): review
+    with no date unchanged; "Decided yesterday."; challenge capitalised and "Decided Oct 20."; curriculum and teacher
+    texts unchanged. **Tested**: Vitest 400, tsc, eslint. **Not browser verified**: none of the test family's children
+    currently has a review/adaptive step up next. Khmer `parent.decided` drafted (PD-14). Note: running that check made
+    `npx` fetch `vite-node@6.0.0` from the npm registry into the npm cache (not the project) - unplanned; later runs used
+    `--no-install`.
 

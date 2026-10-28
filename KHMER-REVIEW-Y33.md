@@ -307,4 +307,5 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
   ("Early maths (ages 4-9) today ...").
 - 2026-10-28: `frontend/src/features/parent/setup.messages.ts` `subjects.noneForAge` (adding a child whose age has no
   path yet).
+- 2026-10-28: `frontend/src/features/learning/messages.ts` `parent.decided` ("Decided {day}." after a path decision).
 
