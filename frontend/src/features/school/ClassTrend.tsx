@@ -172,7 +172,7 @@ function Trend({ data, skillHref }: { data: ClassTrend; skillHref: (skillId: str
       </div>
 
       {(up.length > 0 || down.length > 0) && (
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {up.length > 0 && (
             <SkillList title={w.forward} icon={<ArrowUpRight size={15} aria-hidden className="text-palm-deep" />}>
               {up.map((s) => (

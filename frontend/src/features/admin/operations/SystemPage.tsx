@@ -43,7 +43,7 @@ function Body({ data }: { data: SystemStatus }) {
   const m = useMessages(opsMessages).system;
   const heapShare = data.heapMaxBytes > 0 ? Math.round((data.heapUsedBytes / data.heapMaxBytes) * 100) : null;
   return (
-    <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
       <Panel title={m.build}>
         <Facts
           rows={[

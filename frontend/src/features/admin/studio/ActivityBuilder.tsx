@@ -343,7 +343,7 @@ function TypePicker({ onPick, onCancel }: { onPick: (type: QuestionType) => void
           {b.cancel}
         </Button>
       </div>
-      <ul className="grid gap-2.5 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {AUTHORABLE_TYPES.map((type, i) => {
           const Icon = KIND_PICTURE[type];
           const t = b.types[type];

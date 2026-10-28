@@ -226,7 +226,7 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
       {/* The places as big cards: the way in on phones and tablets (on a large screen they are on the painting). */}
       <div className="flex flex-col gap-3 lg:hidden">
         <h2 className="font-display text-2xl font-bold text-tonle-950">{e.subjects}</h2>
-        <ul aria-label={e.subjects} className="grid gap-4 sm:grid-cols-2">
+        <ul aria-label={e.subjects} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {paths.map((path, i) => (
             <SubjectDoor key={path.enrollmentId} childId={childId} path={path} art={places[i].art} placeName={e.places[places[i].key]} />
           ))}

@@ -100,12 +100,12 @@ function Waiting({ data }: { data: AdminOverview }) {
                   {plan.parentEmail ? (
                     <Link
                       to={`/admin/plans?parentEmail=${encodeURIComponent(plan.parentEmail)}`}
-                      className="grid gap-x-4 gap-y-0.5 px-4 py-3 transition-colors hover:bg-paper sm:grid-cols-[minmax(0,1fr)_auto]"
+                      className="grid grid-cols-1 gap-x-4 gap-y-0.5 px-4 py-3 transition-colors hover:bg-paper sm:grid-cols-[minmax(0,1fr)_auto]"
                     >
                       <EndingRow plan={plan} />
                     </Link>
                   ) : (
-                    <div className="grid gap-x-4 gap-y-0.5 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-0.5 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                       <EndingRow plan={plan} />
                     </div>
                   )}

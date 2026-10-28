@@ -131,7 +131,7 @@ function EnrollmentCard({
         <ChapterTrack chapters={enrollment.chapters} label={ch.label(curriculum.name)} />
 
         {nextStep ? (
-          <div className="grid gap-4 border-t border-line pt-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-8">
+          <div className="grid grid-cols-1 gap-4 border-t border-line pt-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-8">
             <div>
               <p className="text-sm font-semibold text-tonle-600">{m.upNext}</p>
               <p className="mt-1 font-display text-lg font-semibold text-tonle-950">{nextStep.title}</p>

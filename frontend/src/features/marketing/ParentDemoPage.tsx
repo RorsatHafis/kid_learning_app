@@ -94,7 +94,7 @@ export function ParentDemoPage() {
               </ul>
             </section>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <section aria-labelledby="demo-insight" className="flex flex-col gap-2 rounded-paper bg-white p-5 shadow-card">
                 <h2 id="demo-insight" className="flex items-center gap-2 font-display text-lg font-semibold text-tonle-950">
                   <Lightbulb size={18} aria-hidden className="text-palm-deep" /> {m.insightTitle}

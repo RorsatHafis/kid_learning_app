@@ -206,7 +206,7 @@ function Statements() {
           {first.kind === "TESTIMONIAL" && by(first) && <figcaption className="text-sm font-semibold text-light">{by(first)}</figcaption>}
         </figure>
         {rest.length > 0 && (
-          <ul className="grid gap-6 border-t border-white/15 pt-8 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-6 border-t border-white/15 pt-8 sm:grid-cols-2">
             {rest.map((s) => (
               <li key={s.id}>
                 <figure className="flex flex-col gap-2">
@@ -293,7 +293,7 @@ function ForParents() {
           </div>
           <dl className="flex flex-col gap-3">
             {rules.map(([when, then]) => (
-              <div key={when} className="grid gap-1 rounded-[16px] bg-paper px-5 py-4 ring-1 ring-line/70 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-4">
+              <div key={when} className="grid grid-cols-1 gap-1 rounded-[16px] bg-paper px-5 py-4 ring-1 ring-line/70 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-4">
                 <dt className="text-[0.9375rem] text-ink">{when}</dt>
                 <ArrowRight size={16} className="hidden text-tonle-400 sm:block" aria-hidden />
                 <dd className="text-[0.9375rem] font-semibold text-tonle-800">{then}</dd>
@@ -320,7 +320,7 @@ function ForChildren() {
       <div className="relative mx-auto max-w-[1240px] px-4 pb-0 pt-20 sm:px-8 sm:pt-28">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
           <Heading title={m.title} lead={m.lead} />
-          <ul className="grid gap-x-8 gap-y-4 text-[0.9375rem] text-ink sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-x-8 gap-y-4 text-[0.9375rem] text-ink sm:grid-cols-2">
             {[m.point1, m.point2, m.point3, m.point4].map((point) => (
               <li key={point} className="border-t border-tonle-950/15 pt-4">
                 {point}
@@ -422,7 +422,7 @@ function Schools() {
             <h2 className="font-display text-[2.1rem] font-bold leading-[1.08] sm:text-[2.9rem]">{m.title}</h2>
             <p className="text-lg leading-relaxed text-tonle-100">{m.lead}</p>
           </div>
-          <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
             {caps.map((cap) => (
               <li key={cap} className="flex items-start gap-3 border-t border-white/15 pt-4 text-[0.9375rem] leading-relaxed text-tonle-50">
                 <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-light" />
@@ -456,7 +456,7 @@ function Grow() {
   const m = useMessages(trustMessages).grow;
   return (
     <Section id="grow">
-      <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+      <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
         <div className="flex flex-col gap-7">
           <Heading title={m.title} lead={m.lead} />
           <div aria-hidden className="flex items-end gap-6">
@@ -503,7 +503,7 @@ function Safety() {
           <Heading title={m.title} lead={m.lead} />
           <LearningBuddy kind="BUFFALO" mood="happy" size={150} className="!animate-none hidden lg:block" />
         </div>
-        <ul className="grid gap-x-10 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-x-10 sm:grid-cols-2">
           {items.map(({ icon: Icon, title, text }) => (
             <li key={title} className="flex gap-4 border-t border-line py-6">
               <Icon size={22} strokeWidth={1.75} className="mt-1 shrink-0 text-tonle-600" aria-hidden />

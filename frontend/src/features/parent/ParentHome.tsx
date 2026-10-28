@@ -235,7 +235,7 @@ function ChildSummary({ child }: { child: Child }) {
       </header>
 
       {/* Y40: four questions, four cells - ruled, not boxed. */}
-      <div className="grid gap-px bg-line sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-px bg-line sm:grid-cols-2">
         <Cell title={o.learning}>
           {isLoading && !enrollments && <p className="text-sm text-ink-faint">{m.loadingLearning}</p>}
           {error && <p className="text-sm text-ink-soft">{m.learningFailed}</p>}

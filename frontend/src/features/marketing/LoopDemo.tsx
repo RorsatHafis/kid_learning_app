@@ -129,7 +129,7 @@ export function LoopDemo() {
       </figure>
 
       <div className="flex flex-col gap-4">
-        <ol className="grid gap-1.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-5">
+        <ol className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-5">
           {loop.map((text, i) => (
             <li key={text}>
               <button

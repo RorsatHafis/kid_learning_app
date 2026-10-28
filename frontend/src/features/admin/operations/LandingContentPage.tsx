@@ -207,7 +207,7 @@ function StatementForm({
       <TextAreaField label={t.textKm} lang="km" value={draft.textKm} maxLength={280} required rows={2} onChange={(e) => set("textKm", e.target.value)} />
       {testimonial && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label={t.attributionEn} hint={t.attributionHint} value={draft.attributionEn ?? ""} maxLength={120} required
               onChange={(e) => set("attributionEn", e.target.value)} />
             <FormField label={t.attributionKm} lang="km" value={draft.attributionKm ?? ""} maxLength={120} required
@@ -315,7 +315,7 @@ function DemoPanel() {
       {candidates.data && candidates.data.length > 0 && (
         <fieldset className="flex flex-col gap-4">
           <legend className="mb-2 text-sm font-semibold text-ink">{t.demoChosen(chosen.length)}</legend>
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {candidates.data.map((c) => {
               const position = chosen.indexOf(c.activityVersionId);
               return (

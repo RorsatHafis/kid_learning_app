@@ -138,7 +138,7 @@ function Choose({
           <h2 id="choose-title" className="font-display text-2xl font-bold text-tonle-950">
             {t.choose}
           </h2>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {activities.data.map((activity) => (
               <li key={activity.activityVersionId} className="flex flex-col gap-3 rounded-[24px] bg-[#FFFDF8] p-5 shadow-paper ring-1 ring-tonle-950/5">
                 <p className="font-display text-xl font-bold leading-snug text-tonle-950">{activity.title}</p>

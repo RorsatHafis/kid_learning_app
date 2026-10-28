@@ -135,7 +135,7 @@ export function SchoolDetailPage() {
                 {data.classes.map((c) => (
                   <li
                     key={c.id}
-                    className="grid gap-1.5 py-3.5 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)] sm:gap-6"
+                    className="grid grid-cols-1 gap-1.5 py-3.5 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)] sm:gap-6"
                   >
                     <span className="font-semibold text-ink">{c.name}</span>
                     <span className="flex flex-col gap-1 text-sm">

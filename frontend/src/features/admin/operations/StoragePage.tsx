@@ -48,7 +48,7 @@ export function StoragePage() {
       {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
       {data && (
         <>
-          <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Tile label={m.onDisk} value={sizeText(data.storedBytes)} hint={m.onDiskHint} />
             <Tile label={m.platform} value={sizeText(data.platformBytes)} hint={m.platformHint(data.platformFiles)} />
             <Tile label={m.authors} value={sizeText(data.authorBytes)} hint={m.authorsHint(data.owners.filter((o) => o.files > 0).length)} />

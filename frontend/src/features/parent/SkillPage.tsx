@@ -254,7 +254,7 @@ function MovementStrip({ activities }: { activities: ActivityOnSkill[] }) {
 function ActivityRow({ activity }: { activity: ActivityOnSkill }) {
   const m = useMessages(familyMessages).skill;
   return (
-    <li className="grid gap-2 px-6 py-4 sm:grid-cols-[6rem_minmax(0,1fr)_11rem] sm:items-center sm:gap-5 sm:px-8">
+    <li className="grid grid-cols-1 gap-2 px-6 py-4 sm:grid-cols-[6rem_minmax(0,1fr)_11rem] sm:items-center sm:gap-5 sm:px-8">
       <span className="tabular text-sm text-ink-faint">{formatDay(activity.at)}</span>
       <span className="flex min-w-0 flex-col gap-1">
         <span className="font-semibold text-ink">{activity.activityTitle}</span>

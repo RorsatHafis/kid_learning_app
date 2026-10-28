@@ -136,7 +136,7 @@ function AboutStep({ onCreated }: { onCreated: (child: Child) => void }) {
         </h2>
         <p className="mt-1.5 max-w-xl text-ink-soft">{m.lead}</p>
       </div>
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <FormField
           label={m.name}
           required
@@ -301,7 +301,7 @@ function SubjectsStep({
       {forAge.length > 0 && (
         <div className="flex flex-col gap-3">
           <h3 className="text-sm font-semibold text-ink-soft">{m.forAge(child.displayName)}</h3>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {bySubject(forAge).map((group) => (
               <SubjectGroup key={group[0].subjectCode} choices={group} chosen={chosen} onToggle={toggle} />
             ))}
@@ -314,7 +314,7 @@ function SubjectsStep({
             {m.otherAges(otherAges.length)}
             <ChevronDown size={17} className="transition-transform group-open:rotate-180" aria-hidden />
           </summary>
-          <div className="grid gap-3 px-4 pb-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 px-4 pb-4 md:grid-cols-2">
             {bySubject(otherAges).map((group) => (
               <SubjectGroup key={group[0].subjectCode} choices={group} chosen={chosen} onToggle={toggle} />
             ))}

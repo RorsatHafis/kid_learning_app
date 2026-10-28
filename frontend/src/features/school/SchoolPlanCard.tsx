@@ -13,7 +13,7 @@ import { useState } from "react";
 export function SchoolPlanUsage({ entitlements }: { entitlements: Entitlement[] }) {
   const m = useMessages(schoolPlanMessages);
   return (
-    <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
       {entitlements.map((e) => {
         if (e.key === "TEACHER_STORAGE_MB") {
           return (

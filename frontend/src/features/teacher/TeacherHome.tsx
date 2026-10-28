@@ -44,7 +44,7 @@ export function TeacherHome() {
       <SchoolInvitations onAccepted={refetch} />
 
       {/* Y39: the classes are the work; what a teacher keeps and where they teach sit beside them. */}
-      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="flex flex-col gap-6">
           {isLoading && !data && <LoadingState label={m.loading} />}
           {error && <ErrorState error={error} onRetry={refetch} />}

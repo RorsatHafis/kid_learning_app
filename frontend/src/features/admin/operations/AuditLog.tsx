@@ -121,7 +121,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
   const m = useMessages(opsMessages).activity;
   const actor = entry.actorType === "SYSTEM" ? m.platform : (entry.actorEmail ?? m.goneAccount);
   return (
-    <li className="grid gap-1 py-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
+    <li className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
       <time dateTime={entry.occurredAt} className="text-xs tabular-nums text-ink-soft sm:pt-0.5">
         {formatDateTime(entry.occurredAt, { dateStyle: "medium", timeStyle: "medium" })}
       </time>

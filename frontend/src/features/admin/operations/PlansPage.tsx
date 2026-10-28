@@ -331,7 +331,7 @@ function NewPlan({
     <ComposerPanel title={m.titleFor[audience]} onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-2xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <p className="text-sm text-ink-soft">{m.leadFor[audience]}</p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField
             label={m.nameFor[audience]}
             value={name}
@@ -547,7 +547,7 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
         ) : (
           <>
             {plan.plan.description && <p className="text-sm leading-relaxed text-ink-soft">{plan.plan.description}</p>}
-            <dl className="grid gap-3 sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {plan.entitlements.map((e) => (
                 <div key={e.key} className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
                   <dt className="text-sm text-ink-faint">{entitlementLabel(e.key)}</dt>
@@ -771,7 +771,7 @@ function FamilyPlanCard({
   }
 
   return (
-    <div className="grid gap-6 border-t border-line pt-5 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 border-t border-line pt-5 lg:grid-cols-2">
       <div className="flex flex-col gap-3">
         <p className="font-semibold text-tonle-950">{family.familyName}</p>
         <p className="text-sm text-ink-soft">

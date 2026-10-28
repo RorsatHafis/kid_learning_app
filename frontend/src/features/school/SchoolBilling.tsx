@@ -59,7 +59,7 @@ export function SchoolRenew({ schoolId, first, onStarted }: { schoolId: string; 
       <p className="text-sm font-semibold text-ink">{choosing ? m.chooseTitle : m.renewTitle}</p>
       {choosing && <p className="max-w-prose text-sm text-ink-soft">{m.chooseLead}</p>}
       {choosing && (
-        <fieldset className="grid gap-2 sm:grid-cols-2">
+        <fieldset className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <legend className="sr-only">{m.choosePlan}</legend>
           {plans.map((option) => (
             <label

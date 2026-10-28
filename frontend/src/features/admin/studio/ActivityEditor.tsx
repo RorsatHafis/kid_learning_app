@@ -171,7 +171,7 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
               />
             }
           />
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {liveVersion && <WithdrawalPanel kind="ACTIVITY" versionId={liveVersion.id} versionNumber={liveVersion.versionNumber} />}
             <Panel title={m.versions}>
               <VersionHistory versions={detail.versions} />
@@ -273,7 +273,7 @@ function DetailsForm({
           maxLength={2000}
           onChange={(e) => setInstructions(e.target.value)}
         />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SelectField label={m.difficultyRange} value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
             <option value="">{m.notSet}</option>
             {DIFFICULTIES.map((d) => (

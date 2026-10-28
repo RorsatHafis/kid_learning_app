@@ -306,7 +306,7 @@ function QuickActivity({ onClose }: { onClose: () => void }) {
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-0.5 text-sm font-semibold text-ink">{b.practises}</legend>
             <p className="-mt-0.5 mb-1 text-xs text-ink-soft">{b.practisesHint}</p>
-            <div className="grid gap-1.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
               {catalog.skills.map((skill) => (
                 <label key={skill.id} className="flex min-h-11 items-center gap-2.5 rounded-[12px] bg-paper px-3 text-sm text-ink ring-1 ring-line">
                   <input
@@ -321,7 +321,7 @@ function QuickActivity({ onClose }: { onClose: () => void }) {
             </div>
           </fieldset>
         )}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SelectField label={b.lesson} hint={b.lessonHint} value={chosen} onChange={(e) => setLesson(e.target.value)}>
             {existing.map((l) => (
               <option key={l.id} value={l.id}>

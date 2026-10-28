@@ -92,7 +92,7 @@ export function AccountPage() {
           {profile.isLoading && !profile.data && <LoadingState label={m.loadingAccount} />}
           {profile.error && <ErrorState error={profile.error} onRetry={profile.refetch} />}
           {profile.data && (
-            <dl className="grid gap-5 sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
                 <dt className="text-sm text-ink-faint">{m.email}</dt>
                 <dd className="break-all font-semibold text-ink">{profile.data.email}</dd>

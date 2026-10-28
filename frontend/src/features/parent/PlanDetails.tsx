@@ -151,7 +151,7 @@ export function PlanDetails({
         )}
       </div>
 
-      <dl className="grid gap-3 sm:grid-cols-2">
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {plan.entitlements.map((entitlement) => (
           <div key={entitlement.key} className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
             <dt className="text-sm text-ink-faint">{entitlementLabel(entitlement.key)}</dt>
@@ -192,7 +192,7 @@ export function PlanDetails({
             </h3>
             <p className="text-sm text-ink-soft">{plan.choices.some(payable) ? pay.canBuy : m.cantBuy}</p>
           </div>
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {plan.choices.map((offer) => (
               <li key={offer.plan.id} className="flex flex-col gap-2 rounded-[12px] px-4 py-3 ring-1 ring-line">
                 <p className="flex flex-wrap items-baseline justify-between gap-x-3">

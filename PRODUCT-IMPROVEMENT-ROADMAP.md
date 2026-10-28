@@ -1634,4 +1634,14 @@ Dependencies:
   parent is asked "Is this Vanna's device?" -> Yes -> the device opens `/learn/<Vanna>` ("Hi Vanna! A grown-up needs
   to choose what you'll learn first"); sent to `/parent`, it lands back in Vanna's space. BRD section 5 gains the
   device and caregiver workflows.
+- 2026-10-28: **Khmer at 320 px found subject cards clipped; every breakpoint-only grid now has a base column.**
+  Khmer pass at 320 px on today's changed screens (sign-in, both register modes, add a child aged 3): no page overflow
+  and the new Khmer present - but in "Add a child" the subject cards were 250 px wide in a 208 px column, cut off by
+  the card's rounded frame (not a page overflow, so the earlier checks missed it). Cause as before: a grid with
+  columns only from a breakpoint grows its implicit column to its widest content. All 42 `className="grid ..."` that
+  set columns only from `sm/md/lg/xl` up now have `grid-cols-1` below it (a scripted, uniform change; content that
+  fits is unaffected). **Browser verified**: the cards are 208 px in a 240 px panel; regression - landing height
+  unchanged (14,932 px at 360), axe clean on /, /try, /try/parent; family home and child page, admin overview /
+  payments / schools / learning and teacher home at 1280 and 360 px: 0 overflow. **Tested**: Vitest 400, tsc.
+  Not covered: grids whose classes are built with `cn(...)`.
 

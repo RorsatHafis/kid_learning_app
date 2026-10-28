@@ -261,7 +261,7 @@ function JoinClass({
             <p className="text-[0.9375rem] text-ink">{m.already(childName)}</p>
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="rounded-[12px] bg-tonle-50/70 p-4">
                   <p className="text-sm font-semibold text-ink">{m.willSee(preview.schoolName)}</p>
                   <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm leading-relaxed text-ink">

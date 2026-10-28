@@ -154,7 +154,7 @@ function SkillTable({ childId, objective }: { childId: string; objective: Object
 function SkillRow({ childId, skill }: { childId: string; skill: SkillProgress }) {
   const m = useMessages(familyMessages).skills;
   return (
-    <div role="row" className="grid gap-3 px-6 py-4 sm:grid-cols-[minmax(0,1fr)_150px_150px] sm:items-center sm:gap-4 sm:px-8">
+    <div role="row" className="grid grid-cols-1 gap-3 px-6 py-4 sm:grid-cols-[minmax(0,1fr)_150px_150px] sm:items-center sm:gap-4 sm:px-8">
       <div role="cell">
         {/* X19: each skill opens its evidence and what happens next. */}
         <Link
