@@ -182,7 +182,7 @@ function FollowUp({
         </ul>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <section aria-labelledby="skill-children" className="flex min-w-0 flex-col gap-5">
           <h2 id="skill-children" className="sr-only">
             {m.childrenOnSkill}

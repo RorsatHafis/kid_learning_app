@@ -1533,4 +1533,10 @@ Dependencies:
     (screenshot reviewed). Regression: the test family's home and child page at 1280 and 360 px - no overflow, axe
     clean, desktop two-column layout unchanged (screenshot). **Tested**: Vitest full suite, tsc, eslint.
   - **Not checked**: the same edge case on teacher, principal and admin pages (class and school names).
+  - **Same guard on the other page grids** that hold typed names or admin-edited words (admin operations, schools,
+    payments, learning, media library, the teacher's skill follow-up, the landing page, the demonstration, add a
+    child): `grid-cols-1` below their breakpoint. No visual change for normal content - verified: admin overview,
+    payments, schools, learning and the teacher home at 1280 and 360 px with 0 overflow; landing, Try and parent demo
+    axe clean; the demonstration's play/pause/step checks unchanged. Long names on school pages themselves were not
+    exercised (needs a family to join a class).
 

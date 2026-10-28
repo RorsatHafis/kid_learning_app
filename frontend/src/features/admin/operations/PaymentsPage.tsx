@@ -249,7 +249,7 @@ function PaymentDetail({ orderId, onClose, onChanged }: { orderId: string; onClo
                 <p className="text-sm text-ink-soft">{m.confirmLead}</p>
               </div>
               <FormField label={m.receipt} hint={m.receiptHint} value={receipt} maxLength={200} required onChange={(e) => setReceipt(e.target.value)} />
-              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_7rem]">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_7rem]">
                 <FormField
                   label={m.received}
                   hint={m.receivedHint(orderPriceText(order))}

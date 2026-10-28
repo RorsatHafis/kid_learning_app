@@ -124,7 +124,7 @@ export function SchoolDetailPage() {
         </p>
       )}
       {data && (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
           <Panel title={m.classesCount(data.classes.length)}>
             {data.classes.length === 0 ? (
               <p className="text-sm text-ink-soft">

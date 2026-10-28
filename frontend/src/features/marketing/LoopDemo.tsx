@@ -57,7 +57,7 @@ export function LoopDemo() {
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-tonle-800 text-sm font-bold text-white">{step + 1}</span>
         <span key={step} className="motion-safe:animate-rise-in">{loop[step]}</span>
       </p>
-      <figure aria-label={m.demoLabel} className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-8">
+      <figure aria-label={m.demoLabel} className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-8">
         {/* The child's side: one question, the buddy, gentle feedback. */}
         <div className="flex flex-col gap-3">
           <p className="text-sm font-semibold text-ink-soft">{m.childSees}</p>

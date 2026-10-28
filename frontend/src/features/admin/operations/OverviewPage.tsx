@@ -26,7 +26,7 @@ export function OverviewPage() {
       {overview.isLoading && !overview.data && <LoadingState label={m.loading} />}
       {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
       {overview.data && (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
           <Waiting data={overview.data} />
           <div className="flex flex-col gap-6">
             <Platform data={overview.data} />

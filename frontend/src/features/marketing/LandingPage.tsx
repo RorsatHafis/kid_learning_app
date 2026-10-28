@@ -322,7 +322,7 @@ function ForParents() {
   ];
   return (
     <Section id="for-parents" className="bg-white">
-      <div className="grid gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
+      <div className="grid grid-cols-1 gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
         <div className="flex flex-col gap-10">
           <Heading title={m.title} lead={m.lead} />
           <ul className="flex flex-col divide-y divide-line border-y border-line">
@@ -371,7 +371,7 @@ function ForChildren() {
   return (
     <section id="for-children" className="relative scroll-mt-16 overflow-hidden bg-[#E7F1EC]">
       <div className="relative mx-auto max-w-[1240px] px-4 pb-0 pt-20 sm:px-8 sm:pt-28">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
           <Heading title={m.title} lead={m.lead} />
           <ul className="grid gap-x-8 gap-y-4 text-[0.9375rem] text-ink sm:grid-cols-2">
             {[m.point1, m.point2, m.point3, m.point4].map((point) => (
@@ -551,7 +551,7 @@ function Safety() {
   ];
   return (
     <Section id="safety" className="bg-white">
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-20">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-20">
         <div className="flex flex-col gap-8">
           <Heading title={m.title} lead={m.lead} />
           <LearningBuddy kind="BUFFALO" mood="happy" size={150} className="!animate-none hidden lg:block" />

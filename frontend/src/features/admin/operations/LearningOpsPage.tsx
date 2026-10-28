@@ -35,7 +35,7 @@ function Body({ data }: { data: LearningOperations }) {
   const m = useMessages(opsMessages).learning;
   const accuracy = w.answers > 0 ? Math.round((w.answersCorrect / w.answers) * 100) : null;
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start">
       <div className="flex flex-col gap-6">
         <Panel title={m.lastSevenDays}>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">

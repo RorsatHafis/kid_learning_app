@@ -49,7 +49,7 @@ export function AddChildFlow() {
           <ArrowLeft size={15} aria-hidden /> {m.about.cancel}
         </Link>
       </nav>
-      <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
         <aside className="flex flex-col gap-6">
           <h1 className="font-display text-headline font-bold text-tonle-950">{m.title}</h1>
           <ol className="flex gap-2 lg:flex-col lg:gap-3" aria-label={m.stepOf(index + 1, steps.length)}>
