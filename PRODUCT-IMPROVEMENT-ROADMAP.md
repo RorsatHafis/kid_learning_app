@@ -1678,4 +1678,14 @@ Dependencies:
   owner runs (or approves) `bash /d/bk-work/preview/preview.sh update`, then
   `node /d/bk-work/preview/browser-check.mjs "$(cat /d/bk-work/preview/tunnel.url)"` and `journey-check.mjs` the same
   way (with `PLAYWRIGHT_BROWSERS_PATH=D:/bk-work/pw-browsers`). The environment is unchanged and working.
+- 2026-10-28: **CHECKPOINT - coworker preview verified on `3e193a3` (= `869ec82`'s code; the only later change is
+  this roadmap), on the original link `immediate-marketplace-complexity-optimal.trycloudflare.com`.** The owner ran
+  `preview.sh update`; nothing was redeployed by me. **Verified through the link**: anonymous 401;
+  `browser-check.mjs` - all five roles sign in (parent family home, Sophea's progress, child space, Khmer and back;
+  teacher class + Studio; unpaid principal's payment panel; paid principal's classes; administrator payments);
+  `journey-check.mjs` - served bundle = the new local build (`index-BKDJdX6D.js`), "Let's go" fully on screen at
+  360x640, "6 + 4" answered with 10 -> "You got it!", then (re-run, resuming) "9 + 1" with 10 -> "That's right!" and
+  **the activity finished** (completion screen), 0 server errors; this window's changes - the role-neutral sign-in
+  line, the principal's sign-up line, landing 0 px overflow at 320 px, no 5xx; preview DB at V76. CI green on all four
+  jobs for `869ec82`.
 
