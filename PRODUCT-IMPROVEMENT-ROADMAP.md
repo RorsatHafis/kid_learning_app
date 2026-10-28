@@ -1659,4 +1659,7 @@ Dependencies:
   hash, no tokens, no other family's children. Also: the seed child Rithy's "Up next" is a curriculum step and his
   path has only curriculum items - the teacher-assigned items in the dev database belong to E2E children of the same
   name (not a defect).
+- 2026-10-28: **"Sign out everywhere" checked (no change needed).** One new parent signed in on two browsers; Account ->
+  "Sign out everywhere" -> "Yes" on the first sends it to sign-in, and the second, on its next page load, is sent to
+  sign-in too (immediate revocation, PD-02).
 
