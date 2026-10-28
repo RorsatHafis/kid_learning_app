@@ -1653,4 +1653,10 @@ Dependencies:
   changes on restart), run `bash /d/bk-work/preview/preview.sh update`, then `browser-check.mjs`, `journey-check.mjs`
   and a check of today's changes through the link. Still open for the owner: authorisation to fix the two
   order-dependent tests; CLAUDE.md section 25's stale note; D-18, D-19, M11, M12; legal drafts' `[OWNER]` items.
+- 2026-10-28: **Family data export checked (no change needed).** As the seed parent, Account -> "Download my family's
+  data" (headless Chromium): `bookeyond-kid-data-2026-10-28.json` with `format`, `exportedAt`, `account`, `plan`,
+  `learningDayZone`, `children` - exactly this family's three children, their answers with hint use (23); no password
+  hash, no tokens, no other family's children. Also: the seed child Rithy's "Up next" is a curriculum step and his
+  path has only curriculum items - the teacher-assigned items in the dev database belong to E2E children of the same
+  name (not a defect).
 
