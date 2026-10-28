@@ -1598,4 +1598,10 @@ Dependencies:
 - 2026-10-28: **Keyboard check of the landing page's interactive parts (no change needed).** Tabbing through the
   page reaches the five demonstration steps, Pause and the five buddies in order, each with the global 2px focus ring.
   BRD gains a glossary of the product's terms (section 10).
+- 2026-10-28: **New principal on a phone - two copy fixes.** Walked register -> confirm -> set up the school -> plan
+  at 360 px (0 px overflow throughout, a 50-character school name wraps). With "I'm a principal" chosen, the sign-up
+  page still said "Start your family's learning journey" - it now says "Bring your school's classes to Bookeyond Kid".
+  The plan screen said "once its payment is confirmed" three times in a row; the plan picker's lead now only says
+  who sets prices (the shared "hasn't paid" status line stays - the admin view uses it too). **Browser verified**;
+  **Tested**: Vitest 400, tsc, eslint. Khmer `register.principalSubtitle` drafted (PD-14).
 

@@ -45,6 +45,7 @@ export const authMessages = defineMessages(
     register: {
       title: "Create your account",
       subtitle: "Start your family's learning journey with Bookeyond Kid.",
+      principalSubtitle: "Bring your school's classes to Bookeyond Kid.",
       agreeFirst: "Agree to the terms of use and the privacy notice to create an account.",
       failed: "Couldn't create that account.",
       pendingTitle: "Check your email",
@@ -169,6 +170,7 @@ export const authMessages = defineMessages(
     register: {
       title: "បង្កើតគណនីរបស់អ្នក",
       subtitle: "ចាប់ផ្ដើមដំណើររៀនរបស់គ្រួសារអ្នកជាមួយ Bookeyond Kid។",
+      principalSubtitle: "នាំថ្នាក់រៀនរបស់សាលាអ្នកមកកាន់ Bookeyond Kid។",
       agreeFirst: "សូមយល់ព្រមនឹងលក្ខខណ្ឌប្រើប្រាស់ និងសេចក្ដីជូនដំណឹងអំពីឯកជនភាព ដើម្បីបង្កើតគណនី។",
       failed: "មិនអាចបង្កើតគណនីនោះបានទេ។",
       pendingTitle: "សូមពិនិត្យអ៊ីមែលរបស់អ្នក",

@@ -49,7 +49,7 @@ export const schoolPlanMessages = defineMessages(
     askTeam: "To start a plan, ask the Bookeyond team for an invoice.",
     // M4: a school chooses its first plan itself (the plans the Bookeyond team offers schools, at their prices).
     chooseTitle: "Choose the school's plan",
-    chooseLead: "Each plan's price and what it includes are set by the Bookeyond team. The school opens once its payment is confirmed.",
+    chooseLead: "Each plan's price and what it includes are set by the Bookeyond team.",
     choosePlan: "Plan",
     payFor: (plan: string, price: string) => `Pay for ${plan} · ${price}`,
     limitItem: (label: string, limit: number | null) => (limit === null ? `${label}: no limit` : `${label}: ${limit}`),
@@ -100,7 +100,7 @@ export const schoolPlanMessages = defineMessages(
     renewFailed: "មិនដំណើរការនៅពេលនេះទេ។ សូមព្យាយាមម្ដងទៀត។",
     askTeam: "ដើម្បីចាប់ផ្ដើមកញ្ចប់ សូមស្នើសុំវិក្កយបត្រពីក្រុម Bookeyond។",
     chooseTitle: "ជ្រើសរើសកញ្ចប់របស់សាលា",
-    chooseLead: "តម្លៃ និងអ្វីដែលកញ្ចប់នីមួយៗរួមបញ្ចូល ត្រូវបានកំណត់ដោយក្រុម Bookeyond។ សាលានឹងបើក នៅពេលការបង់ប្រាក់របស់វាត្រូវបានបញ្ជាក់។",
+    chooseLead: "តម្លៃ និងអ្វីដែលកញ្ចប់នីមួយៗរួមបញ្ចូល ត្រូវបានកំណត់ដោយក្រុម Bookeyond។",
     choosePlan: "កញ្ចប់",
     payFor: (plan: string, price: string) => `បង់ប្រាក់សម្រាប់ ${plan} · ${price}`,
     limitItem: (label: string, limit: number | null) => (limit === null ? `${label}៖ គ្មានដែនកំណត់` : `${label}៖ ${limit}`),

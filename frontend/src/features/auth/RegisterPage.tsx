@@ -88,7 +88,7 @@ export function RegisterPage() {
   }
 
   return (
-    <AuthLayout title={r.title} subtitle={r.subtitle}>
+    <AuthLayout title={r.title} subtitle={role === "PRINCIPAL" ? r.principalSubtitle : r.subtitle}>
       <div role="group" aria-label={r.accountType} className="mb-7 grid grid-cols-2 gap-1 rounded-[14px] bg-tonle-50 p-1 ring-1 ring-inset ring-line">
         <button
           type="button"
