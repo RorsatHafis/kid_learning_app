@@ -180,7 +180,7 @@ Status as of 2026-10-27. "Where" points to the record with the verification deta
 | Feature | Status | Notes |
 |---|---|---|
 | Content Studio: subjects, skills, objectives, questions, activities, curricula, preview, checks and gaps (L8), writing guide | **Live** | |
-| Versioning: DRAFT -> PUBLISHED -> RETIRED; learners get published content only; exact pinned versions respected; take-down of a wrong version (Y16) | **Live** | Constitution §25 records a content-lifecycle question about pinned versions that later retire - see the progress record for its status. |
+| Versioning: DRAFT -> PUBLISHED -> RETIRED; learners get published content only; exact pinned versions respected; take-down of a wrong version (Y16) | **Live** | Pinned versions that are later RETIRED (superseded) are still served by exact reference; DRAFT never is (Battle 3R, `PublishableVersion.wasPublished`). A wrong version is withdrawn separately (Y16). CLAUDE.md §25 still lists this as open - the code has resolved it. |
 | Review/approval before publication | **Built, limited** | Mechanism exists, switched off (PD-20: who reviews). |
 | Media upload (pictures, recordings) with per-teacher allowance | **Live** | Stored on the server disk (`MEDIA_ROOT`). |
 | Storage-provider abstraction / school storage choice | **Planned / Blocked** | M11; needs D-06 and D-12 (library approval). |
