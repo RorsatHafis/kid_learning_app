@@ -41,8 +41,6 @@ export function DeleteChildSection({ child }: { child: Child }) {
       navigate("/parent", { replace: true });
     } catch (err) {
       setError(passwordProblem(err));
-      // The error is tied to the field: put focus there so it is read out, not left on the button.
-      requestAnimationFrame(() => document.getElementById(passwordId)?.focus());
       setWorking(false);
     }
   }
@@ -145,8 +143,6 @@ export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | 
       onChanged();
     } catch (err) {
       setError(passwordProblem(err));
-      // The error is tied to the field: put focus there so it is read out, not left on the button.
-      requestAnimationFrame(() => document.getElementById(passwordId)?.focus());
     } finally {
       setWorking(false);
     }

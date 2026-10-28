@@ -1688,4 +1688,10 @@ Dependencies:
   **the activity finished** (completion screen), 0 server errors; this window's changes - the role-neutral sign-in
   line, the principal's sign-up line, landing 0 px overflow at 320 px, no 5xx; preview DB at V76. CI green on all four
   jobs for `869ec82`.
+- 2026-10-28: **Errors after a submit are read out on every form that uses `FormField`.** The deletion-form fix is now
+  general: when an error arrives on a field, focus moves to the form's first invalid field - unless the person is
+  already in another field (typing is never interrupted). The two local focus workarounds in `Deletion.tsx` are
+  removed. **Browser verified** (dev stack): a wrong password in "Delete <child>" leaves focus on the password field,
+  `aria-invalid`, described by the error; deletion still works. **Tested**: Vitest 400, tsc, eslint. Not exercised in a
+  browser: the other forms (sign-in, register, reset, account), which share the component.
 

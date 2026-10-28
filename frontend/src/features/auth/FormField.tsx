@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes } from "react";
+import { useEffect, useId, useRef, type InputHTMLAttributes } from "react";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -21,12 +21,24 @@ export function FormField({
   const errorId = `${inputId}-error`;
   const hintId = `${inputId}-hint`;
   const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined;
+  const input = useRef<HTMLInputElement>(null);
+  // An error that arrives after a submit is read out only if focus is on the field it belongs to: move focus to the
+  // form's first invalid field - unless the person is already in another field (typing), which is never interrupted.
+  useEffect(() => {
+    const el = input.current;
+    if (!error || !el?.form) return;
+    const active = document.activeElement;
+    const typingElsewhere = active instanceof HTMLElement && active !== el && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
+    if (typingElsewhere) return;
+    if (el.form.querySelector('[aria-invalid="true"]') === el) el.focus();
+  }, [error]);
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={inputId} className="text-sm font-semibold text-ink">
         {label}
       </label>
       <input
+        ref={input}
         id={inputId}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
