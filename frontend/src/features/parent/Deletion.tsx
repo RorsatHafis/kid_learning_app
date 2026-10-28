@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trash2, Undo2 } from "lucide-react";
 import { accountApi, childrenApi } from "@/lib/api/endpoints";
@@ -29,6 +29,7 @@ export function DeleteChildSection({ child }: { child: Child }) {
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const passwordId = useId();
   const [working, setWorking] = useState(false);
 
   async function onSubmit(e: FormEvent) {
@@ -40,6 +41,8 @@ export function DeleteChildSection({ child }: { child: Child }) {
       navigate("/parent", { replace: true });
     } catch (err) {
       setError(passwordProblem(err));
+      // The error is tied to the field: put focus there so it is read out, not left on the button.
+      requestAnimationFrame(() => document.getElementById(passwordId)?.focus());
       setWorking(false);
     }
   }
@@ -53,6 +56,7 @@ export function DeleteChildSection({ child }: { child: Child }) {
       {open ? (
         <form onSubmit={onSubmit} noValidate aria-label={m.deleteChild(child.displayName)} className="flex max-w-md flex-col gap-4">
           <FormField
+            id={passwordId}
             label={m.yourPassword}
             type="password"
             autoComplete="current-password"
@@ -127,6 +131,7 @@ export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | 
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const passwordId = useId();
   const [working, setWorking] = useState(false);
 
   async function onSubmit(e: FormEvent) {
@@ -140,6 +145,8 @@ export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | 
       onChanged();
     } catch (err) {
       setError(passwordProblem(err));
+      // The error is tied to the field: put focus there so it is read out, not left on the button.
+      requestAnimationFrame(() => document.getElementById(passwordId)?.focus());
     } finally {
       setWorking(false);
     }
@@ -182,6 +189,7 @@ export function DeleteAccount({ eraseAfter, onChanged }: { eraseAfter: string | 
       {open ? (
         <form onSubmit={onSubmit} noValidate aria-label={m.deleteAccount} className="flex flex-col gap-4">
           <FormField
+            id={passwordId}
             label={m.yourPassword}
             type="password"
             autoComplete="current-password"

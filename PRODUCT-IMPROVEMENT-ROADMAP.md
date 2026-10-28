@@ -1662,4 +1662,12 @@ Dependencies:
 - 2026-10-28: **"Sign out everywhere" checked (no change needed).** One new parent signed in on two browsers; Account ->
   "Sign out everywhere" -> "Yes" on the first sends it to sign-in, and the second, on its next page load, is sent to
   sign-in too (immediate revocation, PD-02).
+- 2026-10-28: **Deleting a child walked; a refused password is now read out.** New family, child Chenda: "Delete
+  Chenda..." -> wrong password -> correct one -> the family home shows "Will be deleted on November 4, 2026. Until then
+  you can keep Chenda." with "Keep Chenda" (7-day grace). The wrong-password message was shown and tied to the field
+  (`aria-describedby`, `aria-invalid`), but focus stayed on the button, so a screen reader wouldn't read it. Both
+  password-confirmed forms in `Deletion.tsx` (delete a child, delete the account) now move focus to the password field
+  when the password is refused. **Browser verified**: after the wrong password, focus is on the password input, invalid,
+  described by "That isn't your current password." **Tested**: Vitest 400, tsc, eslint. Not changed: other forms that
+  show errors only on their field (a wider pass for later).
 
