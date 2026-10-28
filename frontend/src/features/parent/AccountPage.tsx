@@ -56,7 +56,7 @@ export function AccountPage() {
       </header>
 
       {/* Y38: a long page gets an index - each topic one click away on wide screens. */}
-      <div className="grid gap-8 xl:grid-cols-[200px_minmax(0,1fr)] xl:items-start">
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[200px_minmax(0,1fr)] xl:items-start">
       <nav aria-label={m.onThisPage} className="hidden xl:sticky xl:top-24 xl:block">
         <p className="mb-2 px-3 text-[0.8125rem] font-semibold text-ink-faint">{m.onThisPage}</p>
         <ul className="flex flex-col gap-0.5 border-l border-line">

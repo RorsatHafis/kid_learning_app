@@ -75,7 +75,7 @@ export function ParentHome() {
       )}
 
       {children && children.length > 0 && (
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
           <section aria-label={m.children} className="flex min-w-0 flex-col gap-6">
             {children.map((child) =>
               child.status === "DELETION_PENDING" ? (
@@ -191,12 +191,12 @@ function ChildSummary({ child }: { child: Child }) {
   return (
     <article aria-labelledby={`child-${child.id}`} className="overflow-hidden rounded-[28px] bg-white shadow-card">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-6 py-5 sm:px-8">
-        <Link to={`/parent/children/${child.id}`} className="group flex items-center gap-4">
+        <Link to={`/parent/children/${child.id}`} className="group flex min-w-0 items-center gap-4">
           <ChildPortrait buddy={child.learningBuddy} />
-          <div>
+          <div className="min-w-0">
             <h2
               id={`child-${child.id}`}
-              className="font-display text-[1.75rem] font-bold leading-tight tracking-[-0.01em] text-tonle-950 group-hover:underline group-hover:decoration-tonle-300 group-hover:underline-offset-4"
+              className="[overflow-wrap:anywhere] font-display text-[1.75rem] font-bold leading-tight tracking-[-0.01em] text-tonle-950 group-hover:underline group-hover:decoration-tonle-300 group-hover:underline-offset-4"
             >
               {child.displayName}
             </h2>
@@ -212,7 +212,7 @@ function ChildSummary({ child }: { child: Child }) {
           </div>
         </Link>
         <div className="flex flex-wrap items-center gap-2">
-          <Link to={`/learn/${child.id}`} className={buttonClasses("solid", "md")}>
+          <Link to={`/learn/${child.id}`} className={buttonClasses("solid", "md", "max-w-full [overflow-wrap:anywhere]")}>
             <Play size={16} aria-hidden /> {m.startSession(child.displayName)}
           </Link>
           <Link to={`/parent/children/${child.id}`} className={buttonClasses("ghost", "md")}>

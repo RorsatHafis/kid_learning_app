@@ -14,7 +14,7 @@ export function SectionTitle({
 }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
-      <div className="max-w-2xl">
+      <div className="min-w-0 max-w-2xl">
         <h2 id={id} className="font-display text-title font-semibold text-tonle-950" style={{ fontVariationSettings: '"opsz" 36' }}>
           {title}
         </h2>

@@ -1520,4 +1520,17 @@ Dependencies:
     integration classes that call the answers endpoint (45 tests, incl. the cross-family access sweep) and 3 more,
     all green; frontend Vitest full suite, tsc, eslint.
   - **Test still needed** (test files frozen): the recovery path showing the recorded answer, not the local one.
+- 2026-10-28: **A long child name no longer breaks the family pages on a phone.** The server accepts names up to 80
+  characters; one typed without spaces (Latin script) pushed "Add a child", the family home, the child page and the
+  child's space up to ~1,000 px wider than a 360 px screen. Causes and fixes, smallest first: no word-break fallback
+  anywhere -> `overflow-wrap: break-word` on `body` (only words longer than their line break; nothing is resized);
+  flex items holding the name sized by its longest word -> `min-w-0` + `overflow-wrap: anywhere` on the name heading,
+  the "Start ...'s session/learning" buttons, the breadcrumb and the shared `SectionTitle`; the parent page grids had
+  no column below desktop width, so their implicit column grew to the word -> `grid-cols-1` (`minmax(0,1fr)`) on the
+  family home, child, skill and account grids.
+  - **Browser verified (headless Chromium, 360px)**: an 80-character name across add-a-child steps 2-3, the child
+    page, the family home and the child's space: 0 px horizontal overflow (was 291-1,080 px); the name wraps
+    (screenshot reviewed). Regression: the test family's home and child page at 1280 and 360 px - no overflow, axe
+    clean, desktop two-column layout unchanged (screenshot). **Tested**: Vitest full suite, tsc, eslint.
+  - **Not checked**: the same edge case on teacher, principal and admin pages (class and school names).
 

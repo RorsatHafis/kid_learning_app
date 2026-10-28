@@ -87,7 +87,7 @@ function ChildOverview({ childId }: { childId: string }) {
           element={
             // Phone: insights right after the plan - the parent's first question. Desktop: insights
             // ride along in a sticky column beside it.
-            <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-x-14">
+            <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-x-14">
               <div className="flex min-w-0 flex-col gap-12">
                 <PlanAnchor>
                   <LearningNowSection childId={childId} childName={data.displayName} enrollments={enrollments} />
@@ -207,7 +207,7 @@ function BackLink({ name }: { name?: string }) {
         {name && (
           <>
             <ChevronRight size={14} className="text-ink-faint" aria-hidden />
-            <li aria-current="page" className="text-ink-soft">
+            <li aria-current="page" className="min-w-0 text-ink-soft [overflow-wrap:anywhere]">
               {name}
             </li>
           </>
@@ -252,7 +252,7 @@ function Header({ child, onRenamed, enrollments }: { child: Child; onRenamed: ()
   return (
     <SceneBand>
       <header className="flex flex-col items-start gap-6 px-6 py-8 sm:px-10 sm:py-10">
-        <div className="flex items-end gap-5">
+        <div className="flex max-w-full items-end gap-5">
           <ChildPortrait buddy={child.learningBuddy} size="lg" />
           {editing ? (
             <form onSubmit={save} className="flex flex-col gap-2">
@@ -307,9 +307,9 @@ function Header({ child, onRenamed, enrollments }: { child: Child; onRenamed: ()
               )}
             </form>
           ) : (
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1">
-                <h1 className="font-display text-headline font-bold text-tonle-950">
+                <h1 className="min-w-0 font-display text-headline font-bold text-tonle-950 [overflow-wrap:anywhere]">
                   {child.displayName}
                 </h1>
                 <button
@@ -335,7 +335,7 @@ function Header({ child, onRenamed, enrollments }: { child: Child; onRenamed: ()
             ))}
           </ul>
         )}
-        <Link to={`/learn/${child.id}`} className={buttonClasses("solid", "lg", "w-full sm:w-auto")}>
+        <Link to={`/learn/${child.id}`} className={buttonClasses("solid", "lg", "w-full max-w-full [overflow-wrap:anywhere] sm:w-auto")}>
           <Play size={18} aria-hidden /> {m.startSession(child.displayName)}
         </Link>
       </header>

@@ -436,7 +436,12 @@ function ReviewStep({ child, chosen, onBack }: { child: Child; chosen: string[];
           </>
         ) : picked.length > 0 ? (
           <>
-            <Button size="lg" disabled={busy || catalog.isLoading} onClick={() => void start(picked.filter((c) => !started.includes(c.id)))}>
+            <Button
+              size="lg"
+              className="max-w-full [overflow-wrap:anywhere]"
+              disabled={busy || catalog.isLoading}
+              onClick={() => void start(picked.filter((c) => !started.includes(c.id)))}
+            >
               {busy ? m.starting : m.start(child.displayName)}
             </Button>
             <Button variant="ghost" size="lg" disabled={busy} onClick={onBack}>

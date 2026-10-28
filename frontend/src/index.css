@@ -21,6 +21,9 @@
     font-family: theme("fontFamily.sans");
     font-feature-settings: "kern", "liga";
     text-rendering: optimizeLegibility;
+    /* A word longer than its line (a long name typed without spaces) breaks instead of widening the page. Words
+       that fit are untouched, and sizes don't change. */
+    overflow-wrap: break-word;
   }
 
   h1,

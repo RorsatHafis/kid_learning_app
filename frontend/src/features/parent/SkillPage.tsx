@@ -97,7 +97,7 @@ function Story({ story, childName }: { story: SkillStory; childName: string }) {
         {story.description && <p className="text-[1.0625rem] leading-relaxed text-ink-soft">{story.description}</p>}
       </header>
 
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-x-14">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-x-14">
         <div className="flex min-w-0 flex-col gap-12">
           <section aria-labelledby="stands" className="flex flex-col gap-5">
             <SectionTitle id="stands" title={m.whereItStands} />
