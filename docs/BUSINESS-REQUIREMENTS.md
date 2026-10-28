@@ -215,6 +215,13 @@ AA is an acceptance criterion: an automated axe gate runs on the main screens in
 6. **Content.** Educator drafts skills/questions/activities in the Studio -> checks and preview -> publish (frozen
    version) -> curricula reference published versions -> retire or take down when superseded or wrong.
 7. **Administration.** Staff and accounts, plans and grants, payments, storage, public site words, audit.
+8. **A child's own device** (M10a). On the child's page the parent makes a short-lived code -> on the tablet or shared
+   phone, `/child-device` and the code -> the parent is asked "Is this <child>'s device?" -> the device opens only that
+   child's space (it cannot reach the parent's pages) -> the parent can sign it out from Account > Devices.
+9. **A caregiver** (M10b). The parent invites an email address and chooses "see progress" or "see progress and open
+   the learning space" -> the invitee signs in, or creates an account with that address and confirms it -> accepts
+   (a confirmed email is required) -> sees only that child, never the family's settings, payments or other children;
+   the parent can change or end it.
 
 ---
 

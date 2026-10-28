@@ -1629,4 +1629,9 @@ Dependencies:
   payments docs except two - `PAYMENTS_MANUAL_LIFETIME` (P14D) and `PAYMENTS_SWEEP_INTERVAL` (PT5M), now in
   `docs/PAYMENTS.md`; the frontend reads no build-time settings. Bundle check: entry 113 KB gzip, admin/Studio/account
   split into their own chunks, hero art in WebP with small variants - nothing to change.
+- 2026-10-28: **Child-device linking walked (no change needed).** New family, child Vanna: "Make a code" -> a second
+  browser (tablet size, not signed in) at `/child-device` types it -> "Waiting for your grown-up to say yes" -> the
+  parent is asked "Is this Vanna's device?" -> Yes -> the device opens `/learn/<Vanna>` ("Hi Vanna! A grown-up needs
+  to choose what you'll learn first"); sent to `/parent`, it lands back in Vanna's space. BRD section 5 gains the
+  device and caregiver workflows.
 
