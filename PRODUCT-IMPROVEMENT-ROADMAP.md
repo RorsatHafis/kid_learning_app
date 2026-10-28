@@ -1552,4 +1552,10 @@ Dependencies:
   nothing linked to it. Subject cards' picture band is shorter on phones (h-32, h-44 from 640 px). Phone page height
   15,951 -> 14,932 px. **Browser verified (headless Chromium)**: section order and heights measured at 360 px; axe
   clean at 1280 and 360. **Tested**: Vitest 400, tsc, eslint.
+- 2026-10-28: **Closed F1c's "not verified" item: the words editor in a browser.** As the administrator (dev stack,
+  headless Chromium, 1280px): Operations -> Landing page -> "Show the words" lists four groups - Landing page, Trust
+  and safety, Try a lesson, **What parents see (sample)** - 212 entries after F1d-6; searching "Mealea" finds the parent
+  demo's 4 entries (`lead`, `childName`, `childLine`, `insight`); axe clean. Also: `LAUNCH-CHECKLIST.md` reviewed
+  against this program (legal drafts, administrators' authenticator, payment instructions, Khmer review list,
+  retention of sign-in records, PDP status; PD-29 is built).
 
