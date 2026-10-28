@@ -315,3 +315,28 @@ scheduled for review and placed on the path. Deterministic - no AI decides learn
 **Future requirements under consideration**: more subjects and age hubs across 3-12; native Khmer content with
 native-voice audio; content review before publication; object storage; production hosting and monitoring; school
 modules if approved; an evidence ladder with delayed checks (considered, not adopted - research README).
+
+---
+
+## 10. Glossary
+
+| Term | Meaning in Bookeyond Kid |
+|---|---|
+| **Age hub** | An age band that curricula belong to (today one: Junior, 4-9). Decides which curricula are suggested first for a child. |
+| **Curriculum / version** | A subject's sequence of objectives for an age hub; published as a frozen version that enrolments point to. |
+| **Objective, skill** | What a curriculum aims at, and the small abilities (skills) that make it up. Evidence is counted per skill. |
+| **Activity, question** | What a child plays, and the items in it. Both are versioned; a published version never changes. |
+| **Learning path / path item** | A child's ordered list of activities for one enrolment. Items come from the curriculum, the adaptive engine, Smart Review or a teacher - each with its reason. |
+| **Attempt** | One play-through of an activity. One answer per question per attempt; completion requires every question. |
+| **Evidence** | A scored answer given without the hint. Hinted answers are recorded as practice (D-16). |
+| **Evidence strength** | How much evidence stands behind a skill: none, partial (1-2), sufficient (3+), strong (at the saturation count, default 10). Shown as a line, separate from the standing. |
+| **Mastery** | The server's estimate (0-1) of how well a skill is known, updated after every scored answer. Never shown as a number to children. |
+| **Standing** | What the evidence supports saying: Not started, Too early to tell, Needs practice, Progressing, Secure (needs two different days, D-17). |
+| **Adaptive decision** | After an activity: reinforce, challenge or continue, from the weakest skill it exercised. Explained to the parent with its date. |
+| **Smart Review** | Separate from the adaptive engine: brings back a skill whose mastery has fallen, as a review item on the path. |
+| **Parent insight** | A plain-language statement about a child's learning, only with sufficient evidence behind it. |
+| **School access** | A family's grant letting one school see one child's learning (PD-01); separate from class membership and teacher assignment. |
+| **Public demo** | "Try a lesson" (`/try`): real lessons, checked by the server, stored nowhere. **Parent demo** (`/try/parent`): a fictional sample child. |
+| **Site copy** | The public pages' words, overridable by administrators without code (F1a). |
+| **Coworker preview** | The owner's gated test environment reached through a Cloudflare Quick Tunnel; its address changes when the tunnel restarts. |
+
