@@ -305,4 +305,6 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - Also 2026-10-27: `frontend/src/features/auth/messages.ts` `register.parentNext` (what a family is asked for);
   `marketing/trust.messages.ts` `proof.ages` ("Made for ages 3 to 12") and `marketing/messages.ts` `hero.status`
   ("Early maths (ages 4-9) today ...").
+- 2026-10-28: `frontend/src/features/parent/setup.messages.ts` `subjects.noneForAge` (adding a child whose age has no
+  path yet).
 

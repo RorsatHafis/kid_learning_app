@@ -1493,4 +1493,18 @@ Dependencies:
   test files may not be changed without the owner's authorisation.** Proposed fix (needs that authorisation): each
   test creates the extra skill / second published curriculum it needs in its own setup. Failed jobs re-run to
   confirm.
+- 2026-10-28: **Resumed; the CI failure on `e7952d0` was the test-order problem, confirmed.** Re-running the failed
+  job on the same commit (identical code) passed all four jobs - a regression would fail every time. The two tests
+  (recorded 2026-10-27) stay unchanged pending authorisation. The coworker preview was **down** at resume (Docker
+  Desktop not running, no `tunnel.url` - the laptop was restarted); left for the reserved phase.
+- 2026-10-28: **A family with a child of an age that has no path yet is told so while adding the child.** Walked the
+  real journey on the dev stack (new parent, children aged 3, 6 and 11; only Junior 4-9 content exists): the child
+  page already said "No path is for Three's age yet", but step 2 of "Add a child" jumped straight to "160 paths for
+  other ages" with no explanation. It now first says: nothing is made for the child's age yet; a path for other ages
+  can be chosen, or decided later and added from the learning plan once one is published (D-09: the audience is 3-12
+  while the content grows). A child with no path who opens their space is met by the buddy: "A grown-up needs to choose
+  what you'll learn first" - already right, unchanged. **Browser verified (headless Chromium, 390px)**: ages 3 and 11
+  show the note, age 6 shows "Made for Six's age" as before, no 5xx. **Tested**: parent Vitest 70, tsc, eslint.
+  Khmer `subjects.noneForAge` drafted (PD-14). (The dev database holds ~160 E2E-made curricula - test data, not shown
+  on a real installation.)
 

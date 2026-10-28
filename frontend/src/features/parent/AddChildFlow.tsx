@@ -294,6 +294,10 @@ function SubjectsStep({
       {catalog.isLoading && <LoadingState label={m.loading} />}
       {catalog.error && <ErrorState error={catalog.error} onRetry={catalog.refetch} />}
       {catalog.data && catalog.data.length === 0 && <p className="rounded-[18px] bg-cream p-5 text-ink-soft">{m.none(child.displayName)}</p>}
+      {/* The audience is 3-12 (D-09) but not every age has a path yet: say so before offering other ages' paths. */}
+      {catalog.data && catalog.data.length > 0 && forAge.length === 0 && (
+        <p className="rounded-[18px] bg-cream p-5 text-ink-soft">{m.noneForAge(child.displayName)}</p>
+      )}
       {forAge.length > 0 && (
         <div className="flex flex-col gap-3">
           <h3 className="text-sm font-semibold text-ink-soft">{m.forAge(child.displayName)}</h3>

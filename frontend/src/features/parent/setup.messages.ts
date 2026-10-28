@@ -24,6 +24,8 @@ export const setupMessages = defineMessages(
       lead: "Choose the subjects to start with. You can add or stop a subject at any time from their learning plan.",
       loading: "Finding subjects…",
       forAge: (name: string) => `Made for ${name}'s age`,
+      noneForAge: (name: string) =>
+        `Nothing is made for ${name}'s age yet. You can choose a path made for other ages below, or decide later: when a path for ${name}'s age is published, you can add it from ${name}'s learning plan.`,
       otherAges: (n: number) => (n === 1 ? "1 path for other ages" : `${n} paths for other ages`),
       ages: (min: number, max: number | null) => (max === null ? `Ages ${min}+` : `Ages ${min}-${max}`),
       chosen: "Chosen",
@@ -106,6 +108,8 @@ export const setupMessages = defineMessages(
       lead: "ជ្រើសរើសមុខវិជ្ជាដើម្បីចាប់ផ្ដើម។ អ្នកអាចបន្ថែម ឬបញ្ឈប់មុខវិជ្ជាណាមួយបានគ្រប់ពេល ពីផែនការរៀនរបស់ពួកគេ។",
       loading: "កំពុងស្វែងរកមុខវិជ្ជា…",
       forAge: (name: string) => `រៀបចំសម្រាប់អាយុរបស់ ${name}`,
+      noneForAge: (name: string) =>
+        `មិនទាន់មានអ្វីបង្កើតសម្រាប់អាយុរបស់ ${name} នៅឡើយទេ។ អ្នកអាចជ្រើសផ្លូវរៀនដែលបង្កើតសម្រាប់អាយុផ្សេងខាងក្រោម ឬសម្រេចនៅពេលក្រោយ៖ នៅពេលផ្លូវរៀនសម្រាប់អាយុរបស់ ${name} ត្រូវបានផ្សព្វផ្សាយ អ្នកអាចបន្ថែមវាពីផែនការរៀនរបស់ ${name}។`,
       otherAges: (n: number) => `ផ្លូវរៀន ${n} សម្រាប់អាយុផ្សេងទៀត`,
       ages: (min: number, max: number | null) => (max === null ? `អាយុ ${min}+` : `អាយុ ${min}-${max}`),
       chosen: "បានជ្រើសរើស",
