@@ -1670,4 +1670,12 @@ Dependencies:
   when the password is refused. **Browser verified**: after the wrong password, focus is on the password input, invalid,
   described by "That isn't your current password." **Tested**: Vitest 400, tsc, eslint. Not changed: other forms that
   show errors only on their field (a wider pass for later).
+- 2026-10-28: **CHECKPOINT - preview update waiting for the owner's approval.** The usage window had not reset (90%
+  used at the start of this turn), so no new product work; straight to the reserved phase. CI green on all four jobs
+  for `869ec82` (the latest code). The link `immediate-marketplace-complexity-optimal.trycloudflare.com` is up, the
+  gate holds (anonymous 401), and it serves `index-DeqW-Tb0.js` = the `7705de8` build. `preview.sh update` was refused
+  by the auto-mode safety check ("Production Deploy") and was **not** retried or worked around. **To finish**: the
+  owner runs (or approves) `bash /d/bk-work/preview/preview.sh update`, then
+  `node /d/bk-work/preview/browser-check.mjs "$(cat /d/bk-work/preview/tunnel.url)"` and `journey-check.mjs` the same
+  way (with `PLAYWRIGHT_BROWSERS_PATH=D:/bk-work/pw-browsers`). The environment is unchanged and working.
 
