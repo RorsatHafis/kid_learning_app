@@ -101,6 +101,15 @@ public class AcademicYearController {
         return ResponseEntity.noContent().build();
     }
 
+    /** Year-end rollover: the earlier year's classes, by name, into this one (children and teachers stay where they are). */
+    @PostMapping("/academic-years/{yearId}/copy-classes")
+    public CopyResponse copyClasses(@PathVariable UUID schoolId, @PathVariable UUID yearId, @Valid @RequestBody CopyRequest request,
+                                    @AuthenticationPrincipal UUID accountId) {
+        guard.requireSchoolManage(accountId, schoolId);
+        AcademicYearService.CopiedClasses copied = service.copyClasses(schoolId, request.fromYearId(), yearId, accountId);
+        return new CopyResponse(copied.created().stream().map(SchoolClass::getName).toList(), copied.alreadyThere());
+    }
+
     /** {@code academicYearId} null takes the class out of any year. */
     @PutMapping("/classes/{classId}/academic-year")
     public ClassYearResponse placeClass(@PathVariable UUID schoolId, @PathVariable UUID classId,
@@ -120,6 +129,10 @@ public class AcademicYearController {
     public record TermRequest(@NotBlank @Size(max = 80) String name, @NotNull LocalDate startsOn, @NotNull LocalDate endsOn) {}
 
     public record ClassYearRequest(UUID academicYearId) {}
+
+    public record CopyRequest(@NotNull UUID fromYearId) {}
+
+    public record CopyResponse(List<String> created, List<String> alreadyThere) {}
 
     public record TermResponse(UUID id, String name, LocalDate startsOn, LocalDate endsOn) {
         static TermResponse of(AcademicTerm t) { return new TermResponse(t.getId(), t.getName(), t.getStartsOn(), t.getEndsOn()); }

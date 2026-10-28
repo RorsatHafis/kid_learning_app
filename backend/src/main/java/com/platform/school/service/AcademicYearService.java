@@ -45,9 +45,12 @@ public class AcademicYearService {
     private final SchoolClassRepository classes;
     private final AccountRepository accounts;
     private final AuditService audit;
+    private final SchoolService schoolService;
 
     public AcademicYearService(AcademicYearRepository years, AcademicTermRepository terms, SchoolRepository schools,
-                               SchoolClassRepository classes, AccountRepository accounts, AuditService audit) {
+                               SchoolClassRepository classes, AccountRepository accounts, AuditService audit,
+                               SchoolService schoolService) {
+        this.schoolService = schoolService;
         this.years = years;
         this.terms = terms;
         this.schools = schools;
@@ -214,6 +217,44 @@ public class AcademicYearService {
         metadata.put("toYearId", yearId);
         record(actorId, "CLASS_ACADEMIC_YEAR_SET", classId, metadata);
         return schoolClass;
+    }
+
+    public record CopiedClasses(List<SchoolClass> created, List<String> alreadyThere) {}
+
+    /**
+     * Year-end rollover: the active classes of {@code fromYearId}, recreated by name in {@code toYearId} (an active
+     * year). A name the target year already has is skipped, so running it again adds nothing twice. Only the class
+     * structure moves: no children (a family's consent, S1), no teachers, codes or curricula (the principal's choices
+     * for the new year). Each class is made as any other (plan limit, archived school), all or nothing.
+     */
+    @Transactional
+    public CopiedClasses copyClasses(UUID schoolId, UUID fromYearId, UUID toYearId, UUID actorId) {
+        activeSchool(schoolId);
+        if (fromYearId.equals(toYearId)) {
+            throw new IllegalArgumentException("Choose a different year to copy from.");
+        }
+        List<AcademicYear> existing = years.lockBySchoolId(schoolId);
+        yearOf(existing, fromYearId);
+        activeYearOf(existing, toYearId);
+        List<SchoolClass> all = classes.findBySchoolId(schoolId);
+        java.util.Set<String> inTarget = new java.util.HashSet<>();
+        all.stream().filter(c -> toYearId.equals(c.getAcademicYearId()) && !c.isArchived())
+                .forEach(c -> inTarget.add(c.getName().toLowerCase(java.util.Locale.ROOT)));
+        List<SchoolClass> created = new java.util.ArrayList<>();
+        List<String> skipped = new java.util.ArrayList<>();
+        for (SchoolClass source : all.stream().filter(c -> fromYearId.equals(c.getAcademicYearId()) && !c.isArchived())
+                .sorted(java.util.Comparator.comparing(SchoolClass::getName)).toList()) {
+            if (!inTarget.add(source.getName().toLowerCase(java.util.Locale.ROOT))) {
+                skipped.add(source.getName());
+                continue;
+            }
+            SchoolClass copy = schoolService.createClass(schoolId, source.getName());
+            copy.placeInYear(toYearId);
+            created.add(copy);
+        }
+        record(actorId, "ACADEMIC_YEAR_CLASSES_COPIED", toYearId, Map.of("schoolId", schoolId, "fromYearId", fromYearId,
+                "created", created.size(), "alreadyThere", skipped.size()));
+        return new CopiedClasses(created, skipped);
     }
 
     private School activeSchool(UUID schoolId) {

@@ -494,6 +494,7 @@ public final class ServerText {
             Map.entry("The year's dates must still contain all of its terms.", "កាលបរិច្ឆេទរបស់ឆ្នាំត្រូវតែគ្របដណ្ដប់វគ្គសិក្សាទាំងអស់របស់វា។"),
             Map.entry("This academic year is archived.", "ឆ្នាំសិក្សានេះត្រូវបានទុកក្នុងបណ្ណសារ។"),
             Map.entry("The current academic year can't be archived: make another year current first.", "មិនអាចទុកឆ្នាំសិក្សាបច្ចុប្បន្នក្នុងបណ្ណសារបានទេ៖ សូមកំណត់ឆ្នាំផ្សេងជាឆ្នាំបច្ចុប្បន្នជាមុនសិន។"),
+            Map.entry("Choose a different year to copy from.", "សូមជ្រើសឆ្នាំផ្សេងដើម្បីចម្លងពី។"),
             Map.entry("This school is archived: restore it to change its academic years.", "សាលានេះត្រូវបានទុកក្នុងបណ្ណសារ៖ សូមស្ដារវាវិញ ដើម្បីកែប្រែឆ្នាំសិក្សារបស់វា។")
     );
 

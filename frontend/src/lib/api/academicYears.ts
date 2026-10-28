@@ -41,6 +41,9 @@ export const academicYearsApi = {
     apiClient.put<AcademicTerm>(`${years(schoolId)}/${yearId}/terms/${termId}`, body),
   removeTerm: (schoolId: string, yearId: string, termId: string) =>
     apiClient.delete<void>(`${years(schoolId)}/${yearId}/terms/${termId}`),
+  /** Year-end rollover: the earlier year's classes, by name, into this one. */
+  copyClasses: (schoolId: string, yearId: string, fromYearId: string) =>
+    apiClient.post<{ created: string[]; alreadyThere: string[] }>(`${years(schoolId)}/${yearId}/copy-classes`, { fromYearId }),
   placeClass: (schoolId: string, classId: string, academicYearId: string | null) =>
     apiClient.put<{ classId: string; academicYearId: string | null }>(`/schools/${schoolId}/classes/${classId}/academic-year`, {
       academicYearId,

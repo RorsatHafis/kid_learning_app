@@ -1720,4 +1720,14 @@ Dependencies:
     overlapping term refused with "These dates overlap another term of this year.", a second year made current, a class
     placed in it (kept after reload), 0 overflow, axe clean; the page in Khmer (account language) with no English left.
   - **Not done**: P2-P7 wait for S1-S6. Teachers don't see the year yet (nothing of theirs uses it).
+- 2026-10-28: **M12 P1 follow-up - year-end rollover.** On an active year, "Copy the classes of <earlier year>" recreates
+  that year's active classes by name in this year (names already there are skipped, so a second run adds nothing).
+  Only the structure moves: **no children** (a family's consent - S1), no teachers, codes or curricula (the principal's
+  choices for the new year); each class is made through `SchoolService.createClass`, so plan limits and the archived-
+  school rule hold, all in one transaction; audited (`ACADEMIC_YEAR_CLASSES_COPIED`). `POST
+  .../academic-years/{id}/copy-classes`. **Tested**: `AcademicYearIntegrationTests` third scenario (copies the two
+  active classes, not the archived one; the new classes have no enrolments or teacher assignments; a repeat adds none;
+  same year 400; an archived target 409; audited twice) - green with ServerText coverage. **Browser verified (360 px)**:
+  "1 class added to this year." then "This year already has all of those classes."; 0 overflow. Vitest: the known
+  `media.test.tsx` load timeout aside, green.
 

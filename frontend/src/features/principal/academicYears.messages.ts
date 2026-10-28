@@ -35,6 +35,17 @@ export const academicYearMessages = defineMessages(
     classYear: "Academic year",
     noYear: "No year",
     classYearFor: (name: string) => `Academic year of ${name}`,
+    copyTitle: "Classes for this year",
+    copyLead: "Start from an earlier year's classes: the same names are added to this year. Children and teachers stay where they are - families bring their children into the new classes with the class codes, and you choose each class's teacher.",
+    copyFrom: "Copy the classes of",
+    copy: "Copy classes",
+    copying: "Copying…",
+    copied: (created: number, already: number) =>
+      created === 0
+        ? already === 0
+          ? "That year has no classes to copy."
+          : "This year already has all of those classes."
+        : `${created === 1 ? "1 class" : `${created} classes`} added to this year${already > 0 ? `; ${already} already there` : ""}.`,
   },
   {
     newYear: "បន្ថែមឆ្នាំសិក្សា",
@@ -68,5 +79,16 @@ export const academicYearMessages = defineMessages(
     classYear: "ឆ្នាំសិក្សា",
     noYear: "គ្មានឆ្នាំ",
     classYearFor: (name: string) => `ឆ្នាំសិក្សារបស់ ${name}`,
+    copyTitle: "ថ្នាក់សម្រាប់ឆ្នាំនេះ",
+    copyLead: "ចាប់ផ្ដើមពីថ្នាក់នៃឆ្នាំមុន៖ ឈ្មោះដដែលត្រូវបានបន្ថែមទៅឆ្នាំនេះ។ កុមារ និងគ្រូនៅដដែល - គ្រួសារនាំកូនរបស់ពួកគេចូលថ្នាក់ថ្មីដោយលេខកូដថ្នាក់ ហើយអ្នកជ្រើសរើសគ្រូរបស់ថ្នាក់នីមួយៗ។",
+    copyFrom: "ចម្លងថ្នាក់នៃ",
+    copy: "ចម្លងថ្នាក់",
+    copying: "កំពុងចម្លង…",
+    copied: (created: number, already: number) =>
+      created === 0
+        ? already === 0
+          ? "ឆ្នាំនោះមិនមានថ្នាក់ដើម្បីចម្លងទេ។"
+          : "ឆ្នាំនេះមានថ្នាក់ទាំងនោះរួចហើយ។"
+        : `ថ្នាក់ ${created} ត្រូវបានបន្ថែមទៅឆ្នាំនេះ${already > 0 ? `៖ ${already} មានរួចហើយ` : ""}។`,
   },
 );

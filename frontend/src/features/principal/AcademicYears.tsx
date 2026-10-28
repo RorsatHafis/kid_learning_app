@@ -43,12 +43,24 @@ export function AcademicYears({ schoolId }: { schoolId: string }) {
       {years.isLoading && !years.data && <LoadingState />}
       {years.error && <ErrorState error={years.error} onRetry={years.refetch} />}
       {years.data && years.data.length === 0 && <p className="text-ink-soft">{m.none}</p>}
-      {years.data?.map((year) => <YearCard key={year.id} schoolId={schoolId} year={year} onChanged={years.refetch} />)}
+      {years.data?.map((year) => (
+        <YearCard key={year.id} schoolId={schoolId} year={year} others={years.data!.filter((y) => y.id !== year.id)} onChanged={years.refetch} />
+      ))}
     </div>
   );
 }
 
-function YearCard({ schoolId, year, onChanged }: { schoolId: string; year: AcademicYear; onChanged: () => void }) {
+function YearCard({
+  schoolId,
+  year,
+  others,
+  onChanged,
+}: {
+  schoolId: string;
+  year: AcademicYear;
+  others: AcademicYear[];
+  onChanged: () => void;
+}) {
   const m = useMessages(academicYearMessages);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,6 +151,7 @@ function YearCard({ schoolId, year, onChanged }: { schoolId: string; year: Acade
         )}
         {!year.archived && <AddTerm schoolId={schoolId} yearId={year.id} onChanged={onChanged} />}
       </div>
+      {!year.archived && others.length > 0 && <CopyClasses schoolId={schoolId} year={year} others={others} />}
     </section>
   );
 }
@@ -361,6 +374,65 @@ export function ClassYearSelect({
         <span role="alert" className="font-medium text-brick-deep">
           {error}
         </span>
+      )}
+    </div>
+  );
+}
+
+/** Year-end rollover (M12 P1): an earlier year's class names into this one; the server skips names already here. */
+function CopyClasses({ schoolId, year, others }: { schoolId: string; year: AcademicYear; others: AcademicYear[] }) {
+  const m = useMessages(academicYearMessages);
+  const [from, setFrom] = useState(others[0]?.id ?? "");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function copy() {
+    setBusy(true);
+    setResult(null);
+    setError(null);
+    try {
+      const done = await academicYearsApi.copyClasses(schoolId, year.id, from);
+      setResult(m.copied(done.created.length, done.alreadyThere.length));
+    } catch (err) {
+      setError(problemMessage(err, m.failed));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-line pt-4">
+      <h3 className="text-sm font-semibold text-ink">{m.copyTitle}</h3>
+      <p className="text-sm text-ink-soft">{m.copyLead}</p>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm font-semibold text-ink">
+          {m.copyFrom}
+          <select
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="h-11 max-w-full rounded-[12px] bg-white px-3 text-[0.9375rem] font-normal text-ink ring-1 ring-inset ring-line-strong"
+          >
+            {others.map((y) => (
+              <option key={y.id} value={y.id}>
+                {y.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button size="sm" variant="outline" disabled={busy || !from} onClick={() => void copy()}>
+          {busy ? m.copying : m.copy}
+        </Button>
+      </div>
+      {result && (
+        <p role="status" className="text-sm font-medium text-palm-deep">
+          {result}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-sm font-medium text-brick-deep">
+          {error}
+        </p>
       )}
     </div>
   );

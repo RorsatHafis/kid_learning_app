@@ -159,6 +159,53 @@ class AcademicYearIntegrationTests {
         assertThat(get(base, admin).statusCode()).isEqualTo(200);
     }
 
+    @Test
+    void yearEndRolloverCopiesTheClassStructureOnceAndNothingElse() throws Exception {
+        User principal = user(PlatformRole.PRINCIPAL);
+        String schoolId = paidSchool(principal, "Rollover Primary");
+        String base = "/api/v1/schools/" + schoolId + "/academic-years";
+        String from = json(post(base, year("2025-2026", "2025-11-03", "2026-08-28"), principal), 201).get("id").asString();
+        String to = json(post(base, year("2026-2027", "2026-11-02", "2027-08-27"), principal), 201).get("id").asString();
+        for (String name : List.of("Grade 1A", "Grade 2A", "Old Class")) {
+            String classId = json(post("/api/v1/schools/" + schoolId + "/classes", "{\"name\":\"" + name + "\"}", principal), 201)
+                    .get("id").asString();
+            assertThat(put("/api/v1/schools/" + schoolId + "/classes/" + classId + "/academic-year",
+                    "{\"academicYearId\":\"" + from + "\"}", principal).statusCode()).isEqualTo(200);
+            if (name.equals("Old Class")) {
+                jdbc.update("update school_classes set status = 'ARCHIVED' where id = ?::uuid", classId);
+            }
+        }
+
+        JsonNode copied = json(post(base + "/" + to + "/copy-classes", "{\"fromYearId\":\"" + from + "\"}", principal), 200);
+        assertThat(copied.get("created")).extracting(JsonNode::asString).containsExactly("Grade 1A", "Grade 2A");
+        assertThat(copied.get("alreadyThere")).isEmpty();
+        assertThat(jdbc.queryForObject("select count(*) from school_classes where academic_year_id = ?::uuid", Integer.class, to))
+                .isEqualTo(2);
+        // The new classes start empty: no children, teachers or codes come with them.
+        assertThat(jdbc.queryForObject("""
+                select count(*) from class_enrollments e join school_classes c on c.id = e.school_class_id
+                where c.academic_year_id = ?::uuid""", Integer.class, to)).isZero();
+        assertThat(jdbc.queryForObject("""
+                select count(*) from teacher_assignments a join school_classes c on c.id = a.school_class_id
+                where c.academic_year_id = ?::uuid""", Integer.class, to)).isZero();
+
+        // Again: nothing twice.
+        JsonNode again = json(post(base + "/" + to + "/copy-classes", "{\"fromYearId\":\"" + from + "\"}", principal), 200);
+        assertThat(again.get("created")).isEmpty();
+        assertThat(again.get("alreadyThere")).extracting(JsonNode::asString).containsExactly("Grade 1A", "Grade 2A");
+        assertThat(jdbc.queryForObject("select count(*) from school_classes where academic_year_id = ?::uuid", Integer.class, to))
+                .isEqualTo(2);
+
+        assertThat(post(base + "/" + to + "/copy-classes", "{\"fromYearId\":\"" + to + "\"}", principal).statusCode()).isEqualTo(400);
+        // An archived year takes no classes.
+        assertThat(json(post(base + "/" + to + "/current", "", principal), 200).get("current").asBoolean()).isTrue();
+        assertThat(post(base + "/" + from + "/archive", "", principal).statusCode()).isEqualTo(200);
+        assertThat(detail(post(base + "/" + from + "/copy-classes", "{\"fromYearId\":\"" + to + "\"}", principal), 409))
+                .isEqualTo("This academic year is archived.");
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'ACADEMIC_YEAR_CLASSES_COPIED' and actor_id = ?::uuid",
+                Integer.class, UUID.fromString(principal.id()))).isEqualTo(2);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private static String year(String name, String startsOn, String endsOn) {
