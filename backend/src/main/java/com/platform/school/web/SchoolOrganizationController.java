@@ -41,6 +41,16 @@ public class SchoolOrganizationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(BranchResponse.of(service.addBranch(organizationId, request.name(), accountId)));
     }
 
+    /** M12 B1: the owner appoints a branch's principal (an existing principal account, by email). */
+    @PutMapping("/{organizationId}/branches/{schoolId}/principal")
+    public BranchResponse assignPrincipal(@PathVariable UUID organizationId, @PathVariable UUID schoolId,
+                                          @Valid @RequestBody PrincipalRequest request, @AuthenticationPrincipal UUID accountId) {
+        guard.requireStaff(accountId);
+        return BranchResponse.of(service.assignBranchPrincipal(organizationId, schoolId, request.email(), accountId));
+    }
+
+    public record PrincipalRequest(@NotBlank @Size(max = 320) String email) {}
+
     public record BranchRequest(@NotBlank @Size(max = 200) String name) {}
 
     public record BranchResponse(UUID id, String name, UUID principalAccountId, boolean archived) {

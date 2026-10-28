@@ -32,9 +32,13 @@ public class SchoolAccessGuard {
     private final SchoolClassRepository classes;
     private final TeacherAssignmentRepository assignments;
     private final SchoolEntitlementService entitlements;
+    private final com.platform.school.repository.SchoolOrganizationRepository organizations;
 
     public SchoolAccessGuard(AccountRepository accounts, SchoolRepository schools, SchoolClassRepository classes,
-                             TeacherAssignmentRepository assignments, SchoolEntitlementService entitlements) {
+                             TeacherAssignmentRepository assignments, SchoolEntitlementService entitlements,
+                             com.platform.school.repository.SchoolOrganizationRepository organizations) {
+
+        this.organizations = organizations;
 
         this.accounts = accounts;
         this.schools = schools;
@@ -130,10 +134,20 @@ public class SchoolAccessGuard {
 
     }
 
+    /**
+     * M12 B1: the owner of the school's organization runs every branch's configuration (calendar, classes, staff,
+     * plan) - not the children's data in a branch's classes (requireClassStaff stays the branch's principal and teachers).
+     */
+    private boolean ownsOrganizationOf(Account account, School school) {
+        return organizations.findById(school.getOrganizationId())
+                .map(o -> account.getId().equals(o.getOwnerAccountId())).orElse(false);
+    }
+
     private School schoolManagedBy(Account account, UUID schoolId) {
 
         School school = schools.findById(schoolId).orElseThrow(() -> new ResourceNotFoundException("School", schoolId));
-        if (account.getPlatformRole() != PlatformRole.ADMIN && !account.getId().equals(school.getPrincipalAccountId())) {
+        if (account.getPlatformRole() != PlatformRole.ADMIN && !account.getId().equals(school.getPrincipalAccountId())
+                && !ownsOrganizationOf(account, school)) {
             throw new AccessDeniedException("Account is not allowed to manage this school");
         }
         return school;

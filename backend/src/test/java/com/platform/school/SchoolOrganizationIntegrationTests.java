@@ -121,6 +121,55 @@ class SchoolOrganizationIntegrationTests {
         }
     }
 
+    @Test
+    void theOwnerAppointsABranchPrincipalWhoRunsThatBranchOnly() throws Exception {
+        User owner = user(PlatformRole.PRINCIPAL);
+        String north = json(post("/api/v1/schools", "{\"name\":\"Lotus Group - North\"}", owner), 201).get("id").asString();
+        PaidSchools.pay(context, UUID.fromString(north));
+        String organizationId = json(get("/api/v1/organizations/mine", owner), 200).get(0).get("id").asString();
+        String south = json(post("/api/v1/organizations/" + organizationId + "/branches", "{\"name\":\"Lotus Group - South\"}", owner), 201)
+                .get("id").asString();
+        PaidSchools.pay(context, UUID.fromString(south));
+        String appoint = "/api/v1/organizations/" + organizationId + "/branches/" + south + "/principal";
+
+        // Only an existing, active principal account can be appointed.
+        User teacher = user(PlatformRole.TEACHER);
+        assertThat(json(put(appoint, "{\"email\":\"" + teacher.email() + "\"}", owner), 409).get("detail").asString())
+                .isEqualTo("That account isn't an active principal account.");
+        assertThat(json(put(appoint, "{\"email\":\"nobody-" + UUID.randomUUID() + "@example.com\"}", owner), 409).get("detail").asString())
+                .isEqualTo("There is no principal account with that email address.");
+
+        User branchPrincipal = user(PlatformRole.PRINCIPAL);
+        assertThat(json(put(appoint, "{\"email\":\"" + branchPrincipal.email() + "\"}", owner), 200).get("principalAccountId").asString())
+                .isEqualTo(branchPrincipal.id());
+        // Someone who doesn't own the organization can't appoint (as if it didn't exist), not even the new principal.
+        assertThat(put(appoint, "{\"email\":\"" + owner.email() + "\"}", branchPrincipal).statusCode()).isEqualTo(404);
+
+        // The branch principal runs South only.
+        String southYears = "/api/v1/schools/" + south + "/academic-years";
+        assertThat(post(southYears, "{\"name\":\"2025-2026\",\"startsOn\":\"2025-11-03\",\"endsOn\":\"2026-08-28\"}", branchPrincipal)
+                .statusCode()).isEqualTo(201);
+        assertThat(get("/api/v1/schools/" + north + "/academic-years", branchPrincipal).statusCode()).isIn(403, 404);
+        assertThat(post("/api/v1/organizations/" + organizationId + "/branches", "{\"name\":\"Theirs\"}", branchPrincipal).statusCode())
+                .isEqualTo(404);
+        JsonNode theirs = json(get("/api/v1/organizations/mine", branchPrincipal), 200);
+        assertThat(theirs).hasSize(1);
+        assertThat(theirs.get(0).get("owner").asBoolean()).isFalse();
+        assertThat(theirs.get(0).get("branches")).extracting(b -> b.get("id").asString()).containsExactly(south);
+
+        // The owner still runs both branches' configuration...
+        assertThat(get(southYears, owner).statusCode()).isEqualTo(200);
+        assertThat(post("/api/v1/schools/" + south + "/classes", "{\"name\":\"Grade 3A\"}", owner).statusCode()).isEqualTo(201);
+        // ...but a branch's children's data stays with the people who run that branch's classes.
+        String southClass = json(post("/api/v1/schools/" + south + "/classes", "{\"name\":\"Grade 4A\"}", branchPrincipal), 201)
+                .get("id").asString();
+        assertThat(get("/api/v1/schools/classes/" + southClass + "/children", owner).statusCode()).isIn(403, 404);
+        assertThat(get("/api/v1/schools/classes/" + southClass + "/children", branchPrincipal).statusCode()).isEqualTo(200);
+
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'SCHOOL_BRANCH_PRINCIPAL_ASSIGNED' "
+                + "and resource_id = ?::uuid", Integer.class, south)).isEqualTo(1);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private record User(String id, String email, PlatformRole role, String token) {
@@ -145,6 +194,11 @@ class SchoolOrganizationIntegrationTests {
     private HttpResponse<String> post(String path, String body, User user) throws Exception {
         return http.send(request(path, user).header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> put(String path, String body, User user) throws Exception {
+        return http.send(request(path, user).header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpRequest.Builder request(String path, User user) {

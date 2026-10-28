@@ -498,6 +498,8 @@ public final class ServerText {
             Map.entry("Choose another branch to copy the calendar from.", "សូមជ្រើសសាខាផ្សេងដើម្បីចម្លងប្រតិទិនពី។"),
             Map.entry("This school organization is archived.", "ស្ថាប័នសាលានេះត្រូវបានទុកក្នុងបណ្ណសារ។"),
             Map.entry("A branch name needs 1 to 200 characters.", "ឈ្មោះសាខាត្រូវមានពី 1 ដល់ 200 តួអក្សរ។"),
+            Map.entry("There is no principal account with that email address.", "មិនមានគណនីនាយកសាលាដែលមានអាសយដ្ឋានអ៊ីមែលនោះទេ។"),
+            Map.entry("That account isn't an active principal account.", "គណនីនោះមិនមែនជាគណនីនាយកសាលាសកម្មទេ។"),
             Map.entry("This school is archived: restore it to change its academic years.", "សាលានេះត្រូវបានទុកក្នុងបណ្ណសារ៖ សូមស្ដារវាវិញ ដើម្បីកែប្រែឆ្នាំសិក្សារបស់វា។")
     );
 

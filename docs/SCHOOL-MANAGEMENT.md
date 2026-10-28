@@ -157,3 +157,36 @@ without an organization by any path (older code, raw SQL) gets its own from a tr
 | B3 | Branch principals other than the owner; group administrators who aren't principals | **Invite a principal per branch** (the owner keeps oversight); a group-admin permission rather than a new role (S4) |
 | B4 | Receipt numbering | **Per branch** (each branch's own sequence), with the branch's code in the number |
 
+### 8.1 Roles across platform, organization and branch (owner's hierarchy, 2026-10-28)
+
+| Level | Who | Can | Cannot |
+|---|---|---|---|
+| **Platform admin** (`ADMIN`) | Bookeyond staff | organizations and platform account status, Bookeyond subscriptions, platform configuration, audited support | children's data in classes (`requireClassStaff` excludes admins), a school's own business decisions |
+| **Organization owner** | `school_organizations.owner_account_id` | create branches, **appoint/replace a branch's principal** (built, B1), run every branch's configuration (years, classes, staff, plan) through `requireSchoolManage`, switch branches with one account, group reports (to come: aggregates) | the children's data in a branch's classes unless they also run that branch (verified by test) |
+| **Branch principal** | `schools.principal_account_id` | everything in their branch | other branches (verified: 403/404), organization settings, adding branches |
+| **Branch staff** | teachers today (`SchoolStaff`, `TeacherAssignment`); registrar/cashier as permissions later (S4) | their assigned classes/duties, possibly in several branches | anything organization-wide by virtue of working in several branches |
+
+No role combines platform and school authority. Every check is on the server (`SchoolAccessGuard`), keyed on the
+record's own school/organization, so a changed URL or id finds nothing.
+
+### 8.2 To build next, in order (each a complete slice)
+
+1. **Organization dashboard** (owner): per-branch counts (classes, staff, children with access, plan state) - aggregates
+   only, no child records.
+2. **Shared settings with branch overrides** (when a module has settings: attendance codes, grading scales, fee heads).
+3. **Student records (P2, after S1)**: `students` at organization level with a stable student number; enrolments carry
+   branch + year + class; **transfer** = close one enrolment, open another (history and the old branch's ledger stay).
+4. **A school joining an organization later** (design, not built): an owner invites an existing school's principal; on
+   acceptance the school's `organization_id` moves to the inviting organization (its own one-branch organization is
+   archived, not deleted); classes, years, staff, payments and audit history stay on the school row, so nothing is
+   copied; student records (once they exist) move with an audited re-parenting, never merged silently. Needs the owner's
+   approval (B5) because it changes who can oversee that school's data.
+
+**B5 (new decision)**: may an existing school join an organization, and does its principal consent (recommended: yes,
+by invitation accepted by the school's principal, audited, reversible by the platform admin).
+
+**Subscription (B1, open)**: options are per branch (today), per organization (one plan covering N branches), or per
+student capacity across the organization. Recommendation: keep per branch until a real group asks; then an
+organization plan whose entitlements are the sum of branch places, billed to the organization - a Bookeyond
+subscription record, never mixed with school fees.
+

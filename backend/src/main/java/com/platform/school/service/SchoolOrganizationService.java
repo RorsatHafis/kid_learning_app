@@ -94,6 +94,38 @@ public class SchoolOrganizationService {
         return branch;
     }
 
+    /**
+     * M12 B1: the owner (or a platform administrator) appoints a branch's principal - an existing, active principal
+     * account. The new principal runs that branch only; the owner keeps every branch. Audited with who it was before.
+     */
+    @Transactional
+    public School assignBranchPrincipal(UUID organizationId, UUID schoolId, String email, UUID actorId) {
+        SchoolOrganization organization = organizations.findById(organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException("School organization", organizationId));
+        Account actor = accounts.findById(actorId).orElseThrow(() -> new ResourceNotFoundException("Account", actorId));
+        if (!actorId.equals(organization.getOwnerAccountId()) && actor.getPlatformRole() != PlatformRole.ADMIN) {
+            throw new ResourceNotFoundException("School organization", organizationId);
+        }
+        School branch = schools.findById(schoolId).filter(s -> s.getOrganizationId().equals(organizationId))
+                .orElseThrow(() -> new ResourceNotFoundException("School", schoolId));
+        Account principal = accounts.findByNormalizedEmail(Account.normalize(email == null ? "" : email))
+                .orElseThrow(() -> new IllegalStateException("There is no principal account with that email address."));
+        if (principal.getPlatformRole() != PlatformRole.PRINCIPAL || principal.getStatus() != com.platform.identity.entity.AccountStatus.ACTIVE) {
+            throw new IllegalStateException("That account isn't an active principal account.");
+        }
+        UUID before = branch.getPrincipalAccountId();
+        branch.assignPrincipal(principal.getId());
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("organizationId", organizationId);
+        if (before != null) {
+            metadata.put("fromAccountId", before);
+        }
+        metadata.put("toAccountId", principal.getId());
+        audit.record(new RecordAuditEvent(null, actorId, AuditActorType.valueOf(actor.getPlatformRole().name()),
+                "SCHOOL_BRANCH_PRINCIPAL_ASSIGNED", "SCHOOL", schoolId, metadata));
+        return branch;
+    }
+
     /** The two schools are branches of one organization (calendar copies never cross organizations). */
     public void requireSameOrganization(School a, School b) {
         if (!a.getOrganizationId().equals(b.getOrganizationId())) {

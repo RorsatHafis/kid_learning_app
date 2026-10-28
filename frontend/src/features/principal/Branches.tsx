@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { useMessages } from "@/i18n/catalog";
 import { branchMessages } from "./branches.messages";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 /**
  * M12 B0: the organization this school belongs to and its branches - the owner adds one here (it then waits for its
@@ -52,9 +53,14 @@ export function Branches({ schoolId, onAdded }: { schoolId: string; onAdded: () 
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {organization.branches.map((b) => (
-            <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 [overflow-wrap:anywhere]">
-              <span className={b.id === schoolId ? "font-semibold text-ink" : "text-ink"}>{b.name}</span>
-              {b.archived && <span className="text-xs font-semibold text-ink-soft">{m.archived}</span>}
+            <li key={b.id} className="flex flex-col gap-2 py-3 [overflow-wrap:anywhere]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className={b.id === schoolId ? "font-semibold text-ink" : "text-ink"}>{b.name}</span>
+                {b.archived && <span className="text-xs font-semibold text-ink-soft">{m.archived}</span>}
+              </div>
+              {organization.owner && (
+                <AppointPrincipal organizationId={organization.id} branch={b} onAppointed={organizations.refetch} />
+              )}
             </li>
           ))}
         </ul>
@@ -80,6 +86,76 @@ export function Branches({ schoolId, onAdded }: { schoolId: string; onAdded: () 
         </p>
       )}
     </section>
+  );
+}
+
+/** M12 B1: the owner sees who runs a branch and can appoint its principal (the server checks everything). */
+function AppointPrincipal({
+  organizationId,
+  branch,
+  onAppointed,
+}: {
+  organizationId: string;
+  branch: { id: string; name: string; principalAccountId: string };
+  onAppointed: () => void;
+}) {
+  const m = useMessages(branchMessages);
+  const me = useAuth().session?.accountId;
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function appoint(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setNotice(null);
+    setError(null);
+    try {
+      await organizationsApi.assignPrincipal(organizationId, branch.id, email.trim());
+      setEmail("");
+      setOpen(false);
+      setNotice(m.appointed(branch.name));
+      onAppointed();
+    } catch (err) {
+      setError(problemMessage(err, m.failed));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 text-sm">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="text-ink-soft">{branch.principalAccountId === me ? m.runByYou : m.runByOther}</span>
+        {!open && (
+          <Button size="sm" variant="outline" onClick={() => setOpen(true)} aria-label={m.appointFor(branch.name)}>
+            {m.appoint}
+          </Button>
+        )}
+      </div>
+      {open && (
+        <form onSubmit={appoint} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
+            <FormField label={m.principalEmail} type="email" value={email} required hint={m.appointHint} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <Button type="submit" size="sm" disabled={busy || !email.trim()}>
+            {busy ? m.appointing : m.appoint}
+          </Button>
+        </form>
+      )}
+      {notice && (
+        <p role="status" className="font-medium text-palm-deep">
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="font-medium text-brick-deep">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

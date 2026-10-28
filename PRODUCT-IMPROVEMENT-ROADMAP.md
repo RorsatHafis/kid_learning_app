@@ -1752,4 +1752,23 @@ Dependencies:
     `SchoolStaffIntegrationTests` (11), `SelfServiceSchoolOnboardingIntegrationTests` - green. **Browser verified (360 px)**:
     Branches shows "only branch", a branch added ("opens once its own plan is paid"), listed and in the switcher, the
     calendar copy offered, 0 overflow, axe clean, no 5xx.
+- 2026-10-28: **CI verified on `25fe220` (all four jobs green); M12 B1 - the organization owner appoints branch
+  principals.** Two consecutive green runs (`c3cc834`, `25fe220`) with `runOrder=alphabetical`, after two consecutive
+  failures without it: the mitigation holds. **Technical debt (recorded, not fixed)**: `DueReviewIntegrationTests:57`
+  and `SubscriptionIntegrationTests:129` still depend on content other test classes create; a reordering or a new
+  content-free database would fail them again; the fix (each creates its own skill / second curriculum) needs the
+  owner's authorisation to change those tests.
+  - **B1**: `PUT /api/v1/organizations/{id}/branches/{schoolId}/principal {email}` - the owner (or a platform admin)
+    appoints an existing, active principal account; audited with the previous principal. `SchoolAccessGuard`: the
+    organization's owner now passes `requireSchoolManage` for every branch (configuration), while `requireClassStaff`
+    (children's data) is unchanged - the owner doesn't see a branch's children unless they run it. Principal UI: each
+    branch shows "You run this branch / Run by its own principal" and "Appoint a principal". Role table and the next
+    slices (organization dashboard, shared settings with overrides, student records and transfers after S1, a school
+    joining an organization - decision B5) in `docs/SCHOOL-MANAGEMENT.md` 8.1-8.2.
+  - **Tested**: `SchoolOrganizationIntegrationTests` third scenario (teacher and unknown emails refused with words; the
+    appointed principal runs South, not North, can't add branches, sees only South; the owner still manages South's
+    calendar and classes but not its class's children; non-owner can't appoint; audited) plus the existing school
+    suites (`SchoolAccess` 11, `SchoolFamilyBoundary` 3, `SchoolPaymentAccess` 3, `SchoolStaff` 11), `AcademicYear` 3,
+    ServerText - 37 green; frontend principal/school Vitest 28, tsc, eslint. **Not browser verified**: the appoint form
+    (API and server rules are covered by the integration test).
 

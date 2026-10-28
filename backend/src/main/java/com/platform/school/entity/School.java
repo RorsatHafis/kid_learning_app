@@ -20,6 +20,8 @@ public class School extends AuditableEntity {
     private School(String name, UUID principalAccountId, UUID organizationId) { this.name = name; this.principalAccountId = principalAccountId; this.organizationId = organizationId; this.status = CatalogStatus.ACTIVE; }
     public static School create(String name, UUID principalAccountId, UUID organizationId) { Assert.hasText(name, "name must not be blank"); Assert.notNull(principalAccountId, "principalAccountId must not be null"); Assert.notNull(organizationId, "organizationId must not be null"); return new School(name, principalAccountId, organizationId); }
     public UUID getOrganizationId() { return organizationId; }
+    /** M12 B1: the organization's owner appoints the branch's principal. */
+    public void assignPrincipal(UUID principalAccountId) { Assert.notNull(principalAccountId, "principalAccountId must not be null"); this.principalAccountId = principalAccountId; }
     /** PD-26 (Y17): the school stops being used - nothing new; everything existing stays. */
     public void archive() { if (status == CatalogStatus.ARCHIVED) throw new IllegalStateException("This school is already archived."); status = CatalogStatus.ARCHIVED; }
     public void restore() { if (status != CatalogStatus.ARCHIVED) throw new IllegalStateException("This school is not archived."); status = CatalogStatus.ACTIVE; }

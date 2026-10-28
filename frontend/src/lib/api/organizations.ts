@@ -19,6 +19,9 @@ export interface SchoolOrganization {
 
 export const organizationsApi = {
   mine: () => apiClient.get<SchoolOrganization[]>("/organizations/mine"),
+  /** M12 B1: the owner appoints a branch's principal (an existing principal account). */
+  assignPrincipal: (organizationId: string, schoolId: string, email: string) =>
+    apiClient.put<SchoolBranch>(`/organizations/${organizationId}/branches/${schoolId}/principal`, { email }),
   addBranch: (organizationId: string, name: string) => apiClient.post<SchoolBranch>(`/organizations/${organizationId}/branches`, { name }),
   /** A sibling branch's calendar (years and terms) into this branch; years already here by name are skipped. */
   copyCalendar: (schoolId: string, sourceSchoolId: string) =>
