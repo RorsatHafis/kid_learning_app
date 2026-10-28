@@ -47,7 +47,6 @@ export function LandingPage() {
       <Nav />
       <main id="main" tabIndex={-1}>
         <Hero />
-        <Audiences />
         <HowItWorks />
         <ForParents />
         <ForChildren />
@@ -226,58 +225,6 @@ function Statements() {
   );
 }
 
-/** Two ways in: what a family gets, and what a school gets - each with its own first step. */
-function Audiences() {
-  const l = useMessages(marketingMessages).landing;
-  const cards = [
-    {
-      title: l.familiesTitle,
-      lead: l.familiesLead,
-      points: [l.familiesPoints.a, l.familiesPoints.b, l.familiesPoints.c],
-      cta: l.familiesCta,
-      to: "/register",
-      buddy: "OTTER" as const,
-    },
-    {
-      title: l.schoolsTitle,
-      lead: l.schoolsLead,
-      points: [l.schoolsPoints.a, l.schoolsPoints.b, l.schoolsPoints.c],
-      cta: l.schoolsCta,
-      to: "/register?as=principal",
-      buddy: "ELEPHANT" as const,
-    },
-  ];
-  return (
-    <section aria-labelledby="audiences" className="relative px-4 pb-6 pt-16 sm:px-8 sm:pt-20">
-      <h2 id="audiences" className="sr-only">
-        {l.audiences}
-      </h2>
-      <div className="mx-auto grid max-w-[1240px] border-y border-line md:grid-cols-2 md:divide-x md:divide-line">
-        {cards.map((c, i) => (
-          <article key={c.title} className={cn("flex flex-col gap-5 py-10 md:py-12", i === 0 ? "md:pr-12" : "border-t border-line md:border-t-0 md:pl-12")}>
-            <div className="flex items-center gap-4">
-              <LearningBuddy kind={c.buddy} mood="idle" size={72} className="!animate-none shrink-0" />
-              <h3 className="font-display text-[2rem] font-bold leading-tight text-tonle-950">{c.title}</h3>
-            </div>
-            <p className="max-w-[30rem] text-lg leading-relaxed text-ink">{c.lead}</p>
-            <ul className="flex flex-col gap-2.5">
-              {c.points.map((point) => (
-                <li key={point} className="flex items-start gap-3 text-[0.9375rem] leading-relaxed text-ink">
-                  <Check size={18} strokeWidth={2.5} className="mt-0.5 shrink-0 text-palm" aria-hidden />
-                  {point}
-                </li>
-              ))}
-            </ul>
-            <Link to={c.to} className={buttonClasses(i === 0 ? "solid" : "outline", "lg", "mt-auto w-fit")}>
-              {c.cta} <ArrowRight size={18} aria-hidden />
-            </Link>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function Section({ id, className, children }: { id?: string; className?: string; children: ReactNode }) {
   return (
     <section id={id} className={cn("scroll-mt-20 px-4 py-20 sm:px-8 sm:py-28", className)}>
@@ -434,8 +381,8 @@ function Subjects() {
       <ul className="mt-12 grid gap-6 md:grid-cols-3">
         {subjects.map((s) => (
           <li key={s.key} className={cn("flex flex-col overflow-hidden rounded-[24px] bg-white shadow-paper ring-1 ring-line/70", !s.ready && "bg-white/80")}>
-            <div className={cn("flex h-44 items-end justify-center", s.ready ? "bg-[#EAF3E4]" : "bg-paper")}>
-              <Place kind={s.place} className={cn("h-40 w-auto", !s.ready && "opacity-75 saturate-[0.7]")} />
+            <div className={cn("flex h-32 items-end justify-center sm:h-44", s.ready ? "bg-[#EAF3E4]" : "bg-paper")}>
+              <Place kind={s.place} className={cn("h-28 w-auto sm:h-40", !s.ready && "opacity-75 saturate-[0.7]")} />
             </div>
             <div className="flex flex-1 flex-col gap-2 p-6">
               <div className="flex items-start justify-between gap-3">

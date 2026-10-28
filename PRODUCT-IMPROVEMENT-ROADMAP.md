@@ -32,7 +32,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | F1a Landing page: every word editable without code | **done** 2026-10-27 | see log | V75 |
 | F1b Public demo journey for families: a child tries a real activity (buddy, introduction, questions, feedback, completion) then "Create a parent account" or "Not now"; what an account enables | **done** 2026-10-27 (teach-first, account explanation, Not now, demo picker shows replaced versions) | see log | - |
 | F1c Parent demo with representative sample data (progress, evidence, how to help) | **done** 2026-10-27: `/try/parent`, a fictional sample child labelled on the page, static, nothing fetched or stored | see log | V76 |
-| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; **F1d-2**: closing headline and footer line editable, parent demo linked from "For parents"; **F1d-3**: "For parents" says what the product actually does; **F1d-4**: the buddies can be chosen on the page, as a child does | see log | |
+| F1d Landing page redesign: concise copy, purposeful Learning Buddy/character motion showing the real app | **F1d-1 done** 2026-10-27: "How it works" plays the learning loop (child answer -> evidence -> standing -> next step) with the real components; **F1d-2**: closing headline and footer line editable, parent demo linked from "For parents"; **F1d-3**: "For parents" says what the product actually does; **F1d-4**: the buddies can be chosen on the page, as a child does; **F1d-6**: shorter on phones (redundant "For families / For schools" removed) | see log | |
 | F2 Legal and launch readiness: Terms, Privacy, Cookies (if used), children's data and parental consent, deletion, media, third parties | **F2a done** 2026-10-27: `docs/legal/DATA-INVENTORY.md` (facts from the code + 10 questions for a lawyer); **F2b drafts done**: `PRIVACY-NOTICE-DRAFT.md`, `TERMS-DRAFT.md` (unpublished, owner/lawyer placeholders); next: owner facts + qualified review - written from what the product actually collects and does; jurisdiction questions (Cambodia PDP draft, D-11) for qualified review; no claims of compliance without it | | |
 
 **Execution order (revised 2026-10-23, owner's continuous-execution brief: parent and child first, school management
@@ -1545,4 +1545,11 @@ Dependencies:
   right!" - and the database holds that answer **once**; (2) **never sent** (offline at "Check"): "We couldn't send
   that answer. Please try again.", the typed answer kept, "Check" again recorded it ("3 + 4" with 7) - **once**. Also:
   one confirmation email per registration (a duplicate count earlier came from the local mail catcher's search).
+- 2026-10-28: **F1d-6 the landing page says each thing once.** Right after the hero, "For families / For schools"
+  (two cards, ~1,150 px on a phone) repeated what "For parents", "A world of their own", "Plans" and "Schools" each
+  say in full further down, and the hero already offers both ways in ("Start as a family", "For schools" -> the
+  Schools section). Removed, with its 18 catalog entries (EN + KM) so the words editor lists only words that appear;
+  nothing linked to it. Subject cards' picture band is shorter on phones (h-32, h-44 from 640 px). Phone page height
+  15,951 -> 14,932 px. **Browser verified (headless Chromium)**: section order and heights measured at 360 px; axe
+  clean at 1280 and 360. **Tested**: Vitest 400, tsc, eslint.
 
