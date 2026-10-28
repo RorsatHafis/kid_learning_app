@@ -316,4 +316,5 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - 2026-10-28 (M12 P1): `frontend/src/features/principal/academicYears.messages.ts` (whole file), `workspace.messages.ts`
   `nav.years`, `yearsLead`; `admin/operations/auditCodes.ts` ACADEMIC_*; `backend/.../common/web/ServerText.java` the
   twelve academic-year messages.
-
+- 2026-10-28 (M12 B0): `frontend/src/features/principal/branches.messages.ts` (whole file); `auditCodes.ts`
+  SCHOOL_BRANCH_CREATED, ACADEMIC_CALENDAR_COPIED; `ServerText.java` the three branch messages.

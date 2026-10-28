@@ -23,6 +23,7 @@ import { staffMessages } from "@/features/school/staff.messages";
 import { schoolPlansApi } from "@/lib/api/subscriptions";
 import { principalWorkspaceMessages } from "./workspace.messages";
 import { AcademicYears, ClassYearSelect } from "./AcademicYears";
+import { Branches } from "./Branches";
 import { academicYearsApi, type AcademicYear } from "@/lib/api/academicYears";
 
 const SCHOOL_KEY = "bk.principal.school";
@@ -65,7 +66,8 @@ export function SchoolFrame({
   overview?: boolean;
   /** The plan page: open while the school's services wait for payment (Y44), since it is the way to pay. */
   billing?: boolean;
-  children: (school: SchoolSummary) => ReactNode;
+  /** {@code refresh} reloads the school list (a branch was added: the switcher shows it). */
+  children: (school: SchoolSummary, refresh: () => void) => ReactNode;
 }) {
   const { schools, school, select } = usePrincipalSchool();
   const m = useMessages(staffMessages).principal;
@@ -115,7 +117,7 @@ export function SchoolFrame({
       ) : paused && access.data ? (
         <SchoolPaymentRequired schoolId={school.id} schoolName={school.name} plan={access.data} />
       ) : (
-        children(school)
+        children(school, schools.refetch)
       )}
     </div>
   );
@@ -126,12 +128,13 @@ export function PrincipalHome() {
   const overview = useAsync(() => staffOverviewApi.get(), []);
   return (
     <SchoolFrame overview>
-      {(school) => (
+      {(school, refresh) => (
         <>
           {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
           {overview.data && <AtAGlance school={overview.data.schools.find((s) => s.schoolId === school.id)} />}
           <SchoolLearningSection key={school.id} schoolId={school.id} />
           <PlanLine schoolId={school.id} />
+          <Branches key={`branches-${school.id}`} schoolId={school.id} onAdded={refresh} />
         </>
       )}
     </SchoolFrame>

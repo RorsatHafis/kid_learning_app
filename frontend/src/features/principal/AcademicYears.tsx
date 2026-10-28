@@ -9,6 +9,7 @@ import { FormField } from "@/features/auth/FormField";
 import { useMessages } from "@/i18n/catalog";
 import { formatDate } from "@/i18n/format";
 import { academicYearMessages } from "./academicYears.messages";
+import { CopyBranchCalendar } from "./Branches";
 
 /** A school date (yyyy-mm-dd) shown in the reader's language, read as a local day (never shifted by a time zone). */
 const day = (iso: string) => formatDate(`${iso}T00:00:00`);
@@ -23,6 +24,7 @@ export function AcademicYears({ schoolId }: { schoolId: string }) {
 
   return (
     <div className="flex flex-col gap-8">
+      <CopyBranchCalendar schoolId={schoolId} onCopied={years.refetch} />
       <section aria-labelledby="new-year" className="flex flex-col gap-3 rounded-[20px] bg-white p-5 shadow-card sm:p-6">
         <h2 id="new-year" className="font-display text-xl font-bold text-tonle-950">
           {m.newYear}

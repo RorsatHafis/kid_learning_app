@@ -219,6 +219,46 @@ public class AcademicYearService {
         return schoolClass;
     }
 
+    public record CopiedCalendar(List<String> yearsAdded, List<String> yearsAlreadyThere) {}
+
+    /**
+     * M12 B0: reuse a sibling branch's calendar - its active years and their terms, copied into this branch. A year
+     * whose name this branch already has is skipped (a second run adds nothing); every copy passes the same rules as a
+     * year made by hand (no overlap...). Both branches belong to one organization; the caller manages both.
+     */
+    @Transactional
+    public CopiedCalendar copyCalendar(UUID schoolId, UUID sourceSchoolId, UUID actorId) {
+        if (schoolId.equals(sourceSchoolId)) {
+            throw new IllegalArgumentException("Choose another branch to copy the calendar from.");
+        }
+        School target = activeSchool(schoolId);
+        School source = schools.findById(sourceSchoolId).orElseThrow(() -> new ResourceNotFoundException("School", sourceSchoolId));
+        if (!target.getOrganizationId().equals(source.getOrganizationId())) {
+            throw new ResourceNotFoundException("School", sourceSchoolId);
+        }
+        java.util.Set<String> here = new java.util.HashSet<>();
+        years.lockBySchoolId(schoolId).forEach(y -> here.add(y.getName().toLowerCase(java.util.Locale.ROOT)));
+        List<String> added = new java.util.ArrayList<>();
+        List<String> skipped = new java.util.ArrayList<>();
+        for (YearWithTerms from : list(sourceSchoolId)) {
+            if (from.year().isArchived()) {
+                continue;
+            }
+            if (!here.add(from.year().getName().toLowerCase(java.util.Locale.ROOT))) {
+                skipped.add(from.year().getName());
+                continue;
+            }
+            AcademicYear copy = create(schoolId, from.year().getName(), from.year().getStartsOn(), from.year().getEndsOn(), actorId);
+            for (AcademicTerm term : from.terms()) {
+                addTerm(schoolId, copy.getId(), term.getName(), term.getStartsOn(), term.getEndsOn(), actorId);
+            }
+            added.add(copy.getName());
+        }
+        record(actorId, "ACADEMIC_CALENDAR_COPIED", schoolId, Map.of("schoolId", schoolId, "fromSchoolId", sourceSchoolId,
+                "yearsAdded", added.size(), "yearsAlreadyThere", skipped.size()));
+        return new CopiedCalendar(added, skipped);
+    }
+
     public record CopiedClasses(List<SchoolClass> created, List<String> alreadyThere) {}
 
     /**

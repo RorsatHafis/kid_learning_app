@@ -120,3 +120,40 @@ entries, never edits -> reports: collected by head/class, outstanding and aging,
 6. **Low-connectivity attendance** (P3) - take the register offline and sync; many classrooms have weak data.
 7. Later or excluded for now: timetable and rooms (useful, but primary schools often run fixed class teachers),
    transport, library, inventory, payroll (buy, don't build), multi-campus (until a real customer needs it).
+
+## 8. Multi-branch schools (owner requirement, 2026-10-28) - foundation B0 built
+
+Research (vendor material, read as claims): OpenEduCat, *Student information system for multi-campus groups*
+(https://openeducat.org/solutions/student-information-system-for-multi-campus-groups/) - each campus an isolated unit
+under a group layer; a stable student identity across the group; a transfer closes the campus record and opens a
+continuation (no duplicate); campus-level fee structures within the group's policy.
+
+**Model.** A **school organization** (a school or a group) has one or more **branches**. The existing `schools` row
+*is* the branch: classes, academic years, staff, join codes, plan and payments stay on it, so nothing already built
+changes meaning. To come, by rule:
+
+| Belongs to the organization | Belongs to a branch (and a period) |
+|---|---|
+| Student records (one per student, stable ID - P2, decision S1), guardian links, the group's settings and policy defaults, group oversight and consolidated reports | Enrolments (branch + year + class), attendance, assessments and results, fee structures, invoices, receipts and **receipt numbering**, branch settings that override the group's, staff assignments |
+
+- **Transfers between branches**: end the enrolment at one branch, start one at the other - the student record, past
+  enrolments, results and the old branch's ledger stay where they were (finance never moves between branch ledgers).
+- **Calendars**: each branch has its own; one branch's can be **copied** into another of the same organization (built);
+  a shared group calendar with branch exceptions is possible later (decision B2).
+- **People**: the organization's **owner** oversees every branch and adds branches (built); each branch has its own
+  principal (today the owner; assigning another principal to a branch is next - decision B3); staff may work in
+  several branches through separate assignments.
+
+**Backward compatible (V78).** Every existing school became the only branch of its own organization (same name; its
+principal as owner) - verified on the dev database: 123 schools, 123 organizations, none without. A school inserted
+without an organization by any path (older code, raw SQL) gets its own from a trigger.
+
+**Decisions for the owner (multi-branch)**
+
+| # | Decision | Recommendation |
+|---|---|---|
+| B1 | Platform billing for a group: per branch (today) or one plan for the organization | **Per branch for now** (each branch waits for its own payment - as built); an organization plan later if groups ask |
+| B2 | Shared group calendar vs branch calendars | **Branch calendars with copy** (built); a group calendar only if groups need one source of truth |
+| B3 | Branch principals other than the owner; group administrators who aren't principals | **Invite a principal per branch** (the owner keeps oversight); a group-admin permission rather than a new role (S4) |
+| B4 | Receipt numbering | **Per branch** (each branch's own sequence), with the branch's code in the number |
+

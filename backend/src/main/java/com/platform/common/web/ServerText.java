@@ -495,6 +495,9 @@ public final class ServerText {
             Map.entry("This academic year is archived.", "ឆ្នាំសិក្សានេះត្រូវបានទុកក្នុងបណ្ណសារ។"),
             Map.entry("The current academic year can't be archived: make another year current first.", "មិនអាចទុកឆ្នាំសិក្សាបច្ចុប្បន្នក្នុងបណ្ណសារបានទេ៖ សូមកំណត់ឆ្នាំផ្សេងជាឆ្នាំបច្ចុប្បន្នជាមុនសិន។"),
             Map.entry("Choose a different year to copy from.", "សូមជ្រើសឆ្នាំផ្សេងដើម្បីចម្លងពី។"),
+            Map.entry("Choose another branch to copy the calendar from.", "សូមជ្រើសសាខាផ្សេងដើម្បីចម្លងប្រតិទិនពី។"),
+            Map.entry("This school organization is archived.", "ស្ថាប័នសាលានេះត្រូវបានទុកក្នុងបណ្ណសារ។"),
+            Map.entry("A branch name needs 1 to 200 characters.", "ឈ្មោះសាខាត្រូវមានពី 1 ដល់ 200 តួអក្សរ។"),
             Map.entry("This school is archived: restore it to change its academic years.", "សាលានេះត្រូវបានទុកក្នុងបណ្ណសារ៖ សូមស្ដារវាវិញ ដើម្បីកែប្រែឆ្នាំសិក្សារបស់វា។")
     );
 

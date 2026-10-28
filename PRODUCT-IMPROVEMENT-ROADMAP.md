@@ -1730,4 +1730,26 @@ Dependencies:
   same year 400; an archived target 409; audited twice) - green with ServerText coverage. **Browser verified (360 px)**:
   "1 class added to this year." then "This year already has all of those classes."; 0 overflow. Vitest: the known
   `media.test.tsx` load timeout aside, green.
+- 2026-10-28: **CI test order isolated; M12 B0 multi-branch foundation.**
+  - **CI**: `cecd70f` and `0337462` both failed on the same two order-dependent tests (DueReview:57, Subscription:129) -
+    twice in a row, not random: a new test class shifted Surefire's file-system class order. Isolated without touching
+    test files: `runOrder=alphabetical` in `pom.xml` (the content tests that create skills and curricula always run
+    first). **CI on `c3cc834`: backend job green.** The hidden dependency remains (recorded in the pom); removing it
+    needs the owner's authorisation to change those two tests.
+  - **B0** (owner requirement: multi-branch is foundational): V78 `school_organizations`; `schools.organization_id`
+    NOT NULL, backfilled one organization per existing school (dev DB: 123 schools -> 123 organizations, none
+    without); a trigger gives any school inserted without one its own (a frozen test inserts schools by raw SQL - still
+    green). A new school creates its organization; the owner adds branches (`POST /api/v1/organizations/{id}/branches`,
+    a retry makes no second; each branch waits for its own payment, B1); `GET /api/v1/organizations/mine` (owner: all
+    branches; a branch principal: theirs); `POST /api/v1/schools/{id}/academic-years/copy-from/{branchId}` copies a
+    sibling branch's years and terms (same rules as by hand; names already there skipped; never across organizations;
+    the caller manages both). Principal: "Branches" on the overview (list, add), branch in the switcher, "Use another
+    branch's calendar" on the School year page. Design, ownership table (organization vs branch), transfers, receipts
+    and decisions B1-B4: `docs/SCHOOL-MANAGEMENT.md` section 8.
+  - **Tested**: new `SchoolOrganizationIntegrationTests` (2: single-branch backward compatibility incl. a raw insert;
+    branches, retry, per-branch payment, calendar copy once, no crossing organizations, only the owner, audit),
+    `AcademicYearIntegrationTests` (3), `ServerTextCoverageTests`, `FamilyDataExportIntegrationTests`,
+    `SchoolStaffIntegrationTests` (11), `SelfServiceSchoolOnboardingIntegrationTests` - green. **Browser verified (360 px)**:
+    Branches shows "only branch", a branch added ("opens once its own plan is paid"), listed and in the switcher, the
+    calendar copy offered, 0 overflow, axe clean, no 5xx.
 

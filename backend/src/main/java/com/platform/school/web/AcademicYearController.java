@@ -101,6 +101,18 @@ public class AcademicYearController {
         return ResponseEntity.noContent().build();
     }
 
+    /** M12 B0: a sibling branch's calendar (years and terms) into this branch. The caller manages both branches. */
+    @PostMapping("/academic-years/copy-from/{sourceSchoolId}")
+    public CalendarCopyResponse copyCalendar(@PathVariable UUID schoolId, @PathVariable UUID sourceSchoolId,
+                                             @AuthenticationPrincipal UUID accountId) {
+        guard.requireSchoolManage(accountId, schoolId);
+        guard.requireSchoolManage(accountId, sourceSchoolId);
+        AcademicYearService.CopiedCalendar copied = service.copyCalendar(schoolId, sourceSchoolId, accountId);
+        return new CalendarCopyResponse(copied.yearsAdded(), copied.yearsAlreadyThere());
+    }
+
+    public record CalendarCopyResponse(List<String> yearsAdded, List<String> yearsAlreadyThere) {}
+
     /** Year-end rollover: the earlier year's classes, by name, into this one (children and teachers stay where they are). */
     @PostMapping("/academic-years/{yearId}/copy-classes")
     public CopyResponse copyClasses(@PathVariable UUID schoolId, @PathVariable UUID yearId, @Valid @RequestBody CopyRequest request,

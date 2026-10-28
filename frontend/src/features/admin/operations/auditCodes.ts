@@ -4,7 +4,9 @@
  * fallback for a code added later, never the raw code.
  */
 export const KHMER_ACTIONS: Record<string, string> = {
+  ACADEMIC_CALENDAR_COPIED: "ប្រតិទិនសិក្សាត្រូវបានចម្លងពីសាខាផ្សេង",
   ACADEMIC_TERM_CHANGED: "វគ្គសិក្សាត្រូវបានកែប្រែ",
+  SCHOOL_BRANCH_CREATED: "សាខាសាលាត្រូវបានបង្កើត",
   ACADEMIC_TERM_CREATED: "វគ្គសិក្សាត្រូវបានបង្កើត",
   ACADEMIC_TERM_REMOVED: "វគ្គសិក្សាត្រូវបានដកចេញ",
   ACADEMIC_YEAR_ARCHIVED: "ឆ្នាំសិក្សាត្រូវបានទុកក្នុងបណ្ណសារ",

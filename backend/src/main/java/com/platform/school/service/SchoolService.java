@@ -26,9 +26,10 @@ import java.util.*;
 @Service
 public class SchoolService {
     private final SchoolRepository schools; private final SchoolClassRepository classes; private final TeacherAssignmentRepository assignments; private final ClassEnrollmentRepository enrollments; private final AccountRepository accounts; private final ChildRepository children; private final CurriculumRepository curricula; private final CurriculumService curriculumService; private final EnrollmentService enrollmentService; private final ClassCurriculumAssignmentRepository classCurricula; private final AuditService audit; private final com.platform.subscription.service.SchoolEntitlementService entitlements;
-    public SchoolService(SchoolRepository schools, SchoolClassRepository classes, TeacherAssignmentRepository assignments, ClassEnrollmentRepository enrollments, AccountRepository accounts, ChildRepository children, CurriculumRepository curricula, CurriculumService curriculumService, EnrollmentService enrollmentService, ClassCurriculumAssignmentRepository classCurricula, AuditService audit, com.platform.subscription.service.SchoolEntitlementService entitlements) { this.entitlements=entitlements; this.schools=schools;this.classes=classes;this.assignments=assignments;this.enrollments=enrollments;this.accounts=accounts;this.children=children;this.curricula=curricula;this.curriculumService=curriculumService;this.enrollmentService=enrollmentService;this.classCurricula=classCurricula;this.audit=audit; }
+    private final com.platform.school.repository.SchoolOrganizationRepository organizations;
+    public SchoolService(SchoolRepository schools, SchoolClassRepository classes, TeacherAssignmentRepository assignments, ClassEnrollmentRepository enrollments, AccountRepository accounts, ChildRepository children, CurriculumRepository curricula, CurriculumService curriculumService, EnrollmentService enrollmentService, ClassCurriculumAssignmentRepository classCurricula, AuditService audit, com.platform.subscription.service.SchoolEntitlementService entitlements, com.platform.school.repository.SchoolOrganizationRepository organizations) { this.organizations=organizations; this.entitlements=entitlements; this.schools=schools;this.classes=classes;this.assignments=assignments;this.enrollments=enrollments;this.accounts=accounts;this.children=children;this.curricula=curricula;this.curriculumService=curriculumService;this.enrollmentService=enrollmentService;this.classCurricula=classCurricula;this.audit=audit; }
     static final String ARCHIVED_CLASS="This class is archived: restore it before adding to it.";
-    @Transactional public School createSchool(String name, UUID principalAccountId) { return schools.save(School.create(name, principalAccountId)); }
+    @Transactional public School createSchool(String name, UUID principalAccountId) { var organization = organizations.save(com.platform.school.entity.SchoolOrganization.create(name, principalAccountId)); return schools.save(School.create(name, principalAccountId, organization.getId())); }
 
     /** A school a principal set up, and whether this request made it (false: it was already theirs). */
     public record SetUp(School school, boolean created) {}
@@ -44,7 +45,10 @@ public class SchoolService {
         Optional<School> same = schools.findByPrincipalAccountId(principalAccountId).stream()
                 .filter(s -> !s.isArchived() && s.getName().strip().equalsIgnoreCase(trimmed)).findFirst();
         if (same.isPresent()) return new SetUp(same.get(), false);
-        School school = schools.save(School.create(trimmed, principalAccountId));
+        // M12 B0: a new school is the first branch of its own organization (the principal owns it).
+        com.platform.school.entity.SchoolOrganization organization = organizations.save(
+                com.platform.school.entity.SchoolOrganization.create(trimmed, principalAccountId));
+        School school = schools.save(School.create(trimmed, principalAccountId, organization.getId()));
         audit.record(new RecordAuditEvent(null, principalAccountId, AuditActorType.PRINCIPAL, "SCHOOL_CREATED", "SCHOOL", school.getId(),
                 Map.of("name", trimmed)));
         return new SetUp(school, true);
