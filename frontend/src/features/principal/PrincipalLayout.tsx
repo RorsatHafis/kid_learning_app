@@ -1,4 +1,4 @@
-import { Layers, School, UserRound, Users, UsersRound } from "lucide-react";
+import { CalendarDays, Layers, School, UserRound, Users, UsersRound } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { useMessages } from "@/i18n/catalog";
 import { staffMessages } from "@/features/school/staff.messages";
@@ -19,6 +19,7 @@ export function PrincipalLayout() {
       nav={[
         { to: "/principal", label: w.overview, icon: School, end: true },
         { to: "/principal/classes", label: w.classes, icon: UsersRound },
+        { to: "/principal/years", label: w.years, icon: CalendarDays },
         { to: "/principal/teachers", label: w.teachers, icon: Users },
         { to: "/principal/plan", label: w.plan, icon: Layers },
         { to: "/principal/account", label: m.account, icon: UserRound },

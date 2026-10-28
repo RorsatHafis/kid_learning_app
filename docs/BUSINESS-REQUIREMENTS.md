@@ -173,7 +173,8 @@ Status as of 2026-10-27. "Where" points to the record with the verification deta
 | Family-granted access; class learning and trends; teacher-assigned practice | **Live** | PD-01. |
 | Plans with place limits; invoices; manual payment confirmation | **Live** | Y44, M8. KHQR image only once the owner configures it (D-07). |
 | Teacher content and media, school sharing by copy | **Live** | M5, D-13. PUBLIC sharing deferred (D-14). |
-| Linking a school's own student record to a family's child; attendance, exams, report cards | **Blocked** | M12 - owner decision; Battle 4C not designed. |
+| Academic years and terms (one current year), classes placed in a year | **Live** | M12 P1 (V77): the school sets its own dates; no overlapping years or terms, terms inside their year, the current year can't be archived; audited. See [`SCHOOL-MANAGEMENT.md`](SCHOOL-MANAGEMENT.md). |
+| School-owned student records, attendance, assessments, report cards, school fees | **Blocked / Planned** | M12 P2-P7 - decisions S1-S6 in [`SCHOOL-MANAGEMENT.md`](SCHOOL-MANAGEMENT.md) (student record vs family child, attendance/report-card scope, fee policies, roles, online fee payment, legal review). |
 
 ### 4.7 Content and administration
 

@@ -22,6 +22,8 @@ import { formatDate } from "@/i18n/format";
 import { staffMessages } from "@/features/school/staff.messages";
 import { schoolPlansApi } from "@/lib/api/subscriptions";
 import { principalWorkspaceMessages } from "./workspace.messages";
+import { AcademicYears, ClassYearSelect } from "./AcademicYears";
+import { academicYearsApi, type AcademicYear } from "@/lib/api/academicYears";
 
 const SCHOOL_KEY = "bk.principal.school";
 
@@ -51,7 +53,7 @@ function usePrincipalSchool() {
  * Every principal page: set up a school first if there is none, then the page's heading with the
  * school picker when the principal runs more than one (Y37: one job per page).
  */
-function SchoolFrame({
+export function SchoolFrame({
   title,
   lead,
   overview = false,
@@ -151,6 +153,16 @@ export function PrincipalTeachersPage() {
   return (
     <SchoolFrame title={w.nav.teachers} lead={w.teachersLead}>
       {(school) => <Teachers key={school.id} school={school} onChanged={() => undefined} />}
+    </SchoolFrame>
+  );
+}
+
+/** M12 P1: the school's academic years and terms. */
+export function PrincipalYearsPage() {
+  const w = useMessages(principalWorkspaceMessages);
+  return (
+    <SchoolFrame title={w.nav.years} lead={w.yearsLead}>
+      {(school) => <AcademicYears key={school.id} schoolId={school.id} />}
     </SchoolFrame>
   );
 }
@@ -291,6 +303,8 @@ function Classes({
 }) {
   const byId = new Map<string, ClassOverview>((overview?.classes ?? []).map((c) => [c.classId, c]));
   const classes = useAsync(() => schoolApi.schoolClasses(school.id), [school.id]);
+  // M12 P1: the school's academic years, to place each class in one (empty until the school adds a year).
+  const years = useAsync(() => academicYearsApi.list(school.id), [school.id]);
   const [name, setName] = useState("");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -331,7 +345,13 @@ function Classes({
           {m.noClasses}
         </p>
       )}
-      {active.length > 0 && <ClassList classes={active} byId={byId} />}
+      {active.length > 0 && (
+        <ClassList
+          classes={active}
+          byId={byId}
+          years={years.data && years.data.length > 0 ? { schoolId: school.id, list: years.data, onPlaced: classes.refetch } : undefined}
+        />
+      )}
       {archived.length > 0 && (
         <details className="group">
           <summary className="w-fit cursor-pointer text-sm font-semibold text-tonle-700 hover:text-tonle-900">
@@ -374,7 +394,15 @@ function SchoolLimitNote() {
   );
 }
 
-function ClassList({ classes, byId }: { classes: SchoolClassWithTeachers[]; byId: Map<string, ClassOverview> }) {
+function ClassList({
+  classes,
+  byId,
+  years,
+}: {
+  classes: SchoolClassWithTeachers[];
+  byId: Map<string, ClassOverview>;
+  years?: { schoolId: string; list: AcademicYear[]; onPlaced: () => void };
+}) {
   const m = useMessages(staffMessages).principal;
   return (
     <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[18px] bg-white shadow-card">
@@ -383,6 +411,16 @@ function ClassList({ classes, byId }: { classes: SchoolClassWithTeachers[]; byId
         return summary ? (
           <li key={c.id}>
             <ClassSummary overview={summary} to={`/principal/classes/${c.id}`} teachers={c.teachers.map((t) => t.email)} />
+            {years && (
+              <ClassYearSelect
+                schoolId={years.schoolId}
+                classId={c.id}
+                className={c.name}
+                value={c.academicYearId ?? null}
+                years={years.list}
+                onPlaced={years.onPlaced}
+              />
+            )}
           </li>
         ) : (
           <li key={c.id}>
@@ -398,6 +436,16 @@ function ClassList({ classes, byId }: { classes: SchoolClassWithTeachers[]; byId
               </div>
               <ChevronRight size={18} className="shrink-0 text-ink-soft" aria-hidden />
             </Link>
+            {years && (
+              <ClassYearSelect
+                schoolId={years.schoolId}
+                classId={c.id}
+                className={c.name}
+                value={c.academicYearId ?? null}
+                years={years.list}
+                onPlaced={years.onPlaced}
+              />
+            )}
           </li>
         );
       })}

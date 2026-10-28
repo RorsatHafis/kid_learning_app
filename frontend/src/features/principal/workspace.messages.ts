@@ -4,7 +4,8 @@ import { defineMessages } from "@/i18n/catalog";
 export const principalWorkspaceMessages = defineMessages(
   "features/principal/workspace",
   {
-    nav: { overview: "Overview", classes: "Classes", teachers: "Teachers", plan: "Plan" },
+    nav: { overview: "Overview", classes: "Classes", years: "School year", teachers: "Teachers", plan: "Plan" },
+    yearsLead: "Your school's academic years and terms: the dates your classes, and later attendance and results, belong to.",
     classesLead: "Each class, its teacher, what it learns and its code for families.",
     teachersLead: "Who teaches at your school, and invitations still waiting.",
     teaches: "Teaches",
@@ -17,7 +18,8 @@ export const principalWorkspaceMessages = defineMessages(
     goClasses: "Go to classes",
   },
   {
-    nav: { overview: "ទិដ្ឋភាពរួម", classes: "ថ្នាក់", teachers: "គ្រូ", plan: "កញ្ចប់" },
+    nav: { overview: "ទិដ្ឋភាពរួម", classes: "ថ្នាក់", years: "ឆ្នាំសិក្សា", teachers: "គ្រូ", plan: "កញ្ចប់" },
+    yearsLead: "ឆ្នាំសិក្សា និងវគ្គសិក្សារបស់សាលាអ្នក៖ កាលបរិច្ឆេទដែលថ្នាក់ ហើយនៅពេលក្រោយ វត្តមាន និងលទ្ធផល ជារបស់។",
     classesLead: "ថ្នាក់នីមួយៗ គ្រូរបស់វា អ្វីដែលវារៀន និងលេខកូដសម្រាប់គ្រួសារ។",
     teachersLead: "អ្នកដែលបង្រៀននៅសាលារបស់អ្នក និងការអញ្ជើញដែលកំពុងរង់ចាំ។",
     teaches: "បង្រៀន",

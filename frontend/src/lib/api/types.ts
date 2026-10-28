@@ -623,6 +623,8 @@ export interface SchoolClassWithTeachers {
   name: string;
   teachers: { accountId: string; email: string }[];
   archived: boolean;
+  /** M12 P1: the academic year the class belongs to; null for a class placed in none. */
+  academicYearId?: string | null;
 }
 
 export type SchoolStaffStatus = "INVITED" | "ACTIVE" | "DECLINED" | "REMOVED";

@@ -482,7 +482,19 @@ public final class ServerText {
                     "ពាក្យសម្ងាត់នោះជាការរាប់លេខ ឬជួរឃីបតមួយ៖ សូមជ្រើសរើសពាក្យសម្ងាត់ដែលពិបាកទាយជាងនេះ"),
             Map.entry("That password is one of the first anyone would try: choose one that is harder to guess",
                     "ពាក្យសម្ងាត់នោះជាពាក្យដំបូងគេដែលអ្នកណាក៏សាកដែរ៖ សូមជ្រើសរើសពាក្យសម្ងាត់ដែលពិបាកទាយជាងនេះ"),
-            Map.entry("The new password must be different from the current one", "ពាក្យសម្ងាត់ថ្មីត្រូវតែខុសពីពាក្យសម្ងាត់បច្ចុប្បន្ន")
+            Map.entry("The new password must be different from the current one", "ពាក្យសម្ងាត់ថ្មីត្រូវតែខុសពីពាក្យសម្ងាត់បច្ចុប្បន្ន"),
+            Map.entry("A name needs 1 to 80 characters.", "ឈ្មោះត្រូវមានពី 1 ដល់ 80 តួអក្សរ។"),
+            Map.entry("The end date must be after the start date.", "ថ្ងៃបញ្ចប់ត្រូវនៅក្រោយថ្ងៃចាប់ផ្ដើម។"),
+            Map.entry("An academic year can last at most two years.", "ឆ្នាំសិក្សាមួយអាចមានរយៈពេលយ៉ាងច្រើនពីរឆ្នាំ។"),
+            Map.entry("These dates overlap another academic year of this school.", "កាលបរិច្ឆេទទាំងនេះជាន់គ្នានឹងឆ្នាំសិក្សាមួយទៀតរបស់សាលានេះ។"),
+            Map.entry("This school already has an academic year with that name.", "សាលានេះមានឆ្នាំសិក្សាដែលមានឈ្មោះនោះរួចហើយ។"),
+            Map.entry("A term must fall within its academic year.", "វគ្គសិក្សាត្រូវស្ថិតនៅក្នុងឆ្នាំសិក្សារបស់វា។"),
+            Map.entry("These dates overlap another term of this year.", "កាលបរិច្ឆេទទាំងនេះជាន់គ្នានឹងវគ្គសិក្សាមួយទៀតនៃឆ្នាំនេះ។"),
+            Map.entry("This year already has a term with that name.", "ឆ្នាំនេះមានវគ្គសិក្សាដែលមានឈ្មោះនោះរួចហើយ។"),
+            Map.entry("The year's dates must still contain all of its terms.", "កាលបរិច្ឆេទរបស់ឆ្នាំត្រូវតែគ្របដណ្ដប់វគ្គសិក្សាទាំងអស់របស់វា។"),
+            Map.entry("This academic year is archived.", "ឆ្នាំសិក្សានេះត្រូវបានទុកក្នុងបណ្ណសារ។"),
+            Map.entry("The current academic year can't be archived: make another year current first.", "មិនអាចទុកឆ្នាំសិក្សាបច្ចុប្បន្នក្នុងបណ្ណសារបានទេ៖ សូមកំណត់ឆ្នាំផ្សេងជាឆ្នាំបច្ចុប្បន្នជាមុនសិន។"),
+            Map.entry("This school is archived: restore it to change its academic years.", "សាលានេះត្រូវបានទុកក្នុងបណ្ណសារ៖ សូមស្ដារវាវិញ ដើម្បីកែប្រែឆ្នាំសិក្សារបស់វា។")
     );
 
 }

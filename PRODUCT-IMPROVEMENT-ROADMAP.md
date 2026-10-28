@@ -24,7 +24,7 @@ research, **[P]** our proposed design decision, **[Q]** open question needing th
 | M9 Phone registration and verification foundations | M9a done (administrator authenticator app); M9b-1 done (a verified phone on an account, V71); sign-in and password reset by verified phone done (V72); email stays required (D-15) | | |
 | M10 Child access across devices, trusted caregivers | **done** (M10a child devices, M10b caregivers) | see log | V65, V66 |
 | M11 Storage-provider abstraction, school storage choice | planned | | |
-| M12 School management: foundation and first modules | planned - **needs the owner first**: linking a school's student record to a family's child (consent, Battle 4C "school <-> child authorization" is not designed) and whether school administration (attendance, exams, report cards) is in scope now - CLAUDE.md keeps children and parents first and warns against premature school-ERP | | |
+| M12 School management: foundation and first modules | **P1 done** 2026-10-28 (academic years and terms, V77); discovery and decisions S1-S6 in `docs/SCHOOL-MANAGEMENT.md`; P2+ **needs the owner first**: linking a school's student record to a family's child (consent, Battle 4C "school <-> child authorization" is not designed) and whether school administration (attendance, exams, report cards) is in scope now - CLAUDE.md keeps children and parents first and warns against premature school-ERP | | |
 | M13 Integration, role verification, docs, staging readiness | planned | | |
 | L1 Learning experience: "Learn first" activity introductions (owner brief 2026-10-25) | **done** | see log | V73 |
 | L2-L11 Learning experience follow-ups (explanation tip, D-16 hints, recorder, D-17 two days, phone layouts, Studio gaps/guide, parent fixes and help) | **done** | see log | V74 |
@@ -1694,4 +1694,30 @@ Dependencies:
   removed. **Browser verified** (dev stack): a wrong password in "Delete <child>" leaves focus on the password field,
   `aria-invalid`, described by the error; deletion still works. **Tested**: Vitest 400, tsc, eslint. Not exercised in a
   browser: the other forms (sign-in, register, reset, account), which share the component.
+- 2026-10-28: **M12 discovery, and P1 - a school's academic years and terms.** The owner asked to research and build
+  school management. `docs/SCHOOL-MANAGEMENT.md`: what exists (school, classes, codes, teachers, family-granted
+  children, class learning, platform billing) and what's missing; research (RAITHub, OpenEduCat, AccessPH - marketing
+  claims marked as such; Cambodian calendars differ, so dates are data); a module map; the student and fee workflows;
+  the two money domains kept apart (school fees vs Bookeyond subscription); **decisions S1-S6 for the owner** (school
+  student record vs family child - recommended: separate records linked only by the family's grant; attendance and
+  report-card scope; fee policies; registrar/cashier as staff permissions; online fee payment; legal review); a phased
+  plan; ranked further ideas. **P1 built** (no decision needed): V77 `academic_years` (school, name, dates, current,
+  archived; one current per school by a partial unique index) and `academic_terms`; `school_classes.academic_year_id`
+  (nullable). `AcademicYearService`: dates in order, at most two years, a school's years and a year's terms never
+  overlap, terms inside their year, a year can't shrink past its terms, the first year becomes current, making a year
+  current clears the old one, the current year can't be archived, classes go only into an active year of their own
+  school - all under a lock on the school's years, all audited (null values left out of audit metadata). Calendar
+  conflicts answer 409 with words for people; malformed input 400. Endpoints under
+  `/api/v1/schools/{id}/academic-years` and `.../classes/{id}/academic-year`, behind `requireSchoolManage` (the
+  school's principal or an administrator, school paid). Principal: new "School year" page (add/change years, add/change/
+  remove terms, make current, archive/restore) and an academic-year selector on each class in Classes; Khmer for every
+  message (ServerText, audit codes, catalog).
+  - **Tested**: new `AcademicYearIntegrationTests` (2 scenarios: the whole calendar flow with every rule and its message,
+    audit; other principal/teacher/parent refused, another school's class 404, unpaid school refused, admin allowed),
+    `ServerTextCoverageTests`, `SchoolStaffIntegrationTests` (11) - green; Vitest 401 of 402 with
+    `media.test.tsx` (Studio, untouched) timing out at 5 s under full-suite load - it passes alone (4/4) and passed in CI on
+    `be2ece0`; tsc, eslint. **Browser verified (dev stack, headless Chromium, 360 px)**: add a year with two terms, an
+    overlapping term refused with "These dates overlap another term of this year.", a second year made current, a class
+    placed in it (kept after reload), 0 overflow, axe clean; the page in Khmer (account language) with no English left.
+  - **Not done**: P2-P7 wait for S1-S6. Teachers don't see the year yet (nothing of theirs uses it).
 

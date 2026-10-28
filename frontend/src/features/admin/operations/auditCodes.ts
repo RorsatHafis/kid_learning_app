@@ -4,6 +4,15 @@
  * fallback for a code added later, never the raw code.
  */
 export const KHMER_ACTIONS: Record<string, string> = {
+  ACADEMIC_TERM_CHANGED: "វគ្គសិក្សាត្រូវបានកែប្រែ",
+  ACADEMIC_TERM_CREATED: "វគ្គសិក្សាត្រូវបានបង្កើត",
+  ACADEMIC_TERM_REMOVED: "វគ្គសិក្សាត្រូវបានដកចេញ",
+  ACADEMIC_YEAR_ARCHIVED: "ឆ្នាំសិក្សាត្រូវបានទុកក្នុងបណ្ណសារ",
+  ACADEMIC_YEAR_CHANGED: "ឆ្នាំសិក្សាត្រូវបានកែប្រែ",
+  ACADEMIC_YEAR_CREATED: "ឆ្នាំសិក្សាត្រូវបានបង្កើត",
+  ACADEMIC_YEAR_MADE_CURRENT: "ឆ្នាំសិក្សាត្រូវបានកំណត់ជាឆ្នាំបច្ចុប្បន្ន",
+  ACADEMIC_YEAR_RESTORED: "ឆ្នាំសិក្សាត្រូវបានស្ដារវិញ",
+  CLASS_ACADEMIC_YEAR_SET: "ឆ្នាំសិក្សារបស់ថ្នាក់ត្រូវបានកំណត់",
   ACCOUNT_CREATED_BY_INVITATION: "គណនីត្រូវបានបង្កើតតាមការអញ្ជើញ",
   ACCOUNT_DATA_EXPORTED: "ទិន្នន័យគណនីត្រូវបានទាញយក",
   ACCOUNT_DEVICE_SIGNED_OUT: "ឧបករណ៍មួយត្រូវបានចាកចេញពីគណនី",
@@ -91,6 +100,8 @@ export const KHMER_ACTIONS: Record<string, string> = {
 
 /** What a recorded event is about. */
 export const KHMER_RESOURCES: Record<string, string> = {
+  ACADEMIC_TERM: "វគ្គសិក្សា",
+  ACADEMIC_YEAR: "ឆ្នាំសិក្សា",
   ACCOUNT: "គណនី",
   ACTIVITY: "សកម្មភាព",
   ACTIVITY_VERSION: "កំណែសកម្មភាព",
