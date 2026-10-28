@@ -1571,4 +1571,15 @@ Dependencies:
     currently has a review/adaptive step up next. Khmer `parent.decided` drafted (PD-14). Note: running that check made
     `npx` fetch `vite-node@6.0.0` from the npm registry into the npm cache (not the project) - unplanned; later runs used
     `--no-install`.
+- 2026-10-28: **CHECKPOINT - coworker preview updated to `7705de8` (CI green on all four jobs) on the owner's
+  current link `immediate-marketplace-complexity-optimal.trycloudflare.com`.** At resume the preview was down (Docker
+  not running); the owner brought the stack and a new tunnel back at 09:52; it served yesterday's `093e4da` build
+  (`index--FWIlrRV.js`) - last session's interrupted update had not replaced it. `preview.sh update` run as is (tunnel,
+  URL, gate and password kept; the script re-checked the gate through the URL). **Verified through the link**:
+  anonymous 401; `browser-check.mjs` - all five roles sign in (parent family home, Sophea's progress, child space,
+  Khmer and back; teacher class + Studio; both principals; administrator payments); `journey-check.mjs` - served
+  bundle = the new build (`index-DeqW-Tb0.js`), the child resumed an activity, answered "8 + 2 = ?" with 10 ->
+  "That's right!", **finished it** (completion screen), 0 server errors; this session's changes - "Made for ages 3
+  to 12", "Early maths (ages 4–9) today", the old family/school cards gone, registration's "No payment details"
+  note, `/try/parent` - 0 overflow at 360 px, no 5xx; preview DB at **V76**.
 
