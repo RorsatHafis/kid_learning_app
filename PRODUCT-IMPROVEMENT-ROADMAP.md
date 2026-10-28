@@ -1643,5 +1643,14 @@ Dependencies:
   fits is unaffected). **Browser verified**: the cards are 208 px in a 240 px panel; regression - landing height
   unchanged (14,932 px at 360), axe clean on /, /try, /try/parent; family home and child page, admin overview /
   payments / schools / learning and teacher home at 1280 and 360 px: 0 overflow. **Tested**: Vitest 400, tsc.
-  Not covered: grids whose classes are built with `cn(...)`.
+  (Grids built with `cn(...)`: none set columns only from a breakpoint.)
+- 2026-10-28: **CHECKPOINT - end of this usage window (owner: no deployment this window).** Pushed through the commit
+  after `1e6262e`. **The coworker preview still serves `7705de8`** (verified earlier today at
+  `immediate-marketplace-complexity-optimal.trycloudflare.com`); everything after it is **not live**: long names on
+  the school side and family settings, "Try again" hidden for 403/404, principal and sign-in copy, the teacher's
+  joined notice, the caregiver home, the grid base columns, docs. **Next session, in order**: (1) confirm CI is green
+  on the latest commit; (2) continue product work; (3) at the reserve, read `D:/bk-work/preview/tunnel.url` (it
+  changes on restart), run `bash /d/bk-work/preview/preview.sh update`, then `browser-check.mjs`, `journey-check.mjs`
+  and a check of today's changes through the link. Still open for the owner: authorisation to fix the two
+  order-dependent tests; CLAUDE.md section 25's stale note; D-18, D-19, M11, M12; legal drafts' `[OWNER]` items.
 

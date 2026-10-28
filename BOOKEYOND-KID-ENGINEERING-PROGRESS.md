@@ -582,7 +582,9 @@ reuses the container name of another local project.
 > unpublished). 2026-10-28: `docs/BUSINESS-REQUIREMENTS.md` is the business reference (audience 3-12 decided, D-09);
 > fixes from walking real journeys - an answer from another tab shows the recorded answer, long names wrap, a child
 > whose age has no path is told so, path decisions are dated; F1d-6 shorter landing page; team test guide and launch
-> checklist current. CI (backend, frontend, deployment files, E2E + accessibility) runs on every push to `master`;
+> checklist current. Later on 2026-10-28: long names wrap on school pages and family settings; every breakpoint-only
+> grid has a base column; principals', teachers' and caregivers' screens speak to them; the preview serves
+> `7705de8` (later commits not yet live - see the roadmap's last checkpoint). CI (backend, frontend, deployment files, E2E + accessibility) runs on every push to `master`;
 > last full green run `e7952d0` (its first run failed on two order-dependent tests - recorded, test files unchanged);
 > Flyway is at V76. Several sections below (e.g. "no CI", "no
 > frontend tests") describe September and are superseded.
