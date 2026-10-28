@@ -35,7 +35,7 @@ export const staffMessages = defineMessages(
       leaveConfirm: "Leave the school",
       stay: "Stay",
       joined: (school: string) =>
-        `You've joined ${school}. Your classes will appear here once the principal assigns you to them.`,
+        `You've joined ${school}.`,
       invitations: "Invitations",
       answerFailed: "We couldn't record your answer. The invitation may have been withdrawn — refresh to check.",
       invitedYou: "invited you to join its teachers.",
@@ -159,7 +159,7 @@ export const staffMessages = defineMessages(
       leaveConfirm: "ចាកចេញពីសាលា",
       stay: "នៅដដែល",
       joined: (school: string) =>
-        `អ្នកបានចូលរួម ${school} ហើយ។ ថ្នាក់របស់អ្នកនឹងបង្ហាញនៅទីនេះ នៅពេលនាយកសាលាចាត់អ្នកទៅថ្នាក់ទាំងនោះ។`,
+        `អ្នកបានចូលរួម ${school} ហើយ។`,
       invitations: "ការអញ្ជើញ",
       answerFailed: "យើងមិនអាចកត់ត្រាចម្លើយរបស់អ្នកបានទេ។ ការអញ្ជើញប្រហែលជាត្រូវបានដកវិញ — សូមផ្ទុកទំព័រឡើងវិញដើម្បីពិនិត្យ។",
       invitedYou: "បានអញ្ជើញអ្នកឱ្យចូលរួមជាគ្រូរបស់សាលា។",

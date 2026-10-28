@@ -1610,4 +1610,8 @@ Dependencies:
   overflow at 360 px throughout). The sign-in page, used by every role, said "Log in to continue your child's learning
   journey" - now "Log in to your Bookeyond Kid account - families, teachers and schools alike." **Browser verified**;
   **Tested**: Vitest 400, tsc. Khmer `login.subtitle` drafted (PD-14).
+  - Also: after accepting, the teacher's notice repeated the empty state below it ("Your classes will appear here once
+    the principal assigns you"); the notice is now just "You've joined <school>." (the E2E check `joined <school>` still
+    matches). Swept all-role surfaces for parent-only wording: sign-in fixed above; register, reset, verify and the
+    account emails are role-neutral. **Tested**: Vitest 400, tsc.
 
