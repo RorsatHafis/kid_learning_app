@@ -1582,4 +1582,11 @@ Dependencies:
   "That's right!", **finished it** (completion screen), 0 server errors; this session's changes - "Made for ages 3
   to 12", "Early maths (ages 4–9) today", the old family/school cards gone, registration's "No payment details"
   note, `/try/parent` - 0 overflow at 360 px, no 5xx; preview DB at **V76**.
+- 2026-10-28: **Long names on the school side and the rest of the family settings.** Closed the "not checked" item:
+  a new family (email confirmed) added a child with an 80-character name, joined the seed class Grade 1 A with its
+  code, and the teacher opened the class and the child. Overflow at 360-390 px: teacher's student page **906 px**
+  (header flex item), the parent's "School & settings" tab **375 px** (the "Open ...'s space" button, then the
+  caregiver access options and "Delete ..."); the class table stays inside its own scroll area (page 0). Same fix as
+  before (`min-w-0` + `overflow-wrap: anywhere` on the item holding the name); the caregiver "helping" page header
+  too. After: 0 px on all three. **Tested**: Vitest full suite, tsc, eslint.
 

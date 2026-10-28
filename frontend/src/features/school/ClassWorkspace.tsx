@@ -507,15 +507,15 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <span
             aria-hidden
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-tonle-50 text-lg font-bold text-ink"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-tonle-50 text-lg font-bold text-ink"
           >
             {m.displayName.charAt(0).toUpperCase()}
           </span>
-          <div>
-            <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 sm:text-[2.5rem]">
+          <div className="min-w-0">
+            <h1 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.015em] text-tonle-950 [overflow-wrap:anywhere] sm:text-[2.5rem]">
               {m.displayName}
             </h1>
             <p className="text-sm text-ink-soft">{w.since(longDate(m.joinedAt))}</p>

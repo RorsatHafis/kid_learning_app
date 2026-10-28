@@ -174,20 +174,20 @@ function OwnSpace({ child }: { child: Child }) {
   const b = useMessages(buddyMessages);
   return (
     <section aria-labelledby="own-space" className="flex flex-col gap-4 rounded-[24px] bg-white p-6 shadow-card sm:p-8">
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-4">
         <ChildPortrait buddy={child.learningBuddy} />
-        <div>
+        <div className="min-w-0">
           <h2 id="own-space" className="font-display text-title font-bold text-tonle-950">
             {m.space}
           </h2>
-          <p className="text-[0.9375rem] text-ink-soft">{m.spaceLead(child.displayName)}</p>
+          <p className="text-[0.9375rem] text-ink-soft [overflow-wrap:anywhere]">{m.spaceLead(child.displayName)}</p>
         </div>
       </div>
       <ul className="flex flex-wrap gap-2 text-sm font-medium text-ink">
         <li className="rounded-pill bg-paper px-3.5 py-1.5">{m.buddy(b.names[child.learningBuddy])}</li>
         <li className="rounded-pill bg-paper px-3.5 py-1.5">{m.language(child.preferredLanguage === "km" ? "ខ្មែរ" : "English")}</li>
       </ul>
-      <Link to={`/learn/${child.id}`} className={buttonClasses("outline", "md", "w-fit")}>
+      <Link to={`/learn/${child.id}`} className={buttonClasses("outline", "md", "w-fit max-w-full [overflow-wrap:anywhere]")}>
         <ExternalLink size={16} aria-hidden /> {m.openSpace(child.displayName)}
       </Link>
     </section>

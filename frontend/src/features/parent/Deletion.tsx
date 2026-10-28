@@ -46,7 +46,7 @@ export function DeleteChildSection({ child }: { child: Child }) {
 
   return (
     <section aria-labelledby="delete-child" className="flex flex-col gap-3 border-t border-line pt-8">
-      <h2 id="delete-child" className="font-display text-lg font-semibold text-tonle-950">
+      <h2 id="delete-child" className="font-display text-lg font-semibold text-tonle-950 [overflow-wrap:anywhere]">
         {m.deleteChild(child.displayName)}
       </h2>
       <p className="max-w-2xl text-sm leading-relaxed text-ink-soft">{m.deleteChildExplain(child.displayName)}</p>
@@ -62,7 +62,7 @@ export function DeleteChildSection({ child }: { child: Child }) {
             error={error ?? undefined}
           />
           <div className="flex flex-wrap gap-3">
-            <Button type="submit" size="md" disabled={working || !password}>
+            <Button type="submit" size="md" className="max-w-full [overflow-wrap:anywhere]" disabled={working || !password}>
               <Trash2 size={16} aria-hidden /> {working ? m.deleting : m.deleteChild(child.displayName)}
             </Button>
             <Button type="button" size="md" variant="ghost" onClick={() => setOpen(false)} disabled={working}>
@@ -71,7 +71,7 @@ export function DeleteChildSection({ child }: { child: Child }) {
           </div>
         </form>
       ) : (
-        <Button size="md" variant="outline" onClick={() => setOpen(true)} className="w-fit">
+        <Button size="md" variant="outline" onClick={() => setOpen(true)} className="w-fit max-w-full [overflow-wrap:anywhere]">
           <Trash2 size={16} aria-hidden /> {m.deleteChildOpen(child.displayName)}
         </Button>
       )}

@@ -100,7 +100,7 @@ export function CaregiversSection({ childId, childName }: { childId: string; chi
           {(["VIEW_PROGRESS", "OPEN_SPACE"] as const).map((option) => (
             <label key={option} className="flex cursor-pointer items-start gap-3 rounded-[12px] bg-white p-3 ring-1 ring-line has-[:checked]:ring-2 has-[:checked]:ring-tonle-600">
               <input type="radio" name={scopeName} value={option} checked={scope === option} onChange={() => setScope(option)} className="mt-1 accent-tonle-700" />
-              <span className="flex flex-col">
+              <span className="flex min-w-0 flex-col [overflow-wrap:anywhere]">
                 <span className="font-semibold text-ink">{option === "VIEW_PROGRESS" ? m.viewProgress : m.openSpace}</span>
                 <span className="text-sm text-ink-soft">{option === "VIEW_PROGRESS" ? m.viewProgressHint : m.openSpaceHint(childName)}</span>
               </span>
@@ -207,12 +207,12 @@ export function HelpingPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] text-tonle-950">{name}</h1>
+        <div className="min-w-0">
+          <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] text-tonle-950 [overflow-wrap:anywhere]">{name}</h1>
           <p className="mt-1 max-w-prose text-ink-soft">{m.helpingLead(name)}</p>
         </div>
         {child.data.access === "OPEN_SPACE" && (
-          <Link to={`/learn/${childId}`} className={buttonClasses("solid", "lg")}>
+          <Link to={`/learn/${childId}`} className={buttonClasses("solid", "lg", "max-w-full [overflow-wrap:anywhere]")}>
             {m.openSpaceAction(name)}
           </Link>
         )}
