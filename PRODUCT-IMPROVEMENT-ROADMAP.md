@@ -1589,4 +1589,13 @@ Dependencies:
   caregiver access options and "Delete ..."); the class table stays inside its own scroll area (page 0). Same fix as
   before (`min-w-0` + `overflow-wrap: anywhere` on the item holding the name); the caregiver "helping" page header
   too. After: 0 px on all three. **Tested**: Vitest full suite, tsc, eslint.
+- 2026-10-28: **Another family's child, by URL: private, and now without a pointless "Try again".** As the seed
+  parent, opening another family's child (`/parent/children/<id>`, `/learn/<id>`, a skill page under it): the server
+  answers **404** (it doesn't confirm the child exists), the pages say "We couldn't find this child in your family" /
+  "This space isn't open right now"; an unknown address shows "Page not found". The shared `ErrorState` offered "Try
+  again" even for 403/404, where retrying can't change the answer - now hidden for those two (other failures keep it);
+  the breadcrumb is the way back. **Browser verified** (dev stack, 390px); **Tested**: Vitest 400, tsc, eslint.
+- 2026-10-28: **Keyboard check of the landing page's interactive parts (no change needed).** Tabbing through the
+  page reaches the five demonstration steps, Pause and the five buddies in order, each with the global 2px focus ring.
+  BRD gains a glossary of the product's terms (section 10).
 

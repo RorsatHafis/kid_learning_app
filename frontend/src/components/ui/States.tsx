@@ -30,11 +30,13 @@ export function ErrorState({ error, onRetry, message: messageOverride }: { error
   const m = useMessages(common);
   // The server's detail is already in the interface language (the request carried it).
   const message = messageOverride ?? (error instanceof ApiError && error.problem?.detail ? error.problem.detail : m.somethingWentWrong);
+  // Not found / not allowed is the answer, not a failure: trying again can't change it, so it isn't offered.
+  const final = error instanceof ApiError && (error.status === 403 || error.status === 404);
   return (
     <div role="alert" className="flex flex-col items-center justify-center gap-4 rounded-[20px] bg-white px-6 py-14 text-center shadow-card">
       <p className="font-display text-lg font-semibold text-ink">{m.didntLoad}</p>
       <p className="max-w-sm text-sm text-ink-soft">{message}</p>
-      {onRetry && (
+      {onRetry && !final && (
         <Button variant="outline" onClick={onRetry}>
           <RotateCcw size={16} aria-hidden /> {m.tryAgain}
         </Button>
