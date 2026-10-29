@@ -51,6 +51,36 @@ export interface PlanResponse {
   entitlements: Entitlement[];
   /** Families (family plan) or schools (school plan) whose subscription names it. */
   subscribers: number;
+  /** The plan this one was duplicated from (V79): its earlier version. */
+  basedOn: { id: string; code: string; name: string } | null;
+}
+
+/** Subscriptions naming one plan, by standing now (SubscriptionReportService.PlanCounts). */
+export interface PlanCounts {
+  planId: string;
+  code: string;
+  name: string;
+  audience: PlanAudience;
+  status: PlanStatus;
+  isDefault: boolean;
+  active: number;
+  trialing: number;
+  pastDue: number;
+  cancelling: number;
+  /** In force and ending within `endingWithinDays`, whatever the standing. */
+  endingSoon: number;
+  /** No longer in force (for a school: ended, refunded or never paid). */
+  ended: number;
+}
+
+/** Who is on which plan now. Families are only counted; schools are listed when their paid period ends soon. */
+export interface SubscriptionSummary {
+  at: string;
+  endingWithinDays: number;
+  plans: PlanCounts[];
+  familiesOnDefault: number;
+  schoolsWithoutPaidPlan: number;
+  schoolsEndingSoon: { schoolId: string; schoolName: string; planName: string; paidUntil: string }[];
 }
 
 /** An operator's view; `id` is the audit log's resource for this subscription. */
@@ -203,6 +233,10 @@ export const plansApi = {
   activate: (planId: string) => apiClient.post<PlanResponse>(`/admin/plans/${planId}/activate`),
   retire: (planId: string) => apiClient.post<PlanResponse>(`/admin/plans/${planId}/retire`),
   makeDefault: (planId: string) => apiClient.post<PlanResponse>(`/admin/plans/${planId}/make-default`),
+  /** A new draft with the plan's words, price and limits (V79); the original and its subscribers are untouched. */
+  duplicate: (planId: string, body: { code: string; name: string }) =>
+    apiClient.post<PlanResponse>(`/admin/plans/${planId}/duplicate`, body),
+  summary: () => apiClient.get<SubscriptionSummary>("/admin/subscriptions/summary"),
   findFamily: (parentEmail: string) =>
     apiClient.get<FamilyAccountSummary>(`/admin/families?parentEmail=${encodeURIComponent(parentEmail)}`),
   grant: (familyId: string, body: { planId: string; periodEnd: string | null; note: string | null }) =>

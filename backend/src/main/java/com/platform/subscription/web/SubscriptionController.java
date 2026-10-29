@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotNull;
 import com.platform.subscription.service.PlanRequestService;
+import com.platform.subscription.service.SubscriptionReportService;
 import com.platform.common.web.PageResponse;
 import com.platform.subscription.service.SubscriptionService;
 import jakarta.validation.Valid;
@@ -34,9 +35,12 @@ public class SubscriptionController {
 
     private final com.platform.school.service.SchoolAccessGuard schoolGuard;
 
+    private final SubscriptionReportService reports;
+
     public SubscriptionController(SubscriptionService service, PlanRequestService planRequests,
-                                  com.platform.school.service.SchoolAccessGuard schoolGuard) {
+                                  com.platform.school.service.SchoolAccessGuard schoolGuard, SubscriptionReportService reports) {
         this.schoolGuard = schoolGuard;
+        this.reports = reports;
         this.service = service;
         this.planRequests = planRequests;
     }
@@ -92,6 +96,19 @@ public class SubscriptionController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(SubscriptionDtos.PlanResponse.of(service.createPlan(adminId, request.code(), request.name(), request.description(),
                         request.audience() == null ? com.platform.subscription.entity.PlanAudience.FAMILY : request.audience())));
+    }
+
+    @PostMapping("/api/v1/admin/plans/{planId}/duplicate")
+    public ResponseEntity<SubscriptionDtos.PlanResponse> duplicatePlan(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId,
+                                                                       @Valid @RequestBody SubscriptionDtos.DuplicatePlanRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(SubscriptionDtos.PlanResponse.of(service.duplicatePlan(adminId, planId, request.code(), request.name())));
+    }
+
+    /** Who is on which plan now: counts per plan and standing; schools whose paid period ends soon. */
+    @GetMapping("/api/v1/admin/subscriptions/summary")
+    public SubscriptionReportService.Summary subscriptionSummary(@AuthenticationPrincipal UUID adminId) {
+        return reports.summary(adminId);
     }
 
     @PutMapping("/api/v1/admin/plans/{planId}")

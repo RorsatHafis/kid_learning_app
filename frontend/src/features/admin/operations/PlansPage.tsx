@@ -15,6 +15,7 @@ import {
   type EntitlementKey,
   type FamilyAccountSummary,
   type PlanAudience,
+  type PlanCounts,
   type PlanResponse,
 } from "@/lib/api/subscriptions";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
@@ -112,12 +113,15 @@ export function PlansPage() {
             <>
               <div
                 aria-hidden
-                className="hidden grid-cols-[minmax(0,1fr)_7rem_8rem_9rem_5rem] gap-x-4 border-y border-line bg-paper px-6 py-2 text-[0.8125rem] text-ink-faint sm:grid"
+                className={cn(
+                  "hidden grid-cols-[minmax(0,1fr)_7rem_8rem_9rem_5rem] gap-x-4 border-y border-line bg-paper px-6 py-2 text-[0.8125rem] text-ink-faint sm:grid",
+                  selected && "xl:grid-cols-[minmax(0,1fr)_7rem_5rem]",
+                )}
               >
                 <span>{m.plan}</span>
                 <span>{m.status}</span>
-                <span>{m.limits}</span>
-                <span>{m.price}</span>
+                <span className={cn(selected && "xl:hidden")}>{m.limits}</span>
+                <span className={cn(selected && "xl:hidden")}>{m.price}</span>
                 <span className="text-right">{m.onIt}</span>
               </div>
               <ul aria-label={m.list} className="divide-y divide-line border-t border-line sm:border-t-0">
@@ -129,25 +133,31 @@ export function PlansPage() {
                       aria-expanded={p.plan.id === selectedId}
                       className={cn(
                         "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-3.5 text-left transition-colors hover:bg-paper sm:grid-cols-[minmax(0,1fr)_7rem_8rem_9rem_5rem] sm:px-6",
+                        selected && "xl:grid-cols-[minmax(0,1fr)_7rem_5rem]",
                         p.plan.id === selectedId && "bg-tonle-50/60",
                       )}
                     >
                       <span className="min-w-0">
                         <span className="block font-medium text-tonle-950">{p.plan.name}</span>
-                        <span className="block font-mono text-xs text-ink-faint">{p.plan.code}</span>
+                        <span className="block font-mono text-xs text-ink-faint [overflow-wrap:anywhere]">
+                          {p.plan.code}
+                          {p.basedOn && <span className="font-sans"> · {m.versions.from(p.basedOn.code)}</span>}
+                        </span>
                       </span>
                       <span className="flex flex-wrap items-center gap-1.5">
                         <PlanBadge status={p.plan.status} />
                         {p.plan.isDefault && <span className="text-xs font-semibold text-tonle-700">{m.default}</span>}
                       </span>
-                      <span className="hidden text-sm text-ink-soft sm:block">
+                      <span className={cn("hidden text-sm text-ink-soft sm:block", selected && "xl:hidden")}>
                         {p.entitlements.map((e) => (
                           <span key={e.key} className="block">
                             {entitlementLabel(e.key, true)}: {limitText(e.limit, e.key)}
                           </span>
                         ))}
                       </span>
-                      <span className="hidden text-sm text-ink-soft sm:block">{priceText(p.plan.price) ?? m.notSet}</span>
+                      <span className={cn("hidden text-sm text-ink-soft sm:block", selected && "xl:hidden")}>
+                        {priceText(p.plan.price) ?? m.notSet}
+                      </span>
                       <span className="hidden text-right text-sm text-ink-soft tabular sm:block">
                         {audience === "SCHOOL" ? m.schools(p.subscribers) : m.families(p.subscribers)}
                       </span>
@@ -158,8 +168,20 @@ export function PlansPage() {
             </>
           )}
         </Panel>
-        {selected && <PlanDetail key={selected.plan.id + selected.plan.status} plan={selected} onChanged={plans.refetch} />}
+        {selected && (
+          <PlanDetail
+            key={selected.plan.id + selected.plan.status}
+            plan={selected}
+            onChanged={plans.refetch}
+            onDuplicated={(copy) => {
+              plans.refetch();
+              setSelectedId(copy.plan.id);
+            }}
+          />
+        )}
       </div>
+
+      <SubscriptionsNow audience={audience} version={plans.data} />
 
       {audience === "FAMILY" ? (
         <>
@@ -360,7 +382,183 @@ function NewPlan({
   );
 }
 
-function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => void }) {
+/**
+ * Who is on which plan now (flexible plan management, slice 1). Families are counted, never listed; schools whose
+ * paid plan ends soon are listed, because renewing them is an administrator's next action.
+ */
+function SubscriptionsNow({ audience, version }: { audience: PlanAudience; version: unknown }) {
+  const summary = useAsync(() => plansApi.summary(), [version]);
+  const m = useMessages(plansMessages).summary;
+  const data = summary.data;
+  const days = data?.endingWithinDays ?? 30;
+  const inForce = (p: PlanCounts) => p.active + p.trialing + p.pastDue + p.cancelling;
+  const rows =
+    data?.plans.filter((p) => p.audience === audience && (p.status === "ACTIVE" || (p.status === "RETIRED" && inForce(p) > 0))) ?? [];
+  const anyone = rows.some((p) => inForce(p) + p.ended > 0);
+  const defaultPlan = rows.find((p) => p.isDefault);
+  const heading = (key: SummaryNumber) => (key === "endingSoon" ? m.endingSoon(days) : m[key]);
+  return (
+    <Panel title={m.title}>
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-ink-soft">{audience === "SCHOOL" ? m.leadSchool : m.leadFamily}</p>
+        {summary.isLoading && !data && <LoadingState label={m.loading} />}
+        {summary.error && <ErrorState error={summary.error} onRetry={summary.refetch} />}
+        {data && !anyone && <p className="text-sm text-ink-soft">{m.none}</p>}
+        {data && anyone && (
+          <div role="region" aria-label={m.title} tabIndex={0} className="-mx-1 overflow-x-auto px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tonle-600">
+            <table className="w-full min-w-[36rem] border-collapse text-sm">
+              <caption className="sr-only">{m.caption(days)}</caption>
+              <thead>
+                <tr className="border-b border-line text-left text-[0.8125rem] text-ink-faint">
+                  <th scope="col" className="py-2 pr-4 font-medium">
+                    {m.plan}
+                  </th>
+                  {SUMMARY_NUMBERS.map((key) => (
+                    <th key={key} scope="col" className="px-2 py-2 text-right font-medium">
+                      {heading(key)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {rows.map((p) => (
+                  <tr key={p.planId}>
+                    <th scope="row" className="py-2.5 pr-4 text-left font-medium text-ink [overflow-wrap:anywhere]">
+                      {p.name}
+                      {p.status === "RETIRED" && (
+                        <span className="ml-2 align-middle">
+                          <PlanBadge status="RETIRED" />
+                        </span>
+                      )}
+                    </th>
+                    {SUMMARY_NUMBERS.map((key) => (
+                      <td
+                        key={key}
+                        className={cn(
+                          "px-2 py-2.5 text-right tabular",
+                          p[key] === 0
+                            ? "text-ink-faint"
+                            : key === "pastDue" || key === "endingSoon"
+                              ? "font-semibold text-ink"
+                              : "text-ink",
+                        )}
+                      >
+                        {p[key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {data && audience === "FAMILY" && defaultPlan && (
+          <p className="text-sm text-ink">{m.familiesOnDefault(data.familiesOnDefault, defaultPlan.name)}</p>
+        )}
+        {data && audience === "SCHOOL" && (
+          <>
+            <p className="text-sm text-ink">{m.schoolsUnpaid(data.schoolsWithoutPaidPlan)}</p>
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-semibold text-ink">{m.endingTitle(days)}</h3>
+              {data.schoolsEndingSoon.length === 0 ? (
+                <p className="text-sm text-ink-soft">{m.endingNone(days)}</p>
+              ) : (
+                <ul aria-label={m.endingTitle(days)} className="flex flex-col divide-y divide-line border-y border-line">
+                  {data.schoolsEndingSoon.map((s) => (
+                    <li key={s.schoolId} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
+                      <Link
+                        to={`/admin/schools/${s.schoolId}`}
+                        className="min-w-0 font-medium text-tonle-700 underline-offset-2 [overflow-wrap:anywhere] hover:underline"
+                      >
+                        {s.schoolName}
+                      </Link>
+                      <span className="text-sm text-ink-soft">{m.endingRow(s.planName, dateOnly(s.paidUntil))}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+const SUMMARY_NUMBERS = ["active", "endingSoon", "trialing", "pastDue", "cancelling", "ended"] as const;
+type SummaryNumber = (typeof SUMMARY_NUMBERS)[number];
+
+/** V79: copies a plan into a new draft version; the original, its subscribers and their price stay as they are. */
+function DuplicatePlan({ plan, onDuplicated }: { plan: PlanResponse; onDuplicated: (copy: PlanResponse) => void }) {
+  const m = useMessages(plansMessages).versions;
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(plan.plan.name);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      onDuplicated(await plansApi.duplicate(plan.plan.id, { code: code.trim().toUpperCase(), name: name.trim() }));
+    } catch (err) {
+      setError(errorText(err, m.failed));
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <Button variant="ghost" size="sm" className="w-fit" onClick={() => setOpen(true)}>
+        {m.duplicate}
+      </Button>
+    );
+  }
+  return (
+    <form
+      onSubmit={onSubmit}
+      aria-label={m.title(plan.plan.name)}
+      className="flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line"
+    >
+      <h3 className="text-sm font-semibold text-ink [overflow-wrap:anywhere]">{m.title(plan.plan.name)}</h3>
+      <p className="text-sm text-ink-soft">{m.lead}</p>
+      <FormField label={m.name} value={name} maxLength={120} required onChange={(e) => setName(e.target.value)} />
+      <FormField
+        label={m.code}
+        value={code}
+        maxLength={60}
+        required
+        autoFocus
+        onChange={(e) => setCode(e.target.value.toUpperCase())}
+      />
+      {error && (
+        <p role="alert" className="text-sm font-medium text-brick-deep">
+          {error}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="sm" disabled={busy || !name.trim() || !code.trim()}>
+          {busy ? m.creating : m.create}
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
+          {m.cancel}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function PlanDetail({
+  plan,
+  onChanged,
+  onDuplicated,
+}: {
+  plan: PlanResponse;
+  onChanged: () => void;
+  onDuplicated: (copy: PlanResponse) => void;
+}) {
   const draft = plan.plan.status === "DRAFT";
   const [name, setName] = useState(plan.plan.name);
   const [description, setDescription] = useState(plan.plan.description ?? "");
@@ -436,6 +634,9 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
           {plan.plan.isDefault && <span className="font-semibold text-tonle-700">{m.defaultPlan}</span>}
           <span>{plan.plan.audience === "SCHOOL" ? m.subscribedSchools(plan.subscribers) : m.subscribed(plan.subscribers)}</span>
         </p>
+        {plan.basedOn && (
+          <p className="-mt-3 text-sm text-ink-soft [overflow-wrap:anywhere]">{all.versions.basedOn(plan.basedOn.name, plan.basedOn.code)}</p>
+        )}
 
         {draft ? (
           <form onSubmit={save} className="flex flex-col gap-4">
@@ -594,6 +795,7 @@ function PlanDetail({ plan, onChanged }: { plan: PlanResponse; onChanged: () => 
             </div>
           </div>
         )}
+        {!confirming && <DuplicatePlan plan={plan} onDuplicated={onDuplicated} />}
       </div>
     </Panel>
   );

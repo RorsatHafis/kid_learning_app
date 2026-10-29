@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import org.springframework.util.Assert;
 
 import java.util.Locale;
+import java.util.UUID;
 
 /**
  * What a family can have (V42). Its entitlements are set while it is a DRAFT; activating
@@ -54,6 +55,10 @@ public class SubscriptionPlan extends AuditableEntity {
     @Column(name = "audience", nullable = false, updatable = false, length = 10)
     private PlanAudience audience;
 
+    /** The plan this draft was copied from (V79), if any: the earlier version of the same offer. */
+    @Column(name = "based_on_plan_id", updatable = false)
+    private UUID basedOnPlanId;
+
     protected SubscriptionPlan() {
         // JPA
     }
@@ -72,6 +77,19 @@ public class SubscriptionPlan extends AuditableEntity {
         plan.description = description == null || description.isBlank() ? null : description.strip();
         plan.status = PlanStatus.DRAFT;
         plan.audience = audience;
+        return plan;
+    }
+
+    /**
+     * A new draft carrying {@code source}'s audience, words, price and self-service choice (its limits are copied by
+     * the caller). The source is untouched, so whoever is on it keeps exactly what they agreed to.
+     */
+    public static SubscriptionPlan duplicateOf(SubscriptionPlan source, String code, String name) {
+        Assert.notNull(source, "source must not be null");
+        SubscriptionPlan plan = draft(code, name, source.description, source.audience);
+        plan.revise(name, source.description, source.selfService, source.priceAmountMinor, source.priceCurrency,
+                source.billingInterval);
+        plan.basedOnPlanId = source.getId();
         return plan;
     }
 
@@ -135,6 +153,10 @@ public class SubscriptionPlan extends AuditableEntity {
         if (status != PlanStatus.DRAFT) {
             throw new IllegalStateException("Only a draft plan can be " + action + "; this one is " + status.name().toLowerCase());
         }
+    }
+
+    public UUID getBasedOnPlanId() {
+        return basedOnPlanId;
     }
 
     public PlanAudience getAudience() {

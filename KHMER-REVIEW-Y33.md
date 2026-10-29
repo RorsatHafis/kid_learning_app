@@ -319,3 +319,4 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - 2026-10-28 (M12 B0): `frontend/src/features/principal/branches.messages.ts` (whole file); `auditCodes.ts`
   SCHOOL_BRANCH_CREATED, ACADEMIC_CALENDAR_COPIED; `ServerText.java` the three branch messages.
 - 2026-10-28 (M12 B1): `branches.messages.ts` runByYou...appointed; `ServerText.java` the two principal-appointment messages.
+- 2026-10-29 (plans slice 1): `plans.messages.ts` `versions` and `summary` groups; `auditCodes.ts` PLAN_DUPLICATED.

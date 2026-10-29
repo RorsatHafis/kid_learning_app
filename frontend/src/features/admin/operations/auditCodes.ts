@@ -70,6 +70,7 @@ export const KHMER_ACTIONS: Record<string, string> = {
   MEDIA_RESTORED: "មេឌៀត្រូវបានស្ដារ",
   PLAN_ACTIVATED: "កញ្ចប់ត្រូវបានដាក់ឱ្យប្រើ",
   PLAN_CREATED: "កញ្ចប់ត្រូវបានបង្កើត",
+  PLAN_DUPLICATED: "កញ្ចប់ត្រូវបានចម្លងជាកំណែថ្មី",
   PLAN_MADE_DEFAULT: "កញ្ចប់ត្រូវបានកំណត់ជាលំនាំដើម",
   PLAN_REQUESTED: "កញ្ចប់ត្រូវបានស្នើសុំ",
   PLAN_REQUEST_DECLINED: "សំណើកញ្ចប់ត្រូវបានបដិសេធ",

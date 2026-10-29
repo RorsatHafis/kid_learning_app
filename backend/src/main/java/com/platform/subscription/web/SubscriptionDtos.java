@@ -56,11 +56,20 @@ public final class SubscriptionDtos {
     }
 
     /** {@code subscribers}: the families (family plan) or schools (school plan) whose subscription names it. */
-    public record PlanResponse(PlanSummary plan, List<Entitlement> entitlements, long subscribers) {
+    /** A plan as an administrator manages it; {@code basedOn}: the plan it was duplicated from (V79), or null. */
+    public record PlanResponse(PlanSummary plan, List<Entitlement> entitlements, long subscribers, PlanRef basedOn) {
 
         static PlanResponse of(SubscriptionService.PlanView view) {
-            return new PlanResponse(PlanSummary.of(view.plan()), entitlementList(view.limits(), null), view.subscribers());
+            SubscriptionPlan basedOn = view.basedOn();
+            return new PlanResponse(PlanSummary.of(view.plan()), entitlementList(view.limits(), null), view.subscribers(),
+                    basedOn == null ? null : new PlanRef(basedOn.getId(), basedOn.getCode(), basedOn.getName()));
         }
+    }
+
+    public record PlanRef(UUID id, String code, String name) {
+    }
+
+    public record DuplicatePlanRequest(@NotBlank @Size(max = 60) String code, @NotBlank @Size(max = 120) String name) {
     }
 
     /** An operator's view of a subscription; {@code id} is its audit-log resource. */

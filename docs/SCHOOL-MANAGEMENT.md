@@ -185,7 +185,7 @@ record's own school/organization, so a changed URL or id finds nothing.
 **B5 (new decision)**: may an existing school join an organization, and does its principal consent (recommended: yes,
 by invitation accepted by the school's principal, audited, reversible by the platform admin).
 
-**Subscription (B1, open)**: options are per branch (today), per organization (one plan covering N branches), or per
+**Subscription (B1, open; full design in `docs/SUBSCRIPTIONS.md` §5, SB1)**: options are per branch (today), per organization (one plan covering N branches), or per
 student capacity across the organization. Recommendation: keep per branch until a real group asks; then an
 organization plan whose entitlements are the sum of branch places, billed to the organization - a Bookeyond
 subscription record, never mixed with school fees.

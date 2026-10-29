@@ -1771,4 +1771,29 @@ Dependencies:
     suites (`SchoolAccess` 11, `SchoolFamilyBoundary` 3, `SchoolPaymentAccess` 3, `SchoolStaff` 11), `AcademicYear` 3,
     ServerText - 37 green; frontend principal/school Vitest 28, tsc, eslint. **Not browser verified**: the appoint form
     (API and server rules are covered by the integration test).
+- 2026-10-29: **CI green on `203c2fb` (M12 B1). Flexible plan management, slice 1** (owner brief "Flexible
+  Subscription and Plan Management"). Discovery found most of the requirement already built (admin-configured
+  plans, DRAFT/ACTIVE/RETIRED, frozen active plans, audience-scoped limits enforced on the server, price and limits
+  copied into every payment order, paid school plans, invoices, refunds, audit). Built now, without any pricing
+  decision:
+  - **Duplicate as a new version** (`POST /api/v1/admin/plans/{id}/duplicate`, V79 `based_on_plan_id`): a new draft
+    with the original's words, price, self-service choice and limits, linked to it; the original and its subscribers
+    are untouched. This is the safe way to change a price or limits. Audited `PLAN_DUPLICATED` with the source code.
+  - **Subscriptions now** (`GET /api/v1/admin/subscriptions/summary`, Plans page): per plan, how many are in force,
+    end within 30 days, trial, payment overdue, cancelling, ended - read with the same rules that grant access;
+    families on the default plan (a count: families are never listed); schools in use without a paid plan; schools
+    whose paid plan ends within 30 days, linked to their page for the renewal invoice.
+  - Plans list fix: with a plan open beside the list at 1280 px the name column collapsed to almost nothing (names
+    broke a letter per line); the list is now compact (name, status, count) while a plan is open side by side.
+  - **Designed, not built** (`docs/SUBSCRIPTIONS.md`): organization-scope plans with coverage and pooled places,
+    add-ons, feature/module entitlements (never a child-learning feature), availability window, renewal of retired
+    versions, trials, introductory versions, promotion codes, grace period; the two money domains (Bookeyond
+    subscriptions vs school fees) kept apart. Owner decisions SB1-SB9 listed with recommendations.
+  - **Tested**: `PlanManagementIntegrationTests` (2: version keeps the subscriber's plan, price and limits; retired
+    plans can be duplicated; school copies keep school levers; refusals 409/400/403; lineage in the schema; audit;
+    summary counts by standing, families never listed, a paid school listed ten days before its end, admin only),
+    `SubscriptionIntegrationTests` (9), `SchoolPlanAndStorageIntegrationTests` (5), `ServerTextCoverageTests` - green.
+    Frontend: `planVersions.test.tsx` (2), admin Vitest 76 (one studio test timed out under the full run's load and
+    passes alone - unrelated), tsc, eslint. **Browser verified** (headless, 1280 and 360 px): duplicating a plan,
+    the summary for families and schools, no horizontal overflow, axe clean.
 

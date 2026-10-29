@@ -88,7 +88,8 @@ public class SubscriptionService {
     // ------------------------------------------------------------------ views
 
     /** {@code subscribers}: families (family plan) or schools (school plan) whose subscription names it. */
-    public record PlanView(SubscriptionPlan plan, Map<EntitlementKey, Integer> limits, long subscribers) {
+    /** {@code basedOn}: the plan this one was duplicated from (V79), or null. */
+    public record PlanView(SubscriptionPlan plan, Map<EntitlementKey, Integer> limits, long subscribers, SubscriptionPlan basedOn) {
     }
 
     /** A school as an operator or its principal sees it: its plan and what it holds. */
@@ -152,6 +153,33 @@ public class SubscriptionService {
         }
         record(adminId, "PLAN_CREATED", plan.getId(), Map.of("code", normalized, "audience", audience.name()));
         return view(plan);
+    }
+
+    /**
+     * Copies a plan - any status - into a new draft with the same audience, words, price, self-service choice and
+     * limits, linked to it (V79). This is how an administrator changes what a plan offers: the copy is changed and
+     * activated, the original retired. Whoever is on the original keeps it, its limits and the price they paid
+     * (payment orders keep their own copy of the price and the plan version).
+     */
+    @Transactional
+    public PlanView duplicatePlan(UUID adminId, UUID sourceId, String code, String name) {
+        requireAdmin(adminId);
+        SubscriptionPlan source = plan(sourceId);
+        String normalized = code == null ? "" : code.strip().toUpperCase();
+        if (!CODE.matcher(normalized).matches()) {
+            throw new IllegalArgumentException("A plan code uses capital letters, numbers and _ (2–60 characters)");
+        }
+        if (plans.findByCode(normalized).isPresent()) {
+            throw new IllegalStateException("A plan with the code " + normalized + " already exists");
+        }
+        SubscriptionPlan copy = plans.save(SubscriptionPlan.duplicateOf(source, normalized, name));
+        Map<EntitlementKey, Integer> limits = entitlementService.limitsOf(sourceId);
+        for (EntitlementKey key : EntitlementKey.of(copy.getAudience())) {
+            entitlements.save(PlanEntitlement.of(copy.getId(), key, limits.get(key)));
+        }
+        record(adminId, "PLAN_DUPLICATED", copy.getId(), Map.of("code", normalized, "from", source.getCode(),
+                "audience", copy.getAudience().name()));
+        return view(copy);
     }
 
     @Transactional
@@ -416,7 +444,8 @@ public class SubscriptionService {
     private PlanView view(SubscriptionPlan plan) {
         long subscribers = plan.getAudience() == PlanAudience.SCHOOL ? schoolSubscriptions.countByPlanId(plan.getId())
                 : subscriptions.countByPlanId(plan.getId());
-        return new PlanView(plan, entitlementService.limitsOf(plan.getId()), subscribers);
+        SubscriptionPlan basedOn = plan.getBasedOnPlanId() == null ? null : plans.findById(plan.getBasedOnPlanId()).orElse(null);
+        return new PlanView(plan, entitlementService.limitsOf(plan.getId()), subscribers, basedOn);
     }
 
     private void recordSchool(UUID adminId, String action, UUID resourceId, Map<String, Object> metadata) {

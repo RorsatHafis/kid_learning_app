@@ -187,6 +187,8 @@ Status as of 2026-10-27. "Where" points to the record with the verification deta
 | Media upload (pictures, recordings) with per-teacher allowance | **Live** | Stored on the server disk (`MEDIA_ROOT`). |
 | Storage-provider abstraction / school storage choice | **Planned / Blocked** | M11; needs D-06 and D-12 (library approval). |
 | Plans and entitlements, grants, family plan requests | **Live** | Server refuses contradictory plans. |
+| Plan versions (duplicate a plan as a new draft; the original's subscribers keep their plan and price) and a subscriptions summary by plan and standing | **Live** (2026-10-29) | `docs/SUBSCRIPTIONS.md` |
+| Organization billing, feature/module entitlements, availability windows, trials, promotions, automatic renewal | **Designed / Decision** | `docs/SUBSCRIPTIONS.md` §4-§10, owner decisions SB1-SB9 |
 | Audit log of administrative and sensitive actions | **Live** | Ids only; kept after erasure. |
 | Public demo lesson picker, statements, site copy | **Live** | |
 

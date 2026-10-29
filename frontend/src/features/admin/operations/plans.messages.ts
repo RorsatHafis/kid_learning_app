@@ -63,6 +63,44 @@ export const plansMessages = defineMessages(
       creating: "Creating…",
       create: "Create draft plan",
     },
+    versions: {
+      basedOn: (name: string, code: string) => `A new version of ${name} (${code})`,
+      from: (code: string) => `from ${code}`,
+      duplicate: "Duplicate as a new version…",
+      title: (name: string) => `A new version of ${name}`,
+      lead:
+        "Copies its words, price and limits into a new draft. Change the draft and activate it; then retire this one so nobody new is given it. Whoever is on this plan keeps it, its limits and the price they paid.",
+      name: "Name of the new version",
+      code: "Code of the new version (capital letters, numbers and _)",
+      creating: "Copying…",
+      create: "Create the draft",
+      cancel: "Cancel",
+      failed: "The copy couldn't be made.",
+    },
+    summary: {
+      title: "Subscriptions now",
+      leadFamily: "Families on each plan right now. Families are counted here, never listed: open one by a parent's email below.",
+      leadSchool: "Schools on each plan right now, counted by a confirmed payment. A school without one waits for its payment.",
+      loading: "Counting subscriptions…",
+      caption: (days: number) => `Subscriptions by plan and standing; "ending soon" means within ${days} days.`,
+      plan: "Plan",
+      active: "In force",
+      endingSoon: (days: number) => `Ending within ${days} days`,
+      trialing: "Trial",
+      pastDue: "Payment overdue",
+      cancelling: "Cancelling",
+      ended: "Ended",
+      none: "Nobody is subscribed to a plan yet.",
+      familiesOnDefault: (n: number, plan: string) =>
+        `${n} ${plural(n, "family is", "families are")} on ${plan}, the default, with no subscription in force.`,
+      schoolsUnpaid: (n: number) =>
+        n === 0
+          ? "Every school in use has a paid plan."
+          : `${n} ${plural(n, "school in use has", "schools in use have")} no paid plan: their school services wait for a payment.`,
+      endingTitle: (days: number) => `Schools whose paid plan ends within ${days} days`,
+      endingNone: (days: number) => `No school's paid plan ends within ${days} days.`,
+      endingRow: (plan: string, date: string) => `${plan} · paid until ${date}`,
+    },
     detail: {
       saveFailed: "The plan couldn't be saved.",
       didntWork: "That didn't work.",
@@ -209,6 +247,43 @@ export const plansMessages = defineMessages(
       code: "លេខកូដ (អក្សរធំឡាតាំង លេខ និង _)",
       creating: "កំពុងបង្កើត…",
       create: "បង្កើតកញ្ចប់ជាសេចក្ដីព្រាង",
+    },
+    versions: {
+      basedOn: (name: string, code: string) => `កំណែថ្មីនៃ ${name} (${code})`,
+      from: (code: string) => `ពី ${code}`,
+      duplicate: "ចម្លងជាកំណែថ្មី…",
+      title: (name: string) => `កំណែថ្មីនៃ ${name}`,
+      lead:
+        "ចម្លងពាក្យ តម្លៃ និងដែនកំណត់របស់វាទៅជាសេចក្ដីព្រាងថ្មី។ កែសេចក្ដីព្រាង ហើយដាក់វាឱ្យប្រើ។ បន្ទាប់មក បញ្ឈប់កញ្ចប់នេះ ដើម្បីកុំឱ្យផ្ដល់វាដល់អ្នកថ្មីទៀត។ អ្នកដែលកំពុងប្រើកញ្ចប់នេះ រក្សាវា ដែនកំណត់របស់វា និងតម្លៃដែលពួកគេបានបង់។",
+      name: "ឈ្មោះកំណែថ្មី",
+      code: "លេខកូដកំណែថ្មី (អក្សរធំ លេខ និង _)",
+      creating: "កំពុងចម្លង…",
+      create: "បង្កើតសេចក្ដីព្រាង",
+      cancel: "បោះបង់",
+      failed: "មិនអាចចម្លងបានទេ។",
+    },
+    summary: {
+      title: "ការជាវឥឡូវនេះ",
+      leadFamily: "គ្រួសារនៅលើកញ្ចប់នីមួយៗឥឡូវនេះ។ គ្រួសារត្រូវបានរាប់នៅទីនេះ មិនដែលរាយឈ្មោះទេ៖ សូមបើកគ្រួសារមួយតាមអ៊ីមែលរបស់មាតាបិតាខាងក្រោម។",
+      leadSchool: "សាលានៅលើកញ្ចប់នីមួយៗឥឡូវនេះ ដែលរាប់តាមការបង់ប្រាក់ដែលបានបញ្ជាក់។ សាលាដែលគ្មានការបង់ប្រាក់ រង់ចាំការបង់ប្រាក់របស់វា។",
+      loading: "កំពុងរាប់ការជាវ…",
+      caption: (days: number) => `ការជាវតាមកញ្ចប់ និងស្ថានភាព។ "ជិតបញ្ចប់" មានន័យថាក្នុងរយៈពេល ${days} ថ្ងៃ។`,
+      plan: "កញ្ចប់",
+      active: "កំពុងអនុវត្ត",
+      endingSoon: (days: number) => `បញ្ចប់ក្នុងរយៈពេល ${days} ថ្ងៃ`,
+      trialing: "សាកល្បង",
+      pastDue: "ការបង់ប្រាក់ហួសកាលកំណត់",
+      cancelling: "កំពុងបោះបង់",
+      ended: "បានបញ្ចប់",
+      none: "មិនទាន់មាននរណាម្នាក់ជាវកញ្ចប់នៅឡើយទេ។",
+      familiesOnDefault: (n: number, plan: string) => `គ្រួសារ ${n} ស្ថិតនៅលើ ${plan} ដែលជាលំនាំដើម ដោយគ្មានការជាវកំពុងអនុវត្ត។`,
+      schoolsUnpaid: (n: number) =>
+        n === 0
+          ? "សាលាទាំងអស់ដែលកំពុងប្រើ មានកញ្ចប់ដែលបានបង់ប្រាក់។"
+          : `សាលា ${n} ដែលកំពុងប្រើ គ្មានកញ្ចប់ដែលបានបង់ប្រាក់ទេ៖ សេវាសាលារបស់ពួកវារង់ចាំការបង់ប្រាក់។`,
+      endingTitle: (days: number) => `សាលាដែលកញ្ចប់បានបង់ប្រាក់បញ្ចប់ក្នុងរយៈពេល ${days} ថ្ងៃ`,
+      endingNone: (days: number) => `គ្មានកញ្ចប់បានបង់ប្រាក់របស់សាលាណាបញ្ចប់ក្នុងរយៈពេល ${days} ថ្ងៃទេ។`,
+      endingRow: (plan: string, date: string) => `${plan} · បានបង់រហូតដល់ ${date}`,
     },
     detail: {
       saveFailed: "មិនអាចរក្សាទុកកញ្ចប់បានទេ។",
