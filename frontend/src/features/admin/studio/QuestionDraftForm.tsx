@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import type { MediaRef, QuestionType } from "@/lib/api/types";
-import type { MediaItem, QuestionDraftInput } from "@/lib/api/studio";
+import type { KhmerDraft, MediaItem, QuestionDraftInput } from "@/lib/api/studio";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
 import { SelectField, TextAreaField } from "./shared";
@@ -9,6 +9,7 @@ import { DIFFICULTIES } from "./studioLogic";
 import { MediaSlot } from "./MediaSlot";
 import { useMessages } from "@/i18n/catalog";
 import { formMessages } from "./form.messages";
+import { cn } from "@/lib/utils/cn";
 
 const MAX_OPTIONS = 10;
 const MAX_PAIRS = 6; // content/service/QuestionCompleteness.MAX_PAIRS
@@ -30,19 +31,21 @@ type Media = MediaRef | null | undefined;
 
 /** A question version as the form edits it: media as references, so they can be shown and heard. */
 export interface DraftValues {
+  /** The Khmer of the question's own fields (LOCALIZATION.md); each row below carries its own Khmer label. */
+  khmer?: { prompt: string; hint: string; explanation: string; promptImageDescription: string };
   prompt: string;
   correctAnswer: string | null;
   difficultyLevel: number | null;
   promptImage?: Media;
   promptImageDescription?: string | null;
   promptAudio?: Media;
-  options?: { label: string; correct: boolean; image?: Media; audio?: Media }[];
-  pairs?: { left: string; right: string; leftImage?: Media; rightImage?: Media }[];
+  options?: { label: string; labelKm?: string; correct: boolean; image?: Media; audio?: Media }[];
+  pairs?: { left: string; right: string; leftKm?: string; rightKm?: string; leftImage?: Media; rightImage?: Media }[];
   /** ORDERING: the items in their correct order. */
-  items?: { label: string; image?: Media; audio?: Media }[];
+  items?: { label: string; labelKm?: string; image?: Media; audio?: Media }[];
   /** SORTING (X23): the groups, and each item with the place of its group in `groups`. */
-  groups?: { label: string; image?: Media }[];
-  sortItems?: { label: string; group: number; image?: Media; audio?: Media }[];
+  groups?: { label: string; labelKm?: string; image?: Media }[];
+  sortItems?: { label: string; labelKm?: string; group: number; image?: Media; audio?: Media }[];
   hint?: string | null;
   explanation?: string | null;
 }
@@ -90,6 +93,15 @@ export function QuestionDraftForm({
   const [difficulty, setDifficulty] = useState(initial.difficultyLevel ? String(initial.difficultyLevel) : "");
   const [hint, setHint] = useState(initial.hint ?? "");
   const [explanation, setExplanation] = useState(initial.explanation ?? "");
+  // The Khmer, kept beside the English (LOCALIZATION.md): switching the content language shows the other set of
+  // fields and never touches the one not shown. The interface language is a separate choice.
+  const [promptKm, setPromptKm] = useState(initial.khmer?.prompt ?? "");
+  const [hintKm, setHintKm] = useState(initial.khmer?.hint ?? "");
+  const [explanationKm, setExplanationKm] = useState(initial.khmer?.explanation ?? "");
+  const [descriptionKm, setDescriptionKm] = useState(initial.khmer?.promptImageDescription ?? "");
+  const translatable = questionType !== "SHORT_ANSWER";
+  const [language, setLanguage] = useState<ContentLanguage>("en");
+  const km = translatable && language === "km";
   const [options, setOptions] = useState<NonNullable<DraftValues["options"]>>(
     initial.options && initial.options.length > 0
       ? initial.options
@@ -162,8 +174,51 @@ export function QuestionDraftForm({
       sortItems: sorting
         ? sortItems.map((i) => ({ label: i.label.trim(), group: i.group, imageAssetId: id(i.image), audioAssetId: id(i.audio) }))
         : undefined,
+      // Sent when there is Khmer to keep or change: the question had some (clearing it is saved too), or some is typed.
+      khmer: translatable && (initial.khmer || anyKhmer()) ? khmerDraft() : undefined,
     };
   }
+
+  function anyKhmer() {
+    const k = khmerDraft();
+    return [k.prompt, k.hint, k.explanation, k.promptImageDescription, ...[k.options, k.pairLefts, k.pairRights, k.items, k.groups, k.sortItems].flat()].some(
+      (text) => !!text,
+    );
+  }
+
+  /** The Khmer as it would be saved: one label per row, in the rows' own order; blank = not translated yet. */
+  function khmerDraft(): KhmerDraft {
+    const t = (text: string | undefined) => text?.trim() ?? "";
+    return {
+      prompt: t(promptKm) || null,
+      hint: t(hintKm) || null,
+      explanation: t(explanationKm) || null,
+      promptImageDescription: promptImage ? t(descriptionKm) || null : null,
+      options: multipleChoice ? options.map((o) => t(o.labelKm)) : undefined,
+      pairLefts: matching ? pairs.map((p) => t(p.leftKm)) : undefined,
+      pairRights: matching ? pairs.map((p) => t(p.rightKm)) : undefined,
+      items: ordering ? items.map((i) => t(i.labelKm)) : undefined,
+      groups: sorting ? groups.map((g) => t(g.labelKm)) : undefined,
+      sortItems: sorting ? sortItems.map((i) => t(i.labelKm)) : undefined,
+    };
+  }
+
+  // How much of the Khmer is written: every field the English has, and each row's label.
+  const khmerCounts = (() => {
+    const pairsOf: [string, string | undefined][] = [
+      [prompt, promptKm],
+      [hint, hintKm],
+      [explanation, explanationKm],
+      [promptImage ? description : "", descriptionKm],
+      ...(multipleChoice ? options.map((o): [string, string | undefined] => [o.label, o.labelKm]) : []),
+      ...(matching ? pairs.flatMap((p): [string, string | undefined][] => [[p.left, p.leftKm], [p.right, p.rightKm]]) : []),
+      ...(ordering ? items.map((i): [string, string | undefined] => [i.label, i.labelKm]) : []),
+      ...(sorting ? groups.map((g): [string, string | undefined] => [g.label, g.labelKm]) : []),
+      ...(sorting ? sortItems.map((i): [string, string | undefined] => [i.label, i.labelKm]) : []),
+    ];
+    const needed = pairsOf.filter(([en]) => en.trim());
+    return { written: needed.filter(([, k]) => k?.trim()).length, needed: needed.length };
+  })();
 
   // Unsaved changes: what saving would send, against what it was when the form was last given saved values. A save
   // brings new saved values (the same draft version, so the form stays mounted): they become the new baseline.
@@ -207,13 +262,20 @@ export function QuestionDraftForm({
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <TextAreaField
-        label={m.prompt}
-        value={prompt}
-        maxLength={2000}
-        required
-        onChange={(e) => setPrompt(e.target.value)}
+      <ContentLanguageSwitch
+        language={km ? "km" : "en"}
+        onChange={setLanguage}
+        translatable={translatable}
+        written={khmerCounts.written}
+        needed={khmerCounts.needed}
       />
+      {km ? (
+        <Translated english={prompt}>
+          <TextAreaField label={m.inKhmer(m.prompt)} lang="km" value={promptKm} maxLength={2000} onChange={(e) => setPromptKm(e.target.value)} />
+        </Translated>
+      ) : (
+        <TextAreaField label={m.prompt} value={prompt} maxLength={2000} required onChange={(e) => setPrompt(e.target.value)} />
+      )}
 
       <fieldset className="flex min-w-0 flex-col gap-4 rounded-[12px] bg-paper px-4 py-3 ring-1 ring-inset ring-line">
         <legend className="sr-only">{m.media}</legend>
@@ -229,15 +291,25 @@ export function QuestionDraftForm({
             }}
             name={m.pictureName}
           />
-          {promptImage && (
-            <FormField
-              label={m.describe}
-              value={description}
-              maxLength={300}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={m.describeHint}
-            />
-          )}
+          {promptImage &&
+            (km ? (
+              <FormField
+                label={m.inKhmer(m.describe)}
+                lang="km"
+                value={descriptionKm}
+                maxLength={300}
+                onChange={(e) => setDescriptionKm(e.target.value)}
+                placeholder={description || m.describeHint}
+              />
+            ) : (
+              <FormField
+                label={m.describe}
+                value={description}
+                maxLength={300}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={m.describeHint}
+              />
+            ))}
         </div>
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-ink">{m.readAloud}</span>
@@ -262,11 +334,14 @@ export function QuestionDraftForm({
                   className="h-5 w-5 shrink-0 accent-tonle-700"
                 />
                 <input
-                  value={option.label}
+                  value={km ? (option.labelKm ?? "") : option.label}
+                  lang={km ? "km" : undefined}
                   maxLength={300}
-                  onChange={(e) => setOptions(options.map((o, i) => (i === index ? { ...o, label: e.target.value } : o)))}
-                  aria-label={m.choice(index + 1)}
-                  placeholder={option.image ? m.describePicture : undefined}
+                  onChange={(e) =>
+                    setOptions(options.map((o, i) => (i === index ? (km ? { ...o, labelKm: e.target.value } : { ...o, label: e.target.value }) : o)))
+                  }
+                  aria-label={km ? m.inKhmer(m.choice(index + 1)) : m.choice(index + 1)}
+                  placeholder={km ? option.label : option.image ? m.describePicture : undefined}
                   className={inputClass}
                 />
               </div>
@@ -324,11 +399,14 @@ export function QuestionDraftForm({
                   {index + 1}
                 </span>
                 <input
-                  value={pair.left}
+                  value={km ? (pair.leftKm ?? "") : pair.left}
+                  lang={km ? "km" : undefined}
                   maxLength={300}
-                  onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, left: e.target.value } : p)))}
-                  aria-label={m.pairItem(index + 1)}
-                  placeholder={m.item}
+                  onChange={(e) =>
+                    setPairs(pairs.map((p, i) => (i === index ? (km ? { ...p, leftKm: e.target.value } : { ...p, left: e.target.value }) : p)))
+                  }
+                  aria-label={km ? m.inKhmer(m.pairItem(index + 1)) : m.pairItem(index + 1)}
+                  placeholder={km ? pair.left : m.item}
                   className={inputClass}
                 />
                 <MediaSlot
@@ -344,11 +422,14 @@ export function QuestionDraftForm({
                   ↔
                 </span>
                 <input
-                  value={pair.right}
+                  value={km ? (pair.rightKm ?? "") : pair.right}
+                  lang={km ? "km" : undefined}
                   maxLength={300}
-                  onChange={(e) => setPairs(pairs.map((p, i) => (i === index ? { ...p, right: e.target.value } : p)))}
-                  aria-label={m.pairMatch(index + 1)}
-                  placeholder={m.itsMatch}
+                  onChange={(e) =>
+                    setPairs(pairs.map((p, i) => (i === index ? (km ? { ...p, rightKm: e.target.value } : { ...p, right: e.target.value }) : p)))
+                  }
+                  aria-label={km ? m.inKhmer(m.pairMatch(index + 1)) : m.pairMatch(index + 1)}
+                  placeholder={km ? pair.right : m.itsMatch}
                   className={inputClass}
                 />
                 <MediaSlot
@@ -388,11 +469,14 @@ export function QuestionDraftForm({
                   {index + 1}
                 </span>
                 <input
-                  value={item.label}
+                  value={km ? (item.labelKm ?? "") : item.label}
+                  lang={km ? "km" : undefined}
                   maxLength={300}
-                  onChange={(e) => setItems(items.map((it, i) => (i === index ? { ...it, label: e.target.value } : it)))}
-                  aria-label={m.itemN(index + 1)}
-                  placeholder={item.image ? m.describePicture : undefined}
+                  onChange={(e) =>
+                    setItems(items.map((it, i) => (i === index ? (km ? { ...it, labelKm: e.target.value } : { ...it, label: e.target.value }) : it)))
+                  }
+                  aria-label={km ? m.inKhmer(m.itemN(index + 1)) : m.itemN(index + 1)}
+                  placeholder={km ? item.label : item.image ? m.describePicture : undefined}
                   className={inputClass}
                 />
               </div>
@@ -463,11 +547,14 @@ export function QuestionDraftForm({
               <div key={index} className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
                 <div className="flex min-w-[13rem] flex-1 items-center gap-2">
                   <input
-                    value={group.label}
+                    value={km ? (group.labelKm ?? "") : group.label}
+                    lang={km ? "km" : undefined}
                     maxLength={120}
-                    onChange={(e) => setGroups(groups.map((g, i) => (i === index ? { ...g, label: e.target.value } : g)))}
-                    aria-label={m.groupN(index + 1)}
-                    placeholder={group.image ? m.describePicture : undefined}
+                    onChange={(e) =>
+                      setGroups(groups.map((g, i) => (i === index ? (km ? { ...g, labelKm: e.target.value } : { ...g, label: e.target.value }) : g)))
+                    }
+                    aria-label={km ? m.inKhmer(m.groupN(index + 1)) : m.groupN(index + 1)}
+                    placeholder={km ? group.label : group.image ? m.describePicture : undefined}
                     className={inputClass}
                   />
                 </div>
@@ -509,11 +596,16 @@ export function QuestionDraftForm({
               <div key={index} className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
                 <div className="flex min-w-[13rem] flex-1 items-center gap-2">
                   <input
-                    value={item.label}
+                    value={km ? (item.labelKm ?? "") : item.label}
+                    lang={km ? "km" : undefined}
                     maxLength={300}
-                    onChange={(e) => setSortItems(sortItems.map((it, i) => (i === index ? { ...it, label: e.target.value } : it)))}
-                    aria-label={m.itemN(index + 1)}
-                    placeholder={item.image ? m.describePicture : undefined}
+                    onChange={(e) =>
+                      setSortItems(
+                        sortItems.map((it, i) => (i === index ? (km ? { ...it, labelKm: e.target.value } : { ...it, label: e.target.value }) : it)),
+                      )
+                    }
+                    aria-label={km ? m.inKhmer(m.itemN(index + 1)) : m.itemN(index + 1)}
+                    placeholder={km ? item.label : item.image ? m.describePicture : undefined}
                     className={inputClass}
                   />
                   <select
@@ -606,15 +698,35 @@ export function QuestionDraftForm({
       <fieldset className="flex min-w-0 flex-col gap-4 rounded-[12px] bg-paper px-4 py-3 ring-1 ring-inset ring-line">
         <legend className="px-1 text-sm font-semibold text-ink">{m.helpTitle}</legend>
         <p className="-mt-1 text-xs text-ink-soft">{m.helpLead}</p>
-        <TextAreaField label={m.hint} hint={m.hintHelp} value={hint} maxLength={300} rows={2} onChange={(e) => setHint(e.target.value)} />
-        <TextAreaField
-          label={m.explanation}
-          hint={m.explanationHelp}
-          value={explanation}
-          maxLength={600}
-          rows={3}
-          onChange={(e) => setExplanation(e.target.value)}
-        />
+        {km ? (
+          <>
+            <Translated english={hint}>
+              <TextAreaField label={m.inKhmer(m.hint)} lang="km" value={hintKm} maxLength={300} rows={2} onChange={(e) => setHintKm(e.target.value)} />
+            </Translated>
+            <Translated english={explanation}>
+              <TextAreaField
+                label={m.inKhmer(m.explanation)}
+                lang="km"
+                value={explanationKm}
+                maxLength={600}
+                rows={3}
+                onChange={(e) => setExplanationKm(e.target.value)}
+              />
+            </Translated>
+          </>
+        ) : (
+          <>
+            <TextAreaField label={m.hint} hint={m.hintHelp} value={hint} maxLength={300} rows={2} onChange={(e) => setHint(e.target.value)} />
+            <TextAreaField
+              label={m.explanation}
+              hint={m.explanationHelp}
+              value={explanation}
+              maxLength={600}
+              rows={3}
+              onChange={(e) => setExplanation(e.target.value)}
+            />
+          </>
+        )}
       </fieldset>
 
       {children}
@@ -623,5 +735,73 @@ export function QuestionDraftForm({
         {busy ? m.saving : submitLabel}
       </Button>
     </form>
+  );
+}
+
+type ContentLanguage = "en" | "km";
+
+/**
+ * Which language of the question is being written - English (always needed) or Khmer (optional; a child reading
+ * Khmer gets the question in Khmer once its Khmer is complete). Independent of the interface's language.
+ */
+function ContentLanguageSwitch({
+  language,
+  onChange,
+  translatable,
+  written,
+  needed,
+}: {
+  language: ContentLanguage;
+  onChange: (language: ContentLanguage) => void;
+  translatable: boolean;
+  written: number;
+  needed: number;
+}) {
+  const m = useMessages(formMessages);
+  const complete = needed > 0 && written >= needed;
+  return (
+    <div className="flex flex-col gap-2 rounded-[12px] bg-paper px-3 py-2.5 ring-1 ring-inset ring-line">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span id="content-language" className="text-sm font-semibold text-ink">
+          {m.writingIn}
+        </span>
+        <div role="group" aria-labelledby="content-language" className="flex gap-1 rounded-[10px] bg-white p-1 ring-1 ring-line">
+          {(["en", "km"] as const).map((l) => (
+            <button
+              key={l}
+              type="button"
+              lang={l}
+              aria-pressed={language === l}
+              disabled={l === "km" && !translatable}
+              onClick={() => onChange(l)}
+              className={cn(
+                "min-h-9 rounded-[8px] px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tonle-600 disabled:opacity-50",
+                language === l ? "bg-tonle-800 text-white" : "text-ink-soft hover:text-ink",
+              )}
+            >
+              {l === "en" ? "English" : "ខ្មែរ"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className={cn("text-xs", translatable && !complete && written > 0 ? "font-semibold text-light-deep" : "text-ink-soft")}>
+        {!translatable ? m.khmerNotForType : complete ? m.khmerComplete : written === 0 ? m.khmerNone : m.khmerPartly(written, needed)}
+      </p>
+    </div>
+  );
+}
+
+/** A Khmer field with the English it translates shown under it, so both versions can be checked side by side. */
+function Translated({ english, children }: { english: string; children: React.ReactNode }) {
+  const m = useMessages(formMessages);
+  return (
+    <div className="flex flex-col gap-1">
+      {children}
+      {english.trim() && (
+        <p className="text-xs text-ink-soft [overflow-wrap:anywhere]">
+          <span className="font-semibold">{m.englishIs}</span> {english}
+        </p>
+      )}
+    </div>
   );
 }

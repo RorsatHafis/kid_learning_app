@@ -18,6 +18,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -191,7 +192,32 @@ public final class StudioDtos {
                                         MediaRef promptImage, String promptImageDescription, MediaRef promptAudio,
                                         List<OptionDetail> options, List<MatchPairDetail> pairs, List<OrderItemDetail> items,
                                         List<UUID> skillIds, List<SortGroupDetail> groups, List<SortItemDetail> sortItems,
-                                        String hint, String explanation) {
+                                        String hint, String explanation, KhmerDetail khmer) {
+    }
+
+    /**
+     * A version's Khmer as written so far (LOCALIZATION.md): any field may be null; {@code options} maps each choice,
+     * pair side, item or group (by id) to its label. {@code complete}: a child reading Khmer gets this version in Khmer
+     * (otherwise in English, as written). {@code translatable}: false for SHORT_ANSWER, which is scored on the
+     * author's own words.
+     */
+    public record KhmerDetail(String prompt, String hint, String explanation, String promptImageDescription,
+                              Map<UUID, String> options, boolean complete, boolean translatable) {
+    }
+
+    /**
+     * A draft's Khmer, saved with its English in the same request: question-level fields, and one label per row, in
+     * the same order as the request's own rows ({@code options}, the pairs' two sides, {@code items}, {@code groups},
+     * {@code sortItems}). Blank or missing: not translated yet. Ignored for SHORT_ANSWER.
+     */
+    public record KhmerDraft(@Size(max = 2000) String prompt, @Size(max = 300) String hint, @Size(max = 600) String explanation,
+                             @Size(max = 300) String promptImageDescription,
+                             @Size(max = 10) List<@Size(max = 300) String> options,
+                             @Size(max = 6) List<@Size(max = 300) String> pairLefts,
+                             @Size(max = 6) List<@Size(max = 300) String> pairRights,
+                             @Size(max = 8) List<@Size(max = 300) String> items,
+                             @Size(max = 4) List<@Size(max = 120) String> groups,
+                             @Size(max = 10) List<@Size(max = 300) String> sortItems) {
     }
 
     /**
@@ -247,14 +273,14 @@ public final class StudioDtos {
                                         @NotNull @Size(max = 20) List<@NotNull UUID> skillIds,
                                         @Size(max = 4) List<@Valid @NotNull SortGroupRequest> groups,
                                         @Size(max = 10) List<@Valid @NotNull SortItemRequest> sortItems,
-                                        @Size(max = 300) String hint, @Size(max = 600) String explanation) {
+                                        @Size(max = 300) String hint, @Size(max = 600) String explanation, @Valid KhmerDraft khmer) {
         /** Every type but SORTING. */
         public CreateQuestionRequest(UUID subjectId, QuestionType questionType, String prompt, String correctAnswer,
                                      Integer difficultyLevel, List<OptionRequest> options, List<MatchPairRequest> pairs,
                                      List<OrderItemRequest> items, UUID promptImageAssetId, String promptImageDescription,
                                      UUID promptAudioAssetId, List<UUID> skillIds) {
             this(subjectId, questionType, prompt, correctAnswer, difficultyLevel, options, pairs, items, promptImageAssetId,
-                    promptImageDescription, promptAudioAssetId, skillIds, null, null, null, null);
+                    promptImageDescription, promptAudioAssetId, skillIds, null, null, null, null, null);
         }
     }
 
@@ -267,13 +293,14 @@ public final class StudioDtos {
                                              UUID promptAudioAssetId,
                                              @Size(max = 4) List<@Valid @NotNull SortGroupRequest> groups,
                                              @Size(max = 10) List<@Valid @NotNull SortItemRequest> sortItems,
-                                             @Size(max = 300) String hint, @Size(max = 600) String explanation) {
+                                             @Size(max = 300) String hint, @Size(max = 600) String explanation,
+                                             @Valid KhmerDraft khmer) {
         /** Every type but SORTING. */
         public ReviseQuestionDraftRequest(String prompt, String correctAnswer, Integer difficultyLevel, List<OptionRequest> options,
                                           List<MatchPairRequest> pairs, List<OrderItemRequest> items, UUID promptImageAssetId,
                                           String promptImageDescription, UUID promptAudioAssetId) {
             this(prompt, correctAnswer, difficultyLevel, options, pairs, items, promptImageAssetId, promptImageDescription,
-                    promptAudioAssetId, null, null, null, null);
+                    promptAudioAssetId, null, null, null, null, null);
         }
     }
 

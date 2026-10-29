@@ -203,8 +203,8 @@ public class LessonSharingService {
                     QuestionVersion original = questionService.getVersion(item.getQuestionVersionId());
                     Question question = questionService.getQuestion(original.getQuestionId());
                     Question newQuestion = questionService.createOwnedQuestion(source.getSubjectId(), question.getQuestionType(), copier.getId());
+                    // copyAsDraft brings the question's translations, its options' mapped to the copy's.
                     copied = questionService.copyAsDraft(original, newQuestion.getId(), id -> mediaFor(id, copier.getId(), mediaCopies)).getId();
-                    copyTranslations("QUESTION_VERSION", original.getId(), copied);
                     questionCopies.put(item.getQuestionVersionId(), copied);
                     questions++;
                 }

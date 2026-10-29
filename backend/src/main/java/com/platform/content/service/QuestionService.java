@@ -38,10 +38,13 @@ public class QuestionService {
     private final SkillRepository skillRepository;
     private final ContentValidator contentValidator;
 
+    private final QuestionTranslations translations;
+
     public QuestionService(QuestionRepository questionRepository, QuestionVersionRepository questionVersionRepository,
                             QuestionOptionRepository questionOptionRepository,
                             QuestionVersionSkillRepository versionSkillRepository, SkillRepository skillRepository,
-                            ContentValidator contentValidator) {
+                            ContentValidator contentValidator, QuestionTranslations translations) {
+        this.translations = translations;
         this.questionRepository = questionRepository;
         this.questionVersionRepository = questionVersionRepository;
         this.questionOptionRepository = questionOptionRepository;
@@ -329,9 +332,13 @@ public class QuestionService {
             draft.setGuidance(latest.getHint(), latest.getExplanation());
             questionVersionRepository.saveAndFlush(draft);
         }
-        for (QuestionOption option : listOptions(latest.getId())) {
+        List<QuestionOption> latestOptions = listOptions(latest.getId());
+        for (QuestionOption option : latestOptions) {
             questionOptionRepository.save(option.copyFor(draft.getId()));
         }
+        questionOptionRepository.flush();
+        // Its Khmer comes along, each option's label to its copy.
+        translations.copy(latest.getId(), latestOptions, draft.getId(), listOptions(draft.getId()));
         return draft;
     }
 
@@ -352,10 +359,13 @@ public class QuestionService {
             draft.setGuidance(source.getHint(), source.getExplanation());
         }
         questionVersionRepository.saveAndFlush(draft);
-        for (QuestionOption option : listOptions(source.getId())) {
+        List<QuestionOption> sourceOptions = listOptions(source.getId());
+        for (QuestionOption option : sourceOptions) {
             questionOptionRepository.save(option.copyFor(draft.getId())
                     .withMedia(media.apply(option.getImageAssetId()), media.apply(option.getAudioAssetId())));
         }
+        questionOptionRepository.flush();
+        translations.copy(source.getId(), sourceOptions, draft.getId(), listOptions(draft.getId()));
         for (UUID skillId : skillsOf(source.getId())) {
             tagSkill(draft.getId(), skillId);
         }

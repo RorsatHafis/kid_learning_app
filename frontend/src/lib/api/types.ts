@@ -194,6 +194,8 @@ export interface ActivityItem {
   options: QuestionOption[];
   /** Y41: the author's hint, offered before answering (never the answer); null when there is none. */
   hint?: string | null;
+  /** "km" when the question is given in Khmer (its Khmer is complete and the child reads Khmer); null: as written. */
+  language?: "km" | null;
 }
 
 export interface ActivityVersionDetail {

@@ -1933,3 +1933,23 @@ Dependencies:
   a newer draft), `ContentStudioIntegrationTests` 9; `introUnsaved.test.tsx`; admin Vitest 80. **Browser verified** at
   768 px (refused with the unsaved introduction, then saved and published). Not done: the activity's "More settings"
   form has the same save-separately shape (recorded).
+- 2026-10-29: **Content in two languages, slice 1 - questions in English and Khmer** (owner requirement; design,
+  rule L-1 and the inventory of what still has one language in `LOCALIZATION.md` "Content in two languages"). A
+  question version's English stays in its columns; its Khmer goes to the existing, until now unused
+  `content_localizations` (no migration): prompt, hint, explanation, picture description and every choice / pair side /
+  item / group label (`QuestionTranslations`). Saved together with the English in one request (`khmer`), carried to new
+  drafts, "Make a copy" and shared-lesson copies with option ids mapped. A child reading Khmer gets a question in
+  Khmer only when its Khmer is complete, otherwise the whole question in English; the explanation and the revealed
+  right answer follow; the item says `language: "km"` and the child's screen sets `lang="km"`. Short answers are not
+  translated (scored on the author's words). Studio: "Writing in: English | ខ្មែរ" with the count written, Khmer
+  fields labelled and marked `lang`, the English shown beside/under them; preview "As a child reading: English |
+  ខ្មែរ"; publish warning `KHMER_INCOMPLETE`. Nothing is translated automatically.
+  - **Tested**: `BilingualQuestionIntegrationTests` (create and revise with both; preview per language; complete vs
+    incomplete; the warning; a new draft and a copy keep the Khmer on the new options; short answer keeps none; a
+    child's activity served in Khmer and in English by `Accept-Language`; a wrong answer's explanation and right answer
+    in Khmer; five rows stored), the content/learning/demo/activity/lesson/question/media suites (78, 0 failed);
+    `bilingualQuestion.test.tsx` (English, switch, Khmer, back, both saved; saved Khmer reopened per row; short answer
+    disabled), studio/child/i18n Vitest 245 incl. the protected payload tests (Khmer is sent only when there is some).
+    **Browser verified** at 1280 and 360 px: written in English, switched, written in Khmer, saved, reloaded - both
+    back in their fields; the preview as a Khmer reader in Khmer with `lang="km"`; axe clean; no overflow; no API
+    error. Not browser verified: a child's real Khmer session (covered by the integration test).

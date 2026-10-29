@@ -313,6 +313,37 @@ export interface QuestionVersionDetail extends VersionSummary {
   hint: string | null;
   /** Y41: shown to the child after answering, with the right answer. */
   explanation: string | null;
+  /** The version's Khmer beside its English (LOCALIZATION.md); absent from older servers. */
+  khmer?: KhmerDetail;
+}
+
+/**
+ * A version's Khmer as written so far: any field may be null; `options` maps each choice, pair side, item or group
+ * (by id) to its label. `complete`: a child reading Khmer gets this version in Khmer (otherwise in English).
+ * `translatable`: false for a short answer, which is checked against the author's own words.
+ */
+export interface KhmerDetail {
+  prompt: string | null;
+  hint: string | null;
+  explanation: string | null;
+  promptImageDescription: string | null;
+  options: Record<string, string>;
+  complete: boolean;
+  translatable: boolean;
+}
+
+/** A draft's Khmer, saved with its English: one label per row, in the order of the request's own rows. */
+export interface KhmerDraft {
+  prompt: string | null;
+  hint: string | null;
+  explanation: string | null;
+  promptImageDescription: string | null;
+  options?: string[];
+  pairLefts?: string[];
+  pairRights?: string[];
+  items?: string[];
+  groups?: string[];
+  sortItems?: string[];
 }
 
 export interface QuestionSummary {
@@ -430,6 +461,8 @@ export interface QuestionDraftInput {
   hint?: string | null;
   /** Y41: up to 600 characters; null or blank for none. */
   explanation?: string | null;
+  /** Its Khmer, saved with the English in the same request (blank: not translated yet). */
+  khmer?: KhmerDraft;
 }
 
 // ---- content/media/MediaLibraryService.java (X13): the media library ----
@@ -661,7 +694,9 @@ export const studioApi = {
     apiClient.put<QuestionDetail>(`${S}/question-versions/${versionId}`, body),
   validateQuestionVersion: (versionId: string) =>
     apiClient.get<ValidationReport>(`${S}/question-versions/${versionId}/validation`),
-  previewQuestionVersion: (versionId: string) => apiClient.get<ActivityItem>(`${S}/question-versions/${versionId}/preview`),
+  /** As a child reading `language` gets it (Khmer only where its Khmer is complete); without one, the author's own. */
+  previewQuestionVersion: (versionId: string, language?: "en" | "km") =>
+    apiClient.get<ActivityItem>(`${S}/question-versions/${versionId}/preview${language ? `?language=${language}` : ""}`),
   /**
    * A picture (PNG, JPEG, WebP, ≤ 2 MB) or recording (MP3, M4A, Ogg, WAV, ≤ 5 MB), inspected by the server.
    * The same file uploaded again is the same library item (X13).

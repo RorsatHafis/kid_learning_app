@@ -9,6 +9,7 @@ import com.platform.content.repository.QuestionOptionRepository;
 import com.platform.content.repository.QuestionRepository;
 import com.platform.content.repository.QuestionVersionRepository;
 import com.platform.content.service.CanonicalAnswers;
+import com.platform.content.service.QuestionTranslations;
 import com.platform.learning.entity.AnswerRecord;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,10 +37,12 @@ public class AnswerFeedbackService {
     private final QuestionVersionRepository questionVersionRepository;
     private final QuestionRepository questionRepository;
     private final QuestionOptionRepository questionOptionRepository;
+    private final QuestionTranslations translations;
 
     public AnswerFeedbackService(QuestionVersionRepository questionVersionRepository,
                                  QuestionRepository questionRepository,
-                                 QuestionOptionRepository questionOptionRepository) {
+                                 QuestionOptionRepository questionOptionRepository, QuestionTranslations translations) {
+        this.translations = translations;
         this.questionVersionRepository = questionVersionRepository;
         this.questionRepository = questionRepository;
         this.questionOptionRepository = questionOptionRepository;
@@ -69,7 +72,16 @@ public class AnswerFeedbackService {
 
     /** The educator's explanation of a question version (M2: also shown after a public demo answer). */
     public String explanationFor(UUID questionVersionId) {
-        return questionVersionRepository.findById(questionVersionId).map(QuestionVersion::getExplanation).orElse(null);
+        QuestionVersion version = questionVersionRepository.findById(questionVersionId).orElse(null);
+        if (version == null) {
+            return null;
+        }
+        // In Khmer when the question was given in Khmer (its translation complete, so the explanation is translated too).
+        return questionRepository.findById(version.getQuestionId())
+                .flatMap(question -> translations.forReader(question.getQuestionType(), version,
+                        questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId())))
+                .map(khmer -> khmer.explanation() != null ? khmer.explanation() : version.getExplanation())
+                .orElse(version.getExplanation());
     }
 
     @Transactional(readOnly = true)
@@ -84,6 +96,10 @@ public class AnswerFeedbackService {
                 .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion", questionVersionId));
         Question question = questionRepository.findById(version.getQuestionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Question", version.getQuestionId()));
+        // In the language the question was given in: Khmer where its translation is complete (QuestionTranslations).
+        QuestionTranslations.Khmer khmer = translations.forReader(question.getQuestionType(), version,
+                questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId())).orElse(null);
+        java.util.function.Function<QuestionOption, String> label = o -> khmer != null && khmer.label(o) != null ? khmer.label(o) : o.getLabel();
 
         return switch (question.getQuestionType()) {
             case MULTIPLE_CHOICE -> {
@@ -92,7 +108,7 @@ public class AnswerFeedbackService {
                         .filter(QuestionOption::isCorrect)
                         .toList();
                 yield new CorrectAnswer(correct.stream().map(QuestionOption::getId).toList(),
-                        String.join(", ", correct.stream().map(QuestionOption::getLabel).toList()));
+                        String.join(", ", correct.stream().map(label).toList()));
             }
             case TRUE_FALSE -> new CorrectAnswer(List.of(), CanonicalAnswers.parseTrueFalse(version.getCorrectAnswer())
                     .map(String::valueOf).orElse(null));
@@ -110,7 +126,7 @@ public class AnswerFeedbackService {
                     items.stream().filter(o -> o.getMatchSide() == MatchSide.RIGHT && o.getMatchPair().equals(left.getMatchPair()))
                             .findFirst().ifPresent(right -> {
                                 matches.add(new MatchPair(left.getId(), right.getId()));
-                                words.add(left.getLabel() + " → " + right.getLabel());
+                                words.add(label.apply(left) + " → " + label.apply(right));
                             });
                 }
                 yield new CorrectAnswer(List.of(), String.join(", ", words), matches);
@@ -128,7 +144,7 @@ public class AnswerFeedbackService {
                             ? groupByNumber.get(item.getSortGroup()) : null;
                     if (group != null) {
                         placements.add(new MatchPair(item.getId(), group.getId()));
-                        words.add(item.getLabel() + " → " + group.getLabel());
+                        words.add(label.apply(item) + " → " + label.apply(group));
                     }
                 }
                 yield new CorrectAnswer(List.of(), String.join(", ", words), placements);
@@ -137,7 +153,7 @@ public class AnswerFeedbackService {
             case ORDERING -> {
                 List<QuestionOption> items = questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId());
                 yield new CorrectAnswer(items.stream().map(QuestionOption::getId).toList(),
-                        String.join(" → ", items.stream().map(QuestionOption::getLabel).toList()));
+                        String.join(" → ", items.stream().map(label).toList()));
             }
         };
     }

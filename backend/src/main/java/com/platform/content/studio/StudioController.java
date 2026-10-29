@@ -320,8 +320,10 @@ public class StudioController {
     }
 
     @GetMapping("/question-versions/{versionId}/preview")
-    public ActivityItemResponse previewQuestionVersion(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId) {
-        return studio.previewQuestionVersion(accountId, versionId);
+    public ActivityItemResponse previewQuestionVersion(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId,
+                                                       @org.springframework.web.bind.annotation.RequestParam(required = false)
+                                                       @jakarta.validation.constraints.Pattern(regexp = "en|km") String language) {
+        return studio.previewQuestionVersion(accountId, versionId, language);
     }
 
     @PostMapping("/question-versions/{versionId}/publish")

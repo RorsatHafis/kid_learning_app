@@ -60,7 +60,7 @@ Khmer conventions used so far:
 
 ## Intentionally English, or not translated
 
-- **Educator content.** Curricula, questions, activities, skill and objective titles, media titles and descriptions: what the author wrote is shown as written. The Studio has no language field for content yet (see below).
+- **Educator content** other than questions (activities, curricula, skill and objective titles, media): shown as written until its slice of "Content in two languages" (below) is built. Questions have English and Khmer since 2026-10-29.
 - **Brand and product names:** Bookeyond Kid; browser names (`ALLOWED_TEXT`); currency codes (`USD`).
 - **Audit log metadata** (keys and recorded values) and identifiers. Action and resource names *are* translated.
 - **Text written by administrators:** plan names and descriptions, messages to families.
@@ -69,23 +69,79 @@ Khmer conventions used so far:
 - **Browser-native messages**, such as built-in form-validation bubbles, which follow the browser's own language.
 - **Developer-only pages** (`/__brand`, `/__play`).
 
-## Content translation: still to build
+## Content in two languages (owner requirement, 2026-10-29)
 
-The interface is bilingual; **content is not yet**. The base content tables have no language column. A
-`content_localizations` table (V12) and a `ContentLocalizationService` exist, but no endpoint,
-Studio screen or learner read path uses them. So:
+The owner asked for every piece of user-facing content that can be localized to have **two independently saved
+inputs, English and Khmer**, with a content-language switch that is separate from the interface language. This
+answers the first open question that used to be here (*a Khmer curriculum is a translation of the same content, not
+separate content*). Slice 1 - **questions** - is built; the rest is listed below in order.
 
-- the Studio can't record which language a question or activity is written in, or hold a second language for it;
-- a child sees content in the language its author wrote it in, whatever the interface language;
-- the content's own `lang` attribute can't be set, so screen readers read Khmer content with the page's language.
+### The model
 
-Building this needs product decisions first:
+- A content version's own columns are its **English**. Its **Khmer** is kept in `content_localizations` (V12), keyed
+  by the version, one row per field, locale `km`. For a question version: `prompt`, `hint`, `explanation`,
+  `promptImageDescription`, and `option:<id>` for every choice, pair side, ordering item, sorting group and item.
+  No new table and no migration: the table existed and was unused.
+- English and Khmer are **saved together** in one request (`khmer` beside the English fields), so neither can
+  overwrite the other. Answer rows are re-created on every save, so their Khmer labels travel with them in the same
+  request (one label per row, in the rows' order) and are written against the new rows in the same transaction.
+- A version's Khmer is **frozen with it** when it is published, like the rest of the version, and **carried to every
+  copy**: a new draft of a published version, "Make a copy", and a colleague's copy of a shared lesson - each option's
+  label mapped to the copy's option by its place, side and pair, role and group (`QuestionTranslations.copy`).
+- Existing content has no Khmer and keeps working exactly as before (served in English, as written).
 
-- Is a Khmer curriculum separate content, or a translation of an English one?
-- Does a version pin its language?
-- What happens to a child whose interface language has no content?
+### What a child is given (rule, built - the owner may change it)
 
-The content itself must come from educators (PD-15). Nothing here may translate it automatically.
+- A child whose language is Khmer (the request's language, which follows the child's own language, Y32) is given a
+  question **in Khmer only when its Khmer is complete**: the prompt, and every field the English has (hint,
+  explanation, picture description) and every option's label. Otherwise the **whole question in English**, as
+  written - never half one language and half the other. The explanation after answering and the right answer shown
+  after a wrong answer come in the same language as the question. Scoring never depends on the language (choices,
+  pairs, items and groups are answered by id).
+- The served question says its language (`language: "km"`), and the child's screen marks it `lang="km"`, so a screen
+  reader reads Khmer content as Khmer.
+- **Short answers are not translated**: they are scored against the author's own words, so a Khmer prompt would mark
+  a Khmer answer wrong. The Studio says so and keeps such a question in the language it is written in. Scoring
+  per-language accepted answers is a later decision.
+- Khmer is **optional**: an incomplete translation is a publish *warning* (`KHMER_INCOMPLETE`: children reading Khmer
+  get the English), never an error.
+
+**Decision recorded (L-1)**: the fallback above - a whole question in English when its Khmer is incomplete - was
+chosen as the honest default (a child is never shown a mixed question, and nothing is invented). Alternatives: hide
+untranslated questions from Khmer readers (would leave paths empty), or allow mixing per field. The owner may choose
+differently.
+
+### The Studio
+
+- Above each question form, **"Writing in: English | ខ្មែរ"**, starting on English (the required language) whatever
+  the interface language. Switching shows the other language's inputs and their saved values; nothing is reset,
+  nothing navigates, and the language not shown is untouched.
+- In Khmer, each field is labelled "... - in Khmer" and marked `lang="km"`; the English it translates is shown under
+  the long fields and as the placeholder of each answer row, so both versions can be checked side by side.
+- The switch says how much is written: "No Khmer yet", "Khmer: 3 of 5 written ...", "Khmer complete ...".
+- Structured settings (the correct choice, difficulty, numbers, true/false, groups chosen, order, pictures and
+  recordings) are shared: one control for both languages.
+- The question's preview has **"As a child reading: English | ខ្មែរ"**, showing exactly what each child gets (and
+  saying so when the Khmer isn't complete and a Khmer reader would get the English).
+- There is **no automatic translation** anywhere: every Khmer word is written by an educator (PD-15). The interface's
+  own language button changes only the interface.
+
+### Inventory: what still has one language (in order)
+
+| # | Content | Where | Fields | Notes |
+|---|---|---|---|---|
+| 1 | **Questions** | Studio question editor, New question, the activity builder | prompt, hint, explanation, picture description, choices, pairs, items, groups, sorting items | **Built** (slice 1). Short answer excluded (scoring). |
+| 2 | Activities | Activity editor, builder | title, instructions, "Teach it first" text and picture description | Next: `ACTIVITY_VERSION` rows (title kept per version, as it is shown with that version). |
+| 3 | Curricula and chapters | Curriculum editor, Skills & objectives | curriculum name and description, learning-objective titles, skill names | Names children and parents read; `CURRICULUM_VERSION` and catalog rows need a content type (CHECK constraint change - a migration). |
+| 4 | Subjects | Studio | subject name | Shown to families and children. |
+| 5 | Media | Media library | title, description (screen-reader text) | The description is read aloud by screen readers. |
+| 6 | Lessons | Studio | lesson title | Shown to teachers (and in shared lessons). |
+| 7 | Landing page / site copy | Admin → Landing page | every editable text | Already **bilingual** (F1a: each text has English and Khmer). |
+| 8 | Plans | Admin → Plans | name, description | Read by parents and principals; administrators' words today ("Intentionally English" above). |
+| 9 | Messages to families | Plan request declines and other notices | free text | Written once to one family, in the administrator's language; translation optional. |
+| 10 | School names, class names, academic years | Principal | names | Proper names: not translated. |
+
+Not localized on purpose: numbers, dates, identifiers, codes, scores, difficulty, prices, durations.
 
 ## Native-speaker review
 

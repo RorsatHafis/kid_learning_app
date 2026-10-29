@@ -35,12 +35,16 @@ public class LearnerActivityReader {
     private final MediaService mediaService;
 
     public LearnerActivityReader(ActivityService activityService, QuestionService questionService,
-                                 ActivityItemRepository activityItemRepository, MediaService mediaService) {
+                                 ActivityItemRepository activityItemRepository, MediaService mediaService,
+                                 com.platform.content.service.QuestionTranslations translations) {
         this.activityService = activityService;
         this.questionService = questionService;
         this.activityItemRepository = activityItemRepository;
         this.mediaService = mediaService;
+        this.translations = translations;
     }
+
+    private final com.platform.content.service.QuestionTranslations translations;
 
     @Transactional(readOnly = true)
     public ActivityVersionDetailResponse read(ActivityVersion version) {
@@ -63,8 +67,9 @@ public class LearnerActivityReader {
                 .filter(java.util.Objects::nonNull).forEach(mediaIds::add);
         Map<UUID, MediaService.MediaRef> media = mediaService.refs(mediaIds);
         List<ActivityItemResponse> items = loaded.stream()
+                // A child reading Khmer gets each question in Khmer where its translation is complete (QuestionTranslations).
                 .map(l -> ActivityItemResponse.forLearner(l.item().getId(), l.item().getSequenceOrder(), l.type(), l.version(),
-                        l.options(), media))
+                        l.options(), media, translations.forReader(l.type(), l.version(), l.options()).orElse(null)))
                 .toList();
 
         return new ActivityVersionDetailResponse(version.getId(), activity.getId(), activity.getTitle(), version.getInstructions(),

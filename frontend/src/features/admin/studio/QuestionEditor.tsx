@@ -48,6 +48,8 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
   const [revision, setRevision] = useState(0);
   const [report, setReport] = useState<ValidationReport | null>(null);
   const [preview, setPreview] = useState<ActivityItem | null>(null);
+  // The preview shows the question as a child reading English or Khmer gets it (LOCALIZATION.md).
+  const [previewLanguage, setPreviewLanguage] = useState<"en" | "km">("en");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "error" | "ok"; text: string } | null>(null);
   const [skillToAdd, setSkillToAdd] = useState("");
@@ -77,7 +79,9 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
 
   useEffect(() => {
     let cancelled = false;
-    studioApi.previewQuestionVersion(latest.id).then((p) => !cancelled && setPreview(p)).catch(() => !cancelled && setPreview(null));
+    (previewLanguage === "km" ? studioApi.previewQuestionVersion(latest.id, "km") : studioApi.previewQuestionVersion(latest.id))
+      .then((p) => !cancelled && setPreview(p))
+      .catch(() => !cancelled && setPreview(null));
     if (isDraft) {
       studioApi.validateQuestionVersion(latest.id).then((r) => !cancelled && setReport(r)).catch(() => !cancelled && setReport(null));
     } else {
@@ -86,7 +90,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
     return () => {
       cancelled = true;
     };
-  }, [latest.id, isDraft, revision, detail.skillIds.length]);
+  }, [latest.id, isDraft, revision, detail.skillIds.length, previewLanguage]);
 
   async function run(action: () => Promise<QuestionDetail>, success?: string) {
     setBusy(true);
@@ -246,7 +250,36 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
             </Panel>
           )}
           <Panel title={m.preview}>
-            {preview ? <ChildPreview item={preview} explanation={latest.explanation} /> : <p className="text-sm text-ink-soft">{m.loadingPreview}</p>}
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+              <span className="font-semibold text-ink">{m.previewAs}</span>
+              {(["en", "km"] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  lang={l}
+                  aria-pressed={previewLanguage === l}
+                  onClick={() => setPreviewLanguage(l)}
+                  className={
+                    previewLanguage === l
+                      ? "min-h-9 rounded-[8px] bg-tonle-800 px-3 font-semibold text-white"
+                      : "min-h-9 rounded-[8px] px-3 font-semibold text-ink-soft ring-1 ring-line hover:text-ink"
+                  }
+                >
+                  {l === "en" ? "English" : "ខ្មែរ"}
+                </button>
+              ))}
+            </div>
+            {previewLanguage === "km" && preview && preview.language !== "km" && (
+              <p className="mb-3 text-xs font-semibold text-light-deep">{m.previewEnglishInstead}</p>
+            )}
+            {preview ? (
+              <ChildPreview
+                item={preview}
+                explanation={preview.language === "km" ? (latest.khmer?.explanation ?? latest.explanation) : latest.explanation}
+              />
+            ) : (
+              <p className="text-sm text-ink-soft">{m.loadingPreview}</p>
+            )}
           </Panel>
           {liveVersion && <WithdrawalPanel kind="QUESTION" versionId={liveVersion.id} versionNumber={liveVersion.versionNumber} />}
           <Panel title={m.versions}>

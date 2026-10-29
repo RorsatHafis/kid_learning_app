@@ -52,7 +52,8 @@ type QuestionProps = {
 export function QuestionView(props: QuestionProps) {
   const hint = props.item.hint?.trim();
   return (
-    <div className="flex flex-col gap-6">
+    // The question's own language, so a screen reader reads Khmer content as Khmer (the page's may differ).
+    <div className="flex flex-col gap-6" lang={props.item.language ?? undefined}>
       <QuestionBody {...props} />
       {hint && !props.result && <Hint key={props.item.questionVersionId} text={hint} onOpened={props.onHintOpened} />}
     </div>

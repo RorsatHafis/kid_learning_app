@@ -5,6 +5,14 @@ export const formMessages = defineMessages(
   "features/admin/studio/form",
   {
     prompt: "Question the child sees",
+    writingIn: "Writing in",
+    inKhmer: (field: string) => `${field} - in Khmer`,
+    englishIs: "English:",
+    khmerNone: "No Khmer yet: children reading Khmer get this question in English. Choose ខ្មែរ to write it.",
+    khmerPartly: (written: number, needed: number) =>
+      `Khmer: ${written} of ${needed} written. Until all are, children reading Khmer get this question in English.`,
+    khmerComplete: "Khmer complete: children reading Khmer get this question in Khmer.",
+    khmerNotForType: "A typed-word answer is checked against your own words, so this kind of question stays in the language you write it in.",
     media: "Picture and sound for the question",
     picture: "Picture with the question",
     pictureName: "picture for the question",
@@ -66,6 +74,14 @@ export const formMessages = defineMessages(
   },
   {
     prompt: "សំណួរដែលកុមារឃើញ",
+    writingIn: "កំពុងសរសេរជា",
+    inKhmer: (field: string) => `${field} - ជាភាសាខ្មែរ`,
+    englishIs: "ភាសាអង់គ្លេស៖",
+    khmerNone: "មិនទាន់មានភាសាខ្មែរ៖ កុមារដែលអានភាសាខ្មែរ ទទួលបានសំណួរនេះជាភាសាអង់គ្លេស។ ជ្រើស ខ្មែរ ដើម្បីសរសេរវា។",
+    khmerPartly: (written: number, needed: number) =>
+      `ភាសាខ្មែរ៖ បានសរសេរ ${written} ក្នុងចំណោម ${needed}។ រហូតដល់គ្រប់ទាំងអស់ កុមារដែលអានភាសាខ្មែរ ទទួលបានសំណួរនេះជាភាសាអង់គ្លេស។`,
+    khmerComplete: "ភាសាខ្មែរពេញលេញ៖ កុមារដែលអានភាសាខ្មែរ ទទួលបានសំណួរនេះជាភាសាខ្មែរ។",
+    khmerNotForType: "ចម្លើយដែលវាយជាពាក្យ ត្រូវបានពិនិត្យនឹងពាក្យរបស់អ្នកផ្ទាល់ ដូច្នេះប្រភេទសំណួរនេះនៅតែជាភាសាដែលអ្នកសរសេរ។",
     media: "រូបភាព និងសំឡេងសម្រាប់សំណួរ",
     picture: "រូបភាពភ្ជាប់ជាមួយសំណួរ",
     pictureName: "រូបភាពសម្រាប់សំណួរ",

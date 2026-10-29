@@ -111,6 +111,7 @@ public class StudioService {
     private final ActivityVersionRepository activityVersions;
     private final MediaService media;
     private final com.platform.content.review.ContentReviewService reviews;
+    private final com.platform.content.service.QuestionTranslations translations;
     private final org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc;
 
     public StudioService(ContentAccessGuard guard, AuditService audit, ContentValidator validator,
@@ -126,8 +127,10 @@ public class StudioService {
                          QuestionVersionSkillRepository questionSkills, QuestionVersionRepository questionVersions,
                          ActivityVersionRepository activityVersions, MediaService media,
                          com.platform.content.review.ContentReviewService reviews,
+                         com.platform.content.service.QuestionTranslations translations,
                          org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc) {
         this.reviews = reviews;
+        this.translations = translations;
         this.jdbc = jdbc;
         this.guard = guard;
         this.audit = audit;
@@ -658,7 +661,7 @@ public class StudioService {
         QuestionDetail created = createQuestion(accountId, new CreateQuestionRequest(activity.getSubjectId(), request.questionType(),
                 request.prompt(), request.correctAnswer(), request.difficultyLevel(), request.options(), request.pairs(), request.items(),
                 request.promptImageAssetId(), request.promptImageDescription(), request.promptAudioAssetId(), skills, request.groups(),
-                request.sortItems(), request.hint(), request.explanation()));
+                request.sortItems(), request.hint(), request.explanation(), request.khmer()));
         List<ActivityService.ItemDraft> items = new java.util.ArrayList<>(activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId)
                 .stream().map(item -> new ActivityService.ItemDraft(item.getQuestionVersionId(), item.getPoints())).toList());
         items.add(new ActivityService.ItemDraft(created.versions().get(0).id(), null));
@@ -775,7 +778,7 @@ public class StudioService {
                             sorting ? options.stream().filter(o -> o.getSortRole() == SortRole.ITEM)
                                     .map(item -> new SortItemDetail(item.getId(), item.getLabel(), item.getSortGroup(),
                                             refs.get(item.getImageAssetId()), refs.get(item.getAudioAssetId()))).toList() : List.of(),
-                            version.getHint(), version.getExplanation());
+                            version.getHint(), version.getExplanation(), khmerDetail(question.getQuestionType(), version, options));
                 })
                 .toList(), question.getStatus() == CatalogStatus.ARCHIVED);
     }
@@ -794,6 +797,7 @@ public class StudioService {
         writeDraftContent(question, draft.getId(), request.promptImageAssetId(), request.promptImageDescription(),
                 request.promptAudioAssetId(), request.options(), request.pairs(), request.items(), request.groups(), request.sortItems());
         questionService.setGuidance(draft.getId(), request.hint(), request.explanation());
+        writeKhmer(question.getQuestionType(), draft.getId(), request.khmer());
         return question(accountId, question.getId());
     }
 
@@ -814,12 +818,8 @@ public class StudioService {
         }
         QuestionVersion latest = versions.get(versions.size() - 1);
         Question copy = questionService.createOwnedQuestion(source.getSubjectId(), source.getQuestionType(), source.getOwnerAccountId());
+        // copyAsDraft brings its translations too (QuestionTranslations.copy).
         QuestionVersion draft = questionService.copyAsDraft(latest, copy.getId(), java.util.function.UnaryOperator.identity());
-        jdbc.update("""
-                INSERT INTO content_localizations (id, content_type, content_id, locale, field_name, localized_text)
-                SELECT gen_random_uuid(), content_type, :to, locale, field_name, localized_text
-                  FROM content_localizations WHERE content_type = 'QUESTION_VERSION' AND content_id = :from
-                """, Map.of("from", latest.getId(), "to", draft.getId()));
         record(author, "QUESTION_DUPLICATED", "QUESTION", copy.getId(), Map.of("sourceQuestionId", questionId,
                 "sourceVersion", latest.getVersionNumber()));
         return question(accountId, copy.getId());
@@ -841,6 +841,7 @@ public class StudioService {
         writeDraftContent(question, questionVersionId, request.promptImageAssetId(), request.promptImageDescription(),
                 request.promptAudioAssetId(), request.options(), request.pairs(), request.items(), request.groups(), request.sortItems());
         questionService.setGuidance(questionVersionId, request.hint(), request.explanation());
+        writeKhmer(question.getQuestionType(), questionVersionId, request.khmer());
         return question(accountId, question.getId());
     }
 
@@ -952,9 +953,17 @@ public class StudioService {
     /** The question exactly as a child would be served it (no answer key). */
     @Transactional(readOnly = true)
     public ActivityItemResponse previewQuestionVersion(UUID accountId, UUID questionVersionId) {
+        return previewQuestionVersion(accountId, questionVersionId, null);
+    }
+
+    /**
+     * The question as a child reading {@code language} ("en", "km"; null: the author's own) gets it: in Khmer only
+     * where its Khmer is complete, as a child would (QuestionTranslations) - so the author sees what children see.
+     */
+    public ActivityItemResponse previewQuestionVersion(UUID accountId, UUID questionVersionId, String language) {
         QuestionVersion version = questionService.getVersion(questionVersionId);
         guard.requireQuestionWrite(accountId, version.getQuestionId());
-        return learnerItem(version.getId(), 0, version);
+        return learnerItem(version.getId(), 0, version, language);
     }
 
     // ================================================================== helpers
@@ -973,10 +982,17 @@ public class StudioService {
     }
 
     private ActivityItemResponse learnerItem(UUID itemId, int sequenceOrder, QuestionVersion version) {
+        return learnerItem(itemId, sequenceOrder, version, null);
+    }
+
+    private ActivityItemResponse learnerItem(UUID itemId, int sequenceOrder, QuestionVersion version, String language) {
         Question question = questionService.getQuestion(version.getQuestionId());
         List<QuestionOption> options = questionService.listOptions(version.getId());
+        com.platform.content.service.QuestionTranslations.Khmer khmer = (language == null
+                ? translations.forReader(question.getQuestionType(), version, options)
+                : translations.forLanguage(language, question.getQuestionType(), version, options)).orElse(null);
         return ActivityItemResponse.forLearner(itemId, sequenceOrder, question.getQuestionType(), version, options,
-                media.refs(ActivityContentDtos.mediaOf(version, options)));
+                media.refs(ActivityContentDtos.mediaOf(version, options)), khmer);
     }
 
     private void requireSkillsOfSubject(List<UUID> skillIds, UUID subjectId) {
@@ -1050,6 +1066,72 @@ public class StudioService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value;
+    }
+
+    /**
+     * A draft's Khmer from the request, written with its English (LOCALIZATION.md): each row's label is matched to
+     * the option the save just made for that row - a choice by its place, a pair's side by its pair, an item by its
+     * place, a group by its number, a sorting item by its place after the groups. A request without Khmer keeps the
+     * draft's Khmer as it is only when the request leaves the rows as they were - otherwise there would be labels for
+     * options that no longer exist - so the Studio always sends the Khmer it shows.
+     */
+    private void writeKhmer(QuestionType type, UUID draftId, KhmerDraft khmer) {
+        if (!com.platform.content.service.QuestionTranslations.translatable(type)) {
+            translations.write(draftId, com.platform.content.service.QuestionTranslations.Khmer.NONE);
+            return;
+        }
+        if (khmer == null) {
+            // No Khmer sent: keep what there is, without labels of options the save just replaced.
+            com.platform.content.service.QuestionTranslations.Khmer kept = translations.of(draftId);
+            translations.write(draftId, new com.platform.content.service.QuestionTranslations.Khmer(kept.prompt(), kept.hint(),
+                    kept.explanation(), kept.promptImageDescription(),
+                    com.platform.content.service.QuestionTranslations.onlyOptions(kept.options(), questionService.listOptions(draftId))));
+            return;
+        }
+        List<QuestionOption> options = questionService.listOptions(draftId);
+        Map<UUID, String> labels = new java.util.LinkedHashMap<>();
+        switch (type) {
+            case MULTIPLE_CHOICE, ORDERING -> {
+                List<QuestionOption> ordered = options.stream().sorted(java.util.Comparator.comparingInt(QuestionOption::getDisplayOrder)).toList();
+                List<String> rows = type == QuestionType.MULTIPLE_CHOICE ? khmer.options() : khmer.items();
+                for (int i = 0; rows != null && i < Math.min(rows.size(), ordered.size()); i++) {
+                    labels.put(ordered.get(i).getId(), rows.get(i));
+                }
+            }
+            case MATCHING -> options.forEach(option -> {
+                List<String> side = option.getMatchSide() == com.platform.content.entity.MatchSide.LEFT ? khmer.pairLefts() : khmer.pairRights();
+                int pair = option.getMatchPair() == null ? -1 : option.getMatchPair();
+                if (side != null && pair >= 0 && pair < side.size()) {
+                    labels.put(option.getId(), side.get(pair));
+                }
+            });
+            case SORTING -> {
+                List<QuestionOption> sortItems = options.stream().filter(o -> o.getSortRole() == SortRole.ITEM)
+                        .sorted(java.util.Comparator.comparingInt(QuestionOption::getDisplayOrder)).toList();
+                options.stream().filter(o -> o.getSortRole() == SortRole.GROUP).forEach(group -> {
+                    int number = group.getSortGroup() == null ? -1 : group.getSortGroup();
+                    if (khmer.groups() != null && number >= 0 && number < khmer.groups().size()) {
+                        labels.put(group.getId(), khmer.groups().get(number));
+                    }
+                });
+                for (int i = 0; khmer.sortItems() != null && i < Math.min(khmer.sortItems().size(), sortItems.size()); i++) {
+                    labels.put(sortItems.get(i).getId(), khmer.sortItems().get(i));
+                }
+            }
+            default -> {
+                // TRUE_FALSE, NUMERIC: no labels to translate.
+            }
+        }
+        labels.values().removeIf(label -> label == null || label.isBlank());
+        translations.write(draftId, new com.platform.content.service.QuestionTranslations.Khmer(khmer.prompt(), khmer.hint(),
+                khmer.explanation(), khmer.promptImageDescription(), labels));
+    }
+
+    private KhmerDetail khmerDetail(QuestionType type, QuestionVersion version, List<QuestionOption> options) {
+        com.platform.content.service.QuestionTranslations.Khmer khmer = translations.of(version.getId());
+        return new KhmerDetail(khmer.prompt(), khmer.hint(), khmer.explanation(), khmer.promptImageDescription(), khmer.options(),
+                com.platform.content.service.QuestionTranslations.complete(type, version, options, khmer),
+                com.platform.content.service.QuestionTranslations.translatable(type));
     }
 
     private void record(Account actor, String action, String resourceType, UUID resourceId, Map<String, Object> metadata) {

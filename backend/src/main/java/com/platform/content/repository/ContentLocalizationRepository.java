@@ -22,4 +22,9 @@ public interface ContentLocalizationRepository extends JpaRepository<ContentLoca
     List<ContentLocalization> findByContentTypeAndContentIdAndLocale(
             LocalizableContentType contentType, UUID contentId, String locale);
 
+    /** Every translated field of one content item in one locale goes (a draft's Khmer is rewritten whole). */
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    void deleteByContentTypeAndContentIdAndLocale(LocalizableContentType contentType, UUID contentId, String locale);
+
 }

@@ -91,6 +91,8 @@ public class ContentValidator {
     private final LearningObjectiveSkillRepository objectiveSkills;
     private final ContentOwnership ownership;
 
+    private final com.platform.content.service.QuestionTranslations translations;
+
     public ContentValidator(QuestionRepository questions, QuestionVersionRepository questionVersions,
                             QuestionOptionRepository questionOptions, QuestionVersionSkillRepository questionSkills,
                             ActivityRepository activities, ActivityVersionRepository activityVersions,
@@ -99,7 +101,9 @@ public class ContentValidator {
                             CurriculumVersionRepository curriculumVersions,
                             CurriculumObjectiveRepository curriculumObjectives,
                             LearningObjectiveRepository learningObjectives,
-                            LearningObjectiveSkillRepository objectiveSkills, ContentOwnership ownership) {
+                            LearningObjectiveSkillRepository objectiveSkills, ContentOwnership ownership,
+                            com.platform.content.repository.ContentLocalizationRepository localizations) {
+        this.translations = new com.platform.content.service.QuestionTranslations(localizations);
         this.questions = questions;
         this.questionVersions = questionVersions;
         this.questionOptions = questionOptions;
@@ -159,6 +163,12 @@ public class ContentValidator {
         if (version.getExplanation() == null) {
             warnings.add(new Issue("NO_EXPLANATION",
                     "No explanation yet: after answering, a child sees only whether they were right. A short \"why\" helps most when they weren't."));
+        }
+        // Khmer is optional; a started translation that misses something gives children reading Khmer the English.
+        com.platform.content.service.QuestionTranslations.Khmer khmer = translations.of(version.getId());
+        if (!khmer.isEmpty() && !com.platform.content.service.QuestionTranslations.complete(question.getQuestionType(), version, options, khmer)) {
+            warnings.add(new Issue("KHMER_INCOMPLETE",
+                    "The Khmer isn't complete, so children reading Khmer get this question in English."));
         }
         return new ValidationReport(errors, warnings);
     }

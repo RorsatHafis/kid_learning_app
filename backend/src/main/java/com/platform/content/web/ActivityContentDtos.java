@@ -42,8 +42,14 @@ public final class ActivityContentDtos {
             MediaRef audio
     ) {
         static QuestionOptionResponse of(QuestionOption option, int displayOrder, Map<UUID, MediaRef> media) {
-            return new QuestionOptionResponse(option.getId(), option.getLabel(), displayOrder, option.getMatchSide(),
-                    option.getSortRole(), media.get(option.getImageAssetId()), media.get(option.getAudioAssetId()));
+            return of(option, displayOrder, media, null);
+        }
+
+        static QuestionOptionResponse of(QuestionOption option, int displayOrder, Map<UUID, MediaRef> media,
+                                         com.platform.content.service.QuestionTranslations.Khmer khmer) {
+            String label = khmer == null ? option.getLabel() : khmer.label(option);
+            return new QuestionOptionResponse(option.getId(), label == null ? option.getLabel() : label, displayOrder,
+                    option.getMatchSide(), option.getSortRole(), media.get(option.getImageAssetId()), media.get(option.getAudioAssetId()));
         }
 
         /**
@@ -55,12 +61,19 @@ public final class ActivityContentDtos {
          */
         public static List<QuestionOptionResponse> forLearner(QuestionType questionType, UUID questionVersionId,
                                                               List<QuestionOption> options, Map<UUID, MediaRef> media) {
+            return forLearner(questionType, questionVersionId, options, media, null);
+        }
+
+        /** The same, each label in Khmer when {@code khmer} is given (a complete translation, QuestionTranslations). */
+        public static List<QuestionOptionResponse> forLearner(QuestionType questionType, UUID questionVersionId,
+                                                              List<QuestionOption> options, Map<UUID, MediaRef> media,
+                                                              com.platform.content.service.QuestionTranslations.Khmer khmer) {
             if (questionType == QuestionType.ORDERING) {
                 // The display order is the answer: the child gets the items in OrderingItems' order instead.
                 List<QuestionOption> given = OrderingItems.learnerOrder(questionVersionId, options);
                 List<QuestionOptionResponse> result = new ArrayList<>();
                 for (int i = 0; i < given.size(); i++) {
-                    result.add(of(given.get(i), i, media));
+                    result.add(of(given.get(i), i, media, khmer));
                 }
                 return result;
             }
@@ -70,28 +83,28 @@ public final class ActivityContentDtos {
                 List<QuestionOption> groups = options.stream().filter(o -> o.getSortRole() == com.platform.content.entity.SortRole.GROUP)
                         .sorted(Comparator.comparing(QuestionOption::getSortGroup)).toList();
                 for (int i = 0; i < groups.size(); i++) {
-                    result.add(of(groups.get(i), i, media));
+                    result.add(of(groups.get(i), i, media, khmer));
                 }
                 List<QuestionOption> items = options.stream().filter(o -> o.getSortRole() == com.platform.content.entity.SortRole.ITEM)
                         .sorted(Comparator.comparing(o -> RequestFingerprint.sha256Hex(questionVersionId + ":sort:" + o.getId()))).toList();
                 for (int i = 0; i < items.size(); i++) {
-                    result.add(of(items.get(i), i, media));
+                    result.add(of(items.get(i), i, media, khmer));
                 }
                 return result;
             }
             if (options.stream().noneMatch(o -> o.getMatchSide() != null)) {
-                return options.stream().map(o -> of(o, o.getDisplayOrder(), media)).toList();
+                return options.stream().map(o -> of(o, o.getDisplayOrder(), media, khmer)).toList();
             }
             List<QuestionOptionResponse> result = new ArrayList<>();
             List<QuestionOption> lefts = options.stream().filter(o -> o.getMatchSide() == MatchSide.LEFT)
                     .sorted(Comparator.comparingInt(QuestionOption::getDisplayOrder)).toList();
             for (int i = 0; i < lefts.size(); i++) {
-                result.add(of(lefts.get(i), i, media));
+                result.add(of(lefts.get(i), i, media, khmer));
             }
             List<QuestionOption> rights = options.stream().filter(o -> o.getMatchSide() == MatchSide.RIGHT)
                     .sorted(Comparator.comparing(o -> RequestFingerprint.sha256Hex(questionVersionId + ":" + o.getId()))).toList();
             for (int i = 0; i < rights.size(); i++) {
-                result.add(of(rights.get(i), i, media));
+                result.add(of(rights.get(i), i, media, khmer));
             }
             return result;
         }
@@ -113,16 +126,30 @@ public final class ActivityContentDtos {
             String promptImageDescription,
             MediaRef promptAudio,
             List<QuestionOptionResponse> options,
-            String hint
+            String hint,
+            /* The language its words are given in: "km" when given in Khmer (LOCALIZATION.md); null when as written. */
+            String language
     ) {
         /** One item as a learner sees it; {@code media} holds the references of every asset it uses ({@link #mediaOf}). */
         public static ActivityItemResponse forLearner(UUID itemId, int sequenceOrder, QuestionType questionType,
                                                       QuestionVersion version, List<QuestionOption> options,
                                                       Map<UUID, MediaRef> media) {
-            return new ActivityItemResponse(itemId, sequenceOrder, version.getId(), questionType, version.getPrompt(),
-                    media.get(version.getPromptImageAssetId()), version.getPromptImageDescription(),
+            return forLearner(itemId, sequenceOrder, questionType, version, options, media, null);
+        }
+
+        /** The same in Khmer when {@code khmer} - a complete translation (QuestionTranslations) - is given. */
+        public static ActivityItemResponse forLearner(UUID itemId, int sequenceOrder, QuestionType questionType,
+                                                      QuestionVersion version, List<QuestionOption> options,
+                                                      Map<UUID, MediaRef> media,
+                                                      com.platform.content.service.QuestionTranslations.Khmer khmer) {
+            boolean km = khmer != null;
+            return new ActivityItemResponse(itemId, sequenceOrder, version.getId(), questionType, km ? khmer.prompt() : version.getPrompt(),
+                    media.get(version.getPromptImageAssetId()),
+                    km && khmer.promptImageDescription() != null ? khmer.promptImageDescription() : version.getPromptImageDescription(),
                     media.get(version.getPromptAudioAssetId()),
-                    QuestionOptionResponse.forLearner(questionType, version.getId(), options, media), version.getHint());
+                    QuestionOptionResponse.forLearner(questionType, version.getId(), options, media, khmer),
+                    km && khmer.hint() != null ? khmer.hint() : version.getHint(),
+                    km ? com.platform.content.service.QuestionTranslations.KHMER : null);
         }
     }
 
