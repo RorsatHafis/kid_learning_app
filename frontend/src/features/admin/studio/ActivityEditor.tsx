@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { WithdrawalPanel } from "./Withdrawal";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, FilePlus2 } from "lucide-react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Copy, FilePlus2 } from "lucide-react";
 import {
   studioApi,
   type ActivityDetail,
@@ -33,7 +33,8 @@ export function ActivityEditor() {
 
   if (loaded.error) return <ErrorState error={loaded.error} onRetry={loaded.refetch} />;
   if (!detail) return <LoadingState label={m.loadingActivity} />;
-  return <Editor detail={detail} onChange={setDetail} onReload={loaded.refetch} />;
+  // Keyed: opening another activity (a copy just made) starts its editor afresh.
+  return <Editor key={detail.id} detail={detail} onChange={setDetail} onReload={loaded.refetch} />;
 }
 
 function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChange: (d: ActivityDetail) => void; onReload: () => void }) {
@@ -49,6 +50,24 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
   const [message, setMessage] = useState<{ tone: "error" | "ok"; text: string } | null>(null);
   const [skillToAdd, setSkillToAdd] = useState("");
   const m = useMessages(editorMessages).editor;
+  const navigate = useNavigate();
+  const copiedHere = (useLocation().state as { copiedFrom?: string } | null)?.copiedFrom !== undefined;
+  const [copyTitle, setCopyTitle] = useState<string | null>(null);
+
+  async function duplicate(e: FormEvent) {
+    e.preventDefault();
+    if (copyTitle === null) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const copy = await studioApi.duplicateActivity(detail.id, copyTitle.trim());
+      navigate(`../${copy.id}`, { relative: "path", state: { copiedFrom: detail.id } });
+    } catch (err) {
+      setMessage({ tone: "error", text: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -134,12 +153,49 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
           <h2 className="font-display text-[1.625rem] font-semibold leading-tight text-tonle-950">{detail.title}</h2>
           <StatusBadge status={latest.status} />
           {detail.archived && <ArchivedBadge />}
-          <span className="ml-auto">
+          <span className="ml-auto flex flex-wrap items-center gap-2">
+            {copyTitle === null && (
+              <Button size="sm" variant="ghost" onClick={() => setCopyTitle(detail.title)} disabled={busy} aria-label={m.activityCopyLabel}>
+                <Copy size={15} aria-hidden /> {m.duplicate}
+              </Button>
+            )}
             <ManageButton kind="activities" id={detail.id} name={detail.title} archived={detail.archived} onChanged={onReload} />
           </span>
         </div>
         <p className="text-sm text-ink-soft">{m.practiceVersion(latest.versionNumber)}</p>
       </div>
+
+      {copyTitle !== null && (
+        <form
+          onSubmit={duplicate}
+          aria-label={m.activityCopyLabel}
+          className="flex flex-col gap-3 rounded-[16px] bg-paper p-4 ring-1 ring-line sm:p-5"
+        >
+          <p className="text-sm text-ink-soft">{m.activityCopyLead}</p>
+          <FormField
+            label={m.activityCopyTitle}
+            value={copyTitle}
+            maxLength={200}
+            required
+            autoFocus
+            onChange={(e) => setCopyTitle(e.target.value)}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="sm" disabled={busy || !copyTitle.trim()}>
+              <Copy size={15} aria-hidden /> {busy ? m.duplicating : m.duplicate}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setCopyTitle(null)} disabled={busy}>
+              {m.cancelCopy}
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {copiedHere && !message && (
+        <p role="status" className="rounded-[10px] bg-palm-soft px-4 py-3 text-sm font-medium text-palm-deep">
+          {m.activityCopied}
+        </p>
+      )}
 
       {message && (
         <p

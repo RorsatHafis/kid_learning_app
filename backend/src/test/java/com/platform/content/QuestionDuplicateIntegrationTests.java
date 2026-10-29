@@ -115,6 +115,80 @@ class QuestionDuplicateIntegrationTests {
                 + "and metadata ->> 'sourceQuestionId' = ?", Integer.class, originalId)).isEqualTo(3);
     }
 
+    /** An activity's copy: the same lesson, settings, introduction and questions (reused, at their current version). */
+    @Test
+    void aTeacherCopiesAnActivityIntoTheSameLessonWithItsSettingsAndQuestionsAtTheirCurrentVersion() throws Exception {
+        Staff admin = staff(PlatformRole.ADMIN);
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String subjectId = json(post("/api/v1/studio/subjects", "{\"code\":\"ACT_" + suffix + "\",\"name\":\"Act " + suffix + "\"}",
+                admin), 201).get("id").asString();
+        String skillId = json(post("/api/v1/studio/subjects/" + subjectId + "/skills", "{\"code\":\"ADD_" + suffix
+                + "\",\"name\":\"Add within 10\",\"description\":\"Adds small numbers.\"}", admin), 201).get("id").asString();
+        Staff teacher = staff(PlatformRole.TEACHER);
+        String first = question(teacher, subjectId, skillId, "2 + 3 = ?", "5");
+        String second = question(teacher, subjectId, skillId, "4 + 4 = ?", "8");
+        String firstV1 = json(get("/api/v1/studio/questions/" + first, teacher), 200).get("versions").get(0).get("id").asString();
+        String secondV1 = json(get("/api/v1/studio/questions/" + second, teacher), 200).get("versions").get(0).get("id").asString();
+        json(post("/api/v1/studio/question-versions/" + firstV1 + "/publish", "", teacher), 200);
+        json(post("/api/v1/studio/question-versions/" + secondV1 + "/publish", "", teacher), 200);
+        String lessonId = json(post("/api/v1/studio/lessons", "{\"subjectId\":\"" + subjectId + "\",\"title\":\"Adding\"}", teacher), 201)
+                .get("id").asString();
+        JsonNode activity = json(post("/api/v1/studio/lessons/" + lessonId + "/activities",
+                "{\"title\":\"Adding practice A\",\"skillIds\":[\"" + skillId + "\"]}", teacher), 201);
+        String activityId = activity.get("id").asString();
+        String versionId = activity.get("versions").get(0).get("id").asString();
+        json(put("/api/v1/studio/activity-versions/" + versionId, "{\"instructions\":\"Add the numbers.\",\"difficultyLevel\":2,"
+                + "\"estimatedDurationSeconds\":120}", teacher), 200);
+        json(put("/api/v1/studio/activity-versions/" + versionId + "/introduction", "{\"text\":\"Adding puts two groups together.\"}",
+                teacher), 200);
+        json(put("/api/v1/studio/activity-versions/" + versionId + "/items", "{\"items\":[{\"questionVersionId\":\"" + firstV1
+                + "\",\"points\":2},{\"questionVersionId\":\"" + secondV1 + "\"}]}", teacher), 200);
+        // The first question gets a newer published version after the activity was built.
+        String firstV2 = json(post("/api/v1/studio/questions/" + first + "/draft", "", teacher), 200).get("versions").get(1).get("id").asString();
+        json(put("/api/v1/studio/question-versions/" + firstV2, "{\"prompt\":\"2 + 3 = ? (count on)\",\"correctAnswer\":\"5\","
+                + "\"difficultyLevel\":1}", teacher), 200);
+        json(post("/api/v1/studio/question-versions/" + firstV2 + "/publish", "", teacher), 200);
+
+        JsonNode copy = json(post("/api/v1/studio/activities/" + activityId + "/duplicate", "{\"title\":\"Adding practice B\"}", teacher), 201);
+        assertThat(copy.get("id").asString()).isNotEqualTo(activityId);
+        assertThat(copy.get("title").asString()).isEqualTo("Adding practice B");
+        assertThat(copy.get("lessonId").asString()).isEqualTo(lessonId);
+        JsonNode draft = copy.get("versions").get(0);
+        assertThat(copy.get("versions")).hasSize(1);
+        assertThat(draft.get("status").asString()).isEqualTo("DRAFT");
+        assertThat(draft.get("instructions").asString()).isEqualTo("Add the numbers.");
+        assertThat(draft.get("difficultyLevel").asInt()).isEqualTo(2);
+        assertThat(draft.get("estimatedDurationSeconds").asInt()).isEqualTo(120);
+        assertThat(draft.get("skillIds").get(0).asString()).isEqualTo(skillId);
+        assertThat(draft.get("introduction").toString()).contains("Adding puts two groups together.");
+        JsonNode items = draft.get("items");
+        assertThat(items).hasSize(2);
+        assertThat(items.get(0).get("questionVersionId").asString()).as("taken at its newer version").isEqualTo(firstV2);
+        assertThat(items.get(0).get("points").asDouble()).isEqualTo(2.0);
+        assertThat(items.get(1).get("questionVersionId").asString()).isEqualTo(secondV1);
+        // Questions are reused, not copied; the original activity is unchanged.
+        assertThat(jdbc.queryForObject("select count(*) from questions where subject_id = ?::uuid", Integer.class,
+                UUID.fromString(subjectId))).isEqualTo(2);
+        JsonNode originalNow = json(get("/api/v1/studio/activities/" + activityId, teacher), 200);
+        assertThat(originalNow.get("title").asString()).isEqualTo("Adding practice A");
+        assertThat(originalNow.get("versions").get(0).get("items").get(0).get("questionVersionId").asString()).isEqualTo(firstV1);
+
+        // Refusals: no title, another teacher, a parent; audited with how many questions moved to a newer version.
+        json(post("/api/v1/studio/activities/" + activityId + "/duplicate", "{\"title\":\" \"}", teacher), 400);
+        assertThat(post("/api/v1/studio/activities/" + activityId + "/duplicate", "{\"title\":\"X\"}", staff(PlatformRole.TEACHER))
+                .statusCode()).isIn(403, 404);
+        assertThat(post("/api/v1/studio/activities/" + activityId + "/duplicate", "{\"title\":\"X\"}", staff(PlatformRole.PARENT))
+                .statusCode()).isEqualTo(403);
+        assertThat(jdbc.queryForObject("select metadata ->> 'atNewerVersion' from audit_events where action = 'ACTIVITY_DUPLICATED' "
+                + "and resource_id = ?::uuid", String.class, UUID.fromString(copy.get("id").asString()))).isEqualTo("1");
+    }
+
+    private String question(Staff author, String subjectId, String skillId, String prompt, String answer) throws Exception {
+        return json(post("/api/v1/studio/questions", "{\"subjectId\":\"" + subjectId + "\",\"questionType\":\"NUMERIC\",\"prompt\":\""
+                + prompt + "\",\"correctAnswer\":\"" + answer + "\",\"difficultyLevel\":1,\"skillIds\":[\"" + skillId + "\"]}", author), 201)
+                .get("id").asString();
+    }
+
     // ------------------------------------------------------------------ accounts and HTTP
 
     private record Staff(UUID id, String token) {

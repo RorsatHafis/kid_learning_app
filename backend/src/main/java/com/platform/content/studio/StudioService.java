@@ -461,6 +461,61 @@ public class StudioService {
                 activity.getSubjectId(), activitySkillIds(activityId), versions, activity.getStatus() == CatalogStatus.ARCHIVED);
     }
 
+    /**
+     * A new activity in the same lesson, starting as a copy of this one's latest version: instructions, difficulty,
+     * time, skills, introduction (its media are the lesson owner's own files) and the same questions in the same
+     * order with the same points. Questions are reused, not copied. A question whose version in the original has since
+     * been replaced by a newer published one is taken at that newer version - an activity draft only takes a question's
+     * draft or current published version - and the author checks the copy before publishing it, as any draft.
+     */
+    @Transactional
+    public ActivityDetail duplicateActivity(UUID accountId, UUID activityId, String title) {
+        Activity source = guard.requireActivityWrite(accountId, activityId);
+        Account author = guard.requireAuthor(accountId);
+        String name = title == null ? "" : title.strip();
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("An activity needs a title");
+        }
+        List<ActivityVersion> versions = activityService.listVersions(activityId);
+        if (versions.isEmpty()) {
+            throw new IllegalStateException("This activity has nothing written yet to copy");
+        }
+        ActivityVersion latest = versions.get(versions.size() - 1);
+        Activity copy = activityService.createActivity(source.getSubjectId(), source.getLessonId(), source.getActivityType(), name);
+        ActivityVersion draft = activityService.createDraftVersion(copy.getId(), latest.getInstructions(), latest.getDifficultyLevel(),
+                latest.getEstimatedDurationSeconds());
+        activityService.skillsOf(latest.getId()).forEach(skillId -> activityService.tagSkill(draft.getId(), skillId));
+        if (latest.hasIntroduction()) {
+            activityService.setIntroduction(draft.getId(), latest.getIntroduction(), latest.getIntroductionImageAssetId(),
+                    latest.getIntroductionImageDescription(), latest.getIntroductionAudioAssetId());
+        }
+        List<ActivityService.ItemDraft> items = new java.util.ArrayList<>();
+        int newer = 0;
+        for (ActivityItem item : activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(latest.getId())) {
+            QuestionVersion pinned = questionService.getVersion(item.getQuestionVersionId());
+            UUID use = pinned.getId();
+            if (pinned.getStatus() != PublicationStatus.DRAFT && pinned.getStatus() != PublicationStatus.PUBLISHED) {
+                java.util.Optional<QuestionVersion> current = questionVersions
+                        .findFirstByQuestionIdAndStatusOrderByVersionNumberDesc(pinned.getQuestionId(), PublicationStatus.PUBLISHED);
+                if (current.isEmpty()) {
+                    continue; // withdrawn with nothing published since: nothing a child could be given
+                }
+                use = current.get().getId();
+                newer++;
+            }
+            items.add(new ActivityService.ItemDraft(use, item.getPoints()));
+        }
+        activityService.replaceItems(draft.getId(), items);
+        jdbc.update("""
+                INSERT INTO content_localizations (id, content_type, content_id, locale, field_name, localized_text)
+                SELECT gen_random_uuid(), content_type, :to, locale, field_name, localized_text
+                  FROM content_localizations WHERE content_type = 'ACTIVITY_VERSION' AND content_id = :from
+                """, Map.of("from", latest.getId(), "to", draft.getId()));
+        record(author, "ACTIVITY_DUPLICATED", "ACTIVITY", copy.getId(), Map.of("sourceActivityId", activityId,
+                "sourceVersion", latest.getVersionNumber(), "questions", items.size(), "atNewerVersion", newer));
+        return activity(accountId, copy.getId());
+    }
+
     @Transactional
     public ActivityDetail openActivityDraft(UUID accountId, UUID activityId) {
         guard.requireActivityWrite(accountId, activityId);

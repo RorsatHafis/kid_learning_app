@@ -64,6 +64,11 @@ export const editorMessages = defineMessages(
     },
     editor: {
       duplicate: "Make a copy",
+      activityCopyTitle: "Title of the copy",
+      activityCopyLabel: "Make a copy of this activity",
+      activityCopyLead: "A new activity in the same lesson with the same instructions, introduction, skills and questions. The questions are shared, not copied; each is at its newest published version.",
+      activityCopied: "This is a copy: a new draft in the same lesson. Check it and publish it when it is ready. The original hasn't changed.",
+      cancelCopy: "Cancel",
       duplicating: "Copying…",
       duplicateLabel: "Make a copy of this question to change into a new one",
       copied: "This is a copy: a new draft with the same words, choices, help and skills. Change what you need and publish it when it is ready. The original hasn't changed.",
@@ -202,6 +207,11 @@ export const editorMessages = defineMessages(
     },
     editor: {
       duplicate: "ធ្វើច្បាប់ចម្លង",
+      activityCopyTitle: "ចំណងជើងនៃច្បាប់ចម្លង",
+      activityCopyLabel: "ធ្វើច្បាប់ចម្លងនៃសកម្មភាពនេះ",
+      activityCopyLead: "សកម្មភាពថ្មីមួយក្នុងមេរៀនដដែល ដែលមានការណែនាំ សេចក្ដីផ្ដើម ជំនាញ និងសំណួរដូចគ្នា។ សំណួរត្រូវបានប្រើរួមគ្នា មិនត្រូវបានចម្លងទេ៖ នីមួយៗស្ថិតនៅកំណែដែលបានផ្សាយថ្មីបំផុតរបស់វា។",
+      activityCopied: "នេះជាច្បាប់ចម្លង៖ សេចក្ដីព្រាងថ្មីមួយក្នុងមេរៀនដដែល។ សូមពិនិត្យវា ហើយផ្សាយវានៅពេលវារួចរាល់។ សកម្មភាពដើមមិនបានផ្លាស់ប្ដូរទេ។",
+      cancelCopy: "បោះបង់",
       duplicating: "កំពុងចម្លង…",
       duplicateLabel: "ធ្វើច្បាប់ចម្លងនៃសំណួរនេះ ដើម្បីប្ដូរវាទៅជាសំណួរថ្មី",
       copied: "នេះជាច្បាប់ចម្លង៖ សេចក្ដីព្រាងថ្មីដែលមានពាក្យ ជម្រើស ជំនួយ និងជំនាញដូចគ្នា។ សូមប្ដូរអ្វីដែលអ្នកត្រូវការ ហើយផ្សាយវានៅពេលវារួចរាល់។ សំណួរដើមមិនបានផ្លាស់ប្ដូរទេ។",

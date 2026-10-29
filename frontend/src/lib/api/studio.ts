@@ -606,6 +606,8 @@ export const studioApi = {
     apiClient.post<ActivityDetail>(`${S}/lessons/${lessonId}/activities`, body),
   activity: (id: string) => apiClient.get<ActivityDetail>(`${S}/activities/${id}`),
   openActivityDraft: (id: string) => apiClient.post<ActivityDetail>(`${S}/activities/${id}/draft`),
+  /** A new activity in the same lesson starting as a copy of this one's latest version (questions reused). */
+  duplicateActivity: (id: string, title: string) => apiClient.post<ActivityDetail>(`${S}/activities/${id}/duplicate`, { title }),
   tagActivitySkill: (id: string, skillId: string) => apiClient.post<ActivityDetail>(`${S}/activities/${id}/skills/${skillId}`),
   untagActivitySkill: (id: string, skillId: string) =>
     apiClient.delete<ActivityDetail>(`${S}/activities/${id}/skills/${skillId}`),

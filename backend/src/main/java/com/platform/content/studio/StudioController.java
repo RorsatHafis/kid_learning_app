@@ -180,6 +180,17 @@ public class StudioController {
         return studio.activity(accountId, activityId);
     }
 
+    public record DuplicateActivityRequest(@jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 200) String title) {
+    }
+
+    /** A new activity in the same lesson starting as a copy of this one (its latest version), as a draft. */
+    @PostMapping("/activities/{activityId}/duplicate")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
+    public ActivityDetail duplicateActivity(@AuthenticationPrincipal UUID accountId, @PathVariable UUID activityId,
+                                            @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody DuplicateActivityRequest request) {
+        return studio.duplicateActivity(accountId, activityId, request.title());
+    }
+
     @PostMapping("/activities/{activityId}/draft")
     public ActivityDetail openActivityDraft(@AuthenticationPrincipal UUID accountId, @PathVariable UUID activityId) {
         return studio.openActivityDraft(accountId, activityId);

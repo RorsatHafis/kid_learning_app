@@ -1849,3 +1849,14 @@ Dependencies:
     another teacher / a parent / an unknown id refused, audit count), `ServerTextCoverageTests`; backend unit suite 0
     failures; studio Vitest 54; tsc; eslint. **Browser verified** as a teacher at 1280 and 360 px: copy made, the copy
     opens with the note, no API error, axe clean, no overflow.
+- 2026-10-29: **Studio: "Make a copy" of an activity** - `POST /api/v1/studio/activities/{id}/duplicate {title}`:
+  a new activity in the same lesson from the latest version - instructions, difficulty, time, skills, introduction
+  (the lesson owner's own media) and the same questions in the same order with the same points. Questions are
+  reused, not copied; one whose version in the original was since replaced by a newer published version is taken at
+  that version (an activity draft only takes a question's draft or current published version), counted in the audit
+  (`ACTIVITY_DUPLICATED`, `atNewerVersion`). The editor asks for the copy's title (prefilled) and opens the copy with
+  a note. **Tested**: `QuestionDuplicateIntegrationTests` second scenario (settings, introduction, skills, items and
+  points, the newer version, questions not duplicated, original unchanged, blank title 400, another teacher and a
+  parent refused, audit) - green; clean backend unit suite 200/200 (the earlier 262/263 counts included stale
+  integration reports); studio Vitest 54. **Browser verified** as an administrator at 1280 and 360 px (title asked,
+  copy opened with the note and a working child preview; no API error; axe clean; no overflow).
