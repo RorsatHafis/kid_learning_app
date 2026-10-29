@@ -1872,3 +1872,9 @@ Dependencies:
   tree** (768 px): the question is the page heading, the answer box and number pad are labelled, "Check" is disabled
   until there is an answer, feedback is a status region, focus moves to "Next" - tree-level evidence, not a real
   screen reader.
+- 2026-10-29: **A family's payments on its admin plan card** (after an administrator finds the family by a parent's
+  exact address): `GET /api/v1/admin/payments?familyId=`, the shared `CustomerPayments` list (schools and families) and
+  "Only one family's payments are shown" on the Payments page. **Tested**: `PlanManagementIntegrationTests` fourth
+  scenario (a real family checkout with the test simulator; that family's payments only, with status; another family
+  none; the parent refused) - green; unit suite 200/200; admin Vitest 22; tsc; eslint. Not browser verified (no
+  family in the dev data has a payment; the shared list is the school list already verified).

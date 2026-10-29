@@ -209,6 +209,10 @@ export const plansMessages = defineMessages(
       giveButton: "Give this plan",
       history: "History of this family's plan",
       noHistory: "Nothing recorded for this plan yet",
+      paymentsTitle: "This family's payments",
+      paymentsNone: "No payment yet.",
+      paymentsLoading: "Loading payments…",
+      paymentsAll: (n: number) => `See all ${n} of this family's payments`,
     },
   },
   {
@@ -424,6 +428,10 @@ export const plansMessages = defineMessages(
       giveButton: "ផ្ដល់កញ្ចប់នេះ",
       history: "ប្រវត្តិនៃកញ្ចប់របស់គ្រួសារនេះ",
       noHistory: "មិនទាន់មានអ្វីត្រូវបានកត់ត្រាសម្រាប់កញ្ចប់នេះនៅឡើយទេ",
+      paymentsTitle: "ការបង់ប្រាក់របស់គ្រួសារនេះ",
+      paymentsNone: "មិនទាន់មានការបង់ប្រាក់នៅឡើយទេ។",
+      paymentsLoading: "កំពុងផ្ទុកការបង់ប្រាក់…",
+      paymentsAll: (n: number) => `មើលការបង់ប្រាក់ទាំង ${n} របស់គ្រួសារនេះ`,
     },
   },
 );

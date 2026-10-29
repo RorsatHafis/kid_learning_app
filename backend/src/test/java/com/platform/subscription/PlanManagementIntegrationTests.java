@@ -300,6 +300,32 @@ class PlanManagementIntegrationTests {
                 UUID.fromString(planId))).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
     }
 
+    /** An administrator who has found a family lists that family's payments only. */
+    @Test
+    void anAdministratorListsOneFamilysPaymentsOnly() throws Exception {
+        String admin = token(PlatformRole.ADMIN);
+        String planId = json(post("/api/v1/admin/plans", "{\"code\":\"FAMPAY_" + suffix() + "\",\"name\":\"Family pay\"}", admin), 201)
+                .get("plan").get("id").asString();
+        json(put("/api/v1/admin/plans/" + planId, familyPlan("Family pay", 3, 3, 250).replace("\"selfService\":false",
+                "\"selfService\":true"), admin), 200);
+        json(post("/api/v1/admin/plans/" + planId + "/activate", "{}", admin), 200);
+        String payingEmail = registerParentEmail();
+        String paying = familyOf(admin, payingEmail);
+        String other = familyOf(admin, registerParentEmail());
+        String payingParent = json(post("/api/v1/auth/login", "{\"email\":\"" + payingEmail + "\",\"password\":\"" + PASSWORD + "\"}", null),
+                200).get("accessToken").asString();
+        JsonNode order = json(post("/api/v1/family/payments", "{\"planId\":\"" + planId + "\",\"method\":\"DEV_SIMULATOR\","
+                + "\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", payingParent), 201);
+
+        JsonNode theirs = json(get("/api/v1/admin/payments?familyId=" + paying, admin), 200);
+        assertThat(theirs.get("total").asLong()).isEqualTo(1);
+        assertThat(theirs.get("items").get(0).get("id").asString()).isEqualTo(order.get("id").asString());
+        assertThat(json(get("/api/v1/admin/payments?familyId=" + paying + "&status=PENDING", admin), 200).get("total").asLong()).isEqualTo(1);
+        assertThat(json(get("/api/v1/admin/payments?familyId=" + paying + "&status=SUCCEEDED", admin), 200).get("total").asLong()).isZero();
+        assertThat(json(get("/api/v1/admin/payments?familyId=" + other, admin), 200).get("total").asLong()).isZero();
+        assertThat(get("/api/v1/admin/payments?familyId=" + paying, payingParent).statusCode()).isEqualTo(403);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private static String familyPlan(String name, int children, int journeys, long price) {

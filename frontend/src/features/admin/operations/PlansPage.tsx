@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils/cn";
 import { ComposerPanel, NewButton, Panel, SelectField, TextAreaField } from "../studio/shared";
 import { errorText, useComposer } from "../studio/studioLogic";
 import { AuditLog } from "./AuditLog";
+import { CustomerPayments } from "./CustomerPayments";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { formatDate } from "@/i18n/format";
 import { plansMessages } from "./plans.messages";
@@ -1235,6 +1236,12 @@ function FamilyPlanCard({
           <AuditLog refreshKey={historyVersion} filter={{ resourceId: sub.id }} emptyTitle={m.noHistory} />
         </section>
       )}
+      <div className="lg:col-span-2">
+        <CustomerPayments
+          customer={{ familyId: family.familyId }}
+          words={{ title: m.paymentsTitle, none: m.paymentsNone, loading: m.paymentsLoading, all: m.paymentsAll }}
+        />
+      </div>
     </div>
   );
 }

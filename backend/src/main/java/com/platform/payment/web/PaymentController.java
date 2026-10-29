@@ -140,10 +140,10 @@ public class PaymentController {
 
     @GetMapping("/api/v1/admin/payments")
     public OrderPage list(@AuthenticationPrincipal UUID adminId, @RequestParam(required = false) PaymentStatus status,
-                          @RequestParam(required = false) UUID schoolId,
+                          @RequestParam(required = false) UUID schoolId, @RequestParam(required = false) UUID familyId,
                           @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "25") int size) {
 
-        Page<com.platform.payment.entity.PaymentOrder> found = payments.list(adminId, status, schoolId, page, size);
+        Page<com.platform.payment.entity.PaymentOrder> found = payments.list(adminId, status, schoolId, familyId, page, size);
         return new OrderPage(found.getContent().stream().map(order -> OrderResponse.summary(order, true)).toList(),
                 found.getTotalElements(), found.getNumber(), found.getSize());
 

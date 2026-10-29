@@ -129,10 +129,10 @@ export const adminPaymentsApi = {
     instructionsKm: string | null;
     qrAssetId: string | null;
   }) => apiClient.put<{ current: PaymentInstructions; history: PaymentInstructions[] }>("/admin/payment-instructions", input),
-  /** Every payment, or one school's when `schoolId` is given; newest first. */
-  list: (status: PaymentStatus | null, page = 0, size = 25, schoolId?: string | null) =>
+  /** Every payment, or one school's / one family's when given; newest first. */
+  list: (status: PaymentStatus | null, page = 0, size = 25, customer?: { schoolId?: string | null; familyId?: string | null }) =>
     apiClient.get<PaymentOrderPage>(
-      `/admin/payments?${status ? `status=${status}&` : ""}${schoolId ? `schoolId=${encodeURIComponent(schoolId)}&` : ""}page=${page}&size=${size}`,
+      `/admin/payments?${status ? `status=${status}&` : ""}${customer?.schoolId ? `schoolId=${encodeURIComponent(customer.schoolId)}&` : ""}${customer?.familyId ? `familyId=${encodeURIComponent(customer.familyId)}&` : ""}page=${page}&size=${size}`,
     ),
   get: (orderId: string) => apiClient.get<PaymentOrder>(`/admin/payments/${orderId}`),
   confirm: (orderId: string, receiptReference: string, amountReceivedMinor: number, currency: string, note: string | null) =>
