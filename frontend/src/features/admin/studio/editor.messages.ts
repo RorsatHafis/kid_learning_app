@@ -64,6 +64,7 @@ export const editorMessages = defineMessages(
     },
     editor: {
       duplicate: "Make a copy",
+      saveBeforeCopy: "Save your changes first: a copy is made from what is saved.",
       activityCopyTitle: "Title of the copy",
       activityCopyLabel: "Make a copy of this activity",
       activityCopyLead: "A new activity in the same lesson with the same instructions, introduction, skills and questions. The questions are shared, not copied; each is at its newest published version.",
@@ -207,6 +208,7 @@ export const editorMessages = defineMessages(
     },
     editor: {
       duplicate: "ធ្វើច្បាប់ចម្លង",
+      saveBeforeCopy: "សូមរក្សាទុកការផ្លាស់ប្ដូររបស់អ្នកជាមុនសិន៖ ច្បាប់ចម្លងត្រូវបានធ្វើពីអ្វីដែលបានរក្សាទុក។",
       activityCopyTitle: "ចំណងជើងនៃច្បាប់ចម្លង",
       activityCopyLabel: "ធ្វើច្បាប់ចម្លងនៃសកម្មភាពនេះ",
       activityCopyLead: "សកម្មភាពថ្មីមួយក្នុងមេរៀនដដែល ដែលមានការណែនាំ សេចក្ដីផ្ដើម ជំនាញ និងសំណួរដូចគ្នា។ សំណួរត្រូវបានប្រើរួមគ្នា មិនត្រូវបានចម្លងទេ៖ នីមួយៗស្ថិតនៅកំណែដែលបានផ្សាយថ្មីបំផុតរបស់វា។",

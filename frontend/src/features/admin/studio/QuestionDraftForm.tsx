@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import type { MediaRef, QuestionType } from "@/lib/api/types";
 import type { MediaItem, QuestionDraftInput } from "@/lib/api/studio";
@@ -70,6 +70,7 @@ export function QuestionDraftForm({
   submitLabel,
   busy,
   onSubmit,
+  onDirtyChange,
   children,
 }: {
   questionType: QuestionType;
@@ -77,6 +78,8 @@ export function QuestionDraftForm({
   submitLabel: string;
   busy: boolean;
   onSubmit: (draft: QuestionDraftInput) => void;
+  /** Told whether the form holds changes that aren't saved (what it would send differs from what it was given). */
+  onDirtyChange?: (dirty: boolean) => void;
   children?: React.ReactNode;
 }) {
   const [prompt, setPrompt] = useState(initial.prompt);
@@ -122,7 +125,12 @@ export function QuestionDraftForm({
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    onSubmit({
+    onSubmit(draft());
+  }
+
+  /** What saving would send now. */
+  function draft(): QuestionDraftInput {
+    return {
       prompt: prompt.trim(),
       correctAnswer: multipleChoice || matching || ordering || sorting ? null : answer.trim() || null,
       difficultyLevel: difficulty ? Number(difficulty) : null,
@@ -154,8 +162,29 @@ export function QuestionDraftForm({
       sortItems: sorting
         ? sortItems.map((i) => ({ label: i.label.trim(), group: i.group, imageAssetId: id(i.image), audioAssetId: id(i.audio) }))
         : undefined,
-    });
+    };
   }
+
+  // Unsaved changes: what saving would send, against what it was when the form was last given saved values. A save
+  // brings new saved values (the same draft version, so the form stays mounted): they become the new baseline.
+  const snapshot = JSON.stringify(draft());
+  const savedValues = JSON.stringify(initial);
+  const [baseline, setBaseline] = useState({ saved: savedValues, snapshot });
+  if (baseline.saved !== savedValues) setBaseline({ saved: savedValues, snapshot });
+  const dirty = baseline.saved === savedValues && snapshot !== baseline.snapshot;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => {
+    if (!dirty) return;
+    // Reloading or closing the tab asks first, so typed work isn't lost by accident.
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   const optionsComplete =
     (!multipleChoice || options.every((o) => o.label.trim())) &&

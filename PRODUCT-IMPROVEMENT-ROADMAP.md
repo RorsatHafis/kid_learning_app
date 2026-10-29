@@ -1914,3 +1914,12 @@ Dependencies:
   card - this failed before the fix; two paths: the card points at the other subject), child Vitest 45 incl. the
   protected `home.test.tsx`. **Browser verified** with the seed child at 360, 768 and 1280 px (one play link, the
   review named on the card).
+- 2026-10-29: **Studio: unsaved question edits are no longer lost silently.** The question form now knows when what
+  it would save differs from what it was given (spaces around words don't count; a save resets it). While it does,
+  "Make a copy" refuses with "Save your changes first: a copy is made from what is saved", and reloading or closing
+  the tab asks first (`beforeunload`; the builder's question forms and the New question form too). Links inside the
+  app are not blocked: the app uses `BrowserRouter`, which has no navigation blocker - moving to a data router is a
+  larger change, recorded rather than done. A teacher's assign-practice flow was also walked at tablet width (button
+  disabled until children are chosen, "Assigned to 2 children.", axe clean). **Tested**: `unsavedDraft.test.tsx` 2,
+  studio and child Vitest 101. **Browser verified** at 1280 px (refusal shown, no navigation; reload asks; after
+  saving, the copy is made).

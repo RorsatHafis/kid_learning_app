@@ -55,8 +55,14 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
   const navigate = useNavigate();
   // Arriving from "Make a copy": say what the copy is (once, on this question's page).
   const copiedHere = (useLocation().state as { copiedFrom?: string } | null)?.copiedFrom !== undefined;
+  // The draft form says when it holds unsaved changes: a copy is made from what is saved, so those would be lost.
+  const [unsaved, setUnsaved] = useState(false);
 
   async function duplicate() {
+    if (unsaved) {
+      setMessage({ tone: "error", text: m.saveBeforeCopy });
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
@@ -150,6 +156,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                 initial={draftValuesOf(latest)}
                 submitLabel={m.saveDraft}
                 busy={busy}
+                onDirtyChange={setUnsaved}
                 onSubmit={(draft) => run(() => studioApi.reviseQuestionDraft(latest.id, draft), m.draftSaved)}
               />
             ) : (
