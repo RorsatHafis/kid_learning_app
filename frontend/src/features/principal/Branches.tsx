@@ -8,6 +8,8 @@ import { FormField } from "@/features/auth/FormField";
 import { useMessages } from "@/i18n/catalog";
 import { branchMessages } from "./branches.messages";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { formatDate } from "@/i18n/format";
+import type { BranchFigures } from "@/lib/api/organizations";
 
 /**
  * M12 B0: the organization this school belongs to and its branches - the owner adds one here (it then waits for its
@@ -17,6 +19,10 @@ export function Branches({ schoolId, onAdded }: { schoolId: string; onAdded: () 
   const m = useMessages(branchMessages);
   const organizations = useAsync(() => organizationsApi.mine(), []);
   const organization = organizations.data?.find((o) => o.branches.some((b) => b.id === schoolId));
+  // M12 B2: the owner sees each branch's size and payment state (counts only; the server answers 404 to anyone else).
+  const ownerOf = organization?.owner ? organization.id : null;
+  const overview = useAsync(() => (ownerOf ? organizationsApi.overview(ownerOf) : Promise.resolve(null)), [ownerOf]);
+  const figuresOf = (id: string) => overview.data?.branches.find((b) => b.schoolId === id);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -48,6 +54,20 @@ export function Branches({ schoolId, onAdded }: { schoolId: string; onAdded: () 
         {m.title}
       </h2>
       <p className="text-sm text-ink-soft [overflow-wrap:anywhere]">{m.lead(organization.name)}</p>
+      {overview.data && organization.branches.length > 1 && (
+        <div className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
+          <p className="text-sm font-semibold text-ink">
+            {m.totals(
+              overview.data.branchesInUse,
+              overview.data.branchesPaid,
+              overview.data.children,
+              overview.data.teachers,
+              overview.data.classes,
+            )}
+          </p>
+          <p className="text-xs text-ink-soft">{m.totalsNote}</p>
+        </div>
+      )}
       {organization.branches.length <= 1 ? (
         <p className="text-sm text-ink-soft">{m.one}</p>
       ) : (
@@ -58,6 +78,7 @@ export function Branches({ schoolId, onAdded }: { schoolId: string; onAdded: () 
                 <span className={b.id === schoolId ? "font-semibold text-ink" : "text-ink"}>{b.name}</span>
                 {b.archived && <span className="text-xs font-semibold text-ink-soft">{m.archived}</span>}
               </div>
+              {figuresOf(b.id) && !b.archived && <Figures figures={figuresOf(b.id)!} />}
               {organization.owner && (
                 <AppointPrincipal organizationId={organization.id} branch={b} onAppointed={organizations.refetch} />
               )}
@@ -86,6 +107,25 @@ export function Branches({ schoolId, onAdded }: { schoolId: string; onAdded: () 
         </p>
       )}
     </section>
+  );
+}
+
+/** M12 B2: one branch at a glance - its size, its year and whether its school services are paid. */
+function Figures({ figures }: { figures: BranchFigures }) {
+  const m = useMessages(branchMessages);
+  const payment = figures.paid
+    ? figures.paidUntil
+      ? m.paidUntil(formatDate(figures.paidUntil, { day: "numeric", month: "short", year: "numeric" }))
+      : null
+    : figures.paymentPending
+      ? m.paymentPending
+      : m.notPaid;
+  return (
+    <ul className="flex flex-col gap-0.5 text-sm text-ink-soft">
+      <li>{m.figures(figures.classes, figures.teachers, figures.children)}</li>
+      <li>{figures.currentYear ? m.year(figures.currentYear) : m.noYear}</li>
+      {payment && <li className={figures.paid ? undefined : "font-semibold text-light-deep"}>{payment}</li>}
+    </ul>
   );
 }
 

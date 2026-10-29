@@ -321,3 +321,4 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - 2026-10-28 (M12 B1): `branches.messages.ts` runByYou...appointed; `ServerText.java` the two principal-appointment messages.
 - 2026-10-29 (plans slice 1): `plans.messages.ts` `versions` and `summary` groups; `auditCodes.ts` PLAN_DUPLICATED.
 - 2026-10-29 (plans slice 2): `plans.messages.ts` `offer` group; `auditCodes.ts` PLAN_AVAILABILITY_CHANGED; `ServerText.java` the five offer-date messages.
+- 2026-10-29 (M12 B2): `branches.messages.ts` totals, totalsNote, figures, paidUntil, notPaid, paymentPending, year, noYear.

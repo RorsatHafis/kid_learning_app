@@ -28,6 +28,11 @@ public interface SchoolStaffRepository extends JpaRepository<SchoolStaff, UUID> 
 
     long countBySchoolIdAndStatusIn(UUID schoolId, java.util.Collection<SchoolStaffStatus> statuses);
 
+    /** M12 B2: staff in any of the schools, each person counted once (a teacher in two branches is one teacher). */
+    @Query("select count(distinct s.accountId) from SchoolStaff s where s.schoolId in :schoolIds and s.status in :statuses")
+    long countDistinctStaff(@Param("schoolIds") java.util.Collection<UUID> schoolIds,
+                            @Param("statuses") java.util.Collection<SchoolStaffStatus> statuses);
+
     /** Whether {@code accountId} is ACTIVE staff at a school {@code principalId} is the principal of. */
     @Query("select count(s) > 0 from SchoolStaff s, School sc where s.schoolId = sc.id and sc.principalAccountId = :principalId"
             + " and s.accountId = :accountId and s.status = com.platform.school.entity.SchoolStaffStatus.ACTIVE")

@@ -1,6 +1,7 @@
 package com.platform.school.web;
 
 import com.platform.school.entity.School;
+import com.platform.school.service.OrganizationOverviewService;
 import com.platform.school.service.SchoolAccessGuard;
 import com.platform.school.service.SchoolOrganizationService;
 import jakarta.validation.Valid;
@@ -21,10 +22,19 @@ public class SchoolOrganizationController {
 
     private final SchoolOrganizationService service;
     private final SchoolAccessGuard guard;
+    private final OrganizationOverviewService overviews;
 
-    public SchoolOrganizationController(SchoolOrganizationService service, SchoolAccessGuard guard) {
+    public SchoolOrganizationController(SchoolOrganizationService service, SchoolAccessGuard guard,
+                                        OrganizationOverviewService overviews) {
+        this.overviews = overviews;
         this.service = service;
         this.guard = guard;
+    }
+
+    /** M12 B2: each branch's size and payment state, and the totals - counts only; the owner or a platform admin. */
+    @GetMapping("/{organizationId}/overview")
+    public OrganizationOverviewService.Overview overview(@AuthenticationPrincipal UUID accountId, @PathVariable UUID organizationId) {
+        return overviews.overview(organizationId, accountId);
     }
 
     @GetMapping("/mine")

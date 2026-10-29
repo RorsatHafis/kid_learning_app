@@ -171,7 +171,10 @@ record's own school/organization, so a changed URL or id finds nothing.
 
 ### 8.2 To build next, in order (each a complete slice)
 
-1. **Organization dashboard** (owner): per-branch counts (classes, staff, children with access, plan state) - aggregates
+1. **Organization dashboard** (owner) - **built 2026-10-29 (B2)**: `GET /api/v1/organizations/{id}/overview` (owner or
+   platform admin; 404 for anyone else) and the owner's Branches section show each branch's classes, teachers,
+   children with access, current year and payment state, and totals that count a child or teacher in two branches
+   once (`OrganizationOverviewService`). Originally specified as: per-branch counts (classes, staff, children with access, plan state) - aggregates
    only, no child records.
 2. **Shared settings with branch overrides** (when a module has settings: attendance codes, grading scales, fee heads).
 3. **Student records (P2, after S1)**: `students` at organization level with a stable student number; enrolments carry

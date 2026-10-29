@@ -20,5 +20,11 @@ public interface SchoolChildAccessRepository extends JpaRepository<SchoolChildAc
 
     long countBySchoolIdAndStatus(UUID schoolId, SchoolChildAccessStatus status);
 
+    /** M12 B2: children with access in any of the schools, each counted once (a child in two branches is one child). */
+    @org.springframework.data.jpa.repository.Query("select count(distinct a.childId) from SchoolChildAccess a"
+            + " where a.schoolId in :schoolIds and a.status = :status")
+    long countDistinctChildren(@org.springframework.data.repository.query.Param("schoolIds") java.util.Collection<UUID> schoolIds,
+                               @org.springframework.data.repository.query.Param("status") SchoolChildAccessStatus status);
+
     List<SchoolChildAccess> findByChildIdOrderByGrantedAtAsc(UUID childId);
 }

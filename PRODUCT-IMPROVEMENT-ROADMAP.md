@@ -1814,4 +1814,18 @@ Dependencies:
     **Browser**: the dates form at 1280 and 360 px (axe clean, no overflow) up to the step-up prompt, which asks the
     seed administrator for an authenticator code I don't have - saving through it is covered by the tests above,
     **not browser verified**.
+- 2026-10-29: **M12 B2 - organization overview for its owner** (`docs/SCHOOL-MANAGEMENT.md` §8.2 item 1; no
+  decision needed). `GET /api/v1/organizations/{id}/overview`: per branch - classes in use, teachers (on staff or
+  invited), children with access, current academic year, paid / paid until / payment waiting / not paid; totals over
+  branches in use that count a child or a teacher in two branches once (new distinct-count queries). Counts only:
+  nobody is named, so oversight never goes round `requireClassStaff`. Owner or platform admin; a branch principal,
+  teacher, parent or another principal gets 404. Shown in the owner's Branches section (totals line, figures per
+  branch; the unpaid state in the warm warning colour).
+  - **Tested**: `OrganizationOverviewIntegrationTests` (three branches, a shared child and teacher counted once, a
+    current year, paid and unpaid, nobody named in the response, 404 for four other roles, 401, admin view,
+    archived branch listed but not counted; access rows arranged directly - the class-code flow has its own tests),
+    `SchoolOrganizationIntegrationTests` 3 - green. Frontend `branchesOverview.test.tsx` 2, principal Vitest 19, tsc,
+    eslint. **Browser verified** in English at 1280 and 360 px (axe clean, no overflow, no API errors). Khmer is not
+    browser verified: the seed account's language setting keeps the page in English; the Khmer strings are listed
+    for review.
 
