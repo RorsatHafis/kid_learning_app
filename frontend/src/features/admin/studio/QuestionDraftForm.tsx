@@ -221,52 +221,57 @@ export function QuestionDraftForm({
         <fieldset className="flex min-w-0 flex-col gap-2">
           <legend className="mb-1 text-sm font-semibold text-ink">{m.choices}</legend>
           {options.map((option, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="correct-choice"
-                checked={option.correct}
-                onChange={() => setOptions(options.map((o, i) => ({ ...o, correct: i === index })))}
-                aria-label={m.choiceCorrect(index + 1)}
-                className="h-5 w-5 accent-tonle-700"
-              />
-              <input
-                value={option.label}
-                maxLength={300}
-                onChange={(e) => setOptions(options.map((o, i) => (i === index ? { ...o, label: e.target.value } : o)))}
-                aria-label={m.choice(index + 1)}
-                placeholder={option.image ? m.describePicture : undefined}
-                className={inputClass}
-              />
-              <MediaSlot
-                compact
-                kind="IMAGE"
-                value={option.image ?? null}
-                onChange={(image, item) =>
-                  setOptions(
-                    options.map((o, i) =>
-                      i === index ? { ...o, image, label: o.label.trim() ? o.label : labelFrom(item, o.label) } : o,
-                    ),
-                  )
-                }
-                name={m.choicePicture(index + 1)}
-              />
-              <MediaSlot
-                compact
-                kind="AUDIO"
-                value={option.audio ?? null}
-                onChange={(audio) => setOptions(options.map((o, i) => (i === index ? { ...o, audio } : o)))}
-                name={m.choiceRecording(index + 1)}
-              />
-              <button
-                type="button"
-                onClick={() => setOptions(options.filter((_, i) => i !== index))}
-                disabled={options.length <= 2}
-                aria-label={m.removeChoice(index + 1)}
-                className={removeClass}
-              >
-                <Trash2 size={16} aria-hidden />
-              </button>
+            // As ordering and sorting rows: the words keep a usable width, the media controls wrap below them.
+            <div key={index} className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+              <div className="flex min-w-[13rem] flex-1 items-center gap-2">
+                <input
+                  type="radio"
+                  name="correct-choice"
+                  checked={option.correct}
+                  onChange={() => setOptions(options.map((o, i) => ({ ...o, correct: i === index })))}
+                  aria-label={m.choiceCorrect(index + 1)}
+                  className="h-5 w-5 shrink-0 accent-tonle-700"
+                />
+                <input
+                  value={option.label}
+                  maxLength={300}
+                  onChange={(e) => setOptions(options.map((o, i) => (i === index ? { ...o, label: e.target.value } : o)))}
+                  aria-label={m.choice(index + 1)}
+                  placeholder={option.image ? m.describePicture : undefined}
+                  className={inputClass}
+                />
+              </div>
+              <div className="ml-auto flex items-center gap-1">
+                <MediaSlot
+                  compact
+                  kind="IMAGE"
+                  value={option.image ?? null}
+                  onChange={(image, item) =>
+                    setOptions(
+                      options.map((o, i) =>
+                        i === index ? { ...o, image, label: o.label.trim() ? o.label : labelFrom(item, o.label) } : o,
+                      ),
+                    )
+                  }
+                  name={m.choicePicture(index + 1)}
+                />
+                <MediaSlot
+                  compact
+                  kind="AUDIO"
+                  value={option.audio ?? null}
+                  onChange={(audio) => setOptions(options.map((o, i) => (i === index ? { ...o, audio } : o)))}
+                  name={m.choiceRecording(index + 1)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setOptions(options.filter((_, i) => i !== index))}
+                  disabled={options.length <= 2}
+                  aria-label={m.removeChoice(index + 1)}
+                  className={removeClass}
+                >
+                  <Trash2 size={16} aria-hidden />
+                </button>
+              </div>
             </div>
           ))}
           {options.length < MAX_OPTIONS && (
