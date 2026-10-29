@@ -36,7 +36,9 @@ public class LearnerActivityReader {
 
     public LearnerActivityReader(ActivityService activityService, QuestionService questionService,
                                  ActivityItemRepository activityItemRepository, MediaService mediaService,
-                                 com.platform.content.service.QuestionTranslations translations) {
+                                 com.platform.content.service.QuestionTranslations translations,
+                                 com.platform.content.service.ActivityTranslations activityTranslations) {
+        this.activityTranslations = activityTranslations;
         this.activityService = activityService;
         this.questionService = questionService;
         this.activityItemRepository = activityItemRepository;
@@ -45,6 +47,7 @@ public class LearnerActivityReader {
     }
 
     private final com.platform.content.service.QuestionTranslations translations;
+    private final com.platform.content.service.ActivityTranslations activityTranslations;
 
     @Transactional(readOnly = true)
     public ActivityVersionDetailResponse read(ActivityVersion version) {
@@ -72,9 +75,18 @@ public class LearnerActivityReader {
                         l.options(), media, translations.forReader(l.type(), l.version(), l.options()).orElse(null)))
                 .toList();
 
-        return new ActivityVersionDetailResponse(version.getId(), activity.getId(), activity.getTitle(), version.getInstructions(),
-                version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items,
-                ActivityContentDtos.LearnerIntroduction.of(version, media));
+        // The activity's own words in Khmer for a Khmer reader when they are all translated (ActivityTranslations).
+        com.platform.content.service.ActivityTranslations.Khmer khmer = activityTranslations.forReader(activity, version).orElse(null);
+        ActivityContentDtos.LearnerIntroduction introduction = ActivityContentDtos.LearnerIntroduction.of(version, media);
+        if (khmer != null && introduction != null) {
+            introduction = new ActivityContentDtos.LearnerIntroduction(
+                    khmer.introduction() != null ? khmer.introduction() : introduction.text(), introduction.image(),
+                    khmer.introductionImageDescription() != null ? khmer.introductionImageDescription() : introduction.imageDescription(),
+                    introduction.audio());
+        }
+        return new ActivityVersionDetailResponse(version.getId(), activity.getId(), khmer != null ? khmer.title() : activity.getTitle(),
+                khmer != null && khmer.instructions() != null ? khmer.instructions() : version.getInstructions(),
+                version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items, introduction);
     }
 
 }

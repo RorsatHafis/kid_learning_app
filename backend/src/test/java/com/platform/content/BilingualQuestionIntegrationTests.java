@@ -146,6 +146,17 @@ class BilingualQuestionIntegrationTests {
         String activityVersionId = activity.get("versions").get(0).get("id").asString();
         json(put("/api/v1/studio/activity-versions/" + activityVersionId + "/items",
                 "{\"items\":[{\"questionVersionId\":\"" + versionId + "\"}]}", admin, null), 200);
+        // The activity's own words in both languages: details (name, instructions) and its introduction, saved apart.
+        JsonNode details = json(put("/api/v1/studio/activity-versions/" + activityVersionId, "{\"instructions\":\"Choose the bigger number.\","
+                + "\"difficultyLevel\":1,\"khmer\":{\"title\":\"តើមួយណាធំជាង\",\"instructions\":\"ជ្រើសលេខដែលធំជាង។\"}}", admin, null), 200);
+        JsonNode activityKm = details.get("versions").get(0).get("khmer");
+        assertThat(activityKm.get("title").asString()).isEqualTo("តើមួយណាធំជាង");
+        assertThat(activityKm.get("complete").asBoolean()).isTrue();
+        JsonNode withIntro = json(put("/api/v1/studio/activity-versions/" + activityVersionId + "/introduction",
+                "{\"text\":\"Bigger means more.\",\"khmer\":{\"text\":\"ធំជាង មានន័យថាច្រើនជាង។\"}}", admin, null), 200);
+        assertThat(withIntro.get("versions").get(0).get("khmer").get("introduction").asString()).isEqualTo("ធំជាង មានន័យថាច្រើនជាង។");
+        assertThat(withIntro.get("versions").get(0).get("khmer").get("instructions").asString()).as("the other save left it").isEqualTo("ជ្រើសលេខដែលធំជាង។");
+        assertThat(withIntro.get("versions").get(0).get("instructions").asString()).isEqualTo("Choose the bigger number.");
         json(post("/api/v1/studio/activity-versions/" + activityVersionId + "/publish", "", admin, null), 200);
         JsonNode curriculum = json(post("/api/v1/studio/curricula", "{\"subjectId\":\"" + subjectId + "\",\"ageHubId\":\"" + ageHubId
                 + "\",\"name\":\"Bilingual " + suffix + "\"}", admin, null), 201);
@@ -160,8 +171,19 @@ class BilingualQuestionIntegrationTests {
                 "{\"curriculumId\":\"" + curriculum.get("id").asString() + "\"}", parent, null), 201).get("id").asString();
         JsonNode step = json(get("/api/v1/enrollments/" + enrollmentId + "/journey", parent, null), 200).get("steps").get(0);
 
-        JsonNode itemKm = json(get("/api/v1/activity-versions/" + activityVersionId + "?childId=" + childId, parent, "km"), 200)
-                .get("items").get(0);
+        JsonNode contentKm = json(get("/api/v1/activity-versions/" + activityVersionId + "?childId=" + childId, parent, "km"), 200);
+        assertThat(contentKm.get("title").asString()).isEqualTo("តើមួយណាធំជាង");
+        assertThat(contentKm.get("instructions").asString()).isEqualTo("ជ្រើសលេខដែលធំជាង។");
+        assertThat(contentKm.get("introduction").get("text").asString()).isEqualTo("ធំជាង មានន័យថាច្រើនជាង។");
+        JsonNode contentEn = json(get("/api/v1/activity-versions/" + activityVersionId + "?childId=" + childId, parent, "en"), 200);
+        assertThat(contentEn.get("title").asString()).isEqualTo("Which is bigger");
+        assertThat(contentEn.get("introduction").get("text").asString()).isEqualTo("Bigger means more.");
+        JsonNode itemKm = contentKm.get("items").get(0);
+        // The child's path names the activity in the same language.
+        assertThat(json(get("/api/v1/enrollments/" + enrollmentId + "/journey", parent, "km"), 200).get("steps").get(0).get("title")
+                .asString()).isEqualTo("តើមួយណាធំជាង");
+        assertThat(json(get("/api/v1/enrollments/" + enrollmentId + "/journey", parent, "en"), 200).get("steps").get(0).get("title")
+                .asString()).isEqualTo("Which is bigger");
         assertThat(itemKm.get("language").asString()).isEqualTo("km");
         assertThat(itemKm.get("prompt").asString()).isEqualTo("តើលេខមួយណាធំជាង?");
         assertThat(labels(itemKm)).containsExactly("ប្រាំពីរ", "បួន");
@@ -182,6 +204,12 @@ class BilingualQuestionIntegrationTests {
         assertThat(answer.get("correctAnswer").get("text").asString()).isEqualTo("ប្រាំពីរ");
         assertThat(jdbc.queryForObject("select count(*) from content_localizations where content_id = ?::uuid and locale = 'km'",
                 Integer.class, UUID.fromString(versionId))).as("prompt, hint, explanation and two choices").isEqualTo(5);
+
+        // A new version of the activity keeps its Khmer.
+        String activityId = activity.get("id").asString();
+        JsonNode next = json(post("/api/v1/studio/activities/" + activityId + "/draft", "", admin, null), 200).get("versions").get(1);
+        assertThat(next.get("khmer").get("title").asString()).isEqualTo("តើមួយណាធំជាង");
+        assertThat(next.get("khmer").get("introduction").asString()).isEqualTo("ធំជាង មានន័យថាច្រើនជាង។");
     }
 
     // ------------------------------------------------------------------ helpers

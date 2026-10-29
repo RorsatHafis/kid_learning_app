@@ -86,6 +86,16 @@ public class LearningJourneyService {
     private final PlacementNames placementNames;
     private final com.platform.child.repository.ChildRepository childRepository;
 
+    /**
+     * An activity's name as the reader gets it: in Khmer for a Khmer reader when the version's Khmer is complete
+     * (ActivityTranslations - the same rule as the activity screen), otherwise as written.
+     */
+    private String titleFor(Activity activity, ActivityVersion version) {
+        return activityTranslations.forReader(activity, version).map(com.platform.content.service.ActivityTranslations.Khmer::title).orElse(activity.getTitle());
+    }
+
+    private final com.platform.content.service.ActivityTranslations activityTranslations;
+
     public LearningJourneyService(EnrollmentRepository enrollmentRepository, LearningPathRepository learningPathRepository,
                                   LearningPathItemRepository learningPathItemRepository,
                                   ActivityAttemptRepository activityAttemptRepository,
@@ -99,7 +109,9 @@ public class LearningJourneyService {
                                   com.platform.review.repository.ReviewItemRepository reviewItemRepository,
                                   LearningObjectiveRepository learningObjectiveRepository,
                                   LearningObjectiveSkillService learningObjectiveSkillService, PlacementNames placementNames,
-                                  com.platform.child.repository.ChildRepository childRepository) {
+                                  com.platform.child.repository.ChildRepository childRepository,
+                                  com.platform.content.service.ActivityTranslations activityTranslations) {
+        this.activityTranslations = activityTranslations;
         this.childRepository = childRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.learningPathRepository = learningPathRepository;
@@ -474,7 +486,7 @@ public class LearningJourneyService {
                 .max(Comparator.comparing(ActivityAttempt::getCompletedAt));
 
         List<SkillRef> skills = lookups.skillsOf(version.getId());
-        return new JourneyStep(item.getId(), version.getId(), activity.getTitle(), activity.getActivityType(),
+        return new JourneyStep(item.getId(), version.getId(), titleFor(activity, version), activity.getActivityType(),
                 version.getDifficultyLevel(), version.getEstimatedDurationSeconds(),
                 lookups.questionCount(version.getId()), item.getSequenceOrder(), item.getStatus(), item.getSource(),
                 skills, completedAttempt.map(ActivityAttempt::getScore).orElse(null),
@@ -535,7 +547,7 @@ public class LearningJourneyService {
                 .orElse(null);
 
         String subjectName = lookups.subjectName(activity.getSubjectId());
-        return new CompletedActivity(attempt.getId(), version.getId(), activity.getTitle(), subjectName, source,
+        return new CompletedActivity(attempt.getId(), version.getId(), titleFor(activity, version), subjectName, source,
                 attempt.getScore(), correct, answers.size(), attempt.getStartedAt(), attempt.getCompletedAt(),
                 lookups.skillsOf(version.getId()), decision, (int) answers.stream().filter(AnswerRecord::isHintUsed).count());
     }

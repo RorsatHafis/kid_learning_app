@@ -74,7 +74,7 @@ Khmer conventions used so far:
 The owner asked for every piece of user-facing content that can be localized to have **two independently saved
 inputs, English and Khmer**, with a content-language switch that is separate from the interface language. This
 answers the first open question that used to be here (*a Khmer curriculum is a translation of the same content, not
-separate content*). Slice 1 - **questions** - is built; the rest is listed below in order.
+separate content*). Slice 1 - **questions** - and slice 2 - **activities** - are built; the rest is listed below in order.
 
 ### The model
 
@@ -131,7 +131,7 @@ differently.
 | # | Content | Where | Fields | Notes |
 |---|---|---|---|---|
 | 1 | **Questions** | Studio question editor, New question, the activity builder | prompt, hint, explanation, picture description, choices, pairs, items, groups, sorting items | **Built** (slice 1). Short answer excluded (scoring). |
-| 2 | Activities | Activity editor, builder | title, instructions, "Teach it first" text and picture description | Next: `ACTIVITY_VERSION` rows (title kept per version, as it is shown with that version). |
+| 2 | Activities | Activity editor, builder | title, instructions, "Teach it first" text and picture description | **Built** (slice 2): `ACTIVITY_VERSION` rows (`ActivityTranslations`); the name is kept per version and written under More settings; a child reading Khmer gets the activity's own words in Khmer when all are translated, and the same name on the path, home and shelf. |
 | 3 | Curricula and chapters | Curriculum editor, Skills & objectives | curriculum name and description, learning-objective titles, skill names | Names children and parents read; `CURRICULUM_VERSION` and catalog rows need a content type (CHECK constraint change - a migration). |
 | 4 | Subjects | Studio | subject name | Shown to families and children. |
 | 5 | Media | Media library | title, description (screen-reader text) | The description is read aloud by screen readers. |

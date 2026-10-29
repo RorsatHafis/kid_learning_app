@@ -18,6 +18,9 @@ import { Panel, SelectField, SkillChips, StatusBadge, TextAreaField, VersionHist
 import { ArchivedBadge, ManageButton } from "./Lifecycle";
 import { ActivityBuilder } from "./ActivityBuilder";
 import { builderMessages } from "./builder.messages";
+import { formMessages } from "./form.messages";
+import { ContentLanguageSwitch, Translated, type ContentLanguage } from "./BilingualFields";
+import { khmerCount } from "./bilingual";
 import { useMessages } from "@/i18n/catalog";
 import { editorMessages } from "./editor.messages";
 
@@ -221,6 +224,7 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
             settings={
               <DetailsForm
                 key={`meta-${latest.id}`}
+                title={detail.title}
                 version={latest}
                 busy={busy}
                 onSave={(body) => run(() => studioApi.reviseActivityDraft(latest.id, body), m.detailsSaved)}
@@ -298,37 +302,91 @@ function ReachChildren() {
 }
 
 function DetailsForm({
+  title,
   version,
   busy,
   onSave,
 }: {
+  title: string;
   version: ActivityVersionDetail;
   busy: boolean;
-  onSave: (body: { instructions: string | null; difficultyLevel: number | null; estimatedDurationSeconds: number | null }) => void;
+  onSave: (body: {
+    instructions: string | null;
+    difficultyLevel: number | null;
+    estimatedDurationSeconds: number | null;
+    khmer?: { title: string | null; instructions: string | null };
+  }) => void;
 }) {
   const [instructions, setInstructions] = useState(version.instructions ?? "");
+  // LOCALIZATION.md: the activity's name and instructions in Khmer, beside the English (the name itself is changed
+  // under Manage...; its Khmer is written here).
+  const [language, setLanguage] = useState<ContentLanguage>("en");
+  const [titleKm, setTitleKm] = useState(version.khmer?.title ?? "");
+  const [instructionsKm, setInstructionsKm] = useState(version.khmer?.instructions ?? "");
+  const f = useMessages(formMessages);
+  const b = useMessages(builderMessages);
+  const counted = khmerCount([
+    [title, titleKm],
+    [instructions, instructionsKm],
+    [version.introduction?.text, version.khmer?.introduction],
+    [version.introduction?.image ? version.introduction?.imageDescription : "", version.khmer?.introductionImageDescription],
+  ]);
   const [difficulty, setDifficulty] = useState(version.difficultyLevel ? String(version.difficultyLevel) : "");
   const [duration, setDuration] = useState(version.estimatedDurationSeconds ? String(version.estimatedDurationSeconds) : "");
   const m = useMessages(editorMessages).editor;
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    const hadKhmer = !!(version.khmer?.title || version.khmer?.instructions);
     onSave({
       instructions: instructions.trim() || null,
       difficultyLevel: difficulty ? Number(difficulty) : null,
       estimatedDurationSeconds: duration ? Number(duration) : null,
+      khmer:
+        hadKhmer || titleKm.trim() || instructionsKm.trim()
+          ? { title: titleKm.trim() || null, instructions: instructionsKm.trim() || null }
+          : undefined,
     });
   }
 
   return (
     <Panel title={m.draftVersion(version.versionNumber)}>
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <TextAreaField
-          label={m.instructions}
-          value={instructions}
-          maxLength={2000}
-          onChange={(e) => setInstructions(e.target.value)}
+        <ContentLanguageSwitch
+          language={language}
+          onChange={setLanguage}
+          warn={counted.written > 0 && counted.written < counted.needed}
+          status={
+            counted.needed > 0 && counted.written >= counted.needed
+              ? f.activityKhmerComplete
+              : counted.written === 0
+                ? f.activityKhmerNone
+                : f.activityKhmerPartly(counted.written, counted.needed)
+          }
         />
+        {language === "km" ? (
+          <>
+            <Translated english={title}>
+              <FormField label={f.inKhmer(b.activityName)} lang="km" value={titleKm} maxLength={200} onChange={(e) => setTitleKm(e.target.value)} />
+            </Translated>
+            <Translated english={instructions}>
+              <TextAreaField
+                label={f.inKhmer(m.instructions)}
+                lang="km"
+                value={instructionsKm}
+                maxLength={2000}
+                onChange={(e) => setInstructionsKm(e.target.value)}
+              />
+            </Translated>
+          </>
+        ) : (
+          <TextAreaField
+            label={m.instructions}
+            value={instructions}
+            maxLength={2000}
+            onChange={(e) => setInstructions(e.target.value)}
+          />
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SelectField label={m.difficultyRange} value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
             <option value="">{m.notSet}</option>

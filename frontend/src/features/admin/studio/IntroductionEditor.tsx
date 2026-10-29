@@ -8,6 +8,9 @@ import { useMessages } from "@/i18n/catalog";
 import { MediaSlot } from "./MediaSlot";
 import { errorText } from "./studioLogic";
 import { introductionMessages } from "./introduction.messages";
+import { formMessages } from "./form.messages";
+import { ContentLanguageSwitch, Translated, type ContentLanguage } from "./BilingualFields";
+import { khmerCount } from "./bilingual";
 
 /**
  * Teaching before asking: a draft activity's introduction - a short explanation or worked example, a picture (with
@@ -33,13 +36,25 @@ export function IntroductionEditor({
   const [audio, setAudio] = useState<MediaRef | null>(intro?.audio ?? null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  // LOCALIZATION.md: the introduction in Khmer, beside the English.
+  const [language, setLanguage] = useState<ContentLanguage>("en");
+  const [textKm, setTextKm] = useState(version.khmer?.introduction ?? "");
+  const [descriptionKm, setDescriptionKm] = useState(version.khmer?.introductionImageDescription ?? "");
+  const f = useMessages(formMessages);
+  const counted = khmerCount([
+    [text, textKm],
+    [image ? description : "", descriptionKm],
+  ]);
   // Unsaved: what saving would store, against the saved introduction (spaces around the words don't count).
-  const onScreen = JSON.stringify([text.trim(), image?.id ?? null, image ? description.trim() : "", audio?.id ?? null]);
+  const onScreen = JSON.stringify([text.trim(), image?.id ?? null, image ? description.trim() : "", audio?.id ?? null, textKm.trim(),
+    image ? descriptionKm.trim() : ""]);
   const saved = JSON.stringify([
     (intro?.text ?? "").trim(),
     intro?.image?.id ?? null,
     intro?.image ? (intro?.imageDescription ?? "").trim() : "",
     intro?.audio?.id ?? null,
+    (version.khmer?.introduction ?? "").trim(),
+    intro?.image ? (version.khmer?.introductionImageDescription ?? "").trim() : "",
   ]);
   const dirty = onScreen !== saved;
   useEffect(() => {
@@ -66,6 +81,7 @@ export function IntroductionEditor({
           imageAssetId: image?.id ?? null,
           imageDescription: image ? description.trim() || null : null,
           audioAssetId: audio?.id ?? null,
+          khmer: { text: textKm.trim() || null, imageDescription: image ? descriptionKm.trim() || null : null },
         }),
       );
       setMessage({ ok: true, text: m.saved });
@@ -96,36 +112,65 @@ export function IntroductionEditor({
         </div>
       </div>
       <form onSubmit={save} className="flex flex-col gap-4">
+        <ContentLanguageSwitch
+          language={language}
+          onChange={setLanguage}
+          warn={counted.written > 0 && counted.written < counted.needed}
+          status={
+            counted.needed > 0 && counted.written >= counted.needed
+              ? f.introKhmerComplete
+              : counted.written === 0
+                ? f.introKhmerNone
+                : f.introKhmerPartly(counted.written, counted.needed)
+          }
+        />
         <div className="flex flex-col gap-2">
           <label htmlFor={textId} className="text-sm font-semibold text-ink">
-            {m.text}
+            {language === "km" ? f.inKhmer(m.text) : m.text}
           </label>
           <textarea
             id={textId}
             aria-describedby={`${textId}-hint`}
-            value={text}
+            lang={language === "km" ? "km" : undefined}
+            value={language === "km" ? textKm : text}
             maxLength={1200}
             rows={4}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={m.placeholder}
+            onChange={(e) => (language === "km" ? setTextKm(e.target.value) : setText(e.target.value))}
+            placeholder={language === "km" ? text || m.placeholder : m.placeholder}
             className="rounded-[12px] border border-line-strong bg-white px-3 py-2.5 text-[0.9375rem] leading-relaxed text-ink"
           />
           <span id={`${textId}-hint`} className="text-xs text-ink-faint">
-            {m.textHint(text.length)}
+            {m.textHint((language === "km" ? textKm : text).length)}
           </span>
+          {language === "km" && text.trim() && (
+            <p className="text-xs text-ink-soft [overflow-wrap:anywhere]">
+              <span className="font-semibold">{f.englishIs}</span> {text}
+            </p>
+          )}
         </div>
         <div className="flex flex-col gap-2">
           <span className="text-sm font-semibold text-ink">{m.picture}</span>
           <MediaSlot kind="IMAGE" value={image} onChange={(value) => setImage(value)} name={m.pictureName} />
-          {image && (
-            <FormField
-              label={m.describe}
-              hint={m.describeHint}
-              maxLength={300}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          )}
+          {image &&
+            (language === "km" ? (
+              <Translated english={description}>
+                <FormField
+                  label={f.inKhmer(m.describe)}
+                  lang="km"
+                  maxLength={300}
+                  value={descriptionKm}
+                  onChange={(e) => setDescriptionKm(e.target.value)}
+                />
+              </Translated>
+            ) : (
+              <FormField
+                label={m.describe}
+                hint={m.describeHint}
+                maxLength={300}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            ))}
         </div>
         <div className="flex flex-col gap-2">
           <span className="text-sm font-semibold text-ink">{m.recording}</span>

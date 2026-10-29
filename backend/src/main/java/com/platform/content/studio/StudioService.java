@@ -112,6 +112,7 @@ public class StudioService {
     private final MediaService media;
     private final com.platform.content.review.ContentReviewService reviews;
     private final com.platform.content.service.QuestionTranslations translations;
+    private final com.platform.content.service.ActivityTranslations activityTranslations;
     private final org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc;
 
     public StudioService(ContentAccessGuard guard, AuditService audit, ContentValidator validator,
@@ -128,9 +129,11 @@ public class StudioService {
                          ActivityVersionRepository activityVersions, MediaService media,
                          com.platform.content.review.ContentReviewService reviews,
                          com.platform.content.service.QuestionTranslations translations,
+                         com.platform.content.service.ActivityTranslations activityTranslations,
                          org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc) {
         this.reviews = reviews;
         this.translations = translations;
+        this.activityTranslations = activityTranslations;
         this.jdbc = jdbc;
         this.guard = guard;
         this.audit = audit;
@@ -458,7 +461,7 @@ public class StudioService {
                         version.getEstimatedDurationSeconds(),
                         activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(version.getId()).stream()
                                 .map(this::itemDetail).toList(), activityService.skillsOf(version.getId()),
-                        introductionOf(version)))
+                        introductionOf(version), activityKhmer(activity, version)))
                 .toList();
         return new ActivityDetail(activity.getId(), activity.getTitle(), activity.getActivityType(), activity.getLessonId(),
                 activity.getSubjectId(), activitySkillIds(activityId), versions, activity.getStatus() == CatalogStatus.ARCHIVED);
@@ -509,11 +512,8 @@ public class StudioService {
             items.add(new ActivityService.ItemDraft(use, item.getPoints()));
         }
         activityService.replaceItems(draft.getId(), items);
-        jdbc.update("""
-                INSERT INTO content_localizations (id, content_type, content_id, locale, field_name, localized_text)
-                SELECT gen_random_uuid(), content_type, :to, locale, field_name, localized_text
-                  FROM content_localizations WHERE content_type = 'ACTIVITY_VERSION' AND content_id = :from
-                """, Map.of("from", latest.getId(), "to", draft.getId()));
+        activityTranslations.copy(latest.getId(), draft.getId());
+        activityTranslations.set(draft.getId(), "title", null); // the copy is named anew; its Khmer name is written again
         record(author, "ACTIVITY_DUPLICATED", "ACTIVITY", copy.getId(), Map.of("sourceActivityId", activityId,
                 "sourceVersion", latest.getVersionNumber(), "questions", items.size(), "atNewerVersion", newer));
         return activity(accountId, copy.getId());
@@ -603,6 +603,11 @@ public class StudioService {
         media.requireAttachable(request.audioAssetId(), AssetType.AUDIO, owner, onDraft);
         activityService.setIntroduction(activityVersionId, request.text(), request.imageAssetId(), request.imageDescription(),
                 request.audioAssetId());
+        if (request.khmer() != null) {
+            activityTranslations.set(activityVersionId, "introduction", request.khmer().text());
+            activityTranslations.set(activityVersionId, "introductionImageDescription",
+                    request.imageAssetId() == null ? null : request.khmer().imageDescription());
+        }
         return activity(accountId, version.getActivityId());
     }
 
@@ -612,6 +617,10 @@ public class StudioService {
         guard.requireActivityWrite(accountId, version.getActivityId());
         activityService.reviseDraft(activityVersionId, blankToNull(request.instructions()), request.difficultyLevel(),
                 request.estimatedDurationSeconds());
+        if (request.khmer() != null) {
+            activityTranslations.set(activityVersionId, "title", request.khmer().title());
+            activityTranslations.set(activityVersionId, "instructions", request.khmer().instructions());
+        }
         return activity(accountId, version.getActivityId());
     }
 
@@ -1125,6 +1134,12 @@ public class StudioService {
         labels.values().removeIf(label -> label == null || label.isBlank());
         translations.write(draftId, new com.platform.content.service.QuestionTranslations.Khmer(khmer.prompt(), khmer.hint(),
                 khmer.explanation(), khmer.promptImageDescription(), labels));
+    }
+
+    private ActivityKhmerDetail activityKhmer(Activity activity, ActivityVersion version) {
+        com.platform.content.service.ActivityTranslations.Khmer khmer = activityTranslations.of(version.getId());
+        return new ActivityKhmerDetail(khmer.title(), khmer.instructions(), khmer.introduction(), khmer.introductionImageDescription(),
+                com.platform.content.service.ActivityTranslations.complete(activity, version, khmer));
     }
 
     private KhmerDetail khmerDetail(QuestionType type, QuestionVersion version, List<QuestionOption> options) {

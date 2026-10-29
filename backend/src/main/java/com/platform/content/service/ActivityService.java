@@ -45,10 +45,13 @@ public class ActivityService {
     private final QuestionRepository questionRepository;
     private final ContentOwnership contentOwnership;
 
+    private final ActivityTranslations translations;
+
     public ActivityService(ActivityRepository activityRepository, ActivityVersionRepository activityVersionRepository,
                             ActivityVersionSkillRepository versionSkillRepository, SkillRepository skillRepository, ActivityItemRepository activityItemRepository, QuestionVersionRepository questionVersionRepository,
                             ContentValidator contentValidator, QuestionRepository questionRepository,
-                            ContentOwnership contentOwnership) {
+                            ContentOwnership contentOwnership, ActivityTranslations translations) {
+        this.translations = translations;
         this.contentValidator = contentValidator;
         this.questionRepository = questionRepository;
         this.contentOwnership = contentOwnership;
@@ -275,6 +278,8 @@ public class ActivityService {
                 activityItemRepository.save(ActivityItem.create(draft.getId(), current.get().getId(), order++, item.getPoints()));
             }
         }
+        // Its Khmer comes along (LOCALIZATION.md).
+        translations.copy(source.getId(), draft.getId());
         return draft;
     }
 

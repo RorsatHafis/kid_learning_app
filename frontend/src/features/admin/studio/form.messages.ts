@@ -6,6 +6,14 @@ export const formMessages = defineMessages(
   {
     prompt: "Question the child sees",
     writingIn: "Writing in",
+    introKhmerNone: "No Khmer for the introduction yet.",
+    introKhmerPartly: (written: number, needed: number) => `The introduction's Khmer: ${written} of ${needed} written.`,
+    introKhmerComplete:
+      "The introduction is written in Khmer. Children reading Khmer see it once the activity's name and instructions (More settings) are in Khmer too.",
+    activityKhmerNone: "No Khmer yet: children reading Khmer see this activity's name and words in English.",
+    activityKhmerPartly: (written: number, needed: number) =>
+      `Khmer: ${written} of ${needed} written. Until all are, children reading Khmer see them in English.`,
+    activityKhmerComplete: "Khmer complete: children reading Khmer see this activity's name and words in Khmer.",
     inKhmer: (field: string) => `${field} - in Khmer`,
     englishIs: "English:",
     khmerNone: "No Khmer yet: children reading Khmer get this question in English. Choose ខ្មែរ to write it.",
@@ -75,6 +83,14 @@ export const formMessages = defineMessages(
   {
     prompt: "សំណួរដែលកុមារឃើញ",
     writingIn: "កំពុងសរសេរជា",
+    introKhmerNone: "មិនទាន់មានភាសាខ្មែរសម្រាប់សេចក្ដីផ្ដើមនៅឡើយទេ។",
+    introKhmerPartly: (written: number, needed: number) => `ភាសាខ្មែររបស់សេចក្ដីផ្ដើម៖ បានសរសេរ ${written} ក្នុងចំណោម ${needed}។`,
+    introKhmerComplete:
+      "សេចក្ដីផ្ដើមត្រូវបានសរសេរជាភាសាខ្មែរ។ កុមារដែលអានភាសាខ្មែរ ឃើញវា នៅពេលឈ្មោះ និងការណែនាំរបស់សកម្មភាព (ការកំណត់បន្ថែម) ជាភាសាខ្មែរដែរ។",
+    activityKhmerNone: "មិនទាន់មានភាសាខ្មែរ៖ កុមារដែលអានភាសាខ្មែរ ឃើញឈ្មោះ និងពាក្យរបស់សកម្មភាពនេះជាភាសាអង់គ្លេស។",
+    activityKhmerPartly: (written: number, needed: number) =>
+      `ភាសាខ្មែរ៖ បានសរសេរ ${written} ក្នុងចំណោម ${needed}។ រហូតដល់គ្រប់ទាំងអស់ កុមារដែលអានភាសាខ្មែរ ឃើញវាជាភាសាអង់គ្លេស។`,
+    activityKhmerComplete: "ភាសាខ្មែរពេញលេញ៖ កុមារដែលអានភាសាខ្មែរ ឃើញឈ្មោះ និងពាក្យរបស់សកម្មភាពនេះជាភាសាខ្មែរ។",
     inKhmer: (field: string) => `${field} - ជាភាសាខ្មែរ`,
     englishIs: "ភាសាអង់គ្លេស៖",
     khmerNone: "មិនទាន់មានភាសាខ្មែរ៖ កុមារដែលអានភាសាខ្មែរ ទទួលបានសំណួរនេះជាភាសាអង់គ្លេស។ ជ្រើស ខ្មែរ ដើម្បីសរសេរវា។",

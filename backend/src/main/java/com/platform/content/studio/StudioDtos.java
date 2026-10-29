@@ -127,7 +127,24 @@ public final class StudioDtos {
     /** {@code introduction}: what the version teaches before it asks; null when it has none. */
     public record ActivityVersionDetail(UUID id, int versionNumber, PublicationStatus status, Instant publishedAt,
                                         String instructions, Integer difficultyLevel, Integer estimatedDurationSeconds,
-                                        List<ItemDetail> items, List<UUID> skillIds, IntroductionDetail introduction) {
+                                        List<ItemDetail> items, List<UUID> skillIds, IntroductionDetail introduction,
+                                        ActivityKhmerDetail khmer) {
+    }
+
+    /**
+     * An activity version's Khmer as written so far (LOCALIZATION.md): any field may be null. {@code complete}: a child
+     * reading Khmer gets the activity's own words (title, instructions, introduction) in Khmer.
+     */
+    public record ActivityKhmerDetail(String title, String instructions, String introduction, String introductionImageDescription,
+                                      boolean complete) {
+    }
+
+    /** The Khmer of an activity's name and instructions, saved with the draft's details; blank: not translated. */
+    public record ActivityKhmerDraft(@Size(max = 200) String title, @Size(max = 2000) String instructions) {
+    }
+
+    /** The Khmer of an activity's introduction, saved with it; blank: not translated. */
+    public record IntroductionKhmerDraft(@Size(max = 1200) String text, @Size(max = 300) String imageDescription) {
     }
 
     /** An activity's introduction: text, a picture with its description, a recording. */
@@ -137,7 +154,10 @@ public final class StudioDtos {
 
     /** Sets a draft's introduction; every field optional, blank text is none. */
     public record IntroductionRequest(@Size(max = 1200) String text, UUID imageAssetId, @Size(max = 300) String imageDescription,
-                                      UUID audioAssetId) {
+                                      UUID audioAssetId, @jakarta.validation.Valid IntroductionKhmerDraft khmer) {
+        public IntroductionRequest(String text, UUID imageAssetId, String imageDescription, UUID audioAssetId) {
+            this(text, imageAssetId, imageDescription, audioAssetId, null);
+        }
     }
 
     public record ActivityDetail(UUID id, String title, String activityType, UUID lessonId, UUID subjectId,
@@ -153,7 +173,11 @@ public final class StudioDtos {
 
     public record ReviseActivityDraftRequest(@Size(max = 2000) String instructions,
                                              @Min(1) @Max(10) Integer difficultyLevel,
-                                             @Positive @Max(3600) Integer estimatedDurationSeconds) {
+                                             @Positive @Max(3600) Integer estimatedDurationSeconds,
+                                             @jakarta.validation.Valid ActivityKhmerDraft khmer) {
+        public ReviseActivityDraftRequest(String instructions, Integer difficultyLevel, Integer estimatedDurationSeconds) {
+            this(instructions, difficultyLevel, estimatedDurationSeconds, null);
+        }
     }
 
     public record ItemRequest(@NotNull UUID questionVersionId, @DecimalMin("0.01") BigDecimal points) {

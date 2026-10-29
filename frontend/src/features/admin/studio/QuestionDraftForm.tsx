@@ -9,7 +9,7 @@ import { DIFFICULTIES } from "./studioLogic";
 import { MediaSlot } from "./MediaSlot";
 import { useMessages } from "@/i18n/catalog";
 import { formMessages } from "./form.messages";
-import { cn } from "@/lib/utils/cn";
+import { ContentLanguageSwitch, Translated, type ContentLanguage } from "./BilingualFields";
 
 const MAX_OPTIONS = 10;
 const MAX_PAIRS = 6; // content/service/QuestionCompleteness.MAX_PAIRS
@@ -266,8 +266,16 @@ export function QuestionDraftForm({
         language={km ? "km" : "en"}
         onChange={setLanguage}
         translatable={translatable}
-        written={khmerCounts.written}
-        needed={khmerCounts.needed}
+        warn={translatable && khmerCounts.written > 0 && khmerCounts.written < khmerCounts.needed}
+        status={
+          !translatable
+            ? m.khmerNotForType
+            : khmerCounts.needed > 0 && khmerCounts.written >= khmerCounts.needed
+              ? m.khmerComplete
+              : khmerCounts.written === 0
+                ? m.khmerNone
+                : m.khmerPartly(khmerCounts.written, khmerCounts.needed)
+        }
       />
       {km ? (
         <Translated english={prompt}>
@@ -735,73 +743,5 @@ export function QuestionDraftForm({
         {busy ? m.saving : submitLabel}
       </Button>
     </form>
-  );
-}
-
-type ContentLanguage = "en" | "km";
-
-/**
- * Which language of the question is being written - English (always needed) or Khmer (optional; a child reading
- * Khmer gets the question in Khmer once its Khmer is complete). Independent of the interface's language.
- */
-function ContentLanguageSwitch({
-  language,
-  onChange,
-  translatable,
-  written,
-  needed,
-}: {
-  language: ContentLanguage;
-  onChange: (language: ContentLanguage) => void;
-  translatable: boolean;
-  written: number;
-  needed: number;
-}) {
-  const m = useMessages(formMessages);
-  const complete = needed > 0 && written >= needed;
-  return (
-    <div className="flex flex-col gap-2 rounded-[12px] bg-paper px-3 py-2.5 ring-1 ring-inset ring-line">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span id="content-language" className="text-sm font-semibold text-ink">
-          {m.writingIn}
-        </span>
-        <div role="group" aria-labelledby="content-language" className="flex gap-1 rounded-[10px] bg-white p-1 ring-1 ring-line">
-          {(["en", "km"] as const).map((l) => (
-            <button
-              key={l}
-              type="button"
-              lang={l}
-              aria-pressed={language === l}
-              disabled={l === "km" && !translatable}
-              onClick={() => onChange(l)}
-              className={cn(
-                "min-h-9 rounded-[8px] px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tonle-600 disabled:opacity-50",
-                language === l ? "bg-tonle-800 text-white" : "text-ink-soft hover:text-ink",
-              )}
-            >
-              {l === "en" ? "English" : "ខ្មែរ"}
-            </button>
-          ))}
-        </div>
-      </div>
-      <p className={cn("text-xs", translatable && !complete && written > 0 ? "font-semibold text-light-deep" : "text-ink-soft")}>
-        {!translatable ? m.khmerNotForType : complete ? m.khmerComplete : written === 0 ? m.khmerNone : m.khmerPartly(written, needed)}
-      </p>
-    </div>
-  );
-}
-
-/** A Khmer field with the English it translates shown under it, so both versions can be checked side by side. */
-function Translated({ english, children }: { english: string; children: React.ReactNode }) {
-  const m = useMessages(formMessages);
-  return (
-    <div className="flex flex-col gap-1">
-      {children}
-      {english.trim() && (
-        <p className="text-xs text-ink-soft [overflow-wrap:anywhere]">
-          <span className="font-semibold">{m.englishIs}</span> {english}
-        </p>
-      )}
-    </div>
   );
 }

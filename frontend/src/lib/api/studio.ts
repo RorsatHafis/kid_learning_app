@@ -230,6 +230,14 @@ export interface ActivityVersionDetail extends VersionSummary {
   skillIds: string[];
   /** What the version teaches before it asks; null when it has none. */
   introduction: ActivityIntroduction | null;
+  /** Its Khmer (LOCALIZATION.md): any field may be null; `complete`: a child reading Khmer gets the activity's words in Khmer. */
+  khmer?: {
+    title: string | null;
+    instructions: string | null;
+    introduction: string | null;
+    introductionImageDescription: string | null;
+    complete: boolean;
+  };
 }
 
 /** Sets a draft's introduction; every field optional. */
@@ -238,6 +246,8 @@ export interface IntroductionInput {
   imageAssetId: string | null;
   imageDescription: string | null;
   audioAssetId: string | null;
+  /** Its Khmer, saved with it; absent: the Khmer is left as it is. */
+  khmer?: { text: string | null; imageDescription: string | null };
 }
 
 export interface ActivityDetail {
@@ -651,7 +661,13 @@ export const studioApi = {
     apiClient.put<ActivityDetail>(`${S}/activity-versions/${versionId}/introduction`, body),
   reviseActivityDraft: (
     versionId: string,
-    body: { instructions: string | null; difficultyLevel: number | null; estimatedDurationSeconds: number | null },
+    body: {
+      instructions: string | null;
+      difficultyLevel: number | null;
+      estimatedDurationSeconds: number | null;
+      /** The Khmer of the activity's name and instructions; absent: left as it is. */
+      khmer?: { title: string | null; instructions: string | null };
+    },
   ) => apiClient.put<ActivityDetail>(`${S}/activity-versions/${versionId}`, body),
   replaceActivityItems: (versionId: string, items: { questionVersionId: string }[]) =>
     apiClient.put<ActivityDetail>(`${S}/activity-versions/${versionId}/items`, { items }),

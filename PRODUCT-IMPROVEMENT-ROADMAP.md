@@ -1953,3 +1953,17 @@ Dependencies:
     **Browser verified** at 1280 and 360 px: written in English, switched, written in Khmer, saved, reloaded - both
     back in their fields; the preview as a Khmer reader in Khmer with `lang="km"`; axe clean; no overflow; no API
     error. Not browser verified: a child's real Khmer session (covered by the integration test).
+- 2026-10-29: **Content in two languages, slice 2 - activities.** An activity version's name, instructions,
+  "Teach it first" text and its picture's description in Khmer (`ActivityTranslations`, `ACTIVITY_VERSION` rows - no
+  migration), written by the two saves the Studio already has (More settings: name and instructions; Teach it first:
+  text and description), carried to the next version (a copy keeps all but the name, which is new). A child reading
+  Khmer gets the activity's own words in Khmer when all of them are translated; the name on the child's path, home
+  and shelf follows the same rule (`LearningJourneyService`). Studio: the shared `ContentLanguageSwitch` /
+  `Translated` (`BilingualFields.tsx`, used by questions too) on both forms, with honest status lines (the
+  introduction's says children see it once the name and instructions are in Khmer too). **Tested**:
+  `BilingualQuestionIntegrationTests` (activity Khmer saved by both saves without either clearing the other, served
+  in Khmer and English, the path's step name in both, a new version keeps it) and the learning / parent / studio /
+  lesson-sharing suites - 44, 0 failed; backend unit 200/200; `activityKhmer.test.tsx`; frontend 420 (one protected
+  `media.test.tsx` case timed out under the full run's load and passes alone - known). **Browser verified** at 768 px:
+  introduction, name and instructions written in both languages, saved, reloaded - all back; axe clean; no overflow;
+  no API error.
