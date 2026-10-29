@@ -22,7 +22,7 @@ import { ChildPreview } from "./ChildPreview";
 import { QuestionDraftForm } from "./QuestionDraftForm";
 import { draftValuesOf } from "./draftValues";
 import { PublishControl } from "./Review";
-import { AUTHORABLE_TYPES, errorText, issueText, reportFromError } from "./studioLogic";
+import { AUTHORABLE_TYPES, errorText, issueText, reportFromError, useStudio } from "./studioLogic";
 import { IconButton, Panel } from "./shared";
 import { useMessages } from "@/i18n/catalog";
 import { builderMessages } from "./builder.messages";
@@ -62,6 +62,8 @@ export function ActivityBuilder({
   const [adding, setAdding] = useState<"closed" | "picking" | QuestionType>("closed");
   const [editing, setEditing] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
+  // The introduction is saved on its own: publishing with it unsaved would leave it out of what children get.
+  const [introUnsaved, setIntroUnsaved] = useState(false);
   const b = useMessages(builderMessages);
 
   async function run(action: () => Promise<ActivityDetail>, success?: string) {
@@ -104,6 +106,7 @@ export function ActivityBuilder({
               onChange(detail);
               setRevision((r) => r + 1);
             }}
+            onDirtyChange={setIntroUnsaved}
           />
           <section aria-labelledby="build-questions" className="flex flex-col gap-4 rounded-[20px] bg-white p-5 shadow-card sm:p-6">
             <StepTitle id="build-questions" step={1} title={b.steps.write} detail={items.length > 0 ? b.questionsTitle(items.length) : undefined} />
@@ -193,7 +196,13 @@ export function ActivityBuilder({
             items={items}
             revision={revision}
             busy={busy}
-            onPublish={() => run(() => studioApi.publishActivityWithQuestions(latest.id), b.published)}
+            onPublish={async () => {
+              if (introUnsaved) {
+                announce({ tone: "error", text: b.introUnsaved });
+                return false;
+              }
+              return run(() => studioApi.publishActivityWithQuestions(latest.id), b.published);
+            }}
             onPublished={() => run(() => studioApi.activity(detail.id), b.published)}
           />
           <TryIt versionId={latest.id} revision={revision} />
@@ -457,6 +466,8 @@ function Reuse({ subjectId, taken, busy, onAdd }: { subjectId: string; taken: st
     [subjectId, settled, open],
   );
   const choosable = (questions.data?.items ?? []).filter((q: QuestionSummary) => q.publishedVersionId && !taken.includes(q.publishedVersionId));
+  const { catalog } = useStudio();
+  const skillName = (id: string) => catalog.skills.find((s) => s.id === id)?.name;
   return (
     <details className="rounded-[14px] bg-paper/60 ring-1 ring-line" onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-tonle-800">{b.reuse}</summary>
@@ -476,18 +487,27 @@ function Reuse({ subjectId, taken, busy, onAdd }: { subjectId: string; taken: st
         <ul className="flex max-h-60 flex-col gap-1 overflow-y-auto">
           {choosable.map((q) => {
             const Icon = KIND_PICTURE[q.questionType];
+            // What is added is the published version, so its wording is what's shown (a newer draft may differ).
+            const prompt = q.publishedPrompt ?? q.latestPrompt ?? "";
+            const skills = q.skillIds.map(skillName).filter(Boolean).join(" · ");
             return (
               <li key={q.id}>
                 <button
                   type="button"
                   disabled={busy}
-                  aria-label={e.addQuestion(q.latestPrompt ?? "", b.types[q.questionType].name)}
+                  aria-label={e.addQuestion(prompt, b.types[q.questionType].name)}
                   onClick={() => onAdd(q.publishedVersionId!)}
-                  className="flex w-full items-center gap-2 rounded-[10px] px-2 py-2 text-left text-sm hover:bg-white disabled:opacity-50"
+                  className="flex w-full items-start gap-2 rounded-[10px] px-2 py-2 text-left text-sm hover:bg-white disabled:opacity-50"
                 >
-                  <Plus size={14} className="shrink-0 text-tonle-700" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate text-ink">{q.latestPrompt}</span>
-                  <Icon size={14} className="shrink-0 text-ink-soft" aria-label={b.types[q.questionType].name} />
+                  <Plus size={14} className="mt-0.5 shrink-0 text-tonle-700" aria-hidden />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="line-clamp-2 text-ink [overflow-wrap:anywhere]">{prompt}</span>
+                    <span className="text-xs text-ink-soft">
+                      {b.types[q.questionType].name}
+                      {skills && ` · ${skills}`}
+                    </span>
+                  </span>
+                  <Icon size={14} className="mt-0.5 shrink-0 text-ink-soft" aria-hidden />
                 </button>
               </li>
             );

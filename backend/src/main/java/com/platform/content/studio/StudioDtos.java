@@ -194,8 +194,13 @@ public final class StudioDtos {
                                         String hint, String explanation) {
     }
 
+    /**
+     * {@code publishedPrompt}: the published version's own wording - what a child is given when the question is reused
+     * (the latest draft may already say something else); null without a published version.
+     */
     public record QuestionSummary(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,
-                                  String latestPrompt, UUID publishedVersionId, List<VersionSummary> versions, boolean archived) {
+                                  String latestPrompt, UUID publishedVersionId, List<VersionSummary> versions, boolean archived,
+                                  String publishedPrompt) {
     }
 
     /** The question bank's filters; every one is optional. {@code live}: has a published version; {@code archived}: the archived ones instead. */

@@ -737,11 +737,12 @@ public class StudioService {
         return ids.stream().map(byId::get).filter(Objects::nonNull).map(question -> {
             List<QuestionVersion> versions = versionsOf.getOrDefault(question.getId(), List.of());
             QuestionVersion latest = versions.isEmpty() ? null : versions.get(versions.size() - 1);
-            UUID publishedId = versions.stream().filter(v -> v.getStatus() == PublicationStatus.PUBLISHED)
-                    .map(QuestionVersion::getId).findFirst().orElse(null);
+            QuestionVersion published = versions.stream().filter(v -> v.getStatus() == PublicationStatus.PUBLISHED)
+                    .findFirst().orElse(null);
             return new QuestionSummary(question.getId(), question.getSubjectId(), question.getQuestionType(),
-                    skillsOf.getOrDefault(question.getId(), List.of()), latest == null ? null : latest.getPrompt(), publishedId,
-                    versions.stream().map(VersionSummary::of).toList(), question.getStatus() == CatalogStatus.ARCHIVED);
+                    skillsOf.getOrDefault(question.getId(), List.of()), latest == null ? null : latest.getPrompt(),
+                    published == null ? null : published.getId(), versions.stream().map(VersionSummary::of).toList(),
+                    question.getStatus() == CatalogStatus.ARCHIVED, published == null ? null : published.getPrompt());
         }).toList();
     }
 

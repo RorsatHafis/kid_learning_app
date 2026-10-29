@@ -19,6 +19,7 @@ export const introductionMessages = defineMessages(
     save: "Save introduction",
     saving: "Saving…",
     saved: "Introduction saved with this draft.",
+    notSaved: "Not saved yet.",
   },
   {
     title: "បង្រៀនជាមុនសិន",
@@ -36,5 +37,6 @@ export const introductionMessages = defineMessages(
     save: "រក្សាទុកសេចក្ដីផ្ដើម",
     saving: "កំពុងរក្សាទុក…",
     saved: "បានរក្សាទុកសេចក្ដីផ្ដើមជាមួយសេចក្ដីព្រាងនេះ។",
+    notSaved: "មិនទាន់បានរក្សាទុកទេ។",
   },
 );

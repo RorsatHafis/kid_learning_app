@@ -330,3 +330,4 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - 2026-10-29 (writing guide): `writing.messages.ts` title and lead (no age range: the audience is 3-12, D-09).
 - 2026-10-29 (admin school group): `admin/messages.ts` schools.organizationTitle, organizationLead, organizationTotals, organizationThisBranch, organizationBranch, organizationLoading.
 - 2026-10-29 (unsaved edits): `editor.messages.ts` saveBeforeCopy.
+- 2026-10-29 (builder): `builder.messages.ts` introUnsaved; `introduction.messages.ts` notSaved.

@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { BookOpen } from "lucide-react";
 import { studioApi, type ActivityDetail, type ActivityVersionDetail } from "@/lib/api/studio";
 import type { MediaRef } from "@/lib/api/types";
@@ -17,9 +17,12 @@ import { introductionMessages } from "./introduction.messages";
 export function IntroductionEditor({
   version,
   onSaved,
+  onDirtyChange,
 }: {
   version: ActivityVersionDetail;
   onSaved: (detail: ActivityDetail) => void;
+  /** Told whether what is on screen differs from the saved introduction (publishing would leave it out). */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const m = useMessages(introductionMessages);
   const intro = version.introduction;
@@ -30,6 +33,27 @@ export function IntroductionEditor({
   const [audio, setAudio] = useState<MediaRef | null>(intro?.audio ?? null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  // Unsaved: what saving would store, against the saved introduction (spaces around the words don't count).
+  const onScreen = JSON.stringify([text.trim(), image?.id ?? null, image ? description.trim() : "", audio?.id ?? null]);
+  const saved = JSON.stringify([
+    (intro?.text ?? "").trim(),
+    intro?.image?.id ?? null,
+    intro?.image ? (intro?.imageDescription ?? "").trim() : "",
+    intro?.audio?.id ?? null,
+  ]);
+  const dirty = onScreen !== saved;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -116,9 +140,12 @@ export function IntroductionEditor({
             {message.text}
           </p>
         )}
-        <Button type="submit" variant="outline" disabled={busy} className="w-fit">
-          {busy ? m.saving : m.save}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" variant={dirty ? "solid" : "outline"} disabled={busy} className="w-fit">
+            {busy ? m.saving : m.save}
+          </Button>
+          {dirty && !busy && <span className="text-sm font-semibold text-light-deep">{m.notSaved}</span>}
+        </div>
       </form>
     </section>
   );

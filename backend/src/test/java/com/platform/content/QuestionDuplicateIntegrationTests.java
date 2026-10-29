@@ -101,6 +101,22 @@ class QuestionDuplicateIntegrationTests {
         assertThat(fromPublished.get("versions").get(0).get("status").asString()).isEqualTo("DRAFT");
         assertThat(fromPublished.get("versions").get(0).get("prompt").asString()).isEqualTo("Which is bigger?");
 
+        // The bank shows a reused question's published wording, which a newer draft doesn't change.
+        String newer = json(post("/api/v1/studio/questions/" + originalId + "/draft", "", teacher), 200).get("versions").get(1).get("id").asString();
+        json(put("/api/v1/studio/question-versions/" + newer, "{\"prompt\":\"Which is the bigger number?\",\"difficultyLevel\":2,"
+                + "\"options\":[{\"label\":\"7\",\"correct\":true},{\"label\":\"4\",\"correct\":false}]}", teacher), 200);
+        JsonNode bank = json(get("/api/v1/studio/questions?subjectId=" + subjectId + "&live=true", teacher), 200);
+        JsonNode listed = null;
+        for (JsonNode q : bank.get("items")) {
+            if (q.get("id").asString().equals(originalId)) {
+                listed = q;
+            }
+        }
+        assertThat(listed).isNotNull();
+        assertThat(listed.get("latestPrompt").asString()).isEqualTo("Which is the bigger number?");
+        assertThat(listed.get("publishedPrompt").asString()).isEqualTo("Which is bigger?");
+        assertThat(listed.get("publishedVersionId").asString()).isEqualTo(originalVersion);
+
         // An administrator's copy of a teacher's question stays the teacher's (its media are the teacher's files).
         JsonNode adminCopy = json(post("/api/v1/studio/questions/" + originalId + "/duplicate", "", admin), 201);
         assertThat(jdbc.queryForObject("select owner_account_id from questions where id = ?::uuid", UUID.class,

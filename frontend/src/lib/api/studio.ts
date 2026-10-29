@@ -324,6 +324,8 @@ export interface QuestionSummary {
   publishedVersionId: string | null;
   versions: VersionSummary[];
   archived?: boolean;
+  /** The published version's own wording (what reusing the question gives a child); null without one. */
+  publishedPrompt?: string | null;
 }
 
 /** The question bank's filters; `live`: only questions with a published version. */

@@ -63,6 +63,7 @@ export const builderMessages = defineMessages(
     nothingPublished: "Nothing was published - fix the things listed and try again.",
     reviewRequired:
       "Content needs a reviewer's approval here. Send each new question for review from its page, then this activity.",
+    introUnsaved: "Save \"Teach it first\" before publishing: what you wrote there isn't saved yet, so children wouldn't see it.",
     newActivity: "New activity",
     newActivityLead: "Name it and choose what it practises - then write its questions.",
     activityName: "Activity name",
@@ -150,6 +151,7 @@ export const builderMessages = defineMessages(
     published: "បានផ្សាយ។ ឥឡូវកុមារអាចទទួលសកម្មភាពនេះបានហើយ។",
     nothingPublished: "មិនមានអ្វីត្រូវបានផ្សាយទេ - សូមកែចំណុចដែលបានរាយ ហើយសាកល្បងម្ដងទៀត។",
     reviewRequired: "មាតិកាត្រូវការការអនុម័តពីអ្នកពិនិត្យនៅទីនេះ។ សូមផ្ញើសំណួរថ្មីនីមួយៗដើម្បីពិនិត្យពីទំព័ររបស់វា បន្ទាប់មកសកម្មភាពនេះ។",
+    introUnsaved: "សូមរក្សាទុក «បង្រៀនជាមុនសិន» មុនពេលផ្សាយ៖ អ្វីដែលអ្នកបានសរសេរនៅទីនោះ មិនទាន់ត្រូវបានរក្សាទុកទេ ដូច្នេះកុមារនឹងមិនឃើញវាទេ។",
     newActivity: "សកម្មភាពថ្មី",
     newActivityLead: "ដាក់ឈ្មោះ ហើយជ្រើសរើសអ្វីដែលវាហាត់ - បន្ទាប់មកសរសេរសំណួររបស់វា។",
     activityName: "ឈ្មោះសកម្មភាព",

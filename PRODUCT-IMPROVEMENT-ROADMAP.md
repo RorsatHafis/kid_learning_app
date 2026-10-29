@@ -1923,3 +1923,13 @@ Dependencies:
   disabled until children are chosen, "Assigned to 2 children.", axe clean). **Tested**: `unsavedDraft.test.tsx` 2,
   studio and child Vitest 101. **Browser verified** at 1280 px (refusal shown, no navigation; reload asks; after
   saving, the copy is made).
+- 2026-10-29: **Studio authoring: reuse shows what is reused; "Teach it first" can't be lost at publish.** The builder's
+  "Use a question you already published" listed each question's *latest* wording but added its *published* version, so
+  a newer draft's text could be shown for a question children would get in its older form; the question bank now
+  carries `publishedPrompt` and the picker shows it, with the question's type and skills, over two lines instead of
+  one truncated line. The activity's introduction saves on its own: typed but unsaved, it now says "Not saved yet.",
+  its button turns solid, reloading asks first, and publishing is refused with "Save \"Teach it first\" before
+  publishing..." until it is saved. **Tested**: `QuestionDuplicateIntegrationTests` (published vs latest wording with
+  a newer draft), `ContentStudioIntegrationTests` 9; `introUnsaved.test.tsx`; admin Vitest 80. **Browser verified** at
+  768 px (refused with the unsaved introduction, then saved and published). Not done: the activity's "More settings"
+  form has the same save-separately shape (recorded).
