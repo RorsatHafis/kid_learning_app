@@ -167,9 +167,13 @@ public class SubscriptionPlan extends AuditableEntity {
 
     /** Whether someone new can take it up at {@code at}: active, and inside its offer dates. */
     public boolean offeredAt(Instant at) {
-        return status == PlanStatus.ACTIVE
-                && (availableFrom == null || !availableFrom.isAfter(at))
-                && (availableUntil == null || availableUntil.isAfter(at));
+        return status == PlanStatus.ACTIVE && withinOfferDates(this, at);
+    }
+
+    /** The offer-date half of {@link #offeredAt}, read through the plan's getters (for callers that check status themselves). */
+    public static boolean withinOfferDates(SubscriptionPlan plan, Instant at) {
+        return (plan.getAvailableFrom() == null || !plan.getAvailableFrom().isAfter(at))
+                && (plan.getAvailableUntil() == null || plan.getAvailableUntil().isAfter(at));
     }
 
     public void makeDefault() {

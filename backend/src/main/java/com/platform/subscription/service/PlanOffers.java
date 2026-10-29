@@ -50,7 +50,8 @@ public class PlanOffers {
         }
         List<SubscriptionPlan> choosable = plans.findAllByOrderByCreatedAtAsc().stream()
                 .filter(plan -> plan.getAudience() == PlanAudience.FAMILY)
-                .filter(plan -> plan.offeredAt(java.time.Instant.now()) && plan.isSelfService())
+                .filter(plan -> plan.getStatus() == PlanStatus.ACTIVE && plan.isSelfService()
+                        && SubscriptionPlan.withinOfferDates(plan, java.time.Instant.now()))
                 .toList();
         if (choosable.isEmpty()) {
             return List.of();
