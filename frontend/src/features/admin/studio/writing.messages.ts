@@ -7,8 +7,8 @@ import { defineMessages } from "@/i18n/catalog";
 export const writingMessages = defineMessages(
   "features/admin/studio/writing",
   {
-    title: "Writing for young children",
-    lead: "Seven things that help children aged 4 to 9 learn from an activity.",
+    title: "Writing for children",
+    lead: "Seven things that help children learn from an activity - most of all the youngest, who are still learning to read.",
     points: {
       p1: "Teach before asking: a short worked example in \"Teach it first\" (e.g. 2 birds and 1 more make 3).",
       p2: "Show it: a picture of the things to count, and picture choices for children who don't read yet.",
@@ -20,8 +20,8 @@ export const writingMessages = defineMessages(
     },
   },
   {
-    title: "ការសរសេរសម្រាប់កុមារតូចៗ",
-    lead: "ចំណុចប្រាំពីរដែលជួយកុមារអាយុពី 4 ដល់ 9 ឆ្នាំ ឱ្យរៀនពីសកម្មភាពមួយ។",
+    title: "ការសរសេរសម្រាប់កុមារ",
+    lead: "ចំណុចប្រាំពីរដែលជួយកុមារឱ្យរៀនពីសកម្មភាពមួយ - ជាពិសេសកុមារតូចៗ ដែលកំពុងរៀនអាន។",
     points: {
       p1: "បង្រៀនមុនសួរ៖ ឧទាហរណ៍ខ្លីមួយដែលបានដោះស្រាយ ក្នុង \"បង្រៀនជាមុនសិន\" (ឧ. បក្សី 2 និង 1 ទៀត ស្មើ 3)។",
       p2: "បង្ហាញវា៖ រូបភាពនៃវត្ថុដែលត្រូវរាប់ និងជម្រើសជារូបភាព សម្រាប់កុមារដែលមិនទាន់ចេះអាន។",

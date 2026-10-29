@@ -327,3 +327,4 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - 2026-10-29 (school payments): `schoolPlan.messages.ts` paymentsTitle, paymentsNone, paymentsLoading, paymentsAll; `payments.messages.ts` oneSchool, everyPayment.
 - 2026-10-29 (family payments): `plans.messages.ts` family.paymentsTitle, paymentsNone, paymentsLoading, paymentsAll; `payments.messages.ts` oneFamily.
 - 2026-10-29 (mistake help): `child/messages.ts` play.wayToThink; `studio/messages.ts` preview.afterWrong; `form.messages.ts` hintHelp (extended).
+- 2026-10-29 (writing guide): `writing.messages.ts` title and lead (no age range: the audience is 3-12, D-09).
