@@ -31,7 +31,9 @@ export function PaymentsPage() {
   const { params, page, update, setPage } = useUrlFilters();
   const status = (STATUSES as string[]).includes(params.get("status") ?? "") ? (params.get("status") as PaymentStatus) : null;
   const [version, setVersion] = useState(0);
-  const list = useAsync(() => adminPaymentsApi.list(status, page, PAGE_SIZE), [status, page, version]);
+  // ?school=<id> (from a school's page): that school's invoices and payments only.
+  const schoolId = params.get("school");
+  const list = useAsync(() => adminPaymentsApi.list(status, page, PAGE_SIZE, schoolId), [status, page, version, schoolId]);
   const openId = params.get("open");
   const pages = list.data ? Math.max(1, Math.ceil(list.data.total / PAGE_SIZE)) : 1;
   usePageInRange(list.data, setPage);
@@ -42,6 +44,18 @@ export function PaymentsPage() {
       <PageHeader title={m.title} description={m.lead} />
       <div className={cn("grid grid-cols-1 gap-6", openId && "xl:grid-cols-[minmax(0,1fr)_440px]")}>
         <Panel title={status ? m.status[status] : m.all} flush>
+          {schoolId && (
+            <p className="mx-5 mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[12px] bg-paper px-4 py-2.5 text-sm text-ink ring-1 ring-line sm:mx-6">
+              {m.oneSchool}
+              <button
+                type="button"
+                onClick={() => update({ school: undefined, open: undefined })}
+                className="font-semibold text-tonle-700 underline-offset-2 hover:underline"
+              >
+                {m.everyPayment}
+              </button>
+            </p>
+          )}
           <div className="px-5 pb-4 sm:px-6">
             <label className="flex w-fit items-center gap-2 text-sm text-ink">
               <span className="font-semibold">{m.show}</span>

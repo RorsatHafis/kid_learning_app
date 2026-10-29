@@ -412,8 +412,20 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public Page<PaymentOrder> list(UUID adminId, PaymentStatus status, int page, int size) {
 
+        return list(adminId, status, null, page, size);
+
+    }
+
+    /** The same, for one school only when {@code schoolId} is given (its invoices and payments, newest first). */
+    @Transactional(readOnly = true)
+    public Page<PaymentOrder> list(UUID adminId, PaymentStatus status, UUID schoolId, int page, int size) {
+
         requireAdmin(adminId);
         PageRequest request = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        if (schoolId != null) {
+            return status == null ? orders.findBySchoolIdOrderByCreatedAtDescIdDesc(schoolId, request)
+                    : orders.findBySchoolIdAndStatusOrderByCreatedAtDescIdDesc(schoolId, status, request);
+        }
         return status == null ? orders.findAllByOrderByCreatedAtDesc(request) : orders.findByStatusOrderByCreatedAtDesc(status, request);
 
     }

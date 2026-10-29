@@ -39,6 +39,8 @@ public interface PaymentOrderRepository extends JpaRepository<PaymentOrder, UUID
 
     Page<PaymentOrder> findBySchoolIdOrderByCreatedAtDescIdDesc(UUID schoolId, Pageable pageable);
 
+    Page<PaymentOrder> findBySchoolIdAndStatusOrderByCreatedAtDescIdDesc(UUID schoolId, PaymentStatus status, Pageable pageable);
+
     Page<PaymentOrder> findByStatusOrderByCreatedAtDesc(PaymentStatus status, Pageable pageable);
 
     /** M8: another payment this way of paying already settled with this receipt (case and spaces aside). */

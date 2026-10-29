@@ -324,3 +324,4 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - 2026-10-29 (M12 B2): `branches.messages.ts` totals, totalsNote, figures, paidUntil, notPaid, paymentPending, year, noYear.
 - 2026-10-29 (Studio copy, plan history): `editor.messages.ts` duplicate, duplicating, duplicateLabel, copied; `plans.messages.ts` detail.history, historyEmpty; `ServerText.java` "This question has nothing written yet to copy".
 - 2026-10-29 (Studio activity copy): `editor.messages.ts` activityCopyTitle, activityCopyLabel, activityCopyLead, activityCopied, cancelCopy; `ServerText.java` "This activity has nothing written yet to copy", "An activity needs a title".
+- 2026-10-29 (school payments): `schoolPlan.messages.ts` paymentsTitle, paymentsNone, paymentsLoading, paymentsAll; `payments.messages.ts` oneSchool, everyPayment.

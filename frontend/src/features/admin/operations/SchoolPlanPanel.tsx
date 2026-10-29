@@ -1,4 +1,8 @@
+import { Link } from "react-router-dom";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { adminPaymentsApi, orderPriceText } from "@/lib/api/payments";
+import { formatDate } from "@/i18n/format";
+import { adminPaymentMessages } from "./payments.messages";
 import { plansApi, schoolPlansApi, type SchoolPlan } from "@/lib/api/subscriptions";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { useMessages } from "@/i18n/catalog";
@@ -28,7 +32,48 @@ export function SchoolPlanPanel({ schoolId }: { schoolId: string }) {
       {current.error && <ErrorState error={current.error} onRetry={current.refetch} />}
       {plan && <SchoolPlanState plan={plan} />}
       {plan && <SchoolInvoice schoolId={schoolId} plans={plans.data ?? []} />}
+      {plan && <SchoolPayments schoolId={schoolId} />}
     </Panel>
+  );
+}
+
+/** The school's latest invoices and payments, each opening on the Payments page (where it is confirmed or refunded). */
+function SchoolPayments({ schoolId }: { schoolId: string }) {
+  const m = useMessages(adminSchoolPlanMessages);
+  const pm = useMessages(adminPaymentMessages);
+  const latest = useAsync(() => adminPaymentsApi.list(null, 0, 5, schoolId), [schoolId]);
+  const orders = latest.data?.items ?? [];
+  return (
+    <section aria-labelledby="school-payments" className="mt-5 flex flex-col gap-2 border-t border-line pt-4">
+      <h3 id="school-payments" className="text-sm font-semibold text-ink">
+        {m.paymentsTitle}
+      </h3>
+      {latest.isLoading && !latest.data && <LoadingState label={m.paymentsLoading} />}
+      {latest.error && <ErrorState error={latest.error} onRetry={latest.refetch} />}
+      {latest.data && orders.length === 0 && <p className="text-sm text-ink-soft">{m.paymentsNone}</p>}
+      {orders.length > 0 && (
+        <ul className="flex flex-col divide-y divide-line">
+          {orders.map((order) => (
+            <li key={order.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
+              <Link
+                to={`/admin/payments?school=${schoolId}&open=${order.id}`}
+                className="min-w-0 font-medium text-tonle-700 underline-offset-2 [overflow-wrap:anywhere] hover:underline"
+              >
+                {m.paymentRow(order.planName, order.reference)}
+              </Link>
+              <span className="text-sm text-ink-soft">
+                {orderPriceText(order)} · {pm.status[order.status]} · {formatDate(order.createdAt)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {latest.data && latest.data.total > orders.length && (
+        <Link to={`/admin/payments?school=${schoolId}`} className="w-fit text-sm font-semibold text-tonle-700 underline-offset-2 hover:underline">
+          {m.paymentsAll(latest.data.total)}
+        </Link>
+      )}
+    </section>
   );
 }
 

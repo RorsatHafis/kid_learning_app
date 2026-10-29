@@ -39,6 +39,11 @@ export const adminSchoolPlanMessages = defineMessages(
     provider: "This plan comes from a payment provider; change it there.",
     history: "History",
     noHistory: "No changes yet.",
+    paymentsTitle: "This school's payments",
+    paymentsNone: "No invoice or payment yet.",
+    paymentsLoading: "Loading payments…",
+    paymentsAll: (n: number) => `See all ${n} of this school's payments`,
+    paymentRow: (plan: string, reference: string) => `${plan} · ${reference}`,
   },
   {
     title: "កញ្ចប់",
@@ -77,5 +82,10 @@ export const adminSchoolPlanMessages = defineMessages(
     provider: "កញ្ចប់នេះមកពីអ្នកផ្ដល់សេវាទូទាត់ប្រាក់។ សូមផ្លាស់ប្ដូរវានៅទីនោះ។",
     history: "ប្រវត្តិ",
     noHistory: "មិនទាន់មានការផ្លាស់ប្ដូរទេ។",
+    paymentsTitle: "ការបង់ប្រាក់របស់សាលានេះ",
+    paymentsNone: "មិនទាន់មានវិក្កយបត្រ ឬការបង់ប្រាក់នៅឡើយទេ។",
+    paymentsLoading: "កំពុងផ្ទុកការបង់ប្រាក់…",
+    paymentsAll: (n: number) => `មើលការបង់ប្រាក់ទាំង ${n} របស់សាលានេះ`,
+    paymentRow: (plan: string, reference: string) => `${plan} · ${reference}`,
   },
 );

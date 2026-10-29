@@ -129,8 +129,11 @@ export const adminPaymentsApi = {
     instructionsKm: string | null;
     qrAssetId: string | null;
   }) => apiClient.put<{ current: PaymentInstructions; history: PaymentInstructions[] }>("/admin/payment-instructions", input),
-  list: (status: PaymentStatus | null, page = 0, size = 25) =>
-    apiClient.get<PaymentOrderPage>(`/admin/payments?${status ? `status=${status}&` : ""}page=${page}&size=${size}`),
+  /** Every payment, or one school's when `schoolId` is given; newest first. */
+  list: (status: PaymentStatus | null, page = 0, size = 25, schoolId?: string | null) =>
+    apiClient.get<PaymentOrderPage>(
+      `/admin/payments?${status ? `status=${status}&` : ""}${schoolId ? `schoolId=${encodeURIComponent(schoolId)}&` : ""}page=${page}&size=${size}`,
+    ),
   get: (orderId: string) => apiClient.get<PaymentOrder>(`/admin/payments/${orderId}`),
   confirm: (orderId: string, receiptReference: string, amountReceivedMinor: number, currency: string, note: string | null) =>
     apiClient.post<PaymentOrder>(`/admin/payments/${orderId}/confirm`, { receiptReference, amountReceivedMinor, currency, note }),

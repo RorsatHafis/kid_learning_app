@@ -121,6 +121,30 @@ class OrganizationOverviewIntegrationTests {
         assertThat(afterArchive.get("children").asLong()).isEqualTo(2);
     }
 
+    /** An administrator reads one school's invoices and payments only (the school's admin page lists them). */
+    @Test
+    void anAdministratorListsOneSchoolsPaymentsOnly() throws Exception {
+        User principal = user(PlatformRole.PRINCIPAL);
+        String first = json(post("/api/v1/schools", "{\"name\":\"Payments One\"}", principal), 201).get("id").asString();
+        String second = json(post("/api/v1/schools", "{\"name\":\"Payments Two\"}", principal), 201).get("id").asString();
+        PaidSchools.pay(context, UUID.fromString(first));
+        PaidSchools.pay(context, UUID.fromString(first));
+        PaidSchools.pay(context, UUID.fromString(second));
+        String admin = com.platform.TestAdmin.stepUp(port, user(PlatformRole.ADMIN).token(), PASSWORD);
+        User adminUser = new User(null, null, PlatformRole.ADMIN, admin);
+
+        JsonNode firstOnly = json(get("/api/v1/admin/payments?schoolId=" + first, adminUser), 200);
+        assertThat(firstOnly.get("total").asLong()).isEqualTo(2);
+        firstOnly.get("items").forEach(order -> assertThat(order.get("schoolId").asString()).isEqualTo(first));
+        assertThat(json(get("/api/v1/admin/payments?schoolId=" + second + "&status=SUCCEEDED", adminUser), 200).get("total").asLong())
+                .isEqualTo(1);
+        assertThat(json(get("/api/v1/admin/payments?schoolId=" + second + "&status=PENDING", adminUser), 200).get("total").asLong())
+                .isZero();
+        assertThat(json(get("/api/v1/admin/payments?schoolId=" + UUID.randomUUID(), adminUser), 200).get("total").asLong()).isZero();
+        // Only an administrator lists payments.
+        assertThat(get("/api/v1/admin/payments?schoolId=" + first, principal).statusCode()).isEqualTo(403);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private record User(String id, String email, PlatformRole role, String token) {

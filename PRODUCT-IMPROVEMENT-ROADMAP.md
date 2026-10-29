@@ -1860,3 +1860,15 @@ Dependencies:
   parent refused, audit) - green; clean backend unit suite 200/200 (the earlier 262/263 counts included stale
   integration reports); studio Vitest 54. **Browser verified** as an administrator at 1280 and 360 px (title asked,
   copy opened with the note and a working child preview; no API error; axe clean; no overflow).
+- 2026-10-29: **A school's payments on its admin page** (subscription history per customer): `GET
+  /api/v1/admin/payments?schoolId=` (with or without `status`), "This school's payments" (latest five, each opening on
+  the Payments page filtered to the school, with "See all") and a "Only one school's payments are shown / Show every
+  payment" note there. **Tested**: `OrganizationOverviewIntegrationTests` second scenario (two schools, one's
+  payments only, with status, an unknown school, a principal refused), `PaymentIntegrationTests` 4 - green; unit suite
+  200/200; admin Vitest 22. **Browser verified** at 1280 and 360 px (axe clean, no overflow, no API error).
+  **Khmer browser check** of today's screens at 360 px (the seed accounts switched to Khmer through the API and put
+  back to English afterwards): the owner's branch figures, Plans (subscriptions now, offer dates, history) and the
+  Studio's "Make a copy" - Khmer throughout, no English left, no overflow, axe clean. **Child session, accessibility
+  tree** (768 px): the question is the page heading, the answer box and number pad are labelled, "Check" is disabled
+  until there is an answer, feedback is a status region, focus moves to "Next" - tree-level evidence, not a real
+  screen reader.
