@@ -72,6 +72,7 @@ export const childMessages = defineMessages(
       lanterns: (n: number) => `${n} ${plural(n, "question", "questions")}`,
       letsGo: "Let's go",
       why: "Why",
+      wayToThink: "A way to think about it",
       inThisBook: "In this book",
       kinds: {
         MULTIPLE_CHOICE: "Choose",
@@ -287,6 +288,7 @@ export const childMessages = defineMessages(
       lanterns: (n: number) => `សំណួរ ${n}`,
       letsGo: "តោះទៅ",
       why: "ហេតុអ្វី",
+      wayToThink: "វិធីគិតអំពីវា",
       inThisBook: "ក្នុងសៀវភៅនេះ",
       kinds: {
         MULTIPLE_CHOICE: "ជ្រើសរើស",

@@ -4,6 +4,7 @@ import type { ActivityItem } from "@/lib/api/types";
 import { QuestionView } from "@/features/child/QuestionView";
 import { Explanation } from "@/features/child/Explanation";
 import { useMessages } from "@/i18n/catalog";
+import { childMessages } from "@/features/child/messages";
 import { studioMessages } from "./messages";
 
 /**
@@ -24,6 +25,9 @@ export function ChildPreview({
 }) {
   const [tried, setTried] = useState(false);
   const m = useMessages(studioMessages).preview;
+  const play = useMessages(childMessages).play;
+  // As AnswerVerdict: without an explanation, a wrong answer is followed by the author's hint.
+  const hint = !explanation ? item.hint?.trim() || null : null;
   return (
     <figure className="flex flex-col gap-4 rounded-[20px] bg-[#FFFBF3] p-4 ring-1 ring-[#EADFCB] sm:p-6">
       <figcaption className="flex items-center justify-between gap-2 text-[0.8125rem] font-medium text-ink-soft">
@@ -46,6 +50,14 @@ export function ChildPreview({
               <p className="text-sm font-semibold text-ink">{m.afterAnswer}</p>
               <div className="[zoom:0.7]">
                 <Explanation text={explanation} />
+              </div>
+            </>
+          )}
+          {hint && (
+            <>
+              <p className="text-sm font-semibold text-ink">{m.afterWrong}</p>
+              <div className="[zoom:0.7]">
+                <Explanation text={hint} heading={play.wayToThink} />
               </div>
             </>
           )}

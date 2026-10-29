@@ -326,3 +326,4 @@ at 360 px (and 1280 px for the buddies) - no overflow, no clipped text, no axe v
 - 2026-10-29 (Studio activity copy): `editor.messages.ts` activityCopyTitle, activityCopyLabel, activityCopyLead, activityCopied, cancelCopy; `ServerText.java` "This activity has nothing written yet to copy", "An activity needs a title".
 - 2026-10-29 (school payments): `schoolPlan.messages.ts` paymentsTitle, paymentsNone, paymentsLoading, paymentsAll; `payments.messages.ts` oneSchool, everyPayment.
 - 2026-10-29 (family payments): `plans.messages.ts` family.paymentsTitle, paymentsNone, paymentsLoading, paymentsAll; `payments.messages.ts` oneFamily.
+- 2026-10-29 (mistake help): `child/messages.ts` play.wayToThink; `studio/messages.ts` preview.afterWrong; `form.messages.ts` hintHelp (extended).

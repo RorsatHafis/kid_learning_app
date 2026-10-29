@@ -171,6 +171,7 @@ export const studioMessages = defineMessages(
       questionOf: (n: number, total: number) => `Question ${n} of ${total}`,
       previewOnly: "Preview only — in the app the server checks the answer and records it as evidence.",
       afterAnswer: "After answering, the child also sees:",
+      afterWrong: "After a wrong answer, the child also sees your hint:",
     },
     curricula: {
       title: "Curricula",
@@ -466,6 +467,7 @@ export const studioMessages = defineMessages(
       questionOf: (n: number, total: number) => `សំណួរទី ${n} នៃ ${total}`,
       previewOnly: "គ្រាន់តែជាការមើលជាមុនប៉ុណ្ណោះ — នៅក្នុងកម្មវិធី ម៉ាស៊ីនមេពិនិត្យចម្លើយ ហើយកត់ត្រាវាជាភស្តុតាង។",
       afterAnswer: "ក្រោយពេលឆ្លើយ កុមារក៏ឃើញ៖",
+      afterWrong: "ក្រោយចម្លើយខុស កុមារក៏ឃើញជំនួយរបស់អ្នក៖",
     },
     curricula: {
       title: "កម្មវិធីសិក្សា",

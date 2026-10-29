@@ -1878,3 +1878,20 @@ Dependencies:
   scenario (a real family checkout with the test simulator; that family's payments only, with status; another family
   none; the parent refused) - green; unit suite 200/200; admin Vitest 22; tsc; eslint. Not browser verified (no
   family in the dev data has a payment; the shared list is the school list already verified).
+- 2026-10-29: **Learning from a mistake - the author's hint after a wrong answer.** Traced end to end: an explanation
+  is written in the Studio (with a `NO_EXPLANATION` warning when missing), stored per version, returned only with a
+  recorded answer and shown under "Why"; learner content is served in its authored language only (no translation is
+  read on the learner side - Battle 3, no invented fallback). The developer seed has no explanations or hints
+  (D-19: real curriculum authoring is the owner's), so nothing was written into content. **Changed** (a deliberate
+  refinement of Y41, where the hint was gone after answering): after a **wrong** answer to a question **without an
+  explanation**, the verdict shows the author's hint under "A way to think about it" - a strategy in the educator's
+  own words, which never gives the answer away, so a mistake is met with more than the right answer. An explanation,
+  when written, still takes precedence; a right answer adds no hint. The Studio's hint help and the child-view preview
+  say so ("After a wrong answer, the child also sees your hint"). Retrying before the answer is revealed was **not**
+  added: it changes what counts as evidence (first attempt vs. practice, as D-16 did for hints) - a decision for the
+  owner (recorded as an open learning-design question).
+  - **Tested**: `mistakeHelp.test.tsx` (hint after a wrong answer without explanation, announced in the status; only
+    the explanation when there is one; nothing on a right answer or a blank hint); child, marketing and studio Vitest
+    99 incl. the protected `guidance.test.tsx`. **Browser verified** in the Studio preview at 1280 px (a copy without
+    its explanation shows the hint after a try). Not browser verified in a child's real session: no seed question has
+    a hint; the session renders the same `AnswerVerdict`.

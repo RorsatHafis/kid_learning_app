@@ -34,6 +34,10 @@ export function AnswerVerdict({
 }) {
   const m = useMessages(childMessages).play;
   const q = useMessages(childMessages).question;
+  // A wrong answer on a question its author explained shows why; one without an explanation shows the author's hint
+  // (a way to think it through, which never gives the answer away), so a mistake is met with a strategy rather than
+  // only the right answer. Both are the educator's own words; nothing is made up here.
+  const strategy = !result.correct && !result.explanation ? item.hint?.trim() || null : null;
   return (
     <div
       role="status"
@@ -68,6 +72,7 @@ export function AnswerVerdict({
         </button>
       </div>
       {result.explanation && <Explanation text={result.explanation} />}
+      {strategy && <Explanation text={strategy} heading={m.wayToThink} />}
     </div>
   );
 }
