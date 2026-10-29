@@ -41,7 +41,7 @@ never Bookeyond revenue, and a Bookeyond invoice is never a school fee.
 | Family self-service ask-for-a-plan (an administrator answers) | **Built** | Y11 |
 | Upgrade/downgrade of a family by an administrator (give another plan; starts now) | **Built** | |
 | Customer-facing upgrade path when a limit is reached | **Partial** | The refusal names the limit and the family's account page shows the plan and choices; schools are told to ask the Bookeyond team |
-| Subscription history per customer | **Partial** | The audit log plus the payment ledger; no single timeline view |
+| Subscription history per customer | **Built in parts (2026-10-29)** | A family's and a school's subscription history (audit) on their admin views; a school's invoices and payments on its admin page, linked to the Payments page filtered to that school; each plan's own history on the Plans page. Not one merged timeline |
 | Organization (multi-branch) audience and organization-level subscriptions | **Designed, not built** (§5) | decision SB1 / B1 |
 | Feature and module entitlements (on/off, not just limits) | **Designed, not built** (§4) | decision SB4 |
 | Offer dates (from / until) deciding who new can take a plan up | **Built (slice 2, 2026-10-29)** | V80, `PUT /admin/plans/{id}/availability` (step-up), Plans → "When it is offered" |
@@ -209,7 +209,7 @@ live provider and self-service cancellation exist.
 
 1. **Slice 1 (done, 2026-10-29)**: duplicate as a new version with lineage; subscriptions summary. Admin UI, audit
    (`PLAN_DUPLICATED`), integration and UI tests.
-2. **Slice 2**: offer dates (done 2026-10-29); next, a single subscription timeline per customer (audit + payments).
+2. **Slice 2**: offer dates, plan history, a school's payments on its page (done 2026-10-29); a single merged timeline per customer is optional.
 3. **After SB2**: renewal to the successor version with notice.
 4. **After SB1**: organization-scope plans, coverage, pooled limits, add-ons.
 5. **With the first gated module (SB4)**: feature entitlements.
