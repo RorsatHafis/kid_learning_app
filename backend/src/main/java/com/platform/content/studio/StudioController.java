@@ -273,6 +273,13 @@ public class StudioController {
         return studio.question(accountId, questionId);
     }
 
+    /** A new question starting as a copy of this one (its latest version), as a draft of the same author's. */
+    @PostMapping("/questions/{questionId}/duplicate")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
+    public QuestionDetail duplicateQuestion(@AuthenticationPrincipal UUID accountId, @PathVariable UUID questionId) {
+        return studio.duplicateQuestion(accountId, questionId);
+    }
+
     @PostMapping("/questions/{questionId}/draft")
     public QuestionDetail openQuestionDraft(@AuthenticationPrincipal UUID accountId, @PathVariable UUID questionId) {
         return studio.openQuestionDraft(accountId, questionId);

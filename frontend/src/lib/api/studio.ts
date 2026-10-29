@@ -648,6 +648,8 @@ export const studioApi = {
   createQuestion: (body: QuestionDraftInput & { subjectId: string; questionType: QuestionType; skillIds: string[] }) =>
     apiClient.post<QuestionDetail>(`${S}/questions`, body),
   openQuestionDraft: (id: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/draft`),
+  /** A new question whose first draft copies this one's latest version (the original is untouched). */
+  duplicateQuestion: (id: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/duplicate`),
   tagQuestionSkill: (id: string, skillId: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/skills/${skillId}`),
   untagQuestionSkill: (id: string, skillId: string) =>
     apiClient.delete<QuestionDetail>(`${S}/questions/${id}/skills/${skillId}`),

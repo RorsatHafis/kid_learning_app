@@ -1836,4 +1836,16 @@ Dependencies:
   and 360 px, admin Vitest 22. **Role sweep** (phone 360 and tablet 768, parent / teacher / principal / admin, every
   navigation page plus detail pages and the Studio editors): no overflow, no serious or critical axe violation, no
   API or script error.
-
+- 2026-10-29: **CI green on `9982eef`** (offer dates, organization overview, the PlanOffers fix). **Studio: "Make a
+  copy" of a question** - the way to write a variant ("5 + 4" to "6 + 3") without retyping.
+  `POST /api/v1/studio/questions/{id}/duplicate` (who may edit the question may copy it): a new question whose first
+  draft is the original's latest version - prompt, answer, choices, media, hint, explanation, difficulty, skills and
+  translations (`QuestionService.copyAsDraft`, reused from lesson sharing). The copy belongs to the original's owner,
+  also when an administrator or a principal copies a teacher's question, so its media stay that owner's own files;
+  audited `QUESTION_DUPLICATED`. The editor shows "Make a copy" beside "Manage..." and opens the copy with a note
+  saying what it is.
+  - **Tested**: `QuestionDuplicateIntegrationTests` (everything copied incl. the Khmer prompt, owner, the copy's
+    change leaves the original, a published original copied as a draft, an administrator's copy stays the teacher's,
+    another teacher / a parent / an unknown id refused, audit count), `ServerTextCoverageTests`; backend unit suite 0
+    failures; studio Vitest 54; tsc; eslint. **Browser verified** as a teacher at 1280 and 360 px: copy made, the copy
+    opens with the note, no API error, axe clean, no overflow.

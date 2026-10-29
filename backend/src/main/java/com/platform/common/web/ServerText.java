@@ -387,6 +387,7 @@ public final class ServerText {
             Map.entry("The default plan is always offered, so it can't have offer dates",
                     "កញ្ចប់លំនាំដើមតែងតែត្រូវបានផ្ដល់ជូន ដូច្នេះវាមិនអាចមានកាលបរិច្ឆេទផ្ដល់ជូនបានទេ"),
             Map.entry("The offer has to end after it starts", "ការផ្ដល់ជូនត្រូវតែបញ្ចប់ក្រោយពេលវាចាប់ផ្ដើម"),
+            Map.entry("This question has nothing written yet to copy", "សំណួរនេះមិនទាន់មានអ្វីសរសេរដើម្បីចម្លងនៅឡើយទេ"),
             Map.entry("This plan isn't offered now: today is outside its offer dates",
                     "កញ្ចប់នេះមិនត្រូវបានផ្ដល់ជូនឥឡូវនេះទេ៖ ថ្ងៃនេះនៅក្រៅកាលបរិច្ឆេទផ្ដល់ជូនរបស់វា"),
             Map.entry("The default plan is always offered: remove this plan's offer dates first",

@@ -6,8 +6,8 @@
 import { useEffect, useState } from "react";
 import { WithdrawalPanel } from "./Withdrawal";
 import { PublishControl } from "./Review";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, FilePlus2 } from "lucide-react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Copy, FilePlus2 } from "lucide-react";
 import { studioApi, type QuestionDetail, type ValidationReport } from "@/lib/api/studio";
 import type { ActivityItem } from "@/lib/api/types";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -34,7 +34,8 @@ export function QuestionEditor() {
 
   if (loaded.error) return <ErrorState error={loaded.error} onRetry={loaded.refetch} />;
   if (!detail) return <LoadingState label={m.loadingQuestion} />;
-  return <Editor detail={detail} onChange={setDetail} onReload={loaded.refetch} />;
+  // Keyed: opening another question (a copy just made) starts its editor afresh.
+  return <Editor key={detail.id} detail={detail} onChange={setDetail} onReload={loaded.refetch} />;
 }
 
 function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChange: (d: QuestionDetail) => void; onReload: () => void }) {
@@ -51,6 +52,22 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
   const [message, setMessage] = useState<{ tone: "error" | "ok"; text: string } | null>(null);
   const [skillToAdd, setSkillToAdd] = useState("");
   const m = useMessages(editorMessages).editor;
+  const navigate = useNavigate();
+  // Arriving from "Make a copy": say what the copy is (once, on this question's page).
+  const copiedHere = (useLocation().state as { copiedFrom?: string } | null)?.copiedFrom !== undefined;
+
+  async function duplicate() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const copy = await studioApi.duplicateQuestion(detail.id);
+      navigate(`../${copy.id}`, { relative: "path", state: { copiedFrom: detail.id } });
+    } catch (err) {
+      setMessage({ tone: "error", text: errorText(err) });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +110,10 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
           <h2 className="font-display text-[1.625rem] font-semibold leading-tight text-tonle-950">{latest.prompt}</h2>
           <StatusBadge status={latest.status} />
           {detail.archived && <ArchivedBadge />}
-          <span className="ml-auto">
+          <span className="ml-auto flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={() => void duplicate()} disabled={busy} aria-label={m.duplicateLabel}>
+              <Copy size={15} aria-hidden /> {busy ? m.duplicating : m.duplicate}
+            </Button>
             <ManageButton kind="questions" id={detail.id} name={latest.prompt} archived={detail.archived} renamable={false} onChanged={onReload} />
           </span>
         </div>
@@ -102,6 +122,11 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
         </p>
       </div>
 
+      {copiedHere && !message && (
+        <p role="status" className="rounded-[10px] bg-palm-soft px-4 py-3 text-sm font-medium text-palm-deep">
+          {m.copied}
+        </p>
+      )}
       {message && (
         <p
           role={message.tone === "error" ? "alert" : "status"}

@@ -741,6 +741,34 @@ public class StudioService {
         return question(accountId, question.getId());
     }
 
+    /**
+     * A new question that starts as a copy of one the author may edit: its latest version (draft or published) becomes
+     * the copy's first draft - prompt, answer, choices, media, hint, explanation, difficulty, skills and translations.
+     * The way to make a variant ("5 + 4" to "6 + 3") without retyping. The copy belongs to the original's owner - also
+     * when an administrator or a principal duplicates a teacher's question - so its media stay that owner's own files;
+     * the original is untouched and nothing reaches a child until the copy is published.
+     */
+    @Transactional
+    public QuestionDetail duplicateQuestion(UUID accountId, UUID questionId) {
+        Question source = guard.requireQuestionWrite(accountId, questionId);
+        Account author = guard.requireAuthor(accountId);
+        List<QuestionVersion> versions = questionService.listVersions(questionId);
+        if (versions.isEmpty()) {
+            throw new IllegalStateException("This question has nothing written yet to copy");
+        }
+        QuestionVersion latest = versions.get(versions.size() - 1);
+        Question copy = questionService.createOwnedQuestion(source.getSubjectId(), source.getQuestionType(), source.getOwnerAccountId());
+        QuestionVersion draft = questionService.copyAsDraft(latest, copy.getId(), java.util.function.UnaryOperator.identity());
+        jdbc.update("""
+                INSERT INTO content_localizations (id, content_type, content_id, locale, field_name, localized_text)
+                SELECT gen_random_uuid(), content_type, :to, locale, field_name, localized_text
+                  FROM content_localizations WHERE content_type = 'QUESTION_VERSION' AND content_id = :from
+                """, Map.of("from", latest.getId(), "to", draft.getId()));
+        record(author, "QUESTION_DUPLICATED", "QUESTION", copy.getId(), Map.of("sourceQuestionId", questionId,
+                "sourceVersion", latest.getVersionNumber()));
+        return question(accountId, copy.getId());
+    }
+
     @Transactional
     public QuestionDetail openQuestionDraft(UUID accountId, UUID questionId) {
         guard.requireQuestionWrite(accountId, questionId);

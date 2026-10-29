@@ -63,6 +63,10 @@ export const editorMessages = defineMessages(
       addLesson: "Add lesson",
     },
     editor: {
+      duplicate: "Make a copy",
+      duplicating: "Copying…",
+      duplicateLabel: "Make a copy of this question to change into a new one",
+      copied: "This is a copy: a new draft with the same words, choices, help and skills. Change what you need and publish it when it is ready. The original hasn't changed.",
       loadingQuestion: "Loading the question…",
       loadingActivity: "Loading the activity…",
       notPublished: "Not published: fix the issues listed under Checks.",
@@ -197,6 +201,10 @@ export const editorMessages = defineMessages(
       addLesson: "បន្ថែមមេរៀន",
     },
     editor: {
+      duplicate: "ធ្វើច្បាប់ចម្លង",
+      duplicating: "កំពុងចម្លង…",
+      duplicateLabel: "ធ្វើច្បាប់ចម្លងនៃសំណួរនេះ ដើម្បីប្ដូរវាទៅជាសំណួរថ្មី",
+      copied: "នេះជាច្បាប់ចម្លង៖ សេចក្ដីព្រាងថ្មីដែលមានពាក្យ ជម្រើស ជំនួយ និងជំនាញដូចគ្នា។ សូមប្ដូរអ្វីដែលអ្នកត្រូវការ ហើយផ្សាយវានៅពេលវារួចរាល់។ សំណួរដើមមិនបានផ្លាស់ប្ដូរទេ។",
       loadingQuestion: "កំពុងផ្ទុកសំណួរ…",
       loadingActivity: "កំពុងផ្ទុកសកម្មភាព…",
       notPublished: "មិនបានផ្សាយទេ៖ សូមកែបញ្ហាដែលបានរាយក្រោម ការពិនិត្យ។",
