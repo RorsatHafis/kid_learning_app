@@ -51,10 +51,13 @@ public class SchoolLearningService {
     private final LearningJourneyService journeys;
     private final SkillProgressService skills;
 
+    private final com.platform.content.service.CatalogNames catalogNames;
+
     public SchoolLearningService(SchoolAccessGuard guard, ClassEnrollmentRepository classEnrollments,
                                  ClassCurriculumAssignmentRepository classCurricula, CurriculumRepository curricula,
                                  SubjectRepository subjects, ChildRepository children, LearningJourneyService journeys,
-                                 SkillProgressService skills) {
+                                 SkillProgressService skills, com.platform.content.service.CatalogNames catalogNames) {
+        this.catalogNames = catalogNames;
         this.guard = guard;
         this.classEnrollments = classEnrollments;
         this.classCurricula = classCurricula;
@@ -199,8 +202,11 @@ public class SchoolLearningService {
         for (ClassCurriculumAssignment assignment : classCurricula.findBySchoolClassIdAndStatusOrderByCreatedAtAsc(
                 classId, ClassCurriculumAssignmentStatus.ACTIVE)) {
             Curriculum curriculum = curricula.findById(assignment.getCurriculumId()).orElseThrow();
-            String subjectName = subjects.findById(curriculum.getSubjectId()).map(subject -> subject.getName()).orElse(null);
-            assigned.add(new ClassCurriculum(curriculum.getId(), curriculum.getName(), subjectName));
+            // In the reader's language where its Khmer is written (LOCALIZATION.md, catalog names).
+            String subjectName = subjects.findById(curriculum.getSubjectId())
+                    .map(subject -> catalogNames.name(com.platform.content.entity.LocalizableContentType.SUBJECT, subject.getId(), subject.getName())).orElse(null);
+            assigned.add(new ClassCurriculum(curriculum.getId(),
+                    catalogNames.name(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId(), curriculum.getName()), subjectName));
         }
         return assigned;
     }

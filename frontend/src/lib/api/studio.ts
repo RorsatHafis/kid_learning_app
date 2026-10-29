@@ -14,6 +14,21 @@ export interface VersionSummary {
   publishedAt: string | null;
 }
 
+/**
+ * A catalog name's Khmer as written so far (LOCALIZATION.md "Content in two languages", V81): either may be null.
+ * Each is given to a Khmer reader once written; the English otherwise.
+ */
+export interface KhmerName {
+  name: string | null;
+  description: string | null;
+}
+
+/** A catalog name's Khmer in a request: blank removes one (not translated); leaving `khmer` out keeps both as they are. */
+export interface KhmerNameBody {
+  name?: string | null;
+  description?: string | null;
+}
+
 export interface Subject {
   id: string;
   code: string;
@@ -21,6 +36,7 @@ export interface Subject {
   description: string | null;
   /** X14: archived subjects are listed only in the archived view. */
   archived?: boolean;
+  khmer?: KhmerName;
 }
 
 export interface AgeHub {
@@ -38,6 +54,7 @@ export interface CatalogSkill {
   description: string | null;
   status: "ACTIVE" | "ARCHIVED";
   prerequisiteSkillIds: string[];
+  khmer?: KhmerName;
 }
 
 export interface CatalogObjective {
@@ -47,6 +64,7 @@ export interface CatalogObjective {
   description: string | null;
   skillIds: string[];
   archived?: boolean;
+  khmer?: KhmerName;
 }
 
 export interface Catalog {
@@ -62,6 +80,7 @@ export interface CurriculumSummary {
   ageHubId: string;
   versions: VersionSummary[];
   archived?: boolean;
+  khmer?: KhmerName;
 }
 
 export interface CurriculumVersionDetail extends VersionSummary {
@@ -75,6 +94,7 @@ export interface CurriculumDetail {
   ageHubId: string;
   versions: CurriculumVersionDetail[];
   archived?: boolean;
+  khmer?: KhmerName;
 }
 
 // ---- content/studio/JourneyBuilderService.java: a version as the journey a child meets ----
@@ -594,19 +614,19 @@ export const withdrawalApi = {
 
 export const studioApi = {
   // ---- X14: edit details, archive, restore (archived = no new uses; nothing a child has changes)
-  updateDetails: (kind: Exclude<ManagedKind, "questions">, id: string, body: { name: string; description?: string | null }) =>
+  updateDetails: (kind: Exclude<ManagedKind, "questions">, id: string, body: { name: string; description?: string | null; khmer?: KhmerNameBody }) =>
     apiClient.put<void>(`${S}/${kind}/${id}`, body),
   archive: (kind: ManagedKind, id: string) => apiClient.post<void>(`${S}/${kind}/${id}/archive`),
   restore: (kind: ManagedKind, id: string) => apiClient.post<void>(`${S}/${kind}/${id}/restore`),
   subjects: (archived = false) => apiClient.get<Subject[]>(`${S}/subjects${archived ? "?archived=true" : ""}`),
-  createSubject: (body: { code: string; name: string; description?: string }) =>
+  createSubject: (body: { code: string; name: string; description?: string; khmer?: KhmerNameBody }) =>
     apiClient.post<Subject>(`${S}/subjects`, body),
   ageHubs: () => apiClient.get<AgeHub[]>(`${S}/age-hubs`),
   catalog: (subjectId: string, archived = false) =>
     apiClient.get<Catalog>(`${S}/subjects/${subjectId}/catalog${archived ? "?archived=true" : ""}`),
-  createSkill: (subjectId: string, body: { code: string; name: string; description?: string }) =>
+  createSkill: (subjectId: string, body: { code: string; name: string; description?: string; khmer?: KhmerNameBody }) =>
     apiClient.post<CatalogSkill>(`${S}/subjects/${subjectId}/skills`, body),
-  createObjective: (subjectId: string, body: { code: string; title: string; description?: string }) =>
+  createObjective: (subjectId: string, body: { code: string; title: string; description?: string; khmer?: KhmerNameBody }) =>
     apiClient.post<CatalogObjective>(`${S}/subjects/${subjectId}/objectives`, body),
   linkObjectiveSkill: (objectiveId: string, skillId: string) =>
     apiClient.post<CatalogObjective>(`${S}/objectives/${objectiveId}/skills/${skillId}`),
@@ -615,7 +635,7 @@ export const studioApi = {
 
   curricula: (archived = false) => apiClient.get<CurriculumSummary[]>(`${S}/curricula${archived ? "?archived=true" : ""}`),
   curriculum: (id: string) => apiClient.get<CurriculumDetail>(`${S}/curricula/${id}`),
-  createCurriculum: (body: { subjectId: string; ageHubId: string; name: string }) =>
+  createCurriculum: (body: { subjectId: string; ageHubId: string; name: string; khmer?: KhmerNameBody }) =>
     apiClient.post<CurriculumDetail>(`${S}/curricula`, body),
   openCurriculumDraft: (id: string) => apiClient.post<CurriculumDetail>(`${S}/curricula/${id}/draft`),
   replaceCurriculumObjectives: (versionId: string, objectiveIds: string[]) =>

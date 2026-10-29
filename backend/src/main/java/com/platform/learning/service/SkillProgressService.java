@@ -67,6 +67,8 @@ public class SkillProgressService {
     private final EvidenceStandard evidenceStandard;
     private final LearningDays learningDays;
 
+    private final com.platform.content.service.CatalogNames catalogNames;
+
     public SkillProgressService(EnrollmentRepository enrollmentRepository, CurriculumService curriculumService,
                                 LearningObjectiveService learningObjectiveService,
                                 LearningObjectiveSkillRepository learningObjectiveSkillRepository,
@@ -75,7 +77,9 @@ public class SkillProgressService {
                                 ReviewItemRepository reviewItemRepository,
                                 ReviewScheduleRepository reviewScheduleRepository,
                                 LearningJourneyService learningJourneyService, EvidenceStandard evidenceStandard,
-                                LearningDays learningDays) {
+                                LearningDays learningDays,
+            com.platform.content.service.CatalogNames catalogNames) {
+        this.catalogNames = catalogNames;
         this.enrollmentRepository = enrollmentRepository;
         this.curriculumService = curriculumService;
         this.learningObjectiveService = learningObjectiveService;
@@ -185,7 +189,9 @@ public class SkillProgressService {
     }
 
     private CurriculumStructure structure(UUID curriculumVersionId, Map<UUID, ObjectiveStructure> objectives) {
-        List<ObjectiveStructure> ordered = curriculumService.listObjectives(curriculumVersionId).stream()
+        List<CurriculumObjective> links = curriculumService.listObjectives(curriculumVersionId);
+        catalogNames.prefetch(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, links.stream().map(CurriculumObjective::getLearningObjectiveId).toList());
+        List<ObjectiveStructure> ordered = links.stream()
                 .sorted(Comparator.comparingInt(CurriculumObjective::getDisplayOrder))
                 .map(link -> objectives.computeIfAbsent(link.getLearningObjectiveId(), this::objectiveStructure))
                 .toList();
@@ -198,6 +204,7 @@ public class SkillProgressService {
                 .map(LearningObjectiveSkill::getSkillId)
                 .toList();
         Map<UUID, Skill> byId = skillRepository.findAllById(skillIds).stream().collect(Collectors.toMap(Skill::getId, Function.identity()));
+        catalogNames.prefetch(com.platform.content.entity.LocalizableContentType.SKILL, skillIds);
         return new ObjectiveStructure(objective, skillIds.stream().map(byId::get).filter(java.util.Objects::nonNull).toList());
     }
 
@@ -223,7 +230,8 @@ public class SkillProgressService {
                         ? ObjectiveStanding.SECURE
                         : ObjectiveStanding.IN_PROGRESS;
 
-        return new ObjectiveProgress(objective.getId(), objective.getTitle(), objective.getDescription(), standing,
+        return new ObjectiveProgress(objective.getId(), catalogNames.name(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, objective.getId(), objective.getTitle()),
+                catalogNames.description(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, objective.getId(), objective.getDescription()), standing,
                 skills.size(), practised, sufficient, skills);
     }
 
@@ -231,7 +239,8 @@ public class SkillProgressService {
                                         int evidenceDays) {
         int evidence = state == null ? 0 : state.getEvidenceCount();
         Instant reviewDueAt = review == null ? null : dueByReview.get(review.getId());
-        return new SkillProgress(skill.getId(), skill.getName(), skill.getDescription(),
+        return new SkillProgress(skill.getId(), catalogNames.name(com.platform.content.entity.LocalizableContentType.SKILL, skill.getId(), skill.getName()),
+                catalogNames.description(com.platform.content.entity.LocalizableContentType.SKILL, skill.getId(), skill.getDescription()),
                 evidenceStandard.levelFor(evidence), evidenceStandard.standingFor(state, evidenceDays), evidence,
                 state == null ? 0 : state.getCorrectCount(), state == null ? null : state.getLastEvidenceAt(),
                 review != null, reviewDueAt,

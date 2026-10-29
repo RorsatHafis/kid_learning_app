@@ -55,9 +55,13 @@ public class ContentLifecycleService {
     private final ActivityRepository activities;
     private final QuestionRepository questions;
 
+    private final com.platform.content.service.CatalogNames catalogNames;
+
     public ContentLifecycleService(ContentAccessGuard guard, AuditService audit, SubjectRepository subjects, SkillRepository skills,
                                    LearningObjectiveRepository objectives, CurriculumRepository curricula, LessonRepository lessons,
-                                   ActivityRepository activities, QuestionRepository questions) {
+                                   ActivityRepository activities, QuestionRepository questions,
+                                   com.platform.content.service.CatalogNames catalogNames) {
+        this.catalogNames = catalogNames;
         this.guard = guard;
         this.audit = audit;
         this.subjects = subjects;
@@ -73,9 +77,16 @@ public class ContentLifecycleService {
 
     @Transactional
     public void updateSubject(UUID accountId, UUID subjectId, String name, String description) {
+        updateSubject(accountId, subjectId, name, description, null);
+    }
+
+    /** {@code khmer}: its Khmer name and description (LOCALIZATION.md); null leaves them as they are. */
+    @Transactional
+    public void updateSubject(UUID accountId, UUID subjectId, String name, String description, StudioDtos.KhmerNameRequest khmer) {
         Account admin = guard.requireCatalogAdmin(accountId);
         Subject subject = subject(subjectId);
         subject.rename(name.strip(), blankToNull(description));
+        setKhmer(com.platform.content.entity.LocalizableContentType.SUBJECT, subjectId, khmer);
         record(admin, "CONTENT_UPDATED", "SUBJECT", subjectId, Map.of("name", subject.getName()));
     }
 
@@ -102,9 +113,15 @@ public class ContentLifecycleService {
 
     @Transactional
     public void updateSkill(UUID accountId, UUID skillId, String name, String description) {
+        updateSkill(accountId, skillId, name, description, null);
+    }
+
+    @Transactional
+    public void updateSkill(UUID accountId, UUID skillId, String name, String description, StudioDtos.KhmerNameRequest khmer) {
         Account admin = guard.requireCatalogAdmin(accountId);
         Skill skill = skill(skillId);
         skill.rename(name, description);
+        setKhmer(com.platform.content.entity.LocalizableContentType.SKILL, skillId, khmer);
         record(admin, "CONTENT_UPDATED", "SKILL", skillId, Map.of("name", skill.getName()));
     }
 
@@ -123,9 +140,15 @@ public class ContentLifecycleService {
 
     @Transactional
     public void updateObjective(UUID accountId, UUID objectiveId, String title, String description) {
+        updateObjective(accountId, objectiveId, title, description, null);
+    }
+
+    @Transactional
+    public void updateObjective(UUID accountId, UUID objectiveId, String title, String description, StudioDtos.KhmerNameRequest khmer) {
         Account admin = guard.requireCatalogAdmin(accountId);
         LearningObjective objective = objective(objectiveId);
         objective.rename(title, description);
+        setKhmer(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, objectiveId, khmer);
         record(admin, "CONTENT_UPDATED", "LEARNING_OBJECTIVE", objectiveId, Map.of("title", objective.getTitle()));
     }
 
@@ -147,8 +170,17 @@ public class ContentLifecycleService {
 
     @Transactional
     public void renameCurriculum(UUID accountId, UUID curriculumId, String name) {
+        renameCurriculum(accountId, curriculumId, name, null);
+    }
+
+    @Transactional
+    public void renameCurriculum(UUID accountId, UUID curriculumId, String name, StudioDtos.KhmerNameRequest khmer) {
         Curriculum curriculum = guard.requireCurriculumWrite(accountId, curriculumId);
         curriculum.rename(name.strip());
+        // A curriculum has a name only (no description).
+        if (khmer != null) {
+            catalogNames.set(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculumId, khmer.name(), null);
+        }
         record(guard.requireAuthor(accountId), "CONTENT_UPDATED", "CURRICULUM", curriculumId, Map.of("name", curriculum.getName()));
     }
 
@@ -251,6 +283,13 @@ public class ContentLifecycleService {
     private void record(Account actor, String action, String resourceType, UUID resourceId, Map<String, Object> metadata) {
         audit.record(new RecordAuditEvent(null, actor.getId(), AuditActorType.valueOf(actor.getPlatformRole().name()), action, resourceType,
                 resourceId, new HashMap<>(metadata)));
+    }
+
+
+    private void setKhmer(com.platform.content.entity.LocalizableContentType type, UUID id, StudioDtos.KhmerNameRequest khmer) {
+        if (khmer != null) {
+            catalogNames.set(type, id, khmer.name(), khmer.description());
+        }
     }
 
 }

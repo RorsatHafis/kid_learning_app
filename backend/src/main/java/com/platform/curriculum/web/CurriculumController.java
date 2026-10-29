@@ -1,6 +1,8 @@
 package com.platform.curriculum.web;
 
 import com.platform.child.entity.Child;
+import com.platform.content.entity.LocalizableContentType;
+import com.platform.content.service.CatalogNames;
 import com.platform.curriculum.entity.AgeHub;
 import com.platform.curriculum.entity.Curriculum;
 import com.platform.curriculum.entity.Subject;
@@ -51,9 +53,11 @@ public class CurriculumController {
     private final SubjectRepository subjectRepository;
     private final AgeHubRepository ageHubRepository;
     private final FamilyAccessGuard familyAccessGuard;
+    private final CatalogNames catalogNames;
 
     public CurriculumController(CurriculumService curriculumService, SubjectRepository subjectRepository,
-                                AgeHubRepository ageHubRepository, FamilyAccessGuard familyAccessGuard) {
+                                AgeHubRepository ageHubRepository, FamilyAccessGuard familyAccessGuard, CatalogNames catalogNames) {
+        this.catalogNames = catalogNames;
         this.curriculumService = curriculumService;
         this.subjectRepository = subjectRepository;
         this.ageHubRepository = ageHubRepository;
@@ -63,8 +67,9 @@ public class CurriculumController {
     @GetMapping("/api/v1/curricula")
     @Transactional(readOnly = true)
     public ResponseEntity<List<CurriculumSummaryResponse>> listCurricula() {
-        Lookups lookups = lookups();
-        return ResponseEntity.ok(curriculumService.listFamilyCatalog().stream()
+        List<Curriculum> catalog = curriculumService.listFamilyCatalog();
+        Lookups lookups = lookups(catalog);
+        return ResponseEntity.ok(catalog.stream()
                 .map(curriculum -> toSummary(curriculum, lookups))
                 .toList());
     }
@@ -79,8 +84,9 @@ public class CurriculumController {
     public List<CurriculumChoiceResponse> listForChild(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
         Child child = familyAccessGuard.requireChildAccess(accountId, childId);
         Optional<UUID> childAgeHub = ageHubRepository.findForAge(child.ageInYears(LocalDate.now())).map(AgeHub::getId);
-        Lookups lookups = lookups();
-        return curriculumService.listFamilyCatalog().stream()
+        List<Curriculum> catalog = curriculumService.listFamilyCatalog();
+        Lookups lookups = lookups(catalog);
+        return catalog.stream()
                 .map(curriculum -> {
                     AgeHub hub = lookups.ageHubs().get(curriculum.getAgeHubId());
                     CurriculumSummaryResponse summary = toSummary(curriculum, lookups);
@@ -95,20 +101,27 @@ public class CurriculumController {
                 .toList();
     }
 
-    private record Lookups(Map<UUID, Subject> subjects, Map<UUID, AgeHub> ageHubs) {
+    /** With the curricula's and subjects' names as the reader gets them (their Khmer for a Khmer reader, when written). */
+    private record Lookups(Map<UUID, Subject> subjects, Map<UUID, AgeHub> ageHubs, Map<UUID, String> curriculumNames,
+                           Map<UUID, String> subjectNames) {
     }
 
     /** Both are small reference tables: read whole, once per request. */
-    private Lookups lookups() {
-        return new Lookups(subjectRepository.findAll().stream().collect(Collectors.toMap(Subject::getId, Function.identity())),
-                ageHubRepository.findAll().stream().collect(Collectors.toMap(AgeHub::getId, Function.identity())));
+    private Lookups lookups(List<Curriculum> curricula) {
+        Map<UUID, Subject> subjects = subjectRepository.findAll().stream().collect(Collectors.toMap(Subject::getId, Function.identity()));
+        return new Lookups(subjects,
+                ageHubRepository.findAll().stream().collect(Collectors.toMap(AgeHub::getId, Function.identity())),
+                catalogNames.names(LocalizableContentType.CURRICULUM,
+                        curricula.stream().collect(Collectors.toMap(Curriculum::getId, Curriculum::getName))),
+                catalogNames.names(LocalizableContentType.SUBJECT,
+                        subjects.values().stream().collect(Collectors.toMap(Subject::getId, Subject::getName))));
     }
 
     private static CurriculumSummaryResponse toSummary(Curriculum curriculum, Lookups lookups) {
         Subject subject = lookups.subjects().get(curriculum.getSubjectId());
         AgeHub ageHub = lookups.ageHubs().get(curriculum.getAgeHubId());
-        return new CurriculumSummaryResponse(curriculum.getId(), curriculum.getName(),
-                subject.getCode(), subject.getName(), ageHub.getCode(), ageHub.getName());
+        return new CurriculumSummaryResponse(curriculum.getId(), lookups.curriculumNames().get(curriculum.getId()),
+                subject.getCode(), lookups.subjectNames().get(subject.getId()), ageHub.getCode(), ageHub.getName());
     }
 
 }

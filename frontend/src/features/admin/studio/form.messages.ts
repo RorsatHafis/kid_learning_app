@@ -15,6 +15,10 @@ export const formMessages = defineMessages(
       `Khmer: ${written} of ${needed} written. Until all are, children reading Khmer see them in English.`,
     activityKhmerComplete: "Khmer complete: children reading Khmer see this activity's name and words in Khmer.",
     inKhmer: (field: string) => `${field} - in Khmer`,
+    catalogKhmerNone: "No Khmer yet: people reading Khmer see this name in English.",
+    catalogKhmerPartly: (written: number, needed: number) =>
+      `Khmer: ${written} of ${needed} written. What is written is shown in Khmer; the rest in English.`,
+    catalogKhmerComplete: "Khmer complete: people reading Khmer see this in Khmer.",
     englishIs: "English:",
     khmerNone: "No Khmer yet: children reading Khmer get this question in English. Choose ខ្មែរ to write it.",
     khmerPartly: (written: number, needed: number) =>
@@ -92,6 +96,10 @@ export const formMessages = defineMessages(
       `ភាសាខ្មែរ៖ បានសរសេរ ${written} ក្នុងចំណោម ${needed}។ រហូតដល់គ្រប់ទាំងអស់ កុមារដែលអានភាសាខ្មែរ ឃើញវាជាភាសាអង់គ្លេស។`,
     activityKhmerComplete: "ភាសាខ្មែរពេញលេញ៖ កុមារដែលអានភាសាខ្មែរ ឃើញឈ្មោះ និងពាក្យរបស់សកម្មភាពនេះជាភាសាខ្មែរ។",
     inKhmer: (field: string) => `${field} - ជាភាសាខ្មែរ`,
+    catalogKhmerNone: "មិនទាន់មានភាសាខ្មែរ៖ អ្នកដែលអានភាសាខ្មែរ ឃើញឈ្មោះនេះជាភាសាអង់គ្លេស។",
+    catalogKhmerPartly: (written: number, needed: number) =>
+      `ភាសាខ្មែរ៖ បានសរសេរ ${written} ក្នុងចំណោម ${needed}។ អ្វីដែលបានសរសេរ បង្ហាញជាភាសាខ្មែរ ហើយផ្សេងទៀតជាភាសាអង់គ្លេស។`,
+    catalogKhmerComplete: "ភាសាខ្មែរពេញលេញ៖ អ្នកដែលអានភាសាខ្មែរ ឃើញវាជាភាសាខ្មែរ។",
     englishIs: "ភាសាអង់គ្លេស៖",
     khmerNone: "មិនទាន់មានភាសាខ្មែរ៖ កុមារដែលអានភាសាខ្មែរ ទទួលបានសំណួរនេះជាភាសាអង់គ្លេស។ ជ្រើស ខ្មែរ ដើម្បីសរសេរវា។",
     khmerPartly: (written: number, needed: number) =>

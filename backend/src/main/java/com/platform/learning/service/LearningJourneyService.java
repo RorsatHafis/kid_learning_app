@@ -96,6 +96,8 @@ public class LearningJourneyService {
 
     private final com.platform.content.service.ActivityTranslations activityTranslations;
 
+    private final com.platform.content.service.CatalogNames catalogNames;
+
     public LearningJourneyService(EnrollmentRepository enrollmentRepository, LearningPathRepository learningPathRepository,
                                   LearningPathItemRepository learningPathItemRepository,
                                   ActivityAttemptRepository activityAttemptRepository,
@@ -110,7 +112,9 @@ public class LearningJourneyService {
                                   LearningObjectiveRepository learningObjectiveRepository,
                                   LearningObjectiveSkillService learningObjectiveSkillService, PlacementNames placementNames,
                                   com.platform.child.repository.ChildRepository childRepository,
-                                  com.platform.content.service.ActivityTranslations activityTranslations) {
+                                  com.platform.content.service.ActivityTranslations activityTranslations,
+            com.platform.content.service.CatalogNames catalogNames) {
+        this.catalogNames = catalogNames;
         this.activityTranslations = activityTranslations;
         this.childRepository = childRepository;
         this.enrollmentRepository = enrollmentRepository;
@@ -425,6 +429,7 @@ public class LearningJourneyService {
         Map<UUID, LearningObjective> byId = new HashMap<>();
         learningObjectiveRepository.findAllById(objectives.stream().map(CurriculumObjective::getLearningObjectiveId).toList())
                 .forEach(objective -> byId.put(objective.getId(), objective));
+        catalogNames.prefetch(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, byId.keySet());
         List<ChapterSource> sources = new java.util.ArrayList<>();
         int position = 1;
         for (CurriculumObjective link : objectives) {
@@ -435,7 +440,9 @@ public class LearningJourneyService {
             java.util.Set<UUID> skills = learningObjectiveSkillService.listSkillsForObjective(objective.getId()).stream()
                     .map(LearningObjectiveSkill::getSkillId)
                     .collect(java.util.stream.Collectors.toSet());
-            sources.add(new ChapterSource(objective.getId(), position++, objective.getTitle(), objective.getDescription(), skills));
+            sources.add(new ChapterSource(objective.getId(), position++,
+                    catalogNames.name(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, objective.getId(), objective.getTitle()),
+                    catalogNames.description(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, objective.getId(), objective.getDescription()), skills));
         }
         return sources;
     }
@@ -579,8 +586,9 @@ public class LearningJourneyService {
                 curriculumService.getVersion(curriculumVersionId).getCurriculumId());
         Subject subject = subjectRepository.findById(curriculum.getSubjectId()).orElse(null);
         AgeHub ageHub = ageHubRepository.findById(curriculum.getAgeHubId()).orElse(null);
-        return new CurriculumRef(curriculum.getId(), curriculum.getName(),
-                subject == null ? null : subject.getCode(), subject == null ? null : subject.getName(),
+        return new CurriculumRef(curriculum.getId(), catalogNames.name(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId(), curriculum.getName()),
+                subject == null ? null : subject.getCode(),
+                subject == null ? null : catalogNames.name(com.platform.content.entity.LocalizableContentType.SUBJECT, subject.getId(), subject.getName()),
                 ageHub == null ? null : ageHub.getName());
     }
 
@@ -666,10 +674,7 @@ public class LearningJourneyService {
                     }
                 }
             }
-            skillIds.removeAll(skills.keySet());
-            if (!skillIds.isEmpty()) {
-                skillRepository.findAllById(skillIds).forEach(skill -> skills.put(skill.getId(), new SkillRef(skill.getId(), skill.getName())));
-            }
+            loadSkills(skillIds);
             for (UUID versionId : untagged) {
                 skillsByVersion.put(versionId, skillIdsByVersion.getOrDefault(versionId, List.of()).stream()
                         .map(this::skill).filter(java.util.Objects::nonNull)
@@ -731,13 +736,28 @@ public class LearningJourneyService {
         }
 
         List<SkillRef> skillsOf(UUID activityVersionId) {
-            return skillsByVersion.computeIfAbsent(activityVersionId, key -> activitySkillRepository
-                    .findByActivityVersionIdOrderByCreatedAtAscIdAsc(key).stream()
-                    .map(ActivityVersionSkill::getSkillId)
-                    .map(this::skill)
-                    .filter(java.util.Objects::nonNull)
-                    .sorted(Comparator.comparing(SkillRef::name))
-                    .toList());
+            return skillsByVersion.computeIfAbsent(activityVersionId, key -> {
+                List<UUID> skillIds = activitySkillRepository.findByActivityVersionIdOrderByCreatedAtAscIdAsc(key).stream()
+                        .map(ActivityVersionSkill::getSkillId)
+                        .toList();
+                loadSkills(skillIds);
+                return skillIds.stream()
+                        .map(this::skill)
+                        .filter(java.util.Objects::nonNull)
+                        .sorted(Comparator.comparing(SkillRef::name))
+                        .toList();
+            });
+        }
+
+        /** The skills not read yet, and their names in the reader's language, in one query each - not one per skill. */
+        private void loadSkills(java.util.Collection<UUID> skillIds) {
+            List<UUID> missing = skillIds.stream().filter(id -> !skills.containsKey(id)).distinct().toList();
+            if (missing.isEmpty()) {
+                return;
+            }
+            catalogNames.prefetch(com.platform.content.entity.LocalizableContentType.SKILL, missing);
+            skillRepository.findAllById(missing).forEach(skill -> skills.put(skill.getId(), new SkillRef(skill.getId(),
+                    catalogNames.name(com.platform.content.entity.LocalizableContentType.SKILL, skill.getId(), skill.getName()))));
         }
 
         SkillRef skill(UUID skillId) {
@@ -745,7 +765,7 @@ public class LearningJourneyService {
                 return null;
             }
             return skills.computeIfAbsent(skillId, key -> skillRepository.findById(key)
-                    .map((Skill skill) -> new SkillRef(skill.getId(), skill.getName()))
+                    .map((Skill skill) -> new SkillRef(skill.getId(), catalogNames.name(com.platform.content.entity.LocalizableContentType.SKILL, skill.getId(), skill.getName())))
                     .orElse(null));
         }
 

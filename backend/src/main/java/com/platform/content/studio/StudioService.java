@@ -113,6 +113,7 @@ public class StudioService {
     private final com.platform.content.review.ContentReviewService reviews;
     private final com.platform.content.service.QuestionTranslations translations;
     private final com.platform.content.service.ActivityTranslations activityTranslations;
+    private final com.platform.content.service.CatalogNames catalogNames;
     private final org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc;
 
     public StudioService(ContentAccessGuard guard, AuditService audit, ContentValidator validator,
@@ -130,10 +131,12 @@ public class StudioService {
                          com.platform.content.review.ContentReviewService reviews,
                          com.platform.content.service.QuestionTranslations translations,
                          com.platform.content.service.ActivityTranslations activityTranslations,
+                         com.platform.content.service.CatalogNames catalogNames,
                          org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc) {
         this.reviews = reviews;
         this.translations = translations;
         this.activityTranslations = activityTranslations;
+        this.catalogNames = catalogNames;
         this.jdbc = jdbc;
         this.guard = guard;
         this.audit = audit;
@@ -178,7 +181,7 @@ public class StudioService {
         guard.requireAuthor(accountId);
         return subjects.findByStatus(archived ? CatalogStatus.ARCHIVED : CatalogStatus.ACTIVE).stream()
                 .sorted(Comparator.comparing(Subject::getName, String.CASE_INSENSITIVE_ORDER))
-                .map(StudioService::subjectDto).toList();
+                .map(this::subjectDto).toList();
     }
 
     @Transactional(readOnly = true)
@@ -214,6 +217,7 @@ public class StudioService {
     public SubjectDto createSubject(UUID accountId, CreateSubjectRequest request) {
         Account admin = guard.requireCatalogAdmin(accountId);
         Subject subject = subjectService.create(request.code(), request.name().strip(), blankToNull(request.description()));
+        setCatalogKhmer(com.platform.content.entity.LocalizableContentType.SUBJECT, subject.getId(), request.khmer());
         record(admin, "CATALOG_SUBJECT_CREATED", "SUBJECT", subject.getId(), Map.of("code", subject.getCode()));
         return subjectDto(subject);
     }
@@ -223,6 +227,7 @@ public class StudioService {
         Account admin = guard.requireCatalogAdmin(accountId);
         subjectService.getById(subjectId);
         Skill skill = skillService.createSkill(subjectId, request.code(), request.name().strip(), blankToNull(request.description()));
+        setCatalogKhmer(com.platform.content.entity.LocalizableContentType.SKILL, skill.getId(), request.khmer());
         record(admin, "CATALOG_SKILL_CREATED", "SKILL", skill.getId(), Map.of("code", skill.getCode()));
         return skillDto(skill);
     }
@@ -233,6 +238,7 @@ public class StudioService {
         subjectService.getById(subjectId);
         LearningObjective objective = objectiveService.create(subjectId, request.code(), request.title().strip(),
                 blankToNull(request.description()));
+        setCatalogKhmer(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, objective.getId(), request.khmer());
         record(admin, "CATALOG_OBJECTIVE_CREATED", "LEARNING_OBJECTIVE", objective.getId(), Map.of("code", objective.getCode()));
         return objectiveDto(objective);
     }
@@ -296,7 +302,8 @@ public class StudioService {
                 .sorted(Comparator.comparing(Curriculum::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(curriculum -> new CurriculumSummary(curriculum.getId(), curriculum.getName(), curriculum.getSubjectId(),
                         curriculum.getAgeHubId(), curriculumService.listVersions(curriculum.getId()).stream()
-                        .map(VersionSummary::of).toList(), curriculum.getStatus() == CatalogStatus.ARCHIVED))
+                        .map(VersionSummary::of).toList(), curriculum.getStatus() == CatalogStatus.ARCHIVED,
+                        khmerName(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId())))
                 .toList();
     }
 
@@ -309,7 +316,8 @@ public class StudioService {
                         .map(CurriculumObjective::getLearningObjectiveId).toList()))
                 .toList();
         return new CurriculumDetail(curriculum.getId(), curriculum.getName(), curriculum.getSubjectId(),
-                curriculum.getAgeHubId(), versions, curriculum.getStatus() == CatalogStatus.ARCHIVED);
+                curriculum.getAgeHubId(), versions, curriculum.getStatus() == CatalogStatus.ARCHIVED,
+                khmerName(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId()));
     }
 
     @Transactional
@@ -324,6 +332,9 @@ public class StudioService {
                 ? curriculumService.createCurriculum(request.subjectId(), request.ageHubId(), request.name().strip())
                 : curriculumService.createOwnedCurriculum(request.subjectId(), request.ageHubId(), request.name().strip(), owner);
         curriculumService.createDraftVersion(curriculum.getId());
+        if (request.khmer() != null) {
+            catalogNames.set(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId(), request.khmer().name(), null);
+        }
         return curriculum(accountId, curriculum.getId());
     }
 
@@ -1027,18 +1038,31 @@ public class StudioService {
 
     private SkillDto skillDto(Skill skill) {
         return new SkillDto(skill.getId(), skill.getCode(), skill.getName(), skill.getDescription(), skill.getStatus(),
-                prerequisites.findBySkillId(skill.getId()).stream().map(SkillPrerequisite::getPrerequisiteSkillId).toList());
+                prerequisites.findBySkillId(skill.getId()).stream().map(SkillPrerequisite::getPrerequisiteSkillId).toList(),
+                khmerName(com.platform.content.entity.LocalizableContentType.SKILL, skill.getId()));
     }
 
     private ObjectiveDto objectiveDto(LearningObjective objective) {
         return new ObjectiveDto(objective.getId(), objective.getCode(), objective.getTitle(), objective.getDescription(),
                 objectiveSkills.findByLearningObjectiveId(objective.getId()).stream()
-                        .map(LearningObjectiveSkill::getSkillId).toList(), objective.getStatus() == CatalogStatus.ARCHIVED);
+                        .map(LearningObjectiveSkill::getSkillId).toList(), objective.getStatus() == CatalogStatus.ARCHIVED,
+                khmerName(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, objective.getId()));
     }
 
-    private static SubjectDto subjectDto(Subject subject) {
+    private SubjectDto subjectDto(Subject subject) {
         return new SubjectDto(subject.getId(), subject.getCode(), subject.getName(), subject.getDescription(),
-                subject.getStatus() == CatalogStatus.ARCHIVED);
+                subject.getStatus() == CatalogStatus.ARCHIVED, khmerName(com.platform.content.entity.LocalizableContentType.SUBJECT, subject.getId()));
+    }
+
+    private KhmerName khmerName(com.platform.content.entity.LocalizableContentType type, UUID id) {
+        com.platform.content.service.CatalogNames.Khmer khmer = catalogNames.of(type, id);
+        return new KhmerName(khmer.name(), khmer.description());
+    }
+
+    private void setCatalogKhmer(com.platform.content.entity.LocalizableContentType type, UUID id, KhmerNameRequest khmer) {
+        if (khmer != null) {
+            catalogNames.set(type, id, khmer.name(), khmer.description());
+        }
     }
 
     /** Multiple choice is answered by option id; its correct answer lives on the options, not the text field. */

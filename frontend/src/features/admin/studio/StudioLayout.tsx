@@ -44,6 +44,7 @@ export function StudioLayout() {
                 id={catalog.data.subject.id}
                 name={catalog.data.subject.name}
                 description={catalog.data.subject.description}
+                khmer={catalog.data.subject.khmer}
                 describable
                 wording="manageSubject"
                 onChanged={(change) => (change === "archived" ? navigate(`${base}/studio`) : (catalog.refetch(), subjects.refetch()))}

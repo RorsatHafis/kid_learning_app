@@ -1967,3 +1967,24 @@ Dependencies:
   `media.test.tsx` case timed out under the full run's load and passes alone - known). **Browser verified** at 768 px:
   introduction, name and instructions written in both languages, saved, reloaded - all back; axe clean; no overflow;
   no API error.
+- 2026-10-29: **Content in two languages, slice 3 - subject, skill, chapter and curriculum names.** V81 widens
+  `content_localizations`' content types to `SUBJECT`, `SKILL`, `LEARNING_OBJECTIVE` and `CURRICULUM` (no row
+  changes); `CatalogNames` keeps each one's Khmer name and description and gives a Khmer reader the Khmer per name,
+  whenever it is written (a name is a self-contained label, unlike a question - L-1 stays as it is). Read in Khmer on
+  the family catalog, the child's path (curriculum, subject, chapters, step skills), the skills page, "what changed"
+  and the skill or chapter inside a parent insight's sentence (`InsightNames`, swapping the recorded name for its
+  Khmer; renamed since: left as recorded). Studio: `CatalogNameFields` (the shared language switch) in every Manage
+  dialog for these and in the new subject / skill / chapter / curriculum forms; a save that never touched Khmer sends
+  none. Teachers' class and assignable-curricula lists name curricula and subjects the same way. Reads: a Khmer
+  reader's names are read per curriculum shown, not per name (`CatalogNames.prefetch` and a per-transaction cache);
+  doing so found and fixed a pre-existing one-query-per-skill read on the child's path, for every reader (a journey
+  with a six-skill step: 24 -> 19 statements in English, 24 in Khmer). **Tested**:
+  `BilingualCatalogNamesIntegrationTests` 2/2 (create with Khmer, edit keeps or replaces it, clearing removes it, the
+  family catalog / path / skills page in both languages, a parent can't write names - 403; and the Khmer reads stay
+  within a fixed allowance per curriculum); `ReadQueryScalingIntegrationTests`, learning journey, progress changes,
+  parent insights, family catalog, Studio, school access, caregiver and account-language suites - 48, 0 failed;
+  `InsightNamesTests` 3/3, `InsightTextTests` 4/4; `catalogKhmer.test.tsx` + the admin and i18n suites 224/224.
+  **Browser verified** at 360 px: a skill created with a Khmer name, its description's Khmer added in Manage, reloaded
+  - both languages back; axe clean in the dialog; no overflow; no API error. Findings (recorded, not fixed): the
+  Studio catalog reads each row's links and Khmer one row at a time (pre-existing pattern - **future**, performance);
+  a parent insight's name costs two reads per insight for a Khmer reader (a handful per page - **future**).

@@ -3,7 +3,9 @@ import { Plus } from "lucide-react";
 import { studioApi, type CatalogObjective, type CatalogSkill } from "@/lib/api/studio";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
-import { ComposerPanel, NewButton, Panel, SkillChips, TextAreaField } from "./shared";
+import { ComposerPanel, NewButton, Panel, SkillChips } from "./shared";
+import { CatalogNameFields } from "./CatalogNameFields";
+import { khmerNameBody } from "./bilingual";
 import { codeFrom, errorText, useArchivedView, useStudio, useStudioScope, useComposer } from "./studioLogic";
 import { ArchivedSwitch, ManageButton } from "./Lifecycle";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -107,6 +109,7 @@ function ArchivedCatalog({ subjectId }: { subjectId: string }) {
                   id={skill.id}
                   name={skill.name}
                   description={skill.description}
+                  khmer={skill.khmer}
                   describable
                   archived
                   wording="restore"
@@ -133,6 +136,7 @@ function ArchivedCatalog({ subjectId }: { subjectId: string }) {
                   id={objective.id}
                   name={objective.title}
                   description={objective.description}
+                  khmer={objective.khmer}
                   describable
                   archived
                   wording="restore"
@@ -188,6 +192,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
             id={skill.id}
             name={skill.name}
             description={skill.description}
+            khmer={skill.khmer}
             describable
             onChanged={refreshCatalog}
           />
@@ -280,6 +285,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
             id={objective.id}
             name={objective.title}
             description={objective.description}
+            khmer={objective.khmer}
             describable
             onChanged={refreshCatalog}
           />
@@ -323,11 +329,19 @@ function useNamedCodeForm() {
   const [code, setCode] = useState("");
   const [codeTouched, setCodeTouched] = useState(false);
   const [description, setDescription] = useState("");
+  const [nameKm, setNameKm] = useState("");
+  const [descriptionKm, setDescriptionKm] = useState("");
   return {
     name,
     code,
     description,
     setDescription,
+    nameKm,
+    setNameKm,
+    descriptionKm,
+    setDescriptionKm,
+    /** The Khmer to send, if any is written (LOCALIZATION.md, V81). */
+    khmer: () => khmerNameBody(undefined, nameKm, descriptionKm),
     onName: (value: string) => {
       setName(value);
       if (!codeTouched) setCode(codeFrom(value));
@@ -341,6 +355,8 @@ function useNamedCodeForm() {
       setCode("");
       setCodeTouched(false);
       setDescription("");
+      setNameKm("");
+      setDescriptionKm("");
     },
   };
 }
@@ -361,6 +377,7 @@ function NewSkill({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen: bo
         name: form.name.trim(),
         code: form.code,
         description: form.description.trim() || undefined,
+        ...(form.khmer() && { khmer: form.khmer() }),
       });
       form.reset();
       refreshCatalog();
@@ -375,7 +392,19 @@ function NewSkill({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen: bo
   return (
     <ComposerPanel title={m.newSkill} onClose={onDone} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField label={m.skillName} value={form.name} maxLength={160} required onChange={(e) => form.onName(e.target.value)} />
+        <CatalogNameFields
+          nameLabel={m.skillName}
+          nameMax={160}
+          name={form.name}
+          onName={form.onName}
+          description={form.description}
+          onDescription={form.setDescription}
+          descriptionLabel={m.canDo}
+          nameKm={form.nameKm}
+          onNameKm={form.setNameKm}
+          descriptionKm={form.descriptionKm}
+          onDescriptionKm={form.setDescriptionKm}
+        />
         <FormField
           label={m.code}
           value={form.code}
@@ -383,12 +412,6 @@ function NewSkill({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen: bo
           pattern="[A-Z0-9_]+"
           required
           onChange={(e) => form.onCode(e.target.value)}
-        />
-        <TextAreaField
-          label={m.canDo}
-          value={form.description}
-          maxLength={2000}
-          onChange={(e) => form.setDescription(e.target.value)}
         />
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
@@ -419,6 +442,7 @@ function NewObjective({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen
         title: form.name.trim(),
         code: form.code,
         description: form.description.trim() || undefined,
+        ...(form.khmer() && { khmer: form.khmer() }),
       });
       form.reset();
       refreshCatalog();
@@ -433,12 +457,17 @@ function NewObjective({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen
   return (
     <ComposerPanel title={m.newLearningObjective} onClose={onDone} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField
-          label={m.objectiveTitle}
-          value={form.name}
-          maxLength={200}
-          required
-          onChange={(e) => form.onName(e.target.value)}
+        <CatalogNameFields
+          nameLabel={m.objectiveTitle}
+          name={form.name}
+          onName={form.onName}
+          description={form.description}
+          onDescription={form.setDescription}
+          descriptionLabel={m.description}
+          nameKm={form.nameKm}
+          onNameKm={form.setNameKm}
+          descriptionKm={form.descriptionKm}
+          onDescriptionKm={form.setDescriptionKm}
         />
         <FormField
           label={m.code}
@@ -447,12 +476,6 @@ function NewObjective({ onDone, focusOnOpen }: { onDone: () => void; focusOnOpen
           pattern="[A-Z0-9_]+"
           required
           onChange={(e) => form.onCode(e.target.value)}
-        />
-        <TextAreaField
-          label={m.description}
-          value={form.description}
-          maxLength={2000}
-          onChange={(e) => form.setDescription(e.target.value)}
         />
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">

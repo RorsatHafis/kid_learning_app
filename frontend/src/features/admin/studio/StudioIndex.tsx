@@ -6,7 +6,9 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { FormField } from "@/features/auth/FormField";
-import { ComposerPanel, NewButton, TextAreaField } from "./shared";
+import { ComposerPanel, NewButton } from "./shared";
+import { CatalogNameFields } from "./CatalogNameFields";
+import { khmerNameBody } from "./bilingual";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
 import { codeFrom, errorText, useArchivedView, useComposer, useStudioScope } from "./studioLogic";
 import { ArchivedSwitch, ManageButton } from "./Lifecycle";
@@ -74,6 +76,7 @@ export function StudioIndex() {
                 id={subject.id}
                 name={subject.name}
                 description={subject.description}
+                khmer={subject.khmer}
                 describable
                 archived
                 wording="restore"
@@ -114,9 +117,12 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
   const [code, setCode] = useState("");
   const [codeTouched, setCodeTouched] = useState(false);
   const [description, setDescription] = useState("");
+  const [nameKm, setNameKm] = useState("");
+  const [descriptionKm, setDescriptionKm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const m = useMessages(studioMessages).index;
+  const khmer = khmerNameBody(undefined, nameKm, descriptionKm);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -127,6 +133,7 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
         name: name.trim(),
         code,
         description: description.trim() || undefined,
+        ...(khmer && { khmer }),
       });
       onCreated();
       navigate(`/admin/studio/${subject.id}/catalog`); // only an administrator creates subjects
@@ -140,15 +147,21 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
   return (
     <ComposerPanel title={m.newSubject} onClose={onClose} focusOnOpen={focusOnOpen} className="max-w-2xl">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField
-          label={m.name}
-          value={name}
-          maxLength={120}
-          required
-          onChange={(e) => {
-            setName(e.target.value);
-            if (!codeTouched) setCode(codeFrom(e.target.value));
+        <CatalogNameFields
+          nameLabel={m.name}
+          nameMax={120}
+          name={name}
+          onName={(value) => {
+            setName(value);
+            if (!codeTouched) setCode(codeFrom(value));
           }}
+          description={description}
+          onDescription={setDescription}
+          descriptionLabel={m.description}
+          nameKm={nameKm}
+          onNameKm={setNameKm}
+          descriptionKm={descriptionKm}
+          onDescriptionKm={setDescriptionKm}
         />
         <FormField
           label={m.code}
@@ -160,12 +173,6 @@ function NewSubject({ onCreated, onClose, focusOnOpen }: { onCreated: () => void
             setCodeTouched(true);
             setCode(e.target.value.toUpperCase());
           }}
-        />
-        <TextAreaField
-          label={m.description}
-          value={description}
-          maxLength={2000}
-          onChange={(e) => setDescription(e.target.value)}
         />
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">

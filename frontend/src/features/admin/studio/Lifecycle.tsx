@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Archive, Pencil, RotateCcw } from "lucide-react";
-import { studioApi, type ManagedKind } from "@/lib/api/studio";
+import { studioApi, type KhmerName, type ManagedKind } from "@/lib/api/studio";
 import { useMessages } from "@/i18n/catalog";
 import { studioMessages, type SwitchList } from "./messages";
 import { problemMessage } from "@/lib/api/problemMessage";
@@ -9,6 +9,8 @@ import { Dialog } from "@/components/ui/Dialog";
 import { FormField } from "@/features/auth/FormField";
 import { cn } from "@/lib/utils/cn";
 import { TextAreaField } from "./shared";
+import { CatalogNameFields } from "./CatalogNameFields";
+import { khmerNameBody } from "./bilingual";
 
 /** The button's wording: "Manage…", "Manage subject…" (on the subject's own page) or "Restore…" (in an archived list). */
 export type ManageLabel = "manage" | "manageSubject" | "restore";
@@ -28,11 +30,14 @@ export function ManageButton({
   renamable = true,
   onChanged,
   wording = "manage",
+  khmer,
 }: {
   kind: ManagedKind;
   id: string;
   name: string;
   description?: string | null;
+  /** A catalog name's Khmer (subjects, skills, chapters, curricula): given, the dialog writes both languages. */
+  khmer?: KhmerName;
   /** Catalog items carry a description too. */
   describable?: boolean;
   archived?: boolean;
@@ -65,6 +70,7 @@ export function ManageButton({
           describable={describable}
           archived={archived}
           renamable={renamable}
+          khmer={khmer}
           onChanged={(change) => {
             onChanged(change);
             if (change !== "updated") setOpen(false);
@@ -83,6 +89,7 @@ function LifecyclePanel({
   describable,
   archived,
   renamable,
+  khmer,
   onChanged,
 }: {
   kind: ManagedKind;
@@ -92,10 +99,13 @@ function LifecyclePanel({
   describable: boolean;
   archived: boolean;
   renamable: boolean;
+  khmer?: KhmerName;
   onChanged: (change: "updated" | "archived" | "restored") => void;
 }) {
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription ?? "");
+  const [nameKm, setNameKm] = useState(khmer?.name ?? "");
+  const [descriptionKm, setDescriptionKm] = useState(khmer?.description ?? "");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -125,6 +135,7 @@ function LifecyclePanel({
         studioApi.updateDetails(kind, id, {
           name: name.trim(),
           description: describable ? description.trim() || null : undefined,
+          ...(khmer && { khmer: khmerNameBody(khmer, nameKm, describable ? descriptionKm : undefined) }),
         }),
       m.saved,
       "updated",
@@ -135,14 +146,29 @@ function LifecyclePanel({
     <div className="flex flex-col gap-6">
       {renamable && kind !== "questions" && (
         <form onSubmit={save} className="flex flex-col gap-3">
-          <FormField
-            label={kind === "objectives" || kind === "lessons" || kind === "activities" ? m.title : m.name}
-            value={name}
-            maxLength={200}
-            required
-            onChange={(e) => setName(e.target.value)}
-          />
-          {describable && (
+          {khmer ? (
+            <CatalogNameFields
+              nameLabel={kind === "objectives" ? m.title : m.name}
+              name={name}
+              onName={setName}
+              description={describable ? description : undefined}
+              onDescription={describable ? setDescription : undefined}
+              descriptionLabel={m.description}
+              nameKm={nameKm}
+              onNameKm={setNameKm}
+              descriptionKm={describable ? descriptionKm : undefined}
+              onDescriptionKm={describable ? setDescriptionKm : undefined}
+            />
+          ) : (
+            <FormField
+              label={kind === "objectives" || kind === "lessons" || kind === "activities" ? m.title : m.name}
+              value={name}
+              maxLength={200}
+              required
+              onChange={(e) => setName(e.target.value)}
+            />
+          )}
+          {describable && !khmer && (
             <TextAreaField
               label={m.description}
               value={description}

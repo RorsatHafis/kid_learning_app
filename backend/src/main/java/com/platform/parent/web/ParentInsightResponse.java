@@ -30,9 +30,16 @@ public record ParentInsightResponse(
 
     /** As {@link #from(ParentInsight, String)}, naming the child for a reader outside the family (a caregiver). */
     public static ParentInsightResponse from(ParentInsight insight, String language, String childName) {
+        return from(insight, language, childName, null);
+    }
+
+    /** As {@link #from(ParentInsight, String, String)}, with the skill or chapter it names in the reader's language. */
+    public static ParentInsightResponse from(ParentInsight insight, String language, String childName, InsightNames names) {
+        String headline = InsightText.translate(insight.getHeadline(), language, childName);
+        String detail = InsightText.translate(insight.getDetail(), language, childName);
         return new ParentInsightResponse(insight.getId(), insight.getInsightType(),
-                InsightText.translate(insight.getHeadline(), language, childName),
-                InsightText.translate(insight.getDetail(), language, childName),
+                names == null ? headline : names.apply(insight, headline, language),
+                names == null ? detail : names.apply(insight, detail, language),
                 insight.getSupportingData(), insight.getOccurredAt());
     }
 }

@@ -334,13 +334,14 @@ public class StudioController {
     // ================================================================== X14: edit details, archive, restore
 
     /** New details for something the Studio manages: its name or title, and (catalog) a description. */
-    public record DetailsRequest(@NotBlank @Size(max = 200) String name, @Size(max = 2000) String description) {
+    public record DetailsRequest(@NotBlank @Size(max = 200) String name, @Size(max = 2000) String description,
+                                 @Valid StudioDtos.KhmerNameRequest khmer) {
     }
 
     @PutMapping("/subjects/{subjectId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateSubject(@AuthenticationPrincipal UUID accountId, @PathVariable UUID subjectId, @Valid @RequestBody DetailsRequest request) {
-        lifecycle.updateSubject(accountId, subjectId, request.name(), request.description());
+        lifecycle.updateSubject(accountId, subjectId, request.name(), request.description(), request.khmer());
     }
 
     @PostMapping("/subjects/{subjectId}/archive")
@@ -358,7 +359,7 @@ public class StudioController {
     @PutMapping("/skills/{skillId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateSkill(@AuthenticationPrincipal UUID accountId, @PathVariable UUID skillId, @Valid @RequestBody DetailsRequest request) {
-        lifecycle.updateSkill(accountId, skillId, request.name(), request.description());
+        lifecycle.updateSkill(accountId, skillId, request.name(), request.description(), request.khmer());
     }
 
     @PostMapping("/skills/{skillId}/{action:archive|restore}")
@@ -371,7 +372,7 @@ public class StudioController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateObjective(@AuthenticationPrincipal UUID accountId, @PathVariable UUID objectiveId,
                                 @Valid @RequestBody DetailsRequest request) {
-        lifecycle.updateObjective(accountId, objectiveId, request.name(), request.description());
+        lifecycle.updateObjective(accountId, objectiveId, request.name(), request.description(), request.khmer());
     }
 
     @PostMapping("/objectives/{objectiveId}/{action:archive|restore}")
@@ -384,7 +385,7 @@ public class StudioController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void renameCurriculum(@AuthenticationPrincipal UUID accountId, @PathVariable UUID curriculumId,
                                  @Valid @RequestBody DetailsRequest request) {
-        lifecycle.renameCurriculum(accountId, curriculumId, request.name());
+        lifecycle.renameCurriculum(accountId, curriculumId, request.name(), request.khmer());
     }
 
     @PostMapping("/curricula/{curriculumId}/{action:archive|restore}")

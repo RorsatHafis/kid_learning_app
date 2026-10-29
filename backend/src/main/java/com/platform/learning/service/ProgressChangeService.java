@@ -66,8 +66,12 @@ public class ProgressChangeService {
     private final LearningDays learningDays;
     private final SkillProgressService skillProgress;
 
+    private final com.platform.content.service.CatalogNames catalogNames;
+
     public ProgressChangeService(LearnerSkillStateRepository skillStates, SkillRepository skills, StandingHistory standingHistory,
-                                 EvidenceStandard evidenceStandard, LearningDays learningDays, SkillProgressService skillProgress) {
+                                 EvidenceStandard evidenceStandard, LearningDays learningDays, SkillProgressService skillProgress,
+            com.platform.content.service.CatalogNames catalogNames) {
+        this.catalogNames = catalogNames;
         this.skillStates = skillStates;
         this.skills = skills;
         this.standingHistory = standingHistory;
@@ -101,7 +105,7 @@ public class ProgressChangeService {
                     StandingHistory.Moment before = then.getOrDefault(state.getSkillId(), StandingHistory.Moment.NONE);
                     SkillStanding now = evidenceStandard.standingFor(state, evidenceDays.getOrDefault(state.getSkillId(), 0));
                     Skill skill = names.get(state.getSkillId());
-                    return new SkillChange(state.getSkillId(), skill == null ? "A skill" : skill.getName(), kind(before.standing(), now),
+                    return new SkillChange(state.getSkillId(), skill == null ? "A skill" : catalogNames.name(com.platform.content.entity.LocalizableContentType.SKILL, skill.getId(), skill.getName()), kind(before.standing(), now),
                             before.standing(), now, state.getEvidenceCount() - before.evidence(), state.getLastEvidenceAt(), onPlan.contains(state.getSkillId()));
                 })
                 .sorted(Comparator.comparing(SkillChange::kind).thenComparing(SkillChange::name))

@@ -22,6 +22,10 @@ public interface ContentLocalizationRepository extends JpaRepository<ContentLoca
     List<ContentLocalization> findByContentTypeAndContentIdAndLocale(
             LocalizableContentType contentType, UUID contentId, String locale);
 
+    /** One locale's translations of many items of one type (a list's names in one query). */
+    List<ContentLocalization> findByContentTypeAndContentIdInAndLocale(
+            LocalizableContentType contentType, java.util.Collection<UUID> contentIds, String locale);
+
     /** Every translated field of one content item in one locale goes (a draft's Khmer is rewritten whole). */
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional

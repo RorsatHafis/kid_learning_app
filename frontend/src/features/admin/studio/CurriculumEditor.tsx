@@ -194,7 +194,7 @@ function JourneyBuilder({
           <StatusBadge status={latest.status} />
           {detail.archived && <ArchivedBadge />}
           <span className="ml-auto">
-            <ManageButton kind="curricula" id={detail.id} name={detail.name} archived={detail.archived} onChanged={onReload} />
+            <ManageButton kind="curricula" id={detail.id} name={detail.name} khmer={detail.khmer} archived={detail.archived} onChanged={onReload} />
           </span>
         </div>
         <p className="text-sm text-ink-soft">

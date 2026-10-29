@@ -39,9 +39,11 @@ public class AssignableCurriculaController {
     private final CurriculumRepository curricula;
     private final SubjectRepository subjects;
     private final AgeHubRepository ageHubs;
+    private final com.platform.content.service.CatalogNames catalogNames;
 
     public AssignableCurriculaController(SchoolAccessGuard guard, CurriculumService curriculumService, CurriculumRepository curricula,
-                                         SubjectRepository subjects, AgeHubRepository ageHubs) {
+                                         SubjectRepository subjects, AgeHubRepository ageHubs, com.platform.content.service.CatalogNames catalogNames) {
+        this.catalogNames = catalogNames;
         this.guard = guard;
         this.curriculumService = curriculumService;
         this.curricula = curricula;
@@ -65,11 +67,13 @@ public class AssignableCurriculaController {
         return list;
     }
 
-    private static AssignableCurriculum of(Curriculum curriculum, Map<UUID, Subject> subjects, Map<UUID, AgeHub> hubs, boolean own) {
+    /** Names in the reader's language where their Khmer is written (LOCALIZATION.md, catalog names). */
+    private AssignableCurriculum of(Curriculum curriculum, Map<UUID, Subject> subjects, Map<UUID, AgeHub> hubs, boolean own) {
         Subject subject = subjects.get(curriculum.getSubjectId());
         AgeHub hub = hubs.get(curriculum.getAgeHubId());
-        return new AssignableCurriculum(curriculum.getId(), curriculum.getName(), subject == null ? null : subject.getCode(),
-                subject == null ? null : subject.getName(), hub == null ? null : hub.getCode(), hub == null ? null : hub.getName(), own);
+        return new AssignableCurriculum(curriculum.getId(),
+                catalogNames.name(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId(), curriculum.getName()), subject == null ? null : subject.getCode(),
+                subject == null ? null : catalogNames.name(com.platform.content.entity.LocalizableContentType.SUBJECT, subject.getId(), subject.getName()), hub == null ? null : hub.getCode(), hub == null ? null : hub.getName(), own);
     }
 
 }

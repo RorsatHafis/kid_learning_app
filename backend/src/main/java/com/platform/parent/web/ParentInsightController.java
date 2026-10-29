@@ -26,8 +26,11 @@ public class ParentInsightController {
     private final ParentInsightService parentInsightService;
     private final FamilyAccessGuard familyAccessGuard;
     private final com.platform.family.service.ChildAccess childAccess;
+    private final InsightNames insightNames;
 
-    public ParentInsightController(ParentInsightService parentInsightService, FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess) {
+    public ParentInsightController(ParentInsightService parentInsightService, FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess,
+                                   InsightNames insightNames) {
+        this.insightNames = insightNames;
         this.parentInsightService = parentInsightService;
         this.familyAccessGuard = familyAccessGuard;
         this.childAccess = childAccess;
@@ -41,7 +44,7 @@ public class ParentInsightController {
 
         List<ParentInsight> insights = parentInsightService.generateInsights(childId);
 
-        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest())).toList());
+        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest(), null, insightNames)).toList());
     }
 
     /**
@@ -58,7 +61,7 @@ public class ParentInsightController {
 
         List<ParentInsight> insights = parentInsightService.currentInsights(childId);
 
-        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest(), name)).toList());
+        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest(), name, insightNames)).toList());
     }
 
     /** Every recorded snapshot, most recent first - historical events, not the child's current state. */
@@ -69,7 +72,7 @@ public class ParentInsightController {
 
         List<ParentInsight> insights = parentInsightService.listRecent(childId);
 
-        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest(), name)).toList());
+        return ResponseEntity.ok(insights.stream().map(insight -> ParentInsightResponse.from(insight, UiLanguage.ofCurrentRequest(), name, insightNames)).toList());
     }
 
     /** The child's name for a caregiver, so insights don't call the child theirs; null for the family. */

@@ -32,17 +32,26 @@ public final class StudioDtos {
 
     // ------------------------------------------------------------------ catalog
 
-    public record SubjectDto(UUID id, String code, String name, String description, boolean archived) {
+    public record SubjectDto(UUID id, String code, String name, String description, boolean archived, KhmerName khmer) {
+    }
+
+    /** A catalog name's Khmer as written so far (LOCALIZATION.md, V81): either may be null. */
+    public record KhmerName(String name, String description) {
+    }
+
+    /** A catalog name's Khmer in a create or update request; blank: not translated; absent: left as it is. */
+    public record KhmerNameRequest(@Size(max = 200) String name, @Size(max = 2000) String description) {
     }
 
     public record AgeHubDto(UUID id, String code, String name, int minAge, Integer maxAge) {
     }
 
     public record SkillDto(UUID id, String code, String name, String description, CatalogStatus status,
-                           List<UUID> prerequisiteSkillIds) {
+                           List<UUID> prerequisiteSkillIds, KhmerName khmer) {
     }
 
-    public record ObjectiveDto(UUID id, String code, String title, String description, List<UUID> skillIds, boolean archived) {
+    public record ObjectiveDto(UUID id, String code, String title, String description, List<UUID> skillIds, boolean archived,
+                               KhmerName khmer) {
     }
 
     public record CatalogDto(SubjectDto subject, List<SkillDto> skills, List<ObjectiveDto> objectives) {
@@ -51,15 +60,18 @@ public final class StudioDtos {
     private static final String CODE = "^[A-Z0-9_]+$";
 
     public record CreateSubjectRequest(@NotBlank @Size(max = 50) @Pattern(regexp = CODE) String code,
-                                       @NotBlank @Size(max = 120) String name, @Size(max = 2000) String description) {
+                                       @NotBlank @Size(max = 120) String name, @Size(max = 2000) String description,
+                                       @jakarta.validation.Valid KhmerNameRequest khmer) {
     }
 
     public record CreateSkillRequest(@NotBlank @Size(max = 60) @Pattern(regexp = CODE) String code,
-                                     @NotBlank @Size(max = 160) String name, @Size(max = 2000) String description) {
+                                     @NotBlank @Size(max = 160) String name, @Size(max = 2000) String description,
+                                     @jakarta.validation.Valid KhmerNameRequest khmer) {
     }
 
     public record CreateObjectiveRequest(@NotBlank @Size(max = 60) @Pattern(regexp = CODE) String code,
-                                         @NotBlank @Size(max = 200) String title, @Size(max = 2000) String description) {
+                                         @NotBlank @Size(max = 200) String title, @Size(max = 2000) String description,
+                                         @jakarta.validation.Valid KhmerNameRequest khmer) {
     }
 
     // ------------------------------------------------------------------ versions
@@ -73,7 +85,7 @@ public final class StudioDtos {
     // ------------------------------------------------------------------ curricula
 
     public record CurriculumSummary(UUID id, String name, UUID subjectId, UUID ageHubId, List<VersionSummary> versions,
-                                    boolean archived) {
+                                    boolean archived, KhmerName khmer) {
     }
 
     public record CurriculumVersionDetail(UUID id, int versionNumber, PublicationStatus status, Instant publishedAt,
@@ -81,11 +93,15 @@ public final class StudioDtos {
     }
 
     public record CurriculumDetail(UUID id, String name, UUID subjectId, UUID ageHubId,
-                                   List<CurriculumVersionDetail> versions, boolean archived) {
+                                   List<CurriculumVersionDetail> versions, boolean archived, KhmerName khmer) {
     }
 
     public record CreateCurriculumRequest(@NotNull UUID subjectId, @NotNull UUID ageHubId,
-                                          @NotBlank @Size(max = 160) String name) {
+                                          @NotBlank @Size(max = 160) String name,
+                                          @jakarta.validation.Valid KhmerNameRequest khmer) {
+        public CreateCurriculumRequest(UUID subjectId, UUID ageHubId, String name) {
+            this(subjectId, ageHubId, name, null);
+        }
     }
 
     public record ReplaceObjectivesRequest(@NotNull @Size(max = 200) List<@NotNull UUID> objectiveIds) {

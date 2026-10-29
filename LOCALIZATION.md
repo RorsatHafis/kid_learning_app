@@ -60,7 +60,7 @@ Khmer conventions used so far:
 
 ## Intentionally English, or not translated
 
-- **Educator content** other than questions (activities, curricula, skill and objective titles, media): shown as written until its slice of "Content in two languages" (below) is built. Questions have English and Khmer since 2026-10-29.
+- **Educator content** not yet in two languages (media descriptions, lesson titles): shown as written until its slice of "Content in two languages" (below) is built. Questions, activities, and subject, skill, chapter and curriculum names have English and Khmer since 2026-10-29.
 - **Brand and product names:** Bookeyond Kid; browser names (`ALLOWED_TEXT`); currency codes (`USD`).
 - **Audit log metadata** (keys and recorded values) and identifiers. Action and resource names *are* translated.
 - **Text written by administrators:** plan names and descriptions, messages to families.
@@ -126,14 +126,37 @@ differently.
 - There is **no automatic translation** anywhere: every Khmer word is written by an educator (PD-15). The interface's
   own language button changes only the interface.
 
+### Catalog names (slice 3)
+
+- A subject's, skill's, chapter's and curriculum's English stays on its own row; its Khmer `name` and `description`
+  are rows of `content_localizations` keyed by that row (V81 adds the four content types to the CHECK constraint;
+  nothing else changes).
+- A name is **one self-contained label**, so it is given to a Khmer reader **per name, whenever its Khmer is
+  written**, and in English otherwise - unlike a question, whose parts must all be in one language (L-1). A Khmer
+  name never needs the description's Khmer to be shown.
+- Where it is read: the family catalog (choosing a curriculum: curriculum and subject names), the child's path
+  (curriculum, subject, chapter titles and descriptions, the skills each step practises), the skills page (chapter
+  and skill names and descriptions), "what changed since your last visit", and the skill or chapter named in a parent
+  insight's sentence.
+- A parent insight records its sentence in English with the name as it was then; on screen the sentence is put in the
+  reader's language (`InsightText`) and the name it carries swapped for its Khmer (`InsightNames`). A name renamed
+  since the sentence was recorded is left as recorded.
+- The Studio: "Writing in: English | ខ្មែរ" in the Manage dialog of each of these and in the new-skill, new-chapter,
+  new-subject and new-curriculum forms; the code stays one field (it is not a name). A save that never touched Khmer
+  sends none and leaves it as it is; a Khmer field emptied on purpose removes that Khmer.
+- Teachers' class views and the curricula they can assign name curricula and subjects the same way. Not in Khmer:
+  the names of age groups (a short fixed list, not educator content).
+- A Khmer reader's names are read together - per curriculum shown, not per name (`CatalogNames.prefetch`, kept for
+  the rest of the request's transaction); an English reader costs no extra read.
+
 ### Inventory: what still has one language (in order)
 
 | # | Content | Where | Fields | Notes |
 |---|---|---|---|---|
 | 1 | **Questions** | Studio question editor, New question, the activity builder | prompt, hint, explanation, picture description, choices, pairs, items, groups, sorting items | **Built** (slice 1). Short answer excluded (scoring). |
 | 2 | Activities | Activity editor, builder | title, instructions, "Teach it first" text and picture description | **Built** (slice 2): `ACTIVITY_VERSION` rows (`ActivityTranslations`); the name is kept per version and written under More settings; a child reading Khmer gets the activity's own words in Khmer when all are translated, and the same name on the path, home and shelf. |
-| 3 | Curricula and chapters | Curriculum editor, Skills & objectives | curriculum name and description, learning-objective titles, skill names | Names children and parents read; `CURRICULUM_VERSION` and catalog rows need a content type (CHECK constraint change - a migration). |
-| 4 | Subjects | Studio | subject name | Shown to families and children. |
+| 3 | Curricula and chapters | Curriculum editor (Manage), New curriculum, Skills & objectives (new and Manage) | curriculum name; chapter (learning objective) title and description; skill name and description | **Built** (slice 3, V81 widens the content types to `SUBJECT`, `SKILL`, `LEARNING_OBJECTIVE`, `CURRICULUM`; `CatalogNames`). Catalog rows aren't versioned, so neither is their Khmer. A curriculum has no description to translate. |
+| 4 | Subjects | Studio (new subject, Manage subject) | subject name and description | **Built** (slice 3). |
 | 5 | Media | Media library | title, description (screen-reader text) | The description is read aloud by screen readers. |
 | 6 | Lessons | Studio | lesson title | Shown to teachers (and in shared lessons). |
 | 7 | Landing page / site copy | Admin → Landing page | every editable text | Already **bilingual** (F1a: each text has English and Khmer). |

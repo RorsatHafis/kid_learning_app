@@ -6,7 +6,8 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { cn } from "@/lib/utils/cn";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/features/auth/FormField";
+import { CatalogNameFields } from "./CatalogNameFields";
+import { khmerNameBody } from "./bilingual";
 import { ComposerPanel, NewButton, Panel, SelectField, StatusBadge } from "./shared";
 import { currentStatus, errorText, useStudio, useComposer, useArchivedView } from "./studioLogic";
 import { ArchivedSwitch } from "./Lifecycle";
@@ -98,6 +99,7 @@ function NewCurriculum({
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [ageHubId, setAgeHubId] = useState("");
+  const [nameKm, setNameKm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const m = useMessages(studioMessages).curricula;
@@ -111,6 +113,7 @@ function NewCurriculum({
         subjectId: catalog.subject.id,
         ageHubId,
         name: name.trim(),
+        ...(nameKm.trim() && { khmer: khmerNameBody(undefined, nameKm) }),
       });
       navigate(created.id);
     } catch (err) {
@@ -122,13 +125,7 @@ function NewCurriculum({
   return (
     <ComposerPanel title={m.newCurriculum} onClose={onClose} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <FormField
-          label={m.nameFamilies}
-          value={name}
-          maxLength={160}
-          required
-          onChange={(e) => setName(e.target.value)}
-        />
+        <CatalogNameFields nameLabel={m.nameFamilies} nameMax={160} name={name} onName={setName} nameKm={nameKm} onNameKm={setNameKm} />
         <SelectField label={m.ageGroup} value={ageHubId} required onChange={(e) => setAgeHubId(e.target.value)}>
           <option value="">{m.choose}</option>
           {ageHubs.map((hub) => (
