@@ -105,6 +105,15 @@ public class SubscriptionController {
                 .body(SubscriptionDtos.PlanResponse.of(service.duplicatePlan(adminId, planId, request.code(), request.name())));
     }
 
+    /** V80: when new customers can take the plan up; subscribers are unaffected. Step-up, like retiring it. */
+    @com.platform.security.stepup.RequiresStepUp
+    @PutMapping("/api/v1/admin/plans/{planId}/availability")
+    public SubscriptionDtos.PlanResponse changeAvailability(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId,
+                                                            @RequestBody SubscriptionDtos.AvailabilityRequest request) {
+        return SubscriptionDtos.PlanResponse.of(service.changeAvailability(adminId, planId, request.availableFrom(),
+                request.availableUntil()));
+    }
+
     /** Who is on which plan now: counts per plan and standing; schools whose paid period ends soon. */
     @GetMapping("/api/v1/admin/subscriptions/summary")
     public SubscriptionReportService.Summary subscriptionSummary(@AuthenticationPrincipal UUID adminId) {

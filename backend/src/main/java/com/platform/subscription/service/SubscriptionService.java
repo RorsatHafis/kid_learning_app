@@ -231,6 +231,26 @@ public class SubscriptionService {
     }
 
     /**
+     * When new customers can take a plan up (V80): from, until, either or neither. Nobody already on it is affected.
+     */
+    @Transactional
+    public PlanView changeAvailability(UUID adminId, UUID planId, Instant from, Instant until) {
+        requireAdmin(adminId);
+        SubscriptionPlan plan = plan(planId);
+        Instant previousFrom = plan.getAvailableFrom();
+        Instant previousUntil = plan.getAvailableUntil();
+        plan.changeAvailability(from, until);
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("code", plan.getCode());
+        metadata.put("from", previousFrom == null ? "open" : previousFrom.toString());
+        metadata.put("until", previousUntil == null ? "open" : previousUntil.toString());
+        metadata.put("newFrom", from == null ? "open" : from.toString());
+        metadata.put("newUntil", until == null ? "open" : until.toString());
+        record(adminId, "PLAN_AVAILABILITY_CHANGED", planId, metadata);
+        return view(plan);
+    }
+
+    /**
      * Families (or schools) without a subscription get their audience's default plan; changing it
      * changes what they can add from now on.
      */
@@ -283,6 +303,10 @@ public class SubscriptionService {
         }
         Instant now = Instant.now();
         Optional<FamilySubscription> existing = subscriptions.findByFamilyIdForUpdate(familyId);
+        boolean alreadyOnIt = existing.filter(s -> s.getPlanId().equals(planId) && s.grantsAccessAt(now)).isPresent();
+        if (!plan.offeredAt(now) && !alreadyOnIt) {
+            throw new IllegalStateException("This plan isn't offered now: today is outside its offer dates");
+        }
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("plan", plan.getCode());
         metadata.put("until", periodEnd == null ? "open-ended" : periodEnd.toString());
@@ -415,7 +439,7 @@ public class SubscriptionService {
         Optional<PlanOffer> afterwards = ends ? Optional.of(offer(entitlementService.defaultPlan())) : Optional.empty();
         List<PlanOffer> choices = plans.findAllByOrderByCreatedAtAsc().stream()
                 .filter(plan -> plan.getAudience() == PlanAudience.FAMILY)
-                .filter(plan -> plan.getStatus() == PlanStatus.ACTIVE && plan.isSelfService())
+                .filter(plan -> plan.offeredAt(Instant.now()) && plan.isSelfService())
                 .filter(plan -> !plan.getId().equals(effective.plan().getId()))
                 .map(this::offer)
                 .toList();

@@ -128,6 +128,52 @@ describe("Plan versions and the subscriptions summary", () => {
     expect(within(list).getByText(/from FAMILY/)).toBeInTheDocument();
   });
 
+  it("says when a plan stopped being offered and saves new offer dates as the moments the server keeps", async () => {
+    const ended = {
+      ...plan("family", "FAMILY", { name: "Family 2026" }),
+      availableFrom: null,
+      availableUntil: "2026-10-01T00:00:00Z",
+      offeredNow: false,
+    };
+    const calls = server({
+      "GET /admin/plans": () => respond(200, [PLANS[0], ended, PLANS[2]]),
+      "GET /admin/plan-requests": () => respond(200, { items: [], page: 0, size: 100, total: 0 }),
+      "GET /admin/subscriptions/summary": () => respond(200, SUMMARY),
+      "PUT /admin/plans/family/availability": () => respond(200, { ...ended, availableUntil: null, offeredNow: true }),
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PlansPage />
+      </MemoryRouter>,
+    );
+
+    const list = await screen.findByRole("list", { name: "Plans" });
+    expect(within(list).getByText("No longer offered")).toBeInTheDocument();
+    await user.click(within(list).getByText("Family 2026"));
+    const offer = screen.getByRole("region", { name: "When it is offered" });
+    expect(within(offer).getByText(/Offered until/)).toBeInTheDocument();
+    await user.click(within(offer).getByRole("button", { name: "Change the dates…" }));
+    const from = within(offer).getByLabelText("First day offered (optional)");
+    const until = within(offer).getByLabelText("Last day offered (optional)");
+    await user.clear(until);
+    await user.type(from, "2026-11-10");
+    await user.type(until, "2026-11-05");
+    expect(within(offer).getByText("The last day has to be on or after the first day.")).toBeInTheDocument();
+    expect(within(offer).getByRole("button", { name: "Save the dates" })).toBeDisabled();
+    await user.clear(until);
+    await user.type(until, "2026-11-30");
+    await user.click(within(offer).getByRole("button", { name: "Save the dates" }));
+
+    const put = calls.find((c) => c.method === "PUT");
+    // The first day starts the offer; the last day is included, so the offer ends as the next day starts.
+    expect(put?.body).toEqual({
+      availableFrom: new Date("2026-11-10T00:00:00").toISOString(),
+      availableUntil: new Date("2026-12-01T00:00:00").toISOString(),
+    });
+    expect(await within(offer).findByText("The dates are saved.")).toBeInTheDocument();
+  });
+
   it("counts families by plan and standing without listing them, and lists schools whose paid plan ends soon", async () => {
     server({
       "GET /admin/plans": () => respond(200, PLANS),

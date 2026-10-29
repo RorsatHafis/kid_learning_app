@@ -145,6 +145,12 @@ public class PaymentService {
             throw new IllegalArgumentException("This plan isn't offered for families to choose");
         }
 
+        boolean ownPlan = familySubscriptions.findByFamilyId(familyId)
+                .filter(s -> s.getPlanId().equals(planId) && s.grantsAccessAt(now())).isPresent();
+        if (!plan.offeredAt(now()) && !ownPlan) {
+            throw new IllegalStateException("This plan isn't offered now: today is outside its offer dates");
+        }
+
         PaymentProvider provider = requireAvailable(method);
         expireStale(orders.findFirstByFamilyIdAndStatus(familyId, PaymentStatus.PENDING));
         if (orders.findFirstByFamilyIdAndStatus(familyId, PaymentStatus.PENDING).isPresent()) {
@@ -183,6 +189,12 @@ public class PaymentService {
         SubscriptionPlan plan = plans.findById(planId).orElseThrow(() -> new ResourceNotFoundException("Plan", planId));
         if (plan.getAudience() != PlanAudience.SCHOOL) {
             throw new IllegalArgumentException("Only a school plan can be invoiced to a school");
+        }
+
+        boolean schoolsOwnPlan = schoolSubscriptions.findBySchoolId(schoolId)
+                .filter(s -> s.getSource() == SubscriptionSource.PROVIDER && s.getPlanId().equals(planId)).isPresent();
+        if (!plan.offeredAt(now()) && !schoolsOwnPlan) {
+            throw new IllegalStateException("This plan isn't offered now: today is outside its offer dates");
         }
 
         PaymentProvider provider = requireAvailable(PaymentProviderType.MANUAL);
@@ -231,6 +243,9 @@ public class PaymentService {
             if (paidPlan.filter(s -> s.grantsAccessAt(now())).isPresent()) {
                 throw new IllegalStateException("The school's paid plan is still running: to change plans, ask the Bookeyond team");
             }
+            if (!plan.offeredAt(now())) {
+                throw new IllegalStateException("This plan isn't offered now: today is outside its offer dates");
+            }
         }
 
         PaymentProvider provider = requireAvailable(method);
@@ -261,7 +276,7 @@ public class PaymentService {
         return plans.findAllByOrderByCreatedAtAsc().stream()
                 .filter(plan -> plan.getAudience() == PlanAudience.SCHOOL && plan.getPriceAmountMinor() != null)
                 .filter(plan -> plan.getStatus() == com.platform.subscription.entity.PlanStatus.ACTIVE)
-                .filter(plan -> own.filter(plan.getId()::equals).isPresent() || (!running && plan.isSelfService()))
+                .filter(plan -> own.filter(plan.getId()::equals).isPresent() || (!running && plan.isSelfService() && plan.offeredAt(now())))
                 .sorted(java.util.Comparator.comparing((SubscriptionPlan plan) -> own.filter(plan.getId()::equals).isEmpty()))
                 .toList();
 

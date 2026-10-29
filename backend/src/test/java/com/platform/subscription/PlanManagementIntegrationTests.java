@@ -208,6 +208,98 @@ class PlanManagementIntegrationTests {
         assertThat(get("/api/v1/admin/subscriptions/summary", null).statusCode()).isEqualTo(401);
     }
 
+    /** Slice 2 (V80): offer dates decide who new can take a plan up; nobody already on it is affected. */
+    @Test
+    void offerDatesDecideWhoNewCanTakeAPlanUpAndNeverTouchWhoeverIsOnIt() throws Exception {
+        String admin = token(PlatformRole.ADMIN);
+        String code = "OFFER_" + suffix();
+        String planId = json(post("/api/v1/admin/plans", "{\"code\":\"" + code + "\",\"name\":\"Offer plan\"}", admin), 201)
+                .get("plan").get("id").asString();
+        json(put("/api/v1/admin/plans/" + planId, familyPlan("Offer plan", 2, 2, 400).replace("\"selfService\":false",
+                "\"selfService\":true"), admin), 200);
+        json(post("/api/v1/admin/plans/" + planId + "/activate", "{}", admin), 200);
+        String availability = "/api/v1/admin/plans/" + planId + "/availability";
+        Instant now = Instant.now();
+
+        // Not offered yet: nobody new gets it, in any of the ways a plan is taken up.
+        JsonNode later = json(put(availability, "{\"availableFrom\":\"" + now.plus(5, ChronoUnit.DAYS) + "\"}", admin), 200);
+        assertThat(later.get("offeredNow").asBoolean()).isFalse();
+        assertThat(later.get("availableFrom").isNull()).isFalse();
+        assertThat(later.get("availableUntil").isNull()).isTrue();
+        String firstEmail = "offer-first-" + UUID.randomUUID() + "@example.com";
+        String firstParent = registerParent(firstEmail);
+        String first = familyOf(admin, firstEmail);
+        assertThat(json(get("/api/v1/family/plan", firstParent), 200).get("choices").toString()).doesNotContain(planId);
+        assertThat(post("/api/v1/family/plan/request", "{\"planId\":\"" + planId + "\"}", firstParent).statusCode()).isEqualTo(404);
+        assertThat(json(post("/api/v1/admin/families/" + first + "/subscription", "{\"planId\":\"" + planId + "\"}", admin), 409)
+                .get("detail").asString()).isEqualTo("This plan isn't offered now: today is outside its offer dates");
+        assertThat(json(post("/api/v1/family/payments", "{\"planId\":\"" + planId + "\",\"method\":\"DEV_SIMULATOR\","
+                + "\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", firstParent), 409).get("detail").asString())
+                .isEqualTo("This plan isn't offered now: today is outside its offer dates");
+
+        // Offered until a date: the family takes it up; the family's choices show it.
+        json(put(availability, "{\"availableUntil\":\"" + now.plus(5, ChronoUnit.DAYS) + "\"}", admin), 200);
+        assertThat(json(get("/api/v1/family/plan", firstParent), 200).get("choices").toString()).contains(planId);
+        json(post("/api/v1/admin/families/" + first + "/subscription", "{\"planId\":\"" + planId + "\"}", admin), 200);
+
+        // The offer ends: someone new is refused, the family already on it keeps it and can be given it again.
+        JsonNode ended = json(put(availability, "{\"availableUntil\":\"" + now.minus(1, ChronoUnit.MINUTES) + "\"}", admin), 200);
+        assertThat(ended.get("offeredNow").asBoolean()).isFalse();
+        assertThat(ended.get("subscribers").asLong()).isEqualTo(1);
+        String secondEmail = "offer-second-" + UUID.randomUUID() + "@example.com";
+        registerParent(secondEmail);
+        json(post("/api/v1/admin/families/" + familyOf(admin, secondEmail) + "/subscription", "{\"planId\":\"" + planId + "\"}", admin), 409);
+        JsonNode stillOn = json(get("/api/v1/family/plan", firstParent), 200);
+        assertThat(stillOn.get("plan").get("id").asString()).isEqualTo(planId);
+        assertThat(stillOn.get("onDefaultPlan").asBoolean()).isFalse();
+        json(post("/api/v1/admin/families/" + first + "/subscription", "{\"planId\":\"" + planId + "\"}", admin), 200);
+
+        // A school plan offered later is not among a principal's choices, can't be started or invoiced.
+        String schoolCode = "OFFER_SCHOOL_" + suffix();
+        String schoolPlan = json(post("/api/v1/admin/plans", "{\"code\":\"" + schoolCode + "\",\"name\":\"Offer school\",\"audience\":\"SCHOOL\"}",
+                admin), 201).get("plan").get("id").asString();
+        json(put("/api/v1/admin/plans/" + schoolPlan, "{\"name\":\"Offer school\",\"selfService\":true,\"priceAmountMinor\":9000,"
+                + "\"priceCurrency\":\"USD\",\"billingInterval\":\"YEAR\",\"limits\":{}}", admin), 200);
+        json(post("/api/v1/admin/plans/" + schoolPlan + "/activate", "{}", admin), 200);
+        json(put("/api/v1/admin/plans/" + schoolPlan + "/availability", "{\"availableFrom\":\"" + now.plus(3, ChronoUnit.DAYS) + "\"}", admin), 200);
+        String principal = token(PlatformRole.PRINCIPAL);
+        String schoolId = json(post("/api/v1/schools", "{\"name\":\"Offer School " + suffix() + "\"}", principal), 201).get("id").asString();
+        assertThat(json(get("/api/v1/schools/" + schoolId + "/payment-plans", principal), 200).toString()).doesNotContain(schoolPlan);
+        json(post("/api/v1/schools/" + schoolId + "/payments", "{\"planId\":\"" + schoolPlan + "\",\"method\":\"DEV_SIMULATOR\","
+                + "\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", principal), 409);
+        json(post("/api/v1/admin/schools/" + schoolId + "/invoices", "{\"planId\":\"" + schoolPlan + "\",\"idempotencyKey\":\""
+                + UUID.randomUUID() + "\"}", admin), 409);
+        json(put("/api/v1/admin/plans/" + schoolPlan + "/availability", "{}", admin), 200);
+        assertThat(json(get("/api/v1/schools/" + schoolId + "/payment-plans", principal), 200).toString()).contains(schoolPlan);
+
+        // Rules: an offer ends after it starts; the default plan has no dates and a dated plan can't become it; a retired
+        // plan isn't offered; only an administrator sets dates.
+        json(put(availability, "{\"availableFrom\":\"" + now.plus(2, ChronoUnit.DAYS) + "\",\"availableUntil\":\""
+                + now.plus(1, ChronoUnit.DAYS) + "\"}", admin), 400);
+        String familyDefault = null;
+        for (JsonNode p : json(get("/api/v1/admin/plans", admin), 200)) {
+            if (p.get("plan").get("audience").asString().equals("FAMILY") && p.get("plan").get("isDefault").asBoolean()) {
+                familyDefault = p.get("plan").get("id").asString();
+                assertThat(p.get("offeredNow").asBoolean()).isTrue();
+            }
+        }
+        assertThat(json(put("/api/v1/admin/plans/" + familyDefault + "/availability", "{\"availableUntil\":\""
+                + now.plus(9, ChronoUnit.DAYS) + "\"}", admin), 409).get("detail").asString())
+                .isEqualTo("The default plan is always offered, so it can't have offer dates");
+        assertThat(json(post("/api/v1/admin/plans/" + planId + "/make-default", "{}", admin), 409).get("detail").asString())
+                .isEqualTo("The default plan is always offered: remove this plan's offer dates first");
+        json(put(availability, "{}", admin), 200);
+        json(post("/api/v1/admin/plans/" + planId + "/retire", "{}", admin), 200);
+        json(put(availability, "{\"availableUntil\":\"" + now.plus(9, ChronoUnit.DAYS) + "\"}", admin), 409);
+        assertThat(put(availability, "{}", firstParent).statusCode()).isEqualTo(403);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'PLAN_AVAILABILITY_CHANGED' "
+                + "and resource_id = ?::uuid", Integer.class, UUID.fromString(planId))).isEqualTo(4);
+        // The database keeps the same rules even if a write bypassed the service.
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> jdbc.update(
+                "update subscription_plans set available_from = now(), available_until = now() - interval '1 day' where id = ?::uuid",
+                UUID.fromString(planId))).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private static String familyPlan(String name, int children, int journeys, long price) {

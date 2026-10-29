@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import org.springframework.util.Assert;
 
+import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -59,6 +60,13 @@ public class SubscriptionPlan extends AuditableEntity {
     @Column(name = "based_on_plan_id", updatable = false)
     private UUID basedOnPlanId;
 
+    /** When new customers can take it up (V80); null = no bound on that side. Subscribers are never affected. */
+    @Column(name = "available_from")
+    private Instant availableFrom;
+
+    @Column(name = "available_until")
+    private Instant availableUntil;
+
     protected SubscriptionPlan() {
         // JPA
     }
@@ -90,6 +98,7 @@ public class SubscriptionPlan extends AuditableEntity {
         plan.revise(name, source.description, source.selfService, source.priceAmountMinor, source.priceCurrency,
                 source.billingInterval);
         plan.basedOnPlanId = source.getId();
+        // Offer dates (V80) are not copied: a new version is offered when its administrator says, not when the old was.
         return plan;
     }
 
@@ -138,9 +147,37 @@ public class SubscriptionPlan extends AuditableEntity {
         this.status = PlanStatus.RETIRED;
     }
 
+    /**
+     * Sets when new customers can take the plan up (V80). Editable on a draft or an active plan - it changes the
+     * offer, never what a subscriber has. The default plan is everyone's fallback, so it is always offered.
+     */
+    public void changeAvailability(Instant from, Instant until) {
+        if (status == PlanStatus.RETIRED) {
+            throw new IllegalStateException("A retired plan isn't offered any more: duplicate it to offer it again");
+        }
+        if (defaultPlan && (from != null || until != null)) {
+            throw new IllegalStateException("The default plan is always offered, so it can't have offer dates");
+        }
+        if (from != null && until != null && !until.isAfter(from)) {
+            throw new IllegalArgumentException("The offer has to end after it starts");
+        }
+        this.availableFrom = from;
+        this.availableUntil = until;
+    }
+
+    /** Whether someone new can take it up at {@code at}: active, and inside its offer dates. */
+    public boolean offeredAt(Instant at) {
+        return status == PlanStatus.ACTIVE
+                && (availableFrom == null || !availableFrom.isAfter(at))
+                && (availableUntil == null || availableUntil.isAfter(at));
+    }
+
     public void makeDefault() {
         if (status != PlanStatus.ACTIVE) {
             throw new IllegalStateException("Only an active plan can be the default");
+        }
+        if (availableFrom != null || availableUntil != null) {
+            throw new IllegalStateException("The default plan is always offered: remove this plan's offer dates first");
         }
         this.defaultPlan = true;
     }
@@ -153,6 +190,14 @@ public class SubscriptionPlan extends AuditableEntity {
         if (status != PlanStatus.DRAFT) {
             throw new IllegalStateException("Only a draft plan can be " + action + "; this one is " + status.name().toLowerCase());
         }
+    }
+
+    public Instant getAvailableFrom() {
+        return availableFrom;
+    }
+
+    public Instant getAvailableUntil() {
+        return availableUntil;
     }
 
     public UUID getBasedOnPlanId() {

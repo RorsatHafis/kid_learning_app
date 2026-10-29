@@ -147,6 +147,9 @@ export function PlansPage() {
                       <span className="flex flex-wrap items-center gap-1.5">
                         <PlanBadge status={p.plan.status} />
                         {p.plan.isDefault && <span className="text-xs font-semibold text-tonle-700">{m.default}</span>}
+                        {p.plan.status === "ACTIVE" && p.offeredNow === false && (
+                          <span className="text-xs font-semibold text-light-deep">{offerState(p)}</span>
+                        )}
                       </span>
                       <span className={cn("hidden text-sm text-ink-soft sm:block", selected && "xl:hidden")}>
                         {p.entitlements.map((e) => (
@@ -795,9 +798,119 @@ function PlanDetail({
             </div>
           </div>
         )}
+        <OfferDates plan={plan} onChanged={onChanged} />
         {!confirming && <DuplicatePlan plan={plan} onDuplicated={onDuplicated} />}
       </div>
     </Panel>
+  );
+}
+
+/** "2026-11-01" in the browser's day, as the instant that day starts. */
+const dayStart = (day: string) => new Date(`${day}T00:00:00`).toISOString();
+/** An instant as the browser's calendar day ("2026-11-01"). */
+function dayOf(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+/** The last day offered is shown and chosen; the server keeps the moment the offer ends (the next day's start). */
+function lastDayOf(untilIso: string): string {
+  const d = new Date(untilIso);
+  d.setDate(d.getDate() - 1);
+  return dayOf(d.toISOString());
+}
+function dayAfter(day: string): string {
+  const d = new Date(`${day}T00:00:00`);
+  d.setDate(d.getDate() + 1);
+  return d.toISOString();
+}
+
+/** Why an active plan isn't offered now: its offer starts later, or has ended (the server decides offeredNow). */
+function offerState(p: PlanResponse): string {
+  const m = messagesNow(plansMessages).offer;
+  return p.availableFrom && new Date(p.availableFrom).getTime() > Date.now() ? m.notYet : m.over;
+}
+
+/**
+ * V80: when new customers can take the plan up. A family or school already on it keeps it whatever the dates say;
+ * the default plan is always offered; a retired plan is offered to nobody.
+ */
+function OfferDates({ plan, onChanged }: { plan: PlanResponse; onChanged: () => void }) {
+  const m = useMessages(plansMessages).offer;
+  const [open, setOpen] = useState(false);
+  const [from, setFrom] = useState(plan.availableFrom ? dayOf(plan.availableFrom) : "");
+  const [until, setUntil] = useState(plan.availableUntil ? lastDayOf(plan.availableUntil) : "");
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const status = plan.plan.status;
+  const showDay = (day: string) => dateOnly(`${day}T12:00:00`);
+  const fromDay = plan.availableFrom ? dayOf(plan.availableFrom) : null;
+  const lastDay = plan.availableUntil ? lastDayOf(plan.availableUntil) : null;
+  const wrongOrder = Boolean(from && until && until < from);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setFeedback(null);
+    try {
+      await plansApi.setAvailability(plan.plan.id, from ? dayStart(from) : null, until ? dayAfter(until) : null);
+      setOpen(false);
+      setFeedback({ ok: true, text: m.saved });
+      onChanged();
+    } catch (err) {
+      setFeedback({ ok: false, text: errorText(err, m.failed) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  let line: string;
+  if (plan.plan.isDefault) line = m.defaultAlways;
+  else if (status === "RETIRED") line = m.retired;
+  else if (!fromDay && !lastDay) line = m.always;
+  else line = m.window(fromDay && showDay(fromDay), lastDay && showDay(lastDay));
+  const editable = !plan.plan.isDefault && status !== "RETIRED";
+
+  return (
+    <section aria-label={m.title} className="flex flex-col gap-2 rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
+      <h3 className="text-sm font-semibold text-ink">{m.title}</h3>
+      <p className="text-sm text-ink">
+        {line}
+        {status === "ACTIVE" && plan.offeredNow === false && !plan.plan.isDefault && (
+          <span className="ml-1 font-semibold text-light-deep">({offerState(plan)})</span>
+        )}
+      </p>
+      {status === "DRAFT" && (fromDay || lastDay) && <p className="text-xs text-ink-soft">{m.draftNote}</p>}
+      {editable && !open && (
+        <Button size="sm" variant="ghost" className="w-fit" onClick={() => setOpen(true)}>
+          {m.change}
+        </Button>
+      )}
+      {editable && open && (
+        <form onSubmit={save} className="flex flex-col gap-3">
+          <p className="text-xs text-ink-soft">{m.lead}</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FormField label={m.from} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <FormField
+              label={m.until}
+              type="date"
+              value={until}
+              min={from || undefined}
+              error={wrongOrder ? m.endBeforeStart : undefined}
+              onChange={(e) => setUntil(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="sm" disabled={busy || wrongOrder}>
+              {busy ? m.saving : m.save}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
+              {m.cancel}
+            </Button>
+          </div>
+        </form>
+      )}
+      {feedback && <Feedback ok={feedback.ok} text={feedback.text} />}
+    </section>
   );
 }
 

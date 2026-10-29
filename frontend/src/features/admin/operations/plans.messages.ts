@@ -77,6 +77,27 @@ export const plansMessages = defineMessages(
       cancel: "Cancel",
       failed: "The copy couldn't be made.",
     },
+    offer: {
+      title: "When it is offered",
+      lead: "Who new can take this plan up, and when. Families and schools already on it keep it whatever the dates say.",
+      always: "Offered to new customers with no end date.",
+      defaultAlways: "The default plan is always offered: it is what everyone without a subscription has.",
+      retired: "Retired: no longer offered to anyone new.",
+      draftNote: "It is offered from these dates once it is activated.",
+      window: (from: string | null, until: string | null) =>
+        from && until ? `Offered from ${from} to ${until}.` : from ? `Offered from ${from}.` : `Offered until ${until}.`,
+      notYet: "Not offered yet",
+      over: "No longer offered",
+      from: "First day offered (optional)",
+      until: "Last day offered (optional)",
+      endBeforeStart: "The last day has to be on or after the first day.",
+      change: "Change the dates…",
+      save: "Save the dates",
+      saving: "Saving…",
+      cancel: "Cancel",
+      saved: "The dates are saved.",
+      failed: "The dates couldn't be saved.",
+    },
     summary: {
       title: "Subscriptions now",
       leadFamily: "Families on each plan right now. Families are counted here, never listed: open one by a parent's email below.",
@@ -261,6 +282,31 @@ export const plansMessages = defineMessages(
       create: "បង្កើតសេចក្ដីព្រាង",
       cancel: "បោះបង់",
       failed: "មិនអាចចម្លងបានទេ។",
+    },
+    offer: {
+      title: "ពេលដែលវាត្រូវបានផ្ដល់ជូន",
+      lead: "អ្នកថ្មីណាអាចយកកញ្ចប់នេះ និងនៅពេលណា។ គ្រួសារ និងសាលាដែលកំពុងប្រើវារួចហើយ រក្សាវាទុក ទោះកាលបរិច្ឆេទយ៉ាងណាក៏ដោយ។",
+      always: "ត្រូវបានផ្ដល់ជូនអតិថិជនថ្មី ដោយគ្មានកាលបរិច្ឆេទបញ្ចប់។",
+      defaultAlways: "កញ្ចប់លំនាំដើមតែងតែត្រូវបានផ្ដល់ជូន៖ វាជាអ្វីដែលអ្នកគ្មានការជាវទាំងអស់មាន។",
+      retired: "បានបញ្ឈប់៖ មិនត្រូវបានផ្ដល់ជូនអ្នកថ្មីទៀតទេ។",
+      draftNote: "វានឹងត្រូវបានផ្ដល់ជូនចាប់ពីកាលបរិច្ឆេទទាំងនេះ នៅពេលវាត្រូវបានដាក់ឱ្យប្រើ។",
+      window: (from: string | null, until: string | null) =>
+        from && until
+          ? `ត្រូវបានផ្ដល់ជូនពី ${from} ដល់ ${until}។`
+          : from
+            ? `ត្រូវបានផ្ដល់ជូនចាប់ពី ${from}។`
+            : `ត្រូវបានផ្ដល់ជូនរហូតដល់ ${until}។`,
+      notYet: "មិនទាន់ផ្ដល់ជូនទេ",
+      over: "លែងផ្ដល់ជូនហើយ",
+      from: "ថ្ងៃដំបូងដែលផ្ដល់ជូន (ស្រេចចិត្ត)",
+      until: "ថ្ងៃចុងក្រោយដែលផ្ដល់ជូន (ស្រេចចិត្ត)",
+      endBeforeStart: "ថ្ងៃចុងក្រោយត្រូវតែនៅថ្ងៃដំបូង ឬក្រោយថ្ងៃដំបូង។",
+      change: "ប្ដូរកាលបរិច្ឆេទ…",
+      save: "រក្សាទុកកាលបរិច្ឆេទ",
+      saving: "កំពុងរក្សាទុក…",
+      cancel: "បោះបង់",
+      saved: "កាលបរិច្ឆេទត្រូវបានរក្សាទុក។",
+      failed: "មិនអាចរក្សាទុកកាលបរិច្ឆេទបានទេ។",
     },
     summary: {
       title: "ការជាវឥឡូវនេះ",

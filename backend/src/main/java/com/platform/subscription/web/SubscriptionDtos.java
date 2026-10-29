@@ -57,13 +57,25 @@ public final class SubscriptionDtos {
 
     /** {@code subscribers}: the families (family plan) or schools (school plan) whose subscription names it. */
     /** A plan as an administrator manages it; {@code basedOn}: the plan it was duplicated from (V79), or null. */
-    public record PlanResponse(PlanSummary plan, List<Entitlement> entitlements, long subscribers, PlanRef basedOn) {
+    /**
+     * A plan as an administrator manages it; {@code basedOn}: the plan it was duplicated from (V79), or null;
+     * {@code availableFrom} / {@code availableUntil}: its offer dates (V80, null = unbounded); {@code offeredNow}: whether
+     * someone new can take it up at this moment (active and inside its dates).
+     */
+    public record PlanResponse(PlanSummary plan, List<Entitlement> entitlements, long subscribers, PlanRef basedOn,
+                               Instant availableFrom, Instant availableUntil, boolean offeredNow) {
 
         static PlanResponse of(SubscriptionService.PlanView view) {
             SubscriptionPlan basedOn = view.basedOn();
-            return new PlanResponse(PlanSummary.of(view.plan()), entitlementList(view.limits(), null), view.subscribers(),
-                    basedOn == null ? null : new PlanRef(basedOn.getId(), basedOn.getCode(), basedOn.getName()));
+            SubscriptionPlan plan = view.plan();
+            return new PlanResponse(PlanSummary.of(plan), entitlementList(view.limits(), null), view.subscribers(),
+                    basedOn == null ? null : new PlanRef(basedOn.getId(), basedOn.getCode(), basedOn.getName()),
+                    plan.getAvailableFrom(), plan.getAvailableUntil(), plan.offeredAt(Instant.now()));
         }
+    }
+
+    /** Offer dates; either may be null (no bound on that side). */
+    public record AvailabilityRequest(Instant availableFrom, Instant availableUntil) {
     }
 
     public record PlanRef(UUID id, String code, String name) {

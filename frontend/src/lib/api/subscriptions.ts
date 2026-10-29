@@ -53,6 +53,11 @@ export interface PlanResponse {
   subscribers: number;
   /** The plan this one was duplicated from (V79): its earlier version. */
   basedOn: { id: string; code: string; name: string } | null;
+  /** V80: when new customers can take it up (null = no bound on that side); subscribers are never affected. */
+  availableFrom: string | null;
+  availableUntil: string | null;
+  /** Whether someone new can take it up now (decided by the server: active and inside its dates). */
+  offeredNow: boolean;
 }
 
 /** Subscriptions naming one plan, by standing now (SubscriptionReportService.PlanCounts). */
@@ -237,6 +242,9 @@ export const plansApi = {
   duplicate: (planId: string, body: { code: string; name: string }) =>
     apiClient.post<PlanResponse>(`/admin/plans/${planId}/duplicate`, body),
   summary: () => apiClient.get<SubscriptionSummary>("/admin/subscriptions/summary"),
+  /** V80: offer dates; either may be null. */
+  setAvailability: (planId: string, availableFrom: string | null, availableUntil: string | null) =>
+    apiClient.put<PlanResponse>(`/admin/plans/${planId}/availability`, { availableFrom, availableUntil }),
   findFamily: (parentEmail: string) =>
     apiClient.get<FamilyAccountSummary>(`/admin/families?parentEmail=${encodeURIComponent(parentEmail)}`),
   grant: (familyId: string, body: { planId: string; periodEnd: string | null; note: string | null }) =>

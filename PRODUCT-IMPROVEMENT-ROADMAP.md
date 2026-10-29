@@ -1796,4 +1796,22 @@ Dependencies:
     Frontend: `planVersions.test.tsx` (2), admin Vitest 76 (one studio test timed out under the full run's load and
     passes alone - unrelated), tsc, eslint. **Browser verified** (headless, 1280 and 360 px): duplicating a plan,
     the summary for families and schools, no horizontal overflow, axe clean.
+- 2026-10-29: **CI green on `3092341`. Studio choice width; subscriptions slice 2 - offer dates.**
+  - Child journey walked on a tablet (768 px, wrong answer first): feedback, reveal, completion and next step work;
+    the weakest moment is a mistake on content without an authored explanation - a content gap (the seed has
+    none), not invented in code. Retrying before the reveal would change what counts as evidence: not done
+    without a decision.
+  - Teacher authoring walked at 1280 px: writing, checks (missing skill, hint naming the answer), child-view
+    preview and publish gating work. **Fixed** (`8aa12ac`): a multiple-choice answer's text box was squeezed to
+    about 50 px by six media buttons; it now keeps a usable width (324 px) with the buttons wrapping below.
+  - **Offer dates** (V80, `docs/SUBSCRIPTIONS.md` §6): an active plan offered from / until; applied in every place
+    someone new takes a plan up; whoever is on it keeps it; the default plan always offered (database CHECK too);
+    step-up, audited. Plans list says "Not offered yet" / "No longer offered"; the plan shows "When it is offered".
+  - **Tested**: `PlanManagementIntegrationTests` third scenario (not yet / until / ended across family choices,
+    requests, checkout, grants; a school plan in a principal's choices, checkout, an administrator's invoice; the
+    default plan; retired; 400 on reversed dates; 403 for a parent; audit count; database CHECK) and the payment,
+    subscription and school-plan suites - green; `planVersions.test.tsx` 3; admin operations Vitest 22; tsc; eslint.
+    **Browser**: the dates form at 1280 and 360 px (axe clean, no overflow) up to the step-up prompt, which asks the
+    seed administrator for an authenticator code I don't have - saving through it is covered by the tests above,
+    **not browser verified**.
 

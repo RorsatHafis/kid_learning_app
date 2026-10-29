@@ -44,7 +44,7 @@ never Bookeyond revenue, and a Bookeyond invoice is never a school fee.
 | Subscription history per customer | **Partial** | The audit log plus the payment ledger; no single timeline view |
 | Organization (multi-branch) audience and organization-level subscriptions | **Designed, not built** (§5) | decision SB1 / B1 |
 | Feature and module entitlements (on/off, not just limits) | **Designed, not built** (§4) | decision SB4 |
-| Availability window (offer from / until) | **Designed, not built** (§6) | slice 2 |
+| Offer dates (from / until) deciding who new can take a plan up | **Built (slice 2, 2026-10-29)** | V80, `PUT /admin/plans/{id}/availability` (step-up), Plans → "When it is offered" |
 | Renewal of a retired version (grandfathering) or move to its successor | **Designed, not built** (§7) | decision SB2 |
 | Trials, introductory prices, promotions / discount codes | **Designed, not built** (§8) | decisions SB5, SB6 |
 | Automatic renewal, renewal failure, grace period, dunning | **Not built** | Needs a live provider (ABA PayWay credentials) and decision SB3 |
@@ -124,13 +124,21 @@ organization row (organization scope).
 the decision B1 in `SCHOOL-MANAGEMENT.md` already says. Pooled child places across branches are the simplest fair
 measure for a group; a per-branch cap is optional.
 
-## 6. Availability window (slice 2, designed)
+## 6. Offer dates (slice 2, built 2026-10-29)
 
 An active plan may carry `available_from` / `available_until`. Outside the window it is not offered to new
 customers (self-service choices, a principal's plan choices, an administrator's grant or invoice list); existing
 subscribers are unaffected. This gives "offer from 1 January" and "this price until 31 March" without anyone
-having to remember to retire a plan on the day. Small schema change (two nullable columns, a CHECK that until >
-from) and one filter in the three places plans are offered.
+having to remember to retire a plan on the day.
+
+**As built.** `SubscriptionPlan.offeredAt(instant)` (active and inside the dates) is the one rule, applied where
+someone new takes a plan up: a family's choices and plan requests, the plans offered when a limit is reached, a
+family's checkout, a principal's plan choices and checkout, an administrator's grant to a family and invoice to a
+school. The plan a customer is already on is never refused (a family re-granted the plan it has, a school renewing
+its own paid plan). The default plan has no dates and a dated plan can't become the default (also a database
+CHECK). A retired plan's dates can't be set (duplicate it to offer it again). Dates are chosen as days in the
+administrator's browser: the first day starts the offer, the last day is included. Changing them needs step-up and
+is audited (`PLAN_AVAILABILITY_CHANGED`, before and after). A duplicate starts without dates.
 
 ## 7. Renewals, upgrades and downgrades
 
@@ -201,7 +209,7 @@ live provider and self-service cancellation exist.
 
 1. **Slice 1 (done, 2026-10-29)**: duplicate as a new version with lineage; subscriptions summary. Admin UI, audit
    (`PLAN_DUPLICATED`), integration and UI tests.
-2. **Slice 2**: availability window; a single subscription timeline per customer (audit + payments).
+2. **Slice 2**: offer dates (done 2026-10-29); next, a single subscription timeline per customer (audit + payments).
 3. **After SB2**: renewal to the successor version with notice.
 4. **After SB1**: organization-scope plans, coverage, pooled limits, add-ons.
 5. **With the first gated module (SB4)**: feature entitlements.
