@@ -27,6 +27,14 @@ export const adminMessages = defineMessages(
       setUp: "Set up",
       school: "School",
       runBy: (email: string | null) => `Run by ${email ?? "no principal"}`,
+      organizationTitle: (name: string) => `Part of ${name}`,
+      organizationLead: (n: number) => `A school group of ${n} branches. Each branch has its own classes, staff and paid plan.`,
+      organizationTotals: (children: number, teachers: number, paid: number, branches: number) =>
+        `${children} ${children === 1 ? "child" : "children"} and ${teachers} ${teachers === 1 ? "teacher" : "teachers"} in all (each counted once) · ${paid} of ${branches} branches paid`,
+      organizationThisBranch: "This branch",
+      organizationBranch: (classes: number, children: number, paid: boolean) =>
+        `${classes} ${classes === 1 ? "class" : "classes"} · ${children} ${children === 1 ? "child" : "children"} · ${paid ? "paid" : "not paid"}`,
+      organizationLoading: "Loading the group…",
       loadingOne: "Loading the school…",
       archivedNotice: "Archived by its principal.",
       archivedNoticeBody:
@@ -141,6 +149,14 @@ export const adminMessages = defineMessages(
       setUp: "បានរៀបចំរួច",
       school: "សាលា",
       runBy: (email: string | null) => (email ? `ដឹកនាំដោយ ${email}` : "គ្មាននាយកសាលា"),
+      organizationTitle: (name: string) => `ជាផ្នែកមួយនៃ ${name}`,
+      organizationLead: (n: number) => `ក្រុមសាលាដែលមានសាខា ${n}។ សាខានីមួយៗមានថ្នាក់ បុគ្គលិក និងកញ្ចប់ដែលបានបង់ផ្ទាល់ខ្លួន។`,
+      organizationTotals: (children: number, teachers: number, paid: number, branches: number) =>
+        `កុមារ ${children} និងគ្រូ ${teachers} សរុប (រាប់ម្នាក់ម្ដង) · បានបង់ ${paid} ក្នុងចំណោមសាខា ${branches}`,
+      organizationThisBranch: "សាខានេះ",
+      organizationBranch: (classes: number, children: number, paid: boolean) =>
+        `ថ្នាក់ ${classes} · កុមារ ${children} · ${paid ? "បានបង់" : "មិនទាន់បង់"}`,
+      organizationLoading: "កំពុងផ្ទុកក្រុម…",
       loadingOne: "កំពុងផ្ទុកសាលា…",
       archivedNotice: "ត្រូវបានទុកក្នុងបណ្ណសារដោយនាយកសាលារបស់វា។",
       archivedNoticeBody:

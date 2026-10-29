@@ -54,9 +54,13 @@ public class AdminInsightService {
 
     // ------------------------------------------------------------------ schools
 
-    /** A school as operations sees it: who runs it, how big it is, and what is still to set up. */
+    /**
+     * A school as operations sees it: who runs it, how big it is, and what is still to set up; and the organization it
+     * is a branch of (M12 B0), with how many branches it has, so a group is recognised as one customer.
+     */
     public record SchoolRow(UUID id, String name, String status, Instant createdAt, String principalEmail, String principalStatus,
-                            int classes, int teachers, int childrenWithAccess, int classesWithoutTeacher, int classesWithoutCurriculum) {
+                            int classes, int teachers, int childrenWithAccess, int classesWithoutTeacher, int classesWithoutCurriculum,
+                            UUID organizationId, String organizationName, int organizationBranches) {
     }
 
     public record ClassRow(UUID id, String name, List<String> teachers, int children, List<String> curricula, boolean openCode) {
@@ -74,8 +78,11 @@ public class AdminInsightService {
                AND NOT EXISTS (SELECT 1 FROM teacher_assignments t WHERE t.school_class_id = c.id AND t.status = 'ACTIVE')) AS no_teacher,
             (SELECT count(*) FROM school_classes c WHERE c.school_id = s.id AND c.status = 'ACTIVE'
                AND NOT EXISTS (SELECT 1 FROM class_curriculum_assignments k WHERE k.school_class_id = c.id AND k.status = 'ACTIVE'))
-               AS no_curriculum
+               AS no_curriculum,
+            s.organization_id, o.name AS organization_name,
+            (SELECT count(*) FROM schools b WHERE b.organization_id = s.organization_id) AS organization_branches
             FROM schools s LEFT JOIN accounts a ON a.id = s.principal_account_id
+            LEFT JOIN school_organizations o ON o.id = s.organization_id
             """;
 
     @Transactional(readOnly = true)
@@ -124,7 +131,8 @@ public class AdminInsightService {
         Timestamp created = rs.getTimestamp("created_at");
         return new SchoolRow(rs.getObject("id", UUID.class), rs.getString("name"), rs.getString("status"),
                 created == null ? null : created.toInstant(), rs.getString("principal_email"), rs.getString("principal_status"),
-                rs.getInt("classes"), rs.getInt("teachers"), rs.getInt("children"), rs.getInt("no_teacher"), rs.getInt("no_curriculum"));
+                rs.getInt("classes"), rs.getInt("teachers"), rs.getInt("children"), rs.getInt("no_teacher"), rs.getInt("no_curriculum"),
+                rs.getObject("organization_id", UUID.class), rs.getString("organization_name"), rs.getInt("organization_branches"));
     }
 
     private static List<String> split(String joined) {

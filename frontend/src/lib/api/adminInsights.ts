@@ -16,6 +16,10 @@ export interface AdminSchoolRow {
   childrenWithAccess: number;
   classesWithoutTeacher: number;
   classesWithoutCurriculum: number;
+  /** M12 B0: the organization this school is a branch of, and how many branches it has (1: an independent school). */
+  organizationId: string;
+  organizationName: string | null;
+  organizationBranches: number;
 }
 
 export interface AdminClassRow {

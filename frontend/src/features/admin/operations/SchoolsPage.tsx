@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils/cn";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { adminMessages } from "../messages";
 import { SchoolPlanPanel } from "./SchoolPlanPanel";
+import { organizationsApi } from "@/lib/api/organizations";
 
 /** Archived by its principal (PD-26, Y17): it takes nothing new, so it has nothing left to set up. */
 const isArchived = (school: AdminSchoolRow) => school.status === "ARCHIVED";
@@ -174,7 +175,57 @@ export function SchoolDetailPage() {
           </Panel>
         </div>
       )}
+      {data && data.school.organizationBranches > 1 && (
+        <OrganizationPanel organizationId={data.school.organizationId} name={data.school.organizationName ?? ""} schoolId={schoolId} />
+      )}
       {data && <SchoolPlanPanel schoolId={schoolId} />}
     </div>
+  );
+}
+
+/**
+ * M12 B2 for operations: the school group this branch belongs to - its branches with their size and payment, each
+ * opening its own page. Counts only (the organization overview), so supporting a group shows no child's record.
+ */
+function OrganizationPanel({ organizationId, name, schoolId }: { organizationId: string; name: string; schoolId: string }) {
+  const m = useMessages(adminMessages).schools;
+  const overview = useAsync(() => organizationsApi.overview(organizationId), [organizationId]);
+  const data = overview.data;
+  return (
+    <Panel title={m.organizationTitle(name)}>
+      <div className="flex flex-col gap-3">
+        {overview.isLoading && !data && <LoadingState label={m.organizationLoading} />}
+        {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
+        {data && (
+          <>
+            <p className="text-sm text-ink-soft">{m.organizationLead(data.branches.length)}</p>
+            <p className="text-sm font-semibold text-ink">
+              {m.organizationTotals(data.children, data.teachers, data.branchesPaid, data.branchesInUse)}
+            </p>
+            <ul className="flex flex-col divide-y divide-line">
+              {data.branches.map((b) => (
+                <li key={b.schoolId} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
+                  {b.schoolId === schoolId ? (
+                    <span className="min-w-0 font-semibold text-ink [overflow-wrap:anywhere]">
+                      {b.name} · {m.organizationThisBranch}
+                    </span>
+                  ) : (
+                    <Link
+                      to={`/admin/schools/${b.schoolId}`}
+                      className="min-w-0 font-medium text-tonle-700 underline-offset-2 [overflow-wrap:anywhere] hover:underline"
+                    >
+                      {b.name}
+                    </Link>
+                  )}
+                  <span className={cn("text-sm", b.paid ? "text-ink-soft" : "font-semibold text-light-deep")}>
+                    {m.organizationBranch(b.classes, b.children, b.paid)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </Panel>
   );
 }

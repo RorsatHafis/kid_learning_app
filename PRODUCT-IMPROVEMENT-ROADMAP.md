@@ -1896,3 +1896,14 @@ Dependencies:
     99 incl. the protected `guidance.test.tsx`. **Browser verified** in the Studio preview at 1280 px (a copy without
     its explanation shows the hint after a try). Not browser verified in a child's real session: no seed question has
     a hint; the session renders the same `AnswerVerdict`.
+- 2026-10-29: **CI green on `2720e8a` and `81d4934`.** Authoring forms re-measured for every question type at 1280,
+  768 and 360 px: no squeezed text box left (the sorting group picker sizes to its longest group name; matching on a
+  phone keeps 126 px boxes, usable). A teacher's whole journey walked at tablet width - new activity in a new lesson,
+  a question with hint and explanation, checks, publish, the published page and "Get it to children", then a class's
+  skill page and "Assign practice": complete and clear. **Writing guide** no longer says "aged 4 to 9" (D-09, 3-12).
+  **D-20** recorded (a second try before the answer is shown). **Operations see school groups**: the admin school
+  record carries its organization and branch count; a branch's admin page shows "Part of ..." with the group's totals
+  and every branch's classes, children and payment, linking to each (counts only, from the organization overview).
+  **Tested**: `OrganizationOverviewIntegrationTests` (organization and branch count on the admin school record, an
+  independent school counts 1), `AdminInsightIntegrationTests` 4, `AdminOperationsIntegrationTests` 4 - green; unit
+  suite 200/200; admin Vitest 77. **Browser verified** at 1280 and 360 px (axe clean, no overflow, no API error).

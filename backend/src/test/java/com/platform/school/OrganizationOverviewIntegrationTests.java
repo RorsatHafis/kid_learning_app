@@ -113,6 +113,16 @@ class OrganizationOverviewIntegrationTests {
         assertThat(json(get("/api/v1/organizations/" + organizationId + "/overview", user(PlatformRole.ADMIN)), 200)
                 .get("children").asLong()).isEqualTo(2);
 
+        // Operations recognise the group from any branch's page: its organization and how many branches it has.
+        User admin = user(PlatformRole.ADMIN);
+        JsonNode adminSchool = json(get("/api/v1/admin/schools/" + south, admin), 200).get("school");
+        assertThat(adminSchool.get("organizationId").asString()).isEqualTo(organizationId);
+        assertThat(adminSchool.get("organizationBranches").asInt()).isEqualTo(3);
+        assertThat(adminSchool.get("organizationName").asString()).isNotBlank();
+        User loner = user(PlatformRole.PRINCIPAL);
+        String alone = json(post("/api/v1/schools", "{\"name\":\"Overview Alone\"}", loner), 201).get("id").asString();
+        assertThat(json(get("/api/v1/admin/schools/" + alone, admin), 200).get("school").get("organizationBranches").asInt()).isEqualTo(1);
+
         // An archived branch is listed but no longer counted.
         jdbc.update("update schools set status = 'ARCHIVED' where id = ?::uuid", UUID.fromString(south));
         JsonNode afterArchive = json(get("/api/v1/organizations/" + organizationId + "/overview", owner), 200);
