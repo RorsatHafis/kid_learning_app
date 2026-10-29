@@ -159,8 +159,10 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
   const kind = useBuddyKind();
   // The garden glimpse is a nice-to-have: if the skills can't be read, the home simply doesn't show it.
   const skills = useAsync(() => learningApi.skills(childId), [childId]);
-  const review = paths.find((p) => p.nextStep?.explanation.reason === "REVIEW");
   const current = paths.find((p) => p.nextStep?.status === "IN_PROGRESS") ?? paths.find((p) => p.nextStep) ?? null;
+  // A review on another subject gets its own card; one on the path the big card already carries on with would be a
+  // second button doing the same thing (that card says it is a review).
+  const review = paths.find((p) => p.nextStep?.explanation.reason === "REVIEW" && p !== current);
   const places = placesFor(paths.map((p) => subjectTheme(p.curriculum.subjectCode, p.curriculum.subjectName).motif));
   const anyStarted = paths.some((p) => p.completedSteps > 0);
   const line = !current ? e.buddyAllDone : anyStarted ? e.buddyGo : e.buddyStart;

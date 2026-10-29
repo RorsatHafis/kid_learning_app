@@ -1907,3 +1907,10 @@ Dependencies:
   **Tested**: `OrganizationOverviewIntegrationTests` (organization and branch count on the admin school record, an
   independent school counts 1), `AdminInsightIntegrationTests` 4, `AdminOperationsIntegrationTests` 4 - green; unit
   suite 200/200; admin Vitest 77. **Browser verified** at 1280 and 360 px (axe clean, no overflow, no API error).
+- 2026-10-29: **Child home: one way in when a review is due on the path the child carries on with.** The separate
+  "A review is waiting" card pointed at the same activity as the big "Keep playing" card (which already says "Time to
+  review ... so it sticks!"), so a child saw two buttons doing the same thing (and a screen reader heard two links).
+  The card now shows only for a review on another subject. **Tested**: `homeReview.test.tsx` (one path: no second
+  card - this failed before the fix; two paths: the card points at the other subject), child Vitest 45 incl. the
+  protected `home.test.tsx`. **Browser verified** with the seed child at 360, 768 and 1280 px (one play link, the
+  review named on the card).
