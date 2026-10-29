@@ -1828,4 +1828,12 @@ Dependencies:
     eslint. **Browser verified** in English at 1280 and 360 px (axe clean, no overflow, no API errors). Khmer is not
     browser verified: the seed account's language setting keeps the page in English; the Khmer strings are listed
     for review.
+- 2026-10-29: **CI on `224fa74` failed** (`PlanOffersTests`, protected: plans built as mocks returned false for the
+  new `offeredAt`); fixed in `9982eef` without touching the test (`SubscriptionPlan.withinOfferDates`, read through
+  getters); unit suite 262/262 locally. Lesson recorded: run the unit suite, not only integration classes, before a
+  push. **Plan history**: each plan's own audit trail (created, revised, activated, duplicated, dated, made default,
+  retired) now shows under the plan on the Plans page, reloaded after a change made there - browser verified at 1280
+  and 360 px, admin Vitest 22. **Role sweep** (phone 360 and tablet 768, parent / teacher / principal / admin, every
+  navigation page plus detail pages and the Studio editors): no overflow, no serious or critical axe violation, no
+  API or script error.
 

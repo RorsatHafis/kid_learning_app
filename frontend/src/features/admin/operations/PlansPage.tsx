@@ -579,6 +579,12 @@ function PlanDetail({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // Reloads the plan's history after a change made here (created, revised, dated, activated...).
+  const [historyVersion, setHistoryVersion] = useState(0);
+  const changed = () => {
+    setHistoryVersion((n) => n + 1);
+    onChanged();
+  };
   const all = useMessages(plansMessages);
   const m = all.detail;
 
@@ -599,7 +605,7 @@ function PlanDetail({
         limits,
       });
       setSaved(true);
-      onChanged();
+      changed();
     } catch (err) {
       setError(errorText(err, m.saveFailed));
     } finally {
@@ -615,7 +621,7 @@ function PlanDetail({
       if (action === "default") await plansApi.makeDefault(plan.plan.id);
       if (action === "retire") await plansApi.retire(plan.plan.id);
       setConfirming(null);
-      onChanged();
+      changed();
     } catch (err) {
       setError(errorText(err, m.didntWork));
     } finally {
@@ -798,8 +804,15 @@ function PlanDetail({
             </div>
           </div>
         )}
-        <OfferDates plan={plan} onChanged={onChanged} />
+        <OfferDates plan={plan} onChanged={changed} />
         {!confirming && <DuplicatePlan plan={plan} onDuplicated={onDuplicated} />}
+        {/* Every change to a plan is audited (PLAN_*): who did what, when, with the values before and after. */}
+        <section aria-labelledby={`plan-history-${plan.plan.id}`} className="flex flex-col gap-2">
+          <h3 id={`plan-history-${plan.plan.id}`} className="text-sm font-semibold text-ink">
+            {m.history}
+          </h3>
+          <AuditLog refreshKey={historyVersion} filter={{ resourceId: plan.plan.id }} emptyTitle={m.historyEmpty} />
+        </section>
       </div>
     </Panel>
   );

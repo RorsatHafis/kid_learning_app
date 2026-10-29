@@ -156,6 +156,8 @@ export const plansMessages = defineMessages(
       retire: "Retire…",
       confirm: "Confirm",
       working: "Working…",
+      history: "History of this plan",
+      historyEmpty: "Nothing recorded for this plan yet.",
     },
     family: {
       notFound: "No family has a parent with that email address. It has to match exactly.",
@@ -366,6 +368,8 @@ export const plansMessages = defineMessages(
       retire: "បញ្ឈប់…",
       confirm: "បញ្ជាក់",
       working: "កំពុងដំណើរការ…",
+      history: "ប្រវត្តិនៃកញ្ចប់នេះ",
+      historyEmpty: "មិនទាន់មានអ្វីត្រូវបានកត់ត្រាសម្រាប់កញ្ចប់នេះនៅឡើយទេ។",
     },
     family: {
       notFound: "គ្មានគ្រួសារណាមានឪពុកម្ដាយដែលប្រើអាសយដ្ឋានអ៊ីមែលនោះទេ។ វាត្រូវតែដូចគ្នាទាំងស្រុង។",
