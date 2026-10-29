@@ -173,7 +173,7 @@ Status as of 2026-10-27. "Where" points to the record with the verification deta
 | Family-granted access; class learning and trends; teacher-assigned practice | **Live** | PD-01. |
 | Plans with place limits; invoices; manual payment confirmation | **Live** | Y44, M8. KHQR image only once the owner configures it (D-07). |
 | Teacher content and media, school sharing by copy | **Live** | M5, D-13. PUBLIC sharing deferred (D-14). |
-| School organizations with branches: every school is a branch; the owner sees and adds branches; a branch's calendar can be copied to another | **Live** | M12 B0 (V78), backward compatible; billing per branch (B1). Decisions B1-B4 in [`SCHOOL-MANAGEMENT.md`](SCHOOL-MANAGEMENT.md) section 8. |
+| School organizations with branches: every school is a branch; the owner sees and adds branches, appoints branch principals and sees each branch's size and payment state (counts only); a branch's calendar can be copied to another | **Live** | M12 B0 (V78), backward compatible; billing per branch (B1). Decisions B1-B4 in [`SCHOOL-MANAGEMENT.md`](SCHOOL-MANAGEMENT.md) section 8. |
 | Academic years and terms (one current year), classes placed in a year | **Live** | M12 P1 (V77): the school sets its own dates; no overlapping years or terms, terms inside their year, the current year can't be archived; audited. See [`SCHOOL-MANAGEMENT.md`](SCHOOL-MANAGEMENT.md). |
 | School-owned student records, attendance, assessments, report cards, school fees | **Blocked / Planned** | M12 P2-P7 - decisions S1-S6 in [`SCHOOL-MANAGEMENT.md`](SCHOOL-MANAGEMENT.md) (student record vs family child, attendance/report-card scope, fee policies, roles, online fee payment, legal review). |
 
@@ -181,14 +181,15 @@ Status as of 2026-10-27. "Where" points to the record with the verification deta
 
 | Feature | Status | Notes |
 |---|---|---|
-| Content Studio: subjects, skills, objectives, questions, activities, curricula, preview, checks and gaps (L8), writing guide | **Live** | |
+| Content Studio: subjects, skills, objectives, questions, activities, curricula, preview, checks and gaps (L8), writing guide; make a copy of a question or an activity (2026-10-29) | **Live** | |
 | Versioning: DRAFT -> PUBLISHED -> RETIRED; learners get published content only; exact pinned versions respected; take-down of a wrong version (Y16) | **Live** | Pinned versions that are later RETIRED (superseded) are still served by exact reference; DRAFT never is (Battle 3R, `PublishableVersion.wasPublished`). A wrong version is withdrawn separately (Y16). CLAUDE.md §25 still lists this as open - the code has resolved it. |
 | Review/approval before publication | **Built, limited** | Mechanism exists, switched off (PD-20: who reviews). |
 | Media upload (pictures, recordings) with per-teacher allowance | **Live** | Stored on the server disk (`MEDIA_ROOT`). |
 | Storage-provider abstraction / school storage choice | **Planned / Blocked** | M11; needs D-06 and D-12 (library approval). |
 | Plans and entitlements, grants, family plan requests | **Live** | Server refuses contradictory plans. |
 | Plan versions (duplicate a plan as a new draft; the original's subscribers keep their plan and price) and a subscriptions summary by plan and standing | **Live** (2026-10-29) | `docs/SUBSCRIPTIONS.md` |
-| Organization billing, feature/module entitlements, availability windows, trials, promotions, automatic renewal | **Designed / Decision** | `docs/SUBSCRIPTIONS.md` §4-§10, owner decisions SB1-SB9 |
+| Plan offer dates (who new can take a plan up, from / until), each plan's history, a school's payments on its admin page | **Live** (2026-10-29) | `docs/SUBSCRIPTIONS.md` §2, §6 |
+| Organization billing, feature/module entitlements, trials, promotions, automatic renewal | **Designed / Decision** | `docs/SUBSCRIPTIONS.md` §4-§10, owner decisions SB1-SB9 |
 | Audit log of administrative and sensitive actions | **Live** | Ids only; kept after erasure. |
 | Public demo lesson picker, statements, site copy | **Live** | |
 
