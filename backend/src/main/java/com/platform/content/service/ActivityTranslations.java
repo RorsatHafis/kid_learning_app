@@ -37,6 +37,19 @@ public class ActivityTranslations {
         }
     }
 
+    /** The Khmer names written for many versions, in one query: version id -> its Khmer name (absent when none). */
+    @Transactional(readOnly = true)
+    public java.util.Map<UUID, String> titles(java.util.Collection<UUID> versionIds) {
+        if (versionIds.isEmpty()) {
+            return java.util.Map.of();
+        }
+        java.util.Map<UUID, String> titles = new java.util.HashMap<>();
+        repository.findByContentTypeAndContentIdInAndLocale(TYPE, versionIds, QuestionTranslations.KHMER).stream()
+                .filter(row -> "title".equals(row.getFieldName()))
+                .forEach(row -> titles.put(row.getContentId(), row.getLocalizedText()));
+        return titles;
+    }
+
     @Transactional(readOnly = true)
     public Khmer of(UUID versionId) {
         String title = null;

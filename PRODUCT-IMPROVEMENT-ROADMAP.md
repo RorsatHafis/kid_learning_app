@@ -2055,7 +2055,10 @@ Dependencies:
   (`content_localizations`, unique per target - no new index). **Tested**: `StudioKhmerSearchIntegrationTests` (a Khmer
   word finds only its question; English unchanged; a word in neither finds nothing; a lesson by its activity's Khmer
   name) with the Studio, lesson sharing and read-scaling suites - 13, 0 failed. Not browser-verified (the search box
-  is unchanged and sends the words as typed).
+  is unchanged and sends the words as typed). **Fixed the same day**: a lesson found by an activity's Khmer name
+  listed none of its activities (the list under a found lesson was filtered again in memory on the English names
+  only); it is now matched the same way, with one more query (`ActivityTranslations.titles`), and the test asserts the
+  matched activity is listed.
 - 2026-10-30: **Phone sweep after these changes.** Parent, teacher, principal and administrator navigation at 360 and
   768 px, the Studio's pages and editors, and the child's home, shelf and buddy in Khmer at 320 px: no overflow, no
   serious or critical axe finding, no API or page error.

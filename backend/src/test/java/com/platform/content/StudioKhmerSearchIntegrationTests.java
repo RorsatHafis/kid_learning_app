@@ -78,6 +78,9 @@ class StudioKhmerSearchIntegrationTests {
         JsonNode lessons = json(get("/api/v1/studio/lessons?subjectId=" + subjectId + "&q=" + enc("រាប់ទា"), admin), 200);
         assertThat(lessons.get("total").asLong()).isEqualTo(1);
         assertThat(lessons.get("items").get(0).get("id").asString()).isEqualTo(lessonId);
+        // ...listing the activity that matched, as an English search lists the one whose English matched.
+        assertThat(lessons.get("items").get(0).get("activities")).hasSize(1);
+        assertThat(lessons.get("items").get(0).get("activities").get(0).get("title").asString()).isEqualTo("Count the ducks");
         assertThat(json(get("/api/v1/studio/lessons?subjectId=" + subjectId + "&q=ducks", admin), 200).get("total").asLong()).isEqualTo(1);
     }
 

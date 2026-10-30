@@ -440,6 +440,18 @@ public class StudioService {
         Map<UUID, List<Activity>> byLesson = all.stream().collect(java.util.stream.Collectors.groupingBy(Activity::getLessonId));
         Map<UUID, StudioDtos.Support> supportOf = supportOf(allVersions, latestVersionOf);
         String needle = pattern == null ? null : text.strip().toLowerCase(java.util.Locale.ROOT);
+        // The search also finds an activity by its Khmer name in any of its versions (LessonRepository), so the
+        // activities shown under a found lesson are matched the same way.
+        Map<UUID, List<String>> khmerTitlesOf = new java.util.HashMap<>();
+        if (needle != null) {
+            Map<UUID, String> khmerTitles = activityTranslations.titles(allVersions.stream().map(ActivityVersion::getId).toList());
+            allVersions.forEach(v -> {
+                String title = khmerTitles.get(v.getId());
+                if (title != null) {
+                    khmerTitlesOf.computeIfAbsent(v.getActivityId(), id -> new java.util.ArrayList<>()).add(title);
+                }
+            });
+        }
         List<LessonSummary> page = ids.stream().map(byId::get).filter(Objects::nonNull).map(lesson -> {
             boolean lessonArchived = lesson.getStatus() == CatalogStatus.ARCHIVED;
             List<Activity> own = byLesson.getOrDefault(lesson.getId(), List.of()).stream()
@@ -448,7 +460,9 @@ public class StudioService {
                     .toList();
             boolean lessonMatches = needle == null || lesson.getTitle().toLowerCase(java.util.Locale.ROOT).contains(needle);
             List<ActivitySummary> shown = own.stream()
-                    .filter(activity -> lessonMatches || activity.getTitle().toLowerCase(java.util.Locale.ROOT).contains(needle))
+                    .filter(activity -> lessonMatches || activity.getTitle().toLowerCase(java.util.Locale.ROOT).contains(needle)
+                            || khmerTitlesOf.getOrDefault(activity.getId(), List.of()).stream()
+                                    .anyMatch(title -> title.toLowerCase(java.util.Locale.ROOT).contains(needle)))
                     .sorted(Comparator.comparing(Activity::getTitle, String.CASE_INSENSITIVE_ORDER))
                     .map(activity -> new ActivitySummary(activity.getId(), activity.getTitle(), activity.getActivityType(),
                             skillsOf.getOrDefault(activity.getId(), List.of()), versionsOf.getOrDefault(activity.getId(), List.of()),
