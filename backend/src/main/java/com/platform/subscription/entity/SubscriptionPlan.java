@@ -67,6 +67,13 @@ public class SubscriptionPlan extends AuditableEntity {
     @Column(name = "available_until")
     private Instant availableUntil;
 
+    /** Its name and description in Khmer (V82), the administrator's own words; null = not translated (English shown). */
+    @Column(name = "name_km", length = 120)
+    private String nameKm;
+
+    @Column(name = "description_km", length = 1000)
+    private String descriptionKm;
+
     protected SubscriptionPlan() {
         // JPA
     }
@@ -98,6 +105,10 @@ public class SubscriptionPlan extends AuditableEntity {
         plan.revise(name, source.description, source.selfService, source.priceAmountMinor, source.priceCurrency,
                 source.billingInterval);
         plan.basedOnPlanId = source.getId();
+        // Its Khmer carries over too (V82). The copy is a draft, so if its new English name needs a new Khmer name, the
+        // administrator writes it before offering the copy (the editor shows each Khmer beside its English).
+        plan.nameKm = source.nameKm;
+        plan.descriptionKm = source.descriptionKm;
         // Offer dates (V80) are not copied: a new version is offered when its administrator says, not when the old was.
         return plan;
     }
@@ -129,6 +140,31 @@ public class SubscriptionPlan extends AuditableEntity {
         this.priceAmountMinor = priceAmountMinor;
         this.priceCurrency = currency;
         this.billingInterval = billingInterval;
+    }
+
+    /** Its Khmer name and description (V82), written while it is a draft like the English; blank = not translated. */
+    public void translate(String nameKm, String descriptionKm) {
+        requireDraft("translated");
+        this.nameKm = nameKm == null || nameKm.isBlank() ? null : nameKm.strip();
+        this.descriptionKm = descriptionKm == null || descriptionKm.isBlank() ? null : descriptionKm.strip();
+    }
+
+    /** Its name for a reader of {@code language}: the Khmer when written and the reader reads Khmer, else the English. */
+    public String nameIn(String language) {
+        return com.platform.identity.UiLanguage.isKhmer(language) && nameKm != null ? nameKm : name;
+    }
+
+    /** Its description for a reader of {@code language} (the same rule as {@link #nameIn}). */
+    public String descriptionIn(String language) {
+        return com.platform.identity.UiLanguage.isKhmer(language) && descriptionKm != null ? descriptionKm : description;
+    }
+
+    public String getNameKm() {
+        return nameKm;
+    }
+
+    public String getDescriptionKm() {
+        return descriptionKm;
     }
 
     public void activate() {

@@ -138,6 +138,12 @@ public class SubscriptionService {
 
     @Transactional
     public PlanView createPlan(UUID adminId, String code, String name, String description, PlanAudience audience) {
+        return createPlan(adminId, code, name, description, audience, null);
+    }
+
+    /** As above, with its Khmer name and description (V82), or none. */
+    @Transactional
+    public PlanView createPlan(UUID adminId, String code, String name, String description, PlanAudience audience, PlanKhmer khmer) {
         requireAdmin(adminId);
         String normalized = code == null ? "" : code.strip().toUpperCase();
         if (!CODE.matcher(normalized).matches()) {
@@ -147,6 +153,9 @@ public class SubscriptionService {
             throw new IllegalStateException("A plan with the code " + normalized + " already exists");
         }
         SubscriptionPlan plan = plans.save(SubscriptionPlan.draft(normalized, name, description, audience));
+        if (khmer != null) {
+            plan.translate(khmer.name(), khmer.description());
+        }
         Map<EntitlementKey, Integer> start = entitlementService.limitsOf(entitlementService.defaultPlan(audience).getId());
         for (EntitlementKey key : EntitlementKey.of(audience)) {
             entitlements.save(PlanEntitlement.of(plan.getId(), key, start.get(key)));
@@ -182,8 +191,20 @@ public class SubscriptionService {
         return view(copy);
     }
 
+    /** A plan's words in Khmer, as an administrator writes them (V82); blank = not translated. */
+    public record PlanKhmer(String name, String description) {
+    }
+
     @Transactional
     public PlanView revisePlan(UUID adminId, UUID planId, String name, String description, boolean selfService,
+                               Long priceAmountMinor, String priceCurrency, BillingInterval interval,
+                               Map<EntitlementKey, Integer> limits) {
+        return revisePlan(adminId, planId, name, description, null, selfService, priceAmountMinor, priceCurrency, interval, limits);
+    }
+
+    /** As above, with its Khmer name and description (V82); {@code khmer} null leaves the Khmer as it is. */
+    @Transactional
+    public PlanView revisePlan(UUID adminId, UUID planId, String name, String description, PlanKhmer khmer, boolean selfService,
                                Long priceAmountMinor, String priceCurrency, BillingInterval interval,
                                Map<EntitlementKey, Integer> limits) {
         requireAdmin(adminId);
@@ -194,6 +215,9 @@ public class SubscriptionService {
             throw new IllegalArgumentException("A school plan can be chosen by schools only once it has a price");
         }
         plan.revise(name, description, selfService, priceAmountMinor, priceCurrency, interval);
+        if (khmer != null) {
+            plan.translate(khmer.name(), khmer.description());
+        }
         for (Map.Entry<EntitlementKey, Integer> entry : limits.entrySet()) {
             if (entry.getKey().audience() != plan.getAudience()) {
                 throw new IllegalArgumentException("This limit belongs to another kind of plan");

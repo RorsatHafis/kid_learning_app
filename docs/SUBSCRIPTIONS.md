@@ -204,6 +204,7 @@ live provider and self-service cancellation exist.
 | SB7 | Currencies | USD for schools and families at first; KHR plans possible (amounts are stored in each currency's minor units) |
 | SB8 | Prices, names and limits of the first paid plans (= PD-09) | Owner's commercial decision |
 | SB9 | Tax on invoices | Owner with an accountant (Cambodian VAT registration) |
+| L-2 | May an offered plan's Khmer be added or corrected? (LOCALIZATION.md "Plans") | Yes for the Khmer only, audited; the English, price and limits stay fixed |
 
 ## 11. Phases
 

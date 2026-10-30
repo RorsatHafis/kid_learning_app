@@ -1988,3 +1988,18 @@ Dependencies:
   - both languages back; axe clean in the dialog; no overflow; no API error. Findings (recorded, not fixed): the
   Studio catalog reads each row's links and Khmer one row at a time (pre-existing pattern - **future**, performance);
   a parent insight's name costs two reads per insight for a Khmer reader (a handful per page - **future**).
+- 2026-10-30: **Content in two languages - plans.** V82 adds `name_km` / `description_km` to `subscription_plans`
+  (NULL = not translated; existing plans unchanged). Written on a draft with the English, carried to a duplicate,
+  fixed once offered like the English. Families (own plan, choices, limit offers, open request, request emails) and
+  principals (own plan, plans to pay for) read them in their language; administrators manage English as English with
+  the Khmer beside it; payment orders keep the English name they were made with. Admin -> Plans: the shared language
+  switch in the draft form; an offered plan shows its Khmer read-only, or how to give it some. **Decision recorded
+  (L-2)**: may an offered plan's Khmer be added or corrected (today: no - duplicate it); recommendation: Khmer only,
+  audited. **Tested**: `PlanKhmerIntegrationTests` (create with Khmer, a save without Khmer keeps it, one with Khmer
+  replaces it, reopened, an administrator reading Khmer still edits English, refused once offered (409) and unchanged,
+  a duplicate carries both, the default plan with no Khmer reads English, a family reads Khmer in Khmer and English in
+  English), plan management / subscriptions / payments / school payment access - 21, 0 failed; frontend admin, parent,
+  school and i18n suites 305/305. **Browser verified** at 360 px: a new draft's Khmer name and description written,
+  English unchanged after switching, saved, reloaded - both back; axe clean; no overflow; no API error. **Not browser
+  verified**: the family's plan page in Khmer (putting a family on a plan needs the seed administrator's authenticator
+  code) - covered by the integration test. Media descriptions checked and set aside: authoring aids only (inventory 5).

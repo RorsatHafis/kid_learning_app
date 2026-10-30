@@ -95,7 +95,8 @@ public class SubscriptionController {
                                                                     @Valid @RequestBody SubscriptionDtos.CreatePlanRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(SubscriptionDtos.PlanResponse.of(service.createPlan(adminId, request.code(), request.name(), request.description(),
-                        request.audience() == null ? com.platform.subscription.entity.PlanAudience.FAMILY : request.audience())));
+                        request.audience() == null ? com.platform.subscription.entity.PlanAudience.FAMILY : request.audience(),
+                        request.khmer() == null ? null : request.khmer().words())));
     }
 
     @PostMapping("/api/v1/admin/plans/{planId}/duplicate")
@@ -124,7 +125,7 @@ public class SubscriptionController {
     public SubscriptionDtos.PlanResponse revisePlan(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId,
                                                     @Valid @RequestBody SubscriptionDtos.RevisePlanRequest request) {
         return SubscriptionDtos.PlanResponse.of(service.revisePlan(adminId, planId, request.name(), request.description(),
-                request.selfService(), request.priceAmountMinor(), request.priceCurrency(), request.billingInterval(), request.limits()));
+                request.khmer() == null ? null : request.khmer().words(), request.selfService(), request.priceAmountMinor(), request.priceCurrency(), request.billingInterval(), request.limits()));
     }
 
     @com.platform.security.stepup.RequiresStepUp

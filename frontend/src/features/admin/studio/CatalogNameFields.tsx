@@ -16,6 +16,7 @@ export function CatalogNameFields({
   name,
   onName,
   nameMax = 200,
+  descriptionMax = 2000,
   description,
   onDescription,
   descriptionLabel = "",
@@ -29,6 +30,7 @@ export function CatalogNameFields({
   name: string;
   onName: (value: string) => void;
   nameMax?: number;
+  descriptionMax?: number;
   /** Left out for a name without a description (a curriculum). */
   description?: string;
   onDescription?: (value: string) => void;
@@ -69,7 +71,7 @@ export function CatalogNameFields({
                 label={f.inKhmer(label)}
                 lang="km"
                 value={descriptionKm ?? ""}
-                maxLength={2000}
+                maxLength={descriptionMax}
                 onChange={(e) => onDescriptionKm?.(e.target.value)}
               />
             </Translated>
@@ -79,7 +81,12 @@ export function CatalogNameFields({
         <>
           <FormField label={nameLabel} value={name} maxLength={nameMax} required={required} onChange={(e) => onName(e.target.value)} />
           {describable && (
-            <TextAreaField label={label} value={description ?? ""} maxLength={2000} onChange={(e) => onDescription?.(e.target.value)} />
+            <TextAreaField
+              label={label}
+              value={description ?? ""}
+              maxLength={descriptionMax}
+              onChange={(e) => onDescription?.(e.target.value)}
+            />
           )}
         </>
       )}

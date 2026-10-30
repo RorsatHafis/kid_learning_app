@@ -110,7 +110,7 @@ public class PlanRequestService {
         record(accountId, AuditActorType.PARENT, "PLAN_REQUESTED", request.getId(), Map.of("plan", plan.getCode()));
         // The plan's name is the administrator's own wording, so it is quoted as it is in both languages.
         events.publishEvent(UiLanguage.isKhmer(parent.getPreferredLanguage())
-                ? new EmailMessage(parent.getEmail(), "សំណើរបស់អ្នកសម្រាប់កញ្ចប់ " + plan.getName(), """
+                ? new EmailMessage(parent.getEmail(), "សំណើរបស់អ្នកសម្រាប់កញ្ចប់ " + plan.nameIn(UiLanguage.KHMER), """
                 សួស្ដី,
 
                 យើងបានទទួលសំណើរបស់គ្រួសារអ្នក សម្រាប់កញ្ចប់ %s ហើយ។ កញ្ចប់មិនទាន់អាចទិញតាមអ៊ីនធឺណិតបាននៅឡើយទេ៖ នរណាម្នាក់នៅ Bookeyond Kid នឹងឆ្លើយតបមកអាសយដ្ឋាននេះ។
@@ -118,7 +118,7 @@ public class PlanRequestService {
                 គ្មានអ្វីផ្លាស់ប្ដូរទេ រហូតដល់ពេលនោះ ហើយអ្នកអាចដកសំណើនេះវិញ ពីទំព័រគណនីរបស់អ្នកនៅ៖
 
                 %s/parent/account
-                """.formatted(plan.getName(), mail.publicUrl()))
+                """.formatted(plan.nameIn(UiLanguage.KHMER), mail.publicUrl()))
                 : new EmailMessage(parent.getEmail(), "Your request for the " + plan.getName() + " plan", """
                 Hello,
 
@@ -142,7 +142,8 @@ public class PlanRequestService {
     @Transactional(readOnly = true)
     public Optional<OpenRequest> openRequestOf(UUID familyId) {
         return requests.findOpen(familyId).map(request -> new OpenRequest(request.getPlanId(),
-                plans.findById(request.getPlanId()).map(SubscriptionPlan::getName).orElse("?"), request.getRequestedAt()));
+                plans.findById(request.getPlanId()).map(plan -> plan.nameIn(UiLanguage.ofCurrentRequest())).orElse("?"),
+                request.getRequestedAt()));
     }
 
     // ------------------------------------------------------------------ administrators
@@ -175,19 +176,21 @@ public class PlanRequestService {
         PlanRequest request = requests.findByIdForUpdate(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Plan request", requestId));
         request.resolve(PlanRequest.Status.DECLINED, adminId, message, Instant.now());
-        Optional<String> named = plans.findById(request.getPlanId()).map(SubscriptionPlan::getName);
+        Optional<SubscriptionPlan> declined = plans.findById(request.getPlanId());
+        Optional<String> named = declined.map(SubscriptionPlan::getName);
+        Optional<String> namedKm = declined.map(plan -> plan.nameIn(UiLanguage.KHMER));
         String planName = named.orElse("requested");
         record(adminId, AuditActorType.ADMIN, "PLAN_REQUEST_DECLINED", requestId, Map.of());
         // The administrator's message is quoted as they wrote it, whatever the email's language.
         accounts.findById(request.getRequestedByAccountId()).ifPresent(parent ->
                 events.publishEvent(UiLanguage.isKhmer(parent.getPreferredLanguage())
-                        ? new EmailMessage(parent.getEmail(), "អំពីសំណើរបស់អ្នកសម្រាប់កញ្ចប់ " + named.orElse("ដែលបានស្នើ"), """
+                        ? new EmailMessage(parent.getEmail(), "អំពីសំណើរបស់អ្នកសម្រាប់កញ្ចប់ " + namedKm.orElse("ដែលបានស្នើ"), """
                         សួស្ដី,
 
                         យើងមិនអាចប្ដូរគ្រួសាររបស់អ្នកទៅកញ្ចប់ %s នៅពេលនេះបានទេ។%s
 
                         គ្រួសាររបស់អ្នកនៅតែប្រើកញ្ចប់បច្ចុប្បន្នរបស់ខ្លួន ហើយអ្វីដែលកូនៗរបស់អ្នកបានធ្វើ មិនផ្លាស់ប្ដូរទេ។
-                        """.formatted(named.orElse("ដែលបានស្នើ"), message == null || message.isBlank() ? "" : "\n\n" + message.strip()))
+                        """.formatted(namedKm.orElse("ដែលបានស្នើ"), message == null || message.isBlank() ? "" : "\n\n" + message.strip()))
                         : new EmailMessage(parent.getEmail(), "About your request for the " + planName + " plan", """
                         Hello,
 

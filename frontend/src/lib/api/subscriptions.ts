@@ -37,6 +37,11 @@ export interface PlanSummary {
   selfService: boolean;
   /** Null until the owner sets a price. */
   price: Price | null;
+  /**
+   * Its words in Khmer (V82) - in an administrator's view only; either may be null (not translated). A family's or
+   * principal's view has `name` and `description` already in their language, and no `khmer`.
+   */
+  khmer?: { name: string | null; description: string | null } | null;
 }
 
 /** `limit` null = unlimited (TEACHER_STORAGE_MB is in MB); `used` only in a family's or school's view. */
@@ -233,6 +238,8 @@ export const plansApi = {
       priceCurrency: string | null;
       billingInterval: BillingInterval | null;
       limits: Partial<Record<EntitlementKey, number | null>>;
+      /** Left out: the Khmer stays as it is; blank parts are removed. */
+      khmer?: { name?: string | null; description?: string | null };
     },
   ) => apiClient.put<PlanResponse>(`/admin/plans/${planId}`, body),
   activate: (planId: string) => apiClient.post<PlanResponse>(`/admin/plans/${planId}/activate`),

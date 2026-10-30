@@ -151,6 +151,10 @@ export const plansMessages = defineMessages(
       saved: "Saved.",
       saving: "Saving…",
       saveDraft: "Save draft",
+      khmerWords: "In Khmer",
+      khmerNoneOffered:
+        "No Khmer: people reading Khmer see this plan's English words. A plan's words are fixed once it is offered - to give it Khmer, duplicate it, write the Khmer on the copy and offer that.",
+      khmerPartlyOffered: "What isn't written in Khmer is shown in English.",
       activate: "Activate…",
       makeDefault: "Make default…",
       retire: "Retire…",
@@ -367,6 +371,10 @@ export const plansMessages = defineMessages(
       saved: "បានរក្សាទុកហើយ។",
       saving: "កំពុងរក្សាទុក…",
       saveDraft: "រក្សាទុកសេចក្ដីព្រាង",
+      khmerWords: "ជាភាសាខ្មែរ",
+      khmerNoneOffered:
+        "គ្មានភាសាខ្មែរ៖ អ្នកដែលអានភាសាខ្មែរ ឃើញពាក្យភាសាអង់គ្លេសរបស់កញ្ចប់នេះ។ ពាក្យរបស់កញ្ចប់មិនអាចកែបានទេ ពេលវាត្រូវបានផ្ដល់ជូនហើយ - ដើម្បីឱ្យវាមានភាសាខ្មែរ សូមចម្លងវា សរសេរភាសាខ្មែរលើច្បាប់ចម្លង ហើយផ្ដល់ច្បាប់ចម្លងនោះជំនួស។",
+      khmerPartlyOffered: "អ្វីដែលមិនទាន់សរសេរជាភាសាខ្មែរ បង្ហាញជាភាសាអង់គ្លេស។",
       activate: "ដាក់ឱ្យប្រើ…",
       makeDefault: "កំណត់ជាលំនាំដើម…",
       retire: "បញ្ឈប់…",

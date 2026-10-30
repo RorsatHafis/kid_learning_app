@@ -30,6 +30,8 @@ import { CustomerPayments } from "./CustomerPayments";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { formatDate } from "@/i18n/format";
 import { plansMessages } from "./plans.messages";
+import { CatalogNameFields } from "../studio/CatalogNameFields";
+import { khmerNameBody } from "../studio/bilingual";
 
 const limitText = (limit: number | null, key?: EntitlementKey) =>
   limit === null ? messagesNow(plansMessages).noLimit : key === "TEACHER_STORAGE_MB" ? `${limit} MB` : String(limit);
@@ -566,6 +568,9 @@ function PlanDetail({
   const draft = plan.plan.status === "DRAFT";
   const [name, setName] = useState(plan.plan.name);
   const [description, setDescription] = useState(plan.plan.description ?? "");
+  // Its words in Khmer (V82), written on a draft like the English; the English is never replaced by them.
+  const [nameKm, setNameKm] = useState(plan.plan.khmer?.name ?? "");
+  const [descriptionKm, setDescriptionKm] = useState(plan.plan.khmer?.description ?? "");
   const [selfService, setSelfService] = useState(plan.plan.selfService);
   const KEYS = ENTITLEMENT_KEYS[plan.plan.audience];
   const [limits, setLimits] = useState<Partial<Record<EntitlementKey, number | null>>>(
@@ -604,6 +609,7 @@ function PlanDetail({
         priceCurrency: currency.trim() ? currency.trim().toUpperCase() : null,
         billingInterval: interval || null,
         limits,
+        khmer: khmerNameBody(plan.plan.khmer ?? undefined, nameKm, descriptionKm),
       });
       setSaved(true);
       changed();
@@ -650,18 +656,19 @@ function PlanDetail({
 
         {draft ? (
           <form onSubmit={save} className="flex flex-col gap-4">
-            <FormField
-              label={all.create.nameFor[plan.plan.audience]}
-              value={name}
-              maxLength={120}
-              required
-              onChange={(e) => setName(e.target.value)}
-            />
-            <TextAreaField
-              label={m.descriptionFor[plan.plan.audience]}
-              value={description}
-              maxLength={1000}
-              onChange={(e) => setDescription(e.target.value)}
+            <CatalogNameFields
+              nameLabel={all.create.nameFor[plan.plan.audience]}
+              nameMax={120}
+              name={name}
+              onName={setName}
+              description={description}
+              onDescription={setDescription}
+              descriptionLabel={m.descriptionFor[plan.plan.audience]}
+              descriptionMax={1000}
+              nameKm={nameKm}
+              onNameKm={setNameKm}
+              descriptionKm={descriptionKm}
+              onDescriptionKm={setDescriptionKm}
             />
             <fieldset className="flex flex-col gap-3">
               <legend className="mb-1 text-sm font-semibold text-ink">{all.limits}</legend>
@@ -758,6 +765,7 @@ function PlanDetail({
         ) : (
           <>
             {plan.plan.description && <p className="text-sm leading-relaxed text-ink-soft">{plan.plan.description}</p>}
+            <PlanKhmerWords plan={plan} />
             <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {plan.entitlements.map((e) => (
                 <div key={e.key} className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
@@ -822,6 +830,34 @@ function PlanDetail({
 /** "2026-11-01" in the browser's day, as the instant that day starts. */
 const dayStart = (day: string) => new Date(`${day}T00:00:00`).toISOString();
 /** An instant as the browser's calendar day ("2026-11-01"). */
+/**
+ * An offered plan's Khmer, read-only: its words are fixed once it is offered (V82), so a plan offered without Khmer says
+ * how to give it some (a copy, which is a draft) rather than offering an edit the server would refuse.
+ */
+function PlanKhmerWords({ plan }: { plan: PlanResponse }) {
+  const m = useMessages(plansMessages).detail;
+  const khmer = plan.plan.khmer;
+  if (!khmer?.name && !khmer?.description) {
+    return <p className="text-sm text-ink-soft">{m.khmerNoneOffered}</p>;
+  }
+  return (
+    <div className="flex flex-col gap-1 rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
+      <p className="text-sm font-semibold text-ink">{m.khmerWords}</p>
+      {khmer.name && (
+        <p lang="km" className="text-sm text-ink [overflow-wrap:anywhere]">
+          {khmer.name}
+        </p>
+      )}
+      {khmer.description && (
+        <p lang="km" className="text-sm leading-relaxed text-ink-soft [overflow-wrap:anywhere]">
+          {khmer.description}
+        </p>
+      )}
+      {(!khmer.name || (plan.plan.description && !khmer.description)) && <p className="text-xs text-ink-soft">{m.khmerPartlyOffered}</p>}
+    </div>
+  );
+}
+
 function dayOf(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

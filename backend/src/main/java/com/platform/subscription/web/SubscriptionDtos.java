@@ -31,16 +31,41 @@ public final class SubscriptionDtos {
     public record Price(long amountMinor, String currency, BillingInterval interval) {
     }
 
-    /** {@code audience}: FAMILY or SCHOOL - who the plan is for (V59). */
+    /** A plan's words in Khmer (V82): either may be null (not translated). */
+    public record PlanKhmer(String name, String description) {
+    }
+
+    /** A plan's Khmer in a request: blank = not translated; leaving {@code khmer} out keeps it as it is. */
+    public record PlanKhmerRequest(@Size(max = 120) String name, @Size(max = 1000) String description) {
+
+        SubscriptionService.PlanKhmer words() {
+            return new SubscriptionService.PlanKhmer(name, description);
+        }
+    }
+
+    /**
+     * {@code audience}: FAMILY or SCHOOL - who the plan is for (V59). As an administrator manages it ({@link #of}): the
+     * English, with the Khmer in {@code khmer}; as a family or a principal reads it ({@link #forReader}): its words in
+     * the reader's language, the English where no Khmer is written, and no {@code khmer}.
+     */
     public record PlanSummary(UUID id, String code, String name, String description, String audience, String status,
-                              boolean isDefault, boolean selfService, Price price) {
+                              boolean isDefault, boolean selfService, Price price, PlanKhmer khmer) {
 
         static PlanSummary of(SubscriptionPlan plan) {
+            return of(plan, plan.getName(), plan.getDescription(), new PlanKhmer(plan.getNameKm(), plan.getDescriptionKm()));
+        }
+
+        static PlanSummary forReader(SubscriptionPlan plan) {
+            String language = com.platform.identity.UiLanguage.ofCurrentRequest();
+            return of(plan, plan.nameIn(language), plan.descriptionIn(language), null);
+        }
+
+        private static PlanSummary of(SubscriptionPlan plan, String name, String description, PlanKhmer khmer) {
             Price price = plan.getPriceAmountMinor() == null ? null
                     : new Price(plan.getPriceAmountMinor(), plan.getPriceCurrency(), plan.getBillingInterval());
-            return new PlanSummary(plan.getId(), plan.getCode(), plan.getName(), plan.getDescription(), plan.getAudience().name(),
+            return new PlanSummary(plan.getId(), plan.getCode(), name, description, plan.getAudience().name(),
                     plan.getStatus().name(),
-                    plan.isDefaultPlan(), plan.isSelfService(), price);
+                    plan.isDefaultPlan(), plan.isSelfService(), price, khmer);
         }
     }
 
@@ -119,7 +144,7 @@ public final class SubscriptionDtos {
     public record PlanOfferResponse(PlanSummary plan, List<Entitlement> entitlements) {
 
         static PlanOfferResponse of(SubscriptionService.PlanOffer offer) {
-            return new PlanOfferResponse(PlanSummary.of(offer.plan()), entitlementList(offer.limits(), null));
+            return new PlanOfferResponse(PlanSummary.forReader(offer.plan()), entitlementList(offer.limits(), null));
         }
     }
 
@@ -139,7 +164,7 @@ public final class SubscriptionDtos {
 
         public static OwnFamilyPlanResponse of(SubscriptionService.FamilyPlanView view) {
             EntitlementService.FamilyPlan effective = view.effective();
-            return new OwnFamilyPlanResponse(PlanSummary.of(effective.plan()), !effective.fromSubscription(),
+            return new OwnFamilyPlanResponse(PlanSummary.forReader(effective.plan()), !effective.fromSubscription(),
                     effective.subscription().map(s -> OwnSubscriptionState.of(s, effective.fromSubscription())).orElse(null),
                     entitlementList(effective.limits(), view.usage()),
                     view.afterwards().map(PlanOfferResponse::of).orElse(null),
@@ -177,7 +202,8 @@ public final class SubscriptionDtos {
 
     /** {@code audience} defaults to FAMILY; it can't change once the plan exists. */
     public record CreatePlanRequest(@NotBlank @Size(max = 60) String code, @NotBlank @Size(max = 120) String name,
-                                    @Size(max = 1000) String description, PlanAudience audience) {
+                                    @Size(max = 1000) String description, PlanAudience audience,
+                                    @jakarta.validation.Valid PlanKhmerRequest khmer) {
     }
 
     /** A school's plan as its principal sees it: no operator note. */
@@ -194,7 +220,7 @@ public final class SubscriptionDtos {
 
         public static OwnSchoolPlanResponse of(SubscriptionService.SchoolView view) {
             SchoolEntitlementService.SchoolPlan effective = view.effective();
-            return new OwnSchoolPlanResponse(view.schoolId(), view.schoolName(), PlanSummary.of(effective.plan()),
+            return new OwnSchoolPlanResponse(view.schoolId(), view.schoolName(), PlanSummary.forReader(effective.plan()),
                     !effective.fromSubscription(),
                     effective.subscription().map(s -> OwnSubscriptionState.of(s, effective.fromSubscription())).orElse(null),
                     entitlementList(effective.limits(), view.usage()), SchoolAccess.of(view.access()));
@@ -217,7 +243,8 @@ public final class SubscriptionDtos {
     /** {@code limits}: every key to set; a null value is unlimited. */
     public record RevisePlanRequest(@NotBlank @Size(max = 120) String name, @Size(max = 1000) String description,
                                     boolean selfService, Long priceAmountMinor, @Size(min = 3, max = 3) String priceCurrency,
-                                    BillingInterval billingInterval, @NotNull Map<EntitlementKey, Integer> limits) {
+                                    BillingInterval billingInterval, @NotNull Map<EntitlementKey, Integer> limits,
+                                    @jakarta.validation.Valid PlanKhmerRequest khmer) {
     }
 
     public record GrantRequest(@NotNull UUID planId, Instant periodEnd, @Size(max = 500) String note) {

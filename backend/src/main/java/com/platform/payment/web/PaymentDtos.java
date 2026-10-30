@@ -62,7 +62,9 @@ public final class PaymentDtos {
         public static SchoolPlanChoice of(com.platform.subscription.entity.SubscriptionPlan plan,
                                           java.util.Map<String, Integer> limits) {
 
-            return new SchoolPlanChoice(plan.getId(), plan.getCode(), plan.getName(), plan.getDescription(),
+            // The principal reads the plan's words in their language where its Khmer is written (V82).
+            String language = com.platform.identity.UiLanguage.ofCurrentRequest();
+            return new SchoolPlanChoice(plan.getId(), plan.getCode(), plan.nameIn(language), plan.descriptionIn(language),
                     plan.getPriceAmountMinor(), plan.getPriceCurrency(), plan.getBillingInterval().name(), limits);
 
         }

@@ -63,7 +63,8 @@ Khmer conventions used so far:
 - **Educator content** not yet in two languages (media descriptions, lesson titles): shown as written until its slice of "Content in two languages" (below) is built. Questions, activities, and subject, skill, chapter and curriculum names have English and Khmer since 2026-10-29.
 - **Brand and product names:** Bookeyond Kid; browser names (`ALLOWED_TEXT`); currency codes (`USD`).
 - **Audit log metadata** (keys and recorded values) and identifiers. Action and resource names *are* translated.
-- **Text written by administrators:** plan names and descriptions, messages to families.
+- **Text written by administrators:** messages to families. (Plan names and descriptions have English and Khmer since
+  2026-10-30, V82 - see "Plans" below.)
 - **The owner's legal documents** (terms, privacy notice). They are published documents, linked as they are. A Khmer version is a legal task (PD-18).
 - **The family data export** (a portable record, kept in one language).
 - **Browser-native messages**, such as built-in form-validation bubbles, which follow the browser's own language.
@@ -149,6 +150,24 @@ differently.
 - A Khmer reader's names are read together - per curriculum shown, not per name (`CatalogNames.prefetch`, kept for
   the rest of the request's transaction); an English reader costs no extra read.
 
+### Plans (V82)
+
+- A plan's English name and description stay in `name` / `description`; its Khmer in `name_km` / `description_km`
+  (not `content_localizations`: a plan is commercial configuration, not learning content). NULL = not translated.
+- Written, like the English, **only while the plan is a draft** (Admin -> Plans, "Writing in: English | ខ្មែរ" in the
+  draft's form), and **carried to a duplicate** with the English; a save that never touched Khmer leaves it as it is.
+- Read in the reader's language - per word, the English wherever no Khmer is written - by a family (its plan, what it
+  may choose or ask for, the plan offered when a limit is reached, its open request and the emails about it) and by a
+  principal (the school's plan and the plans it may pay for). An administrator always manages the English as English,
+  with the Khmer beside it, whatever their interface language. A payment order keeps the English name it was made with.
+- **Decision open (L-2)**: an offered (active or retired) plan's words are fixed, so a plan offered before V82 - or
+  offered without Khmer - can be given Khmer only by duplicating it and offering the copy, which moves nobody: its
+  subscribers stay on the original, still read in English. Options: (a) keep the rule (today); (b) allow adding or
+  correcting *only* the Khmer on an offered plan, audited, since a translation changes no price, limit or English
+  word; (c) also allow correcting the English wording. Recommendation: (b), with the change audited and the Khmer
+  required to say the same as the English (the administrator's responsibility; nothing checks meaning). Until the
+  owner decides, an offered plan shows its Khmer read-only, or says how to give it some.
+
 ### Inventory: what still has one language (in order)
 
 | # | Content | Where | Fields | Notes |
@@ -157,10 +176,10 @@ differently.
 | 2 | Activities | Activity editor, builder | title, instructions, "Teach it first" text and picture description | **Built** (slice 2): `ACTIVITY_VERSION` rows (`ActivityTranslations`); the name is kept per version and written under More settings; a child reading Khmer gets the activity's own words in Khmer when all are translated, and the same name on the path, home and shelf. |
 | 3 | Curricula and chapters | Curriculum editor (Manage), New curriculum, Skills & objectives (new and Manage) | curriculum name; chapter (learning objective) title and description; skill name and description | **Built** (slice 3, V81 widens the content types to `SUBJECT`, `SKILL`, `LEARNING_OBJECTIVE`, `CURRICULUM`; `CatalogNames`). Catalog rows aren't versioned, so neither is their Khmer. A curriculum has no description to translate. |
 | 4 | Subjects | Studio (new subject, Manage subject) | subject name and description | **Built** (slice 3). |
-| 5 | Media | Media library | title, description (screen-reader text) | The description is read aloud by screen readers. |
+| 5 | Media | Media library | title, description | **Not a reader-facing text** (checked 2026-10-30): the library's title and description help authors find a file, and the description is offered as the starting text of a question's or introduction's picture description - which children's screen readers do read, and which is already written in both languages (slices 1-2). Low value; future. |
 | 6 | Lessons | Studio | lesson title | Shown to teachers (and in shared lessons). |
 | 7 | Landing page / site copy | Admin → Landing page | every editable text | Already **bilingual** (F1a: each text has English and Khmer). |
-| 8 | Plans | Admin → Plans | name, description | Read by parents and principals; administrators' words today ("Intentionally English" above). |
+| 8 | Plans | Admin → Plans | name, description | **Built** (V82, "Plans" above); offered plans' Khmer is decision L-2. |
 | 9 | Messages to families | Plan request declines and other notices | free text | Written once to one family, in the administrator's language; translation optional. |
 | 10 | School names, class names, academic years | Principal | names | Proper names: not translated. |
 

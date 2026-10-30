@@ -62,7 +62,8 @@ public class PlanOffers {
         return choosable.stream()
                 // A plan without this limit set includes it without limit.
                 .filter(plan -> limits.getOrDefault(plan.getId(), Optional.empty()).map(limit -> limit > currentLimit).orElse(true))
-                .map(plan -> new Offer(plan.getId(), plan.getName(), limits.getOrDefault(plan.getId(), Optional.empty()).orElse(null),
+                // Named in the reader's language where the administrator wrote it in Khmer (V82).
+                .map(plan -> new Offer(plan.getId(), plan.nameIn(com.platform.identity.UiLanguage.ofCurrentRequest()), limits.getOrDefault(plan.getId(), Optional.empty()).orElse(null),
                         plan.getPriceAmountMinor(), plan.getPriceCurrency(),
                         plan.getBillingInterval() == null ? null : plan.getBillingInterval().name()))
                 .sorted(Comparator.comparing((Offer offer) -> offer.limit() == null ? Integer.MAX_VALUE : offer.limit())
