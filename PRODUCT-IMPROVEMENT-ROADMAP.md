@@ -2024,7 +2024,11 @@ Dependencies:
 - 2026-10-30: **Authoring: an activity's "More settings" keep unsaved changes** (follow-up recorded with slice 2).
   Instructions, difficulty, time and their Khmer now say "Not saved yet." beside a filled Save button, and leaving or
   reloading the page asks first - like a question's form and the introduction; after a save nothing is left to warn
-  about. Still not covered (recorded before): a link inside the app leaves without asking (the router has no
-  navigation blocker; `BrowserRouter`). **Tested**: `detailsUnsaved.test.tsx` 2/2 (English and Khmer changes; cleared
-  once saved) and the Studio suites. **Browser verified** at 360 px: typed, notice shown, reload asked and kept the
-  text, saved, notice gone.
+  about. **And a link inside the app now asks too** (the router has no navigation blocker - `BrowserRouter` - so
+  `useUnsavedGuard` reads link clicks before the router does; one prompt however many forms are unsaved; new tabs,
+  downloads, same-page and modified clicks are left alone). It serves the question form, the introduction and More
+  settings, replacing their three copies of the reload prompt. Not covered: the browser's Back button (it can't be
+  held without a data router - recorded, future). **Tested**: `detailsUnsaved.test.tsx` 2/2 (English and Khmer
+  changes; cleared once saved), `unsavedLinks.test.tsx` 2/2 (asks; Stay keeps the page and the text; Leave goes;
+  nothing unsaved - no question) and the Studio suites 66/66. **Browser verified** at 360 px: typed, notice shown,
+  the Studio link asked and Stay kept the page, reload asked and kept the text, saved, notice gone.

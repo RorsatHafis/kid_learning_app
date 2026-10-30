@@ -24,6 +24,7 @@ import { khmerCount } from "./bilingual";
 import { useMessages } from "@/i18n/catalog";
 import { editorMessages } from "./editor.messages";
 import { introductionMessages } from "./introduction.messages";
+import { useUnsavedGuard } from "./unsavedGuard";
 
 export function ActivityEditor() {
   const { activityId = "" } = useParams<{ activityId: string }>();
@@ -347,15 +348,7 @@ export function DetailsForm({
     (version.khmer?.instructions ?? "").trim(),
   ]);
   const dirty = onScreen !== saved;
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  useUnsavedGuard(dirty);
 
   function submit(e: FormEvent) {
     e.preventDefault();

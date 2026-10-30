@@ -10,6 +10,7 @@ import { MediaSlot } from "./MediaSlot";
 import { useMessages } from "@/i18n/catalog";
 import { formMessages } from "./form.messages";
 import { ContentLanguageSwitch, Translated, type ContentLanguage } from "./BilingualFields";
+import { useUnsavedGuard } from "./unsavedGuard";
 
 const MAX_OPTIONS = 10;
 const MAX_PAIRS = 6; // content/service/QuestionCompleteness.MAX_PAIRS
@@ -230,16 +231,8 @@ export function QuestionDraftForm({
   useEffect(() => {
     onDirtyChange?.(dirty);
   }, [dirty, onDirtyChange]);
-  useEffect(() => {
-    if (!dirty) return;
-    // Reloading or closing the tab asks first, so typed work isn't lost by accident.
-    const warn = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  // Reloading, closing the tab or following a link elsewhere asks first, so typed work isn't lost by accident.
+  useUnsavedGuard(dirty);
 
   const optionsComplete =
     (!multipleChoice || options.every((o) => o.label.trim())) &&

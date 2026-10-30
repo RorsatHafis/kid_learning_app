@@ -6,6 +6,7 @@ export const formMessages = defineMessages(
   {
     prompt: "Question the child sees",
     writingIn: "Writing in",
+    leaveUnsaved: "Your changes aren't saved yet. Leave this page and lose them?",
     introKhmerNone: "No Khmer for the introduction yet.",
     introKhmerPartly: (written: number, needed: number) => `The introduction's Khmer: ${written} of ${needed} written.`,
     introKhmerComplete:
@@ -87,6 +88,7 @@ export const formMessages = defineMessages(
   {
     prompt: "សំណួរដែលកុមារឃើញ",
     writingIn: "កំពុងសរសេរជា",
+    leaveUnsaved: "ការផ្លាស់ប្ដូររបស់អ្នក មិនទាន់បានរក្សាទុកនៅឡើយទេ។ ចាកចេញពីទំព័រនេះ ហើយបាត់បង់វាឬ?",
     introKhmerNone: "មិនទាន់មានភាសាខ្មែរសម្រាប់សេចក្ដីផ្ដើមនៅឡើយទេ។",
     introKhmerPartly: (written: number, needed: number) => `ភាសាខ្មែររបស់សេចក្ដីផ្ដើម៖ បានសរសេរ ${written} ក្នុងចំណោម ${needed}។`,
     introKhmerComplete:

@@ -11,6 +11,7 @@ import { introductionMessages } from "./introduction.messages";
 import { formMessages } from "./form.messages";
 import { ContentLanguageSwitch, Translated, type ContentLanguage } from "./BilingualFields";
 import { khmerCount } from "./bilingual";
+import { useUnsavedGuard } from "./unsavedGuard";
 
 /**
  * Teaching before asking: a draft activity's introduction - a short explanation or worked example, a picture (with
@@ -60,15 +61,7 @@ export function IntroductionEditor({
   useEffect(() => {
     onDirtyChange?.(dirty);
   }, [dirty, onDirtyChange]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  useUnsavedGuard(dirty);
 
   async function save(e: FormEvent) {
     e.preventDefault();
