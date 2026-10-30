@@ -183,6 +183,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-ink">{skill.name}</p>
+          <KhmerNameLine name={skill.khmer?.name} editable={catalogAdmin} />
           <p className="font-mono text-xs text-ink-faint">{skill.code}</p>
           {skill.description && <p className="mt-1 text-sm text-ink-soft">{skill.description}</p>}
         </div>
@@ -276,6 +277,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-ink">{objective.title}</p>
+          <KhmerNameLine name={objective.khmer?.name} editable={catalogAdmin} />
           <p className="font-mono text-xs text-ink-faint">{objective.code}</p>
           {objective.description && <p className="mt-1 text-sm text-ink-soft">{objective.description}</p>}
         </div>
@@ -322,6 +324,22 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
       )}
     </li>
   );
+}
+
+/**
+ * The Khmer name under the English one (LOCALIZATION.md, V81) - or, for someone who can add it, that there is none
+ * yet (families and children reading Khmer then see the English).
+ */
+function KhmerNameLine({ name, editable }: { name: string | null | undefined; editable: boolean }) {
+  const m = useMessages(catalogMessages);
+  if (name) {
+    return (
+      <p lang="km" className="text-sm text-ink-soft [overflow-wrap:anywhere]">
+        {name}
+      </p>
+    );
+  }
+  return editable ? <p className="text-xs text-ink-faint">{m.noKhmerName}</p> : null;
 }
 
 function useNamedCodeForm() {

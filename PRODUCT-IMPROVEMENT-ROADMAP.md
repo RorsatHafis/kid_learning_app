@@ -2083,3 +2083,6 @@ Dependencies:
   `ActivityTranslations.nameForReader`) and each curriculum by `CatalogNames` - for a Khmer reader only (an English
   reader costs no read). **Tested**: `SkillStoryKhmerIntegrationTests` (a waiting step in Khmer and in English) with
   the learning journey and read-scaling suites - 10, 0 failed.
+- 2026-10-30: **The Studio catalog shows each skill's and chapter's Khmer name** under the English (`lang="km"`), or -
+  to a catalog administrator, who can add it - "No Khmer name yet". **Tested**: Studio and i18n Vitest 205/205.
+  **Browser verified** at 360 px: one Khmer name and two "none yet" in the seed subject; no overflow; axe clean.
