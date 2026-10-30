@@ -76,12 +76,17 @@ public class ClassPracticeService {
     private final AuditService audit;
     private final StandingHistory standingHistory;
 
+    /** Activities named in the reader's language where their Khmer is complete, like the child's path. */
+    private final com.platform.content.service.ActivityTranslations activityTranslations;
+
     public ClassPracticeService(SchoolAccessGuard guard, SchoolLearningService learning, ActivityVersionSkillRepository activitySkills,
                                 ActivityRepository activities, ActivityVersionRepository activityVersions,
                                 ActivityItemRepository activityItems, EnrollmentRepository enrollments,
                                 LearningPathRepository paths, LearningPathItemRepository pathItems, LearningPathService pathService,
                                 PathContentScope contentScope, AccountRepository accounts, AuditService audit,
-                                StandingHistory standingHistory) {
+                                StandingHistory standingHistory,
+                                com.platform.content.service.ActivityTranslations activityTranslations) {
+        this.activityTranslations = activityTranslations;
         this.guard = guard;
         this.learning = learning;
         this.activitySkills = activitySkills;
@@ -278,7 +283,7 @@ public class ClassPracticeService {
                 continue;
             }
             activities.findById(version.getActivityId()).ifPresent(activity -> options.add(new PracticeOption(activity.getId(),
-                    activity.getTitle(), activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(version.getId()).size(),
+                    activityTranslations.nameForReader(activity, version), activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(version.getId()).size(),
                     version.getDifficultyLevel())));
         }
         return options;
@@ -288,14 +293,16 @@ public class ClassPracticeService {
     private Map<UUID, PlacedPractice> latestPractice(UUID classId, UUID skillId) {
         Map<UUID, PlacedPractice> latest = new HashMap<>();
         Map<UUID, String> titles = new HashMap<>();
-        Map<UUID, UUID> activityOfVersion = new HashMap<>();
+        Map<UUID, ActivityVersion> versionsById = new HashMap<>();
         for (ClassPractice practice : pathItems.findClassPractice(classId)) {
             if (!skillId.equals(practice.skillId()) || latest.containsKey(practice.childId())) {
                 continue; // newest first: the first one per child is the latest
             }
-            UUID activityId = activityOfVersion.computeIfAbsent(practice.activityVersionId(),
-                    id -> activityVersions.findById(id).map(ActivityVersion::getActivityId).orElseThrow());
-            String title = titles.computeIfAbsent(activityId, id -> activities.findById(id).map(a -> a.getTitle()).orElse(null));
+            ActivityVersion version = versionsById.computeIfAbsent(practice.activityVersionId(),
+                    id -> activityVersions.findById(id).orElseThrow());
+            UUID activityId = version.getActivityId();
+            String title = titles.computeIfAbsent(version.getId(), id -> activities.findById(activityId)
+                    .map(a -> activityTranslations.nameForReader(a, version)).orElse(null));
             latest.put(practice.childId(), new PlacedPractice(activityId, title, practice.status(), practice.addedAt(),
                     practice.completedAt(), null));
         }

@@ -2086,3 +2086,8 @@ Dependencies:
 - 2026-10-30: **The Studio catalog shows each skill's and chapter's Khmer name** under the English (`lang="km"`), or -
   to a catalog administrator, who can add it - "No Khmer name yet". **Tested**: Studio and i18n Vitest 205/205.
   **Browser verified** at 360 px: one Khmer name and two "none yet" in the seed subject; no overflow; axe clean.
+- 2026-10-30: **A teacher's class practice names activities like the path** (the practice to choose from, and each
+  child's latest placed practice): in Khmer for a teacher reading Khmer where the activity's Khmer is complete
+  (`ActivityTranslations.nameForReader`). **Tested**: school access and school/family boundary suites - 14, 0 failed
+  (the English behaviour); the Khmer rule is the one tested with the skill story and the path - the class view in
+  Khmer is **not separately tested**.
