@@ -26,7 +26,8 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
      * The question bank's search (StudioService#questions). One owner's active questions in a subject:
      * platform content when ownerId is null, otherwise that teacher's own. Every filter is optional:
      * type, the latest version's status, a skill the latest version is tagged with (PD-08), "has a published version" (live) and a
-     * case-insensitive match on the latest version's prompt. Ordered like the bank reads, by prompt.
+     * case-insensitive match on the latest version's prompt - in English or in its Khmer (LOCALIZATION.md), so an author
+     * finds a question in either language they wrote it in. Ordered like the bank reads, by prompt.
      */
     String BANK_FROM = """
             FROM questions q
@@ -41,7 +42,10 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
                                                              WHERE s.question_version_id = latest.id AND s.skill_id = CAST(:skillId AS uuid)))
               AND (:live = false OR EXISTS (SELECT 1 FROM question_versions p
                                             WHERE p.question_id = q.id AND p.status = 'PUBLISHED'))
-              AND (CAST(:pattern AS varchar) IS NULL OR latest.prompt ILIKE CAST(:pattern AS varchar))
+              AND (CAST(:pattern AS varchar) IS NULL OR latest.prompt ILIKE CAST(:pattern AS varchar)
+                   OR EXISTS (SELECT 1 FROM content_localizations k
+                              WHERE k.content_type = 'QUESTION_VERSION' AND k.content_id = latest.id AND k.locale = 'km'
+                                AND k.field_name = 'prompt' AND k.localized_text ILIKE CAST(:pattern AS varchar)))
             """;
 
     @Query(value = "SELECT q.id " + BANK_FROM + " ORDER BY lower(latest.prompt) NULLS LAST, q.id LIMIT :limit OFFSET :offset",

@@ -25,7 +25,8 @@ public interface LessonRepository extends JpaRepository<Lesson, UUID> {
     /*
      * The Studio's lessons (StudioService#lessons): one owner's active lessons (platform lessons when
      * ownerId is null), optionally in one subject, optionally those whose title or one of whose
-     * activities' titles contains the search pattern. By title.
+     * activities' titles contains the search pattern - an activity's name in English or, in any of its versions, in
+     * Khmer (LOCALIZATION.md). By title.
      */
     String STUDIO_FROM = """
             FROM lessons l
@@ -35,7 +36,12 @@ public interface LessonRepository extends JpaRepository<Lesson, UUID> {
               AND ((CAST(:ownerId AS uuid) IS NULL AND l.owner_account_id IS NULL) OR l.owner_account_id = CAST(:ownerId AS uuid))
               AND (CAST(:subjectId AS uuid) IS NULL OR l.subject_id = CAST(:subjectId AS uuid))
               AND (CAST(:pattern AS varchar) IS NULL OR l.title ILIKE CAST(:pattern AS varchar)
-                   OR EXISTS (SELECT 1 FROM activities a WHERE a.lesson_id = l.id AND a.title ILIKE CAST(:pattern AS varchar)))
+                   OR EXISTS (SELECT 1 FROM activities a WHERE a.lesson_id = l.id AND a.title ILIKE CAST(:pattern AS varchar))
+                   OR EXISTS (SELECT 1 FROM activities a
+                              JOIN activity_versions av ON av.activity_id = a.id
+                              JOIN content_localizations k ON k.content_type = 'ACTIVITY_VERSION' AND k.content_id = av.id
+                                   AND k.locale = 'km' AND k.field_name = 'title'
+                              WHERE a.lesson_id = l.id AND k.localized_text ILIKE CAST(:pattern AS varchar)))
             """;
 
     @Query(value = "SELECT l.id " + STUDIO_FROM + " ORDER BY lower(l.title), l.id LIMIT :limit OFFSET :offset", nativeQuery = true)

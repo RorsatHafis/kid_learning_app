@@ -2049,3 +2049,13 @@ Dependencies:
   not marked `lang="en"` (it inherits the page's Khmer); the model says base text is English, but text typed in Khmer
   into the English fields before the bilingual inputs existed would then be marked wrong - mark by the model or leave
   unmarked is the owner's call.
+- 2026-10-30: **Studio search finds content by its Khmer too.** The question bank matched only a question's English
+  prompt and the lessons list only English titles, so an author couldn't find what they had written in Khmer. The
+  bank now also matches the latest version's Khmer prompt; lessons, an activity's Khmer name in any of its versions
+  (`content_localizations`, unique per target - no new index). **Tested**: `StudioKhmerSearchIntegrationTests` (a Khmer
+  word finds only its question; English unchanged; a word in neither finds nothing; a lesson by its activity's Khmer
+  name) with the Studio, lesson sharing and read-scaling suites - 13, 0 failed. Not browser-verified (the search box
+  is unchanged and sends the words as typed).
+- 2026-10-30: **Phone sweep after these changes.** Parent, teacher, principal and administrator navigation at 360 and
+  768 px, the Studio's pages and editors, and the child's home, shelf and buddy in Khmer at 320 px: no overflow, no
+  serious or critical axe finding, no API or page error.
