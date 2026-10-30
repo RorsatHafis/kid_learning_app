@@ -191,6 +191,29 @@ public class SubscriptionService {
         return view(copy);
     }
 
+    /**
+     * L-2: an offered (or retired, or draft) plan's Khmer words, added or corrected without changing anything else about
+     * it (SubscriptionPlan#retranslate). Audited with what the Khmer was and became.
+     */
+    @Transactional
+    public PlanView translatePlan(UUID adminId, UUID planId, PlanKhmer khmer) {
+        requireAdmin(adminId);
+        SubscriptionPlan plan = plan(planId);
+        String nameBefore = plan.getNameKm();
+        String descriptionBefore = plan.getDescriptionKm();
+        if (plan.retranslate(khmer.name(), khmer.description())) {
+            Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+            metadata.put("code", plan.getCode());
+            metadata.put("status", plan.getStatus().name());
+            metadata.put("nameKmBefore", nameBefore == null ? "" : nameBefore);
+            metadata.put("nameKm", plan.getNameKm() == null ? "" : plan.getNameKm());
+            metadata.put("descriptionKmBefore", descriptionBefore == null ? "" : descriptionBefore);
+            metadata.put("descriptionKm", plan.getDescriptionKm() == null ? "" : plan.getDescriptionKm());
+            record(adminId, "PLAN_TRANSLATED", planId, metadata);
+        }
+        return view(plan);
+    }
+
     /** A plan's words in Khmer, as an administrator writes them (V82); blank = not translated. */
     public record PlanKhmer(String name, String description) {
     }

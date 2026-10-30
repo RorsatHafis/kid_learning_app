@@ -2091,3 +2091,25 @@ Dependencies:
   (`ActivityTranslations.nameForReader`). **Tested**: school access and school/family boundary suites - 14, 0 failed
   (the English behaviour); the Khmer rule is the one tested with the skill story and the path - the class view in
   Khmer is **not separately tested**.
+- 2026-10-30: **L-2 decided by the owner and built: an offered plan's Khmer can be added or corrected.** "Edit the
+  Khmer words" on any plan (`PUT /admin/plans/{id}/khmer`, step-up, `SubscriptionPlan#retranslate`) changes only
+  `name_km` / `description_km`; English, price, currency, interval, limits, status, offer dates, subscriptions and
+  payment orders are untouched, and nothing is activated, retired, renewed or moved. Audited `PLAN_TRANSLATED` with
+  the Khmer before and after (Khmer wording added to the audit log's codes). The form shows each English beside its
+  Khmer field and asks before unsaved Khmer is lost. **Tested**: `PlanTranslationIntegrationTests` (an active plan with
+  a subscribed family: Khmer added then corrected; every other column, the limits and the subscription row unchanged;
+  the family reads the new Khmer, English unchanged; two audit events with before/after; a parent 403; an administrator
+  without step-up 403 `stepUpRequired` and nothing written) with the plan Khmer and plan management suites - 6, 0
+  failed; admin operations and i18n Vitest 161/161. **Not browser verified**: saving needs the seed administrator's
+  authenticator code for the step-up.
+- 2026-10-30: **Screen-reader language of content shown as written - designed, not built** (owner's direction: mark
+  only from explicit metadata, never guess, leave unknown unmarked). Design and migration implications in
+  `LOCALIZATION.md` ("Screen-reader language ..."): a nullable `text_language` on question and activity versions,
+  set by the bilingual Studio, NULL (unmarked) for everything earlier. Next in the localization order.
+- 2026-10-30: **Authoring inventory, owner's widened brief (lessons, learning materials, objectives, announcements
+  and notices, all meaningful metadata)** - recorded for the next window, in this order: (1) `text_language` above;
+  (2) lesson titles - teachers and colleagues read them (shared lessons), so they get a Khmer title through a `LESSON`
+  content type (a CHECK change, like V81); (3) school-written communication: today the only free text a school or
+  administrator sends families is the plan-request decline message (written once to one family) - announcements and
+  notices don't exist yet, so they will be designed bilingual when built (S-decisions); (4) learning-objective
+  descriptions and curriculum names are done (V81); lesson bodies (`LessonVersion.body`) have no screen today.

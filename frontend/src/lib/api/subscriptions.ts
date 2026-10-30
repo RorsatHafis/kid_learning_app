@@ -245,6 +245,12 @@ export const plansApi = {
   activate: (planId: string) => apiClient.post<PlanResponse>(`/admin/plans/${planId}/activate`),
   retire: (planId: string) => apiClient.post<PlanResponse>(`/admin/plans/${planId}/retire`),
   makeDefault: (planId: string) => apiClient.post<PlanResponse>(`/admin/plans/${planId}/make-default`),
+  /**
+   * L-2: a plan's Khmer words at any status - a translation only: the English, price, limits and every subscription
+   * stay as they are. Needs a step-up (the client asks for it).
+   */
+  translate: (planId: string, body: { name: string | null; description: string | null }) =>
+    apiClient.put<PlanResponse>(`/admin/plans/${planId}/khmer`, body),
   /** A new draft with the plan's words, price and limits (V79); the original and its subscribers are untouched. */
   duplicate: (planId: string, body: { code: string; name: string }) =>
     apiClient.post<PlanResponse>(`/admin/plans/${planId}/duplicate`, body),

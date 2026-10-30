@@ -71,6 +71,7 @@ export const KHMER_ACTIONS: Record<string, string> = {
   PLAN_ACTIVATED: "កញ្ចប់ត្រូវបានដាក់ឱ្យប្រើ",
   PLAN_CREATED: "កញ្ចប់ត្រូវបានបង្កើត",
   PLAN_DUPLICATED: "កញ្ចប់ត្រូវបានចម្លងជាកំណែថ្មី",
+  PLAN_TRANSLATED: "ពាក្យភាសាខ្មែររបស់កញ្ចប់ត្រូវបានកែប្រែ",
   PLAN_AVAILABILITY_CHANGED: "កាលបរិច្ឆេទផ្ដល់ជូនកញ្ចប់ត្រូវបានប្ដូរ",
   PLAN_MADE_DEFAULT: "កញ្ចប់ត្រូវបានកំណត់ជាលំនាំដើម",
   PLAN_REQUESTED: "កញ្ចប់ត្រូវបានស្នើសុំ",

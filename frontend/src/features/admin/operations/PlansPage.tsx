@@ -33,6 +33,8 @@ import { plansMessages } from "./plans.messages";
 import { CatalogNameFields } from "../studio/CatalogNameFields";
 import { khmerNameBody } from "../studio/bilingual";
 import { useUnsavedGuard } from "../studio/unsavedGuard";
+import { Translated } from "../studio/BilingualFields";
+import { formMessages } from "../studio/form.messages";
 
 const limitText = (limit: number | null, key?: EntitlementKey) =>
   limit === null ? messagesNow(plansMessages).noLimit : key === "TEACHER_STORAGE_MB" ? `${limit} MB` : String(limit);
@@ -773,7 +775,7 @@ function PlanDetail({
         ) : (
           <>
             {plan.plan.description && <p className="text-sm leading-relaxed text-ink-soft">{plan.plan.description}</p>}
-            <PlanKhmerWords plan={plan} />
+            <PlanKhmerWords plan={plan} onChanged={changed} />
             <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {plan.entitlements.map((e) => (
                 <div key={e.key} className="rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
@@ -839,17 +841,117 @@ function PlanDetail({
 const dayStart = (day: string) => new Date(`${day}T00:00:00`).toISOString();
 /** An instant as the browser's calendar day ("2026-11-01"). */
 /**
- * An offered plan's Khmer, read-only: its words are fixed once it is offered (V82), so a plan offered without Khmer says
- * how to give it some (a copy, which is a draft) rather than offering an edit the server would refuse.
+ * An offered plan's Khmer (L-2): shown, and - a translation only - added or corrected here. The English, price, limits
+ * and every subscription stay as they are; people reading Khmer see the new words.
  */
-function PlanKhmerWords({ plan }: { plan: PlanResponse }) {
+function PlanKhmerWords({ plan, onChanged }: { plan: PlanResponse; onChanged: () => void }) {
   const m = useMessages(plansMessages).detail;
+  const f = useMessages(formMessages);
   const khmer = plan.plan.khmer;
+  const [editing, setEditing] = useState(false);
+  const [nameKm, setNameKm] = useState(khmer?.name ?? "");
+  const [descriptionKm, setDescriptionKm] = useState(khmer?.description ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const dirty = editing && (nameKm.trim() !== (khmer?.name ?? "") || descriptionKm.trim() !== (khmer?.description ?? ""));
+  useUnsavedGuard(dirty);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await plansApi.translate(plan.plan.id, { name: nameKm.trim() || null, description: descriptionKm.trim() || null });
+      setEditing(false);
+      setSaved(true);
+      onChanged();
+    } catch (err) {
+      setError(errorText(err, m.saveFailed));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <form onSubmit={save} className="flex flex-col gap-3 rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
+        <p className="text-sm font-semibold text-ink">{m.khmerEdit}</p>
+        <p className="text-xs text-ink-soft">{m.khmerEditLead}</p>
+        <Translated english={plan.plan.name}>
+          <FormField
+            label={f.inKhmer(m.khmerName)}
+            lang="km"
+            value={nameKm}
+            maxLength={120}
+            onChange={(e) => setNameKm(e.target.value)}
+          />
+        </Translated>
+        <Translated english={plan.plan.description ?? ""}>
+          <TextAreaField
+            label={f.inKhmer(m.khmerDescription)}
+            lang="km"
+            value={descriptionKm}
+            maxLength={1000}
+            onChange={(e) => setDescriptionKm(e.target.value)}
+          />
+        </Translated>
+        {error && (
+          <p role="alert" className="text-sm font-medium text-brick-deep">
+            {error}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" disabled={busy || !dirty}>
+            {busy ? m.saving : m.khmerSave}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => {
+              setEditing(false);
+              setNameKm(khmer?.name ?? "");
+              setDescriptionKm(khmer?.description ?? "");
+              setError(null);
+            }}
+          >
+            {m.khmerCancel}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  const editButton = (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="w-fit"
+      onClick={() => {
+        setSaved(false);
+        setEditing(true);
+      }}
+    >
+      {m.khmerEdit}
+    </Button>
+  );
   if (!khmer?.name && !khmer?.description) {
-    return <p className="text-sm text-ink-soft">{m.khmerNoneOffered}</p>;
+    return (
+      <div className="flex flex-col gap-2">
+        <p className="text-sm text-ink-soft">{m.khmerNoneOffered}</p>
+        {editButton}
+      </div>
+    );
   }
   return (
     <div className="flex flex-col gap-1 rounded-[12px] bg-paper px-4 py-3 ring-1 ring-line">
+      {saved && (
+        <p role="status" className="text-sm font-medium text-palm-deep">
+          {m.khmerSaved}
+        </p>
+      )}
       <p className="text-sm font-semibold text-ink">{m.khmerWords}</p>
       {khmer.name && (
         <p lang="km" className="text-sm text-ink [overflow-wrap:anywhere]">
@@ -862,6 +964,7 @@ function PlanKhmerWords({ plan }: { plan: PlanResponse }) {
         </p>
       )}
       {(!khmer.name || (plan.plan.description && !khmer.description)) && <p className="text-xs text-ink-soft">{m.khmerPartlyOffered}</p>}
+      <div className="mt-2">{editButton}</div>
     </div>
   );
 }

@@ -169,13 +169,38 @@ differently.
   may choose or ask for, the plan offered when a limit is reached, its open request and the emails about it) and by a
   principal (the school's plan and the plans it may pay for). An administrator always manages the English as English,
   with the Khmer beside it, whatever their interface language. A payment order keeps the English name it was made with.
-- **Decision open (L-2)**: an offered (active or retired) plan's words are fixed, so a plan offered before V82 - or
-  offered without Khmer - can be given Khmer only by duplicating it and offering the copy, which moves nobody: its
-  subscribers stay on the original, still read in English. Options: (a) keep the rule (today); (b) allow adding or
-  correcting *only* the Khmer on an offered plan, audited, since a translation changes no price, limit or English
-  word; (c) also allow correcting the English wording. Recommendation: (b), with the change audited and the Khmer
-  required to say the same as the English (the administrator's responsibility; nothing checks meaning). Until the
-  owner decides, an offered plan shows its Khmer read-only, or says how to give it some.
+- **Decision L-2 (owner, 2026-10-30: option b, built)**: an administrator adds or corrects *only* the Khmer of a plan
+  at any status - offered, retired or draft - with "Edit the Khmer words" on the plan (`PUT /admin/plans/{id}/khmer`,
+  `SubscriptionPlan#retranslate`). It is a translation, not a change to the plan: the English, price, currency,
+  interval, limits, status, offer dates, every subscription and every payment order stay exactly as they were (nothing
+  is activated, retired, renewed or moved). It needs a step-up like other changes customers of an offered plan see,
+  and is audited (`PLAN_TRANSLATED`, with the Khmer before and after). Families and schools on the plan reading Khmer
+  see the new words at once. That the Khmer says the same as the English is the administrator's responsibility -
+  nothing checks meaning, and nothing is translated automatically. Editing an offered plan's *English* stays
+  impossible (option c, not chosen): it is what subscribers agreed to.
+
+### Screen-reader language of content shown as written (design, not built)
+
+The owner's direction (2026-10-30): mark Khmer as `km` and English as `en` only from explicit metadata, never by
+guessing, and leave content whose language is unknown unmarked.
+
+- **Today**: a question served in Khmer says `language: "km"` and is marked `lang="km"` (also an activity's own
+  words, `language` on the activity, since 2026-10-30). Content served *as written* says `null` and is not marked, so
+  it inherits the page's language. That is correct for an English page; on a Khmer page an English fallback is read
+  with Khmer pronunciation.
+- **Why not mark it "en"**: the base columns are labelled English in the Studio only since the bilingual inputs
+  (2026-10-29). Earlier versions may hold Khmer typed into those fields, and short labels can't be told apart
+  reliably by script detection (numbers, names, mixed words).
+- **Design**: a nullable `text_language` ("en") on `question_versions` and `activity_versions`, set when a version is
+  created or saved through the bilingual Studio (whose base fields are English by label), copied to new drafts and
+  copies; NULL for every existing version (unknown - stays unmarked). The served item's `language` then becomes
+  "km" (Khmer given), "en" (as written, known English) or null (unknown), and the screens mark `lang` only when it is
+  not null. Catalog names and plans need no column: their base fields have always been the English ones, but they
+  were also editable before the bilingual inputs, so they get the same treatment only if the owner wants it.
+- **Migration implications**: one migration adding the nullable column to two tables (no backfill: unknown stays
+  unknown); a version published before stays NULL until its next draft is saved; an author can't mark old content
+  "English" except by saving a new draft. Published versions are frozen, so nothing a child already has changes.
+- **Status**: designed and recorded; not built in this window (usage). Next in the localization order.
 
 ### Inventory: what still has one language (in order)
 

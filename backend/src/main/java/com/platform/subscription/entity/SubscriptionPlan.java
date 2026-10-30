@@ -149,6 +149,20 @@ public class SubscriptionPlan extends AuditableEntity {
         this.descriptionKm = descriptionKm == null || descriptionKm.isBlank() ? null : descriptionKm.strip();
     }
 
+    /**
+     * L-2 (owner, 2026-10-30): its Khmer name and description, at any status - a translation, not a change to the plan.
+     * The English, price, limits, status and offer dates are untouched, so no subscriber's agreement changes; those who
+     * read Khmer see the new words. Returns whether anything changed.
+     */
+    public boolean retranslate(String nameKm, String descriptionKm) {
+        String name = nameKm == null || nameKm.isBlank() ? null : nameKm.strip();
+        String description = descriptionKm == null || descriptionKm.isBlank() ? null : descriptionKm.strip();
+        boolean changed = !java.util.Objects.equals(name, this.nameKm) || !java.util.Objects.equals(description, this.descriptionKm);
+        this.nameKm = name;
+        this.descriptionKm = description;
+        return changed;
+    }
+
     /** Its name for a reader of {@code language}: the Khmer when written and the reader reads Khmer, else the English. */
     public String nameIn(String language) {
         return com.platform.identity.UiLanguage.isKhmer(language) && nameKm != null ? nameKm : name;

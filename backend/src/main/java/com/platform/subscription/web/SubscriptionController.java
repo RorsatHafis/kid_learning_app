@@ -121,6 +121,17 @@ public class SubscriptionController {
         return reports.summary(adminId);
     }
 
+    /**
+     * L-2: a plan's Khmer words at any status - a translation only (nothing else about the plan changes). Step-up, like
+     * other changes to what customers of an offered plan see.
+     */
+    @com.platform.security.stepup.RequiresStepUp
+    @PutMapping("/api/v1/admin/plans/{planId}/khmer")
+    public SubscriptionDtos.PlanResponse translatePlan(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId,
+                                                       @Valid @RequestBody SubscriptionDtos.PlanKhmerRequest request) {
+        return SubscriptionDtos.PlanResponse.of(service.translatePlan(adminId, planId, request.words()));
+    }
+
     @PutMapping("/api/v1/admin/plans/{planId}")
     public SubscriptionDtos.PlanResponse revisePlan(@AuthenticationPrincipal UUID adminId, @PathVariable UUID planId,
                                                     @Valid @RequestBody SubscriptionDtos.RevisePlanRequest request) {
