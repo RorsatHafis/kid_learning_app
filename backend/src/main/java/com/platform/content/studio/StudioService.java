@@ -798,6 +798,10 @@ public class StudioService {
         Map<UUID, List<QuestionVersion>> versionsOf = questionVersions.findByQuestionIdInOrderByVersionNumberAsc(ids).stream()
                 .collect(java.util.stream.Collectors.groupingBy(QuestionVersion::getQuestionId));
         List<UUID> latestIds = versionsOf.values().stream().map(versions -> versions.get(versions.size() - 1).getId()).toList();
+        // The published versions too: reusing a question adds its published version, whose Khmer may differ from a newer draft's.
+        List<UUID> translationIds = new java.util.ArrayList<>(latestIds);
+        versionsOf.values().forEach(versions -> versions.stream().filter(v -> v.getStatus() == PublicationStatus.PUBLISHED)
+                .map(QuestionVersion::getId).filter(id -> !latestIds.contains(id)).forEach(translationIds::add));
         Map<UUID, List<UUID>> skillsOfVersion = latestIds.isEmpty() ? Map.of() : questionSkills.findByQuestionVersionIdIn(latestIds).stream()
                 .collect(java.util.stream.Collectors.groupingBy(QuestionVersionSkill::getQuestionVersionId,
                         java.util.stream.Collectors.mapping(QuestionVersionSkill::getSkillId, java.util.stream.Collectors.toList())));
@@ -805,10 +809,10 @@ public class StudioService {
         versionsOf.forEach((questionId, versions) ->
                 skillsOf.put(questionId, skillsOfVersion.getOrDefault(versions.get(versions.size() - 1).getId(), List.of())));
         // How far each latest version's Khmer has got: its options and Khmer, two more queries for the page.
-        Map<UUID, List<QuestionOption>> optionsOf = latestIds.isEmpty() ? Map.of()
-                : questionService.listOptions(latestIds).stream()
+        Map<UUID, List<QuestionOption>> optionsOf = translationIds.isEmpty() ? Map.of()
+                : questionService.listOptions(translationIds).stream()
                         .collect(java.util.stream.Collectors.groupingBy(QuestionOption::getQuestionVersionId));
-        Map<UUID, com.platform.content.service.QuestionTranslations.Khmer> khmerOf = translations.of(latestIds);
+        Map<UUID, com.platform.content.service.QuestionTranslations.Khmer> khmerOf = translations.of(translationIds);
         return ids.stream().map(byId::get).filter(Objects::nonNull).map(question -> {
             List<QuestionVersion> versions = versionsOf.getOrDefault(question.getId(), List.of());
             QuestionVersion latest = versions.isEmpty() ? null : versions.get(versions.size() - 1);
@@ -819,7 +823,9 @@ public class StudioService {
                     published == null ? null : published.getId(), versions.stream().map(VersionSummary::of).toList(),
                     question.getStatus() == CatalogStatus.ARCHIVED, published == null ? null : published.getPrompt(),
                     latest == null ? null : com.platform.content.service.QuestionTranslations.status(question.getQuestionType(), latest,
-                            optionsOf.getOrDefault(latest.getId(), List.of()), khmerOf.get(latest.getId())));
+                            optionsOf.getOrDefault(latest.getId(), List.of()), khmerOf.get(latest.getId())),
+                    published == null ? null : com.platform.content.service.QuestionTranslations.status(question.getQuestionType(), published,
+                            optionsOf.getOrDefault(published.getId(), List.of()), khmerOf.get(published.getId())));
         }).toList();
     }
 

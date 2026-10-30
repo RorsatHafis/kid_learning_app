@@ -2075,8 +2075,8 @@ Dependencies:
   for many versions, options in one query). **Tested**: `BankKhmerStatusIntegrationTests` (complete, partly, none,
   not translatable) with the Studio, bilingual question and copy suites - 13, 0 failed; Studio Vitest 66/66.
   **Browser verified** at 360 px: the seed bank's rows show their status; no overflow, axe clean, no API error.
-  (Not shown in the activity builder's "reuse a question" picker on purpose: reuse adds the *published* version, and
-  the status describes the latest, which may be a newer draft - it could mislead.)
+  (The "reuse a question" picker now shows the *published* version's own status - see the 2026-10-30 entry
+  "reuse picker".)
 - 2026-10-30: **A skill explained (X19) names activities and curricula in the reader's language.** The page read
   them in SQL as written while its skill and chapter names were localized, so a Khmer-reading parent saw both
   languages on one page. Each activity is now named by the path's rule (its Khmer when complete,
@@ -2134,6 +2134,13 @@ Dependencies:
   `SharedLessonKhmerTitleIntegrationTests` (a paid school, author and colleague: the copy keeps "Farm animals" and its
   Khmer; renaming the copy in both languages leaves the original's; the author's later Khmer rename doesn't reach the
   copy) - 1, 0 failed.
+- 2026-10-30: **Authoring: the "reuse a question" picker says whether what it adds is in Khmer.** Reusing a question
+  adds its *published* version, so the bank's summaries now also carry `publishedKhmer` (that version's status, in
+  the same two batch queries), and the activity builder's picker shows it ("in Khmer too", "Khmer not finished",
+  "English only"). An author building a bilingual activity can pick questions children reading Khmer will get in
+  Khmer. **Tested**: `PublishedKhmerStatusIntegrationTests` (draft only - none; published English with a translated
+  newer draft - latest COMPLETE, published NONE; after publishing the draft - COMPLETE) with the bank status and Studio
+  suites - 11, 0 failed; Studio Vitest 66/66. Not browser verified.
 - 2026-10-30: **Authoring inventory, owner's widened brief (lessons, learning materials, objectives, announcements
   and notices, all meaningful metadata)** - recorded for the next window, in this order: (1) `text_language` above;
   (2) lesson titles - teachers and colleagues read them (shared lessons), so they get a Khmer title through a `LESSON`

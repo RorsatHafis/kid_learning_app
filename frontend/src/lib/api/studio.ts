@@ -391,6 +391,8 @@ export interface QuestionSummary {
   publishedPrompt?: string | null;
   /** How far the latest version's Khmer has got (LOCALIZATION.md); a typed-word answer isn't translated. */
   khmer?: "NONE" | "PARTLY" | "COMPLETE" | "NOT_TRANSLATABLE" | null;
+  /** The same for the published version - what reusing the question adds; null without one. */
+  publishedKhmer?: "NONE" | "PARTLY" | "COMPLETE" | "NOT_TRANSLATABLE" | null;
 }
 
 /** The question bank's filters; `live`: only questions with a published version. */

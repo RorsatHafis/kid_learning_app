@@ -458,6 +458,7 @@ function InlineEditor({
 function Reuse({ subjectId, taken, busy, onAdd }: { subjectId: string; taken: string[]; busy: boolean; onAdd: (versionId: string) => void }) {
   const b = useMessages(builderMessages);
   const e = useMessages(editorMessages).editor;
+  const bank = useMessages(editorMessages).questions;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const settled = useDebouncedValue(query);
@@ -505,6 +506,10 @@ function Reuse({ subjectId, taken, busy, onAdd }: { subjectId: string; taken: st
                     <span className="text-xs text-ink-soft">
                       {b.types[q.questionType].name}
                       {skills && ` · ${skills}`}
+                      {/* The published version's Khmer: what reusing it adds (LOCALIZATION.md). */}
+                      {q.publishedKhmer === "COMPLETE" && ` · ${bank.khmerComplete}`}
+                      {q.publishedKhmer === "PARTLY" && ` · ${bank.khmerPartly}`}
+                      {q.publishedKhmer === "NONE" && ` · ${bank.khmerNone}`}
                     </span>
                   </span>
                   <Icon size={14} className="mt-0.5 shrink-0 text-ink-soft" aria-hidden />

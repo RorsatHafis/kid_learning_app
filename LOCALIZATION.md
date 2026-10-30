@@ -127,7 +127,8 @@ differently.
   the long fields and as the placeholder of each answer row, so both versions can be checked side by side.
 - The switch says how much is written: "No Khmer yet", "Khmer: 3 of 5 written ...", "Khmer complete ...".
 - The question bank says the same for every question in its list ("in Khmer too", "Khmer not finished", "English
-  only"), and its search, like the lessons', finds content by its Khmer as well as its English.
+  only"), and its search, like the lessons', finds content by its Khmer as well as its English. The activity
+  builder's "reuse a question" picker says it for the published version - the one reuse adds.
 - "Try it as a child" on an activity, like a question's preview, shows it "as a child reading: English | ខ្មែរ".
 - Structured settings (the correct choice, difficulty, numbers, true/false, groups chosen, order, pictures and
   recordings) are shared: one control for both languages.
