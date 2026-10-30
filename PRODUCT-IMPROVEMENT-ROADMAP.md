@@ -2031,7 +2031,9 @@ Dependencies:
   held without a data router - recorded, future). **Tested**: `detailsUnsaved.test.tsx` 2/2 (English and Khmer
   changes; cleared once saved), `unsavedLinks.test.tsx` 2/2 (asks; Stay keeps the page and the text; Leave goes;
   nothing unsaved - no question) and the Studio suites 66/66. **Browser verified** at 360 px: typed, notice shown,
-  the Studio link asked and Stay kept the page, reload asked and kept the text, saved, notice gone.
+  the Studio link asked and Stay kept the page, reload asked and kept the text, saved, notice gone. The same guard now
+  covers a draft plan's form (Admin -> Plans: words in both languages, limits, price); browser verified at 1280 px -
+  an admin link asked with unsaved edits and Stay kept them; after Save the link left without asking.
 - 2026-10-30: **Content in two languages - an activity previewed per language.** A question's preview had "As a child
   reading: English | ខ្មែរ"; a whole activity's "Try it as a child" showed only the English, so an author could not see
   what a Khmer-reading child gets before publishing. `GET .../activity-versions/{id}/preview?language=en|km` now

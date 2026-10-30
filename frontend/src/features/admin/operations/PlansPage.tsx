@@ -32,6 +32,7 @@ import { formatDate } from "@/i18n/format";
 import { plansMessages } from "./plans.messages";
 import { CatalogNameFields } from "../studio/CatalogNameFields";
 import { khmerNameBody } from "../studio/bilingual";
+import { useUnsavedGuard } from "../studio/unsavedGuard";
 
 const limitText = (limit: number | null, key?: EntitlementKey) =>
   limit === null ? messagesNow(plansMessages).noLimit : key === "TEACHER_STORAGE_MB" ? `${limit} MB` : String(limit);
@@ -593,6 +594,12 @@ function PlanDetail({
   };
   const all = useMessages(plansMessages);
   const m = all.detail;
+  // A draft's words, limits and price not saved yet: leaving or reloading asks first (as in the Studio).
+  const onScreen = JSON.stringify([name.trim(), description.trim(), nameKm.trim(), descriptionKm.trim(), selfService, limits,
+    amount.trim(), currency.trim(), interval]);
+  // What was saved: the plan as opened (this form is shown anew for each plan and status), then each save.
+  const [savedScreen, setSavedScreen] = useState(onScreen);
+  useUnsavedGuard(draft && onScreen !== savedScreen);
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -612,6 +619,7 @@ function PlanDetail({
         khmer: khmerNameBody(plan.plan.khmer ?? undefined, nameKm, descriptionKm),
       });
       setSaved(true);
+      setSavedScreen(onScreen);
       changed();
     } catch (err) {
       setError(errorText(err, m.saveFailed));
