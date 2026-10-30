@@ -2003,3 +2003,21 @@ Dependencies:
   English unchanged after switching, saved, reloaded - both back; axe clean; no overflow; no API error. **Not browser
   verified**: the family's plan page in Khmer (putting a family on a plan needs the seed administrator's authenticator
   code) - covered by the integration test. Media descriptions checked and set aside: authoring aids only (inventory 5).
+- 2026-10-30: **Finding (high - learning integrity), fixed: a child's first screen was fetched in the parent's
+  language.** Found by browser-checking slice 3 with the seed family: the parent reading Khmer, the child English - the
+  child's home showed Khmer chapter, skill and subject names under an English screen. Cause: the child's pages fetched
+  their content in parallel with the child (whose language sets the space's), so those requests went out in the
+  parent's language; nothing fetched again when the child changed language. It affected every bilingual slice
+  (questions, activities, names). Fix: `ChildLanguageGate` on `/learn/:childId` - the child's language is in force before
+  any page of the space asks for anything (known once per tab), and a language change shows the page afresh (home,
+  shelf, buddy; the player has no language button). **Tested**: `childLanguage.test.tsx` (the first request is in the
+  child's language under a parent of the other; a change shows the page again in the new one) and the child suites -
+  49 passed. **Browser verified** at 360 px with the seed family in all three combinations: parent Khmer / child
+  English - all English; parent English / child Khmer - Khmer screen with Khmer chapter, skill and subject names (the
+  activity names English: no Khmer written for them, rule L-1); parent Khmer - the parent's Progress tab names chapters
+  and skills in Khmer. Also fixed on the way: the garden link's summary on the child's home was below contrast
+  (3.59:1, `text-rice-deep/80`) - now full `text-rice-deep`; axe clean.
+- 2026-10-30: **Localization audit of the remaining forms** (inventory in `LOCALIZATION.md`): landing page already
+  bilingual (F1a; its plans section is site copy); lesson titles are teachers-only; age groups are seeded reference
+  data shown beside a localized age range (future, with D-19); assessments and challenges have no screen. Nothing else
+  that a child, family or principal reads is single-language.

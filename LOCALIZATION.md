@@ -101,6 +101,12 @@ separate content*). Slice 1 - **questions** - and slice 2 - **activities** - are
   pairs, items and groups are answered by id).
 - The served question says its language (`language: "km"`), and the child's screen marks it `lang="km"`, so a screen
   reader reads Khmer content as Khmer.
+- **The child's language comes first** (fixed 2026-10-30): content is served in the language of the request, and a
+  child's space speaks the child's own language, not the parent's. `ChildLanguageGate` (the `/learn/:childId` route)
+  learns the child's language before any page of the space asks the server for anything, and shows the page afresh
+  when the child changes it (only possible outside an activity: the player has no language button). Before, the first
+  page of a session was fetched in the parent's language, so an English-reading child of a Khmer-reading parent saw
+  Khmer names and words under an English screen (and the reverse).
 - **Short answers are not translated**: they are scored against the author's own words, so a Khmer prompt would mark
   a Khmer answer wrong. The Studio says so and keeps such a question in the language it is written in. Scoring
   per-language accepted answers is a later decision.
@@ -177,11 +183,13 @@ differently.
 | 3 | Curricula and chapters | Curriculum editor (Manage), New curriculum, Skills & objectives (new and Manage) | curriculum name; chapter (learning objective) title and description; skill name and description | **Built** (slice 3, V81 widens the content types to `SUBJECT`, `SKILL`, `LEARNING_OBJECTIVE`, `CURRICULUM`; `CatalogNames`). Catalog rows aren't versioned, so neither is their Khmer. A curriculum has no description to translate. |
 | 4 | Subjects | Studio (new subject, Manage subject) | subject name and description | **Built** (slice 3). |
 | 5 | Media | Media library | title, description | **Not a reader-facing text** (checked 2026-10-30): the library's title and description help authors find a file, and the description is offered as the starting text of a question's or introduction's picture description - which children's screen readers do read, and which is already written in both languages (slices 1-2). Low value; future. |
-| 6 | Lessons | Studio | lesson title | Shown to teachers (and in shared lessons). |
-| 7 | Landing page / site copy | Admin → Landing page | every editable text | Already **bilingual** (F1a: each text has English and Khmer). |
+| 6 | Lessons | Studio | lesson title | Checked 2026-10-30: read only by teachers (their Studio, colleagues' shared lessons) - never by a child or a family; the activities inside are bilingual. Future (would need a `LESSON` content type). |
+| 7 | Landing page / site copy | Admin → Landing page | every editable text | Already **bilingual** (F1a: each text has English and Khmer; statements require both). Checked 2026-10-30: the landing page's plans section is site copy (`features/marketing/trust`), not the plan records, so it is covered. |
 | 8 | Plans | Admin → Plans | name, description | **Built** (V82, "Plans" above); offered plans' Khmer is decision L-2. |
 | 9 | Messages to families | Plan request declines and other notices | free text | Written once to one family, in the administrator's language; translation optional. |
 | 10 | School names, class names, academic years | Principal | names | Proper names: not translated. |
+| 11 | Age groups | Seeded reference data (no form) | name ("Junior") | Checked 2026-10-30: families see it beside the age range, which *is* localized ("អាយុ 4-9"). No editing form exists; a Khmer name would come with the owner's final age groups (D-19). Future. |
+| 12 | Assessments, challenges | Backend only | title, instructions, description | Checked 2026-10-30: no screen uses them; nothing to translate until they are part of the product. |
 
 Not localized on purpose: numbers, dates, identifiers, codes, scores, difficulty, prices, durations.
 

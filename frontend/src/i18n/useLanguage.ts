@@ -53,6 +53,11 @@ export function useLanguageChoice() {
 /** The last language seen for each child, so moving between a child's pages never flashes another. */
 const childLanguages = new Map<string, Locale>();
 
+/** The language this child's space last showed in this tab, if it has been open (updated when the child changes it). */
+export function knownChildLanguage(childId: string): Locale | undefined {
+  return childLanguages.get(childId);
+}
+
 /**
  * Shows a child's space in the child's own language while it is open, and returns to the grown-up's
  * language when it closes. `language` is undefined until the child has loaded; meanwhile the language

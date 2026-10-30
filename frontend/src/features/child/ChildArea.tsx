@@ -6,6 +6,7 @@ import { ChildHome } from "./ChildHome";
 import { PlaySession, PracticeSession } from "./PlaySession";
 import { ShelfPage } from "./ShelfPage";
 import { BuddyPage } from "./BuddyPage";
+import { ChildLanguageGate } from "./ChildLanguageGate";
 
 /**
  * Everything under /learn, loaded only when the child's space opens (App.tsx). The home, the player,
@@ -15,11 +16,14 @@ export default function ChildArea() {
   const m = useMessages(common);
   return (
     <Routes>
-      <Route path=":childId" element={<ChildHome />} />
-      <Route path=":childId/shelf" element={<ShelfPage />} />
-      <Route path=":childId/buddy" element={<BuddyPage />} />
-      <Route path=":childId/practice/:activityVersionId" element={<PracticeSession />} />
-      <Route path=":childId/play/:enrollmentId" element={<PlaySession />} />
+      {/* The child's language is in force before any page of the space asks the server for anything. */}
+      <Route path=":childId" element={<ChildLanguageGate />}>
+        <Route index element={<ChildHome />} />
+        <Route path="shelf" element={<ShelfPage />} />
+        <Route path="buddy" element={<BuddyPage />} />
+        <Route path="practice/:activityVersionId" element={<PracticeSession />} />
+        <Route path="play/:enrollmentId" element={<PlaySession />} />
+      </Route>
       <Route
         path="*"
         element={

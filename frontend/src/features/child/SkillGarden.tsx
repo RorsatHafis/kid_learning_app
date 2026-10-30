@@ -91,7 +91,7 @@ export function GardenGlimpse({ childId, skills }: { childId: string; skills: Cu
       </span>
       <span>
         {m.visit}
-        <span className="font-medium text-rice-deep/80"> · {m.summary(count("bloom"), count("bud"), count("sprout"))}</span>
+        <span className="font-medium text-rice-deep"> ·{m.summary(count("bloom"), count("bud"), count("sprout"))}</span>
       </span>
     </Link>
   );
