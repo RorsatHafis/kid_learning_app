@@ -435,6 +435,8 @@ export interface LearnerActivityPreview {
   estimatedDurationSeconds: number | null;
   items: ActivityItem[];
   introduction: ActivityIntroduction | null;
+  /** "km" when the activity's own words are given in Khmer (complete); null when as written. Each item says its own. */
+  language?: "km" | null;
 }
 
 /** Media fields are asset ids from `uploadMedia`; left out when there is none. */
@@ -693,8 +695,9 @@ export const studioApi = {
     apiClient.put<ActivityDetail>(`${S}/activity-versions/${versionId}/items`, { items }),
   validateActivityVersion: (versionId: string) =>
     apiClient.get<ValidationReport>(`${S}/activity-versions/${versionId}/validation`),
-  previewActivityVersion: (versionId: string) =>
-    apiClient.get<LearnerActivityPreview>(`${S}/activity-versions/${versionId}/preview`),
+  /** As a child reading `language` gets it (Khmer only where complete); left out: as written. */
+  previewActivityVersion: (versionId: string, language?: "en" | "km") =>
+    apiClient.get<LearnerActivityPreview>(`${S}/activity-versions/${versionId}/preview${language ? `?language=${language}` : ""}`),
   publishActivityVersion: (versionId: string) =>
     apiClient.post<ActivityDetail>(`${S}/activity-versions/${versionId}/publish`),
   /** Y42: a new question written in the activity and added at its end - one step (its subject and skills: the activity's). */

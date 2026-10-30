@@ -234,8 +234,10 @@ public class StudioController {
 
     @GetMapping("/activity-versions/{versionId}/preview")
     public ActivityVersionDetailResponse previewActivityVersion(@AuthenticationPrincipal UUID accountId,
-                                                                @PathVariable UUID versionId) {
-        return studio.previewActivityVersion(accountId, versionId);
+                                                                @PathVariable UUID versionId,
+                                                                @org.springframework.web.bind.annotation.RequestParam(required = false)
+                                                                @jakarta.validation.constraints.Pattern(regexp = "en|km") String language) {
+        return studio.previewActivityVersion(accountId, versionId, language);
     }
 
     @PostMapping("/activity-versions/{versionId}/publish")

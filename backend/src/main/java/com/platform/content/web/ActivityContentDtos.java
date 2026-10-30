@@ -166,7 +166,11 @@ public final class ActivityContentDtos {
         return ids;
     }
 
-    /** {@code introduction}: what the activity teaches before it asks; null when it has none. */
+    /**
+     * {@code introduction}: what the activity teaches before it asks; null when it has none. {@code language}: the
+     * language the activity's own words (name, instructions, introduction) are given in - "km" when given in Khmer
+     * (LOCALIZATION.md, rule L-1 for activities); null when as written. Each item says its own.
+     */
     public record ActivityVersionDetailResponse(
             UUID activityVersionId,
             UUID activityId,
@@ -175,8 +179,27 @@ public final class ActivityContentDtos {
             Integer difficultyLevel,
             Integer estimatedDurationSeconds,
             List<ActivityItemResponse> items,
-            LearnerIntroduction introduction
+            LearnerIntroduction introduction,
+            String language
     ) {
+
+        /** As written, or - given its complete {@code khmer} - with the activity's own words in Khmer. */
+        public static ActivityVersionDetailResponse of(com.platform.content.entity.Activity activity,
+                                                       com.platform.content.entity.ActivityVersion version,
+                                                       List<ActivityItemResponse> items, LearnerIntroduction introduction,
+                                                       com.platform.content.service.ActivityTranslations.Khmer khmer) {
+            if (khmer == null) {
+                return new ActivityVersionDetailResponse(version.getId(), activity.getId(), activity.getTitle(), version.getInstructions(),
+                        version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items, introduction, null);
+            }
+            LearnerIntroduction inKhmer = introduction == null ? null : new LearnerIntroduction(
+                    khmer.introduction() != null ? khmer.introduction() : introduction.text(), introduction.image(),
+                    khmer.introductionImageDescription() != null ? khmer.introductionImageDescription() : introduction.imageDescription(),
+                    introduction.audio());
+            return new ActivityVersionDetailResponse(version.getId(), activity.getId(), khmer.title(),
+                    khmer.instructions() != null ? khmer.instructions() : version.getInstructions(),
+                    version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items, inKhmer, com.platform.content.service.QuestionTranslations.KHMER);
+        }
     }
 
     /** An activity's introduction as a learner sees it: the text, a picture with its description, a recording. */

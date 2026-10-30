@@ -69,7 +69,13 @@ public class ActivityTranslations {
     /** The Khmer to give the person asking, if they read Khmer and the activity's Khmer is complete. */
     @Transactional(readOnly = true)
     public Optional<Khmer> forReader(Activity activity, ActivityVersion version) {
-        if (!QuestionTranslations.KHMER.equals(LocaleContextHolder.getLocale().getLanguage())) {
+        return forLanguage(LocaleContextHolder.getLocale().getLanguage(), activity, version);
+    }
+
+    /** The same for a reader of {@code language} ("km", "en"; anything else: as written) - the Studio's preview. */
+    @Transactional(readOnly = true)
+    public Optional<Khmer> forLanguage(String language, Activity activity, ActivityVersion version) {
+        if (!QuestionTranslations.KHMER.equals(language)) {
             return Optional.empty();
         }
         Khmer khmer = of(version.getId());

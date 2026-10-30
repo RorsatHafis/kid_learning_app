@@ -681,21 +681,60 @@ function ChecksAndPublish({
 
 function TryIt({ versionId, revision }: { versionId: string; revision: number }) {
   const b = useMessages(builderMessages);
+  const e = useMessages(editorMessages).editor;
   const [preview, setPreview] = useState<LearnerActivityPreview | null>(null);
+  // LOCALIZATION.md: what a child reading English, or Khmer, gets - Khmer only where it is complete, as for the child.
+  const [language, setLanguage] = useState<"en" | "km">("en");
   useEffect(() => {
     let cancelled = false;
-    studioApi.previewActivityVersion(versionId).then((p) => !cancelled && setPreview(p)).catch(() => !cancelled && setPreview(null));
+    (language === "km" ? studioApi.previewActivityVersion(versionId, "km") : studioApi.previewActivityVersion(versionId))
+      .then((p) => !cancelled && setPreview(p))
+      .catch(() => !cancelled && setPreview(null));
     return () => {
       cancelled = true;
     };
-  }, [versionId, revision]);
+  }, [versionId, revision, language]);
   if (!preview || (preview.items.length === 0 && !preview.introduction)) return null;
+  const englishQuestions = preview.items.filter((item) => item.language !== "km").length;
   return (
     <Panel title={b.tryIt}>
       <div className="flex flex-col gap-4">
         <p className="-mt-2 text-sm text-ink-soft">{b.tryItLead}</p>
-        {preview.instructions && <p className="text-sm font-semibold text-ink">“{preview.instructions}”</p>}
-        {preview.introduction && <LearnCard introduction={preview.introduction} />}
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-semibold text-ink">{e.previewAs}</span>
+          {(["en", "km"] as const).map((l) => (
+            <button
+              key={l}
+              type="button"
+              lang={l}
+              aria-pressed={language === l}
+              onClick={() => setLanguage(l)}
+              className={
+                language === l
+                  ? "min-h-9 rounded-[8px] bg-tonle-800 px-3 font-semibold text-white"
+                  : "min-h-9 rounded-[8px] px-3 font-semibold text-ink-soft ring-1 ring-line hover:text-ink"
+              }
+            >
+              {l === "en" ? "English" : "ខ្មែរ"}
+            </button>
+          ))}
+        </div>
+        {language === "km" && (preview.language !== "km" || englishQuestions > 0) && (
+          <ul className="flex flex-col gap-1 text-xs font-semibold text-light-deep">
+            {preview.language !== "km" && <li>{b.tryItActivityEnglish}</li>}
+            {englishQuestions > 0 && <li>{b.tryItQuestionsEnglish(englishQuestions, preview.items.length)}</li>}
+          </ul>
+        )}
+        {preview.instructions && (
+          <p lang={preview.language ?? undefined} className="text-sm font-semibold text-ink">
+            “{preview.instructions}”
+          </p>
+        )}
+        {preview.introduction && (
+          <div lang={preview.language ?? undefined}>
+            <LearnCard introduction={preview.introduction} />
+          </div>
+        )}
         {preview.items.map((item, index) => (
           <ChildPreview key={item.activityItemId} item={item} index={index} total={preview.items.length} />
         ))}

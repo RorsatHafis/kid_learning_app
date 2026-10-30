@@ -77,16 +77,7 @@ public class LearnerActivityReader {
 
         // The activity's own words in Khmer for a Khmer reader when they are all translated (ActivityTranslations).
         com.platform.content.service.ActivityTranslations.Khmer khmer = activityTranslations.forReader(activity, version).orElse(null);
-        ActivityContentDtos.LearnerIntroduction introduction = ActivityContentDtos.LearnerIntroduction.of(version, media);
-        if (khmer != null && introduction != null) {
-            introduction = new ActivityContentDtos.LearnerIntroduction(
-                    khmer.introduction() != null ? khmer.introduction() : introduction.text(), introduction.image(),
-                    khmer.introductionImageDescription() != null ? khmer.introductionImageDescription() : introduction.imageDescription(),
-                    introduction.audio());
-        }
-        return new ActivityVersionDetailResponse(version.getId(), activity.getId(), khmer != null ? khmer.title() : activity.getTitle(),
-                khmer != null && khmer.instructions() != null ? khmer.instructions() : version.getInstructions(),
-                version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items, introduction);
+        return ActivityVersionDetailResponse.of(activity, version, items, ActivityContentDtos.LearnerIntroduction.of(version, media), khmer);
     }
 
 }

@@ -710,16 +710,26 @@ public class StudioService {
     /** Exactly what a child is served for this version - the learner DTO - for the author to try before publishing. */
     @Transactional(readOnly = true)
     public ActivityVersionDetailResponse previewActivityVersion(UUID accountId, UUID activityVersionId) {
+        return previewActivityVersion(accountId, activityVersionId, null);
+    }
+
+    /**
+     * The activity as a child reading {@code language} ("en", "km"; null: as written) gets it - its own words and each
+     * question in Khmer only where their Khmer is complete, as a child would (LOCALIZATION.md), so the author sees what
+     * each child sees before publishing.
+     */
+    public ActivityVersionDetailResponse previewActivityVersion(UUID accountId, UUID activityVersionId, String language) {
         ActivityVersion version = activityService.getVersion(activityVersionId);
         Activity activity = guard.requireActivityWrite(accountId, version.getActivityId());
         List<ActivityItemResponse> items = activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId).stream()
-                .map(item -> learnerItem(item.getId(), item.getSequenceOrder(), questionService.getVersion(item.getQuestionVersionId())))
+                .map(item -> learnerItem(item.getId(), item.getSequenceOrder(), questionService.getVersion(item.getQuestionVersionId()),
+                        language))
                 .toList();
         Map<UUID, MediaService.MediaRef> introMedia = media.refs(java.util.stream.Stream.of(version.getIntroductionImageAssetId(),
                 version.getIntroductionAudioAssetId()).filter(Objects::nonNull).toList());
-        return new ActivityVersionDetailResponse(version.getId(), activity.getId(), activity.getTitle(),
-                version.getInstructions(), version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items,
-                com.platform.content.web.ActivityContentDtos.LearnerIntroduction.of(version, introMedia));
+        return ActivityVersionDetailResponse.of(activity, version, items,
+                com.platform.content.web.ActivityContentDtos.LearnerIntroduction.of(version, introMedia),
+                activityTranslations.forLanguage(language, activity, version).orElse(null));
     }
 
     // ================================================================== questions

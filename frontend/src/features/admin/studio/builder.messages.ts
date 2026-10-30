@@ -86,6 +86,12 @@ export const builderMessages = defineMessages(
     reachAdminAction: "Open curricula",
     tryIt: "Try it as a child",
     tryItLead: "Exactly what a child will get. Answers here aren't recorded.",
+    tryItActivityEnglish:
+      "The activity's name, instructions and introduction are shown in English: their Khmer isn't complete yet (More settings, Teach it first).",
+    tryItQuestionsEnglish: (english: number, total: number) =>
+      english === total
+        ? "Its questions are shown in English: their Khmer isn't complete yet."
+        : `${english} of ${total} questions are shown in English: their Khmer isn't complete yet.`,
     types: {
       MULTIPLE_CHOICE: { name: "Choose the answer", what: "Pick one answer from a few choices.", example: "Which is more? 3 · 7" },
       TRUE_FALSE: { name: "True or false", what: "Decide if a sentence is true.", example: "5 is more than 2." },
@@ -174,6 +180,12 @@ export const builderMessages = defineMessages(
     reachAdminAction: "បើកកម្មវិធីសិក្សា",
     tryIt: "សាកល្បងជាកុមារ",
     tryItLead: "ដូចដែលកុមារនឹងទទួលបាន។ ចម្លើយនៅទីនេះមិនត្រូវបានកត់ត្រាទេ។",
+    tryItActivityEnglish:
+      "ឈ្មោះ ការណែនាំ និងសេចក្ដីផ្ដើមរបស់សកម្មភាព បង្ហាញជាភាសាអង់គ្លេស៖ ភាសាខ្មែររបស់វាមិនទាន់ពេញលេញនៅឡើយ (ការកំណត់បន្ថែម បង្រៀនជាមុនសិន)។",
+    tryItQuestionsEnglish: (english: number, total: number) =>
+      english === total
+        ? "សំណួររបស់វាបង្ហាញជាភាសាអង់គ្លេស៖ ភាសាខ្មែររបស់វាមិនទាន់ពេញលេញនៅឡើយ។"
+        : `សំណួរ ${english} ក្នុងចំណោម ${total} បង្ហាញជាភាសាអង់គ្លេស៖ ភាសាខ្មែររបស់វាមិនទាន់ពេញលេញនៅឡើយ។`,
     types: {
       MULTIPLE_CHOICE: { name: "ជ្រើសរើសចម្លើយ", what: "ជ្រើសរើសចម្លើយមួយពីជម្រើសខ្លះ។", example: "មួយណាច្រើនជាង? 3 · 7" },
       TRUE_FALSE: { name: "ពិត ឬ មិនពិត", what: "សម្រេចថាប្រយោគមួយពិតឬអត់។", example: "5 ច្រើនជាង 2។" },

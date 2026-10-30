@@ -2032,3 +2032,18 @@ Dependencies:
   changes; cleared once saved), `unsavedLinks.test.tsx` 2/2 (asks; Stay keeps the page and the text; Leave goes;
   nothing unsaved - no question) and the Studio suites 66/66. **Browser verified** at 360 px: typed, notice shown,
   the Studio link asked and Stay kept the page, reload asked and kept the text, saved, notice gone.
+- 2026-10-30: **Content in two languages - an activity previewed per language.** A question's preview had "As a child
+  reading: English | ខ្មែរ"; a whole activity's "Try it as a child" showed only the English, so an author could not see
+  what a Khmer-reading child gets before publishing. `GET .../activity-versions/{id}/preview?language=en|km` now
+  builds the activity exactly as the child's reader does (one shared factory, `ActivityVersionDetailResponse.of`, for
+  both): its own words in Khmer only when complete, each question by its own Khmer; the response says its
+  `language`. The Studio's Try it has the same switch and says what a Khmer reader would still get in English (the
+  activity's words; "2 of 3 questions"); Khmer text is marked `lang="km"`. **Tested**:
+  `ActivityPreviewLanguageIntegrationTests` (incomplete activity Khmer - English words, questions each by their own;
+  complete - Khmer; English and as written unchanged; `fr` refused 400; a parent 403), with the bilingual question,
+  activity builder and Studio suites - 14, 0 failed; frontend Studio and i18n suites. **Browser verified** at 768 px:
+  an activity written in both languages - Try it in English, then in Khmer with the Khmer instructions and
+  introduction, marked `lang="km"`; no API error. **Finding (future, decision)**: English shown to a Khmer reader is
+  not marked `lang="en"` (it inherits the page's Khmer); the model says base text is English, but text typed in Khmer
+  into the English fields before the bilingual inputs existed would then be marked wrong - mark by the model or leave
+  unmarked is the owner's call.
