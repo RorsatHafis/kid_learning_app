@@ -23,6 +23,7 @@ import { ContentLanguageSwitch, Translated, type ContentLanguage } from "./Bilin
 import { khmerCount } from "./bilingual";
 import { useMessages } from "@/i18n/catalog";
 import { editorMessages } from "./editor.messages";
+import { introductionMessages } from "./introduction.messages";
 
 export function ActivityEditor() {
   const { activityId = "" } = useParams<{ activityId: string }>();
@@ -301,7 +302,7 @@ function ReachChildren() {
   );
 }
 
-function DetailsForm({
+export function DetailsForm({
   title,
   version,
   busy,
@@ -334,6 +335,27 @@ function DetailsForm({
   const [difficulty, setDifficulty] = useState(version.difficultyLevel ? String(version.difficultyLevel) : "");
   const [duration, setDuration] = useState(version.estimatedDurationSeconds ? String(version.estimatedDurationSeconds) : "");
   const m = useMessages(editorMessages).editor;
+  const notSaved = useMessages(introductionMessages).notSaved;
+  // Changes not saved yet: said beside the button, and leaving the page asks first (like a question's form and the
+  // introduction). After a save the version holds what is on screen, so nothing is left to lose.
+  const onScreen = JSON.stringify([instructions.trim(), difficulty, duration, titleKm.trim(), instructionsKm.trim()]);
+  const saved = JSON.stringify([
+    (version.instructions ?? "").trim(),
+    version.difficultyLevel ? String(version.difficultyLevel) : "",
+    version.estimatedDurationSeconds ? String(version.estimatedDurationSeconds) : "",
+    (version.khmer?.title ?? "").trim(),
+    (version.khmer?.instructions ?? "").trim(),
+  ]);
+  const dirty = onScreen !== saved;
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -405,9 +427,12 @@ function DetailsForm({
             onChange={(e) => setDuration(e.target.value)}
           />
         </div>
-        <Button type="submit" variant="outline" disabled={busy} className="w-fit">
-          {m.saveDetails}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" variant={dirty ? "solid" : "outline"} disabled={busy} className="w-fit">
+            {m.saveDetails}
+          </Button>
+          {dirty && !busy && <span className="text-sm font-semibold text-light-deep">{notSaved}</span>}
+        </div>
       </form>
     </Panel>
   );

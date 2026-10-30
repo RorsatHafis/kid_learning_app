@@ -2021,3 +2021,10 @@ Dependencies:
   bilingual (F1a; its plans section is site copy); lesson titles are teachers-only; age groups are seeded reference
   data shown beside a localized age range (future, with D-19); assessments and challenges have no screen. Nothing else
   that a child, family or principal reads is single-language.
+- 2026-10-30: **Authoring: an activity's "More settings" keep unsaved changes** (follow-up recorded with slice 2).
+  Instructions, difficulty, time and their Khmer now say "Not saved yet." beside a filled Save button, and leaving or
+  reloading the page asks first - like a question's form and the introduction; after a save nothing is left to warn
+  about. Still not covered (recorded before): a link inside the app leaves without asking (the router has no
+  navigation blocker; `BrowserRouter`). **Tested**: `detailsUnsaved.test.tsx` 2/2 (English and Khmer changes; cleared
+  once saved) and the Studio suites. **Browser verified** at 360 px: typed, notice shown, reload asked and kept the
+  text, saved, notice gone.
