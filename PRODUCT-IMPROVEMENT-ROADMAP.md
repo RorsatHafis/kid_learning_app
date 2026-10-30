@@ -2125,9 +2125,15 @@ Dependencies:
   (`CatalogNameFields`, "Title"); the Studio's lessons list shows it under the title (`lang="km"`, read together with
   `CatalogNames.preload`); a colleague's copy of a shared lesson carries it. **Tested**:
   `LessonKhmerTitleIntegrationTests` (saved, kept on an English-only rename, removed when emptied, listed) with the
-  lesson sharing, lifecycle, catalog-names and search suites - 8, 0 failed; Studio Vitest 66/66. The shared-lesson
-  copy of the Khmer title is **not separately asserted** (it runs in the lesson-sharing suite without error). Not
-  browser verified.
+  lesson sharing, lifecycle, catalog-names and search suites - 8, 0 failed; Studio Vitest 66/66. Not browser verified.
+  The shared-lesson copy is now asserted too (next entry).
+- 2026-10-30: **Two localization details finished.** (1) "Show me again" during the questions marks the introduction
+  with its known language (`LookAgain` `lang`, from `language ?? writtenIn`; unknown stays unmarked; the dialog's
+  buttons stay in the interface language) - `lookAgainLanguage.test.tsx` (km / en / unmarked, the dialog itself never
+  marked), child Vitest 51/51. (2) A shared lesson's Khmer title through the real sharing workflow -
+  `SharedLessonKhmerTitleIntegrationTests` (a paid school, author and colleague: the copy keeps "Farm animals" and its
+  Khmer; renaming the copy in both languages leaves the original's; the author's later Khmer rename doesn't reach the
+  copy) - 1, 0 failed.
 - 2026-10-30: **Authoring inventory, owner's widened brief (lessons, learning materials, objectives, announcements
   and notices, all meaningful metadata)** - recorded for the next window, in this order: (1) `text_language` above;
   (2) lesson titles - teachers and colleagues read them (shared lessons), so they get a Khmer title through a `LESSON`

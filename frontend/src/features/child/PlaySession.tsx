@@ -819,7 +819,7 @@ function Question({
       </div>
       {activity.introduction && (
         <div className="mx-auto -mb-2 flex w-full max-w-3xl justify-center">
-          <LookAgain introduction={activity.introduction} />
+          <LookAgain introduction={activity.introduction} lang={activity.language ?? activity.writtenIn ?? undefined} />
         </div>
       )}
 

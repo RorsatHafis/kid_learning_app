@@ -60,7 +60,11 @@ export function LearnCard({
  * "Show me again" while answering: the same introduction over the question, closed with the button, Escape or a tap
  * outside. Focus moves to it and returns to the button that opened it; the question underneath stays as it was.
  */
-export function LookAgain({ introduction }: { introduction: ActivityIntroduction }) {
+/**
+ * {@code lang}: the introduction's language when it is known (given in Khmer, or written in the Studio's English fields -
+ * LOCALIZATION.md, V84); left out when unknown, so it is never guessed. The dialog's own words stay the interface's.
+ */
+export function LookAgain({ introduction, lang }: { introduction: ActivityIntroduction; lang?: string }) {
   const m = useMessages(learnMessages);
   const [open, setOpen] = useState(false);
   const opener = useRef<HTMLButtonElement | null>(null);
@@ -109,7 +113,9 @@ export function LookAgain({ introduction }: { introduction: ActivityIntroduction
             onClick={(e) => e.stopPropagation()}
           >
             <div className="rounded-[28px] bg-[#FFFDF8] p-3 shadow-card">
-              <LearnCard introduction={introduction} compact />
+              <div lang={lang}>
+                <LearnCard introduction={introduction} compact />
+              </div>
               <button
                 ref={close}
                 type="button"
