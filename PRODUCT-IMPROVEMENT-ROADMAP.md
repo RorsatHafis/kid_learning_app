@@ -2058,7 +2058,8 @@ Dependencies:
   is unchanged and sends the words as typed). **Fixed the same day**: a lesson found by an activity's Khmer name
   listed none of its activities (the list under a found lesson was filtered again in memory on the English names
   only); it is now matched the same way, with one more query (`ActivityTranslations.titles`), and the test asserts the
-  matched activity is listed.
+  matched activity is listed. **Browser verified** at 360 px after the fix: "រាប់បក្សី" in the activities search finds
+  the lesson and lists its activity "Count the birds"; no API error.
 - 2026-10-30: **Phone sweep after these changes.** Parent, teacher, principal and administrator navigation at 360 and
   768 px, the Studio's pages and editors, and the child's home, shelf and buddy in Khmer at 320 px: no overflow, no
   serious or critical axe finding, no API or page error.
