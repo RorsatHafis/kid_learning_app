@@ -213,6 +213,8 @@ export interface LessonSummary {
   visibility?: LessonVisibility;
   /** M5b: copied from a colleague's shared lesson. */
   copied?: boolean;
+  /** V85: its Khmer title as written so far (a lesson has no description). */
+  khmer?: KhmerName | null;
 }
 
 /** M5b (content/entity/LessonVisibility.java): PUBLIC is deferred. */

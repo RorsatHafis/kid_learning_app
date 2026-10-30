@@ -148,7 +148,7 @@ function LifecyclePanel({
         <form onSubmit={save} className="flex flex-col gap-3">
           {khmer ? (
             <CatalogNameFields
-              nameLabel={kind === "objectives" ? m.title : m.name}
+              nameLabel={kind === "objectives" || kind === "lessons" ? m.title : m.name}
               name={name}
               onName={setName}
               description={describable ? description : undefined}

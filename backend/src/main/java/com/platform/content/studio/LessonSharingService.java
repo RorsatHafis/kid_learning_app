@@ -214,6 +214,7 @@ public class LessonSharingService {
             activityService.replaceItems(draft.getId(), items);
             copyTranslations("ACTIVITY_VERSION", version.getId(), draft.getId());
         }
+        copyTranslations("LESSON", source.getId(), copy.getId()); // its Khmer title (V85)
         record(accountId, "LESSON_COPIED", copy.getId(), Map.of("sourceLessonId", source.getId(), "activities", published.size(),
                 "questions", questions, "media", mediaCopies.size()));
         return new StudioDtos.LessonSummary(copy.getId(), copy.getTitle(), copy.getSubjectId(), List.of(), published.size(), false,

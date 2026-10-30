@@ -2120,6 +2120,14 @@ Dependencies:
   **Tested**: `ActivityTextLanguageIntegrationTests` (Studio-written "en"; complete Khmer "km"; a copy keeps "en";
   unknown says nothing until saved) with the activity preview, bilingual, builder and lesson-sharing suites - 8, 0
   failed; child Vitest 50/50. Not marked yet: the "look again" introduction during the questions.
+- 2026-10-30: **Lesson titles in English and Khmer (V85)** - owner's widened brief (teacher-read fields too).
+  `LESSON` joins the content types; the lesson's Manage dialog writes the Khmer title beside the English
+  (`CatalogNameFields`, "Title"); the Studio's lessons list shows it under the title (`lang="km"`, read together with
+  `CatalogNames.preload`); a colleague's copy of a shared lesson carries it. **Tested**:
+  `LessonKhmerTitleIntegrationTests` (saved, kept on an English-only rename, removed when emptied, listed) with the
+  lesson sharing, lifecycle, catalog-names and search suites - 8, 0 failed; Studio Vitest 66/66. The shared-lesson
+  copy of the Khmer title is **not separately asserted** (it runs in the lesson-sharing suite without error). Not
+  browser verified.
 - 2026-10-30: **Authoring inventory, owner's widened brief (lessons, learning materials, objectives, announcements
   and notices, all meaningful metadata)** - recorded for the next window, in this order: (1) `text_language` above;
   (2) lesson titles - teachers and colleagues read them (shared lessons), so they get a Khmer title through a `LESSON`

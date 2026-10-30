@@ -199,8 +199,16 @@ public class ContentLifecycleService {
 
     @Transactional
     public void retitleLesson(UUID accountId, UUID lessonId, String title) {
+        retitleLesson(accountId, lessonId, title, null);
+    }
+
+    /** {@code khmer}: its Khmer title (V85); null leaves it as it is. */
+    @Transactional
+    public void retitleLesson(UUID accountId, UUID lessonId, String title, StudioDtos.KhmerNameRequest khmer) {
         Lesson lesson = guard.requireLessonWrite(accountId, lessonId);
         lesson.retitle(title.strip());
+        setKhmer(com.platform.content.entity.LocalizableContentType.LESSON, lessonId,
+                khmer == null ? null : new StudioDtos.KhmerNameRequest(khmer.name(), null));
         record(guard.requireAuthor(accountId), "CONTENT_UPDATED", "LESSON", lessonId, Map.of("title", lesson.getTitle()));
     }
 

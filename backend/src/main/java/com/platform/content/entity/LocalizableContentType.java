@@ -10,6 +10,8 @@ public enum LocalizableContentType {
     SUBJECT,
     SKILL,
     LEARNING_OBJECTIVE,
-    CURRICULUM
+    CURRICULUM,
+    /** V85: a lesson's title (not versioned), read by teachers and their colleagues. */
+    LESSON
 
 }

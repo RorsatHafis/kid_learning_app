@@ -419,6 +419,7 @@ public class StudioService {
         if (ids.isEmpty()) {
             return new PageResponse<>(List.of(), request.page(), request.size(), total);
         }
+        catalogNames.preload(com.platform.content.entity.LocalizableContentType.LESSON, ids);
         Map<UUID, Lesson> byId = lessons.findAllById(ids).stream()
                 .collect(java.util.stream.Collectors.toMap(Lesson::getId, lesson -> lesson));
         List<Activity> all = activities.findByLessonIdIn(ids);
@@ -469,7 +470,8 @@ public class StudioService {
                             activity.getStatus() == CatalogStatus.ARCHIVED, supportOf.get(activity.getId())))
                     .toList();
             return new LessonSummary(lesson.getId(), lesson.getTitle(), lesson.getSubjectId(), shown, own.size(), lessonArchived,
-                    lesson.getVisibility().name(), lesson.getCopiedFromLessonId() != null || lesson.getCopiedFromAccountId() != null);
+                    lesson.getVisibility().name(), lesson.getCopiedFromLessonId() != null || lesson.getCopiedFromAccountId() != null,
+                    khmerName(com.platform.content.entity.LocalizableContentType.LESSON, lesson.getId()));
         }).toList();
         return new PageResponse<>(page, request.page(), request.size(), total);
     }

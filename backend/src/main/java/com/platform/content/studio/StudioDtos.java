@@ -126,8 +126,14 @@ public final class StudioDtos {
      * {@code activities} holds only those, and {@code activityCount} still counts them all. M5b: {@code visibility}
      * PRIVATE or SCHOOL; {@code copied} when it was copied from a colleague's shared lesson.
      */
+    /** {@code khmer}: its Khmer title (V85), as written so far; null where not read. */
     public record LessonSummary(UUID id, String title, UUID subjectId, List<ActivitySummary> activities, int activityCount,
-                                boolean archived, String visibility, boolean copied) {
+                                boolean archived, String visibility, boolean copied, KhmerName khmer) {
+
+        public LessonSummary(UUID id, String title, UUID subjectId, List<ActivitySummary> activities, int activityCount,
+                             boolean archived, String visibility, boolean copied) {
+            this(id, title, subjectId, activities, activityCount, archived, visibility, copied, null);
+        }
     }
 
     /**

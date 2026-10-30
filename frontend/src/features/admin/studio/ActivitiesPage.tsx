@@ -131,7 +131,14 @@ function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: 
           {lesson.copied && <CopiedBadge />}
           {lesson.archived && <ArchivedBadge />}
           {!catalogAdmin && !lesson.archived && <LessonVisibilityControl lesson={lesson} onChanged={onChanged} />}
-          <ManageButton kind="lessons" id={lesson.id} name={lesson.title} archived={lesson.archived} onChanged={onChanged} />
+          <ManageButton
+            kind="lessons"
+            id={lesson.id}
+            name={lesson.title}
+            khmer={lesson.khmer ?? { name: null, description: null }}
+            archived={lesson.archived}
+            onChanged={onChanged}
+          />
           {!adding && !lesson.archived && (
             <Button variant="outline" size="sm" onClick={() => setAdding(true)} disabled={catalog.skills.length === 0}>
               <Plus size={15} aria-hidden /> {m.activity}
@@ -140,6 +147,11 @@ function LessonPanel({ lesson, onChanged }: { lesson: LessonSummary; onChanged: 
         </span>
       }
     >
+      {lesson.khmer?.name && (
+        <p lang="km" className="-mt-1 mb-2 text-sm text-ink-soft [overflow-wrap:anywhere]">
+          {lesson.khmer.name}
+        </p>
+      )}
       {adding && <NewActivity lessonId={lesson.id} onCancel={() => setAdding(false)} />}
       {lesson.activityCount === 0 && !adding && <p className="text-sm text-ink-soft">{m.emptyLesson}</p>}
       {lesson.activities.length < lesson.activityCount && (

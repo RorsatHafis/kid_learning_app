@@ -399,7 +399,7 @@ public class StudioController {
     @PutMapping("/lessons/{lessonId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void retitleLesson(@AuthenticationPrincipal UUID accountId, @PathVariable UUID lessonId, @Valid @RequestBody DetailsRequest request) {
-        lifecycle.retitleLesson(accountId, lessonId, request.name());
+        lifecycle.retitleLesson(accountId, lessonId, request.name(), request.khmer());
     }
 
     @PostMapping("/lessons/{lessonId}/{action:archive|restore}")
