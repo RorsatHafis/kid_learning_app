@@ -128,7 +128,9 @@ public final class ActivityContentDtos {
             List<QuestionOptionResponse> options,
             String hint,
             /* The language its words are given in: "km" when given in Khmer (LOCALIZATION.md); null when as written. */
-            String language
+            String language,
+            /* V83: the language it is written in when given as written and known - "en" - else null (unknown, unmarked). */
+            String writtenIn
     ) {
         /** One item as a learner sees it; {@code media} holds the references of every asset it uses ({@link #mediaOf}). */
         public static ActivityItemResponse forLearner(UUID itemId, int sequenceOrder, QuestionType questionType,
@@ -149,7 +151,8 @@ public final class ActivityContentDtos {
                     media.get(version.getPromptAudioAssetId()),
                     QuestionOptionResponse.forLearner(questionType, version.getId(), options, media, khmer),
                     km && khmer.hint() != null ? khmer.hint() : version.getHint(),
-                    km ? com.platform.content.service.QuestionTranslations.KHMER : null);
+                    km ? com.platform.content.service.QuestionTranslations.KHMER : null,
+                    km ? null : version.getTextLanguage());
         }
     }
 

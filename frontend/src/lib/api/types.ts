@@ -196,6 +196,11 @@ export interface ActivityItem {
   hint?: string | null;
   /** "km" when the question is given in Khmer (its Khmer is complete and the child reads Khmer); null: as written. */
   language?: "km" | null;
+  /**
+   * V83: given as written, the language it is written in when that is known ("en": saved through the bilingual
+   * Studio); null when unknown (older content, possibly typed in Khmer) - then nothing is marked, never guessed.
+   */
+  writtenIn?: "en" | null;
 }
 
 export interface ActivityVersionDetail {

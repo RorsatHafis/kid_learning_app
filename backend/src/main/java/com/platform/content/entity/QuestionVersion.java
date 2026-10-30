@@ -38,6 +38,13 @@ public class QuestionVersion extends PublishableVersion {
     @Column(name = "prompt_audio_asset_id")
     private UUID promptAudioAssetId;
 
+    /**
+     * V83: "en" when this version's own text was written in the Studio's English fields; null when unknown (written
+     * before the bilingual inputs, possibly in Khmer) - so a screen reader is told its language only when it is known.
+     */
+    @Column(name = "text_language", length = 2)
+    private String textLanguage;
+
     /** What the prompt's picture shows, read by screen readers (the picture may carry the question). */
     @Column(name = "prompt_image_description", columnDefinition = "text")
     private String promptImageDescription;
@@ -135,4 +142,18 @@ public class QuestionVersion extends PublishableVersion {
         return difficultyLevel;
     }
 
+
+    public String getTextLanguage() {
+        return textLanguage;
+    }
+
+    /** Its own text was written in the Studio's English fields (V83). */
+    public void markWrittenInEnglish() {
+        this.textLanguage = "en";
+    }
+
+    /** A copy's text is the source's, so its language is too (known or unknown). */
+    public void sameTextLanguageAs(QuestionVersion source) {
+        this.textLanguage = source.textLanguage;
+    }
 }

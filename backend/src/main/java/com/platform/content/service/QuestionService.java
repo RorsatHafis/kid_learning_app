@@ -338,6 +338,9 @@ public class QuestionService {
             draft.setGuidance(latest.getHint(), latest.getExplanation());
             questionVersionRepository.saveAndFlush(draft);
         }
+        // The same text, so the same known (or unknown) language (V83).
+        draft.sameTextLanguageAs(latest);
+        questionVersionRepository.saveAndFlush(draft);
         List<QuestionOption> latestOptions = listOptions(latest.getId());
         for (QuestionOption option : latestOptions) {
             questionOptionRepository.save(option.copyFor(draft.getId()));
@@ -364,6 +367,7 @@ public class QuestionService {
         if (source.getHint() != null || source.getExplanation() != null) {
             draft.setGuidance(source.getHint(), source.getExplanation());
         }
+        draft.sameTextLanguageAs(source);
         questionVersionRepository.saveAndFlush(draft);
         List<QuestionOption> sourceOptions = listOptions(source.getId());
         for (QuestionOption option : sourceOptions) {

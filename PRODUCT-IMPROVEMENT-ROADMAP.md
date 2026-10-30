@@ -2106,6 +2106,15 @@ Dependencies:
   only from explicit metadata, never guess, leave unknown unmarked). Design and migration implications in
   `LOCALIZATION.md` ("Screen-reader language ..."): a nullable `text_language` on question and activity versions,
   set by the bilingual Studio, NULL (unmarked) for everything earlier. Next in the localization order.
+- 2026-10-30: **Screen-reader language - built for questions (V83).** `question_versions.text_language` ('en' or
+  NULL, CHECK; no backfill - unknown stays unknown) is set when the Studio creates or saves a draft and carried to the
+  next draft and to copies; the served item adds `writtenIn` ("en"/null) beside the unchanged `language` ("km"/null),
+  and the child's question is marked `lang` from them, unmarked when neither is known. **Tested**:
+  `TextLanguageIntegrationTests` (Studio-written: "en"; in Khmer: "km" and no `writtenIn`; next draft keeps "en";
+  an older version (NULL) says nothing until a draft of it is saved) with the bilingual question, copy, Studio,
+  lesson-sharing and activity-preview suites - 16, 0 failed; `questionLanguage.test.tsx` (km / en / unmarked) and
+  the child suites 50/50. **Not yet**: activity versions' own words (same design, next). Not browser verified (the
+  mark is an attribute; its effect is in screen readers).
 - 2026-10-30: **Authoring inventory, owner's widened brief (lessons, learning materials, objectives, announcements
   and notices, all meaningful metadata)** - recorded for the next window, in this order: (1) `text_language` above;
   (2) lesson titles - teachers and colleagues read them (shared lessons), so they get a Khmer title through a `LESSON`

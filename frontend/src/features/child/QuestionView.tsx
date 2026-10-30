@@ -53,7 +53,8 @@ export function QuestionView(props: QuestionProps) {
   const hint = props.item.hint?.trim();
   return (
     // The question's own language, so a screen reader reads Khmer content as Khmer (the page's may differ).
-    <div className="flex flex-col gap-6" lang={props.item.language ?? undefined}>
+    // Marked with its language only when it is known: given in Khmer, or written in the Studio's English fields (V83).
+    <div className="flex flex-col gap-6" lang={props.item.language ?? props.item.writtenIn ?? undefined}>
       <QuestionBody {...props} />
       {hint && !props.result && <Hint key={props.item.questionVersionId} text={hint} onOpened={props.onHintOpened} />}
     </div>

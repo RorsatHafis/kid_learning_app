@@ -1164,6 +1164,8 @@ public class StudioService {
      * options that no longer exist - so the Studio always sends the Khmer it shows.
      */
     private void writeKhmer(QuestionType type, UUID draftId, KhmerDraft khmer) {
+        // Saved through the bilingual Studio: its own text is the English fields' (V83).
+        questionService.getVersion(draftId).markWrittenInEnglish();
         if (!com.platform.content.service.QuestionTranslations.translatable(type)) {
             translations.write(draftId, com.platform.content.service.QuestionTranslations.Khmer.NONE);
             return;

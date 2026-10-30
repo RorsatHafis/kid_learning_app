@@ -200,7 +200,11 @@ guessing, and leave content whose language is unknown unmarked.
 - **Migration implications**: one migration adding the nullable column to two tables (no backfill: unknown stays
   unknown); a version published before stays NULL until its next draft is saved; an author can't mark old content
   "English" except by saving a new draft. Published versions are frozen, so nothing a child already has changes.
-- **Status**: designed and recorded; not built in this window (usage). Next in the localization order.
+- **Status - questions built (V83, 2026-10-30)**: `question_versions.text_language` ('en' or NULL), set on every
+  Studio create and save of a draft, carried to the next draft and to copies; served beside `language` as
+  `writtenIn` ("en" or null - the existing `language` field keeps its meaning, so nothing reading it changes). The
+  child's question is marked `lang` from `language ?? writtenIn`, and left unmarked when both are null. **Not yet**:
+  an activity's own words (name, instructions, introduction) - the same column on `activity_versions` is next.
 
 ### Inventory: what still has one language (in order)
 
