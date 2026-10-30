@@ -203,13 +203,30 @@ public class StudioService {
         guard.requireAuthor(accountId);
         Subject subject = subjectService.getById(subjectId);
         CatalogStatus shown = archived ? CatalogStatus.ARCHIVED : CatalogStatus.ACTIVE;
-        List<SkillDto> skillDtos = skills.findBySubjectIdAndStatus(subjectId, shown).stream()
+        // Read together, not row by row: a subject's catalog costs the same few queries however many skills it has.
+        List<Skill> subjectSkills = skills.findBySubjectIdAndStatus(subjectId, shown);
+        List<LearningObjective> subjectObjectives = objectives.findBySubjectId(subjectId).stream()
+                .filter(objective -> objective.getStatus() == shown).toList();
+        List<UUID> skillIds = subjectSkills.stream().map(Skill::getId).toList();
+        List<UUID> objectiveIds = subjectObjectives.stream().map(LearningObjective::getId).toList();
+        Map<UUID, List<UUID>> prerequisitesBySkill = new java.util.HashMap<>();
+        if (!skillIds.isEmpty()) {
+            prerequisites.findBySkillIdIn(skillIds).forEach(p ->
+                    prerequisitesBySkill.computeIfAbsent(p.getSkillId(), id -> new java.util.ArrayList<>()).add(p.getPrerequisiteSkillId()));
+        }
+        Map<UUID, List<UUID>> skillsByObjective = new java.util.HashMap<>();
+        if (!objectiveIds.isEmpty()) {
+            objectiveSkills.findByLearningObjectiveIdIn(objectiveIds).forEach(link ->
+                    skillsByObjective.computeIfAbsent(link.getLearningObjectiveId(), id -> new java.util.ArrayList<>()).add(link.getSkillId()));
+        }
+        catalogNames.preload(com.platform.content.entity.LocalizableContentType.SKILL, skillIds);
+        catalogNames.preload(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, objectiveIds);
+        List<SkillDto> skillDtos = subjectSkills.stream()
                 .sorted(Comparator.comparing(Skill::getName, String.CASE_INSENSITIVE_ORDER))
-                .map(this::skillDto).toList();
-        List<ObjectiveDto> objectiveDtos = objectives.findBySubjectId(subjectId).stream()
-                .filter(objective -> objective.getStatus() == shown)
+                .map(skill -> skillDto(skill, prerequisitesBySkill.getOrDefault(skill.getId(), List.of()))).toList();
+        List<ObjectiveDto> objectiveDtos = subjectObjectives.stream()
                 .sorted(Comparator.comparing(LearningObjective::getTitle, String.CASE_INSENSITIVE_ORDER))
-                .map(this::objectiveDto).toList();
+                .map(objective -> objectiveDto(objective, skillsByObjective.getOrDefault(objective.getId(), List.of()))).toList();
         return new CatalogDto(subjectDto(subject), skillDtos, objectiveDtos);
     }
 
@@ -1047,15 +1064,22 @@ public class StudioService {
     }
 
     private SkillDto skillDto(Skill skill) {
+        return skillDto(skill, prerequisites.findBySkillId(skill.getId()).stream().map(SkillPrerequisite::getPrerequisiteSkillId).toList());
+    }
+
+    private SkillDto skillDto(Skill skill, List<UUID> prerequisiteSkillIds) {
         return new SkillDto(skill.getId(), skill.getCode(), skill.getName(), skill.getDescription(), skill.getStatus(),
-                prerequisites.findBySkillId(skill.getId()).stream().map(SkillPrerequisite::getPrerequisiteSkillId).toList(),
-                khmerName(com.platform.content.entity.LocalizableContentType.SKILL, skill.getId()));
+                prerequisiteSkillIds, khmerName(com.platform.content.entity.LocalizableContentType.SKILL, skill.getId()));
     }
 
     private ObjectiveDto objectiveDto(LearningObjective objective) {
+        return objectiveDto(objective, objectiveSkills.findByLearningObjectiveId(objective.getId()).stream()
+                .map(LearningObjectiveSkill::getSkillId).toList());
+    }
+
+    private ObjectiveDto objectiveDto(LearningObjective objective, List<UUID> skillIds) {
         return new ObjectiveDto(objective.getId(), objective.getCode(), objective.getTitle(), objective.getDescription(),
-                objectiveSkills.findByLearningObjectiveId(objective.getId()).stream()
-                        .map(LearningObjectiveSkill::getSkillId).toList(), objective.getStatus() == CatalogStatus.ARCHIVED,
+                skillIds, objective.getStatus() == CatalogStatus.ARCHIVED,
                 khmerName(com.platform.content.entity.LocalizableContentType.LEARNING_OBJECTIVE, objective.getId()));
     }
 

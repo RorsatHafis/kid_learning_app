@@ -13,6 +13,9 @@ public interface SkillPrerequisiteRepository extends JpaRepository<SkillPrerequi
 
     List<SkillPrerequisite> findBySkillId(UUID skillId);
 
+    /** The prerequisites of many skills in one query (the Studio's catalog). */
+    List<SkillPrerequisite> findBySkillIdIn(java.util.Collection<UUID> skillIds);
+
     List<SkillPrerequisite> findByPrerequisiteSkillId(UUID prerequisiteSkillId);
 
 }

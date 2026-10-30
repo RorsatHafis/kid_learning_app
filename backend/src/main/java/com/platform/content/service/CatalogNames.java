@@ -82,6 +82,24 @@ public class CatalogNames {
         missing.forEach(id -> cache.put(key(type, id), found.getOrDefault(id, Khmer.NONE)));
     }
 
+    /**
+     * Reads the Khmer of many rows in one query and keeps it for the rest of the transaction, whoever is reading - the
+     * Studio shows both languages to every author. Does nothing outside a transaction.
+     */
+    @Transactional(readOnly = true)
+    public void preload(LocalizableContentType type, Collection<UUID> ids) {
+        Map<String, Khmer> cache = cache();
+        if (cache == null) {
+            return;
+        }
+        List<UUID> missing = ids.stream().filter(id -> id != null && !cache.containsKey(key(type, id))).distinct().toList();
+        if (missing.isEmpty()) {
+            return;
+        }
+        Map<UUID, Khmer> found = of(type, missing);
+        missing.forEach(id -> cache.put(key(type, id), found.getOrDefault(id, Khmer.NONE)));
+    }
+
     private Khmer read(LocalizableContentType type, UUID id) {
         String name = null;
         String description = null;

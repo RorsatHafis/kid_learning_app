@@ -2059,3 +2059,9 @@ Dependencies:
 - 2026-10-30: **Phone sweep after these changes.** Parent, teacher, principal and administrator navigation at 360 and
   768 px, the Studio's pages and editors, and the child's home, shelf and buddy in Khmer at 320 px: no overflow, no
   serious or critical axe finding, no API or page error.
+- 2026-10-30: **The Studio catalog is read together** (the "future, performance" finding of slice 3, done). A subject's
+  catalog read each skill's prerequisites, each chapter's skills and each one's Khmer row by row - three queries per
+  row. Now one query each for all of them (`findBySkillIdIn`, `findByLearningObjectiveIdIn`, `CatalogNames.preload`,
+  which, unlike `prefetch`, reads the Khmer for any reader: the Studio always shows both languages). **Tested**:
+  `StudioCatalogReadsIntegrationTests` (9 statements with 1 skill and with 8 skills, prerequisites, chapter links and
+  Khmer names - and the same contents) with the Studio, lifecycle and catalog-names suites - 14, 0 failed.

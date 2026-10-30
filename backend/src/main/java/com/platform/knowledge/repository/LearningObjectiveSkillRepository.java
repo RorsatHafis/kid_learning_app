@@ -13,6 +13,9 @@ public interface LearningObjectiveSkillRepository extends JpaRepository<Learning
 
     List<LearningObjectiveSkill> findByLearningObjectiveId(UUID learningObjectiveId);
 
+    /** The skills of many objectives in one query (the Studio's catalog). */
+    List<LearningObjectiveSkill> findByLearningObjectiveIdIn(java.util.Collection<UUID> learningObjectiveIds);
+
     List<LearningObjectiveSkill> findBySkillId(UUID skillId);
 
 }
