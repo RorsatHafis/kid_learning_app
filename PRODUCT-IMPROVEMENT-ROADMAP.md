@@ -2075,3 +2075,11 @@ Dependencies:
   for many versions, options in one query). **Tested**: `BankKhmerStatusIntegrationTests` (complete, partly, none,
   not translatable) with the Studio, bilingual question and copy suites - 13, 0 failed; Studio Vitest 66/66.
   **Browser verified** at 360 px: the seed bank's rows show their status; no overflow, axe clean, no API error.
+  (Not shown in the activity builder's "reuse a question" picker on purpose: reuse adds the *published* version, and
+  the status describes the latest, which may be a newer draft - it could mislead.)
+- 2026-10-30: **A skill explained (X19) names activities and curricula in the reader's language.** The page read
+  them in SQL as written while its skill and chapter names were localized, so a Khmer-reading parent saw both
+  languages on one page. Each activity is now named by the path's rule (its Khmer when complete,
+  `ActivityTranslations.nameForReader`) and each curriculum by `CatalogNames` - for a Khmer reader only (an English
+  reader costs no read). **Tested**: `SkillStoryKhmerIntegrationTests` (a waiting step in Khmer and in English) with
+  the learning journey and read-scaling suites - 10, 0 failed.

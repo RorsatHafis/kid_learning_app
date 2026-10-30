@@ -146,8 +146,8 @@ differently.
   name never needs the description's Khmer to be shown.
 - Where it is read: the family catalog (choosing a curriculum: curriculum and subject names), the child's path
   (curriculum, subject, chapter titles and descriptions, the skills each step practises), the skills page (chapter
-  and skill names and descriptions), "what changed since your last visit", and the skill or chapter named in a parent
-  insight's sentence.
+  and skill names and descriptions), "what changed since your last visit", a skill explained (its activities and
+  curricula too), and the skill or chapter named in a parent insight's sentence.
 - A parent insight records its sentence in English with the name as it was then; on screen the sentence is put in the
   reader's language (`InsightText`) and the name it carries swapped for its Khmer (`InsightNames`). A name renamed
   since the sentence was recorded is left as recorded.

@@ -61,8 +61,36 @@ public class SkillStoryService {
     private final NamedParameterJdbcTemplate jdbc;
     private final LearningDays learningDays;
 
+    private final com.platform.content.service.ActivityTranslations activityTranslations;
+    private final com.platform.content.service.CatalogNames catalogNames;
+    private final com.platform.content.repository.ActivityRepository activities;
+    private final com.platform.content.repository.ActivityVersionRepository activityVersions;
+
+    /** An activity's name as the reader gets it, read once per version; an English reader costs no read. */
+    private final class ReaderNames {
+        private final Map<UUID, String> byVersion = new HashMap<>();
+
+        String activity(UUID versionId, String english) {
+            if (versionId == null || !com.platform.content.service.CatalogNames.readerIsKhmer()) {
+                return english;
+            }
+            return byVersion.computeIfAbsent(versionId, id -> activityVersions.findById(id)
+                    .flatMap(version -> activities.findById(version.getActivityId())
+                            .map(activity -> activityTranslations.nameForReader(activity, version)))
+                    .orElse(english));
+        }
+    }
+
     public SkillStoryService(SkillProgressService skillProgress, LearnerSkillHistoryRepository history,
-                             EvidenceStandard evidenceStandard, NamedParameterJdbcTemplate jdbc, LearningDays learningDays) {
+                             EvidenceStandard evidenceStandard, NamedParameterJdbcTemplate jdbc, LearningDays learningDays,
+                             com.platform.content.service.ActivityTranslations activityTranslations,
+                             com.platform.content.service.CatalogNames catalogNames,
+                             com.platform.content.repository.ActivityRepository activities,
+                             com.platform.content.repository.ActivityVersionRepository activityVersions) {
+        this.activityTranslations = activityTranslations;
+        this.catalogNames = catalogNames;
+        this.activities = activities;
+        this.activityVersions = activityVersions;
         this.skillProgress = skillProgress;
         this.history = history;
         this.evidenceStandard = evidenceStandard;
@@ -90,12 +118,14 @@ public class SkillStoryService {
             throw new ResourceNotFoundException("Skill", skillId);
         }
 
+        // Activities and curricula named in the reader's language, like the path (LOCALIZATION.md); English: as written.
+        ReaderNames names = new ReaderNames();
         MapSqlParameterSource params = new MapSqlParameterSource("child", childId).addValue("skill", skillId)
                 .addValue("limit", RECENT_ACTIVITIES);
-        record Tally(UUID attemptId, String title, Instant at, int answers, int correct, int withHint) {
+        record Tally(UUID attemptId, String title, UUID versionId, Instant at, int answers, int correct, int withHint) {
         }
         List<Tally> tallies = jdbc.query("""
-                SELECT a.id, act.title, COALESCE(a.completed_at, max(r.occurred_at)) AS at,
+                SELECT a.id, act.title, av.id AS version_id, COALESCE(a.completed_at, max(r.occurred_at)) AS at,
                        count(*) AS answers, count(*) FILTER (WHERE r.is_correct) AS correct,
                        count(*) FILTER (WHERE r.hint_used) AS with_hint
                 FROM answer_records r
@@ -103,11 +133,11 @@ public class SkillStoryService {
                 JOIN activity_attempts a ON a.id = r.activity_attempt_id AND a.child_id = :child
                 JOIN activity_versions av ON av.id = a.activity_version_id
                 JOIN activities act ON act.id = av.activity_id
-                GROUP BY a.id, act.title, a.completed_at
+                GROUP BY a.id, act.title, av.id, a.completed_at
                 ORDER BY at DESC, a.id DESC
                 LIMIT :limit
                 """, params, (rs, i) -> new Tally(rs.getObject("id", UUID.class), rs.getString("title"),
-                rs.getTimestamp("at").toInstant(), rs.getInt("answers"), rs.getInt("correct"), rs.getInt("with_hint")));
+                rs.getObject("version_id", UUID.class), rs.getTimestamp("at").toInstant(), rs.getInt("answers"), rs.getInt("correct"), rs.getInt("with_hint")));
         Integer inAll = jdbc.queryForObject("""
                 SELECT count(DISTINCT a.id) FROM answer_records r
                 JOIN question_version_skills qs ON qs.question_version_id = r.question_version_id AND qs.skill_id = :skill
@@ -136,12 +166,12 @@ public class SkillStoryService {
             int[] after = evidenceAfter.get(t.attemptId());
             SkillStanding standing = after == null ? null
                     : evidenceStandard.standingFor(after[0], masteryAfter.get(t.attemptId()), after[1]);
-            return new ActivityOnSkill(t.attemptId(), t.title(), t.at(), t.answers(), t.correct(), standing, after == null ? 0 : after[0],
+            return new ActivityOnSkill(t.attemptId(), names.activity(t.versionId(), t.title()), t.at(), t.answers(), t.correct(), standing, after == null ? 0 : after[0],
                     t.withHint());
         }).toList();
 
         List<WaitingStep> waiting = jdbc.query("""
-                SELECT i.id, act.title, i.status, i.source, i.added_at, cu.name AS curriculum
+                SELECT i.id, act.title, av.id AS version_id, i.status, i.source, i.added_at, cu.id AS curriculum_id, cu.name AS curriculum
                 FROM learning_path_items i
                 JOIN learning_paths p ON p.id = i.learning_path_id
                 JOIN enrollments e ON e.id = p.enrollment_id AND e.child_id = :child
@@ -152,8 +182,11 @@ public class SkillStoryService {
                 JOIN activities act ON act.id = av.activity_id
                 WHERE i.status IN ('PENDING', 'IN_PROGRESS')
                 ORDER BY e.enrolled_at, i.sequence_order
-                """, params, (rs, i) -> new WaitingStep(rs.getObject("id", UUID.class), rs.getString("title"), rs.getString("status"),
-                rs.getString("source"), toInstant(rs.getTimestamp("added_at")), rs.getString("curriculum")));
+                """, params, (rs, i) -> new WaitingStep(rs.getObject("id", UUID.class),
+                names.activity(rs.getObject("version_id", UUID.class), rs.getString("title")), rs.getString("status"),
+                rs.getString("source"), toInstant(rs.getTimestamp("added_at")),
+                catalogNames.name(com.platform.content.entity.LocalizableContentType.CURRICULUM, rs.getObject("curriculum_id", UUID.class),
+                        rs.getString("curriculum"))));
 
         Integer hinted = jdbc.queryForObject("""
                 SELECT count(*) FROM answer_records r

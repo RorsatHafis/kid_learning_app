@@ -95,6 +95,15 @@ public class ActivityTranslations {
         return complete(activity, version, khmer) ? Optional.of(khmer) : Optional.empty();
     }
 
+    /**
+     * An activity's name as the person asking gets it: in Khmer for a Khmer reader when the version's Khmer is complete
+     * (the same rule as the activity screen and the path), otherwise as written.
+     */
+    @Transactional(readOnly = true)
+    public String nameForReader(Activity activity, ActivityVersion version) {
+        return forReader(activity, version).map(Khmer::title).orElse(activity.getTitle());
+    }
+
     /** Sets one field's Khmer on a draft; blank removes it (not translated). */
     @Transactional
     public void set(UUID versionId, String field, String text) {
