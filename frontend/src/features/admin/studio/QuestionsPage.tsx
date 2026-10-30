@@ -140,6 +140,9 @@ export function QuestionsPage() {
                         <span className="block text-xs text-ink-faint">
                           {current.label}
                           {q.skillIds.length === 0 && <span className="text-light-deep"> · {m.noSkill}</span>}
+                          {q.khmer === "COMPLETE" && <span> · {m.khmerComplete}</span>}
+                          {q.khmer === "PARTLY" && <span className="text-light-deep"> · {m.khmerPartly}</span>}
+                          {q.khmer === "NONE" && <span> · {m.khmerNone}</span>}
                         </span>
                       </span>
                       <span className="hidden text-sm text-ink-soft sm:block">{questionTypeLabel(q.questionType)}</span>

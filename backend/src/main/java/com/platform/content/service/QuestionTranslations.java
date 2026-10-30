@@ -65,12 +65,41 @@ public class QuestionTranslations {
 
     @Transactional(readOnly = true)
     public Khmer of(UUID versionId) {
+        return fromRows(repository.findByContentTypeAndContentIdAndLocale(TYPE, versionId, KHMER));
+    }
+
+    /** The Khmer of many versions in one query, by version id (a version without any is absent). */
+    @Transactional(readOnly = true)
+    public Map<UUID, Khmer> of(java.util.Collection<UUID> versionIds) {
+        if (versionIds.isEmpty()) {
+            return Map.of();
+        }
+        return repository.findByContentTypeAndContentIdInAndLocale(TYPE, versionIds, KHMER).stream()
+                .collect(java.util.stream.Collectors.groupingBy(ContentLocalization::getContentId))
+                .entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> fromRows(entry.getValue())));
+    }
+
+    /** How far a version's Khmer has got, as the Studio lists it (the bank). */
+    public enum Status { NONE, PARTLY, COMPLETE, NOT_TRANSLATABLE }
+
+    public static Status status(QuestionType type, QuestionVersion version, List<QuestionOption> options, Khmer khmer) {
+        if (!translatable(type)) {
+            return Status.NOT_TRANSLATABLE;
+        }
+        if (khmer == null || khmer.isEmpty()) {
+            return Status.NONE;
+        }
+        return complete(type, version, options, khmer) ? Status.COMPLETE : Status.PARTLY;
+    }
+
+    private static Khmer fromRows(List<ContentLocalization> rows) {
         String prompt = null;
         String hint = null;
         String explanation = null;
         String description = null;
         Map<UUID, String> options = new LinkedHashMap<>();
-        for (ContentLocalization row : repository.findByContentTypeAndContentIdAndLocale(TYPE, versionId, KHMER)) {
+        for (ContentLocalization row : rows) {
             String field = row.getFieldName();
             String text = row.getLocalizedText();
             switch (field) {

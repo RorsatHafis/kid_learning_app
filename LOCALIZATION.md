@@ -126,6 +126,9 @@ differently.
 - In Khmer, each field is labelled "... - in Khmer" and marked `lang="km"`; the English it translates is shown under
   the long fields and as the placeholder of each answer row, so both versions can be checked side by side.
 - The switch says how much is written: "No Khmer yet", "Khmer: 3 of 5 written ...", "Khmer complete ...".
+- The question bank says the same for every question in its list ("in Khmer too", "Khmer not finished", "English
+  only"), and its search, like the lessons', finds content by its Khmer as well as its English.
+- "Try it as a child" on an activity, like a question's preview, shows it "as a child reading: English | ខ្មែរ".
 - Structured settings (the correct choice, difficulty, numbers, true/false, groups chosen, order, pictures and
   recordings) are shared: one control for both languages.
 - The question's preview has **"As a child reading: English | ខ្មែរ"**, showing exactly what each child gets (and

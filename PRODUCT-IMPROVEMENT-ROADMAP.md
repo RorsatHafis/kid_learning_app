@@ -2065,3 +2065,9 @@ Dependencies:
   which, unlike `prefetch`, reads the Khmer for any reader: the Studio always shows both languages). **Tested**:
   `StudioCatalogReadsIntegrationTests` (9 statements with 1 skill and with 8 skills, prerequisites, chapter links and
   Khmer names - and the same contents) with the Studio, lifecycle and catalog-names suites - 14, 0 failed.
+- 2026-10-30: **The question bank says how far each question's Khmer has got** ("in Khmer too", "Khmer not
+  finished", "English only"; nothing for a typed-word answer, which isn't translated), so an author sees what is left
+  to translate without opening each question. Two more queries per page, not per question (`QuestionTranslations.of`
+  for many versions, options in one query). **Tested**: `BankKhmerStatusIntegrationTests` (complete, partly, none,
+  not translatable) with the Studio, bilingual question and copy suites - 13, 0 failed; Studio Vitest 66/66.
+  **Browser verified** at 360 px: the seed bank's rows show their status; no overflow, axe clean, no API error.

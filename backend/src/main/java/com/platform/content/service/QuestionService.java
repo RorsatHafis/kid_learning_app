@@ -140,6 +140,12 @@ public class QuestionService {
         return questionOptionRepository.findByQuestionVersionIdOrderByDisplayOrderAsc(questionVersionId);
     }
 
+    /** The options of many versions in one query, each version's in display order. */
+    @Transactional(readOnly = true)
+    public List<QuestionOption> listOptions(java.util.Collection<UUID> questionVersionIds) {
+        return questionOptionRepository.findByQuestionVersionIdInOrderByDisplayOrderAsc(questionVersionIds);
+    }
+
     /**
      * Publishes a DRAFT question version, after validating it's actually complete
      * enough to show a learner - this is the "prevent incomplete content from

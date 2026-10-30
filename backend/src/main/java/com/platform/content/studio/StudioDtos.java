@@ -264,9 +264,13 @@ public final class StudioDtos {
      * {@code publishedPrompt}: the published version's own wording - what a child is given when the question is reused
      * (the latest draft may already say something else); null without a published version.
      */
+    /**
+     * {@code khmer}: how far the latest version's Khmer has got (LOCALIZATION.md) - NONE, PARTLY, COMPLETE, or
+     * NOT_TRANSLATABLE (a typed-word answer stays in the language it is written in).
+     */
     public record QuestionSummary(UUID id, UUID subjectId, QuestionType questionType, List<UUID> skillIds,
                                   String latestPrompt, UUID publishedVersionId, List<VersionSummary> versions, boolean archived,
-                                  String publishedPrompt) {
+                                  String publishedPrompt, com.platform.content.service.QuestionTranslations.Status khmer) {
     }
 
     /** The question bank's filters; every one is optional. {@code live}: has a published version; {@code archived}: the archived ones instead. */

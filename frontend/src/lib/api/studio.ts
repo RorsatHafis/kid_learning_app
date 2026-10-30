@@ -387,6 +387,8 @@ export interface QuestionSummary {
   archived?: boolean;
   /** The published version's own wording (what reusing the question gives a child); null without one. */
   publishedPrompt?: string | null;
+  /** How far the latest version's Khmer has got (LOCALIZATION.md); a typed-word answer isn't translated. */
+  khmer?: "NONE" | "PARTLY" | "COMPLETE" | "NOT_TRANSLATABLE" | null;
 }
 
 /** The question bank's filters; `live`: only questions with a published version. */
