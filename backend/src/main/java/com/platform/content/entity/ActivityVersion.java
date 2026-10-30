@@ -22,6 +22,10 @@ public class ActivityVersion extends PublishableVersion {
     @Column(name = "instructions", columnDefinition = "text")
     private String instructions;
 
+    /** V84: "en" when its words (and its activity's name) were written in the Studio's English fields; null: unknown. */
+    @Column(name = "text_language", length = 2)
+    private String textLanguage;
+
     /** 1-10 inclusive when present; nullable since not every activity type is meaningfully leveled. */
     @Column(name = "difficulty_level")
     private Integer difficultyLevel;
@@ -127,4 +131,18 @@ public class ActivityVersion extends PublishableVersion {
         return estimatedDurationSeconds;
     }
 
+
+    public String getTextLanguage() {
+        return textLanguage;
+    }
+
+    /** Its words were written in the Studio's English fields (V84). */
+    public void markWrittenInEnglish() {
+        this.textLanguage = "en";
+    }
+
+    /** A copy's words are the source's, so their language is too (known or unknown). */
+    public void sameTextLanguageAs(ActivityVersion source) {
+        this.textLanguage = source.textLanguage;
+    }
 }

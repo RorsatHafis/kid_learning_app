@@ -191,6 +191,7 @@ public class LessonSharingService {
             ActivityVersion draft = activityService.createDraftVersion(newActivity.getId(), version.getInstructions(),
                     version.getDifficultyLevel(), version.getEstimatedDurationSeconds());
             activityService.skillsOf(version.getId()).forEach(skillId -> activityService.tagSkill(draft.getId(), skillId));
+            activityService.carryTextLanguage(draft, version);
             if (version.hasIntroduction()) {
                 activityService.setIntroduction(draft.getId(), version.getIntroduction(),
                         mediaFor(version.getIntroductionImageAssetId(), copier.getId(), mediaCopies), version.getIntroductionImageDescription(),

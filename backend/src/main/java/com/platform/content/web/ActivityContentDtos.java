@@ -183,7 +183,9 @@ public final class ActivityContentDtos {
             Integer estimatedDurationSeconds,
             List<ActivityItemResponse> items,
             LearnerIntroduction introduction,
-            String language
+            String language,
+            /* V84: given as written, its words' language when known ("en"); null when unknown (left unmarked). */
+            String writtenIn
     ) {
 
         /** As written, or - given its complete {@code khmer} - with the activity's own words in Khmer. */
@@ -193,7 +195,8 @@ public final class ActivityContentDtos {
                                                        com.platform.content.service.ActivityTranslations.Khmer khmer) {
             if (khmer == null) {
                 return new ActivityVersionDetailResponse(version.getId(), activity.getId(), activity.getTitle(), version.getInstructions(),
-                        version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items, introduction, null);
+                        version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items, introduction, null,
+                        version.getTextLanguage());
             }
             LearnerIntroduction inKhmer = introduction == null ? null : new LearnerIntroduction(
                     khmer.introduction() != null ? khmer.introduction() : introduction.text(), introduction.image(),
@@ -201,7 +204,8 @@ public final class ActivityContentDtos {
                     introduction.audio());
             return new ActivityVersionDetailResponse(version.getId(), activity.getId(), khmer.title(),
                     khmer.instructions() != null ? khmer.instructions() : version.getInstructions(),
-                    version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items, inKhmer, com.platform.content.service.QuestionTranslations.KHMER);
+                    version.getDifficultyLevel(), version.getEstimatedDurationSeconds(), items, inKhmer, com.platform.content.service.QuestionTranslations.KHMER,
+                    null);
         }
     }
 

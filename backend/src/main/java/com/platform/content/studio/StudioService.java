@@ -491,6 +491,7 @@ public class StudioService {
         Activity activity = activityService.createActivity(lesson.getSubjectId(), lessonId, PRACTICE, request.title().strip());
         ActivityVersion draft = activityService.createDraftVersion(activity.getId(), null, null, null);
         request.skillIds().forEach(skillId -> activityService.tagSkill(draft.getId(), skillId));
+        activityService.markWrittenInEnglish(draft.getId());
         return activity(accountId, activity.getId());
     }
 
@@ -555,6 +556,7 @@ public class StudioService {
         }
         activityService.replaceItems(draft.getId(), items);
         activityTranslations.copy(latest.getId(), draft.getId());
+        activityService.carryTextLanguage(draft, latest);
         activityTranslations.set(draft.getId(), "title", null); // the copy is named anew; its Khmer name is written again
         record(author, "ACTIVITY_DUPLICATED", "ACTIVITY", copy.getId(), Map.of("sourceActivityId", activityId,
                 "sourceVersion", latest.getVersionNumber(), "questions", items.size(), "atNewerVersion", newer));
@@ -645,6 +647,7 @@ public class StudioService {
         media.requireAttachable(request.audioAssetId(), AssetType.AUDIO, owner, onDraft);
         activityService.setIntroduction(activityVersionId, request.text(), request.imageAssetId(), request.imageDescription(),
                 request.audioAssetId());
+        activityService.markWrittenInEnglish(activityVersionId);
         if (request.khmer() != null) {
             activityTranslations.set(activityVersionId, "introduction", request.khmer().text());
             activityTranslations.set(activityVersionId, "introductionImageDescription",
@@ -659,6 +662,7 @@ public class StudioService {
         guard.requireActivityWrite(accountId, version.getActivityId());
         activityService.reviseDraft(activityVersionId, blankToNull(request.instructions()), request.difficultyLevel(),
                 request.estimatedDurationSeconds());
+        activityService.markWrittenInEnglish(activityVersionId);
         if (request.khmer() != null) {
             activityTranslations.set(activityVersionId, "title", request.khmer().title());
             activityTranslations.set(activityVersionId, "instructions", request.khmer().instructions());

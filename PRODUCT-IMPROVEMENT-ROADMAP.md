@@ -2113,8 +2113,13 @@ Dependencies:
   `TextLanguageIntegrationTests` (Studio-written: "en"; in Khmer: "km" and no `writtenIn`; next draft keeps "en";
   an older version (NULL) says nothing until a draft of it is saved) with the bilingual question, copy, Studio,
   lesson-sharing and activity-preview suites - 16, 0 failed; `questionLanguage.test.tsx` (km / en / unmarked) and
-  the child suites 50/50. **Not yet**: activity versions' own words (same design, next). Not browser verified (the
-  mark is an attribute; its effect is in screen readers).
+  the child suites 50/50. Not browser verified (the mark is an attribute; its effect is in screen readers).
+- 2026-10-30: **Screen-reader language - built for activities (V84)**: `activity_versions.text_language`, set by the
+  Studio's three saves, carried by next drafts, copies and shared lessons; `writtenIn` on the activity; the child's
+  player marks the activity's name, instructions and introduction (`language ?? writtenIn`, unmarked when unknown).
+  **Tested**: `ActivityTextLanguageIntegrationTests` (Studio-written "en"; complete Khmer "km"; a copy keeps "en";
+  unknown says nothing until saved) with the activity preview, bilingual, builder and lesson-sharing suites - 8, 0
+  failed; child Vitest 50/50. Not marked yet: the "look again" introduction during the questions.
 - 2026-10-30: **Authoring inventory, owner's widened brief (lessons, learning materials, objectives, announcements
   and notices, all meaningful metadata)** - recorded for the next window, in this order: (1) `text_language` above;
   (2) lesson titles - teachers and colleagues read them (shared lessons), so they get a Khmer title through a `LESSON`

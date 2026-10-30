@@ -644,12 +644,15 @@ function Intro({
         </div>
         <div className="px-6 sm:px-14">
         {reason && <p className="mx-auto mt-2 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-800">{reason()}</p>}
+        {/* The activity's own words, marked with their language only when it is known (LOCALIZATION.md, V84). */}
+        <div lang={activity.language ?? activity.writtenIn ?? undefined}>
         <h1 id="activity-title" className="mt-4 font-display text-headline font-bold text-tonle-950">
           {activity.title}
         </h1>
         {activity.instructions && <p className="mx-auto mt-3 max-w-lg text-lg font-medium leading-relaxed text-ink-soft">{activity.instructions}</p>}
+        </div>
         {activity.introduction && (
-          <div className="mt-6">
+          <div className="mt-6" lang={activity.language ?? activity.writtenIn ?? undefined}>
             <LearnCard introduction={activity.introduction} />
           </div>
         )}

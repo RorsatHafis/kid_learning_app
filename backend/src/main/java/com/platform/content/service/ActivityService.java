@@ -278,9 +278,26 @@ public class ActivityService {
                 activityItemRepository.save(ActivityItem.create(draft.getId(), current.get().getId(), order++, item.getPoints()));
             }
         }
-        // Its Khmer comes along (LOCALIZATION.md).
+        // Its Khmer comes along (LOCALIZATION.md), and the known (or unknown) language of its words (V84).
         translations.copy(source.getId(), draft.getId());
+        carryTextLanguage(draft, source);
         return draft;
+    }
+
+    /** A copy's words are its source's, so their language is too (V84). */
+    @Transactional
+    public void carryTextLanguage(ActivityVersion draft, ActivityVersion source) {
+        draft.sameTextLanguageAs(source);
+        activityVersionRepository.save(draft);
+    }
+
+    /** Saved through the bilingual Studio: its words are the English fields' (V84). */
+    @Transactional
+    public void markWrittenInEnglish(UUID versionId) {
+        activityVersionRepository.findById(versionId).ifPresent(version -> {
+            version.markWrittenInEnglish();
+            activityVersionRepository.save(version);
+        });
     }
 
     @Transactional(readOnly = true)

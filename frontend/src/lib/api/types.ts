@@ -213,6 +213,10 @@ export interface ActivityVersionDetail {
   items: ActivityItem[];
   /** What the activity teaches before it asks; null when it has none. */
   introduction: ActivityIntroduction | null;
+  /** "km" when its own words (name, instructions, introduction) are given in Khmer; null: as written. */
+  language?: "km" | null;
+  /** V84: given as written, their language when known ("en"); null when unknown - then left unmarked. */
+  writtenIn?: "en" | null;
 }
 
 /** content/web/ActivityContentDtos.LearnerIntroduction: an explanation or worked example, a picture, a recording. */

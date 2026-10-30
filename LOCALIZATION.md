@@ -203,8 +203,12 @@ guessing, and leave content whose language is unknown unmarked.
 - **Status - questions built (V83, 2026-10-30)**: `question_versions.text_language` ('en' or NULL), set on every
   Studio create and save of a draft, carried to the next draft and to copies; served beside `language` as
   `writtenIn` ("en" or null - the existing `language` field keeps its meaning, so nothing reading it changes). The
-  child's question is marked `lang` from `language ?? writtenIn`, and left unmarked when both are null. **Not yet**:
-  an activity's own words (name, instructions, introduction) - the same column on `activity_versions` is next.
+  child's question is marked `lang` from `language ?? writtenIn`, and left unmarked when both are null.
+- **Activities built (V84, 2026-10-30)**: `activity_versions.text_language`, set by the Studio's three saves (new
+  activity, More settings, Teach it first), carried to the next draft, a copy and a shared lesson's copy; served as
+  `writtenIn` beside `language`. The child's player marks the activity's name, instructions and introduction.
+  Not yet marked: the "look again" introduction inside the questions (it inherits the page) and catalog names and plan
+  words (their base fields were also editable before the bilingual inputs; same treatment only if wanted).
 
 ### Inventory: what still has one language (in order)
 
