@@ -15,7 +15,7 @@ nothing here is an approved business rule until the owner decides the items in s
 | Children in classes - **family children**, joined by the family with a code, with a per-child school grant | **Live** | `ClassEnrollment`, `SchoolChildAccess` (PD-01) |
 | Class learning: roster, skills, trends, teacher-assigned practice | **Live** | learning-platform evidence only |
 | Platform subscription billing (school pays Bookeyond): plans, invoices, manual bank/KHQR payment, admin confirmation with step-up, ABA PayWay provider (disabled) | **Live / built, limited** | `payment` package, Y44, M8 |
-| Academic years, terms, school calendar | **Missing** | classes have no year; nothing to roll over |
+| Academic years, terms, school calendar | **Live** (M12 P1, V77; corrected 2026-11-01 - this row said "Missing") | year-end class rollover, calendar copy between branches |
 | School-owned student records (student number, guardians, enrolment history) | **Missing - blocked** | needs decision S1 |
 | Attendance, assessments, marks, grading schemes, report cards | **Missing - blocked** | scope decision S2 (owner) |
 | School fees (school charges families), ledger, receipts | **Missing** | depends on S1; policy decisions S3 |

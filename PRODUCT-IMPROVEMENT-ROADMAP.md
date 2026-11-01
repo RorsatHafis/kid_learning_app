@@ -2148,3 +2148,11 @@ Dependencies:
   administrator sends families is the plan-request decline message (written once to one family) - announcements and
   notices don't exist yet, so they will be designed bilingual when built (S-decisions); (4) learning-objective
   descriptions and curriculum names are done (V81); lesson bodies (`LessonVersion.body`) have no screen today.
+- 2026-11-01: **Product journey review** (owner's request) - `docs/PRODUCT-JOURNEY-REVIEW.md`: journey-by-journey
+  coverage matrix, module connections, missing capabilities, open decisions with recommendations (new proposals N-1
+  weekly parent summary, R-1 one account with two roles, P-1 landing prices from plan records, C-1 principal review
+  of teacher content), and a phased roadmap. Next five tasks, in order: (1) P-1 landing prices from plan records
+  (after the owner's yes) or, meanwhile, (1') unsaved guard for Manage dialogs; (2) teacher first-run guide in the
+  Studio; (3) school setup checklist for a new principal; (4) park/remove the dormant streak backend (owner's call);
+  (5) support read-only view of a child's state for platform admins. Content (D-19) and launch operations remain the
+  owner's critical path.
