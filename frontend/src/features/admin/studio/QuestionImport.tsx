@@ -35,6 +35,9 @@ export function QuestionImport() {
   const [refusal, setRefusal] = useState<string[] | null>(null);
   const [imported, setImported] = useState<ImportedQuestion[] | null>(null);
   const [copied, setCopied] = useState<"done" | "failed" | null>(null);
+  // Bank mode: what publishing each imported draft did (a question reaches children only in a published activity).
+  const [outcome, setOutcome] = useState<Record<string, { published: true } | { published: false; message: string }>>({});
+  const [publishing, setPublishing] = useState(false);
   const sheet = useMemo(() => parseSheet(text), [text]);
   const activityId = useSearchParams()[0].get("activity");
   const target = useAsync(() => (activityId ? studioApi.activity(activityId) : Promise.resolve(null)), [activityId]);
@@ -54,6 +57,21 @@ export function QuestionImport() {
     }
   };
 
+  const publishable = (imported ?? []).filter((q) => q.validation.errors.length === 0 && !outcome[q.questionId]?.published);
+  const publishReady = async () => {
+    setPublishing(true);
+    // One at a time, each through the same checks and review gate as publishing it alone: one refused leaves the others.
+    for (const q of publishable) {
+      try {
+        await studioApi.publishQuestionVersion(q.versionId);
+        setOutcome((prev) => ({ ...prev, [q.questionId]: { published: true } }));
+      } catch (err) {
+        setOutcome((prev) => ({ ...prev, [q.questionId]: { published: false, message: errorText(err) } }));
+      }
+    }
+    setPublishing(false);
+  };
+
   const download = () => {
     const url = URL.createObjectURL(new Blob([templateFile()], { type: "text/tab-separated-values;charset=utf-8" }));
     const link = document.createElement("a");
@@ -70,6 +88,7 @@ export function QuestionImport() {
       const rows = ready.map((r) => ({ ...r.draft!, subjectId: catalog.subject.id, questionType: r.type!, skillIds }));
       const result = draft ? await studioApi.importIntoActivity(draft.id, rows) : await studioApi.importQuestions(rows);
       setImported(result);
+      setOutcome({});
       setText("");
     } catch (err) {
       const fields = err instanceof ApiError ? err.validationErrors : null;
@@ -125,7 +144,13 @@ export function QuestionImport() {
                 <Link to={`../${q.questionId}`} relative="path" className="min-w-0 font-semibold text-tonle-800 [overflow-wrap:anywhere] hover:underline">
                   {q.prompt}
                 </Link>
-                {q.validation.errors.length === 0 ? (
+                {outcome[q.questionId]?.published ? (
+                  <span className="shrink-0 text-sm font-semibold text-palm-deep">{m.published}</span>
+                ) : outcome[q.questionId] ? (
+                  <span role="alert" className="text-sm text-brick-deep sm:max-w-[45%] sm:text-right">
+                    {(outcome[q.questionId] as { message: string }).message}
+                  </span>
+                ) : q.validation.errors.length === 0 ? (
                   <span className="shrink-0 text-sm font-semibold text-palm-deep">{m.readyToPublish}</span>
                 ) : (
                   <span className="text-sm text-brick-deep sm:max-w-[45%] sm:text-right">
@@ -136,7 +161,15 @@ export function QuestionImport() {
               </li>
             ))}
           </ul>
+          {!draft && publishable.length > 0 && (
+            <p className="mt-4 max-w-prose text-sm text-ink-soft">{m.publishLead}</p>
+          )}
           <div className="mt-4 flex flex-wrap gap-3">
+            {!draft && publishable.length > 0 && (
+              <Button size="sm" onClick={publishReady} disabled={publishing}>
+                {publishing ? m.publishing : m.publishReady(publishable.length)}
+              </Button>
+            )}
             {activityPath && (
               <Link to={activityPath} relative="path" className={buttonClasses("solid", "sm")}>
                 {m.openActivity}

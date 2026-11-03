@@ -2274,3 +2274,11 @@ Dependencies:
   principal also TEACHER, **R-1c** ADMIN never combined, **R-1d** what a revoked TEACHER role leaves. Findings ID-1
   (invitation refusal stays generic for privacy), ID-2 (second admin: provisioning only - runbook), ID-3 (~90 role-gate
   sites). INSPECTED only; nothing built - owner decision.
+- 2026-11-03: **Publish the pasted questions that are ready** (bank mode of the import): one button publishes, one at a
+  time, the imported drafts whose checks pass - each through the same guard and review gate as publishing it alone, so
+  one refused (e.g. platform content awaiting review) leaves the others and says why on its row; drafts with issues are
+  not offered. Published questions become reusable in the builder ("Use a question you already published"); a child
+  still sees a question only inside a published activity. **Tested**: `questionImport.test.tsx` 2/2 (rows sent with the
+  chosen skill; only ready ones published, a refusal shown per row and retryable; a server refusal names the sheet row
+  and nothing is shown as added), studio + i18n Vitest 223/223. **Browser verified** (teacher, 360 px): "6 + 1 = ?"
+  published, the one without an answer left as a draft with its reason; axe clean, no API error.
