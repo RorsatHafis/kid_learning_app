@@ -277,9 +277,10 @@ public class StudioController {
                                                    @RequestParam(required = false) UUID skillId,
                                                    @RequestParam(defaultValue = "false") boolean live,
                                                    @RequestParam(defaultValue = "false") boolean archived,
+                                                   @RequestParam(required = false) BankNeed needs,
                                                    @RequestParam(defaultValue = "0") int page,
                                                    @RequestParam(defaultValue = "25") int size) {
-        return studio.questions(accountId, subjectId, new QuestionFilter(q, type, status, skillId, live, archived),
+        return studio.questions(accountId, subjectId, new QuestionFilter(q, type, status, skillId, live, archived, needs),
                 new PageResponse.Request(page, size));
     }
 

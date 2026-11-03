@@ -404,9 +404,13 @@ export interface QuestionQuery {
   status?: PublicationStatus;
   skillId?: string;
   live?: boolean;
+  /** What the latest version still lacks (StudioDtos.BankNeed): explanation, hint, read-aloud recording, or Khmer. */
+  needs?: BankNeed;
   page?: number;
   size?: number;
 }
+
+export type BankNeed = "EXPLANATION" | "HINT" | "READ_ALOUD" | "KHMER";
 
 export interface QuestionDetail {
   id: string;
@@ -737,6 +741,7 @@ export const studioApi = {
     if (query.skillId) params.set("skillId", query.skillId);
     if (query.live) params.set("live", "true");
     if (query.archived) params.set("archived", "true");
+    if (query.needs) params.set("needs", query.needs);
     params.set("page", String(query.page ?? 0));
     params.set("size", String(query.size ?? 25));
     return apiClient.get<Page<QuestionSummary>>(`${S}/questions?${params}`);

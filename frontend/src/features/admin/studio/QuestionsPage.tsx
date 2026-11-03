@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import type { QuestionType } from "@/lib/api/types";
-import { studioApi, type PublicationStatus } from "@/lib/api/studio";
+import { studioApi, type BankNeed, type PublicationStatus } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { usePageInRange, useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { ListCount, Pager } from "@/components/ui/Pager";
@@ -19,6 +19,7 @@ import { importMessages } from "./import.messages";
 
 const PAGE_SIZE = 25;
 const STATUS_FILTERS: PublicationStatus[] = ["DRAFT", "PUBLISHED", "RETIRED"];
+const NEEDS: BankNeed[] = ["EXPLANATION", "HINT", "READ_ALOUD", "KHMER"];
 
 /**
  * The subject's question bank. It grows with every activity written, so the server searches,
@@ -33,14 +34,16 @@ export function QuestionsPage() {
   const status = (params.get("status") as PublicationStatus | null) ?? undefined;
   const skillParam = params.get("skill");
   const skillId = skillParam && catalog.skills.some((s) => s.id === skillParam) ? skillParam : undefined;
+  const needsParam = params.get("needs") as BankNeed | null;
+  const needs = needsParam && NEEDS.includes(needsParam) ? needsParam : undefined;
   const search = useCallback((q: string) => update({ q: q || undefined }), [update]);
 
   const [archived, setArchived] = useArchivedView();
   const questions = useAsync(
-    () => studioApi.questions(catalog.subject.id, { text, type, status, skillId, archived, page, size: PAGE_SIZE }),
-    [catalog.subject.id, text, type, status, skillId, archived, page],
+    () => studioApi.questions(catalog.subject.id, { text, type, status, skillId, needs, archived, page, size: PAGE_SIZE }),
+    [catalog.subject.id, text, type, status, skillId, needs, archived, page],
   );
-  const filtered = Boolean(text || type || status || skillId);
+  const filtered = Boolean(text || type || status || skillId || needs);
   const composer = useComposer(!archived && questions.data?.total === 0 && !filtered);
   const data = questions.data;
 
@@ -66,7 +69,7 @@ export function QuestionsPage() {
       >
         <div role="search" aria-label={m.find} className="mb-4 flex flex-col gap-3">
           <SearchField label={m.search} value={text} onSearch={search} placeholder={m.searchHint} />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <SelectField label={m.type} value={type ?? ""} onChange={(e) => update({ type: e.target.value || undefined })}>
               <option value="">{m.anyType}</option>
               {AUTHORABLE_TYPES.map((t) => (
@@ -87,7 +90,19 @@ export function QuestionsPage() {
                 </option>
               ))}
             </SelectField>
-            <div className="col-span-2 sm:col-span-1">
+            <SelectField
+              label={m.needs}
+              value={needs ?? ""}
+              onChange={(e) => update({ needs: e.target.value || undefined })}
+            >
+              <option value="">{m.anyNeed}</option>
+              {NEEDS.map((n) => (
+                <option key={n} value={n}>
+                  {m.needOptions[n]}
+                </option>
+              ))}
+            </SelectField>
+            <div>
               <SelectField label={m.skill} value={skillId ?? ""} onChange={(e) => update({ skill: e.target.value || undefined })}>
                 <option value="">{m.anySkill}</option>
                 {catalog.skills.map((skill) => (
@@ -103,7 +118,7 @@ export function QuestionsPage() {
               total={data.total}
               counted={m.counted(data.total)}
               filtered={filtered}
-              onClear={() => update({ q: undefined, type: undefined, status: undefined, skill: undefined })}
+              onClear={() => update({ q: undefined, type: undefined, status: undefined, skill: undefined, needs: undefined })}
             />
           )}
         </div>

@@ -281,10 +281,25 @@ public final class StudioDtos {
                                   com.platform.content.service.QuestionTranslations.Status publishedKhmer) {
     }
 
-    /** The question bank's filters; every one is optional. {@code live}: has a published version; {@code archived}: the archived ones instead. */
-    public record QuestionFilter(String text, QuestionType type, PublicationStatus status, UUID skillId, boolean live, boolean archived) {
+    /**
+     * What a question's latest version still lacks, for working through a bank's gaps (the readiness administrators
+     * see): no explanation after a mistake, no hint, no read-aloud recording of the question, or Khmer not complete (a
+     * typed-word question stays in the language it is written in, so it never needs Khmer).
+     */
+    public enum BankNeed { EXPLANATION, HINT, READ_ALOUD, KHMER }
+
+    /**
+     * The question bank's filters; every one is optional. {@code live}: has a published version; {@code archived}: the
+     * archived ones instead; {@code need}: what the latest version still lacks.
+     */
+    public record QuestionFilter(String text, QuestionType type, PublicationStatus status, UUID skillId, boolean live, boolean archived,
+                                 BankNeed need) {
         public QuestionFilter(String text, QuestionType type, PublicationStatus status, UUID skillId, boolean live) {
-            this(text, type, status, skillId, live, false);
+            this(text, type, status, skillId, live, false, null);
+        }
+
+        public QuestionFilter(String text, QuestionType type, PublicationStatus status, UUID skillId, boolean live, boolean archived) {
+            this(text, type, status, skillId, live, archived, null);
         }
     }
 

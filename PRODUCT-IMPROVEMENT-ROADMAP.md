@@ -2282,3 +2282,23 @@ Dependencies:
   chosen skill; only ready ones published, a refusal shown per row and retryable; a server refusal names the sheet row
   and nothing is shown as added), studio + i18n Vitest 223/223. **Browser verified** (teacher, 360 px): "6 + 1 = ?"
   published, the one without an answer left as a draft with its reason; axe clean, no API error.
+- 2026-11-03: **The question bank's "Still needs" filter** (content tooling for D-19, beside the admin readiness
+  panel): Type / Latest version / **Still needs** / Skill - an explanation, a hint, a read-aloud recording, or Khmer.
+  The first three are conditions on the latest version in the bank's query; Khmer uses the same completeness rule the
+  bank's Khmer status shows (`QuestionTranslations`, decided in `StudioService` over the subject's candidates, then
+  paged), and typed-word questions never need it. Kept in the address (`?needs=`) like the other filters; an unknown
+  value is a 400. **Tested**: `BankNeedsIntegrationTests` 1/1 (each need, combined with type, Khmer paging and total,
+  refusal), Bank Khmer status + Content Studio integration 10/10, `bankNeeds.test.tsx`, full frontend Vitest 455/455,
+  backend unit suite 203/203. **Browser verified** (teacher, 360 and 1280 px): 16 questions -> Khmer 13, explanation 11,
+  recording 16; two by two on a phone, one row of four on desktop; axe clean, no API error.
+- 2026-11-03: **Product-wide brief (owner, 2026-11-03) checked against what exists** - recorded, not built:
+  - **Editable landing page**: already built (F1a `SiteCopyService`: every word of the landing, trust and demo pages,
+    nav and footer included, EN/KM overrides with the default restorable; statements V63 with testimonials only when
+    attributed, D-10). **Proposed L-3** (needs approval): an FAQ section, and adding/removing/reordering items (FAQ
+    entries, feature cards) rather than only rewording fixed ones - the brief lists FAQs; nothing in the roadmap does.
+  - **Subjects**: data-driven in the app (catalog in the Studio; each subject's theme follows its code with a stable
+    fallback, `subjectTheme.ts`; child and parent lists are grids over whatever subjects exist). **Finding SUB-1**: the
+    landing page's subject section is a fixed list of three with hard-coded "ready / in preparation" flags
+    (`LandingPage.tsx` SUBJECTS) - it can say something untrue when content changes. **Proposed** (approval, close to
+    P-1): drive it from the published curricula, with words still editable.
+  - Next build per the brief: transitions and state changes across the product (existing motion tokens first).

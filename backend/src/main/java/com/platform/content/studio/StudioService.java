@@ -782,9 +782,23 @@ public class StudioService {
         String type = filter.type() == null ? null : filter.type().name();
         String status = filter.status() == null ? null : filter.status().name();
         String pattern = SearchText.containsPattern(filter.text());
-        long total = questions.countBank(subjectId, owner, type, status, filter.skillId(), filter.live(), pattern, filter.archived());
+        String need = filter.need() == null ? null : filter.need().name();
+        long total = questions.countBank(subjectId, owner, type, status, filter.skillId(), filter.live(), pattern, filter.archived(), need);
+        if (filter.need() == BankNeed.KHMER) {
+            // Whether a question's Khmer is complete depends on its options (QuestionTranslations), so it is decided here,
+            // by the rule the bank shows, over every candidate the query left (one subject's bank), then paged.
+            List<UUID> candidates = total == 0 ? List.of() : questions.searchBank(subjectId, owner, type, status, filter.skillId(),
+                    filter.live(), pattern, filter.archived(), need, (int) total, 0);
+            List<QuestionSummary> untranslated = questionSummaries(candidates).stream()
+                    .filter(summary -> summary.khmer() == com.platform.content.service.QuestionTranslations.Status.NONE
+                            || summary.khmer() == com.platform.content.service.QuestionTranslations.Status.PARTLY)
+                    .toList();
+            int from = (int) Math.min(request.offset(), untranslated.size());
+            return new PageResponse<>(untranslated.subList(from, Math.min(from + request.size(), untranslated.size())), request.page(),
+                    request.size(), untranslated.size());
+        }
         List<UUID> ids = total == 0 ? List.of() : questions.searchBank(subjectId, owner, type, status, filter.skillId(),
-                filter.live(), pattern, filter.archived(), request.size(), request.offset());
+                filter.live(), pattern, filter.archived(), need, request.size(), request.offset());
         return new PageResponse<>(questionSummaries(ids), request.page(), request.size(), total);
     }
 
