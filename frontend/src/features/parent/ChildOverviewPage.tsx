@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { Arrival } from "@/components/motion/Arrival";
 import { ChevronRight, ExternalLink, Pencil, Play } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
@@ -81,53 +82,56 @@ function ChildOverview({ childId }: { childId: string }) {
         <Header child={data} onRenamed={child.refetch} enrollments={enrollments.data} />
       </div>
       <ChildTabs base={base} />
-      <Routes>
-        <Route
-          index
-          element={
-            // Phone: insights right after the plan - the parent's first question. Desktop: insights
-            // ride along in a sticky column beside it.
-            <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-x-14">
-              <div className="flex min-w-0 flex-col gap-12">
-                <PlanAnchor>
-                  <LearningNowSection childId={childId} childName={data.displayName} enrollments={enrollments} />
-                </PlanAnchor>
-                {/* "What is improving?": change over time, right after what is happening now. */}
-                <ChangesSection childId={childId} childName={data.displayName} />
+      {/* A tab's content arrives; the child's name and the tabs stay where they are. */}
+      <Arrival scope={base}>
+        <Routes>
+          <Route
+            index
+            element={
+              // Phone: insights right after the plan - the parent's first question. Desktop: insights
+              // ride along in a sticky column beside it.
+              <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-x-14">
+                <div className="flex min-w-0 flex-col gap-12">
+                  <PlanAnchor>
+                    <LearningNowSection childId={childId} childName={data.displayName} enrollments={enrollments} />
+                  </PlanAnchor>
+                  {/* "What is improving?": change over time, right after what is happening now. */}
+                  <ChangesSection childId={childId} childName={data.displayName} />
+                </div>
+                <aside className="flex flex-col gap-8 lg:sticky lg:top-24 lg:self-start">
+                  <InsightsSection childId={childId} />
+                  <HelpAtHome childName={data.displayName} />
+                </aside>
               </div>
-              <aside className="flex flex-col gap-8 lg:sticky lg:top-24 lg:self-start">
-                <InsightsSection childId={childId} />
-                <HelpAtHome childName={data.displayName} />
-              </aside>
-            </div>
-          }
-        />
-        <Route
-          path="progress"
-          element={
-            <div className="flex flex-col gap-12">
-              <SkillsSection childId={childId} childName={data.displayName} />
-              <RecentActivitySection childId={childId} />
-            </div>
-          }
-        />
-        <Route
-          path="settings"
-          element={
-            <div className="flex flex-col gap-12">
-              {/* Where a parent with a class code looks: it adds the learning a class assigns. */}
-              <SchoolAccessSection childId={childId} childName={data.displayName} onJoined={enrollments.refetch} />
-              <OwnSpace child={data} />
-              <DailyTimeSection childId={childId} childName={data.displayName} />
-              <ChildDeviceSection childId={childId} childName={data.displayName} />
-              <CaregiversSection childId={childId} childName={data.displayName} />
-              <BreakReminderSection childId={childId} childName={data.displayName} />
-              <DeleteChildSection child={data} />
-            </div>
-          }
-        />
-        <Route path="*" element={<NotFound home={base} homeLabel={data.displayName} />} />
-      </Routes>
+            }
+          />
+          <Route
+            path="progress"
+            element={
+              <div className="flex flex-col gap-12">
+                <SkillsSection childId={childId} childName={data.displayName} />
+                <RecentActivitySection childId={childId} />
+              </div>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <div className="flex flex-col gap-12">
+                {/* Where a parent with a class code looks: it adds the learning a class assigns. */}
+                <SchoolAccessSection childId={childId} childName={data.displayName} onJoined={enrollments.refetch} />
+                <OwnSpace child={data} />
+                <DailyTimeSection childId={childId} childName={data.displayName} />
+                <ChildDeviceSection childId={childId} childName={data.displayName} />
+                <CaregiversSection childId={childId} childName={data.displayName} />
+                <BreakReminderSection childId={childId} childName={data.displayName} />
+                <DeleteChildSection child={data} />
+              </div>
+            }
+          />
+          <Route path="*" element={<NotFound home={base} homeLabel={data.displayName} />} />
+        </Routes>
+      </Arrival>
     </div>
   );
 }

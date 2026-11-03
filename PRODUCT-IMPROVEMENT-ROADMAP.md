@@ -2367,3 +2367,7 @@ Dependencies:
   (`POST /admin/staff`, authenticator step-up, audited); the first administrator comes from the startup bootstrap.
   `IDENTITY-PERMISSIONS.md` (how each role is made, the rules for R-1 option B) and the journey review's
   registration row are corrected. No code change.
+- 2026-11-03: **A child's tabs move only their content** (parent: overview / progress / settings): the child page claims
+  its address with a scoped `Arrival`, as the Studio does, so the child's name and the tabs stay put while the tab's
+  content arrives; leaving for the family page moves the page. **Tested**: parent Vitest 72/72. **Browser verified**
+  (1280 px): progress and settings -> the tab content only; Family -> the page; no page errors.
