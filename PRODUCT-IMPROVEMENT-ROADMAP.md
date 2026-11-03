@@ -2385,3 +2385,19 @@ Dependencies:
   Vitest 465/465 (`journey.test.tsx` once flaky under full load, passes alone and on re-run); **e2e locally**
   (isolated stack, both projects): golden journeys 8 passed / 1 skipped (admin credentials), whole suite 20 passed,
   23 skipped, 1 failed only on local data (`language.spec` expects the CI seed's "Maths - Junior" curriculum).
+- 2026-11-03: **Security sweep, and an authorization regression test for every endpoint.** Measured on the isolated
+  stack: every GET with ids (54) and every POST/PUT/PATCH with a schema-shaped body (81) refused a brand-new parent
+  naming another family's child, a paid school's class and school, a curriculum and a teacher's own Studio content;
+  the 16 id-less endpoints a parent may open are all their own or public, the 37 staff/admin ones refuse. Also
+  checked, no change needed: request bodies without `@Valid` are validated in the domain (fixed minute sets, the
+  class/year belongs to the school); no response carries a password hash, token, secret or code; every LIKE search
+  escapes `%`/`_`/`\`; API docs are off in production; join codes are 8 of 31 symbols from `SecureRandom`; the admin
+  authenticator step-up counts failures toward the account lockout and refuses replays. UI crawl of every role's pages
+  (54 pages, 360 and 1280 px): no API error, page/console error, serious axe violation or overflow.
+  **New**: `AuthorizationSweepIntegrationTests` reads the API's own description, builds a real family (child in a paid
+  school's class, an activity started), a school year and term, and a teacher's content, then asserts no read answers
+  and no write succeeds for a stranger, that the sweep reaches >= 50 reads and >= 90 writes (a renamed parameter
+  can't silently skip endpoints), and that the id-less endpoints a parent opens are exactly an allowlist - so an
+  endpoint added later without its guard fails the build. **Proven**: with one guard removed (child daily limit) it
+  fails naming that endpoint; restored, 2/2 pass. Not swept (need objects the fixture doesn't make - payments,
+  caregivers, device codes, reviews, media, organizations): covered by their own suites.
