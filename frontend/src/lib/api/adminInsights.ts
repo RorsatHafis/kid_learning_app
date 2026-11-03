@@ -72,6 +72,8 @@ export interface LearningOperations {
     readAloud: number;
     khmerComplete: number;
     khmerTranslatable: number;
+    /** The curriculum's subject: its question bank is where the gaps are filled. */
+    subjectId: string;
   }[];
 }
 

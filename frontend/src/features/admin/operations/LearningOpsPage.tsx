@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { adminInsightsApi, type LearningOperations, type PlacementSource } from "@/lib/api/adminInsights";
+import type { BankNeed } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
@@ -35,16 +36,27 @@ function Readiness({ rows }: { rows: NonNullable<LearningOperations["readiness"]
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
                 {(
                   [
-                    [m.readinessExplained, row.explained, row.questions],
-                    [m.readinessHinted, row.hinted, row.questions],
-                    [m.readinessReadAloud, row.readAloud, row.questions],
-                    [m.readinessKhmer, row.khmerComplete, row.khmerTranslatable],
-                  ] as const
-                ).map(([label, count, of]) => (
+                    [m.readinessExplained, row.explained, row.questions, "EXPLANATION"],
+                    [m.readinessHinted, row.hinted, row.questions, "HINT"],
+                    [m.readinessReadAloud, row.readAloud, row.questions, "READ_ALOUD"],
+                    [m.readinessKhmer, row.khmerComplete, row.khmerTranslatable, "KHMER"],
+                  ] as const satisfies readonly (readonly [string, number, number, BankNeed])[]
+                ).map(([label, count, of, need]) => (
                   <div key={label}>
                     <dt className="text-ink-soft">{label}</dt>
                     <dd className={count < of ? "font-semibold text-light-deep" : "font-semibold text-palm-deep"}>
-                      {m.readinessCount(count, of)}
+                      {count < of ? (
+                        // A gap leads to where it is filled: the subject's bank, showing what still needs it.
+                        <Link
+                          to={`/admin/studio/${row.subjectId}/questions?needs=${need}`}
+                          aria-label={m.readinessFind(label, m.readinessCount(count, of))}
+                          className="underline decoration-light/60 underline-offset-2 hover:decoration-light-deep"
+                        >
+                          {m.readinessCount(count, of)}
+                        </Link>
+                      ) : (
+                        m.readinessCount(count, of)
+                      )}
                     </dd>
                   </div>
                 ))}

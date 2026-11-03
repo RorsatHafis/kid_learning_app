@@ -167,7 +167,7 @@ public class AdminInsightService {
      * (pre-readers) and are complete in Khmer - of those that can be (a typed-word answer isn't translated).
      */
     public record ContentReadiness(UUID curriculumId, String curriculum, String ageGroup, int questions, int explained, int hinted,
-                                   int readAloud, int khmerComplete, int khmerTranslatable) {
+                                   int readAloud, int khmerComplete, int khmerTranslatable, UUID subjectId) {
     }
 
     /** {@code coverageGapTotal}: every gap; {@code coverageGaps} lists the first {@value #GAPS_SHOWN} of them. */
@@ -238,10 +238,10 @@ public class AdminInsightService {
     /** Every offered platform curriculum's readiness, by age group then name (one query, plus the Khmer in three). */
     private List<ContentReadiness> readiness() {
         record Row(UUID curriculumId, String curriculum, String ageGroup, int order, UUID questionVersionId, String type,
-                   boolean explained, boolean hinted, boolean readAloud) {
+                   boolean explained, boolean hinted, boolean readAloud, UUID subjectId) {
         }
         List<Row> rows = jdbc.query("""
-                SELECT DISTINCT cu.id AS curriculum_id, cu.name AS curriculum, ah.name AS age_group, ah.display_order,
+                SELECT DISTINCT cu.id AS curriculum_id, cu.name AS curriculum, cu.subject_id, ah.name AS age_group, ah.display_order,
                        qv.id AS question_version_id, q.question_type,
                        (qv.explanation IS NOT NULL AND btrim(qv.explanation) <> '') AS explained,
                        (qv.hint IS NOT NULL AND btrim(qv.hint) <> '') AS hinted,
@@ -254,13 +254,18 @@ public class AdminInsightService {
                 JOIN activity_version_skills avs ON avs.skill_id = los.skill_id
                 JOIN activity_versions av ON av.id = avs.activity_version_id AND av.status = 'PUBLISHED'
                 JOIN activities ac ON ac.id = av.activity_id AND ac.status = 'ACTIVE'
+                LEFT JOIN lessons le ON le.id = ac.lesson_id
                 JOIN activity_items ai ON ai.activity_version_id = av.id
                 JOIN question_versions qv ON qv.id = ai.question_version_id
                 JOIN questions q ON q.id = qv.question_id
                 WHERE cu.status = 'ACTIVE' AND cu.owner_account_id IS NULL
+                  -- What a platform curriculum's path may place (PathContentScope, N7): platform activities only - an
+                  -- activity's owner is its lesson's, none without one. A teacher's activity on the same skill isn't counted.
+                  AND (ac.lesson_id IS NULL OR le.owner_account_id IS NULL)
                 """, new MapSqlParameterSource(), (rs, i) -> new Row(rs.getObject("curriculum_id", UUID.class), rs.getString("curriculum"),
                 rs.getString("age_group"), rs.getInt("display_order"), rs.getObject("question_version_id", UUID.class),
-                rs.getString("question_type"), rs.getBoolean("explained"), rs.getBoolean("hinted"), rs.getBoolean("read_aloud")));
+                rs.getString("question_type"), rs.getBoolean("explained"), rs.getBoolean("hinted"), rs.getBoolean("read_aloud"),
+                rs.getObject("subject_id", UUID.class)));
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -297,7 +302,7 @@ public class AdminInsightService {
             }
             Row first = list.get(0);
             result.add(new ContentReadiness(curriculumId, first.curriculum(), first.ageGroup(), list.size(), explained, hinted, readAloud,
-                    complete, translatable));
+                    complete, translatable, first.subjectId()));
         });
         return result;
     }

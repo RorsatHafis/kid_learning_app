@@ -2326,3 +2326,13 @@ Dependencies:
   `schoolFirstSteps.test.tsx` 3/3, principal + teacher + i18n Vitest, full frontend Vitest. **Browser verified**
   (seed principal, 360 px): "3 of 4 done", current step "Give every class a teacher and a curriculum" (one class lacks
   both); axe clean, no API error.
+- 2026-11-03: **Readiness gaps lead to the bank, and count only what the curriculum gives children.** Each gap in the
+  admin's content-readiness panel (explanation, hint, read-aloud, Khmer) is now a link to the curriculum's subject bank
+  with the matching "Still needs" filter (accessible name keeps the visible count). **Fixed while connecting them**: the
+  readiness count matched activities by skill and ignored ownership, so a platform curriculum also counted teachers'
+  own activities on the same skill - content its family children never get (PathContentScope, N7); in the dev data 8 of
+  one curriculum's 11 counted questions were teacher content. It now counts platform activities only (an activity's
+  owner is its lesson's). **Tested**: `ReadinessToBankIntegrationTests` 1/1 (the row names its subject; the bank,
+  filtered by the same need, lists the missing question; a teacher's activity on the skill is not counted),
+  `ContentReadinessIntegrationTests` 1/1, `readinessLinks.test.tsx`, full frontend Vitest 463/463, backend unit 203/203.
+  **Browser verified** (admin, 1280 px): "Explain why 2 of 3" -> the bank with "Still needs: An explanation", 1 match.

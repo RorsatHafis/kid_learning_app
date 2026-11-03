@@ -108,6 +108,7 @@ export const opsMessages = defineMessages(
       readinessReadAloud: "Read aloud",
       readinessKhmer: "Complete in Khmer",
       readinessCount: (count: number, of: number) => `${count} of ${of}`,
+      readinessFind: (gap: string, count: string) => `${gap} ${count}: find the questions that still need it in the subject's question bank`,
       readinessAll: (n: number) => `Show all ${n} curricula`,
       readinessFewer: "Show fewer",
       gapsLead:
@@ -277,6 +278,7 @@ export const opsMessages = defineMessages(
       readinessReadAloud: "អានឮៗ",
       readinessKhmer: "ពេញលេញជាភាសាខ្មែរ",
       readinessCount: (count: number, of: number) => `${count} ក្នុងចំណោម ${of}`,
+      readinessFind: (gap: string, count: string) => `${gap} ${count}៖ រកសំណួរដែលនៅខ្វះវា ក្នុងធនាគារសំណួរនៃមុខវិជ្ជា`,
       readinessAll: (n: number) => `បង្ហាញកម្មវិធីសិក្សាទាំង ${n}`,
       readinessFewer: "បង្ហាញតិចជាងនេះ",
       gapsLead:
