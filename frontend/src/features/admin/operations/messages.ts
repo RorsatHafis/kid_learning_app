@@ -99,6 +99,17 @@ export const opsMessages = defineMessages(
       gaps: "Content gaps",
       nothingOffered: (groups: string) => `Nothing is offered to families for: ${groups}.`,
       allCovered: "Every skill in an offered curriculum has a published activity that practises it.",
+      readiness: "How ready the content is",
+      readinessLead:
+        "For each offered curriculum, the questions its published activities give children: how many explain why after a mistake, offer a hint, are read aloud for children who can't read yet, and are complete in Khmer.",
+      readinessQuestions: (n: number) => (n === 1 ? "1 question" : `${n} questions`),
+      readinessExplained: "Explain why",
+      readinessHinted: "Offer a hint",
+      readinessReadAloud: "Read aloud",
+      readinessKhmer: "Complete in Khmer",
+      readinessCount: (count: number, of: number) => `${count} of ${of}`,
+      readinessAll: (n: number) => `Show all ${n} curricula`,
+      readinessFewer: "Show fewer",
       gapsLead:
         "Offered curricula rely on these skills, but no published activity in use practises them, so children can't be given practice on them.",
       showingFirst: (shown: number, total: number) => `Showing the first ${shown} of ${total}, by subject and curriculum.`,
@@ -257,6 +268,17 @@ export const opsMessages = defineMessages(
       gaps: "ចន្លោះខ្វះខាតនៃខ្លឹមសារ",
       nothingOffered: (groups: string) => `គ្មានអ្វីត្រូវបានផ្ដល់ជូនគ្រួសារសម្រាប់៖ ${groups}។`,
       allCovered: "ជំនាញនីមួយៗក្នុងកម្មវិធីសិក្សាដែលបានផ្ដល់ជូន មានសកម្មភាពដែលបានផ្សព្វផ្សាយដែលហាត់វា។",
+      readiness: "ភាពរួចរាល់នៃខ្លឹមសារ",
+      readinessLead:
+        "សម្រាប់កម្មវិធីសិក្សានីមួយៗដែលបានផ្ដល់ជូន សំណួរដែលសកម្មភាពដែលបានផ្សព្វផ្សាយរបស់វាផ្ដល់ដល់កុមារ៖ ចំនួនប៉ុន្មានពន្យល់ហេតុផលក្រោយពេលឆ្លើយខុស ផ្ដល់តម្រុយ អានឮៗសម្រាប់កុមារដែលមិនទាន់ចេះអាន និងពេញលេញជាភាសាខ្មែរ។",
+      readinessQuestions: (n: number) => `សំណួរ ${n}`,
+      readinessExplained: "ពន្យល់ហេតុផល",
+      readinessHinted: "ផ្ដល់តម្រុយ",
+      readinessReadAloud: "អានឮៗ",
+      readinessKhmer: "ពេញលេញជាភាសាខ្មែរ",
+      readinessCount: (count: number, of: number) => `${count} ក្នុងចំណោម ${of}`,
+      readinessAll: (n: number) => `បង្ហាញកម្មវិធីសិក្សាទាំង ${n}`,
+      readinessFewer: "បង្ហាញតិចជាងនេះ",
       gapsLead:
         "កម្មវិធីសិក្សាដែលបានផ្ដល់ជូនពឹងផ្អែកលើជំនាញទាំងនេះ ប៉ុន្តែគ្មានសកម្មភាពដែលបានផ្សព្វផ្សាយ និងកំពុងប្រើហាត់វាទេ ដូច្នេះកូនៗមិនអាចទទួលការហាត់លើវាបានទេ។",
       showingFirst: (shown: number, total: number) =>

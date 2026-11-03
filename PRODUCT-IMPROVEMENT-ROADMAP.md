@@ -2180,3 +2180,14 @@ Dependencies:
   two wrong answers -> "Look again at the 2 tricky ones", closed, then "3 + 4 = ? The answer: 7"; no overflow, axe
   clean, no API error. Seen on the way: the seed questions have no explanations, so children get only the answer -
   a content gap (D-19), recorded.
+- 2026-11-03: **Educational quality for content production (D-19 support): "How ready the content is".** The
+  administrator's learning page already listed skills with no activity and age groups with nothing offered; it now
+  also says, for each offered platform curriculum, of the questions its published activities give children: how many
+  explain why after a mistake, offer a hint, are read aloud (pre-readers, 3-5) and are complete in Khmer (by the
+  child's reader's own rule, of those that can be) - so content work goes where it is short. One query plus three
+  batched Khmer reads (`AdminInsightService.readiness`); the first 12 curricula, then all on request. **Tested**:
+  `ContentReadinessIntegrationTests` (one fully supported and one plain question -> 2, 1, 1, 0, Khmer 1 of 2; a
+  parent 403) with `AdminInsightIntegrationTests` - 5, 0 failed; admin operations and i18n Vitest 163/163. **Browser
+  verified** at 360 and 1024 px: 12 of 160 dev curricula with "Show all 160 curricula"; no overflow, axe clean, no API
+  error. Seen on the way: the seed curriculum's questions are read aloud 0 of 9 and Khmer 0 of 9 - pre-readers
+  (3-5) and Khmer families have no suitable content yet (D-19).

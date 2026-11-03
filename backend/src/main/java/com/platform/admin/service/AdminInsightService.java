@@ -44,8 +44,17 @@ public class AdminInsightService {
     private final MediaStorage mediaStorage;
     private final Environment environment;
 
+    private final com.platform.content.repository.QuestionVersionRepository questionVersions;
+    private final com.platform.content.repository.QuestionOptionRepository questionOptions;
+    private final com.platform.content.service.QuestionTranslations translations;
+
     public AdminInsightService(AccountRepository accounts, NamedParameterJdbcTemplate jdbc, MediaStorage mediaStorage,
-                               Environment environment) {
+                               Environment environment, com.platform.content.repository.QuestionVersionRepository questionVersions,
+                               com.platform.content.repository.QuestionOptionRepository questionOptions,
+                               com.platform.content.service.QuestionTranslations translations) {
+        this.questionVersions = questionVersions;
+        this.questionOptions = questionOptions;
+        this.translations = translations;
         this.accounts = accounts;
         this.jdbc = jdbc;
         this.mediaStorage = mediaStorage;
@@ -152,9 +161,18 @@ public class AdminInsightService {
     public record CoverageGap(UUID skillId, String skill, String subject, String curriculum) {
     }
 
+    /**
+     * How ready an offered platform curriculum's questions are for the children it is for (D-19 content production): of
+     * the questions its published activities give, how many explain why after a mistake, offer a hint, are read aloud
+     * (pre-readers) and are complete in Khmer - of those that can be (a typed-word answer isn't translated).
+     */
+    public record ContentReadiness(UUID curriculumId, String curriculum, String ageGroup, int questions, int explained, int hinted,
+                                   int readAloud, int khmerComplete, int khmerTranslatable) {
+    }
+
     /** {@code coverageGapTotal}: every gap; {@code coverageGaps} lists the first {@value #GAPS_SHOWN} of them. */
     public record LearningOperations(LoopActivity lastSevenDays, List<CoverageGap> coverageGaps, long coverageGapTotal,
-                                     List<String> ageGroupsWithNothingOffered) {
+                                     List<String> ageGroupsWithNothingOffered, List<ContentReadiness> readiness) {
     }
 
     @Transactional(readOnly = true)
@@ -214,7 +232,74 @@ public class AdminInsightService {
                                   WHERE c.age_hub_id = ah.id AND c.status = 'ACTIVE' AND c.owner_account_id IS NULL)
                 ORDER BY ah.display_order
                 """, params, String.class);
-        return new LearningOperations(loop, gaps, gapTotal == null ? 0 : gapTotal, uncovered);
+        return new LearningOperations(loop, gaps, gapTotal == null ? 0 : gapTotal, uncovered, readiness());
+    }
+
+    /** Every offered platform curriculum's readiness, by age group then name (one query, plus the Khmer in three). */
+    private List<ContentReadiness> readiness() {
+        record Row(UUID curriculumId, String curriculum, String ageGroup, int order, UUID questionVersionId, String type,
+                   boolean explained, boolean hinted, boolean readAloud) {
+        }
+        List<Row> rows = jdbc.query("""
+                SELECT DISTINCT cu.id AS curriculum_id, cu.name AS curriculum, ah.name AS age_group, ah.display_order,
+                       qv.id AS question_version_id, q.question_type,
+                       (qv.explanation IS NOT NULL AND btrim(qv.explanation) <> '') AS explained,
+                       (qv.hint IS NOT NULL AND btrim(qv.hint) <> '') AS hinted,
+                       (qv.prompt_audio_asset_id IS NOT NULL) AS read_aloud
+                FROM curriculums cu
+                JOIN age_hubs ah ON ah.id = cu.age_hub_id
+                JOIN curriculum_versions cv ON cv.curriculum_id = cu.id AND cv.status = 'PUBLISHED'
+                JOIN curriculum_objectives co ON co.curriculum_version_id = cv.id
+                JOIN learning_objective_skills los ON los.learning_objective_id = co.learning_objective_id
+                JOIN activity_version_skills avs ON avs.skill_id = los.skill_id
+                JOIN activity_versions av ON av.id = avs.activity_version_id AND av.status = 'PUBLISHED'
+                JOIN activities ac ON ac.id = av.activity_id AND ac.status = 'ACTIVE'
+                JOIN activity_items ai ON ai.activity_version_id = av.id
+                JOIN question_versions qv ON qv.id = ai.question_version_id
+                JOIN questions q ON q.id = qv.question_id
+                WHERE cu.status = 'ACTIVE' AND cu.owner_account_id IS NULL
+                """, new MapSqlParameterSource(), (rs, i) -> new Row(rs.getObject("curriculum_id", UUID.class), rs.getString("curriculum"),
+                rs.getString("age_group"), rs.getInt("display_order"), rs.getObject("question_version_id", UUID.class),
+                rs.getString("question_type"), rs.getBoolean("explained"), rs.getBoolean("hinted"), rs.getBoolean("read_aloud")));
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+        // Khmer complete by the same rule the child's reader uses (QuestionTranslations.complete) - every word the English has.
+        java.util.Set<UUID> ids = new java.util.HashSet<>();
+        rows.forEach(row -> ids.add(row.questionVersionId()));
+        Map<UUID, com.platform.content.entity.QuestionVersion> versions = new java.util.HashMap<>();
+        questionVersions.findAllById(ids).forEach(v -> versions.put(v.getId(), v));
+        Map<UUID, List<com.platform.content.entity.QuestionOption>> options = new java.util.HashMap<>();
+        questionOptions.findByQuestionVersionIdInOrderByDisplayOrderAsc(ids)
+                .forEach(o -> options.computeIfAbsent(o.getQuestionVersionId(), k -> new java.util.ArrayList<>()).add(o));
+        Map<UUID, com.platform.content.service.QuestionTranslations.Khmer> khmer = translations.of(ids);
+
+        Map<UUID, List<Row>> byCurriculum = new java.util.LinkedHashMap<>();
+        rows.stream().sorted(java.util.Comparator.comparingInt(Row::order).thenComparing(Row::curriculum, String.CASE_INSENSITIVE_ORDER))
+                .forEach(row -> byCurriculum.computeIfAbsent(row.curriculumId(), k -> new java.util.ArrayList<>()).add(row));
+        List<ContentReadiness> result = new java.util.ArrayList<>();
+        byCurriculum.forEach((curriculumId, list) -> {
+            int explained = 0, hinted = 0, readAloud = 0, complete = 0, translatable = 0;
+            for (Row row : list) {
+                explained += row.explained() ? 1 : 0;
+                hinted += row.hinted() ? 1 : 0;
+                readAloud += row.readAloud() ? 1 : 0;
+                com.platform.content.entity.QuestionType type = com.platform.content.entity.QuestionType.valueOf(row.type());
+                if (com.platform.content.service.QuestionTranslations.translatable(type)) {
+                    translatable++;
+                    com.platform.content.entity.QuestionVersion version = versions.get(row.questionVersionId());
+                    com.platform.content.service.QuestionTranslations.Khmer k = khmer.get(row.questionVersionId());
+                    if (version != null && k != null && com.platform.content.service.QuestionTranslations.complete(type, version,
+                            options.getOrDefault(row.questionVersionId(), List.of()), k)) {
+                        complete++;
+                    }
+                }
+            }
+            Row first = list.get(0);
+            result.add(new ContentReadiness(curriculumId, first.curriculum(), first.ageGroup(), list.size(), explained, hinted, readAloud,
+                    complete, translatable));
+        });
+        return result;
     }
 
     // ------------------------------------------------------------------ reports

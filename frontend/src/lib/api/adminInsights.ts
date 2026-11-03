@@ -58,6 +58,21 @@ export interface LearningOperations {
   coverageGapTotal: number;
   /** Age groups with no platform curriculum offered to families. */
   ageGroupsWithNothingOffered: string[];
+  /**
+   * How ready each offered platform curriculum's questions are (D-19): of the questions its published activities give,
+   * how many explain why, offer a hint, are read aloud, and are complete in Khmer (of those that can be).
+   */
+  readiness?: {
+    curriculumId: string;
+    curriculum: string;
+    ageGroup: string;
+    questions: number;
+    explained: number;
+    hinted: number;
+    readAloud: number;
+    khmerComplete: number;
+    khmerTranslatable: number;
+  }[];
 }
 
 /** One week (Monday, UTC). */
