@@ -89,7 +89,7 @@ export function QuestionImport() {
     <Link
       to={activityPath ?? ".."}
       relative="path"
-      className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-tonle-700 hover:underline"
+      className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-semibold text-tonle-700 hover:underline"
     >
       <ArrowLeft size={16} aria-hidden /> {activityPath ? m.backToActivity : m.back}
     </Link>

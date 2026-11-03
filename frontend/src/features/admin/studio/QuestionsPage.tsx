@@ -56,7 +56,7 @@ export function QuestionsPage() {
           <span className="flex flex-wrap items-center gap-3">
             <ArchivedSwitch archived={archived} onChange={setArchived} list="questions" />
             {!archived && (
-              <Link to="import" className="text-sm font-semibold text-tonle-700 hover:underline">
+              <Link to="import" className="inline-flex min-h-11 items-center text-sm font-semibold text-tonle-700 hover:underline">
                 {importText.open}
               </Link>
             )}

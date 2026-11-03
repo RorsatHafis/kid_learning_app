@@ -180,7 +180,7 @@ export function ActivityBuilder({
             <Link
               to={`../../questions/import?activity=${detail.id}`}
               relative="path"
-              className="self-start text-sm font-semibold text-tonle-700 hover:underline"
+              className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-tonle-700 hover:underline"
             >
               {b.paste}
             </Link>
