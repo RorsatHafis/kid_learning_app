@@ -169,7 +169,8 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
 
   return (
     <section aria-labelledby="greeting" className="mx-auto flex w-full max-w-[88rem] flex-col gap-6 px-4 pb-14 pt-4 sm:px-8 sm:pt-6">
-      <div>
+      {/* Arriving in the child's own space: the greeting, then the world, rise in (gone under reduced motion). */}
+      <div className="motion-safe:animate-rise-in">
         <p className="text-sm font-bold uppercase tracking-[0.14em] text-palm-deep">{e.river}</p>
         <h1 id="greeting" className="mt-1 font-display text-[clamp(2.4rem,1.8rem+2.4vw,3.6rem)] font-bold leading-[1.02] tracking-[-0.015em] text-tonle-950">
           {m.home.hi(name ?? "")}
@@ -179,7 +180,7 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
       <DayDone childId={childId} />
 
       {/* The world. Large screens: the places stand on their landmarks; the card and Momo sit on the painting. */}
-      <div className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
+      <div className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10 motion-safe:animate-rise-in motion-safe:[animation-delay:90ms]">
         <PaintedWorld>
           <div className="hidden lg:contents">
             {paths.map((path, i) => (

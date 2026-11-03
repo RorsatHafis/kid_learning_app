@@ -2348,3 +2348,7 @@ Dependencies:
   two admin queries fixed above did not. **A "Still needs" search with nothing left says so as good news** ("Every
   question here is complete in Khmer.") instead of "No question matches these filters". **Tested**:
   `bankNeeds.test.tsx` 2/2, studio + i18n Vitest 227/227.
+- 2026-11-03: **Arriving in the child's space** (owner brief: switching between parent and child contexts): the child's
+  entrance - greeting, then the painted world 90 ms later - rises in, like the shelf, garden and play pages already do;
+  nothing moves under reduced motion. **Tested**: child Vitest 53/53. **Browser verified** (parent -> Sophea's space,
+  390 px): `rise-in` on both, the world delayed 0.09 s; reduced motion -> none; no page errors.
