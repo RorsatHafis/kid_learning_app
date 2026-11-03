@@ -76,6 +76,10 @@ public class ClassPracticeService {
     private final AuditService audit;
     private final StandingHistory standingHistory;
 
+    private final org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc;
+    private final com.platform.content.service.QuestionService questionService;
+    private final com.platform.content.service.QuestionTranslations questionTranslations;
+
     /** Activities named in the reader's language where their Khmer is complete, like the child's path. */
     private final com.platform.content.service.ActivityTranslations activityTranslations;
 
@@ -85,7 +89,13 @@ public class ClassPracticeService {
                                 LearningPathRepository paths, LearningPathItemRepository pathItems, LearningPathService pathService,
                                 PathContentScope contentScope, AccountRepository accounts, AuditService audit,
                                 StandingHistory standingHistory,
-                                com.platform.content.service.ActivityTranslations activityTranslations) {
+                                com.platform.content.service.ActivityTranslations activityTranslations,
+                                org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc,
+                                com.platform.content.service.QuestionService questionService,
+                                com.platform.content.service.QuestionTranslations questionTranslations) {
+        this.jdbc = jdbc;
+        this.questionService = questionService;
+        this.questionTranslations = questionTranslations;
         this.activityTranslations = activityTranslations;
         this.guard = guard;
         this.learning = learning;
@@ -122,8 +132,53 @@ public class ClassPracticeService {
     public record PracticeOption(UUID activityId, String title, int questionCount, Integer difficultyLevel) {
     }
 
+    /**
+     * A question on this skill the class's children find hard: of the members who answered it, how many got it wrong at
+     * least once - children, not answers, so one child's retries don't weigh more. The words in the reader's language
+     * (its Khmer when complete); {@code language} "km" when given in Khmer, {@code writtenIn} "en" when known English.
+     */
+    public record MissedQuestion(UUID questionVersionId, String prompt, String language, String writtenIn, int answered, int wrong) {
+    }
+
     public record SkillFollowUp(UUID skillId, String skillName, String objectiveTitle, UUID curriculumId, String curriculumName,
-                                List<ChildOnSkill> children, List<PracticeOption> practice) {
+                                List<ChildOnSkill> children, List<PracticeOption> practice, List<MissedQuestion> mostMissed) {
+    }
+
+    static final int MOST_MISSED = 5;
+
+    /** The class's hardest questions on the skill, from the members' own answers (only children the class may see). */
+    private List<MissedQuestion> mostMissed(UUID skillId, List<UUID> children) {
+        if (children.isEmpty()) {
+            return List.of();
+        }
+        record Count(UUID questionVersionId, int answered, int wrong) {
+        }
+        List<Count> counts = jdbc.query("""
+                SELECT r.question_version_id,
+                       count(DISTINCT a.child_id) AS answered,
+                       count(DISTINCT a.child_id) FILTER (WHERE NOT r.is_correct) AS wrong
+                FROM answer_records r
+                JOIN activity_attempts a ON a.id = r.activity_attempt_id
+                JOIN question_version_skills qs ON qs.question_version_id = r.question_version_id AND qs.skill_id = :skill
+                WHERE a.child_id IN (:children)
+                GROUP BY r.question_version_id
+                HAVING count(DISTINCT a.child_id) FILTER (WHERE NOT r.is_correct) > 0
+                ORDER BY wrong DESC, answered DESC, r.question_version_id
+                LIMIT :limit
+                """, new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("skill", skillId).addValue("children", children)
+                .addValue("limit", MOST_MISSED),
+                (rs, i) -> new Count(rs.getObject("question_version_id", UUID.class), rs.getInt("answered"), rs.getInt("wrong")));
+        List<MissedQuestion> missed = new ArrayList<>();
+        for (Count count : counts) {
+            com.platform.content.entity.QuestionVersion version = questionService.getVersion(count.questionVersionId());
+            com.platform.content.entity.QuestionType type = questionService.getQuestion(version.getQuestionId()).getQuestionType();
+            Optional<com.platform.content.service.QuestionTranslations.Khmer> khmer =
+                    questionTranslations.forReader(type, version, questionService.listOptions(version.getId()));
+            missed.add(new MissedQuestion(version.getId(), khmer.map(com.platform.content.service.QuestionTranslations.Khmer::prompt)
+                    .orElse(version.getPrompt()), khmer.isPresent() ? com.platform.content.service.QuestionTranslations.KHMER : null,
+                    khmer.isPresent() ? null : version.getTextLanguage(), count.answered(), count.wrong()));
+        }
+        return missed;
     }
 
     @Transactional(readOnly = true)
@@ -146,7 +201,8 @@ public class ClassPracticeService {
         children.sort(Comparator.comparingInt((ChildOnSkill c) -> priority(c.standing()))
                 .thenComparing(ChildOnSkill::displayName, String.CASE_INSENSITIVE_ORDER));
         return new SkillFollowUp(skillId, located.skillName(), located.objectiveTitle(), located.curriculumId(),
-                located.curriculumName(), children, options(skillId, located.enrollmentId()));
+                located.curriculumName(), children, options(skillId, located.enrollmentId()),
+                mostMissed(skillId, snapshot.members().stream().map(MemberRow::childId).toList()));
     }
 
     // ------------------------------------------------------------------ the action

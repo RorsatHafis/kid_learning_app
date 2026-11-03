@@ -2199,3 +2199,13 @@ Dependencies:
   opened; only the missed; a failure says so and retries on reopening), parent and i18n Vitest 213/213. **Browser
   verified** at 360 px on the seed child's Progress tab: "See the 2 questions they missed" -> "3 + 4 = ? The answer:
   7", "5 + 4 = ? The answer: 9"; no overflow, axe clean, no API error.
+- 2026-11-03: **Teachers see the questions their class finds hardest** on a skill's follow-up page (teacher and
+  principal): at most five, each with how many of the members who answered it got it wrong at least once (children,
+  not answers - one child's retries don't weigh more), in the reader's language with the question's known language
+  mark - what to reteach, beside who needs practice. Only the class's members (family-granted access), the same
+  evidence the page already shows per child; nothing changes. One query plus a version read per listed question
+  (`ClassPracticeService.mostMissed`). **Tested**: `SchoolAccessIntegrationTests` 11/11 (the follow-up endpoint
+  unchanged for its existing cases); school, teacher, principal and i18n Vitest 173/173. **Not separately tested**: the
+  counts themselves (no dedicated integration test - fixture of a paid school, class and granted children); checked
+  through the API (one class member's wrong answer -> "2 + 3 = ?", 1 of 1) and **browser verified** at 360 px; no
+  overflow, axe clean, no API error.

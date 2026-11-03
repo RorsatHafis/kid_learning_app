@@ -207,6 +207,11 @@ export interface SkillFollowUp {
   /** Needs practice first, then too early to tell, progressing, not started, secure; by name within each. */
   children: ChildOnSkill[];
   practice: PracticeOption[];
+  /**
+   * The questions on this skill the class's children find hardest (at most 5): of the members who answered each, how
+   * many got it wrong at least once. In the reader's language; `language`/`writtenIn` as on a child's question.
+   */
+  mostMissed?: { questionVersionId: string; prompt: string; language: "km" | null; writtenIn: "en" | null; answered: number; wrong: number }[];
 }
 
 export interface AssignPracticeResult {

@@ -182,6 +182,26 @@ function FollowUp({
         </ul>
       </header>
 
+      {data.mostMissed && data.mostMissed.length > 0 && (
+        // What to reteach: the questions most of the class got wrong, from the members' own answers.
+        <section aria-labelledby="most-missed" className="flex flex-col gap-2 rounded-[18px] bg-white p-5 shadow-card">
+          <h2 id="most-missed" className="text-base font-semibold text-ink">
+            {m.mostMissed}
+          </h2>
+          <p className="text-sm text-ink-soft">{m.mostMissedLead}</p>
+          <ol className="flex flex-col divide-y divide-line">
+            {data.mostMissed.map((q) => (
+              <li key={q.questionVersionId} className="flex flex-col gap-0.5 py-2.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+                <span lang={q.language ?? q.writtenIn ?? undefined} className="text-[0.9375rem] text-ink [overflow-wrap:anywhere]">
+                  {q.prompt}
+                </span>
+                <span className="tabular shrink-0 text-sm font-semibold text-light-deep">{m.missedBy(q.wrong, q.answered)}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <section aria-labelledby="skill-children" className="flex min-w-0 flex-col gap-5">
           <h2 id="skill-children" className="sr-only">

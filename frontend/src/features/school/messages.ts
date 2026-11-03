@@ -167,6 +167,9 @@ export const schoolMessages = defineMessages(
       restoreSchool: "Restore the school",
     },
     followUp: {
+      mostMissed: "Questions the class finds hardest",
+      mostMissedLead: "From the answers of the children in this class: how many of those who answered each one got it wrong at least once.",
+      missedBy: (wrong: number, answered: number) => `${wrong} of ${answered} ${answered === 1 ? "child" : "children"} missed it`,
       assignedOn: (date: string) => `Practice assigned ${date} · waiting`,
       startedOn: (date: string) => `Practice assigned ${date} · started`,
       done: (date: string | null) => (date ? `Practice done ${date}` : "Practice done"),
@@ -367,6 +370,9 @@ export const schoolMessages = defineMessages(
       restoreSchool: "ស្ដារសាលា",
     },
     followUp: {
+      mostMissed: "សំណួរដែលថ្នាក់យល់ថាពិបាកជាងគេ",
+      mostMissedLead: "ពីចម្លើយរបស់កុមារក្នុងថ្នាក់នេះ៖ ក្នុងចំណោមអ្នកដែលបានឆ្លើយ ចំនួនប៉ុន្មាននាក់បានឆ្លើយខុសយ៉ាងហោចណាស់ម្ដង។",
+      missedBy: (wrong: number, answered: number) => `កុមារ ${wrong} ក្នុងចំណោម ${answered} នាក់បានឆ្លើយខុស`,
       assignedOn: (date: string) => `បានចាត់ឱ្យហាត់ ${date} · កំពុងរង់ចាំ`,
       startedOn: (date: string) => `បានចាត់ឱ្យហាត់ ${date} · បានចាប់ផ្ដើម`,
       done: (date: string | null) => (date ? `បានហាត់រួច ${date}` : "បានហាត់រួច"),
