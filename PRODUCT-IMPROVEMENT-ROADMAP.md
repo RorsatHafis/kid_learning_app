@@ -2342,3 +2342,9 @@ Dependencies:
   path's rule: platform content, or the curriculum owner's own. Curriculum publishing already applied it
   (NO_PLAYABLE_ACTIVITY). **Tested**: `CoverageGapScopeIntegrationTests` 1/1 - **fails on the old query** (50 vs 51
   gaps) and passes now; `AdminInsightIntegrationTests` 4/4, readiness 2/2, backend unit 203/203.
+- 2026-11-03: **Swept the other activity-by-skill lookups for the same scope mistake** (no change needed): content
+  validation (`hasPublishedActivityInScope`), the adaptive engine, the path planner, Smart Review, class practice
+  options and assignment (per child's path) and the journey builder's coverage all apply `PathContentScope`; only the
+  two admin queries fixed above did not. **A "Still needs" search with nothing left says so as good news** ("Every
+  question here is complete in Khmer.") instead of "No question matches these filters". **Tested**:
+  `bankNeeds.test.tsx` 2/2, studio + i18n Vitest 227/227.

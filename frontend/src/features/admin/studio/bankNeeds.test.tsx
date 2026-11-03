@@ -38,4 +38,19 @@ describe("question bank: still needs", () => {
     // A filtered empty bank is a search with no match, not a first-run bank: no composer opens.
     expect(screen.queryByRole("textbox", { name: /question/i })).toBeNull();
   });
+
+  it("says so when nothing still needs it - good news, not 'no match'", async () => {
+    api.questions.mockResolvedValue({ items: [], page: 0, size: 25, total: 0 });
+    render(
+      <MemoryRouter initialEntries={["/questions?needs=KHMER"]}>
+        <Routes>
+          <Route element={<Outlet context={{ catalog, refreshCatalog: () => undefined }} />}>
+            <Route path="/questions" element={<QuestionsPage />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("Every question here is complete in Khmer.")).toBeInTheDocument();
+    expect(screen.queryByText("No question matches these filters.")).toBeNull();
+  });
 });

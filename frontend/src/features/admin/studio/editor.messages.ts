@@ -26,6 +26,13 @@ export const editorMessages = defineMessages(
       none: "No questions yet",
       firstHint: "Write the first one in the New question form.",
       noMatch: "No question matches these filters.",
+      // A "still needs" search with nothing left is good news, said as such (of the questions the other filters choose).
+      noneNeed: {
+        EXPLANATION: "Every question here explains why after a mistake.",
+        HINT: "Every question here has a hint.",
+        READ_ALOUD: "Every question here is read aloud.",
+        KHMER: "Every question here is complete in Khmer.",
+      },
       question: "Question",
       status: "Status",
       noSkill: "no skill tagged",
@@ -179,6 +186,12 @@ export const editorMessages = defineMessages(
       none: "មិនទាន់មានសំណួរ",
       firstHint: "សរសេរសំណួរដំបូងនៅក្នុងទម្រង់ សំណួរថ្មី។",
       noMatch: "គ្មានសំណួរណាត្រូវនឹងតម្រងទាំងនេះទេ។",
+      noneNeed: {
+        EXPLANATION: "សំណួរនីមួយៗនៅទីនេះពន្យល់ពីមូលហេតុ បន្ទាប់ពីកំហុស។",
+        HINT: "សំណួរនីមួយៗនៅទីនេះមានតម្រុយ។",
+        READ_ALOUD: "សំណួរនីមួយៗនៅទីនេះត្រូវបានអានឮៗ។",
+        KHMER: "សំណួរនីមួយៗនៅទីនេះពេញលេញជាភាសាខ្មែរ។",
+      },
       question: "សំណួរ",
       status: "ស្ថានភាព",
       noSkill: "មិនទាន់ភ្ជាប់ជំនាញ",

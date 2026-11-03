@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 import type { QuestionType } from "@/lib/api/types";
 import { studioApi, type BankNeed, type PublicationStatus } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -131,7 +131,12 @@ export function QuestionsPage() {
             action={!composer.open && !archived ? <NewButton label={m.newQuestion} onClick={composer.show} /> : undefined}
           />
         )}
-        {data && data.total === 0 && filtered && <p className="text-sm text-ink-soft">{m.noMatch}</p>}
+        {data && data.total === 0 && filtered && !needs && <p className="text-sm text-ink-soft">{m.noMatch}</p>}
+        {data && data.total === 0 && needs && (
+          <p role="status" className="flex items-center gap-2 text-sm font-semibold text-palm-deep">
+            <CheckCircle2 size={18} aria-hidden /> {m.noneNeed[needs]}
+          </p>
+        )}
         {data && data.items.length > 0 && (
           <div
             className={cn("-mx-5 -mb-5 transition-opacity sm:-mx-6 sm:-mb-6", questions.isLoading && "opacity-60")}
