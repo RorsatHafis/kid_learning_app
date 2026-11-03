@@ -118,6 +118,10 @@ platform:
     from: ${MAIL_FROM}
     # Required. The origin families open the app at; links in emails point here.
     public-url: ${APP_PUBLIC_URL}
+  http:
+    # The largest request body other than an upload (RequestSizeLimitFilter): 413 above it, before it is read. As the
+    # nginx front allows for /api - and the hosted path (Vercel -> Railway) has no nginx in front.
+    max-body-bytes: ${HTTP_MAX_BODY_BYTES:1048576}
   media:
     # Required. A directory the API can write: where uploaded pictures and recordings are kept.
     # In production a persistent volume, backed up with the database (DEPLOYMENT.md).

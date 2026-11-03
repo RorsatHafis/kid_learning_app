@@ -2471,3 +2471,11 @@ Dependencies:
   still moves there), and sits after the explanation on every width - read what happened and why, then go on (on
   phones it used to sit above the explanation). **Tested**: child Vitest 54/54 (incl. the protected `mistakeHelp`
   test: the status still holds the hint). **Browser verified**: live text without "Finish"; layout screenshot.
+- 2026-11-03: **M13 readiness docs brought up to date with today's hardening.** The body cap is a named setting like
+  the others (`HTTP_MAX_BODY_BYTES`, default 1 MB, in `application.yaml`) and is listed in `DEPLOYMENT.md`'s tunables
+  (the only cap on the hosted path, which has no nginx). `docs/DEPLOY-VERCEL-RAILWAY.md`'s staging checks gain
+  **10. read-aloud recording** (the browser asks for the microphone and the recording plays back - blocked by the old
+  `microphone=()` header) and **11. oversized requests refused** (a 2 MB sign-in body answers 413; an ordinary sign-in
+  still works); its Flyway note now says the latest version (V85) instead of V62. **Tested**:
+  `RequestSizeLimitIntegrationTests` 2/2 and `ConfigurationContractTests` 61/61 with the setting in place. CI: last
+  full green **`6f12c98`** (backend, frontend, deployment, e2e) - confirms `c910f3a`'s scaling fix and F-IDEM-1.

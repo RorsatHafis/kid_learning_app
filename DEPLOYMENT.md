@@ -112,7 +112,10 @@ own zone on the parent's account page),
 writes each text to the mail catcher for development and is **refused in `prod`**. A real provider is owner decision
 D-04 - M9b),
 `CHILD_DEVICES_MAX_PER_CHILD` (3: how many devices may hold one child's sign-in, M10a - owner decision D-05),
-`CAREGIVERS_MAX_PER_FAMILY` (2: how many people outside the family may help with its children, M10b - D-05).
+`CAREGIVERS_MAX_PER_FAMILY` (2: how many people outside the family may help with its children, M10b - D-05),
+`HTTP_MAX_BODY_BYTES` (1048576: the largest request body other than an upload; larger is refused with 413 before it is
+read. It matches nginx's 1 MB for /api, and is the only cap on the hosted path, which has no nginx. Uploads keep their
+own 5 MB file / 6 MB request limits).
 
 **Payments** (Y43, all off by default; see [docs/PAYMENTS.md](docs/PAYMENTS.md)):
 `PAYMENTS_MANUAL_ENABLED` and `PAYMENTS_MANUAL_INSTRUCTIONS` (bank transfer, confirmed by an administrator

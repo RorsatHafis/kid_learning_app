@@ -81,7 +81,7 @@ Run each against the deployed URLs and record the result. A failure in any of th
 
 1. `GET https://<railway>/actuator/health` returns `UP`; `GET https://<railway>/actuator/metrics` is refused
    (administrators only); `https://<vercel>/` serves the app and a deep link such as `/parent/account` reloads.
-2. Startup log shows Flyway migrating to V62 and `prod` active; no simulator.
+2. Startup log shows Flyway migrating to the latest version (V85 on 2026-11-03) and `prod` active; no simulator.
 3. Register a parent, confirm the email (real delivery), sign in, refresh, sign out.
 4. **Rate limits per client** (sign-in, registration, refresh and recovery budgets are keyed on the client's
    address). The backend believes only `X-Forwarded-For` entries added by proxies it trusts: private-network
@@ -113,6 +113,12 @@ Run each against the deployed URLs and record the result. A failure in any of th
    `prod`).
 8. A child plays an activity; the parent sees the evidence; a teacher and principal see only their classes.
 9. Khmer and English, desktop and phone, on the deployed site.
+10. **Read-aloud recording.** In the Studio, on a question, record a few seconds with the microphone: the browser asks
+    for the microphone, and the recording plays back. (The headers allow `microphone=(self)`; with `microphone=()`
+    the browser refuses before asking - that was the case before 2026-11-03.)
+11. **Oversized requests are refused.** `POST https://<vercel>/api/v1/auth/login` with a 2 MB JSON body answers 413
+    ("That request is too large to accept."), not a timeout or a crash; an ordinary sign-in still works. The hosted
+    path has no nginx, so this is the backend's own cap (`HTTP_MAX_BODY_BYTES`, 1 MB).
 
 ## Local rehearsal (2026-10-20, Y44)
 
