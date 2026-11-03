@@ -4,7 +4,7 @@ Part of the product review (`PRODUCT-JOURNEY-REVIEW.md`). **Verification level: 
 `MasteryEngine`, `AdaptiveEngine`, `PostCompletionService` and `application.yaml` on 2026-11-03. The worked examples
 are computed from the code's formula with the configured defaults; they were **not** run against the server for this
 document (the behaviours are covered by the Battle 2D/5A-5D integration tests, which this pass did not re-read).
-`EvidenceStandard` traced in 4a, Smart Review in 4b. Not traced yet: `CurriculumPathPlanner`, `LearningDays` (next
+`EvidenceStandard` and `LearningDays` traced in 4a, Smart Review in 4b. Not traced yet: `CurriculumPathPlanner` (next
 pass).
 
 ## 1. Inputs and who controls them
@@ -80,6 +80,13 @@ already offers a CHALLENGE (D-17: the standing waits for a second day, decisions
 practice** and gets REINFORCEMENT; "W W" reads **Too early to tell** yet already gets REINFORCEMENT (gate 2 for acting,
 3 for telling an adult - the platform may offer easier practice before it claims anything about the child). That
 asymmetry is deliberate and consistent: acting on weak evidence is cheap and reversible, a claim to a parent is not.
+
+**Learning days** (`LearningDays`, traced 2026-11-03): a "day" for D-17 is the calendar date of each piece of evidence
+in the child's family's chosen zone (`families.learning_day_zone`, V70), else the platform's
+(`platform.learning.day-zone`, default Asia/Phnom_Penh) - the same day the daily learning-time limit uses. Counted per
+skill from the evidence history (also "as it stood at" a moment, for standing history); one query per zone for a
+class. Example: three right answers at 23:50 and 00:10 count as **two** days in Phnom Penh time - the rule is the
+calendar day, not 24 hours apart (as decided in D-17; noted, not a finding).
 
 ## 4b. Smart Review (`SmartReviewService`, `ReviewSchedule`, traced 2026-11-03)
 
