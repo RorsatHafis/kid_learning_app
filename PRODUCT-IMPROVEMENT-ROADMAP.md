@@ -2235,3 +2235,8 @@ Dependencies:
   published together, published activity 409, other subject 400 with nothing kept, another teacher refused),
   `QuestionImportIntegrationTests` 3/3, studio + i18n Vitest 218/218. **Browser verified** (teacher, 360 px): two rows
   added, both in the builder; a published activity's paste page says so; no overflow, axe clean, no API error.
+- 2026-11-03: **A question template to download** on the paste page: `bookeyond-questions-template.tsv` (UTF-8 with
+  a byte-order mark so Excel reads the Khmer) - the header and one sample row per type with English and Khmer columns
+  (sample content, not curriculum; Khmer awaits the same native review, PD-14). Pasting the file's text back reads five
+  ready rows. **Tested**: `sheetImport.test.ts` (template reads back, its Khmer choices aligned), studio + i18n Vitest
+  219/219. **Browser verified**: the download's name, BOM, six lines, and the paste summary "5 questions ready to add".

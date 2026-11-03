@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, CircleAlert, ClipboardCopy } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleAlert, ClipboardCopy, Download } from "lucide-react";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -9,7 +9,7 @@ import { ApiError } from "@/lib/api/ApiError";
 import { useMessages } from "@/i18n/catalog";
 import { editorMessages } from "./editor.messages";
 import { importMessages } from "./import.messages";
-import { errorsByRow, parseSheet, TEMPLATE_COLUMNS, type ImportRow, type RowIssue } from "./sheetImport";
+import { errorsByRow, parseSheet, TEMPLATE_COLUMNS, templateFile, type ImportRow, type RowIssue } from "./sheetImport";
 import { Panel, TextAreaField } from "./shared";
 import { errorText, issueText, questionTypeLabel, useStudio } from "./studioLogic";
 import { useUnsavedGuard } from "./unsavedGuard";
@@ -49,6 +49,15 @@ export function QuestionImport() {
     } catch {
       setCopied("failed");
     }
+  };
+
+  const download = () => {
+    const url = URL.createObjectURL(new Blob([templateFile()], { type: "text/tab-separated-values;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "bookeyond-questions-template.tsv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const add = async () => {
@@ -150,6 +159,9 @@ export function QuestionImport() {
             <div className="flex flex-wrap items-center gap-3">
               <Button variant="outline" size="sm" onClick={copyHeader}>
                 <ClipboardCopy size={15} aria-hidden /> {m.copyHeader}
+              </Button>
+              <Button variant="outline" size="sm" onClick={download}>
+                <Download size={15} aria-hidden /> {m.download}
               </Button>
               <span role="status" className="text-sm text-ink-soft">
                 {copied === "done" ? m.copiedHeader : copied === "failed" ? m.copyFailed : ""}

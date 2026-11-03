@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { errorsByRow, parseSheet, splitCells, TEMPLATE_COLUMNS } from "./sheetImport";
+import { errorsByRow, parseSheet, splitCells, TEMPLATE_COLUMNS, templateFile } from "./sheetImport";
 
 const tsv = (...rows: string[][]) => rows.map((r) => r.join("\t")).join("\n");
 
@@ -84,6 +84,23 @@ describe("parseSheet", () => {
   it("refuses more than 50 rows at once", () => {
     const rows = Array.from({ length: 51 }, (_, i) => ["number", `${i} + 1`, String(i + 1)]);
     expect(parseSheet(tsv(["type", "question", "answer"], ...rows)).tooMany).toBe(true);
+  });
+});
+
+describe("templateFile", () => {
+  it("is a sheet that reads back as one draft per type, its Khmer included", () => {
+    const sheet = parseSheet(templateFile());
+    expect(sheet.unknownColumns).toEqual([]);
+    expect(sheet.rows.map((r) => [r.type, r.issues.length])).toEqual([
+      ["MULTIPLE_CHOICE", 0],
+      ["TRUE_FALSE", 0],
+      ["NUMERIC", 0],
+      ["SHORT_ANSWER", 0],
+      ["ORDERING", 0],
+    ]);
+    expect(sheet.rows[0].draft?.options?.map((o) => o.correct)).toEqual([false, true, false]);
+    expect(sheet.rows[0].draft?.khmer?.options).toEqual(["៣", "៧", "៥"]);
+    expect(sheet.rows[4].draft?.khmer?.items).toEqual(["២", "៥", "៨"]);
   });
 });
 

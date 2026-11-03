@@ -1,6 +1,7 @@
 import type { QuestionType } from "@/lib/api/types";
 import type { KhmerDraft, QuestionDraftInput } from "@/lib/api/studio";
 import { studioMessages } from "./messages";
+import { TEMPLATE_EXAMPLES } from "./import.messages";
 
 /**
  * Questions pasted from a spreadsheet. Copying cells in Google Sheets, Excel or LibreOffice puts them on the
@@ -34,6 +35,14 @@ export const TEMPLATE_COLUMNS = [
   "hint (km)",
   "explanation (km)",
 ];
+
+/**
+ * The template as a file a spreadsheet opens: the header and one sample row per type, tab-separated, with a byte-order
+ * mark so Excel reads the Khmer as UTF-8.
+ */
+export function templateFile(): string {
+  return "\uFEFF" + [TEMPLATE_COLUMNS, ...TEMPLATE_EXAMPLES].map((row) => row.join("\t")).join("\r\n") + "\r\n";
+}
 
 /** The types a paste can add: the ones a row of cells can say in full (no pictures, pairs or groups). */
 export const IMPORTABLE_TYPES: QuestionType[] = ["MULTIPLE_CHOICE", "TRUE_FALSE", "NUMERIC", "SHORT_ANSWER", "ORDERING"];
@@ -177,7 +186,8 @@ function blankToNull(value: string | undefined): string | null {
 
 /** The pasted sheet, row by row: a draft for every row that can be read, and what stops the others. */
 export function parseSheet(text: string): ParsedSheet {
-  const all = splitCells(text);
+  // A file's byte-order mark, when the author pastes the template file's text as it is.
+  const all = splitCells(text.replace(/^\uFEFF/, ""));
   const header = all[0] ?? [];
   const columns = header.map(columnOf);
   const unknownColumns = header.filter((h, i) => h.trim() !== "" && columns[i] === null).map((h) => h.trim());

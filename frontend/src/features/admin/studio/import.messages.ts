@@ -11,6 +11,7 @@ export const importMessages = defineMessages(
     columnsTitle: "1. Start your sheet with these columns",
     columnsLead: "The first row names the columns; they can come in any order, and you can leave out the ones you don't use.",
     copyHeader: "Copy the header row",
+    download: "Download a template with examples",
     copiedHeader: "Copied. Paste it into the first row of your sheet.",
     copyFailed: "Couldn't copy here. Select the header row above and copy it yourself.",
     columnHelp: {
@@ -72,6 +73,7 @@ export const importMessages = defineMessages(
     columnsTitle: "១. ចាប់ផ្ដើមតារាងរបស់អ្នកដោយជួរឈរទាំងនេះ",
     columnsLead: "ជួរទីមួយដាក់ឈ្មោះជួរឈរ៖ ជួរឈរអាចនៅតាមលំដាប់ណាក៏បាន ហើយអ្នកអាចទុកចោលជួរឈរដែលអ្នកមិនប្រើ។",
     copyHeader: "ចម្លងជួរក្បាល",
+    download: "ទាញយកគំរូដែលមានឧទាហរណ៍",
     copiedHeader: "បានចម្លងហើយ។ បិទភ្ជាប់វានៅជួរទីមួយនៃតារាងរបស់អ្នក។",
     copyFailed: "មិនអាចចម្លងនៅទីនេះបានទេ។ សូមជ្រើសជួរក្បាលខាងលើ ហើយចម្លងវាដោយខ្លួនឯង។",
     columnHelp: {
@@ -126,3 +128,17 @@ export const importMessages = defineMessages(
     openActivity: "បើកសកម្មភាព",
   },
 );
+
+/**
+ * Sample rows for the downloadable question template (sheetImport.templateFile), one per type - sample content,
+ * not curriculum - in the template's columns. Both languages side by side by design: the file has English and Khmer
+ * columns whatever the interface language, so this is not a catalog. The Khmer is the product's draft wording, awaiting native review like the rest.
+ */
+export const TEMPLATE_EXAMPLES: string[][] = [
+  ["Multiple choice", "Which number is bigger?", "7", "3", "7", "5", "", "Count: which comes later?", "Seven comes after three and five when we count, so it is bigger.", "2",
+    "តើលេខណាធំជាង?", "៣", "៧", "៥", "", "រាប់៖ តើលេខណាមកក្រោយគេ?", "ពេលរាប់ ប្រាំពីរមកក្រោយបី និងប្រាំ ដូច្នេះវាធំជាង។"],
+  ["True or false", "5 is more than 2.", "true", "", "", "", "", "", "", "1", "៥ ច្រើនជាង ២។", "", "", "", "", "", ""],
+  ["Number answer", "4 + 3 = ?", "7", "", "", "", "", "Start at 4 and count on 3.", "", "2", "៤ + ៣ = ?", "", "", "", "", "ចាប់ពី ៤ ហើយរាប់បន្ត ៣។", ""],
+  ["Short answer", "What colour is the sky on a clear day?", "blue", "", "", "", "", "", "", "1", "", "", "", "", "", "", ""],
+  ["Put in order", "Put the numbers from smallest to biggest.", "", "2", "5", "8", "", "", "", "2", "ដាក់លេខពីតូចបំផុតទៅធំបំផុត។", "២", "៥", "៨", "", "", ""],
+];
