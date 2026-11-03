@@ -2336,3 +2336,9 @@ Dependencies:
   filtered by the same need, lists the missing question; a teacher's activity on the skill is not counted),
   `ContentReadinessIntegrationTests` 1/1, `readinessLinks.test.tsx`, full frontend Vitest 463/463, backend unit 203/203.
   **Browser verified** (admin, 1280 px): "Explain why 2 of 3" -> the bank with "Still needs: An explanation", 1 match.
+- 2026-11-03: **Content gaps no longer hidden by teachers' activities.** The learning-operations "Content gaps" (a
+  curriculum's skills nothing practises) counted a skill as practised if any published activity covered it - including
+  a teacher's own, which a platform curriculum's family children never get (PathContentScope, N7). It now uses the
+  path's rule: platform content, or the curriculum owner's own. Curriculum publishing already applied it
+  (NO_PLAYABLE_ACTIVITY). **Tested**: `CoverageGapScopeIntegrationTests` 1/1 - **fails on the old query** (50 vs 51
+  gaps) and passes now; `AdminInsightIntegrationTests` 4/4, readiness 2/2, backend unit 203/203.

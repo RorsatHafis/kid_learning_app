@@ -217,10 +217,14 @@ public class AdminInsightService {
                 JOIN skills sk ON sk.id = los.skill_id
                 JOIN subjects su ON su.id = cu.subject_id
                 WHERE cu.status = 'ACTIVE'
+                  -- Practised by an activity this curriculum's paths may place (PathContentScope, N7): platform content, or
+                  -- the curriculum owner's own. A teacher's activity doesn't cover a platform curriculum's skill.
                   AND NOT EXISTS (SELECT 1 FROM activity_version_skills avs
                                   JOIN activity_versions av ON av.id = avs.activity_version_id AND av.status = 'PUBLISHED'
                                   JOIN activities ac ON ac.id = av.activity_id AND ac.status = 'ACTIVE'
-                                  WHERE avs.skill_id = sk.id)
+                                  LEFT JOIN lessons le ON le.id = ac.lesson_id
+                                  WHERE avs.skill_id = sk.id
+                                    AND (ac.lesson_id IS NULL OR le.owner_account_id IS NULL OR le.owner_account_id = cu.owner_account_id))
                 """;
         Long gapTotal = jdbc.queryForObject("SELECT count(*) FROM (" + gapRows + ") gaps", params, Long.class);
         List<CoverageGap> gaps = jdbc.query(gapRows + " ORDER BY su.name, cu.name, sk.name LIMIT " + GAPS_SHOWN, params,
