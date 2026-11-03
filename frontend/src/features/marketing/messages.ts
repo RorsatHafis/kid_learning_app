@@ -75,6 +75,7 @@ export const marketingMessages = defineMessages(
       rule3Then: "a harder activity on the same skill",
       rule4When: "Recent answers on a skill start going wrong",
       rule4Then: "Smart Review brings it back into the path",
+      mistakes: "After an activity you can see the questions your child missed - with the right answer and, where the author wrote one, why.",
       dataNote: "Your family's learning data belongs to your family: you can download all of it from your account at any time.",
       seeSample: "See a sample parent view",
     },
@@ -125,6 +126,8 @@ export const marketingMessages = defineMessages(
         d: "The class over four, eight or twelve weeks, worked out from the answers given by then.",
         e: "Practice assigned to the children who need it, from the skill's own page.",
         f: "Teachers can author their own questions and activities for their classes.",
+        g: "The questions a class finds hardest on a skill - what to teach again, beside who needs practice.",
+        h: "Many questions written at once: paste them from a spreadsheet, in English and Khmer, then check and publish.",
       },
     },
     promises: {
@@ -206,6 +209,7 @@ export const marketingMessages = defineMessages(
       rule3Then: "សកម្មភាពពិបាកជាង លើជំនាញដដែល",
       rule4When: "ចម្លើយថ្មីៗលើជំនាញមួយ ចាប់ផ្ដើមខុស",
       rule4Then: "ការរំលឹកឆ្លាតវៃនាំវាត្រឡប់មកក្នុងដំណើររៀនវិញ",
+      mistakes: "បន្ទាប់ពីសកម្មភាពមួយ អ្នកអាចមើលសំណួរដែលកូនរបស់អ្នកឆ្លើយខុស - ជាមួយចម្លើយត្រឹមត្រូវ និងការពន្យល់ ប្រសិនបើអ្នកនិពន្ធបានសរសេរ។",
       dataNote: "ទិន្នន័យការរៀនរបស់គ្រួសារអ្នក ជាកម្មសិទ្ធិរបស់គ្រួសារអ្នក៖ អ្នកអាចទាញយកវាទាំងអស់ពីគណនីរបស់អ្នកបានគ្រប់ពេល។",
       seeSample: "មើលទំព័រឪពុកម្ដាយគំរូ",
     },
@@ -256,6 +260,8 @@ export const marketingMessages = defineMessages(
         d: "ថ្នាក់ក្នុងរយៈពេលបួន ប្រាំបី ឬដប់ពីរសប្ដាហ៍ ដែលគណនាពីចម្លើយដែលបានផ្ដល់រហូតដល់ពេលនោះ។",
         e: "លំហាត់ដែលកំណត់ឱ្យកុមារដែលត្រូវការវា ពីទំព័ររបស់ជំនាញនោះផ្ទាល់។",
         f: "គ្រូអាចនិពន្ធសំណួរ និងសកម្មភាពផ្ទាល់ខ្លួនសម្រាប់ថ្នាក់របស់ពួកគេ។",
+        g: "សំណួរដែលថ្នាក់មួយយល់ថាពិបាកបំផុតលើជំនាញមួយ - អ្វីដែលត្រូវបង្រៀនម្ដងទៀត ក្បែរកុមារដែលត្រូវការការអនុវត្ត។",
+        h: "សរសេរសំណួរជាច្រើនក្នុងពេលតែមួយ៖ បិទភ្ជាប់វាពីតារាងទិន្នន័យ ជាភាសាអង់គ្លេស និងខ្មែរ រួចពិនិត្យ ហើយផ្សាយ។",
       },
     },
     promises: {

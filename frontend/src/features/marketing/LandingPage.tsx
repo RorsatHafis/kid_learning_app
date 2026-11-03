@@ -300,6 +300,7 @@ function ForParents() {
               </div>
             ))}
           </dl>
+          <p className="text-[0.9375rem] leading-relaxed text-ink">{m.mistakes}</p>
           <p className="text-sm leading-relaxed text-ink-soft">{m.dataNote}</p>
           {/* F1c: the parent view itself, with a sample child - before any account. */}
           <Link to="/try/parent" className="inline-flex w-fit items-center gap-2 font-semibold text-tonle-800 underline decoration-light decoration-2 underline-offset-[6px] hover:text-tonle-950">
@@ -413,7 +414,16 @@ function Subjects() {
 function Schools() {
   const m = useMessages(marketingMessages).schools;
   const l = useMessages(marketingMessages).landing;
-  const caps = [l.schoolCapabilities.a, l.schoolCapabilities.b, l.schoolCapabilities.c, l.schoolCapabilities.d, l.schoolCapabilities.e, l.schoolCapabilities.f];
+  const caps = [
+    l.schoolCapabilities.a,
+    l.schoolCapabilities.b,
+    l.schoolCapabilities.c,
+    l.schoolCapabilities.g,
+    l.schoolCapabilities.d,
+    l.schoolCapabilities.e,
+    l.schoolCapabilities.f,
+    l.schoolCapabilities.h,
+  ];
   return (
     <section id="schools" className="scroll-mt-20 bg-tonle-900 px-4 py-20 text-white sm:px-8 sm:py-28">
       <div className="mx-auto grid max-w-[1240px] gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
