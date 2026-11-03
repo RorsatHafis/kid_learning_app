@@ -2462,3 +2462,12 @@ Dependencies:
   refresh responses, revisions under a child, growing history, a slow server) with evidence; measured performance; open
   items S-ENUM-1 (owner), TD-15 (per-instance rate limits), SR-RT, SR-DOCS, SR-KEY. The canonical progress record gets
   a dated 2026-11-03 state and next work. No code change.
+- 2026-11-03: **Every question type checked as a child plays it, and the answer feedback reads cleanly to a screen
+  reader.** Seven one-question sample activities (choice, true/false, number, typed word, matching, ordering, sorting)
+  authored on the dev stack and played at 390 px: axe clean on every question and on the wrong-answer feedback of the
+  four simple types, no overflow, no API error. **Fixed**: the feedback panel was one live region containing its own
+  continue button, so the announcement ran "...good try! The answer is 4. Let's keep going! Finish Why..." - while focus
+  also moved to that button. The live region now holds the verdict, the answer and why; the button follows it (focus
+  still moves there), and sits after the explanation on every width - read what happened and why, then go on (on
+  phones it used to sit above the explanation). **Tested**: child Vitest 54/54 (incl. the protected `mistakeHelp`
+  test: the status still holds the hint). **Browser verified**: live text without "Finish"; layout screenshot.

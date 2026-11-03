@@ -40,39 +40,42 @@ export function AnswerVerdict({
   const strategy = !result.correct && !result.explanation ? item.hint?.trim() || null : null;
   return (
     <div
-      role="status"
       className={cn(
         "flex flex-col gap-5 rounded-b-[32px] px-6 pb-7 pt-6 motion-safe:animate-rise-in sm:px-12",
         result.correct ? "bg-light-soft" : "bg-tonle-50",
       )}
     >
-      <div className="flex flex-col items-center gap-5 sm:flex-row">
-        {/* Y40: the verdict as a picture, for a child who can't read the words yet. */}
-        <span aria-hidden className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-full ring-4 ring-white", result.correct ? "bg-white motion-safe:animate-pop-in" : "bg-white/80")}>
-          <Bud state={result.correct ? "open" : "current"} size={44} />
-        </span>
-        <div className="flex-1 text-center sm:text-left">
-          <p className={cn("font-display text-[1.875rem] font-bold leading-tight", result.correct ? "text-light-deep" : "text-tonle-800")}>
-            {result.correct ? m[RIGHT_HEADLINES[index % RIGHT_HEADLINES.length]] : m.notQuite}
-          </p>
-          <p className="mt-1 text-lg font-medium text-ink">
-            {result.correct
-              ? m.lanternLit
-              : result.correctAnswer?.matches?.length
-                ? m.matchesMixed
-                : result.correctAnswer?.text
-                  ? m.theAnswerIs(
-                      item.questionType === "TRUE_FALSE" ? (result.correctAnswer.text === "true" ? q.true : q.false) : result.correctAnswer.text,
-                    )
-                  : m.keepGoingLine}
-          </p>
+      {/* What a screen reader announces: the verdict, the answer and why - not the button after it, which takes focus. */}
+      <div role="status" className="flex flex-col gap-5">
+        <div className="flex flex-col items-center gap-5 sm:flex-row">
+          {/* Y40: the verdict as a picture, for a child who can't read the words yet. */}
+          <span aria-hidden className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-full ring-4 ring-white", result.correct ? "bg-white motion-safe:animate-pop-in" : "bg-white/80")}>
+            <Bud state={result.correct ? "open" : "current"} size={44} />
+          </span>
+          <div className="flex-1 text-center sm:text-left">
+            <p className={cn("font-display text-[1.875rem] font-bold leading-tight", result.correct ? "text-light-deep" : "text-tonle-800")}>
+              {result.correct ? m[RIGHT_HEADLINES[index % RIGHT_HEADLINES.length]] : m.notQuite}
+            </p>
+            <p className="mt-1 text-lg font-medium text-ink">
+              {result.correct
+                ? m.lanternLit
+                : result.correctAnswer?.matches?.length
+                  ? m.matchesMixed
+                  : result.correctAnswer?.text
+                    ? m.theAnswerIs(
+                        item.questionType === "TRUE_FALSE" ? (result.correctAnswer.text === "true" ? q.true : q.false) : result.correctAnswer.text,
+                      )
+                    : m.keepGoingLine}
+            </p>
+          </div>
         </div>
-        <button ref={continueRef} type="button" onClick={onContinue} className={goButton}>
-          {index + 1 < total ? m.next : m.finish} <ArrowRight size={22} aria-hidden />
-        </button>
+        {result.explanation && <Explanation text={result.explanation} />}
+        {strategy && <Explanation text={strategy} heading={m.wayToThink} />}
       </div>
-      {result.explanation && <Explanation text={result.explanation} />}
-      {strategy && <Explanation text={strategy} heading={m.wayToThink} />}
+      {/* Read what happened and why, then go on. */}
+      <button ref={continueRef} type="button" onClick={onContinue} className={cn(goButton, "self-center sm:self-end")}>
+        {index + 1 < total ? m.next : m.finish} <ArrowRight size={22} aria-hidden />
+      </button>
     </div>
   );
 }
