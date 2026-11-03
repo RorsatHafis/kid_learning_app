@@ -2401,3 +2401,15 @@ Dependencies:
   endpoint added later without its guard fails the build. **Proven**: with one guard removed (child daily limit) it
   fails naming that endpoint; restored, 2/2 pass. Not swept (need objects the fixture doesn't make - payments,
   caregivers, device codes, reviews, media, organizations): covered by their own suites.
+- 2026-11-03: **Fixed: read-aloud recording was impossible in every production deployment.** Both production header
+  sets (`frontend/nginx/security-headers.conf`, `frontend/vercel.json`) sent `Permissions-Policy: microphone=()`, which
+  makes the browser refuse `getUserMedia` before asking - the Studio's voice recorder (read-aloud for pre-readers)
+  only worked in local dev (no such header), and a teacher would have been told to "allow it in the browser's
+  settings", which can't override a server policy. Now `microphone=(self)`: the app's own pages may ask, nothing
+  embedded may. **Proven** in Chromium with a fake microphone: the old header -> `NotAllowedError`, the new -> records.
+  Security review notes (no change): sign-in and recovery are enumeration-safe (same answer, dummy password hash for
+  unknown emails - timing medians 64 vs 60 ms); CSP is strict (`script-src 'self'`, no inline, `frame-ancestors
+  'none'`), HSTS behind TLS; the refresh token in `localStorage` is a documented choice mitigated by rotation and reuse
+  detection with the access token in memory. **For the owner (S-ENUM-1)**: registration answers 409 "An account already
+  exists for this email address", so it reveals which emails have accounts (rate limited per network); closing it
+  means always answering "check your email" and emailing the existing owner - a change to the sign-up experience.
