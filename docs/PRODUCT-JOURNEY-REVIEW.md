@@ -64,7 +64,7 @@ partially implemented · **UI/BE** only one side exists · **PL** planned, not i
 | Caregiver invitation | V | M10b. |
 | Platform admin with authenticator and step-up | V | M9a/M8a. **Gap**: no in-product way to create a second platform admin except the provisioning path - confirm the operating procedure (NC). |
 | Organization owner / branch principals | V | Owner appoints branch principals (M12 B1). |
-| Onboarding guidance after sign-up | P | Add-child flow guides parents; principals get a setup path. **No first-run guide for teachers** (where to start in the Studio) and no checklist for a new school (NC, medium). |
+| Onboarding guidance after sign-up | P | Add-child flow guides parents; principals get a setup path. Teachers get five first steps on their home (2026-11-03); principals see what is still to set up per class (teacher, curriculum, join code) on the school overview. |
 | Duplicate / ambiguous accounts | P | One account per email; a parent who is also a teacher uses one account with one role - **a person with two roles needs two emails** (current role model, `PlatformRole` single value). Real for Cambodian schools where teachers are parents (NC, high for schools). |
 
 ### C. Parent and family
@@ -108,9 +108,9 @@ strongest part of the product. The weak point is not the engine but **the amount
 | Validation in plain words; translation status in bank and picker | V | |
 | Own content isolated per teacher; school sharing by copy | V | |
 | Content review / approval before children see teacher content | P | `ContentReview` exists (Y14) for platform review; **teacher content reaches only their own classes** - is a principal's review needed? (proposed **C-1**, low) |
-| Unsaved work | P | Guards for question, introduction, More settings, plan drafts. **Gap**: closing a Manage dialog (names) discards typed text silently (medium). |
-| Bulk import (questions from a spreadsheet) | NC | Teachers moving existing worksheets would need it; later phase. |
-| A teacher's first-run guide | NC | See B. |
+| Unsaved work | V | Guards for question, introduction, More settings, plan drafts, and closing a Manage dialog (names) asks first (2026-11-03). |
+| Bulk import (questions from a spreadsheet) | V | 2026-11-03: paste rows (or start from the downloadable template, EN+KM columns) into the bank or straight into an activity being written; every row a draft, all or none, with its publishing checks; five types (pictures, matching, sorting stay in the form). Not built: CSV/XLSX file upload, bulk publish (by design: activities publish with their questions). |
+| A teacher's first-run guide | V | 2026-11-03: five derived first steps on the teacher's home (school, class, curriculum, children, own content). |
 
 ### F. School and multi-branch
 
@@ -175,9 +175,9 @@ school access to a child needs the family's grant; school access never exposes f
 | Plan prices shown from plan records on the landing page | Prevents wrong prices | Families, schools | Essential (small) |
 | Weekly calm progress summary for parents (N-1) | Parents don't visit dashboards daily | Parents | Next release (decision) |
 | One person, two roles (parent + teacher) | Common in Cambodian schools | Teachers who are parents | Next release (design decision R-1) |
-| Teacher first-run guide; school setup checklist | "What do I do now?" after sign-up | Teachers, principals | Next release |
+| Teacher first-run guide; school setup checklist | "What do I do now?" after sign-up | Teachers, principals | **Built** 2026-11-03 (teacher first steps; principal per-class to-do) |
 | Support read-only view of a child's state | Answering parents' questions | Platform admin | Next release |
-| Question import from a spreadsheet | Bringing existing worksheets | Teachers, content team | Later |
+| Question import from a spreadsheet | Bringing existing worksheets | Teachers, content team | **Built** 2026-11-03 (paste + template; file upload later) |
 | School administration modules (records, attendance, assessment, fees, announcements) | Schools running operations | Schools | Later, after S1-S3 |
 | Low-connectivity tolerance (resume after drops is built; offline play is not) | Rural connections | Children | Later (measure first) |
 
