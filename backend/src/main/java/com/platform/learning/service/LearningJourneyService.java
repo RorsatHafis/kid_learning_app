@@ -337,6 +337,9 @@ public class LearningJourneyService {
 
         List<LearningPathItem> items = learningPathItemRepository.findByLearningPathIdOrderBySequenceOrderAsc(path.getId());
         List<ChapterSource> chapterSources = chapterSources(enrollment.getCurriculumVersionId());
+        // The path's versions, activities, skills and "play again" versions in a fixed number of queries, however much
+        // of it the child has done (ReadQueryScalingIntegrationTests).
+        lookups.preload(items.stream().map(LearningPathItem::getActivityVersionId).toList());
 
         List<JourneyStep> steps = LearningPathService.playOrder(items).stream()
                 .map(item -> step(item, lookups, chapterSources))
@@ -660,6 +663,21 @@ public class LearningJourneyService {
             activityIds.removeAll(activities.keySet());
             if (!activityIds.isEmpty()) {
                 activityRepository.findAllById(activityIds).forEach(a -> activities.put(a.getId(), a));
+            }
+            // What each finished book plays again (X24): every activity's current published version, in one query.
+            java.util.Set<UUID> unplayable = new java.util.HashSet<>(activities.keySet());
+            unplayable.removeAll(playable.keySet());
+            if (!unplayable.isEmpty()) {
+                Map<UUID, ActivityVersion> current = new HashMap<>();
+                for (ActivityVersion v : activityVersionRepository.findByActivityIdInAndStatus(unplayable,
+                        com.platform.common.entity.PublicationStatus.PUBLISHED)) {
+                    current.merge(v.getActivityId(), v, (a, b) -> a.getVersionNumber() >= b.getVersionNumber() ? a : b);
+                }
+                for (UUID id : unplayable) {
+                    Activity activity = activities.get(id);
+                    playable.put(id, activity.getStatus() != com.platform.common.entity.CatalogStatus.ACTIVE
+                            ? Optional.empty() : Optional.ofNullable(current.get(id)).map(ActivityVersion::getId));
+                }
             }
             java.util.Set<UUID> untagged = new java.util.HashSet<>(versions.keySet());
             untagged.removeAll(skillsByVersion.keySet());

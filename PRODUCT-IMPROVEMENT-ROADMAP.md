@@ -2435,3 +2435,10 @@ Dependencies:
   `shelfReplay.test.tsx` (revised, none, older server), full frontend Vitest 466/466, backend unit 203/203. **Browser
   verified** (Sophea, 390 px): "Play again" on Addition Recognition Practice -> "Playing it again" on its current
   version, no API error (it was a 404 before).
+- 2026-11-03: **Fixed a regression from the "play again" fix (CI red on `c2e6cb2`)**: `ReadQueryScalingIntegrationTests`
+  showed the enrollments read growing with the child's history (44 statements after 1 activity, 49 after 6) - the new
+  "play again" lookup ran once per finished activity. It now loads every activity's current published version in one
+  query inside the journey's batch preload, and the journey preloads its path before building steps. **Tested**: the
+  scaling test passes again; the **full backend integration suite 536/536** locally (3 proxy tests hit the local
+  Postgres connection limit in the full run - "too many clients" - and pass alone), backend unit 203/203. Lesson kept:
+  read-path changes get the full integration suite before a push, not only the related suites.
