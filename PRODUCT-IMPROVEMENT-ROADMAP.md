@@ -2479,3 +2479,17 @@ Dependencies:
   still works); its Flyway note now says the latest version (V85) instead of V62. **Tested**:
   `RequestSizeLimitIntegrationTests` 2/2 and `ConfigurationContractTests` 61/61 with the setting in place. CI: last
   full green **`6f12c98`** (backend, frontend, deployment, e2e) - confirms `c910f3a`'s scaling fix and F-IDEM-1.
+- 2026-11-03: **The answer-feedback restructure above is reverted (finding A11Y-1 for the owner).** The protected
+  `m2.test.tsx` asserts the Finish button sits *inside* the feedback's status region
+  (`within(verdict).getByRole("button", { name: /Finish/ })`), so moving it out is a deliberate behaviour change that
+  needs the owner's approval to update that test - not a change to make by editing it. `AnswerVerdict.tsx` is back to
+  `6f12c98`. **A11Y-1 (open, Low)**: the live region announces its own button label after the explanation ("...Let's
+  keep going! Finish Why..."); the fix is ready (verdict, answer and why in the region; the button after it, focus
+  unchanged) once `m2.test.tsx` may follow it. **Tested**: marketing, child and i18n Vitest 205/205.
+- 2026-11-03: **F1d - the landing page says what schools and parents now get.** It said less than the product does:
+  schools gain two capabilities - the questions a class finds hardest on a skill (what to teach again, beside who needs
+  practice) and many questions written at once (paste from a spreadsheet, English and Khmer, check then publish) - and
+  the parents section says that after an activity they see the questions their child missed, with the right answer
+  and, where the author wrote one, why. Each line describes shipped behaviour only. Khmer drafted (PD-14 review).
+  **Tested**: marketing Vitest. **Browser verified**: 360 px in English and Khmer - 8 school items, no overflow, axe
+  clean (serious/critical).
