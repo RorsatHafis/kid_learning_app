@@ -210,6 +210,9 @@ timetables and rooms.
 | SB1-SB9 | Commercial policies | see `SUBSCRIPTIONS.md` 10 | As recommended there | Renewals, trials, promos, prices | Plan tooling |
 | **New: N-1** | A calm weekly email summary to parents | none / weekly opt-in / weekly default | Weekly, **opt-in**, evidence-only, no "you'll lose" wording | That email | - |
 | **New: R-1** | One account with two roles | two emails (today) / roles per account | Roles per account (design work: authorization by relationship already) | Teacher-parents' convenience | - |
+| R-1a..R-1d (2026-11-03) | How R-1 is built | see `IDENTITY-PERMISSIONS.md` 4 | B: roles per account, one acting role per session; a principal may also hold TEACHER (R-1b, owner's call); ADMIN never combined (R-1c); a removed TEACHER role leaves authored content with its author (R-1d) | Building R-1 | Everything else |
+| L-3 (2026-11-03) | Landing page FAQ and editable lists | words only (today) / items admins add, remove, reorder | An FAQ section and item lists in the existing site-copy model, EN/KM | Those sections | Editing today's words |
+| SUB-1 (2026-11-03) | Landing page subjects | fixed three with hard-coded "ready" (today) / from published curricula | From published curricula, words still editable (close to P-1) | That section | - |
 | **New: P-1** | Landing prices from plan records | copy (today) / from plan records | From plan records, copy for the words around them | Small change | - |
 
 ## 6. Roadmap (phases; no dates or costs invented)
