@@ -2362,3 +2362,8 @@ Dependencies:
   paste retried; an activity gets the row once), import suites 5/5, `questionImport.test.tsx` (same key on an unchanged
   retry, a new key for changed rows), full frontend Vitest 464/464, backend unit 203/203. **Browser verified**
   (regression, teacher 360 px): paste -> add -> publish the ready one, no API error.
+- 2026-11-03: **Correction to the R-1 review**: finding ID-2 ("no in-product way to add a second platform admin") was
+  wrong and is withdrawn - administrators create staff accounts, administrators included, in Admin -> Staff
+  (`POST /admin/staff`, authenticator step-up, audited); the first administrator comes from the startup bootstrap.
+  `IDENTITY-PERMISSIONS.md` (how each role is made, the rules for R-1 option B) and the journey review's
+  registration row are corrected. No code change.

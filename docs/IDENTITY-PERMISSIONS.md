@@ -10,8 +10,11 @@ login/refresh token issue). The behaviours are covered by the existing authoriza
 
 - **One account, one platform role**: `accounts.platform_role` is PARENT, TEACHER, PRINCIPAL or ADMIN, set when the
   account is made and never changed. It is in the access token and decides which workspace the app opens.
-- **How each role is made**: PARENT and PRINCIPAL by registration (a principal waits for approval); TEACHER only by a
-  school's invitation (a new email becomes a TEACHER account); ADMIN only by provisioning (no in-product path).
+- **How each role is made**: PARENT and PRINCIPAL by registration (a principal waits for approval); TEACHER by a
+  school's invitation (a new email becomes a TEACHER account); TEACHER, PRINCIPAL or ADMIN by an administrator in
+  Admin -> Staff (`POST /admin/staff`, authenticator step-up); the very first ADMIN by the startup bootstrap
+  (`platform.bootstrap-admin`, once, when none exists). *(Corrected 2026-11-03: the first version said ADMIN came only
+  from provisioning.)*
 - **Children have no accounts**: a child is reached through a family membership or a caregiver grant (a child-device
   session is scoped to one child).
 - **The role is a gate, never the permission**: after the role check, every resource is checked against a relationship.
@@ -54,8 +57,9 @@ The pattern: everything that is a **relationship** already composes on one accou
 
 **Recommendation: B**, because authorization is already relationship-based: a role becomes "may act as", and every
 relationship check (family, caregiver, school staff, class assignment, ownership) stays exactly as it is. Rules the
-design must keep: a PARENT role never comes from a school (only registration); TEACHER only from a school's invitation;
-PRINCIPAL keeps approval; ADMIN stays provisioning-only and never combines with another role; switching role never
+design must keep: a PARENT role never comes from a school (only registration); TEACHER from a school's invitation or an
+administrator; PRINCIPAL keeps approval; ADMIN only from another administrator (or the first-run bootstrap) and never
+combines with another role; switching role never
 needs the password again but a sensitive admin action still needs step-up; revoking a school's last staff membership
 does not remove the family role.
 
@@ -69,5 +73,5 @@ leave).
 | # | Finding | Severity | Proposed |
 |---|---|---|---|
 | ID-1 | A parent's email can't be invited as a teacher; the message says only "use a different address" | Medium (schools) | R-1 decision. The message stays generic on purpose: saying "a family account" would tell a principal what kind of account an email holds (privacy) |
-| ID-2 | No in-product way to add a second platform admin (provisioning only) | Medium (operations) | Record the operating procedure in the runbook; an in-product path would be an owner decision |
+| ID-2 | ~~No in-product way to add a second platform admin~~ - **wrong, withdrawn**: Admin -> Staff creates staff accounts including administrators (step-up, audited); DEPLOYMENT.md already says to add a second administrator there before turning content review on | - | Nothing to do |
 | ID-3 | Role checks are written per service (`getPlatformRole() == ...`, ~90 sites) | Low now; cost for R-1 | If B is chosen, one `Actor` helper first, then move gates to it |

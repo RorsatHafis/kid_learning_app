@@ -69,7 +69,7 @@ partially implemented · **UI/BE** only one side exists · **PL** planned, not i
 | Phone sign-in / reset | EX | Built; only a local test sender (D-04). |
 | Teacher invitation and acceptance | V | `SchoolStaff`. |
 | Caregiver invitation | V | M10b. |
-| Platform admin with authenticator and step-up | V | M9a/M8a. **Gap**: no in-product way to create a second platform admin except the provisioning path - confirm the operating procedure (NC). |
+| Platform admin with authenticator and step-up | V | M9a/M8a. Second and further administrators: Admin -> Staff (step-up, audited); the first by the startup bootstrap. *(The earlier "no in-product way" note was wrong - corrected 2026-11-03.)* |
 | Organization owner / branch principals | V | Owner appoints branch principals (M12 B1). |
 | Onboarding guidance after sign-up | P | Add-child flow guides parents; principals get a setup path. Teachers get five first steps on their home (2026-11-03); principals see what is still to set up per class (teacher, curriculum, join code) on the school overview. |
 | Duplicate / ambiguous accounts | P | One account per email; a parent who is also a teacher uses one account with one role - **a person with two roles needs two emails** (current role model, `PlatformRole` single value). Real for Cambodian schools where teachers are parents (NC, high for schools). |
