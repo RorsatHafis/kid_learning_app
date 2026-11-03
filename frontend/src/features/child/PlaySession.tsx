@@ -26,6 +26,8 @@ import { breakDue, readSitting, sittingMinutes, useBreakReminder } from "./break
 import { afterActivity, type GardenNews } from "./garden";
 import { AnswerVerdict } from "./AnswerVerdict";
 import { LearnCard, LookAgain } from "./Learn";
+import { TrickyOnes } from "./TrickyOnes";
+import { trickyOnes, type Tricky } from "./tricky";
 import { gardenMessages } from "./garden.messages";
 import { Plant } from "@/features/world/Plant";
 import coverArt from "@/assets/world/river-path.webp";
@@ -76,6 +78,8 @@ type Phase =
       next: JourneyStep | null | undefined;
       /** The chapter this activity finished, when it was the chapter's last step. */
       finishedChapter: Chapter | null;
+      /** The questions answered wrong, to look at again: what was asked, the answer, the author's "why". */
+      tricky?: Tricky[];
       /** The chapter the next step is in. */
       nextChapter: Chapter | null;
       /** The finished step, and its chapter's steps as the server now has them (for the river). */
@@ -178,7 +182,8 @@ export function PlaySession() {
   );
 
   const finishAttempt = useCallback(
-    async (attemptId: string, title: string, itemId: string) => {
+    async (attemptId: string, activity: ActivityVersionDetail, itemId: string) => {
+      const title = activity.title;
       setPhase({ kind: "completing" });
       try {
         await activityAttemptApi.complete(attemptId);
@@ -201,6 +206,7 @@ export function PlaySession() {
         total: answers.length,
         itemId,
         garden: afterActivity(skillsBefore.current, skillsAfter),
+        tricky: trickyOnes(answers, activity),
         ...after,
       });
     },
@@ -243,7 +249,7 @@ export function PlaySession() {
         if (resumeIndex === -1) {
           // Every question already answered (the child left on the last feedback
           // screen) — the attempt only needs completing.
-          await finishAttempt(attempt.id, activity.title, item.id);
+          await finishAttempt(attempt.id, activity, item.id);
           return;
         }
         if (resumeIndex === 0) {
@@ -367,7 +373,7 @@ export function PlaySession() {
               setPhase({ ...phase, index: nextIndex, result: null, startedAt: Date.now() });
               return;
             }
-            void finishAttempt(phase.attemptId, phase.activity.title, phase.itemId);
+            void finishAttempt(phase.attemptId, phase.activity, phase.itemId);
           }}
         />,
         true,
@@ -988,6 +994,7 @@ function Completed({
             {m.gotRight(correct, total)}
           </p>
         )}
+        {phase.tricky && phase.tricky.length > 0 && <TrickyOnes tricky={phase.tricky} />}
         {phase.garden && <GardenNewsPanel news={phase.garden} />}
         {chapterSteps.length > 0 && (
           // The child's stretch of the path: the book just finished takes the light where it sits.

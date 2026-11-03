@@ -2170,3 +2170,13 @@ Dependencies:
   lists what is still to set up. (5) **Support read-only view** reclassified: an administrator reading a child's
   learning is a new privacy boundary - needs the owner's decision (proposed **A-1**: allowed only with the family's
   consent or a support request, audited) before building.
+- 2026-11-03: **Learning from mistakes after an activity: "Look again at the tricky ones".** The end of an activity
+  said only "You got 1 of 3 right"; a child had no way back to what they missed. Now, when something was answered
+  wrong, a closed panel offers each such question in the order asked - what was asked, the answer and, where the
+  author wrote one, why - in the child's language with its known language mark (V83). It changes nothing: no second
+  try, no new score or evidence (D-20 stays the owner's), and it never stands between the child and "Keep going".
+  `trickyOnes` (pure, `tricky.ts`) and `TrickyOnes` - `tricky.test.tsx` 2/2 (only wrong answers, order, answer, why,
+  language; closed until opened) and the child suites 194/194. **Browser verified** at 390 px with the seed child:
+  two wrong answers -> "Look again at the 2 tricky ones", closed, then "3 + 4 = ? The answer: 7"; no overflow, axe
+  clean, no API error. Seen on the way: the seed questions have no explanations, so children get only the answer -
+  a content gap (D-19), recorded.
