@@ -2156,3 +2156,17 @@ Dependencies:
   Studio; (3) school setup checklist for a new principal; (4) park/remove the dormant streak backend (owner's call);
   (5) support read-only view of a child's state for platform admins. Content (D-19) and launch operations remain the
   owner's critical path.
+- 2026-11-03: **Two tasks from the journey review's next five, built.** (1') A Manage dialog (a subject's, skill's,
+  chapter's, curriculum's or lesson's names, in either language) no longer discards typed names: closing it - the
+  close button, Escape or the backdrop - asks first, and links and reload ask too (`useUnsavedGuard`); after a save
+  it closes without asking. `manageUnsaved.test.tsx` 2/2 with the lifecycle and catalog tests (8). **Browser
+  verified** at 768 px: close and Escape both asked; Stay kept the dialog and the typed name. (2) **A teacher's first
+  steps** on their home (`GettingStarted`): join your school, get a class, give it a curriculum, bring children in
+  (class code), write an activity of your own - each read from what is true now (memberships, the staff overview,
+  the teacher's own lessons; nothing stored), the next one highlighted with where to do it, gone once all are done.
+  `gettingStarted.test.tsx` 2/2. **Browser verified** at 360 px: the seed teacher (all five done, checked by API) sees
+  no card; with the lesson count stubbed to 0 the card shows 4 of 5, "Write an activity of your own" current with
+  "Open the Studio"; no overflow, axe clean. (3) **Not needed as a new task**: a principal's school overview already
+  lists what is still to set up. (5) **Support read-only view** reclassified: an administrator reading a child's
+  learning is a new privacy boundary - needs the owner's decision (proposed **A-1**: allowed only with the family's
+  consent or a support request, audited) before building.

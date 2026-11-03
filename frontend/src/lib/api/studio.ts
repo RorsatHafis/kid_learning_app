@@ -658,6 +658,8 @@ export const studioApi = {
   previewJourney: (versionId: string, objectiveIds: string[]) =>
     apiClient.post<JourneyMap>(`${S}/curriculum-versions/${versionId}/journey/preview`, { objectiveIds }),
 
+  /** How many lessons the caller has of their own, in every subject (a teacher's first steps). */
+  ownLessonsTotal: () => apiClient.get<Page<LessonSummary>>(`${S}/lessons?page=0&size=1`).then((page) => page.total),
   /** One page of the caller's lessons in a subject; `text` matches lesson and activity titles. */
   lessons: (subjectId: string, query: { text?: string; archived?: boolean; page?: number; size?: number } = {}) => {
     const params = new URLSearchParams({ subjectId });

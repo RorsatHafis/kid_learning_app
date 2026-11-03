@@ -1,0 +1,42 @@
+import { defineMessages } from "@/i18n/catalog";
+
+/** A teacher's first steps on their home (product journey review, 2026-11-01: "what do I do now?"). */
+export const gettingStartedMessages = defineMessages(
+  "features/teacher/gettingStarted",
+  {
+    title: "Getting started",
+    progress: (done: number, total: number) => `${done} of ${total} done. Each step shows how; this goes away once all are done.`,
+    school: "Join your school",
+    schoolLead: "Your principal invites you by email. Accept the invitation above (or from the email) to join.",
+    klass: "Get a class",
+    classLead: "Your principal assigns teachers to classes. Once you have one, it shows below.",
+    curriculum: "Give your class a curriculum",
+    curriculumLead: "Children in the class learn from the curricula you choose for it. Open the class and add one.",
+    children: "Bring children into your class",
+    childrenLead: "Families join with the class code. Open the class to see its code and share it with families.",
+    content: "Write an activity of your own",
+    contentLead: "In the Studio you write questions and activities in English and Khmer, and see them as a child will.",
+    openClass: "Open the class",
+    openStudio: "Open the Studio",
+    doneLabel: "done",
+    todoLabel: "to do",
+  },
+  {
+    title: "ការចាប់ផ្ដើម",
+    progress: (done: number, total: number) => `បានធ្វើ ${done} ក្នុងចំណោម ${total}។ ជំហាននីមួយៗបង្ហាញពីរបៀបធ្វើ ហើយផ្នែកនេះនឹងបាត់ ពេលធ្វើរួចទាំងអស់។`,
+    school: "ចូលរួមជាមួយសាលារបស់អ្នក",
+    schoolLead: "នាយកសាលារបស់អ្នកអញ្ជើញអ្នកតាមអ៊ីមែល។ ទទួលយកការអញ្ជើញខាងលើ (ឬពីអ៊ីមែល) ដើម្បីចូលរួម។",
+    klass: "ទទួលបានថ្នាក់មួយ",
+    classLead: "នាយកសាលាចាត់គ្រូទៅថ្នាក់។ ពេលអ្នកមានថ្នាក់ វានឹងបង្ហាញខាងក្រោម។",
+    curriculum: "ជ្រើសកម្មវិធីសិក្សាសម្រាប់ថ្នាក់របស់អ្នក",
+    curriculumLead: "កុមារក្នុងថ្នាក់រៀនពីកម្មវិធីសិក្សាដែលអ្នកជ្រើសសម្រាប់ថ្នាក់នោះ។ បើកថ្នាក់ ហើយបន្ថែមមួយ។",
+    children: "នាំកុមារចូលថ្នាក់របស់អ្នក",
+    childrenLead: "គ្រួសារចូលរួមដោយប្រើលេខកូដថ្នាក់។ បើកថ្នាក់ដើម្បីមើលលេខកូដ ហើយចែករំលែកវាជាមួយគ្រួសារ។",
+    content: "សរសេរសកម្មភាពផ្ទាល់ខ្លួន",
+    contentLead: "នៅក្នុងស្ទូឌីយោ អ្នកសរសេរសំណួរ និងសកម្មភាពជាភាសាអង់គ្លេស និងខ្មែរ ហើយមើលវាដូចកុមារនឹងឃើញ។",
+    openClass: "បើកថ្នាក់",
+    openStudio: "បើកស្ទូឌីយោ",
+    doneLabel: "រួចរាល់",
+    todoLabel: "ត្រូវធ្វើ",
+  },
+);

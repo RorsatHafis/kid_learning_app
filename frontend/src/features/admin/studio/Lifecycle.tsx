@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Archive, Pencil, RotateCcw } from "lucide-react";
 import { studioApi, type KhmerName, type ManagedKind } from "@/lib/api/studio";
 import { useMessages } from "@/i18n/catalog";
@@ -10,6 +10,8 @@ import { FormField } from "@/features/auth/FormField";
 import { cn } from "@/lib/utils/cn";
 import { TextAreaField } from "./shared";
 import { CatalogNameFields } from "./CatalogNameFields";
+import { useUnsavedGuard } from "./unsavedGuard";
+import { formMessages } from "./form.messages";
 import { khmerNameBody } from "./bilingual";
 
 /** The button's wording: "Manage…", "Manage subject…" (on the subject's own page) or "Restore…" (in an archived list). */
@@ -47,8 +49,16 @@ export function ManageButton({
   wording?: ManageLabel;
 }) {
   const [open, setOpen] = useState(false);
+  // What the dialog holds and hasn't saved: closing it asks first, so typed names (in either language) aren't lost.
+  const [dirty, setDirty] = useState(false);
+  const leaveUnsaved = useMessages(formMessages).leaveUnsaved;
   const all = useMessages(studioMessages);
   const m = all.lifecycle;
+  const close = () => {
+    if (dirty && !window.confirm(leaveUnsaved)) return;
+    setDirty(false);
+    setOpen(false);
+  };
   const text = wording === "restore" ? m.restoreMenu : wording === "manageSubject" ? all.layout.manageSubject : m.manage;
   const action = wording === "restore" ? m.restoreTitle[kind] : m.manageTitle[kind];
   return (
@@ -61,7 +71,7 @@ export function ManageButton({
       >
         <Pencil size={14} aria-hidden /> {text}
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={m.manageTitle[kind]} description={name}>
+      <Dialog open={open} onClose={close} title={m.manageTitle[kind]} description={name}>
         <LifecyclePanel
           kind={kind}
           id={id}
@@ -71,9 +81,13 @@ export function ManageButton({
           archived={archived}
           renamable={renamable}
           khmer={khmer}
+          onDirtyChange={setDirty}
           onChanged={(change) => {
             onChanged(change);
-            if (change !== "updated") setOpen(false);
+            if (change !== "updated") {
+              setDirty(false);
+              setOpen(false);
+            }
           }}
         />
       </Dialog>
@@ -90,6 +104,7 @@ function LifecyclePanel({
   archived,
   renamable,
   khmer,
+  onDirtyChange,
   onChanged,
 }: {
   kind: ManagedKind;
@@ -100,23 +115,33 @@ function LifecyclePanel({
   archived: boolean;
   renamable: boolean;
   khmer?: KhmerName;
+  onDirtyChange?: (dirty: boolean) => void;
   onChanged: (change: "updated" | "archived" | "restored") => void;
 }) {
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription ?? "");
   const [nameKm, setNameKm] = useState(khmer?.name ?? "");
   const [descriptionKm, setDescriptionKm] = useState(khmer?.description ?? "");
+  // Saved: what the dialog opened with, then each save (a save keeps the dialog open on what was saved).
+  const onScreen = JSON.stringify([name.trim(), description.trim(), nameKm.trim(), descriptionKm.trim()]);
+  const [savedScreen, setSavedScreen] = useState(onScreen);
+  const dirty = renamable && kind !== "questions" && onScreen !== savedScreen;
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  useUnsavedGuard(dirty);
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const all = useMessages(studioMessages);
   const m = all.lifecycle;
 
-  async function run(action: () => Promise<unknown>, done: string, change: "updated" | "archived" | "restored") {
+  async function run(action: () => Promise<unknown>, done: string, change: "updated" | "archived" | "restored", onDone?: () => void) {
     setBusy(true);
     setMessage(null);
     try {
       await action();
+      onDone?.();
       setMessage({ ok: true, text: done });
       onChanged(change);
     } catch (err) {
@@ -139,6 +164,7 @@ function LifecyclePanel({
         }),
       m.saved,
       "updated",
+      () => setSavedScreen(onScreen),
     );
   }
 

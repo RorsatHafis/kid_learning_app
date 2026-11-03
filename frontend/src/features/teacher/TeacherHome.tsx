@@ -5,6 +5,7 @@ import { ClassSummary } from "@/features/school/ClassSummary";
 import { SchoolInvitations } from "./SchoolInvitations";
 import { YourSchools } from "./YourSchools";
 import { TeachingTools } from "./TeachingTools";
+import { GettingStarted } from "./GettingStarted";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useMessages } from "@/i18n/catalog";
 import { staffMessages } from "@/features/school/staff.messages";
@@ -42,6 +43,7 @@ export function TeacherHome() {
         <p className="mt-1.5 max-w-2xl text-[0.9375rem] text-ink-soft">{m.lead}</p>
       </div>
       <SchoolInvitations onAccepted={refetch} />
+      <GettingStarted classes={data?.classes} />
 
       {/* Y39: the classes are the work; what a teacher keeps and where they teach sit beside them. */}
       <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[minmax(0,1fr)_21rem]">
