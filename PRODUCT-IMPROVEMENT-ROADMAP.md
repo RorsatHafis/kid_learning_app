@@ -2253,3 +2253,9 @@ Dependencies:
   deterministic with 2+ prerequisites, medium), AE-2 (prerequisite's own mastery ignored), AE-3 (constants), AE-4 (no
   challenge without difficulty), AE-5 (by design). INSPECTED only; no code changed. Next pass: Smart Review, path
   planner, evidence standard, learning days.
+- 2026-11-03: **AE-1 fixed** - a skill's prerequisites now come back in the order they were recorded (then by id):
+  `SkillPrerequisiteRepository.findBySkillId` gains `ORDER BY created_at, id` (same method, so every caller and mock is
+  unchanged), making reinforcement's "first prerequisite" deterministic as `AdaptiveEngine` documents; the Studio's
+  prerequisite lists get the same stable order. No schema change. **Tested**: `PrerequisiteOrderIntegrationTests` 1/1
+  (stored order differs from recorded order; three reads agree), Studio/cold-start/golden-journey integration 14/14,
+  backend unit suite 203/203.

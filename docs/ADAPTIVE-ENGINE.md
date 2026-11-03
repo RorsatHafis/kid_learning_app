@@ -65,7 +65,7 @@ and the parent sees why.
 
 | # | Finding | Effect | Severity | Proposed |
 |---|---|---|---|---|
-| AE-1 | "First prerequisite" comes from `SkillPrerequisiteRepository.findBySkillId` with **no ORDER BY** | With 2+ prerequisites, reinforcement's target can differ between runs - not deterministic as the class promises | Medium (learning integrity) | Order by a stable column (or choose the weakest prerequisite by the child's evidence - a product decision) |
+| AE-1 | "First prerequisite" comes from `SkillPrerequisiteRepository.findBySkillId` with **no ORDER BY** | With 2+ prerequisites, reinforcement's target can differ between runs - not deterministic as the class promises | Medium (learning integrity) | **Fixed 2026-11-03**: ordered by when recorded, then id (`SkillPrerequisiteRepository.findBySkillId`, `PrerequisiteOrderIntegrationTests`). Choosing the weakest prerequisite instead stays a product decision (AE-2) |
 | AE-2 | Reinforcement targets the prerequisite without looking at the child's state on it | A child strong on the prerequisite is still sent there | Low-medium | Decision: skip prerequisites already mastered with evidence |
 | AE-3 | Thresholds 0.4/0.8 and gates 2/3 are code constants | Operators can't tune per age band; documented in the class | Low | Promote to configuration only when a real need exists |
 | AE-4 | Challenge needs the completed activity's difficulty | Activities without difficulty never lead to a challenge | Low | Authoring: difficulty is optional - a validation warning would surface it |
