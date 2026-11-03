@@ -45,6 +45,10 @@ see [`ADAPTIVE-ENGINE.md`](ADAPTIVE-ENGINE.md) (2026-11-03, INSPECTED).
 real situation, options A/B/C with a recommendation, decisions R-1a..R-1d, findings ID-1..ID-3): see
 [`IDENTITY-PERMISSIONS.md`](IDENTITY-PERMISSIONS.md) (2026-11-03, INSPECTED).
 
+**Security, privacy and reliability** (threat model by asset and threat with each control's evidence, failure modes,
+measured performance, open items S-ENUM-1, TD-15, SR-*): see [`SECURITY-AND-RELIABILITY.md`](SECURITY-AND-RELIABILITY.md)
+(2026-11-03, TESTED/RUNTIME where stated).
+
 ## 2. Coverage matrix by journey
 
 Status key: **V** implemented and verified (tests and/or browser) · **PV** implemented, partially verified · **P**

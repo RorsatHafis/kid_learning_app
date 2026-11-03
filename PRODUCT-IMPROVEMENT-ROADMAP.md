@@ -2455,3 +2455,10 @@ Dependencies:
   tests again hit the local connection limit and pass alone), full frontend 467/467 (`media.test.tsx` times out under
   full load, passes alone), backend unit 203/203. **Browser verified**: a fresh sample parent adds a child; the request
   carries the key; replaying it returns the same child; the family has one.
+- 2026-11-03: **Checkpoint and review: security, privacy and reliability.** `docs/SECURITY-AND-RELIABILITY.md`
+  (linked from the journey review): assets and who must not reach them; every control by threat (identity and
+  sessions, authorization and privacy, input/resources/web surface) with its evidence and level - the tests that
+  assert it, or the runtime probe, or inspection only; failure modes (double submit, races, half-way failures, lost
+  refresh responses, revisions under a child, growing history, a slow server) with evidence; measured performance; open
+  items S-ENUM-1 (owner), TD-15 (per-instance rate limits), SR-RT, SR-DOCS, SR-KEY. The canonical progress record gets
+  a dated 2026-11-03 state and next work. No code change.

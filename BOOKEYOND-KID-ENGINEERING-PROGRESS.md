@@ -569,6 +569,21 @@ reuses the container name of another local project.
 
 # CURRENT VERIFIED PROJECT STATE
 
+> **Update 2026-11-03.** Current state still lives in `PRODUCT-IMPROVEMENT-ROADMAP.md` (dated log with levels). Since
+> 2026-10-27, through commit `6f12c98`: learning-from-mistakes for child, parent and teacher; content production
+> tooling (paste questions from a spreadsheet or CSV into the bank or an activity, template, publish the ready ones,
+> "still needs" filter, readiness gaps linked to it); first steps for teachers and new schools; page, tab and menu
+> transitions; the product review's adaptive-engine trace (`docs/ADAPTIVE-ENGINE.md`, AE-1 and PP-1 fixed), identity
+> and permissions (`docs/IDENTITY-PERMISSIONS.md`, R-1 options) and security/reliability (`docs/SECURITY-AND-
+> RELIABILITY.md`). Defects found by probing and fixed with regression tests: read-aloud recording blocked by the
+> production Permissions-Policy; no backend body-size cap (hosted path); "play again" failing after a revision (and
+> the N+1 it briefly caused, caught by CI on `c2e6cb2`, fixed `c910f3a`); admin readiness and content-gap counts
+> ignoring content scope; a pasted sheet or a child added twice on a lost response (idempotency keys). New permanent
+> coverage: `AuthorizationSweepIntegrationTests` (every endpoint refuses another account's resources). **Verified
+> 2026-11-03, locally**: backend `-Pintegration` 539/539 (3 proxy tests pass alone - local connection limit), unit
+> 203/203, Vitest 467/467, e2e golden journeys 8 passed / 1 skipped (admin credentials). CI: last full green
+> `5021eae`; `c2e6cb2` red (the N+1, fixed); `6f12c98` was running at writing. Flyway V85.
+>
 > **Update 2026-10-27.** Since the September baseline below, work has run under the post-testing improvement program;
 > its record (status table, decisions D-01..D-19, a dated log with what was verified at which level) is
 > `PRODUCT-IMPROVEMENT-ROADMAP.md`, and that is where current state lives. In short: M2-M10 done (landing and public
@@ -638,8 +653,12 @@ the open product decisions PD-01 to PD-10.
 
 # IMMEDIATE NEXT WORK
 
-(Updated 2026-10-27 - details and verification levels in `PRODUCT-IMPROVEMENT-ROADMAP.md`.)
+(Updated 2026-11-03 - details and verification levels in `PRODUCT-IMPROVEMENT-ROADMAP.md`.)
 
+0. **New owner decisions (2026-11-03)**: S-ENUM-1 (registration reveals existing accounts), R-1a..R-1d (one account,
+   several roles), L-3 (landing FAQ and editable lists), SUB-1 (landing subjects from published curricula), AE-2 and
+   SR-1 (adaptive engine), and still P-1, A-1, N-1, D-20, the dormant streak backend. M11 waits on D-06/D-12, M12 P2
+   on S1.
 1. **Owner decisions**: D-18 (bring a skill back on another day so it can read "secure"), D-19 (who authors the real
    curriculum, languages, review - the shipped content is the V29 seed of 12 bare sums), M12's school-record and
    consent model (Battle 4C), D-06/D-12 (storage provider and an S3 client) for M11; Khmer review of Claude-drafted
