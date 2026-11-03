@@ -2376,3 +2376,12 @@ Dependencies:
   link, 42 x 17 px); it doesn't reproduce locally (axe at 0/30/80/600 ms after navigating, scrolled or not). Re-run
   requested to tell flake from regression; the links now meet the size on their own either way. **Tested**: parent
   Vitest 72/72. **Browser verified** (390 px): breadcrumb links 24 px, axe clean on the skill and child pages.
+- 2026-11-03: **A new page opens at its top** - root cause of the e2e failure on `f5ecd7a` (reproduced locally with the
+  e2e suite against the isolated stack): the router kept the old page's scroll, so the parent's skill page, opened
+  from a link far down the progress table, opened half-way down with its breadcrumb under the sticky header (axe:
+  target "partially obscured"). `Arrival`'s outermost boundary now resets the scroll on a new page reached by a link -
+  not on Back/Forward (the browser restores the place), not for a `#section` link, not for a tab switch inside a
+  scope. **Tested**: `arrival.test.tsx` 3/3 (top on a new page; not for a tab, a #section or Back), full frontend
+  Vitest 465/465 (`journey.test.tsx` once flaky under full load, passes alone and on re-run); **e2e locally**
+  (isolated stack, both projects): golden journeys 8 passed / 1 skipped (admin credentials), whole suite 20 passed,
+  23 skipped, 1 failed only on local data (`language.spec` expects the CI seed's "Maths - Junior" curriculum).

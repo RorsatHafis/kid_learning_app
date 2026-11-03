@@ -91,6 +91,26 @@ describe("Arrival", () => {
     expect(moved).toEqual(["outer"]);
   });
 
+  it("opens a new page at its top - but not going back, not for a #section, not for a tab switch", () => {
+    const scrolled = vi.fn();
+    Object.defineProperty(document.documentElement, "scrollTop", { configurable: true, get: () => 0, set: scrolled });
+    renderApp("/w/classes/1");
+    act(() => go("/w/classes/2"));
+    expect(scrolled).toHaveBeenCalledTimes(1);
+
+    scrolled.mockClear();
+    act(() => go("/w/studio/s/questions"));
+    expect(scrolled).toHaveBeenCalled();
+    scrolled.mockClear();
+    act(() => go("/w/studio/s/activities"));
+    expect(scrolled, "a tab switch keeps the place").not.toHaveBeenCalled();
+
+    act(() => go("/w/classes/3#changes"));
+    expect(scrolled, "a link to a section").not.toHaveBeenCalled();
+    act(() => (go as unknown as (delta: number) => void)(-1));
+    expect(scrolled, "Back returns where the reader was").not.toHaveBeenCalled();
+  });
+
   it("never moves for someone who asked for reduced motion", () => {
     reduce = true;
     renderApp("/w/classes/1");
