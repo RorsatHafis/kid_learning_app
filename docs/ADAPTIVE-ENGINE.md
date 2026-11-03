@@ -4,7 +4,7 @@ Part of the product review (`PRODUCT-JOURNEY-REVIEW.md`). **Verification level: 
 `MasteryEngine`, `AdaptiveEngine`, `PostCompletionService` and `application.yaml` on 2026-11-03. The worked examples
 are computed from the code's formula with the configured defaults; they were **not** run against the server for this
 document (the behaviours are covered by the Battle 2D/5A-5D integration tests, which this pass did not re-read).
-`EvidenceStandard` and `LearningDays` traced in 4a, Smart Review in 4b. Not traced yet: `CurriculumPathPlanner` (next
+`EvidenceStandard`, `LearningDays` and `CurriculumPathPlanner` traced in 4a, Smart Review in 4b (pass 2 complete; next
 pass).
 
 ## 1. Inputs and who controls them
@@ -88,6 +88,11 @@ skill from the evidence history (also "as it stood at" a moment, for standing hi
 class. Example: three right answers at 23:50 and 00:10 count as **two** days in Phnom Penh time - the rule is the
 calendar day, not 24 hours apart (as decided in D-17; noted, not a finding).
 
+**The starting path** (`CurriculumPathPlanner`, traced 2026-11-03): for each objective in the curriculum version's
+order, for each of the objective's skills, each published activity practising that skill (its own tags, PD-08) that
+the path's scope admits (N7) - once per activity. Enrolment seeds the path from it and the journey builder shows the
+same plan, so an author sees what a child gets. Adaptive and review steps are appended to this path later (3, 4b).
+
 ## 4b. Smart Review (`SmartReviewService`, `ReviewSchedule`, traced 2026-11-03)
 
 After every completion, each of the activity's skills is evaluated:
@@ -118,6 +123,7 @@ activities lift mastery to 0.5 or more, the next evaluation retires the item.
 | AE-5 | One governing skill per completion (the weakest) | A multi-skill activity adapts on its weakest skill only; others continue via Smart Review | By design | Keep; state it in parent "why" (already grounded) |
 
 | SR-1 | Smart Review is **remediation**, not retention: an item lives only while mastery < 0.5, so the growing intervals (3, 8, 22 days) apply only to a skill that stays weak; a skill that becomes secure is never brought back | Retention of learned skills is not scheduled | By design today | That is decision **D-18** (bring a skill back on another day) - unchanged, owner's call |
+| PP-1 | An objective's skills come from `LearningObjectiveSkillRepository.findByLearningObjectiveId` with **no ORDER BY** | The order of steps *within* an objective (objective order is fixed) is whatever the database returns - stable in practice, not guaranteed; the builder and an enrolment could in principle differ | Low-medium (same class as AE-1) | Order by when the skill was linked, then id - as AE-1; check unit mocks first (`MasteryEngine` uses the same method) |
 | SR-2 | The review threshold (0.5) differs from reinforcement's (0.4) | Between 0.4 and 0.5 a child gets a review but no reinforcement | Low, consistent | Keep; document for authors and support |
 
 Nothing here was changed in code (except AE-1, fixed): these are recorded for the owner's prioritisation (no architecture change during
