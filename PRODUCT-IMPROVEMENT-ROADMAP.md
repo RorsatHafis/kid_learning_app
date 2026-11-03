@@ -2302,3 +2302,13 @@ Dependencies:
     (`LandingPage.tsx` SUBJECTS) - it can say something untrue when content changes. **Proposed** (approval, close to
     P-1): drive it from the published curricula, with words still editable.
   - Next build per the brief: transitions and state changes across the product (existing motion tokens first).
+- 2026-11-03: **Pages arrive instead of snapping** (owner brief: transitions between screens; constitution: motion for
+  orientation and continuity). `components/motion/Arrival`: when the address changes, the area that changed eases in
+  (opacity + 6 px rise, 220 ms, the product's "out" curve) with the Web Animations API - nothing remounts, so state,
+  fetches and unsaved guards are untouched; still on first load and for reduced motion. Boundaries nest: the Studio
+  claims its subject's addresses, so a tab switch moves only the tab's content and the heading and tabs stay put. In
+  every workspace (teacher, principal, admin via `WorkspaceShell`), the parent area and the Studio; the child space
+  keeps its own `page-in`. **Tested**: `arrival.test.tsx` 2/2 (still on first load; outer on a new page; inner only on a
+  tab switch; nothing with reduced motion), full frontend Vitest 457/457. **Browser verified** (teacher, 1280 px):
+  Studio tab -> only the tab content animated; Classes, Media library -> the workspace content; reduced motion -> none;
+  no page errors.

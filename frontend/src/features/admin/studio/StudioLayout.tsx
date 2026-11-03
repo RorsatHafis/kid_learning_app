@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useNavigate, useParams } from "react-router-dom";
+import { Arrival } from "@/components/motion/Arrival";
 import { studioApi } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { ErrorState, LoadingState } from "@/components/ui/States";
@@ -90,7 +91,12 @@ export function StudioLayout() {
 
       {catalog.isLoading && !catalog.data && <LoadingState label={m.loadingSubject} />}
       {catalog.error && <ErrorState error={catalog.error} onRetry={catalog.refetch} />}
-      {context && <Outlet context={context} />}
+      {context && (
+        // The tab's content arrives; the subject's heading and tabs stay where they are.
+        <Arrival scope={`${base}/studio/${subjectId}`}>
+          <Outlet context={context} />
+        </Arrival>
+      )}
     </div>
   );
 }
