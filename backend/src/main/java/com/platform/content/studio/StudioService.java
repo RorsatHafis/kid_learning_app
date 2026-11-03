@@ -903,6 +903,11 @@ public class StudioService {
      */
     @Transactional
     public List<ImportedQuestion> importQuestions(UUID accountId, ImportQuestionsRequest request) {
+        return onceOnly(accountId, "STUDIO_IMPORT_QUESTIONS", request.idempotencyKey(), request.questions().toString(),
+                () -> addImported(accountId, request));
+    }
+
+    private List<ImportedQuestion> addImported(UUID accountId, ImportQuestionsRequest request) {
         Account author = guard.requireAuthor(accountId);
         UUID subjectId = request.questions().get(0).subjectId();
         if (request.questions().stream().anyMatch(row -> !row.subjectId().equals(subjectId))) {
@@ -925,6 +930,41 @@ public class StudioService {
      */
     @Transactional
     public List<ImportedQuestion> importIntoActivity(UUID accountId, UUID activityVersionId, ImportQuestionsRequest request) {
+        return onceOnly(accountId, "STUDIO_IMPORT_INTO_ACTIVITY", request.idempotencyKey(),
+                activityVersionId + " " + request.questions(), () -> addImportedToActivity(accountId, activityVersionId, request));
+    }
+
+    /**
+     * A paste is added once: with an idempotency key, the same request again (a retry after a lost response, a second
+     * tab) is refused rather than adding every row twice; a key reused for different rows is refused too. The guard
+     * completes in the import's own transaction and is released if the import fails, so a failed paste can be retried.
+     * No key: no guard (the Studio always sends one).
+     */
+    private List<ImportedQuestion> onceOnly(UUID accountId, String operation, String key, String payload,
+                                            java.util.function.Supplier<List<ImportedQuestion>> work) {
+        if (key == null || key.isBlank()) {
+            return work.get();
+        }
+        com.platform.common.idempotency.service.IdempotencyOutcome outcome = idempotency.begin(accountId, operation, key,
+                com.platform.common.idempotency.service.RequestFingerprint.sha256Hex(payload), java.time.Duration.ofDays(1));
+        if (outcome instanceof com.platform.common.idempotency.service.IdempotencyOutcome.AlreadyCompleted) {
+            throw new IllegalStateException("These rows were added already: they are in the question bank as drafts");
+        }
+        UUID guardId = ((com.platform.common.idempotency.service.IdempotencyOutcome.Started) outcome).record().getId();
+        try {
+            List<ImportedQuestion> imported = work.get();
+            idempotency.complete(guardId);
+            return imported;
+        } catch (RuntimeException failure) {
+            idempotency.fail(guardId);
+            throw failure;
+        }
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.common.idempotency.service.IdempotencyService idempotency;
+
+    private List<ImportedQuestion> addImportedToActivity(UUID accountId, UUID activityVersionId, ImportQuestionsRequest request) {
         ActivityVersion version = activityService.getVersion(activityVersionId);
         Activity activity = guard.requireActivityWrite(accountId, version.getActivityId());
         List<UUID> activitySkills = activityService.skillsOf(activityVersionId);
@@ -937,7 +977,7 @@ public class StudioService {
                     row.promptImageDescription(), row.promptAudioAssetId(), activitySkills, row.groups(), row.sortItems(), row.hint(),
                     row.explanation(), row.khmer());
         }).toList();
-        List<ImportedQuestion> imported = importQuestions(accountId, new ImportQuestionsRequest(rows));
+        List<ImportedQuestion> imported = addImported(accountId, new ImportQuestionsRequest(rows));
         List<ActivityService.ItemDraft> items = new java.util.ArrayList<>(activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId)
                 .stream().map(item -> new ActivityService.ItemDraft(item.getQuestionVersionId(), item.getPoints())).toList());
         imported.forEach(question -> items.add(new ActivityService.ItemDraft(question.versionId(), null)));

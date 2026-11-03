@@ -39,6 +39,10 @@ export function QuestionImport() {
   const [outcome, setOutcome] = useState<Record<string, { published: true } | { published: false; message: string }>>({});
   const [publishing, setPublishing] = useState(false);
   const sheet = useMemo(() => parseSheet(text), [text]);
+  // One key per paste: the same rows sent again (after a lost response, from a second click) can't be added twice;
+  // other rows or skills are another paste with a key of its own (the server refuses a key reused for other rows).
+  const [pasteKey, setPasteKey] = useState(() => crypto.randomUUID());
+  const newPaste = () => setPasteKey(crypto.randomUUID());
   const activityId = useSearchParams()[0].get("activity");
   const target = useAsync(() => (activityId ? studioApi.activity(activityId) : Promise.resolve(null)), [activityId]);
   const draft = target.data?.versions.at(-1)?.status === "DRAFT" ? target.data.versions.at(-1) : undefined;
@@ -86,10 +90,13 @@ export function QuestionImport() {
     setRefusal(null);
     try {
       const rows = ready.map((r) => ({ ...r.draft!, subjectId: catalog.subject.id, questionType: r.type!, skillIds }));
-      const result = draft ? await studioApi.importIntoActivity(draft.id, rows) : await studioApi.importQuestions(rows);
+      const result = draft
+        ? await studioApi.importIntoActivity(draft.id, rows, pasteKey)
+        : await studioApi.importQuestions(rows, pasteKey);
       setImported(result);
       setOutcome({});
       setText("");
+      newPaste();
     } catch (err) {
       const fields = err instanceof ApiError ? err.validationErrors : null;
       setRefusal(
@@ -234,9 +241,10 @@ export function QuestionImport() {
                       type="checkbox"
                       className="h-4 w-4 accent-tonle-700"
                       checked={skillIds.includes(skill.id)}
-                      onChange={(ev) =>
-                        setSkillIds(ev.target.checked ? [...skillIds, skill.id] : skillIds.filter((id) => id !== skill.id))
-                      }
+                      onChange={(ev) => {
+                        setSkillIds(ev.target.checked ? [...skillIds, skill.id] : skillIds.filter((id) => id !== skill.id));
+                        newPaste();
+                      }}
                     />
                     {skill.name}
                   </label>
@@ -255,6 +263,7 @@ export function QuestionImport() {
               value={text}
               onChange={(ev) => {
                 setText(ev.target.value);
+                newPaste();
                 setRefusal(null);
               }}
               spellCheck={false}
@@ -283,6 +292,7 @@ export function QuestionImport() {
                       return;
                     }
                     setText(await file.text());
+                    newPaste();
                   }}
                 />
               </label>

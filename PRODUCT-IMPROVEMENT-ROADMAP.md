@@ -2352,3 +2352,13 @@ Dependencies:
   entrance - greeting, then the painted world 90 ms later - rises in, like the shelf, garden and play pages already do;
   nothing moves under reduced motion. **Tested**: child Vitest 53/53. **Browser verified** (parent -> Sophea's space,
   390 px): `rise-in` on both, the world delayed 0.09 s; reduced motion -> none; no page errors.
+- 2026-11-03: **A paste is added once** (failure mode: double submit / retry after a lost response). Both import
+  endpoints take an optional `idempotencyKey` (the existing `IdempotencyService`): the same rows again under the key ->
+  409 "These rows were added already: they are in the question bank as drafts"; the key reused for other rows -> 409;
+  a paste that failed releases its key, so retrying it is not blocked as "in progress". The guard completes in the
+  import's own transaction. The Studio sends one key per paste - a new one whenever the rows or skills change or after
+  an add. Known limit (as for answers): a failure at commit time itself leaves the key "in progress" until it expires
+  (1 day). **Tested**: `QuestionImportOnceIntegrationTests` 3/3 (twice -> once; other rows under the key refused; a failed
+  paste retried; an activity gets the row once), import suites 5/5, `questionImport.test.tsx` (same key on an unchanged
+  retry, a new key for changed rows), full frontend Vitest 464/464, backend unit 203/203. **Browser verified**
+  (regression, teacher 360 px): paste -> add -> publish the ready one, no API error.

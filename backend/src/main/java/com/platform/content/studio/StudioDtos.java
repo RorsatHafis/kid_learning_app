@@ -355,7 +355,12 @@ public final class StudioDtos {
      * Questions pasted from a spreadsheet (the Studio reads the rows; the server decides): each becomes a draft, as if
      * written one by one - all of them or none, in one subject.
      */
-    public record ImportQuestionsRequest(@NotNull @Size(min = 1, max = 50) List<@Valid @NotNull CreateQuestionRequest> questions) {
+    public record ImportQuestionsRequest(@NotNull @Size(min = 1, max = 50) List<@Valid @NotNull CreateQuestionRequest> questions,
+                                         @Size(max = 100) String idempotencyKey) {
+        /** {@code idempotencyKey}: the same paste sent again (a retry, a second tab) is refused instead of added twice. */
+        public ImportQuestionsRequest(List<CreateQuestionRequest> questions) {
+            this(questions, null);
+        }
     }
 
     /**

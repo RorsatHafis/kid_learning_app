@@ -725,7 +725,8 @@ export const studioApi = {
   importIntoActivity: (
     versionId: string,
     questions: (QuestionDraftInput & { subjectId: string; questionType: QuestionType; skillIds: string[] })[],
-  ) => apiClient.post<ImportedQuestion[]>(`${S}/activity-versions/${versionId}/questions/import`, { questions }),
+    idempotencyKey?: string,
+  ) => apiClient.post<ImportedQuestion[]>(`${S}/activity-versions/${versionId}/questions/import`, { questions, idempotencyKey }),
   addNewQuestion: (versionId: string, body: QuestionDraftInput & { subjectId: string; questionType: QuestionType }) =>
     apiClient.post<ActivityDetail>(`${S}/activity-versions/${versionId}/questions`, { ...body, skillIds: [] }),
   /** Y42: the activity and its draft questions, published together or not at all. */
@@ -751,8 +752,11 @@ export const studioApi = {
     apiClient.post<QuestionDetail>(`${S}/questions`, body),
   openQuestionDraft: (id: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/draft`),
   /** Rows pasted from a spreadsheet, each added as a draft - all of them or none - with its publishing checks. */
-  importQuestions: (questions: (QuestionDraftInput & { subjectId: string; questionType: QuestionType; skillIds: string[] })[]) =>
-    apiClient.post<ImportedQuestion[]>(`${S}/questions/import`, { questions }),
+  /** `idempotencyKey`: the same paste sent again (a retry, a second tab) is refused instead of added twice. */
+  importQuestions: (
+    questions: (QuestionDraftInput & { subjectId: string; questionType: QuestionType; skillIds: string[] })[],
+    idempotencyKey?: string,
+  ) => apiClient.post<ImportedQuestion[]>(`${S}/questions/import`, { questions, idempotencyKey }),
   /** A new question whose first draft copies this one's latest version (the original is untouched). */
   duplicateQuestion: (id: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/duplicate`),
   tagQuestionSkill: (id: string, skillId: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/skills/${skillId}`),

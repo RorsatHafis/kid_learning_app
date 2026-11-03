@@ -62,6 +62,8 @@ describe("QuestionImport", () => {
     const sent = api.importQuestions.mock.calls[0][0];
     expect(sent).toHaveLength(3);
     expect(sent[0]).toMatchObject({ subjectId: "subject", questionType: "NUMERIC", prompt: "1 + 1 = ?", correctAnswer: "2", skillIds: ["skill"] });
+    // Sent with the paste's key, so the same rows sent again can't be added twice.
+    expect(api.importQuestions.mock.calls[0][1]).toMatch(/^[0-9a-f-]{36}$/);
 
     // Only the two whose checks pass are offered; the one to fix is left as a draft.
     await user.click(screen.getByRole("button", { name: "Publish the 2 that are ready" }));
@@ -81,6 +83,13 @@ describe("QuestionImport", () => {
     await user.click(screen.getByRole("button", { name: "Add 3 questions as drafts" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Row 3: size must be between 0 and 2000");
+    // Tried again unchanged: the same key (one paste); changed rows would be another.
+    await user.click(screen.getByRole("button", { name: "Add 3 questions as drafts" }));
+    expect(api.importQuestions.mock.calls.at(-1)![1]).toBe(api.importQuestions.mock.calls.at(-2)![1]);
+    const more = [rows, ["number", "3 + 3 = ?", "6"].join("\t")].join("\n");
+    fireEvent.change(screen.getByLabelText("Rows copied from your spreadsheet, the header row first"), { target: { value: more } });
+    await user.click(screen.getByRole("button", { name: "Add 4 questions as drafts" }));
+    expect(api.importQuestions.mock.calls.at(-1)![1]).not.toBe(api.importQuestions.mock.calls.at(-2)![1]);
     expect(screen.queryByText(/were added as drafts/)).not.toBeInTheDocument();
   });
 });
