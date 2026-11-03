@@ -10,6 +10,7 @@ import { staffOverviewApi, type ClassOverview, type SchoolOverview, type StaffOv
 import { ClassSummary } from "@/features/school/ClassSummary";
 import { ArchivedSchoolNotice, ManageSchoolButton } from "@/features/school/ClassLifecycle";
 import { SchoolLearningSection } from "./SchoolLearningSection";
+import { SchoolFirstSteps } from "./SchoolFirstSteps";
 import { PrincipalSchoolPlan } from "@/features/school/SchoolPlanCard";
 import { SchoolPaymentRequired } from "@/features/school/SchoolBilling";
 import type { SchoolClassWithTeachers } from "@/lib/api/types";
@@ -131,6 +132,13 @@ export function PrincipalHome() {
       {(school, refresh) => (
         <>
           {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
+          {overview.data && (
+            <SchoolFirstSteps
+              key={`steps-${school.id}`}
+              schoolId={school.id}
+              school={overview.data.schools.find((s) => s.schoolId === school.id)}
+            />
+          )}
           {overview.data && <AtAGlance school={overview.data.schools.find((s) => s.schoolId === school.id)} />}
           <SchoolLearningSection key={school.id} schoolId={school.id} />
           <PlanLine schoolId={school.id} />

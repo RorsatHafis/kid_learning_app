@@ -2317,3 +2317,12 @@ Dependencies:
   `rise-in` without the reduced-motion guard - fixed. Dialogs already open with `pop-in`; closing stays instant (fast
   exits). **Tested**: full frontend Vitest. **Browser verified** (360 px): both menus `menu-in`; reduced motion -> none,
   menus still open.
+- 2026-11-03: **A new school's first steps** (journey review next-five item 3, "school setup checklist"): on the
+  principal's overview, four steps read from what is true now - a class, a teacher who has **joined** (an invitation
+  alone doesn't count), every class with a teacher and a curriculum, a family that has joined - the first not done
+  highlighted with where to take it; gone once all are done (the at-a-glance line keeps per-class gaps after that).
+  Academic years are left out on purpose (optional). The teacher's first-steps card and this one now share
+  `components/workspace/FirstSteps` (same markup; the teacher card's tests pass unchanged). **Tested**:
+  `schoolFirstSteps.test.tsx` 3/3, principal + teacher + i18n Vitest, full frontend Vitest. **Browser verified**
+  (seed principal, 360 px): "3 of 4 done", current step "Give every class a teacher and a curriculum" (one class lacks
+  both); axe clean, no API error.
