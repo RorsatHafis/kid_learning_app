@@ -2312,3 +2312,8 @@ Dependencies:
   tab switch; nothing with reduced motion), full frontend Vitest 457/457. **Browser verified** (teacher, 1280 px):
   Studio tab -> only the tab content animated; Classes, Media library -> the workspace content; reduced motion -> none;
   no page errors.
+- 2026-11-03: **Menus drop open from their bar** - the workspaces' phone menu snapped open (`hidden` toggled); it and
+  the public site menu now share one `menu-in` (fade + 6 px drop, 180 ms) under `motion-safe`. The site menu used
+  `rise-in` without the reduced-motion guard - fixed. Dialogs already open with `pop-in`; closing stays instant (fast
+  exits). **Tested**: full frontend Vitest. **Browser verified** (360 px): both menus `menu-in`; reduced motion -> none,
+  menus still open.

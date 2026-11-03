@@ -5,7 +5,6 @@ import { Logo } from "@/components/brand/Logo";
 import { common } from "@/components/ui/messages";
 import { useMessages } from "@/i18n/catalog";
 import { LanguageSwitcher, LanguageToggle } from "@/i18n/LanguageSwitcher";
-import { cn } from "@/lib/utils/cn";
 import { marketingMessages } from "../messages";
 import { sectionLinks, useSectionLabel } from "./links";
 
@@ -71,7 +70,7 @@ export function Nav() {
       <div
         id="site-menu"
         hidden={!open}
-        className={cn("border-t border-tonle-950/10 px-4 pb-5 pt-2 lg:hidden", open && "animate-rise-in")}
+        className="border-t border-tonle-950/10 px-4 pb-5 pt-2 motion-safe:animate-menu-in lg:hidden"
       >
         <nav aria-label={m.sectionsMenu} className="flex flex-col">
           {sectionLinks.map((link) => (

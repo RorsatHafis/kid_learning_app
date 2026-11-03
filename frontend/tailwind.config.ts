@@ -148,6 +148,11 @@ export default {
           "0%": { transform: "scale(0.94)", opacity: "0" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
+        // A menu dropping open from the bar it belongs to: short, so a tap feels answered at once.
+        "menu-in": {
+          "0%": { transform: "translateY(-6px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
         "rise-in": {
           "0%": { transform: "translateY(8px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
@@ -244,6 +249,7 @@ export default {
       animation: {
         "pop-in": "pop-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both",
         "rise-in": "rise-in 320ms cubic-bezier(0.23, 1, 0.32, 1) both",
+        "menu-in": "menu-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both",
         float: "float 4.5s ease-in-out infinite",
         cheer: "cheer 800ms cubic-bezier(0.23, 1, 0.32, 1)",
         nudge: "nudge 360ms ease-in-out",

@@ -170,7 +170,7 @@ export function WorkspaceShell({
             {open ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
           </button>
         </div>
-        <div id="workspace-menu" hidden={!open} className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-white/10 px-3 pb-4 pt-3">
+        <div id="workspace-menu" hidden={!open} className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-white/10 px-3 pb-4 pt-3 motion-safe:animate-menu-in">
           <nav aria-label={m.menuOf(workspace)}>{links}</nav>
           <div className="mt-3">{account}</div>
         </div>
