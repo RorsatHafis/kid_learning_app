@@ -4,7 +4,7 @@ Part of the product review (`PRODUCT-JOURNEY-REVIEW.md`). **Verification level: 
 `MasteryEngine`, `AdaptiveEngine`, `PostCompletionService` and `application.yaml` on 2026-11-03. The worked examples
 are computed from the code's formula with the configured defaults; they were **not** run against the server for this
 document (the behaviours are covered by the Battle 2D/5A-5D integration tests, which this pass did not re-read).
-`EvidenceStandard` traced in 4a. Not traced yet: `SmartReviewService`, `CurriculumPathPlanner`, `LearningDays` (next
+`EvidenceStandard` traced in 4a, Smart Review in 4b. Not traced yet: `CurriculumPathPlanner`, `LearningDays` (next
 pass).
 
 ## 1. Inputs and who controls them
@@ -81,6 +81,25 @@ practice** and gets REINFORCEMENT; "W W" reads **Too early to tell** yet already
 3 for telling an adult - the platform may offer easier practice before it claims anything about the child). That
 asymmetry is deliberate and consistent: acting on weak evidence is cheap and reversible, a claim to a parent is not.
 
+## 4b. Smart Review (`SmartReviewService`, `ReviewSchedule`, traced 2026-11-03)
+
+After every completion, each of the activity's skills is evaluated:
+
+| Skill state | Review item | Schedule |
+|---|---|---|
+| evidence >= 2 **and** mastery < 0.5 | created if absent (database insert-if-absent, row locked), or reactivated | created once: due **now**, interval 1 day, ease 2.5 |
+| otherwise | an ACTIVE item is **retired** | kept |
+
+Then at most **one** due review is placed on the path (path locked; a review already waiting is returned, not
+doubled): the earliest-due ACTIVE item whose skill has a published activity in the path's scope, choosing the easiest
+such activity (completed ones are not excluded - reviewing may repeat an activity). A review's outcome moves its
+schedule: success -> interval x ease (rounded), ease +0.1 (max 3.0); failure -> interval 1 day, ease -0.2 (min 1.3).
+Worked schedule: due now -> pass: 3 days (ease 2.6) -> pass: 8 days (2.7) -> pass: 22 days (2.8); a miss returns it to 1
+day (2.6).
+
+Example: "C W W" (mastery 0.262, 3 answers) -> REINFORCEMENT now **and** a review item due now; if the next
+activities lift mastery to 0.5 or more, the next evaluation retires the item.
+
 ## 5. Findings from this trace (to the roadmap)
 
 | # | Finding | Effect | Severity | Proposed |
@@ -91,5 +110,8 @@ asymmetry is deliberate and consistent: acting on weak evidence is cheap and rev
 | AE-4 | Challenge needs the completed activity's difficulty | Activities without difficulty never lead to a challenge | Low | Already surfaced: the activity checks warn `NO_DIFFICULTY` ("challenge and reinforcement choices use it", `ContentValidator`). Nothing to build |
 | AE-5 | One governing skill per completion (the weakest) | A multi-skill activity adapts on its weakest skill only; others continue via Smart Review | By design | Keep; state it in parent "why" (already grounded) |
 
-Nothing here was changed in code: these are recorded for the owner's prioritisation (no architecture change during
+| SR-1 | Smart Review is **remediation**, not retention: an item lives only while mastery < 0.5, so the growing intervals (3, 8, 22 days) apply only to a skill that stays weak; a skill that becomes secure is never brought back | Retention of learned skills is not scheduled | By design today | That is decision **D-18** (bring a skill back on another day) - unchanged, owner's call |
+| SR-2 | The review threshold (0.5) differs from reinforcement's (0.4) | Between 0.4 and 0.5 a child gets a review but no reinforcement | Low, consistent | Keep; document for authors and support |
+
+Nothing here was changed in code (except AE-1, fixed): these are recorded for the owner's prioritisation (no architecture change during
 review).
