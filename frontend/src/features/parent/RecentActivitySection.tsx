@@ -9,6 +9,7 @@ import { formatDay } from "@/lib/utils/date";
 import { SectionTitle } from "./SectionTitle";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
+import { MissedQuestions } from "./MissedQuestions";
 
 const PAGE = 10;
 
@@ -51,7 +52,7 @@ export function RecentActivitySection({ childId }: { childId: string }) {
         <ol className="relative flex flex-col">
           <span aria-hidden className="absolute bottom-3 left-[6rem] top-3 hidden w-px bg-line sm:block" />
           {data.map((activity) => (
-            <ActivityRow key={activity.attemptId} activity={activity} />
+            <ActivityRow key={activity.attemptId} activity={activity} childId={childId} />
           ))}
         </ol>
       )}
@@ -78,7 +79,7 @@ export function RecentActivitySection({ childId }: { childId: string }) {
   );
 }
 
-function ActivityRow({ activity }: { activity: CompletedActivity }) {
+function ActivityRow({ activity, childId }: { activity: CompletedActivity; childId: string }) {
   const decision = parentDecision(activity);
   const m = useMessages(familyMessages).recent;
   const minutes = Math.max(1, Math.round((new Date(activity.completedAt).getTime() - new Date(activity.startedAt).getTime()) / 60_000));
@@ -106,6 +107,14 @@ function ActivityRow({ activity }: { activity: CompletedActivity }) {
           {activity.source === null && <span className="text-ink-soft">{m.freePractice}</span>}
         </p>
         {decision && <p className="text-sm leading-relaxed text-ink-soft">{decision}</p>}
+        {activity.correctAnswers < activity.totalAnswers && (
+          <MissedQuestions
+            attemptId={activity.attemptId}
+            activityVersionId={activity.activityVersionId}
+            childId={childId}
+            missed={activity.totalAnswers - activity.correctAnswers}
+          />
+        )}
       </div>
     </li>
   );

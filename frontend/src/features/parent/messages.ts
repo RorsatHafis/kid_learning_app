@@ -324,6 +324,10 @@ export const familyMessages = defineMessages(
       withHint: (n: number) => (n === 1 ? "1 with a hint - practice, not counted as shown on their own" : `${n} with a hint - practice, not counted as shown on their own`),
       smartReview: "Smart Review",
       freePractice: "free practice",
+      missed: (n: number) => (n === 1 ? "See the question they missed" : `See the ${n} questions they missed`),
+      missedLoading: "Loading the questions…",
+      missedFailed: "The questions couldn't be loaded. Close this and open it again to retry.",
+      missedAnswer: "The answer:",
     },
     changes: {
       outsidePlan: "practised outside the learning plan",
@@ -702,6 +706,10 @@ export const familyMessages = defineMessages(
       withHint: (n: number) => `${n} ដោយប្រើតម្រុយ - ជាការហាត់រៀន មិនរាប់ថាបានបង្ហាញដោយខ្លួនឯងទេ`,
       smartReview: "ការរំលឹកឆ្លាតវៃ",
       freePractice: "ការហាត់ដោយសេរី",
+      missed: (n: number) => (n === 1 ? "មើលសំណួរដែលកូនឆ្លើយខុស" : `មើលសំណួរ ${n} ដែលកូនឆ្លើយខុស`),
+      missedLoading: "កំពុងផ្ទុកសំណួរ…",
+      missedFailed: "មិនអាចផ្ទុកសំណួរបានទេ។ បិទផ្នែកនេះ ហើយបើកវាម្ដងទៀត ដើម្បីព្យាយាមម្ដងទៀត។",
+      missedAnswer: "ចម្លើយគឺ៖",
     },
     changes: {
       outsidePlan: "បានហាត់ក្រៅផែនការរៀន",

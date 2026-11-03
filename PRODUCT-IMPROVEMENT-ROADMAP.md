@@ -2191,3 +2191,11 @@ Dependencies:
   verified** at 360 and 1024 px: 12 of 160 dev curricula with "Show all 160 curricula"; no overflow, axe clean, no API
   error. Seen on the way: the seed curriculum's questions are read aloud 0 of 9 and Khmer 0 of 9 - pre-readers
   (3-5) and Khmer families have no suitable content yet (D-19).
+- 2026-11-03: **Parents see what was missed, not only the score.** Each finished activity in a child's recent activity
+  with a wrong answer now has "See the questions they missed": read only when opened - the attempt's answers and the
+  exact (pinned) version the child played, in the parent's language - each missed question with the answer and the
+  author's "why", using the same pairing as the child's "Look again" (`trickyOnes`). No new permission: the family's
+  existing access to the child's answers and content. **Tested**: `missedQuestions.test.tsx` 2/2 (nothing read until
+  opened; only the missed; a failure says so and retries on reopening), parent and i18n Vitest 213/213. **Browser
+  verified** at 360 px on the seed child's Progress tab: "See the 2 questions they missed" -> "3 + 4 = ? The answer:
+  7", "5 + 4 = ? The answer: 9"; no overflow, axe clean, no API error.
