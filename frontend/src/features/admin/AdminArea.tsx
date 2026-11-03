@@ -19,6 +19,7 @@ import { StudioIndex } from "./studio/StudioIndex";
 import { StudioLayout } from "./studio/StudioLayout";
 import { CatalogPage } from "./studio/CatalogPage";
 import { QuestionsPage } from "./studio/QuestionsPage";
+import { QuestionImport } from "./studio/QuestionImport";
 import { QuestionEditor } from "./studio/QuestionEditor";
 import { ActivitiesPage } from "./studio/ActivitiesPage";
 import { ActivityEditor } from "./studio/ActivityEditor";
@@ -43,6 +44,7 @@ export default function AdminArea() {
           <Route index element={<Navigate to="catalog" replace />} />
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="questions" element={<QuestionsPage />} />
+          <Route path="questions/import" element={<QuestionImport />} />
           <Route path="questions/:questionId" element={<QuestionEditor />} />
           <Route path="activities" element={<ActivitiesPage />} />
           <Route path="activities/:activityId" element={<ActivityEditor />} />

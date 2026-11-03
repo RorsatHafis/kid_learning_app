@@ -882,6 +882,29 @@ public class StudioService {
     }
 
     /**
+     * Questions pasted from a spreadsheet: every row a draft, as {@link #createQuestion} makes one - in one transaction,
+     * so a row the server refuses leaves none of them behind (the author fixes the paste and tries again, without
+     * duplicates). Drafts only: nothing reaches a child until each is published. One subject per import, the bank the
+     * author pasted into.
+     */
+    @Transactional
+    public List<ImportedQuestion> importQuestions(UUID accountId, ImportQuestionsRequest request) {
+        Account author = guard.requireAuthor(accountId);
+        UUID subjectId = request.questions().get(0).subjectId();
+        if (request.questions().stream().anyMatch(row -> !row.subjectId().equals(subjectId))) {
+            throw new IllegalArgumentException("Import questions into one subject at a time");
+        }
+        List<ImportedQuestion> imported = new java.util.ArrayList<>();
+        for (CreateQuestionRequest row : request.questions()) {
+            QuestionDetail created = createQuestion(accountId, row);
+            UUID versionId = created.versions().get(0).id();
+            imported.add(new ImportedQuestion(created.id(), versionId, row.prompt().strip(), validator.questionVersion(versionId)));
+        }
+        record(author, "QUESTIONS_IMPORTED", "SUBJECT", subjectId, Map.of("count", imported.size()));
+        return imported;
+    }
+
+    /**
      * A new question that starts as a copy of one the author may edit: its latest version (draft or published) becomes
      * the copy's first draft - prompt, answer, choices, media, hint, explanation, difficulty, skills and translations.
      * The way to make a variant ("5 + 4" to "6 + 3") without retyping. The copy belongs to the original's owner - also

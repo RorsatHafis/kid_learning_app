@@ -336,6 +336,21 @@ public final class StudioDtos {
         }
     }
 
+    /**
+     * Questions pasted from a spreadsheet (the Studio reads the rows; the server decides): each becomes a draft, as if
+     * written one by one - all of them or none, in one subject.
+     */
+    public record ImportQuestionsRequest(@NotNull @Size(min = 1, max = 50) List<@Valid @NotNull CreateQuestionRequest> questions) {
+    }
+
+    /**
+     * An imported question's first draft and what the publishing checks say about it now: the author fixes and publishes
+     * it as any other draft.
+     */
+    public record ImportedQuestion(UUID questionId, UUID versionId, String prompt,
+                                   com.platform.content.validation.ValidationReport validation) {
+    }
+
     public record ReviseQuestionDraftRequest(@NotBlank @Size(max = 2000) String prompt, @Size(max = 300) String correctAnswer,
                                              @Min(1) @Max(10) Integer difficultyLevel,
                                              @Size(max = 10) List<@Valid @NotNull OptionRequest> options,

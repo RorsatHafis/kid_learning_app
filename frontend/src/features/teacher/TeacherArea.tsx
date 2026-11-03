@@ -11,6 +11,7 @@ import { StudioIndex } from "@/features/admin/studio/StudioIndex";
 import { StudioLayout } from "@/features/admin/studio/StudioLayout";
 import { CatalogPage } from "@/features/admin/studio/CatalogPage";
 import { QuestionsPage } from "@/features/admin/studio/QuestionsPage";
+import { QuestionImport } from "@/features/admin/studio/QuestionImport";
 import { QuestionEditor } from "@/features/admin/studio/QuestionEditor";
 import { ActivitiesPage } from "@/features/admin/studio/ActivitiesPage";
 import { ActivityEditor } from "@/features/admin/studio/ActivityEditor";
@@ -40,6 +41,7 @@ export default function TeacherArea() {
             <Route index element={<Navigate to="questions" replace />} />
             <Route path="catalog" element={<CatalogPage />} />
             <Route path="questions" element={<QuestionsPage />} />
+            <Route path="questions/import" element={<QuestionImport />} />
             <Route path="questions/:questionId" element={<QuestionEditor />} />
             <Route path="activities" element={<ActivitiesPage />} />
             <Route path="activities/:activityId" element={<ActivityEditor />} />

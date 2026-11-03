@@ -15,6 +15,7 @@ import { ComposerPanel, NewButton, Panel, SelectField, StatusBadge } from "./sha
 import { ArchivedSwitch } from "./Lifecycle";
 import { useMessages } from "@/i18n/catalog";
 import { editorMessages } from "./editor.messages";
+import { importMessages } from "./import.messages";
 
 const PAGE_SIZE = 25;
 const STATUS_FILTERS: PublicationStatus[] = ["DRAFT", "PUBLISHED", "RETIRED"];
@@ -45,6 +46,7 @@ export function QuestionsPage() {
 
   usePageInRange(data, setPage);
   const m = useMessages(editorMessages).questions;
+  const importText = useMessages(importMessages);
 
   return (
     <div className={cn("grid grid-cols-1 gap-6", composer.open && "lg:grid-cols-[minmax(0,1fr)_400px]")}>
@@ -53,6 +55,11 @@ export function QuestionsPage() {
         action={
           <span className="flex flex-wrap items-center gap-3">
             <ArchivedSwitch archived={archived} onChange={setArchived} list="questions" />
+            {!archived && (
+              <Link to="import" className="text-sm font-semibold text-tonle-700 hover:underline">
+                {importText.open}
+              </Link>
+            )}
             {!composer.open && !archived && <NewButton label={m.newQuestion} onClick={composer.show} />}
           </span>
         }

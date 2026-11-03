@@ -479,6 +479,14 @@ export interface SortItemInput {
   audioAssetId?: string;
 }
 
+/** An imported question's first draft and what the publishing checks say about it now. */
+export interface ImportedQuestion {
+  questionId: string;
+  versionId: string;
+  prompt: string;
+  validation: ValidationReport;
+}
+
 export interface QuestionDraftInput {
   prompt: string;
   correctAnswer: string | null;
@@ -732,6 +740,9 @@ export const studioApi = {
   createQuestion: (body: QuestionDraftInput & { subjectId: string; questionType: QuestionType; skillIds: string[] }) =>
     apiClient.post<QuestionDetail>(`${S}/questions`, body),
   openQuestionDraft: (id: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/draft`),
+  /** Rows pasted from a spreadsheet, each added as a draft - all of them or none - with its publishing checks. */
+  importQuestions: (questions: (QuestionDraftInput & { subjectId: string; questionType: QuestionType; skillIds: string[] })[]) =>
+    apiClient.post<ImportedQuestion[]>(`${S}/questions/import`, { questions }),
   /** A new question whose first draft copies this one's latest version (the original is untouched). */
   duplicateQuestion: (id: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/duplicate`),
   tagQuestionSkill: (id: string, skillId: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/skills/${skillId}`),

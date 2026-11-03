@@ -281,6 +281,14 @@ public class StudioController {
         return studio.createQuestion(accountId, request);
     }
 
+    /** Questions pasted from a spreadsheet, each added as a draft - all or none - with its publishing checks. */
+    @PostMapping("/questions/import")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<ImportedQuestion> importQuestions(@AuthenticationPrincipal UUID accountId,
+                                                  @Valid @RequestBody ImportQuestionsRequest request) {
+        return studio.importQuestions(accountId, request);
+    }
+
     @GetMapping("/questions/{questionId}")
     public QuestionDetail question(@AuthenticationPrincipal UUID accountId, @PathVariable UUID questionId) {
         return studio.question(accountId, questionId);

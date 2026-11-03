@@ -2209,3 +2209,19 @@ Dependencies:
   counts themselves (no dedicated integration test - fixture of a paid school, class and granted children); checked
   through the API (one class member's wrong answer -> "2 + 3 = ?", 1 of 1) and **browser verified** at 360 px; no
   overflow, axe clean, no API error.
+- 2026-11-03: **The class's hardest questions now have their own test** - `ClassHardestQuestionsIntegrationTests`:
+  counts members who answered and who got it wrong, excludes a non-member's wrong answers to the same question, counts
+  a child's repeated wrong answers once, and refuses a teacher of another class. **Tested** 1/1.
+- 2026-11-03: **Paste questions from a spreadsheet** (Priority 3, content production - the D-19 gap is volume): the
+  Studio bank's "Paste from a spreadsheet" page reads rows copied from Sheets/Excel (tab-separated, quoted cells) with
+  a header row - type (the Studio's names in English or Khmer), question, answer, choice 1-8, hint, explanation,
+  difficulty, and "(km)" columns for Khmer. Multiple choice, true/false, number, short answer and put-in-order; pictures,
+  recordings, matching and sorting stay in the question form. The page only maps cells (unknown type, empty question,
+  an answer that isn't one of the choices, difficulty out of range); `POST /studio/questions/import` adds every row as a
+  draft through the same path as the question form - one transaction, all or none, one subject, at most 50 - and
+  returns each draft's publishing checks; audit `QUESTIONS_IMPORTED`. Nothing is published. **Tested**:
+  `QuestionImportIntegrationTests` 3/3 (drafts with their checks, hint and complete Khmer; a refused row leaves none;
+  two subjects / empty / 51 refused; parent 403; a teacher's imports are theirs only), `sheetImport.test.ts` 7/7, studio
+  + teacher Vitest 77/77, backend unit suite 203/203. **Browser verified** (teacher, 360 px and 1280 px): a bad row
+  blocks adding with its reason; four rows added as drafts, all "Ready to publish", the first opens in the editor; no
+  overflow, axe clean, no API error. Not built: bulk publish of the imported drafts (author publishes each), CSV files.
