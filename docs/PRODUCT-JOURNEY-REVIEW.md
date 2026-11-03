@@ -41,6 +41,10 @@ Khmer review) and the owner's decisions, more than code.
 **Adaptive engine, traced from code** (inputs, mastery formula, decision table, worked examples, findings AE-1..AE-5):
 see [`ADAPTIVE-ENGINE.md`](ADAPTIVE-ENGINE.md) (2026-11-03, INSPECTED).
 
+**Identity and permissions, and one person with several roles (R-1)** (permission matrix, today's behaviour per
+real situation, options A/B/C with a recommendation, decisions R-1a..R-1d, findings ID-1..ID-3): see
+[`IDENTITY-PERMISSIONS.md`](IDENTITY-PERMISSIONS.md) (2026-11-03, INSPECTED).
+
 ## 2. Coverage matrix by journey
 
 Status key: **V** implemented and verified (tests and/or browser) · **PV** implemented, partially verified · **P**

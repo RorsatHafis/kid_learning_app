@@ -2266,3 +2266,11 @@ Dependencies:
   `findByLearningObjectiveId`), so steps within an objective on a starting path and in the journey builder have a
   stated order. **Tested**: `ObjectiveSkillOrderIntegrationTests` 1/1 (stored order differs from linked order),
   prerequisite/cold-start/golden-journey/Studio/activity-builder integration 18/18, backend unit suite 203/203.
+- 2026-11-03: **Review: identity and permissions (R-1)** - `docs/IDENTITY-PERMISSIONS.md`: the permission matrix
+  (role gate + the relationship each capability checks), what happens today when one person holds several roles
+  (relationships already compose on one account - teacher in two schools, caregiver, org owner running a branch; only
+  the role is single, so a parent who teaches needs a second email), options A (today) / B (roles per account, one
+  acting role per session - recommended) / C (linked accounts), and the decisions it needs: **R-1a** option, **R-1b**
+  principal also TEACHER, **R-1c** ADMIN never combined, **R-1d** what a revoked TEACHER role leaves. Findings ID-1
+  (invitation refusal stays generic for privacy), ID-2 (second admin: provisioning only - runbook), ID-3 (~90 role-gate
+  sites). INSPECTED only; nothing built - owner decision.
