@@ -108,6 +108,9 @@ function AboutStep({ onCreated }: { onCreated: (child: Child) => void }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [planLimit, setPlanLimit] = useState<ApiProblem | null>(null);
   const [busy, setBusy] = useState(false);
+  // One key per child as typed: sent again unchanged (after a lost response) it is the child already added, not a
+  // second one; a changed name or birthday is another child and gets its own key.
+  const [addKey, setAddKey] = useState(() => crypto.randomUUID());
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -116,7 +119,7 @@ function AboutStep({ onCreated }: { onCreated: (child: Child) => void }) {
     setFieldErrors({});
     setBusy(true);
     try {
-      onCreated(await childrenApi.create({ displayName, dateOfBirth, familyChoosesSubjects: true }));
+      onCreated(await childrenApi.create({ displayName, dateOfBirth, familyChoosesSubjects: true }, addKey));
     } catch (err) {
       if (err instanceof ApiError && err.validationErrors) setFieldErrors(err.validationErrors);
       else if (err instanceof ApiError) {
@@ -143,7 +146,10 @@ function AboutStep({ onCreated }: { onCreated: (child: Child) => void }) {
           autoFocus
           maxLength={80}
           value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
+          onChange={(e) => {
+            setDisplayName(e.target.value);
+            setAddKey(crypto.randomUUID());
+          }}
           error={fieldErrors.displayName}
           hint={m.nameHint}
         />
@@ -152,7 +158,10 @@ function AboutStep({ onCreated }: { onCreated: (child: Child) => void }) {
           type="date"
           required
           value={dateOfBirth}
-          onChange={(e) => setDateOfBirth(e.target.value)}
+          onChange={(e) => {
+            setDateOfBirth(e.target.value);
+            setAddKey(crypto.randomUUID());
+          }}
           error={fieldErrors.dateOfBirth}
           max={new Date().toISOString().slice(0, 10)}
         />

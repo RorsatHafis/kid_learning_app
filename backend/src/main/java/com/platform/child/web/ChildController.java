@@ -98,17 +98,22 @@ public class ChildController {
 
     @PostMapping
     public ResponseEntity<ChildResponse> addChild(@Valid @RequestBody CreateChildRequest request,
-                                                    @AuthenticationPrincipal UUID accountId) {
+                                                    @AuthenticationPrincipal UUID accountId,
+                                                    // F-IDEM-1: the same child sent again under its key is the child already added.
+                                                    @org.springframework.web.bind.annotation.RequestHeader(value = "Idempotency-Key", required = false)
+                                                    String idempotencyKey) {
         // A new child starts in the language the parent is using; the child can change it in their own space.
-        Child child = childService.createForAccount(accountId, request.displayName(), request.dateOfBirth(),
-                com.platform.identity.UiLanguage.ofCurrentRequest());
+        com.platform.child.service.ChildService.Added added = childService.createForAccountOnce(accountId, request.displayName(),
+                request.dateOfBirth(), com.platform.identity.UiLanguage.ofCurrentRequest(), idempotencyKey);
+        Child child = added.child();
 
         // Separate call, on purpose: createForAccount's own transaction has already
         // committed by the time control returns here (crossing back out through its
         // @Transactional proxy boundary), so the child row is now visible to the
         // fresh transaction this starts - see ChildService#completeAutoEnrollment.
         // A family that chooses the subjects itself gets none chosen for it.
-        if (!request.startsWithFamilyChoice()) {
+        // Only for the request that added the child: the same request seen again has nothing more to start.
+        if (added.added() && !request.startsWithFamilyChoice()) {
             childService.completeAutoEnrollment(child);
         }
 

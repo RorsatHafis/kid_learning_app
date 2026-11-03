@@ -138,8 +138,9 @@ export const childrenApi = {
   list: () => apiClient.get<Child[]>("/children"),
   get: (childId: string) => apiClient.get<Child>(`/children/${childId}`),
   /** familyChoosesSubjects: the family picks the subjects (setup flow), so none is started for the child. */
-  create: (input: { displayName: string; dateOfBirth: string; familyChoosesSubjects?: boolean }) =>
-    apiClient.post<Child>("/children", input),
+  /** idempotencyKey (sent as the Idempotency-Key header): the same child sent again is the child already added. */
+  create: (input: { displayName: string; dateOfBirth: string; familyChoosesSubjects?: boolean }, idempotencyKey?: string) =>
+    apiClient.post<Child>("/children", input, idempotencyKey ? { headers: { "Idempotency-Key": idempotencyKey } } : undefined),
   rename: (childId: string, displayName: string) => apiClient.patch<Child>(`/children/${childId}`, { displayName }),
   // Name and/or a corrected date of birth (Y12); 400 with field errors when either is invalid.
   update: (childId: string, changes: { displayName?: string; dateOfBirth?: string }) =>

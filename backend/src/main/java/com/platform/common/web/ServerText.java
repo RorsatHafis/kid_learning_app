@@ -391,6 +391,7 @@ public final class ServerText {
             Map.entry("The offer has to end after it starts", "ការផ្ដល់ជូនត្រូវតែបញ្ចប់ក្រោយពេលវាចាប់ផ្ដើម"),
             Map.entry("This question has nothing written yet to copy", "សំណួរនេះមិនទាន់មានអ្វីសរសេរដើម្បីចម្លងនៅឡើយទេ"),
             Map.entry("Import questions into one subject at a time", "នាំចូលសំណួរទៅក្នុងមុខវិជ្ជាមួយក្នុងពេលតែមួយ"),
+            Map.entry("The idempotency key is too long", "សោមិនឱ្យស្ទួនវែងពេក"),
             Map.entry("These rows were added already: they are in the question bank as drafts",
                     "ជួរទាំងនេះត្រូវបានបន្ថែមរួចហើយ៖ វាស្ថិតនៅក្នុងធនាគារសំណួរជាសេចក្ដីព្រាង"),
             Map.entry("Questions added to an activity must be in its subject", "សំណួរដែលបន្ថែមទៅសកម្មភាពត្រូវតែនៅក្នុងមុខវិជ្ជារបស់វា"),

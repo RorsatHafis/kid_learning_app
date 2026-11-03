@@ -99,6 +99,52 @@ public class ChildService {
      * family) - a 404 here is the correct "you have nowhere to put a child"
      * response for that case, not a 500.
      */
+    /** The child added, and whether this request added it ({@code false}: the same request seen again). */
+    public record Added(Child child, boolean added) {
+    }
+
+    /**
+     * Adds a child once: with an idempotency key, the same child sent again - a retry after a lost response, a second
+     * tap - is answered with the child the first request added instead of a second one (which would also take a place
+     * of the family's plan). The key's request is the child's name and date of birth, so the child found again is the
+     * family's latest with exactly those. The guard completes in the same transaction as the child and is released if
+     * adding fails. No key: as {@link #createForAccount}.
+     */
+    @Transactional
+    public Added createForAccountOnce(UUID accountId, String displayName, LocalDate dateOfBirth, String language, String key) {
+        if (key == null || key.isBlank()) {
+            return new Added(createForAccount(accountId, displayName, dateOfBirth, language), true);
+        }
+        if (key.length() > 100) {
+            throw new IllegalArgumentException("The idempotency key is too long");
+        }
+        String name = displayName.strip();
+        com.platform.common.idempotency.service.IdempotencyOutcome outcome = idempotency.begin(accountId, "ADD_CHILD", key,
+                com.platform.common.idempotency.service.RequestFingerprint.sha256Hex(name + "\u0000" + dateOfBirth),
+                java.time.Duration.ofDays(1));
+        if (outcome instanceof com.platform.common.idempotency.service.IdempotencyOutcome.AlreadyCompleted) {
+            UUID familyId = activeFamilyIds(accountId).stream().findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException("Family for account", accountId));
+            Child again = childRepository.findByFamilyId(familyId).stream()
+                    .filter(c -> c.getDisplayName().strip().equals(name) && dateOfBirth.equals(c.getDateOfBirth()))
+                    .max(java.util.Comparator.comparing(Child::getCreatedAt, java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                    .orElseThrow(() -> new ResourceNotFoundException("Child", null));
+            return new Added(again, false);
+        }
+        UUID guardId = ((com.platform.common.idempotency.service.IdempotencyOutcome.Started) outcome).record().getId();
+        try {
+            Child child = createForAccount(accountId, displayName, dateOfBirth, language);
+            idempotency.complete(guardId);
+            return new Added(child, true);
+        } catch (RuntimeException failure) {
+            idempotency.fail(guardId);
+            throw failure;
+        }
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.common.idempotency.service.IdempotencyService idempotency;
+
     @Transactional
     public Child createForAccount(UUID accountId, String displayName, LocalDate dateOfBirth, String language) {
         UUID familyId = activeFamilyIds(accountId).stream().findFirst()

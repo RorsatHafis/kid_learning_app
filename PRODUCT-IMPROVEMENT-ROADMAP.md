@@ -2442,3 +2442,16 @@ Dependencies:
   scaling test passes again; the **full backend integration suite 536/536** locally (3 proxy tests hit the local
   Postgres connection limit in the full run - "too many clients" - and pass alone), backend unit 203/203. Lesson kept:
   read-path changes get the full integration suite before a push, not only the related suites.
+- 2026-11-03: **F-IDEM-1 fixed: a child is added once.** Adding a child had no duplicate guard: a lost response then a
+  second tap created the child twice (and took a second place of the family's plan). The add-child form now sends an
+  `Idempotency-Key` header (already in the CORS allow-list) - one key per child as typed, renewed when the name or
+  birthday changes; the server, through the existing `IdempotencyService`, answers the same request again with the child
+  the first one added (found as the family's latest with that name and birthday, inside the key's day), refuses the
+  key reused for a different child (409) or over 100 characters (400), and starts auto-enrolment only for the request
+  that added the child. Header rather than a body field so the request body - and the existing add-child test that
+  asserts it - is unchanged. Without a key, as before. **Tested**: `AddChildOnceIntegrationTests` 3/3 (same key twice ->
+  one child; two simultaneous taps -> one child, no 500; another key -> another child; reused key 409; overlong 400; no
+  key unchanged), `childCreate.test.ts` (header sent, body unchanged), full backend integration 539/539 (the 3 proxy
+  tests again hit the local connection limit and pass alone), full frontend 467/467 (`media.test.tsx` times out under
+  full load, passes alone), backend unit 203/203. **Browser verified**: a fresh sample parent adds a child; the request
+  carries the key; replaying it returns the same child; the family has one.
