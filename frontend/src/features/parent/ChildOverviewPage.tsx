@@ -204,7 +204,7 @@ function BackLink({ name }: { name?: string }) {
     <nav aria-label={m.breadcrumb}>
       <ol className="flex items-center gap-1.5 text-sm">
         <li>
-          <Link to="/parent" className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+          <Link to="/parent" className="inline-flex min-h-6 items-center font-semibold text-tonle-700 underline-offset-4 hover:underline">
             {m.yourFamily}
           </Link>
         </li>

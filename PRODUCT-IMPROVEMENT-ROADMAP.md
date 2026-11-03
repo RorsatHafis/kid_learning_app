@@ -2371,3 +2371,8 @@ Dependencies:
   its address with a scoped `Arrival`, as the Studio does, so the child's name and the tabs stay put while the tab's
   content arrives; leaving for the family page moves the page. **Tested**: parent Vitest 72/72. **Browser verified**
   (1280 px): progress and settings -> the tab content only; Family -> the page; no page errors.
+- 2026-11-03: **Parent breadcrumbs are 24 px touch targets** (WCAG 2.5.8 by size, not only by spacing). CI's e2e
+  accessibility check on "parent: one skill explained" failed once on `f5ecd7a` (target-size: the child's breadcrumb
+  link, 42 x 17 px); it doesn't reproduce locally (axe at 0/30/80/600 ms after navigating, scrolled or not). Re-run
+  requested to tell flake from regression; the links now meet the size on their own either way. **Tested**: parent
+  Vitest 72/72. **Browser verified** (390 px): breadcrumb links 24 px, axe clean on the skill and child pages.

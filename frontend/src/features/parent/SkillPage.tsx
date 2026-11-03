@@ -45,13 +45,13 @@ export function SkillPage() {
       <nav aria-label={all.overview.breadcrumb}>
         <ol className="flex flex-wrap items-center gap-1.5 text-sm">
           <li>
-            <Link to="/parent" className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+            <Link to="/parent" className="inline-flex min-h-6 items-center font-semibold text-tonle-700 underline-offset-4 hover:underline">
               {all.overview.yourFamily}
             </Link>
           </li>
           <ChevronRight size={14} className="text-ink-faint" aria-hidden />
           <li>
-            <Link to={`/parent/children/${childId}`} className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+            <Link to={`/parent/children/${childId}`} className="inline-flex min-h-6 items-center font-semibold text-tonle-700 underline-offset-4 hover:underline">
               {name ?? m.yourChild}
             </Link>
           </li>
