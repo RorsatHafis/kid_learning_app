@@ -98,8 +98,11 @@ export interface ParsedSheet {
   tooMany: boolean;
 }
 
-/** Tab-separated rows as spreadsheets copy them: quoted cells may hold tabs, line breaks and doubled quotes. */
-export function splitCells(text: string): string[][] {
+/**
+ * Rows as spreadsheets copy them (tab-separated) or save them as CSV (comma-separated): quoted cells may hold the
+ * separator, line breaks and doubled quotes.
+ */
+export function splitCells(text: string, separator: "\t" | "," = "\t"): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = "";
@@ -125,7 +128,7 @@ export function splitCells(text: string): string[][] {
       atCellStart = false;
       continue;
     }
-    if (ch === "\t") {
+    if (ch === separator) {
       row.push(cell);
       cell = "";
       atCellStart = true;
@@ -187,7 +190,10 @@ function blankToNull(value: string | undefined): string | null {
 /** The pasted sheet, row by row: a draft for every row that can be read, and what stops the others. */
 export function parseSheet(text: string): ParsedSheet {
   // A file's byte-order mark, when the author pastes the template file's text as it is.
-  const all = splitCells(text.replace(/^\uFEFF/, ""));
+  const bare = text.replace(/^\uFEFF/, "");
+  // Copied cells are tab-separated; a CSV file (Excel's "CSV UTF-8", a Sheets download) has commas: the header says which.
+  const headerLine = bare.split(/\r?\n/, 1)[0] ?? "";
+  const all = splitCells(bare, !headerLine.includes("\t") && headerLine.includes(",") ? "," : "\t");
   const header = all[0] ?? [];
   const columns = header.map(columnOf);
   const unknownColumns = header.filter((h, i) => h.trim() !== "" && columns[i] === null).map((h) => h.trim());

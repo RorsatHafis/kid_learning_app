@@ -87,6 +87,25 @@ describe("parseSheet", () => {
   });
 });
 
+describe("CSV files", () => {
+  it("reads comma-separated rows when the header has commas, quoted cells keeping theirs", () => {
+    const sheet = parseSheet('type,question,answer,choice 1,choice 2\r\nchoice,"Which is more, 3 or 8?",8,3,8\r\nnumber,2 + 2 = ?,4,,\r\n');
+    expect(sheet.rows.map((r) => [r.prompt, r.issues.length])).toEqual([
+      ["Which is more, 3 or 8?", 0],
+      ["2 + 2 = ?", 0],
+    ]);
+    expect(sheet.rows[0].draft?.options).toEqual([
+      { label: "3", correct: false },
+      { label: "8", correct: true },
+    ]);
+  });
+
+  it("keeps commas inside copied (tab-separated) cells as words", () => {
+    const sheet = parseSheet(tsv(["type", "question", "answer"], ["number", "1, 2, 3 - what comes next?", "4"]));
+    expect(sheet.rows[0].prompt).toBe("1, 2, 3 - what comes next?");
+  });
+});
+
 describe("templateFile", () => {
   it("is a sheet that reads back as one draft per type, its Khmer included", () => {
     const sheet = parseSheet(templateFile());

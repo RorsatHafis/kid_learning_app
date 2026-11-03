@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, CircleAlert, ClipboardCopy, Download } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleAlert, ClipboardCopy, Download, FileUp } from "lucide-react";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -22,6 +22,9 @@ import { useUnsavedGuard } from "./unsavedGuard";
  * With `?activity=<id>` (from an activity being written) the rows go to the end of that activity instead: the author
  * tries it and publishes it with its questions, as with a question written in it.
  */
+/** A sheet of 50 questions is a few kilobytes; a bigger file is not a question sheet. */
+const MAX_FILE_BYTES = 1_000_000;
+
 export function QuestionImport() {
   const { catalog } = useStudio();
   const m = useMessages(importMessages);
@@ -224,6 +227,34 @@ export function QuestionImport() {
               spellCheck={false}
               className="min-h-[160px] rounded-[12px] border border-line-strong px-4 py-3 font-mono text-xs text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
             />
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <label
+                className={buttonClasses(
+                  "outline",
+                  "sm",
+                  "cursor-pointer focus-within:ring-2 focus-within:ring-tonle-600 focus-within:ring-offset-2",
+                )}
+              >
+                <FileUp size={15} aria-hidden /> {m.openFile}
+                <input
+                  type="file"
+                  accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+                  className="sr-only"
+                  onChange={async (ev) => {
+                    const file = ev.target.files?.[0];
+                    ev.target.value = "";
+                    if (!file) return;
+                    setRefusal(null);
+                    if (file.size > MAX_FILE_BYTES) {
+                      setRefusal([m.fileTooBig]);
+                      return;
+                    }
+                    setText(await file.text());
+                  }}
+                />
+              </label>
+              <span className="text-xs text-ink-soft">{m.openFileHint}</span>
+            </div>
             <SheetSummary sheet={sheet} toFix={toFix.length} ready={ready.length} />
             {sheet.rows.length > 0 && (
               <ol aria-label={m.pasteTitle} className="flex flex-col gap-2">

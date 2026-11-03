@@ -2240,3 +2240,9 @@ Dependencies:
   (sample content, not curriculum; Khmer awaits the same native review, PD-14). Pasting the file's text back reads five
   ready rows. **Tested**: `sheetImport.test.ts` (template reads back, its Khmer choices aligned), studio + i18n Vitest
   219/219. **Browser verified**: the download's name, BOM, six lines, and the paste summary "5 questions ready to add".
+- 2026-11-03: **Open a CSV or TSV file instead of pasting** on the same page ("Or open a file", up to 1 MB; Excel's
+  "CSV UTF-8" keeps Khmer). The parser reads commas when the header row has no tabs (copied cells stay tab-separated,
+  so commas inside them stay words). **Tested**: `sheetImport.test.ts` (CSV with a quoted comma; commas inside copied
+  cells), studio + i18n Vitest 221/221. **Browser verified** (360 px): a UTF-8 CSV with a BOM, a quoted comma and a
+  Khmer column reads as two ready rows; keyboard focus ring on the file control; axe clean. XLSX is not read (save as
+  CSV).
