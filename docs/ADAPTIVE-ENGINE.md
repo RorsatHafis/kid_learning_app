@@ -4,7 +4,8 @@ Part of the product review (`PRODUCT-JOURNEY-REVIEW.md`). **Verification level: 
 `MasteryEngine`, `AdaptiveEngine`, `PostCompletionService` and `application.yaml` on 2026-11-03. The worked examples
 are computed from the code's formula with the configured defaults; they were **not** run against the server for this
 document (the behaviours are covered by the Battle 2D/5A-5D integration tests, which this pass did not re-read).
-Not traced yet: `SmartReviewService`, `CurriculumPathPlanner`, `EvidenceStandard`, `LearningDays` (next pass).
+`EvidenceStandard` traced in 4a. Not traced yet: `SmartReviewService`, `CurriculumPathPlanner`, `LearningDays` (next
+pass).
 
 ## 1. Inputs and who controls them
 
@@ -60,6 +61,25 @@ Every decision is stored (`AdaptationDecision`) with its reason, including "no p
 
 Same content, different evidence: the children in rows 2 and 6 did the same activity and get different next steps,
 and the parent sees why.
+
+## 4a. What adults are told: the evidence standard (`EvidenceStandard`, traced 2026-11-03)
+
+Separate from the decision above: the standing parents and teachers read for a skill.
+
+| Evidence (answers) | Level | Mastery | Learning days | Standing shown |
+|---|---|---|---|---|
+| 0 | NONE | - | - | Not started |
+| 1-2 | PARTIAL | not read | - | Too early to tell |
+| >= 3 (STRONG from 10) | SUFFICIENT | >= 0.8 | >= 2 | Secure |
+| >= 3 | SUFFICIENT | >= 0.8 | 1 | Progressing ("waiting for another day", D-17) |
+| >= 3 | SUFFICIENT | 0.6 - 0.8 | any | Progressing |
+| >= 3 | SUFFICIENT | < 0.6 | any | Needs practice |
+
+Applied to the examples above: "C C C" in one sitting reads **Progressing - waiting for another day** while the engine
+already offers a CHALLENGE (D-17: the standing waits for a second day, decisions don't); "C W W" reads **Needs
+practice** and gets REINFORCEMENT; "W W" reads **Too early to tell** yet already gets REINFORCEMENT (gate 2 for acting,
+3 for telling an adult - the platform may offer easier practice before it claims anything about the child). That
+asymmetry is deliberate and consistent: acting on weak evidence is cheap and reversible, a claim to a parent is not.
 
 ## 5. Findings from this trace (to the roadmap)
 
