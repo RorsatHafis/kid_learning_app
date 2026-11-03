@@ -182,12 +182,16 @@ public class LearningJourneyService {
     /**
      * @param chapterId the learning objective this step belongs to (see {@link Chapter}); null when
      *                  none of the curriculum's objectives covers the activity's skills
+     * @param playAgainVersionId for a finished step, what playing it again (X24, free practice) plays: the activity's
+     *                  current published version - the step keeps the version the child played, which may since have
+     *                  been revised and retired (a new attempt can't start on it). Null when the activity is archived
+     *                  or has nothing published, or the step isn't finished.
      */
     public record JourneyStep(UUID learningPathItemId, UUID activityVersionId, String title, String activityType,
                               Integer difficultyLevel, Integer estimatedDurationSeconds, int questionCount,
                               int sequenceOrder, LearningPathItemStatus status, LearningPathItemSource source,
                               List<SkillRef> skills, BigDecimal score, Instant completedAt, Explanation explanation,
-                              UUID chapterId) {
+                              UUID chapterId, UUID playAgainVersionId) {
     }
 
     /** Where a child is in a chapter, from its steps. Says nothing about mastery. */
@@ -497,7 +501,8 @@ public class LearningJourneyService {
                 version.getDifficultyLevel(), version.getEstimatedDurationSeconds(),
                 lookups.questionCount(version.getId()), item.getSequenceOrder(), item.getStatus(), item.getSource(),
                 skills, completedAttempt.map(ActivityAttempt::getScore).orElse(null),
-                item.getCompletedAt(), explain(item, activity, lookups), chapterOf(skills, chapters));
+                item.getCompletedAt(), explain(item, activity, lookups), chapterOf(skills, chapters),
+                item.getStatus() == LearningPathItemStatus.COMPLETED ? lookups.playAgain(activity) : null);
     }
 
     private Explanation explain(LearningPathItem item, Activity activity, Lookups lookups) {
@@ -611,6 +616,7 @@ public class LearningJourneyService {
         private final Map<UUID, SkillRef> skills = new HashMap<>();
         private final Map<UUID, Integer> questionCounts = new HashMap<>();
         private final Map<UUID, Optional<String>> classLabels = new HashMap<>();
+        private final Map<UUID, Optional<UUID>> playable = new HashMap<>();
 
         Lookups(UUID childId) {
             this.childId = childId;
@@ -733,6 +739,14 @@ public class LearningJourneyService {
         Activity activity(UUID id) {
             return activities.computeIfAbsent(id, key -> activityRepository.findById(key)
                     .orElseThrow(() -> new ResourceNotFoundException("Activity", key)));
+        }
+
+        /** The activity's current published version, once per activity; none for an archived activity. */
+        UUID playAgain(Activity activity) {
+            return playable.computeIfAbsent(activity.getId(), id -> activity.getStatus() != com.platform.common.entity.CatalogStatus.ACTIVE
+                    ? Optional.empty()
+                    : activityVersionRepository.findFirstByActivityIdAndStatusOrderByVersionNumberDesc(id, com.platform.common.entity.PublicationStatus.PUBLISHED)
+                            .map(ActivityVersion::getId)).orElse(null);
         }
 
         List<SkillRef> skillsOf(UUID activityVersionId) {

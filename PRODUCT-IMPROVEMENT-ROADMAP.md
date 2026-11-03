@@ -2423,3 +2423,15 @@ Dependencies:
   refused; a small request -> the usual 401; a 1.5 MB picture upload -> 201), media/import/sweep integration 14/14,
   backend unit 203/203. Checked, no change: media URLs are relative (same origin under the CSP); the hosted
   deployment proxies /api through Vercel, so `connect-src 'self'` holds.
+- 2026-11-03: **Fixed: "Play again" on a finished book failed once the activity was revised** (found by crawling the
+  child's space: `POST /children/{id}/activity-attempts` -> 404). The shelf linked to the version the child played;
+  an author's revision retires it, and a new attempt can't start on a retired version, so the child tapped a lit book
+  and got an error. The journey step now also says what to play again - `playAgainVersionId`, the activity's current
+  published version (none when the activity is archived or nothing is published) - while keeping the version played
+  for its record; the shelf links to it and hides "Play again" when there is nothing to play. No learning rule changes:
+  free practice was already per activity, outside the path (X24, OD-10). A server that doesn't send the field (older)
+  keeps the previous link. **Tested**: `PlayAgainVersionIntegrationTests` 1/1 (finished -> revised: the step keeps v1,
+  names v2; an attempt on v1 is refused, on v2 starts; archived -> none), journey API 8/8, golden journey, sweep 2/2,
+  `shelfReplay.test.tsx` (revised, none, older server), full frontend Vitest 466/466, backend unit 203/203. **Browser
+  verified** (Sophea, 390 px): "Play again" on Addition Recognition Practice -> "Playing it again" on its current
+  version, no API error (it was a 404 before).

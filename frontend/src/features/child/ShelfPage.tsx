@@ -240,6 +240,9 @@ function Book({
   index: number;
 }) {
   const lit = step.status === "COMPLETED";
+  // What playing it again plays: the server names the activity's current published version (null: nothing to play -
+  // archived, or withdrawn). A server that doesn't say (an older one) - the version played, as before.
+  const replay = step.playAgainVersionId === undefined ? step.activityVersionId : step.playAgainVersionId;
   const tag = stepTag(step);
   const m = useMessages(childMessages).shelf;
   const state = lit ? m.litState : isNext ? m.upNextState : m.waitingState;
@@ -273,10 +276,10 @@ function Book({
           {lit ? m.lit : isNext ? m.upNext : m.waiting}
           {tag ? ` · ${tag.label}` : ""}
         </span>
-        {/* X24: a lit book can be played again - free practice, outside the path. */}
-        {lit && (
+        {/* X24: a lit book can be played again - free practice, outside the path - in its current published version. */}
+        {lit && replay && (
           <Link
-            to={`/learn/${childId}/practice/${step.activityVersionId}`}
+            to={`/learn/${childId}/practice/${replay}`}
             aria-label={m.playAgainLabel(step.title)}
             className="inline-flex min-h-11 w-fit items-center gap-1.5 whitespace-nowrap rounded-pill bg-tonle-900 px-3.5 text-xs font-bold text-white transition-colors duration-150 hover:bg-tonle-800"
           >

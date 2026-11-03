@@ -324,6 +324,11 @@ export interface JourneyStep {
   explanation: Explanation;
   /** The chapter (learning objective) this step belongs to; null for practice outside every chapter. */
   chapterId: string | null;
+  /**
+   * A finished step played again (X24) plays this: the activity's current published version - the step keeps the one
+   * the child played, which may have been revised and retired since. Absent or null: nothing to play again.
+   */
+  playAgainVersionId?: string | null;
 }
 
 /** Where a child is in a chapter, from its steps. Not mastery (see Skills & evidence). */
