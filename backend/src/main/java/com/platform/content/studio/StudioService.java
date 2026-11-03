@@ -905,6 +905,33 @@ public class StudioService {
     }
 
     /**
+     * Pasted rows straight into an activity being written: each a draft question (a row without skills takes the
+     * activity's, as a question written in the activity does), added after its questions in the order pasted - all of
+     * them or none. The author tries the activity and publishes it with its questions (Y42), as with any it holds.
+     */
+    @Transactional
+    public List<ImportedQuestion> importIntoActivity(UUID accountId, UUID activityVersionId, ImportQuestionsRequest request) {
+        ActivityVersion version = activityService.getVersion(activityVersionId);
+        Activity activity = guard.requireActivityWrite(accountId, version.getActivityId());
+        List<UUID> activitySkills = activityService.skillsOf(activityVersionId);
+        List<CreateQuestionRequest> rows = request.questions().stream().map(row -> {
+            if (!row.subjectId().equals(activity.getSubjectId())) {
+                throw new IllegalArgumentException("Questions added to an activity must be in its subject");
+            }
+            return !row.skillIds().isEmpty() ? row : new CreateQuestionRequest(row.subjectId(), row.questionType(), row.prompt(),
+                    row.correctAnswer(), row.difficultyLevel(), row.options(), row.pairs(), row.items(), row.promptImageAssetId(),
+                    row.promptImageDescription(), row.promptAudioAssetId(), activitySkills, row.groups(), row.sortItems(), row.hint(),
+                    row.explanation(), row.khmer());
+        }).toList();
+        List<ImportedQuestion> imported = importQuestions(accountId, new ImportQuestionsRequest(rows));
+        List<ActivityService.ItemDraft> items = new java.util.ArrayList<>(activityItems.findByActivityVersionIdOrderBySequenceOrderAsc(activityVersionId)
+                .stream().map(item -> new ActivityService.ItemDraft(item.getQuestionVersionId(), item.getPoints())).toList());
+        imported.forEach(question -> items.add(new ActivityService.ItemDraft(question.versionId(), null)));
+        activityService.replaceItems(activityVersionId, items);
+        return imported;
+    }
+
+    /**
      * A new question that starts as a copy of one the author may edit: its latest version (draft or published) becomes
      * the copy's first draft - prompt, answer, choices, media, hint, explanation, difficulty, skills and translations.
      * The way to make a variant ("5 + 4" to "6 + 3") without retyping. The copy belongs to the original's owner - also

@@ -2225,3 +2225,13 @@ Dependencies:
   + teacher Vitest 77/77, backend unit suite 203/203. **Browser verified** (teacher, 360 px and 1280 px): a bad row
   blocks adding with its reason; four rows added as drafts, all "Ready to publish", the first opens in the editor; no
   overflow, axe clean, no API error. Not built: bulk publish of the imported drafts (author publishes each), CSV files.
+- 2026-11-03: **Paste questions straight into an activity being written** - the builder's "Paste many from a
+  spreadsheet" opens the same page in an "into this activity" mode (`?activity=`); `POST
+  /studio/activity-versions/{id}/questions/import` adds each row as a draft question after the activity's own (rows
+  without skills take the activity's, as a question written in it does), all or none, only into a draft and only in the
+  activity's subject; the author tries the activity and publishes it with its questions (Y42) - no blind bulk publish.
+  The import result now lists each draft's issues in words, not only on hover. Also fixes `f3de0f3`'s hard-coded column
+  words (i18n check). **Tested**: `ActivityQuestionImportIntegrationTests` 2/2 (appended in order, activity's skill,
+  published together, published activity 409, other subject 400 with nothing kept, another teacher refused),
+  `QuestionImportIntegrationTests` 3/3, studio + i18n Vitest 218/218. **Browser verified** (teacher, 360 px): two rows
+  added, both in the builder; a published activity's paste page says so; no overflow, axe clean, no API error.

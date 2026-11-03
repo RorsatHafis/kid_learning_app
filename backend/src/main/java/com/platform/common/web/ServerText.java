@@ -389,6 +389,7 @@ public final class ServerText {
             Map.entry("The offer has to end after it starts", "ការផ្ដល់ជូនត្រូវតែបញ្ចប់ក្រោយពេលវាចាប់ផ្ដើម"),
             Map.entry("This question has nothing written yet to copy", "សំណួរនេះមិនទាន់មានអ្វីសរសេរដើម្បីចម្លងនៅឡើយទេ"),
             Map.entry("Import questions into one subject at a time", "នាំចូលសំណួរទៅក្នុងមុខវិជ្ជាមួយក្នុងពេលតែមួយ"),
+            Map.entry("Questions added to an activity must be in its subject", "សំណួរដែលបន្ថែមទៅសកម្មភាពត្រូវតែនៅក្នុងមុខវិជ្ជារបស់វា"),
             Map.entry("This activity has nothing written yet to copy", "សកម្មភាពនេះមិនទាន់មានអ្វីសរសេរដើម្បីចម្លងនៅឡើយទេ"),
             Map.entry("An activity needs a title", "សកម្មភាពត្រូវការចំណងជើង"),
             Map.entry("This plan isn't offered now: today is outside its offer dates",

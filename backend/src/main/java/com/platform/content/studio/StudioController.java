@@ -253,6 +253,14 @@ public class StudioController {
         return studio.addNewQuestion(accountId, versionId, request);
     }
 
+    /** Rows pasted from a spreadsheet into this draft activity: each a draft question added after its questions, all or none. */
+    @PostMapping("/activity-versions/{versionId}/questions/import")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<ImportedQuestion> importIntoActivity(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId,
+                                                     @Valid @RequestBody ImportQuestionsRequest request) {
+        return studio.importIntoActivity(accountId, versionId, request);
+    }
+
     /** Y42: the activity and its draft questions, published together or not at all. */
     @PostMapping("/activity-versions/{versionId}/publish-with-questions")
     public ActivityDetail publishActivityWithQuestions(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId) {

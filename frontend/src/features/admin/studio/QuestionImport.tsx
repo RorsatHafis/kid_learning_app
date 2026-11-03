@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, CircleAlert, ClipboardCopy } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
+import { ErrorState, LoadingState } from "@/components/ui/States";
+import { useAsync } from "@/lib/hooks/useAsync";
 import { studioApi, type ImportedQuestion } from "@/lib/api/studio";
 import { ApiError } from "@/lib/api/ApiError";
 import { useMessages } from "@/i18n/catalog";
@@ -16,6 +18,9 @@ import { useUnsavedGuard } from "./unsavedGuard";
  * Many questions at once: the author writes them in a spreadsheet and pastes the rows. The page reads the cells and
  * shows what each row will be; the server adds them all as drafts (or none) and says what each needs before it can be
  * published. Pictures, recordings, matching and sorting stay in the question form.
+ *
+ * With `?activity=<id>` (from an activity being written) the rows go to the end of that activity instead: the author
+ * tries it and publishes it with its questions, as with a question written in it.
  */
 export function QuestionImport() {
   const { catalog } = useStudio();
@@ -28,6 +33,9 @@ export function QuestionImport() {
   const [imported, setImported] = useState<ImportedQuestion[] | null>(null);
   const [copied, setCopied] = useState<"done" | "failed" | null>(null);
   const sheet = useMemo(() => parseSheet(text), [text]);
+  const activityId = useSearchParams()[0].get("activity");
+  const target = useAsync(() => (activityId ? studioApi.activity(activityId) : Promise.resolve(null)), [activityId]);
+  const draft = target.data?.versions.at(-1)?.status === "DRAFT" ? target.data.versions.at(-1) : undefined;
   useUnsavedGuard(text.trim() !== "" && imported === null);
 
   const toFix = sheet.rows.filter((r) => r.issues.length > 0);
@@ -47,9 +55,8 @@ export function QuestionImport() {
     setBusy(true);
     setRefusal(null);
     try {
-      const result = await studioApi.importQuestions(
-        ready.map((r) => ({ ...r.draft!, subjectId: catalog.subject.id, questionType: r.type!, skillIds })),
-      );
+      const rows = ready.map((r) => ({ ...r.draft!, subjectId: catalog.subject.id, questionType: r.type!, skillIds }));
+      const result = draft ? await studioApi.importIntoActivity(draft.id, rows) : await studioApi.importQuestions(rows);
       setImported(result);
       setText("");
     } catch (err) {
@@ -64,19 +71,41 @@ export function QuestionImport() {
     }
   };
 
+  const activityPath = activityId ? `../../activities/${activityId}` : null;
+  const title = target.data ? m.intoTitle(target.data.title) : m.title;
+  const back = (
+    <Link
+      to={activityPath ?? ".."}
+      relative="path"
+      className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-tonle-700 hover:underline"
+    >
+      <ArrowLeft size={16} aria-hidden /> {activityPath ? m.backToActivity : m.back}
+    </Link>
+  );
+  if (activityId && (target.isLoading || target.error || !draft)) {
+    return (
+      <div className="flex flex-col gap-6">
+        {back}
+        {target.isLoading ? (
+          <LoadingState />
+        ) : (
+          <ErrorState message={target.error ? m.activityGone : m.notADraft} onRetry={target.error ? target.refetch : undefined} />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <Link to=".." relative="path" className="inline-flex items-center gap-1.5 self-start text-sm font-semibold text-tonle-700 hover:underline">
-        <ArrowLeft size={16} aria-hidden /> {m.back}
-      </Link>
+      {back}
 
       {imported ? (
-        <Panel title={m.title}>
+        <Panel title={title}>
           <div role="status" className="flex flex-col gap-1">
             <p className="flex items-center gap-2 font-semibold text-palm-deep">
-              <CheckCircle2 size={18} aria-hidden /> {m.added(imported.length)}
+              <CheckCircle2 size={18} aria-hidden /> {draft ? m.addedInto(imported.length) : m.added(imported.length)}
             </p>
-            <p className="text-sm text-ink-soft">{m.addedLead}</p>
+            <p className="text-sm text-ink-soft">{draft ? m.addedIntoLead : m.addedLead}</p>
           </div>
           <ul className="mt-4 flex flex-col divide-y divide-line">
             {imported.map((q) => (
@@ -87,20 +116,28 @@ export function QuestionImport() {
                 {q.validation.errors.length === 0 ? (
                   <span className="shrink-0 text-sm font-semibold text-palm-deep">{m.readyToPublish}</span>
                 ) : (
-                  <span className="shrink-0 text-sm text-brick-deep" title={q.validation.errors.map(issueText).join(" ")}>
-                    {m.toFix(q.validation.errors.length)}
+                  <span className="text-sm text-brick-deep sm:max-w-[45%] sm:text-right">
+                    <span className="font-semibold">{m.toFix(q.validation.errors.length)}: </span>
+                    {q.validation.errors.map(issueText).join(" ")}
                   </span>
                 )}
               </li>
             ))}
           </ul>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => setImported(null)}>
-            {m.pasteMore}
-          </Button>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {activityPath && (
+              <Link to={activityPath} relative="path" className={buttonClasses("solid", "sm")}>
+                {m.openActivity}
+              </Link>
+            )}
+            <Button variant="outline" size="sm" onClick={() => setImported(null)}>
+              {m.pasteMore}
+            </Button>
+          </div>
         </Panel>
       ) : (
-        <Panel title={m.title}>
-          <p className="max-w-prose text-sm text-ink-soft">{m.lead}</p>
+        <Panel title={title}>
+          <p className="max-w-prose text-sm text-ink-soft">{draft ? m.intoLead : m.lead}</p>
 
           <section aria-labelledby="import-columns" className="mt-6 flex flex-col gap-3">
             <h3 id="import-columns" className="font-semibold text-ink">
@@ -120,13 +157,13 @@ export function QuestionImport() {
             </div>
             <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-ink-soft">
               <li>
-                <strong className="text-ink">type</strong>: {m.columnHelp.type}
+                <strong className="text-ink">{TEMPLATE_COLUMNS[0]}</strong>: {m.columnHelp.type}
               </li>
               <li>
-                <strong className="text-ink">question</strong>: {m.columnHelp.question}
+                <strong className="text-ink">{TEMPLATE_COLUMNS[1]}</strong>: {m.columnHelp.question}
               </li>
               <li>
-                <strong className="text-ink">answer</strong>: {m.columnHelp.answer}
+                <strong className="text-ink">{TEMPLATE_COLUMNS[2]}</strong>: {m.columnHelp.answer}
               </li>
               <li>{m.columnHelp.choices}</li>
               <li>{m.columnHelp.guidance}</li>
@@ -142,7 +179,7 @@ export function QuestionImport() {
               <p className="text-sm text-ink-soft">{e.skillFirst}</p>
             ) : (
               <>
-                <p className="text-sm text-ink-soft">{m.skillsHint}</p>
+                <p className="text-sm text-ink-soft">{draft ? m.intoSkillsHint : m.skillsHint}</p>
                 {catalog.skills.map((skill) => (
                   <label key={skill.id} className="flex min-h-9 items-center gap-2 text-sm text-ink">
                     <input

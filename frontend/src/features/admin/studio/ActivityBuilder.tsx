@@ -177,6 +177,13 @@ export function ActivityBuilder({
             )}
 
             <Reuse subjectId={detail.subjectId} taken={ids} busy={busy} onAdd={(id) => void replace([...ids, id], b.added)} />
+            <Link
+              to={`../../questions/import?activity=${detail.id}`}
+              relative="path"
+              className="self-start text-sm font-semibold text-tonle-700 hover:underline"
+            >
+              {b.paste}
+            </Link>
           </section>
 
           {skills}

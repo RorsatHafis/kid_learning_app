@@ -717,6 +717,11 @@ export const studioApi = {
   publishActivityVersion: (versionId: string) =>
     apiClient.post<ActivityDetail>(`${S}/activity-versions/${versionId}/publish`),
   /** Y42: a new question written in the activity and added at its end - one step (its subject and skills: the activity's). */
+  /** Rows pasted into this draft activity: each a draft question after its questions (the activity's skills when none). */
+  importIntoActivity: (
+    versionId: string,
+    questions: (QuestionDraftInput & { subjectId: string; questionType: QuestionType; skillIds: string[] })[],
+  ) => apiClient.post<ImportedQuestion[]>(`${S}/activity-versions/${versionId}/questions/import`, { questions }),
   addNewQuestion: (versionId: string, body: QuestionDraftInput & { subjectId: string; questionType: QuestionType }) =>
     apiClient.post<ActivityDetail>(`${S}/activity-versions/${versionId}/questions`, { ...body, skillIds: [] }),
   /** Y42: the activity and its draft questions, published together or not at all. */
