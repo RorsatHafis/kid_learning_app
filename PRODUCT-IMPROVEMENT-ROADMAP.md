@@ -2246,3 +2246,10 @@ Dependencies:
   cells), studio + i18n Vitest 221/221. **Browser verified** (360 px): a UTF-8 CSV with a BOM, a quoted comma and a
   Khmer column reads as two ready rows; keyboard focus ring on the file control; axe clean. XLSX is not read (save as
   CSV).
+- 2026-11-03: **Review, incrementally: the adaptive engine traced from code** - `docs/ADAPTIVE-ENGINE.md` (linked from
+  the journey review): inputs and who controls them, the mastery formula (rate 0.2: step 1, 0.556, 0.410, ...), the
+  decision table (governing skill = weakest with evidence; reinforce < 0.4 with 2 answers, challenge >= 0.8 with 3),
+  eight worked examples, and findings **AE-1** (first prerequisite has no ORDER BY - reinforcement target not
+  deterministic with 2+ prerequisites, medium), AE-2 (prerequisite's own mastery ignored), AE-3 (constants), AE-4 (no
+  challenge without difficulty), AE-5 (by design). INSPECTED only; no code changed. Next pass: Smart Review, path
+  planner, evidence standard, learning days.

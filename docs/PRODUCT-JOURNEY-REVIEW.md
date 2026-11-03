@@ -38,6 +38,9 @@ decisions). Nothing is deployed for real users yet. Assessment: **a credible, we
 families; not yet a launchable product** - the blockers are content, launch operations (deployment, email, legal,
 Khmer review) and the owner's decisions, more than code.
 
+**Adaptive engine, traced from code** (inputs, mastery formula, decision table, worked examples, findings AE-1..AE-5):
+see [`ADAPTIVE-ENGINE.md`](ADAPTIVE-ENGINE.md) (2026-11-03, INSPECTED).
+
 ## 2. Coverage matrix by journey
 
 Status key: **V** implemented and verified (tests and/or browser) · **PV** implemented, partially verified · **P**
