@@ -2259,3 +2259,10 @@ Dependencies:
   prerequisite lists get the same stable order. No schema change. **Tested**: `PrerequisiteOrderIntegrationTests` 1/1
   (stored order differs from recorded order; three reads agree), Studio/cold-start/golden-journey integration 14/14,
   backend unit suite 203/203.
+- 2026-11-03: **Review pass 2 and PP-1** - `docs/ADAPTIVE-ENGINE.md` now also traces the evidence standard (what
+  adults are told, beside what the engine does), learning days, the starting path and Smart Review (worked schedule
+  3 -> 8 -> 22 days; SR-1: Smart Review is remediation while mastery < 0.5, retention of secured skills is D-18; SR-2).
+  **PP-1 fixed**: an objective's skills come back in the order they were linked (`ORDER BY created_at, id` on the same
+  `findByLearningObjectiveId`), so steps within an objective on a starting path and in the journey builder have a
+  stated order. **Tested**: `ObjectiveSkillOrderIntegrationTests` 1/1 (stored order differs from linked order),
+  prerequisite/cold-start/golden-journey/Studio/activity-builder integration 18/18, backend unit suite 203/203.
