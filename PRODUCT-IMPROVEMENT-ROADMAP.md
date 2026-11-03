@@ -2413,3 +2413,13 @@ Dependencies:
   detection with the access token in memory. **For the owner (S-ENUM-1)**: registration answers 409 "An account already
   exists for this email address", so it reveals which emails have accounts (rate limited per network); closing it
   means always answering "check your email" and emailing the existing owner - a change to the sign-up experience.
+- 2026-11-03: **Hardening: request bodies are capped in the backend too** (resource exhaustion). The nginx front caps
+  /api bodies at 1 MB (6 MB uploads), but the hosted deployment (Vercel -> Railway) has no nginx, and Spring MVC reads a
+  JSON body whole into memory before validation - one oversized request, even to the unauthenticated sign-in (the rate
+  limiter counts requests, not bytes), could exhaust a small container. `RequestSizeLimitFilter`: a non-multipart
+  body over `platform.http.max-body-bytes` (1 MB, as nginx) -> 413 problem JSON in the reader's language, before it is
+  read; a body without a length (chunked) is read only to the limit, then refused; uploads keep their multipart
+  limits. **Tested**: `RequestSizeLimitIntegrationTests` 2/2 (2 MB sign-in body -> 413 in English and Khmer; chunked ->
+  refused; a small request -> the usual 401; a 1.5 MB picture upload -> 201), media/import/sweep integration 14/14,
+  backend unit 203/203. Checked, no change: media URLs are relative (same origin under the CSP); the hosted
+  deployment proxies /api through Vercel, so `connect-src 'self'` holds.

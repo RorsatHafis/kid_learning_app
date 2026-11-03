@@ -25,6 +25,7 @@ public final class ServerText {
     public static final String FILTER_UNAUTHENTICATED = "Authentication is required";
     public static final String FILTER_TOKEN_REJECTED = "The access token is invalid or expired";
     public static final String FILTER_RATE_LIMITED = "Too many requests from this network. Please wait and try again.";
+    public static final String FILTER_BODY_TOO_LARGE = "That request is too large to accept.";
 
     private ServerText() {
     }
@@ -161,6 +162,7 @@ public final class ServerText {
             Map.entry(FILTER_UNAUTHENTICATED, "សូមចូលគណនីជាមុនសិន"),
             Map.entry(FILTER_TOKEN_REJECTED, "វគ្គចូលរបស់អ្នកផុតកំណត់ហើយ។ សូមចូលម្ដងទៀត"),
             Map.entry(FILTER_RATE_LIMITED, "មានសំណើច្រើនពេកពីបណ្ដាញនេះ។ សូមរង់ចាំបន្តិច ហើយព្យាយាមម្ដងទៀត។"),
+            Map.entry(FILTER_BODY_TOO_LARGE, "សំណើនោះធំពេកមិនអាចទទួលបានទេ។"),
             Map.entry("This device can only open one child's learning space", "ឧបករណ៍នេះអាចបើកបានតែកន្លែងរៀនរបស់កុមារម្នាក់ប៉ុណ្ណោះ"),
             Map.entry("Enter your password again to do this", "សូមបញ្ចូលពាក្យសម្ងាត់របស់អ្នកម្ដងទៀត ដើម្បីធ្វើការនេះ"),
             // M9b: a phone number on the account
