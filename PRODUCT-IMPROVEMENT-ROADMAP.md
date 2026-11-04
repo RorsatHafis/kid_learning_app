@@ -2574,3 +2574,7 @@ Dependencies:
   `components/ui/gridColumns.test.ts` reads every screen's source so a new such grid fails the suite. **Tested**: full
   frontend 479/479 (incl. the new 2), tsc. **Browser verified** (production build, 320 px, English and Khmer): 23 + 23
   pages, no sideways scroll, nothing cut off. Seed accounts back on English.
+- 2026-11-04: **320 px crawl of every role, English and Khmer - clean.** Each seed role's every page reachable from
+  its navigation and one level of in-page links (parent 7, teacher 14, principal 9, administrator 24 = 54 pages per
+  language) at 320 px on the production build: no sideways scroll, no element cut off outside a scrolling region,
+  no serious/critical axe violation, no API, page or console error.
