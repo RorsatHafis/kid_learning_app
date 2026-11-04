@@ -2540,3 +2540,7 @@ Dependencies:
   through the landing page, sign-in, the parent home, a child's page for the parent, the child home and a sorting
   question - 78 controls - every one looks different when focused than at rest (outline, ring or colour); with
   `prefers-reduced-motion: reduce`, no animation is running on any of those pages once loaded. No change needed.
+- 2026-11-04: **Regression test: an answer checked while offline** - new `e2e/answer-offline.spec.ts` (desktop and
+  phone): a new family's child, on the seeded Maths path, checks an answer with the connection cut - told it wasn't
+  sent, answer kept, axe clean on that state; back online, the same Check sends it, feedback shows, exactly one
+  answer recorded (one 201). **Tested** locally against the production build: 2/2.
