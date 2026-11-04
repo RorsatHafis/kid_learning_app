@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Archive, AudioLines, Play, RotateCcw, Square, Trash2, Upload } from "lucide-react";
 import { studioApi, type MediaDetail, type MediaItem } from "@/lib/api/studio";
@@ -21,6 +21,7 @@ import { useStudioScope } from "./studioLogic";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { formatDate } from "@/i18n/format";
 import { mediaMessages } from "./media.messages";
+import { formMessages } from "./form.messages";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,audio/wav,audio/x-wav";
 
@@ -276,19 +277,29 @@ function MediaDetailDialog({ id, onClose, onChanged }: { id: string | null; onCl
   const detail = useAsync(() => (id ? studioApi.mediaDetail(id) : Promise.resolve(null)), [id]);
   const data = detail.data;
   const m = useMessages(mediaMessages);
+  // A typed title or description isn't lost to a stray Escape or a click beside the dialog: closing asks first.
+  const [dirty, setDirty] = useState(false);
+  const leaveUnsaved = useMessages(formMessages).leaveUnsaved;
+  const close = () => {
+    if (dirty && !window.confirm(leaveUnsaved)) return;
+    setDirty(false);
+    onClose();
+  };
   return (
-    <Dialog open={id !== null} onClose={onClose} title={data ? nameOf(data.item) : m.media} size="lg">
+    <Dialog open={id !== null} onClose={close} title={data ? nameOf(data.item) : m.media} size="lg">
       {detail.isLoading && !data && <LoadingState label={m.loadingOne} />}
       {detail.error && <ErrorState error={detail.error} onRetry={detail.refetch} />}
       {data && (
         <MediaDetailBody
           key={data.item.id}
           detail={data}
+          onDirtyChange={setDirty}
           onChanged={() => {
             detail.refetch();
             onChanged();
           }}
           onDeleted={() => {
+            setDirty(false);
             onClose();
             onChanged();
           }}
@@ -300,10 +311,12 @@ function MediaDetailDialog({ id, onClose, onChanged }: { id: string | null; onCl
 
 function MediaDetailBody({
   detail,
+  onDirtyChange,
   onChanged,
   onDeleted,
 }: {
   detail: MediaDetail;
+  onDirtyChange?: (dirty: boolean) => void;
   onChanged: () => void;
   onDeleted: () => void;
 }) {
@@ -311,6 +324,10 @@ function MediaDetailBody({
   const { base } = useStudioScope();
   const [title, setTitle] = useState(item.title ?? "");
   const [description, setDescription] = useState(item.description ?? "");
+  const dirty = title.trim() !== (item.title ?? "").trim() || description.trim() !== (item.description ?? "").trim();
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);

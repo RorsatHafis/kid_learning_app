@@ -54,6 +54,8 @@ export function ManageClassButton({
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(name);
+  // The name as last saved here: the page's own copy updates only once it has reloaded.
+  const [saved, setSaved] = useState(name);
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const m = useMessages(schoolMessages).lifecycle;
@@ -62,10 +64,16 @@ export function ManageClassButton({
     setConfirming(false);
     onChanged();
   });
+  // A typed name isn't lost to a stray Escape or a click beside the dialog: closing with it unsaved asks first.
+  function close() {
+    if (draft.trim() !== saved.trim() && !window.confirm(m.closeUnsaved)) return;
+    setOpen(false);
+  }
 
   function save(e: FormEvent) {
     e.preventDefault();
-    void run(() => schoolApi.renameClass(classId, draft.trim()), m.saved);
+    const next = draft.trim();
+    void run(() => schoolApi.renameClass(classId, next).then(() => setSaved(next)), m.saved);
   }
 
   return (
@@ -74,6 +82,7 @@ export function ManageClassButton({
         variant="outline"
         onClick={() => {
           setDraft(name);
+          setSaved(name);
           setDone(null);
           setConfirming(false);
           setOpen(true);
@@ -81,7 +90,7 @@ export function ManageClassButton({
       >
         <Pencil size={15} aria-hidden /> {m.manageClass}
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={m.manageClassTitle} description={name}>
+      <Dialog open={open} onClose={close} title={m.manageClassTitle} description={name}>
         <div className="flex flex-col gap-6">
           <form onSubmit={save} className="flex flex-col gap-3">
             <FormField label={m.className} value={draft} maxLength={120} required onChange={(e) => setDraft(e.target.value)} />
@@ -160,6 +169,8 @@ export function ManageSchoolButton({
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(name);
+  // The name as last saved here: the page's own copy updates only once it has reloaded.
+  const [saved, setSaved] = useState(name);
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const m = useMessages(schoolMessages).lifecycle;
@@ -168,6 +179,11 @@ export function ManageSchoolButton({
     setConfirming(false);
     onChanged();
   });
+  // A typed name isn't lost to a stray Escape or a click beside the dialog: closing with it unsaved asks first.
+  function close() {
+    if (draft.trim() !== saved.trim() && !window.confirm(m.closeUnsaved)) return;
+    setOpen(false);
+  }
   return (
     <>
       <Button
@@ -176,6 +192,7 @@ export function ManageSchoolButton({
         className="-ml-2.5 mt-1"
         onClick={() => {
           setDraft(name);
+          setSaved(name);
           setDone(null);
           setConfirming(false);
           setOpen(true);
@@ -183,12 +200,13 @@ export function ManageSchoolButton({
       >
         <Pencil size={14} aria-hidden /> {m.manageSchool}
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={m.manageSchoolTitle} description={name}>
+      <Dialog open={open} onClose={close} title={m.manageSchoolTitle} description={name}>
         <div className="flex flex-col gap-6">
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              void run(() => schoolApi.renameSchool(schoolId, draft.trim()), m.saved);
+              const next = draft.trim();
+              void run(() => schoolApi.renameSchool(schoolId, next).then(() => setSaved(next)), m.saved);
             }}
             className="flex flex-col gap-3"
           >

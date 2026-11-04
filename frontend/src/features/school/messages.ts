@@ -146,6 +146,7 @@ export const schoolMessages = defineMessages(
       classArchiveExplain:
         "Its code stops working, and no family can join or curriculum, teacher or practice be added. Children in it keep everything they have, and the family's access to the school is theirs to end.",
       nothingDeleted: "Nothing is deleted.",
+      closeUnsaved: "Your changes aren't saved yet. Close and lose them?",
       restored: "Restored.",
       restoreClass: "Restore the class",
       archivedDone: "Archived.",
@@ -349,6 +350,7 @@ export const schoolMessages = defineMessages(
       classArchiveExplain:
         "លេខកូដរបស់វាឈប់ដំណើរការ ហើយគ្មានគ្រួសារណាអាចចូលរួម ឬបន្ថែមកម្មវិធីសិក្សា គ្រូ ឬការហាត់បានទេ។ កូនៗក្នុងថ្នាក់រក្សាអ្វីៗទាំងអស់ដែលពួកគេមាន ហើយសិទ្ធិចូលប្រើរបស់គ្រួសារទៅសាលា ជារបស់ពួកគេក្នុងការបញ្ចប់។",
       nothingDeleted: "គ្មានអ្វីត្រូវបានលុបទេ។",
+      closeUnsaved: "ការផ្លាស់ប្ដូររបស់អ្នក មិនទាន់បានរក្សាទុកនៅឡើយទេ។ បិទ ហើយបាត់បង់វាឬ?",
       restored: "បានស្ដារហើយ។",
       restoreClass: "ស្ដារថ្នាក់",
       archivedDone: "បានទុកក្នុងបណ្ណសារហើយ។",

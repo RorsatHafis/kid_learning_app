@@ -2493,3 +2493,13 @@ Dependencies:
   and, where the author wrote one, why. Each line describes shipped behaviour only. Khmer drafted (PD-14 review).
   **Tested**: marketing Vitest. **Browser verified**: 360 px in English and Khmer - 8 school items, no overflow, axe
   clean (serious/critical).
+- 2026-11-04: **Phase 1 "unsaved-guard for dialogs" - done.** Page forms in the Studio were guarded on 2026-10-29/30
+  and the Studio's Manage dialog asked before closing; three dialogs still dropped typed text on a stray Escape, a
+  click beside the panel, or the close button: **rename a class**, **rename a school** (principal) and **a media
+  item's title and description** (Studio). Each now asks first ("Your changes aren't saved yet. Close and lose
+  them?" for the school dialogs, Studio's existing wording for the media dialog); Stay keeps the dialog and the text.
+  A save counts at once - closing right after it doesn't ask, even before the page has reloaded its copy of the name.
+  The 6-digit step-up code dialog is left as it is (nothing worth keeping). **Tested**: new `manageUnsaved.test.tsx`
+  (school, 3) and `mediaUnsaved.test.tsx` (2); school and Studio Vitest 98/98; tsc; eslint. **Browser verified**
+  (Chromium): principal at 360 px - typed school name, Escape -> prompt, Stay kept the text, Leave closed; admin at
+  1280 px - typed media title, backdrop click -> prompt, Stay kept, Leave closed. Khmer prompt drafted (PD-14).
