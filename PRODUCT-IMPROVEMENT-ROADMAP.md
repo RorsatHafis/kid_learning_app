@@ -2772,3 +2772,16 @@ Then defects, then simplification. Push at the end of the window; CI once.
   **Browser verified** (production build, 390 px, a new sample family): unlit before, "You lit your flame!" after the
   first activity, header "1-day learning streak"; with reduced motion no flame animation runs. Next slice: milestone
   celebration on the home and the shelf (bigger moment), and a parent-side mention (read-only).
+- 2026-11-04: **LAND-1 slice 1 - the landing hero's composition fixed at its causes.** Measured at 320-1920 px and at
+  short laptop windows (1366 x 657, 1536 x 730, 1280 x 600) in English and Khmer: (1) the heading was a fixed 72 px from
+  `lg` - on a ~650 px-tall window four lines pushed the buttons below the fold: it is now the smaller of 72 px and
+  9.4% of the window's height (never under 48 px), with the top padding scaled the same way; (2) the phone mockup
+  (44% wide) covered half the dashboard and the caption: now 36%, set further left, so both screens read; (3) the
+  phone's capture ended mid-word ("My subjects") at the frame - its screen now fades out; (4) the otter and frog stood
+  in the background scenery at a fixed spot, apart from everything on wide screens - they now stand at the foot of
+  the screens, presenting them; (5) the caption sat where the phone hangs - the screens and buddies have their own
+  box and the caption follows it; (6) the hero stopped at a hard edge - its scene eases into the page. Khmer's
+  heading line height (1.4) was already applied (checked: the language rule outranks the utility). Not reproduced:
+  a clipped navigation bar (header 73 px, sticky, nothing cut at any measured size) - the owner's screenshot did not
+  arrive; to recheck with it. **Tested**: marketing Vitest. **Browser verified** (production build): 12 sizes x 2
+  languages, no sideways scroll, axe clean; screenshots at 1024, 1280, 1366 x 657 and 1920.

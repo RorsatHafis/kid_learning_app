@@ -20,6 +20,8 @@ export function PhoneFrame({
       <div className="relative overflow-hidden rounded-[2.1rem] bg-[#E7F1EC]">
         <img src={src} alt={alt} width={390} height={844} loading={eager ? "eager" : "lazy"} decoding="async" className="block h-auto w-full" />
         <span aria-hidden className="absolute left-1/2 top-1.5 h-3.5 w-16 -translate-x-1/2 rounded-full bg-tonle-950" />
+        {/* The capture continues below the frame: it ends softly, not mid-word. */}
+        <span aria-hidden className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#F6F3EC] via-[#F6F3EC]/80 to-transparent" />
       </div>
     </div>
   );

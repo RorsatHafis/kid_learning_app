@@ -85,20 +85,16 @@ function Hero() {
   const canTry = (demo.data?.length ?? 0) > 0;
   return (
     <section className="relative overflow-hidden bg-paper lg:bg-[#DCEDEC]">
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] hidden h-28 bg-gradient-to-b from-transparent to-paper lg:block" />
       <div aria-hidden className="absolute inset-0 hidden lg:block">
         <PaintedScene position="58% 62%" />
-        {/* Momo and a friend on the stone path */}
-        <div className="absolute bottom-[6%] left-[46%] flex items-end gap-1">
-          <LearningBuddy kind="OTTER" mood="happy" size={150} />
-          <LearningBuddy kind="FROG" mood="idle" size={96} className="mb-1" />
-        </div>
         {/* a morning haze behind the words, so they read on the sky */}
         <div
           className="absolute inset-0"
           style={{ background: "radial-gradient(ellipse 70% 96% at 16% 50%, rgba(246,243,236,0.97) 0%, rgba(246,243,236,0.86) 50%, rgba(246,243,236,0) 82%)" }}
         />
       </div>
-      <div className="relative mx-auto grid grid-cols-1 max-w-[1240px] items-center gap-10 px-4 pb-14 pt-8 sm:px-8 sm:pt-10 lg:min-h-[min(calc(100svh-4.5rem),900px)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12 lg:pb-24 lg:pt-16">
+      <div className="relative mx-auto grid grid-cols-1 max-w-[1240px] items-center gap-10 px-4 pb-14 pt-8 sm:px-8 sm:pt-10 lg:min-h-[min(calc(100svh-4.5rem),900px)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12 lg:pb-32 lg:pt-[clamp(2rem,6svh,4rem)]">
         <div className="flex max-w-[36rem] flex-col gap-6 motion-safe:animate-rise-in">
           {/* The promise in the other language too, as a quotation (its own quotation marks, no closing stop). */}
           <p lang={other} className={cn("text-lg font-semibold leading-[1.55] text-clay-deep sm:text-xl", other === "km" && "font-khmer")}>
@@ -106,7 +102,7 @@ function Hero() {
             {withoutClosingStop(messagesIn(marketingMessages, other).hero.title)}
             <span aria-hidden className="text-clay">{other === "km" ? " »" : "”"}</span>
           </p>
-          <h1 className="font-display text-[2.45rem] font-bold leading-[1.02] tracking-[-0.02em] text-tonle-950 sm:text-[3.6rem] lg:text-[4.5rem]">{m.hero.title}</h1>
+          <h1 className="font-display text-[2.45rem] font-bold leading-[1.02] tracking-[-0.02em] text-tonle-950 sm:text-[3.6rem] lg:text-[clamp(3rem,9.4svh,4.5rem)]">{m.hero.title}</h1>
           <p className="max-w-[31rem] text-[1.0625rem] leading-relaxed text-ink-soft sm:text-[1.1875rem]">{m.hero.lead}</p>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link to="/register" className={goButton}>
@@ -156,20 +152,27 @@ function Hero() {
 
         {/* Large screens only. Lazy, not eager: a hidden lazy image is never fetched, so a phone doesn't download these
             (about 90 KB); on a large screen they are in the first view and load at once. */}
-        <div className="relative mx-auto hidden w-full max-w-[520px] lg:mx-0 lg:block lg:justify-self-end">
+        <div className="mx-auto hidden w-full max-w-[520px] lg:mx-0 lg:block lg:justify-self-end">
+          <div className="relative">
           <BrowserFrame
             src={parentHome}
             alt={l.shotParent}
             width={1600}
             height={1227}
-            className="ml-auto w-[88%] rotate-[1.5deg] motion-safe:animate-rise-in"
+            className="ml-auto w-[90%] rotate-[1.5deg] motion-safe:animate-rise-in"
           />
           <PhoneFrame
             src={childEntrance}
             alt={l.shotChild}
-            className="absolute -bottom-8 left-0 w-[44%] -rotate-[4deg] motion-safe:animate-rise-in sm:-bottom-12"
+            className="absolute -bottom-12 -left-[4%] w-[36%] -rotate-[4deg] motion-safe:animate-rise-in"
           />
-          <p className="mt-14 text-right text-xs font-medium text-ink-soft sm:mt-16">{l.sample}</p>
+          {/* Momo and a friend at the foot of the screens, presenting what the child and the parent see. */}
+          <div aria-hidden className="absolute -bottom-16 right-[4%] flex items-end gap-1">
+            <LearningBuddy kind="OTTER" mood="happy" size={118} />
+            <LearningBuddy kind="FROG" mood="idle" size={76} className="mb-1" />
+          </div>
+          </div>
+          <p className="mt-16 max-w-[38%] text-left text-xs font-medium text-ink-soft">{l.sample}</p>
         </div>
       </div>
     </section>
