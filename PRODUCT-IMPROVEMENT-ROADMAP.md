@@ -2703,3 +2703,52 @@ Dependencies:
 - 2026-11-04: **CI fully green on `7fc6de4`** (run 41784095600): backend unit + integration, frontend, deployment
   files, end-to-end and accessibility - PERF-1 and the failed-read fixes included. `b70302a` (staff page) pushed
   after it; its CI was not checked in this window.
+
+## Owner direction 2026-11-04 (supersedes the order of work above; the roadmap stays the source of truth)
+
+**Priority order:** 1. planned and approved features, built completely (backend, frontend, data, integration, tests,
+the real journey) -> 2. product experience: transitions, movement, animation, usability (high priority) -> 3.
+remaining defects (anything critical at once) -> 4. simplification (without removing useful capability).
+
+**Decisions recorded today (owner-approved):**
+- **STREAK-1 - learning streaks: approved, keep and build.** Replaces the earlier recommendation to remove the
+  dormant streak backend, and is the deliberate product decision CLAUDE.md §19 requires for streaks. Wanted: a visible
+  streak, an animated flame (flicker, glow, reacts when the streak grows), milestone celebrations, the same
+  presentation across the child's space, built on the existing backend and learning records. Rules: the count is
+  real learning activity, never fabricated; inspect the existing streak backend before changing any rule; no timers,
+  lives, penalties or guilt ("you'll lose") wording; encouraging, not stressful; reduced motion respected. The landing
+  page's "No points to chase, no streaks to lose" line must change with it (it would no longer be true).
+- **EXP-1 - motion and transitions across the product:** pages and sections, dialogs/drawers/menus, between
+  learning environments, starting and finishing an activity, learning-state changes, parent <-> child; character
+  reactions, environmental motion, responsive objects, progression and reward animation, animated progress. Every
+  animation must explain, give feedback, show progress or delight; mobile performance and reduced motion kept.
+- **WORLD-1 - a world for the child, not one scenery:** several distinct, connected learning environments (e.g.
+  rivers, rice fields, forest, village, gardens), landmarks, vegetation, atmosphere, depth/parallax, connected scene
+  transitions, a sense of exploration and progression; a reusable environment system (scenes, layers, animation).
+  Child experience only - parent, teacher and admin screens keep their professional design.
+- **LAND-1 - landing page:** fix the top composition at its cause (navigation clipped, first heading line cut or
+  overlapped, hero too close to the top, crowded device mockups, characters/scenery not integrated, no transition into
+  the next section; header height, sticky behaviour, safe area, line height, overflow, breakpoints) - never by hiding
+  overflow. **Every** visible landing text editable by authorized staff in English and Khmer without code: navigation,
+  hero, CTAs, every section heading and description, features, benefits, statistics, testimonials, **FAQs** (this
+  settles L-3 for the landing page), labels, footer; preview before publishing where practical; repeatable items
+  where the roadmap supports them; layout holds with longer and shorter text. No heavy CMS.
+- **FLEX-1 - no fixed three subjects:** layouts, navigation, progress summaries and landing copy must not assume
+  exactly Khmer, English and Maths; more subjects and activity types through the existing data-driven model (overlaps
+  SUB-1: landing subjects from published curricula).
+
+**Not approved by this direction** (unchanged, still the owner's): scoring and mastery (D-18, D-20, AE-2, SR-1),
+accounts and roles (R-1, S-ENUM-1), consent and privacy, subscriptions and payments (P-1, SB1-SB9), storage provider
+(D-06/D-12), A11Y-1, N-1, A-1, C-1, school management S1-S6/B1-B5, D-19 content, PD-14 Khmer review.
+
+**CHECKPOINT - exact next work (next usage window):**
+1. **STREAK-1**: read the dormant `streak` package (backend: entity, service, endpoint, tests) and how it counts days;
+   wire it to real learning records if not already; child-space streak with an animated flame, growth reaction and
+   milestones; integration + frontend tests; browser check incl. reduced motion; change the landing line.
+2. **LAND-1 top section**: reproduce at 360/768/1024/1280/1440 px, find the cause, fix; then inventory every landing
+   string not yet in the site-copy model (F1a made most words editable - list the rest: FAQ, testimonials, statistics,
+   repeatable features) and extend the existing model and its admin page, EN/KM, with preview.
+3. **WORLD-1 + EXP-1**: design the environment system on top of `features/world/PaintedWorld` (scenes per learning
+   area, layers, parallax, ambient motion), connected scene transitions, activity start/finish transitions.
+4. **FLEX-1** audit alongside: no "three subjects" assumptions in child, parent and landing.
+Then defects, then simplification. Push at the end of the window; CI once.
