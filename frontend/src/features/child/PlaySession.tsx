@@ -3,10 +3,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, BookOpen, Library, X } from "lucide-react";
 import { KIND_PICTURE } from "@/features/learning/questionKinds";
 import { ProgressBuds, Bud } from "@/features/world/ProgressBuds";
-import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
+import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi, progressApi } from "@/lib/api/endpoints";
+import { StreakMoment } from "./StreakMoment";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
-import type { ActivityVersionDetail, AnswerRecord, Chapter, EnrollmentOverview, JourneyStep, QuestionType, StartedAttempt } from "@/lib/api/types";
+import type { ActivityVersionDetail, AnswerRecord, Chapter, EnrollmentOverview, JourneyStep, QuestionType, StartedAttempt, StreakSummary } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { play as playCue } from "@/features/buddy/sound";
 import { childReason } from "@/features/learning/explain";
@@ -124,11 +125,20 @@ export function PlaySession() {
   // Y39: what the answers showed before this activity, to say afterwards what grew. Read once per
   // activity; a failed read only means no "your garden grew" (it never blocks playing).
   const skillsBefore = useRef<CurriculumProgress[] | null>(null);
+  // STREAK-1: the streak before this activity, to say afterwards whether finishing it made the flame grow.
+  const streakBefore = useRef<StreakSummary | null>(null);
   const snapshotFor = useRef<string | null>(null);
   useEffect(() => {
     if ((phase.kind !== "intro" && phase.kind !== "playing") || snapshotFor.current === phase.attemptId) return;
     snapshotFor.current = phase.attemptId;
     skillsBefore.current = null;
+    streakBefore.current = null;
+    progressApi
+      .streak(childId)
+      .then((s) => {
+        streakBefore.current = s;
+      })
+      .catch(() => undefined);
     learningApi
       .skills(childId)
       .then((s) => {
@@ -356,6 +366,8 @@ export function PlaySession() {
       return shell(
         <Completed
           phase={phase}
+          childId={childId}
+          streakBefore={streakBefore.current}
           journeyHref={journeyHref}
           onKeepGoing={loadNext}
           breakSuggestion={
@@ -460,6 +472,11 @@ export function PracticeSession() {
   useDocumentTitle(phase.kind === "intro" || phase.kind === "playing" ? phase.activity.title : m.play.againTitle);
   const loadInFlight = useRef(false);
   const shelfHref = `/learn/${childId}/shelf`;
+  // STREAK-1: the streak as the practice opened, to say afterwards whether it made the flame grow.
+  const [streakBefore, setStreakBefore] = useState<StreakSummary | null>(null);
+  useEffect(() => {
+    progressApi.streak(childId).then(setStreakBefore).catch(() => undefined);
+  }, [childId]);
 
   const finish = useCallback(async (attemptId: string, title: string) => {
     setPhase({ kind: "completing" });
@@ -595,6 +612,7 @@ export function PracticeSession() {
               {phase.total > 0 && phase.correct === phase.total ? m.play.perfectAgain : m.play.practiceDone}
             </h1>
             <p className="mt-1 text-lg font-medium text-ink-soft">{m.play.playedAgain(phase.title)}</p>
+            <StreakMoment childId={childId} before={streakBefore} />
             {phase.total > 0 && (
               <p className="mx-auto mt-5 w-fit rounded-pill bg-light-soft px-5 py-2 text-lg font-bold text-light-deep ring-1 ring-light/40">
                 {m.play.gotRight(phase.correct, phase.total)}
@@ -964,11 +982,15 @@ interface BreakSuggestion {
 
 function Completed({
   phase,
+  childId,
+  streakBefore,
   journeyHref,
   onKeepGoing,
   breakSuggestion,
 }: {
   phase: Extract<Phase, { kind: "completed" }>;
+  childId: string;
+  streakBefore: StreakSummary | null;
   journeyHref: string;
   onKeepGoing: () => void;
   breakSuggestion: BreakSuggestion | null;
@@ -997,6 +1019,7 @@ function Completed({
         <p className="mt-1 text-lg font-medium text-ink-soft">
           {finishedChapter ? m.litEveryBook(finishedChapter.title) : m.litEveryLantern(title)}
         </p>
+        <StreakMoment childId={childId} before={streakBefore} />
         {total > 0 && (
           <p className="mx-auto mt-5 w-fit rounded-pill bg-light-soft px-5 py-2 text-lg font-bold text-light-deep ring-1 ring-light/40">
             {m.gotRight(correct, total)}

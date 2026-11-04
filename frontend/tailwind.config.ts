@@ -245,6 +245,33 @@ export default {
           "45%": { transform: "translate(calc(var(--hop-x) * 0.45), -22px)" },
           "100%": { transform: "translate(0, 0)" },
         },
+        // STREAK-1: a living flame - an irregular sway and stretch from its base, the core quicker than the body.
+        "flame-flicker": {
+          "0%, 100%": { transform: "scale(1, 1) skewX(0deg)" },
+          "20%": { transform: "scale(0.97, 1.04) skewX(-2deg)" },
+          "45%": { transform: "scale(1.02, 0.97) skewX(1.5deg)" },
+          "70%": { transform: "scale(0.98, 1.05) skewX(-1deg)" },
+        },
+        "flame-core": {
+          "0%, 100%": { transform: "scale(1, 1) translateY(0)" },
+          "33%": { transform: "scale(0.92, 1.08) translateY(-0.5px)" },
+          "66%": { transform: "scale(1.05, 0.94) translateY(0.5px)" },
+        },
+        "flame-glow": {
+          "0%, 100%": { opacity: "0.55", transform: "scale(1)" },
+          "50%": { opacity: "0.85", transform: "scale(1.08)" },
+        },
+        // The streak grew: the flame swells past its size and settles, brighter.
+        "flame-grow": {
+          "0%": { transform: "scale(0.55)", filter: "brightness(0.9)" },
+          "55%": { transform: "scale(1.22)", filter: "brightness(1.25)" },
+          "100%": { transform: "scale(1)", filter: "brightness(1)" },
+        },
+        ember: {
+          "0%": { transform: "translate(0, 0) scale(1)", opacity: "0" },
+          "15%": { opacity: "1" },
+          "100%": { transform: "translate(var(--ember-x, 0px), -46px) scale(0.3)", opacity: "0" },
+        },
       },
       animation: {
         "pop-in": "pop-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both",
@@ -268,6 +295,11 @@ export default {
         "book-unlit": "book-unlit 700ms cubic-bezier(0.23, 1, 0.32, 1) both",
         bloom: "bloom 1100ms cubic-bezier(0.23, 1, 0.32, 1) both",
         hop: "hop 900ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "flame-flicker": "flame-flicker 1.9s ease-in-out infinite",
+        "flame-core": "flame-core 1.1s ease-in-out infinite",
+        "flame-glow": "flame-glow 2.4s ease-in-out infinite",
+        "flame-grow": "flame-grow 900ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+        ember: "ember 1.6s ease-out infinite",
       },
     },
   },

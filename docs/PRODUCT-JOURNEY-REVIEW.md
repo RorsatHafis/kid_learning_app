@@ -99,7 +99,7 @@ partially implemented · **UI/BE** only one side exists · **PL** planned, not i
 | Answer submission, server scoring, feedback, correct answer shown, explanation or hint after a mistake | V | |
 | Retry after a wrong answer | BD | D-20: one try today. |
 | Completion, progression, Smart Review, mastery with evidence over days | V / BD | D-17 built; D-18 (bring a skill back to confirm it) open. |
-| Garden, shelf, replay as practice | V | No points/streaks/leaderboards. **Finding**: a streak service and `GET /children/{id}/streak` exist in the backend but no screen uses them - dead code against CLAUDE.md's no-streak rule; remove or record as intentionally dormant (low). |
+| Garden, shelf, replay as practice | V | No points or leaderboards. **Learning streak (STREAK-1, owner-approved 2026-11-04)**: built - flame in the child header, a moment after an activity; real finished activities on the child.s learning day. |
 | Empty states (no curriculum fits, all done, offline) | PV | Tested in earlier milestones; **connection lost while answering: RUNTIME 2026-11-04** - the child is told the answer wasn't sent and keeps it; back online, Check sends it once. "All done" depends on content volume - with one seed curriculum a child reaches the end quickly (D-19). |
 | Age fit 3-12 | P | Audience confirmed 3-12; **content for 3-5 (pre-readers) and 10-12 doesn't exist** - recordings help pre-readers but need an educator to record them (D-19). |
 | EN/KM consistency through a session | V | Questions in Khmer only when complete (L-1); names, activities, plans; screen-reader language from metadata (V83/V84). Khmer is Claude-drafted (PD-14 native review pending - EX). |
@@ -192,7 +192,7 @@ school access to a child needs the family's grant; school access never exposes f
 | School administration modules (records, attendance, assessment, fees, announcements) | Schools running operations | Schools | Later, after S1-S3 |
 | Low-connectivity tolerance (resume after drops is built; offline play is not) | Rural connections | Children | Later (measure first) |
 
-Not recommended now: leaderboards, coins, streaks (product rule), a chat-based buddy, PUBLIC content sharing (D-14),
+Not recommended now: leaderboards, coins (product rule); learning streaks were approved by the owner on 2026-11-04 (STREAK-1, encouraging only), a chat-based buddy, PUBLIC content sharing (D-14),
 timetables and rooms.
 
 ## 5. Open decisions
@@ -226,7 +226,7 @@ timetables and rooms.
 - Objectives: real families can sign up, children learn real content in EN and KM, parents see true progress.
 - Work: D-19 content (owner); launch operations (deployment, mail, monitoring, backups rehearsed, legal texts
   published, Khmer native review); landing prices from plan records (P-1); unsaved-guard for dialogs (**built** 2026-11-04); remove or
-  park the unused streak backend; teacher/school first-run guidance.
+  build the learning streak (STREAK-1, approved 2026-11-04); teacher/school first-run guidance.
 - Acceptance: a stranger registers, verifies email, adds a child 3-12 and finds age-appropriate content in both
   languages; a full session plays on a phone over a mobile connection (**measured** 2026-11-04: see
   `SECURITY-AND-RELIABILITY.md`); prices shown equal what is charged; backups
@@ -247,5 +247,5 @@ sharing (D-14).
 ## 7. Documentation discrepancies found
 
 - `SCHOOL-MANAGEMENT.md` section 1 listed academic years as "Missing" though M12 P1 built them - **corrected**.
-- Backend `streak` package and endpoint exist; `BUSINESS-REQUIREMENTS.md` (correctly for the product) says there are
-  no streaks - the backend capability is dormant and undocumented as such - **recorded** here.
+- Backend `streak` package and endpoint: dormant until 2026-11-04, now the learning streak (STREAK-1, owner-approved);
+  `BUSINESS-REQUIREMENTS.md` should say so when it is next revised.

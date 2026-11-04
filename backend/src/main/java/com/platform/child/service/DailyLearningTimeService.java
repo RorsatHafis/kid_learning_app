@@ -183,7 +183,11 @@ public class DailyLearningTimeService {
 
     // ------------------------------------------------------------------ helpers
 
-    /** The zone this child's learning day follows: their family's choice, else the platform's. */
+    /** The zone this child's learning day follows: their family's choice, else the platform's (STREAK-1 counts the same days). */
+    public ZoneId learningDayZone(UUID childId) {
+        return zoneOf(childId);
+    }
+
     private ZoneId zoneOf(UUID childId) {
         String chosen = jdbc.query("SELECT f.learning_day_zone FROM children c JOIN families f ON f.id = c.family_id WHERE c.id = :c",
                 Map.of("c", childId), rs -> rs.next() ? rs.getString(1) : null);

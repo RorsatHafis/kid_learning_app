@@ -14,7 +14,7 @@ export const trustMessages = defineMessages(
       lead: "Every skill your child practises becomes a plant in their own garden. It buds when their answers show it getting stronger, and blooms when they show it is secure - never just because a lesson was finished.",
       points: {
         a: "Grown only from your child's own answers",
-        b: "No points, coins or streaks to chase",
+        b: "No points, coins or leaderboards to chase",
         c: "The same evidence you see as a parent",
       },
       shot: "A child's garden in the product: one skill in bloom, one getting stronger, one being practised.",
@@ -46,7 +46,7 @@ export const trustMessages = defineMessages(
         },
         evidence: {
           title: "Learning, not screen time",
-          text: "You see what your child showed they understand and how sure that is — not streaks, points or minutes to beat.",
+          text: "You see what your child showed they understand and how sure that is — not points or minutes to beat.",
         },
         data: {
           title: "Your family's data stays yours",
@@ -94,7 +94,7 @@ export const trustMessages = defineMessages(
       lead: "ជំនាញនីមួយៗដែលកូនរបស់អ្នកហាត់ ក្លាយជារុក្ខជាតិមួយនៅក្នុងសួនផ្ទាល់ខ្លួនរបស់ពួកគេ។ វាចេញពន្លកផ្កា ពេលចម្លើយរបស់ពួកគេបង្ហាញថាវាកាន់តែខ្លាំងឡើង ហើយរីកផ្កា ពេលចម្លើយបង្ហាញថាវារឹងមាំ - មិនដែលគ្រាន់តែដោយសារមេរៀនមួយត្រូវបានបញ្ចប់នោះទេ។",
       points: {
         a: "លូតលាស់តែពីចម្លើយផ្ទាល់របស់កូនអ្នកប៉ុណ្ណោះ",
-        b: "គ្មានពិន្ទុ កាក់ ឬការប្រកួតរាប់ថ្ងៃដែលត្រូវដេញតាម",
+        b: "គ្មានពិន្ទុ កាក់ ឬតារាងចំណាត់ថ្នាក់ដែលត្រូវដេញតាម",
         c: "ភស្តុតាងដូចគ្នាដែលអ្នកឃើញក្នុងនាមជាឪពុកម្ដាយ",
       },
       shot: "សួនរបស់កុមារម្នាក់នៅក្នុងផលិតផល៖ ជំនាញមួយកំពុងរីកផ្កា មួយកាន់តែខ្លាំងឡើង និងមួយកំពុងហាត់។",

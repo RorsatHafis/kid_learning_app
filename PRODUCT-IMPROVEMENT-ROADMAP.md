@@ -2752,3 +2752,23 @@ accounts and roles (R-1, S-ENUM-1), consent and privacy, subscriptions and payme
    area, layers, parallax, ambient motion), connected scene transitions, activity start/finish transitions.
 4. **FLEX-1** audit alongside: no "three subjects" assumptions in child, parent and landing.
 Then defects, then simplification. Push at the end of the window; CI once.
+- 2026-11-04: **STREAK-1 slice 1 built - the learning streak with a living flame.** Backend (inspected, three
+  defects fixed, the rule itself unchanged - consecutive learning days, best kept): the day was the **UTC** date (a
+  child in Cambodia learning before 7 am counted for the day before) - now the child's learning day, the same zone the
+  daily limit uses (`DailyLearningTimeService.learningDayZone`); the read returned a **stale** count after missed days
+  - now `currentStreak` is as of today (0 after a missed day, best kept) with `learnedToday`; the read was family-only
+  - now whoever may open the child's space (`ChildAccess.requireLearner`; a view-only caregiver still refused, as the
+  protected `CaregiverIntegrationTests` requires). The progress endpoint uses the same live count. Frontend:
+  `StreakFlame` (layered body and core that sway from the base, breathing glow, rising embers; a grow swell; an unlit
+  warm ember when there is no streak - never a broken one); `StreakChip` in the child's header (days, swells when the
+  number rises); `StreakMoment` on both completion screens (path and free practice) - "You lit your flame!", "Your
+  flame grew - N days in a row!", milestones at 3, 7, 14, 21, 30, 50, 100, 200, 365 - from the server's streak before
+  and after the activity, never guessed. No timers, lives, penalties or "don't lose it" words; reduced motion: still.
+  Public copy that said "no streaks" now says what the streak is (landing, trust strip; EN + KM drafts, PD-14).
+  **Tested**: new `LearnerStreakServiceTests` (Cambodia day boundary; alive today/yesterday, 0 after a gap, best
+  kept; none yet), `StreakIntegrationTests` (finish -> 1, today counted; a second activity the same day stays 1;
+  another family 404), `CaregiverIntegrationTests` and `CrossFamilyAccessSweepIntegrationTests` still pass; new
+  `streak.test.tsx` (growth rule, the moment, the chip lit and unlit); child + marketing + i18n Vitest 209/209.
+  **Browser verified** (production build, 390 px, a new sample family): unlit before, "You lit your flame!" after the
+  first activity, header "1-day learning streak"; with reduced motion no flame animation runs. Next slice: milestone
+  celebration on the home and the shelf (bigger moment), and a parent-side mention (read-only).

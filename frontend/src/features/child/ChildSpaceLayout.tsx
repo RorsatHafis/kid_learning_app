@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils/cn";
 import { useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
 import { chip } from "./chips";
+import { StreakChip } from "./StreakMoment";
 import { LanguageToggle } from "@/i18n/LanguageSwitcher";
 import { useChildLanguage } from "@/i18n/useLanguage";
 import type { Locale } from "@/i18n/store";
@@ -75,6 +76,7 @@ export function ChildSpaceLayout({
               <Link to={`/learn/${childId}/buddy`} aria-label={b.chip(b.names[kind])} title={b.chip(b.names[kind])} className={cn(chip, "w-11 justify-center overflow-hidden")}>
                 <LearningBuddy mood="idle" size={40} className="!animate-none translate-y-1" />
               </Link>
+              <StreakChip childId={childId} />
             </div>
             <BrandMark size={34} className="hidden sm:block" title="Bookeyond Kid" />
             <div className="ml-auto flex items-center gap-1.5 sm:gap-2">

@@ -151,7 +151,7 @@ Status as of 2026-10-27. "Where" points to the record with the verification deta
 | Educator recordings on questions/introductions | **Live** | Recorded in the Studio (L4). No text-to-speech (not adopted - see research README). |
 | Completion with the next step; resume an unfinished activity | **Live** | Backend attempt state is authoritative. |
 | Smart Review items on the path | **Live** | See section 6. |
-| Garden of skills (a plant grows only from evidence) | **Live** | No points, coins, streaks or leaderboards. |
+| Garden of skills (a plant grows only from evidence) | **Live** | No points, coins or leaderboards. A learning streak (STREAK-1, owner-approved 2026-11-04) counts days with learning in them - encouraging only, nothing lost. |
 | Learning Buddy (five authored characters) | **Live** | Not a chatbot; names pending sign-off (PD-13). |
 | Grown-up gate, mute, keyboard play, reduced motion | **Live** | |
 

@@ -519,6 +519,8 @@ export interface StreakSummary {
   currentStreak: number;
   longestStreak: number;
   lastActivityDate: string | null;
+  /** Today already counts (STREAK-1); currentStreak is as of today - 0 once a day was missed. */
+  learnedToday: boolean;
 }
 
 // ---- parent/entity/ParentInsightType.java, parent/web/ParentInsightResponse.java ----

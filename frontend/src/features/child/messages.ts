@@ -7,6 +7,17 @@ import { defineMessages, plural } from "@/i18n/catalog";
 export const childMessages = defineMessages(
   "features/child",
   {
+    // STREAK-1: days in a row with learning in them. Encouraging only: nothing is lost, there is no "don't break it".
+    streak: {
+      chip: (n: number) => `${n}-day learning streak`,
+      chipNone: "No learning streak yet. Finish an activity to light your flame.",
+      days: (n: number) => (n === 1 ? "1 day" : `${n} days`),
+      lit: "You lit your flame!",
+      litBody: "Learn on another day and it grows.",
+      grew: (n: number) => `Your flame grew - ${n} days in a row!`,
+      milestone: (n: number) => `${n} days of learning. What a flame!`,
+      best: (n: number) => `Your best: ${n} days`,
+    },
     space: {
       soundOn: "Sound is on. Turn sound off",
       soundOff: "Sound is off. Turn sound on",
@@ -225,6 +236,16 @@ export const childMessages = defineMessages(
     },
   },
   {
+    streak: {
+      chip: (n: number) => `រៀនជាប់គ្នា ${n} ថ្ងៃ`,
+      chipNone: "មិនទាន់មានការរៀនជាប់គ្នានៅឡើយទេ។ បញ្ចប់សកម្មភាពមួយ ដើម្បីបំភ្លឺភ្លើងរបស់ប្អូន។",
+      days: (n: number) => `${n} ថ្ងៃ`,
+      lit: "ប្អូនបានបំភ្លឺភ្លើងរបស់ប្អូនហើយ!",
+      litBody: "រៀននៅថ្ងៃមួយទៀត ហើយវានឹងធំឡើង។",
+      grew: (n: number) => `ភ្លើងរបស់ប្អូនធំឡើង - ${n} ថ្ងៃជាប់គ្នា!`,
+      milestone: (n: number) => `រៀនបាន ${n} ថ្ងៃ។ ភ្លើងដ៏អស្ចារ្យ!`,
+      best: (n: number) => `ល្អបំផុតរបស់ប្អូន៖ ${n} ថ្ងៃ`,
+    },
     space: {
       soundOn: "សំឡេងកំពុងបើក។ បិទសំឡេង",
       soundOff: "សំឡេងកំពុងបិទ។ បើកសំឡេង",

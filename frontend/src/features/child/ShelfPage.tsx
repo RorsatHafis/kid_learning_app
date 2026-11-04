@@ -22,7 +22,7 @@ import { childMessages } from "./messages";
  * have earned - a place to look back and look ahead, between plays. Every line comes from the
  * server's own record: books are the path's finished steps, "I can" is a skill whose answers
  * show it is secure, "getting stronger" one that is progressing, and a lantern hangs only for
- * something that happened. No points, no streaks, nothing to lose.
+ * something that happened. No points, nothing to lose (the learning streak lives in the header, STREAK-1).
  */
 export function ShelfPage() {
   const { childId = "" } = useParams<{ childId: string }>();
