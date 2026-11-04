@@ -15,6 +15,7 @@ import type { Chapter } from "@/lib/api/types";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
+import { common } from "@/components/ui/messages";
 import { ChapterTrack } from "@/features/parent/ui";
 import { StandingMark } from "@/features/learning/Standing";
 import { standingLabel } from "@/features/learning/explain";
@@ -211,6 +212,7 @@ export function ClassCurriculaPanel({
 
   const s = useMessages(schoolMessages);
   const m = s.curricula;
+  const tryAgain = useMessages(common).tryAgain;
   const assignedIds = new Set((assigned.data ?? []).map((c) => c.curriculumId));
   const available = (catalog.data ?? []).filter((c) => !assignedIds.has(c.id));
 
@@ -280,6 +282,14 @@ export function ClassCurriculaPanel({
               </Button>
             </div>
           </div>
+        ) : !archived && catalog.error ? (
+          // Nothing to choose from because it couldn't be read - not because there is nothing: say so.
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-4 text-sm text-ink-soft">
+            {m.catalogFailed}
+            <Button size="sm" variant="outline" onClick={catalog.refetch}>
+              {tryAgain}
+            </Button>
+          </p>
         ) : (
           !archived &&
           available.length > 0 && (

@@ -2689,3 +2689,11 @@ Dependencies:
   alert, and passes). Khmer drafted (PD-14). **Tested**: new `schoolBillingFailed.test.tsx` (payments fail -> the line;
   Try again -> the waiting payment's reference; ways to pay fail -> the line; Try again -> the plan to choose); school,
   principal and i18n Vitest 181/181.
+- 2026-11-04: **A class's "assign a curriculum" says when its choices couldn't be read.** Same scan: when the
+  curricula a principal or teacher may assign couldn't be read, the assign control simply wasn't there - as if there
+  were nothing to assign. Now "The curricula to assign couldn't be loaded." with Try again (Khmer drafted). The rest of
+  the 41 were read and left as they are, each for a reason: optional extras (a name in a title, a storage meter, a
+  plan summary line with a link to the full plan page, the first-steps card, a skill's movement strip), reads the
+  page already answers elsewhere, and two documented as deliberate (a teacher's school invitations: "the class list
+  below still works"; a family's caregivers: nothing shows when there are none). **Tested**: new
+  `classCatalogFailed.test.tsx`; school, teacher, principal and i18n Vitest 185/185.

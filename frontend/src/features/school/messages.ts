@@ -36,6 +36,7 @@ export const schoolMessages = defineMessages(
       title: "What the class learns",
       lead: "Every child in the class starts these, and so does each child who joins. This is all of a child's learning the class can see.",
       nothing: "Nothing assigned yet.",
+      catalogFailed: "The curricula to assign couldn't be loaded.",
       stopAssigning: "Stop assigning…",
       assignExplain: (name: string) => `Every child in the class starts ${name} now, and children who join later start it too.`,
       unassignExplain: (name: string) =>
@@ -240,6 +241,7 @@ export const schoolMessages = defineMessages(
       title: "អ្វីដែលថ្នាក់រៀន",
       lead: "កូនគ្រប់រូបក្នុងថ្នាក់ចាប់ផ្ដើមរៀនទាំងនេះ ហើយកូនដែលចូលរួមថ្មីក៏ដូចគ្នាដែរ។ នេះជាការរៀនទាំងអស់របស់កូនដែលថ្នាក់អាចមើលឃើញ។",
       nothing: "មិនទាន់បានចាត់ឱ្យអ្វីនៅឡើយទេ។",
+      catalogFailed: "មិនអាចផ្ទុកកម្មវិធីសិក្សាដែលអាចចាត់ឱ្យបានទេ។",
       stopAssigning: "ឈប់ចាត់ឱ្យ…",
       assignExplain: (name: string) =>
         `កូនគ្រប់រូបក្នុងថ្នាក់នឹងចាប់ផ្ដើម ${name} ឥឡូវនេះ ហើយកូនដែលចូលរួមពេលក្រោយក៏នឹងចាប់ផ្ដើមវាដែរ។`,
