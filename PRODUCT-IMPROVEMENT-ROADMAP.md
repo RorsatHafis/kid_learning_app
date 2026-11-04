@@ -2635,3 +2635,6 @@ Dependencies:
   credentials not set locally), 1 failed - `language.spec`, which looks for "Maths - Junior" on a Khmer page: the
   local data gives that curriculum a Khmer name ("គណិតវិទ្យា - កម្រិតដំបូង", checked in the database) that CI's seed
   doesn't have; CI ran it green on `6f12c98`.
+- 2026-11-04: **Text spacing across every role, English and Khmer - clean.** The crawl of every role's pages (54) at
+  360 px with the reader's spacing applied (WCAG 1.4.12) finds nothing cut off and no sideways scroll, in English and
+  in Khmer (whose clusters and longer words are the harder case). Pushed `6f12c98..6507a60` (27 commits) for CI.
