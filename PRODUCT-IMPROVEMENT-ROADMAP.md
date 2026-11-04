@@ -2607,3 +2607,9 @@ Dependencies:
   the seeded Maths path, keys only: after "Let's go" focus is on the first question's answer; after Check, on the
   button that goes on (Next / Finish); after Next, on the next question's answer - never dropped to the page. Emails
   checked by reading `AccountRecoveryService`: each is written in its recipient's interface language (INSPECTED).
+- 2026-11-04: **The landing page's first view on a phone is 90 KB lighter.** A family's first visit at 390 px
+  downloaded 600 KB before scrolling; the large-screen hero (the parent's home in a browser frame, the child's home in
+  a phone) is hidden below `lg` yet its pictures were marked eager, so every phone fetched the 92 KB parent screenshot
+  it never shows. They now load lazily - a hidden lazy picture is never fetched; on a large screen they are in the
+  first view and load at once (both shown 232 ms after navigation at 1280 px). Phone first view: **508 KB** (to the
+  end of the page 760 KB, was 851). **Tested**: marketing Vitest. **Browser verified** (production build).

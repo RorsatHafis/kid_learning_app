@@ -154,19 +154,19 @@ function Hero() {
           <figcaption className="mt-3 pr-[42%] text-xs font-medium text-ink-soft sm:pr-[36%]">{l.sample}</figcaption>
         </figure>
 
+        {/* Large screens only. Lazy, not eager: a hidden lazy image is never fetched, so a phone doesn't download these
+            (about 90 KB); on a large screen they are in the first view and load at once. */}
         <div className="relative mx-auto hidden w-full max-w-[520px] lg:mx-0 lg:block lg:justify-self-end">
           <BrowserFrame
             src={parentHome}
             alt={l.shotParent}
             width={1600}
             height={1227}
-            eager
             className="ml-auto w-[88%] rotate-[1.5deg] motion-safe:animate-rise-in"
           />
           <PhoneFrame
             src={childEntrance}
             alt={l.shotChild}
-            eager
             className="absolute -bottom-8 left-0 w-[44%] -rotate-[4deg] motion-safe:animate-rise-in sm:-bottom-12"
           />
           <p className="mt-14 text-right text-xs font-medium text-ink-soft sm:mt-16">{l.sample}</p>
