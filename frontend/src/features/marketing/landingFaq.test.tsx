@@ -42,7 +42,7 @@ describe("questions and answers", () => {
     const sent: unknown[] = [];
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string, init?: RequestInit) => {
+      vi.fn(async (_url: string, init?: RequestInit) => {
         if ((init?.method ?? "GET") === "POST") {
           sent.push(JSON.parse(String(init?.body)));
           return respond(201, { ...FAQ[0], id: "f9", position: 3, visible: true, version: 0, updatedAt: "2026-11-04T00:00:00Z" });
