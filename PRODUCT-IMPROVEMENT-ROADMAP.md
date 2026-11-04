@@ -2623,3 +2623,9 @@ Dependencies:
   new `routes/areas.test.ts` (addresses to areas, inherited names like "/constructor" are no area, the download
   starts and a second call is harmless); full frontend 493/493, tsc, eslint. **Runtime verified** (production build,
   throttled, twice): the child-space code and the session refresh now go out together.
+- 2026-11-04: **Tried and dropped: fetching an activity beside its attempt start.** Tapping a book costs three round
+  trips in a row (next activity -> start the attempt -> its answers, which need the attempt's id); asking for the
+  activity beside the start moved it, not the chain (2.61 -> 2.56 s on slow 3G, noise), so the change was reverted.
+  Recorded idea **PERF-1** (not built): the attempt start could return the answers already recorded on it - one round
+  trip less per activity start (about 0.6 s on slow 3G) - an additive change to the attempt contract (Battle 2A's
+  path), worth doing with its own integration tests when activity start speed matters more than now.
