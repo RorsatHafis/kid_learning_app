@@ -2515,3 +2515,9 @@ Dependencies:
   child Vitest 56/56. **Browser verified**: axe `landmark-one-main`, `region`, `bypass`, duplicate/top-level main on 17
   pages across the public site, parent, child (home, shelf, buddy, a question), teacher, principal and admin - all
   pass.
+- 2026-11-04: **The connection drops while a child answers - checked, no change needed.** On the production build at
+  390 px: a number question answered with the network cut - the child reads "We couldn't send that answer. Please try
+  again.", the answer stays chosen, nothing reaches the server; back online, "Check" sends it and it is recorded once
+  (one 201, one answer row). An attempt whose questions are all answered is completed when reopened and shows its
+  result (as designed). **Runtime verified** (Chromium, isolated stack); no automated test added (the existing
+  resume and failure tests cover the code paths).

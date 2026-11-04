@@ -100,7 +100,7 @@ partially implemented · **UI/BE** only one side exists · **PL** planned, not i
 | Retry after a wrong answer | BD | D-20: one try today. |
 | Completion, progression, Smart Review, mastery with evidence over days | V / BD | D-17 built; D-18 (bring a skill back to confirm it) open. |
 | Garden, shelf, replay as practice | V | No points/streaks/leaderboards. **Finding**: a streak service and `GET /children/{id}/streak` exist in the backend but no screen uses them - dead code against CLAUDE.md's no-streak rule; remove or record as intentionally dormant (low). |
-| Empty states (no curriculum fits, all done, offline) | PV | Tested in earlier milestones; "all done" depends on content volume - with one seed curriculum a child reaches the end quickly (D-19). |
+| Empty states (no curriculum fits, all done, offline) | PV | Tested in earlier milestones; **connection lost while answering: RUNTIME 2026-11-04** - the child is told the answer wasn't sent and keeps it; back online, Check sends it once. "All done" depends on content volume - with one seed curriculum a child reaches the end quickly (D-19). |
 | Age fit 3-12 | P | Audience confirmed 3-12; **content for 3-5 (pre-readers) and 10-12 doesn't exist** - recordings help pre-readers but need an educator to record them (D-19). |
 | EN/KM consistency through a session | V | Questions in Khmer only when complete (L-1); names, activities, plans; screen-reader language from metadata (V83/V84). Khmer is Claude-drafted (PD-14 native review pending - EX). |
 
