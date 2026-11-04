@@ -2578,3 +2578,14 @@ Dependencies:
   its navigation and one level of in-page links (parent 7, teacher 14, principal 9, administrator 24 = 54 pages per
   language) at 320 px on the production build: no sideways scroll, no element cut off outside a scrolling region,
   no serious/critical axe violation, no API, page or console error.
+- 2026-11-04: **Text spacing (WCAG 1.4.12) checked, and the child's shelf fixed on narrow phones.** With the spacing a
+  reader may set (line height 1.5, letter 0.12em, word 0.16em, paragraphs 2em) on 17 key pages at 360 px, one place
+  clipped: the shelf's book cards - their "Play again" pill never wraps, and the card hides what doesn't fit. Looking
+  closer, the pill didn't fit even at normal spacing at 320 px (about 100 px of label in 74 px of card, its end cut
+  off), and two books a row left a title 74 px - "Recognition" alone is wider. Fixed: the shelf shows one book a row
+  below 360 px (two from 360, as before; 3/4 wider); the pill may wrap onto two centred lines within its card (it
+  does at 360-389 px, a big, clear button); the status ("Lit · Review") wraps beside its tick instead of leaving the
+  tick alone; titles hyphenate where the language allows. **Tested**: child Vitest 56/56 (incl. the protected shelf
+  tests), the grid guard. **Browser verified** (production build): screenshots at 320, 360 and 390 px (whole words,
+  nothing cut off); the text-spacing check now finds nothing on any of the 17 pages. Note: the 320 px crawl above
+  compares elements with the screen's edge only, so a card cutting off its own content can still slip past it.

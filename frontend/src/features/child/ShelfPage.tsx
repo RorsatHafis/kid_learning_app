@@ -206,7 +206,8 @@ function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; s
                 </span>
               )}
             </h3>
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {/* One book a row on the narrowest phones: two would leave a title too little room for a child's words. */}
+            <ul className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
               {group.steps.map((step, i) => (
                 <Book
                   childId={childId}
@@ -261,27 +262,30 @@ function Book({
     >
       <span aria-hidden className={cn("w-3 shrink-0", lit ? spine : "bg-tonle-100", "shadow-[inset_-3px_0_0_rgba(0,0,0,0.12)]")} />
       <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-3">
-        <span className="text-[0.95rem] font-bold leading-snug">{step.title}</span>
+        {/* Two books a row on a narrow phone: a long word is hyphenated where the language allows, broken only if not. */}
+        <span className="hyphens-auto text-[0.95rem] font-bold leading-snug [overflow-wrap:break-word]">{step.title}</span>
         <span
           className={cn(
-            "flex items-center gap-1.5 text-xs font-semibold",
+            "flex items-start gap-1.5 text-xs font-semibold",
             lit ? "text-light-deep" : isNext ? "text-clay-deep" : "text-ink-faint",
           )}
         >
           {lit ? (
-            <Check size={13} strokeWidth={3} aria-hidden />
+            <Check size={13} strokeWidth={3} aria-hidden className="mt-px shrink-0" />
           ) : isNext ? (
-            <Play size={12} fill="currentColor" aria-hidden />
+            <Play size={12} fill="currentColor" aria-hidden className="mt-px shrink-0" />
           ) : null}
-          {lit ? m.lit : isNext ? m.upNext : m.waiting}
-          {tag ? ` · ${tag.label}` : ""}
+          <span className="min-w-0">
+            {lit ? m.lit : isNext ? m.upNext : m.waiting}
+            {tag ? ` · ${tag.label}` : ""}
+          </span>
         </span>
         {/* X24: a lit book can be played again - free practice, outside the path - in its current published version. */}
         {lit && replay && (
           <Link
             to={`/learn/${childId}/practice/${replay}`}
             aria-label={m.playAgainLabel(step.title)}
-            className="inline-flex min-h-11 w-fit items-center gap-1.5 whitespace-nowrap rounded-pill bg-tonle-900 px-3.5 text-xs font-bold text-white transition-colors duration-150 hover:bg-tonle-800"
+            className="inline-flex min-h-11 w-fit max-w-full items-center gap-1 rounded-pill bg-tonle-900 px-3 py-1 text-center text-xs font-bold leading-tight text-white transition-colors duration-150 hover:bg-tonle-800"
           >
             <RotateCcw size={12} aria-hidden /> {m.playAgain}
           </Link>
