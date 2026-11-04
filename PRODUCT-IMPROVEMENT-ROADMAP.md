@@ -2661,3 +2661,13 @@ Dependencies:
   Something went wrong" with Try again - no blank page, no crash. (The administrator's accounts page reads nothing
   until a search, so it has nothing to fail.) Coverage note: pages linked only from inside a loaded page were not
   reached in this run, because links are read from the failed page. **Runtime verified** (production build, 390 px).
+- 2026-11-04: **Adding a child: a plan that didn't load is no longer an empty plan with "Finish".** Found by the
+  server-down crawl, now with links read from each page as it loads normally (54 pages; all others say "That didn't
+  load" with Try again). The last step of adding a child re-reads the subjects chosen; when that read failed (a
+  network blip between two screens) it showed the plan's heading, no subjects, no message and **Finish** - finishing
+  left the child with none of the chosen subjects started, unannounced (CLAUDE.md §8). It now says it didn't load,
+  with Try again, and offers only Back until the plan is there (also while it loads). **Tested**: new
+  `addChildPlanError.test.tsx` (the read fails once: alert, no Finish, no Start; Try again: the plan and Start);
+  parent Vitest 72/72 incl. the protected `addChild.test.tsx`. **Browser verified** (production build, 360 px, a new
+  sample family): plan read failed -> "That didn't load · Something went wrong · Try again", no Finish; Try again,
+  Start -> the child's page shows "Up next".

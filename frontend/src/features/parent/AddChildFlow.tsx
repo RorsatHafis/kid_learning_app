@@ -401,6 +401,8 @@ function ReviewStep({ child, chosen, onBack }: { child: Child; chosen: string[];
         <p className="mt-1.5 max-w-xl text-ink-soft">{m.lead(child.displayName)}</p>
       </div>
       {catalog.isLoading && <LoadingState />}
+      {/* The chosen subjects couldn't be read: say so - finishing now would leave them unstarted, unannounced. */}
+      {catalog.error && <ErrorState error={catalog.error} onRetry={catalog.refetch} />}
       {catalog.data && picked.length === 0 && <p className="rounded-[18px] bg-cream p-5 text-ink-soft">{m.none(child.displayName)}</p>}
       {picked.length > 0 && (
         <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-[22px] ring-1 ring-line">
@@ -457,6 +459,10 @@ function ReviewStep({ child, chosen, onBack }: { child: Child; chosen: string[];
               {m.back}
             </Button>
           </>
+        ) : catalog.error || catalog.isLoading ? (
+          <Button variant="ghost" size="lg" onClick={onBack}>
+            {m.back}
+          </Button>
         ) : (
           <>
             <Link to={`/parent/children/${child.id}`} className={buttonClasses("solid", "lg")}>
