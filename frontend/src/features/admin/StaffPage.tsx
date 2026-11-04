@@ -7,6 +7,7 @@ import { ListCount, Pager } from "@/components/ui/Pager";
 import { SearchField } from "@/components/ui/SearchField";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
+import { common } from "@/components/ui/messages";
 import { FormField } from "@/features/auth/FormField";
 import { ComposerPanel, NewButton, Panel, SelectField } from "./studio/shared";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
@@ -39,6 +40,7 @@ export function StaffPage() {
   usePageInRange(data, setPage);
   const all = useMessages(adminMessages);
   const m = all.staff;
+  const tryAgain = useMessages(common).tryAgain;
 
   function refresh() {
     staff.refetch();
@@ -53,6 +55,15 @@ export function StaffPage() {
         actions={!composer.open && <NewButton label={m.newAccount} onClick={composer.show} />}
       />
 
+      {/* Schools waiting for their principal's approval must not look like none: say when they couldn't be read. */}
+      {pending.error && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-soft">
+          {m.applicationsFailed}
+          <Button size="sm" variant="outline" onClick={pending.refetch}>
+            {tryAgain}
+          </Button>
+        </p>
+      )}
       {pending.data && pending.data.length > 0 && (
         <Panel title={m.applications(pending.data.length)}>
           <ul className="flex flex-col divide-y divide-line">

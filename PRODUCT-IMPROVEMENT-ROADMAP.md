@@ -2697,3 +2697,6 @@ Dependencies:
   page already answers elsewhere, and two documented as deliberate (a teacher's school invitations: "the class list
   below still works"; a family's caregivers: nothing shows when there are none). **Tested**: new
   `classCatalogFailed.test.tsx`; school, teacher, principal and i18n Vitest 185/185.
+- 2026-11-04: **The administrator's staff page says when principal applications couldn't be read** (same scan):
+  schools waiting for their principal's approval looked like none. Now "Principal applications couldn't be loaded."
+  with Try again (Khmer drafted). **Tested**: admin + i18n Vitest 253/253, tsc, eslint. Not browser verified.
