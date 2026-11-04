@@ -716,7 +716,7 @@ function PlanDetail({
               <summary className="cursor-pointer text-sm font-semibold text-tonle-700">
                 {m.priceOptional}
               </summary>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <FormField
                   label={m.amount}
                   type="number"

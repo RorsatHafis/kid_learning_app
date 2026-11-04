@@ -74,7 +74,7 @@ function ClassRow({ row }: { row: SchoolClassLearning }) {
   return (
     <Link
       to={`/principal/classes/${row.classId}`}
-      className="group grid gap-2 px-5 py-4 transition-colors hover:bg-tonle-50/60 focus-visible:bg-tonle-50/60 md:grid-cols-[minmax(0,10rem)_minmax(0,11rem)_minmax(0,1fr)] md:items-center md:gap-6"
+      className="group grid grid-cols-1 gap-2 px-5 py-4 transition-colors hover:bg-tonle-50/60 focus-visible:bg-tonle-50/60 md:grid-cols-[minmax(0,10rem)_minmax(0,11rem)_minmax(0,1fr)] md:items-center md:gap-6"
     >
       <span className="font-semibold text-ink group-hover:underline group-hover:underline-offset-4">{row.className}</span>
       {row.children === 0 ? (

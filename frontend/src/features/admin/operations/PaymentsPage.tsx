@@ -112,7 +112,7 @@ export function PaymentsPage() {
                       aria-expanded={order.id === openId}
                       aria-label={m.open(order.reference)}
                       className={cn(
-                        "grid w-full gap-x-4 gap-y-1 px-5 py-3.5 text-left transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tonle-600 md:grid-cols-[minmax(0,1fr)_9rem_8rem_8rem] md:items-center md:px-6",
+                        "grid grid-cols-1 w-full gap-x-4 gap-y-1 px-5 py-3.5 text-left transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tonle-600 md:grid-cols-[minmax(0,1fr)_9rem_8rem_8rem] md:items-center md:px-6",
                         order.id === openId && "bg-tonle-50/60",
                       )}
                     >

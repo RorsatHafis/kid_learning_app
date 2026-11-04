@@ -96,12 +96,12 @@ export function SchoolFrame({
           )}
         </div>
         {schools.data.length > 1 && (
-          <label className="flex items-center gap-2 text-sm text-ink-soft">
+          <label className="flex min-w-0 max-w-full items-center gap-2 text-sm text-ink-soft">
             {m.schoolPicker}
             <select
               value={school.id}
               onChange={(e) => select(e.target.value)}
-              className="h-11 rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white px-3 text-sm font-medium text-ink"
+              className="h-11 min-w-0 max-w-full rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white px-3 text-sm font-medium text-ink"
             >
               {schools.data.map((s) => (
                 <option key={s.id} value={s.id}>

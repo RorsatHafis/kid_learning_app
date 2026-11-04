@@ -50,7 +50,7 @@ export function SkillsSection({ childId, childName }: { childId: string; childNa
             </span>
           </span>
         </summary>
-        <div className="mt-4 grid gap-6 text-sm text-ink-soft sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-6 text-sm text-ink-soft sm:grid-cols-2">
           <div className="flex flex-col gap-3">
             <p>
               {m.everyAnswer} <strong className="text-ink">{m.tooEarly}</strong>

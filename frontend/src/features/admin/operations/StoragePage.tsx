@@ -153,7 +153,7 @@ function OwnerLine({ row, selected, onOpen }: { row: StorageOwnerRow; selected: 
         aria-expanded={selected}
         aria-label={m.open(email)}
         className={cn(
-          "grid w-full gap-x-4 gap-y-2 px-5 py-3.5 text-left transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tonle-600 md:grid-cols-[minmax(0,1fr)_12rem_10rem] md:items-center md:px-6",
+          "grid grid-cols-1 w-full gap-x-4 gap-y-2 px-5 py-3.5 text-left transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tonle-600 md:grid-cols-[minmax(0,1fr)_12rem_10rem] md:items-center md:px-6",
           selected && "bg-tonle-50/60",
         )}
       >

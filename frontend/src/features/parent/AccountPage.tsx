@@ -148,7 +148,7 @@ export function AccountPage() {
 /** One settings topic: what it is on the left, the controls on the right. */
 function SettingsRow({ id, title, subtitle, children }: { id: string; title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={id} className="scroll-mt-24 grid gap-5 px-6 py-8 sm:px-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
+    <section aria-labelledby={id} className="scroll-mt-24 grid grid-cols-1 gap-5 px-6 py-8 sm:px-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12">
       <div>
         <h2 id={id} className="font-display text-lg font-semibold text-tonle-950">
           {title}

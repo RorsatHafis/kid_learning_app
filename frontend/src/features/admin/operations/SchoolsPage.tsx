@@ -65,7 +65,7 @@ export function SchoolsPage() {
                 <li key={school.id}>
                   <Link
                     to={school.id}
-                    className="group grid gap-2 px-5 py-4 transition-colors hover:bg-paper sm:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-6"
+                    className="group grid grid-cols-1 gap-2 px-5 py-4 transition-colors hover:bg-paper sm:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto] sm:items-center sm:gap-6"
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-semibold text-tonle-950 group-hover:underline group-hover:underline-offset-4">

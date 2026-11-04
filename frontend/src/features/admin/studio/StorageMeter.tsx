@@ -82,7 +82,7 @@ export function StorageMeter({ version }: { version: number }) {
       {(rows.length > 0 || unused.files > 0) && (
         <details className="group">
           <summary className="w-fit cursor-pointer text-sm font-semibold text-tonle-700 hover:text-tonle-900">{m.breakdown}</summary>
-          <dl className="mt-2 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
+          <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
             {rows.map((r) => (
               <div key={r.label} className="flex justify-between gap-3">
                 <dt className="text-ink-soft">{r.label}</dt>

@@ -270,7 +270,7 @@ function PendingPayment({
         </h3>
         <span className="text-sm text-ink-soft">{m.payBy(formatDateTime(data.expiresAt))}</span>
       </div>
-      <dl className={transferBox ? "grid gap-3 sm:grid-cols-2" : "grid gap-3 sm:grid-cols-3"}>
+      <dl className={transferBox ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "grid grid-cols-1 gap-3 sm:grid-cols-3"}>
         <div>
           <dt className="text-sm text-ink-faint">{data.planName}</dt>
           <dd className="tabular font-semibold text-ink">{orderPriceText(data)}</dd>

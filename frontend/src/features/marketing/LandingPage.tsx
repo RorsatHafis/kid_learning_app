@@ -98,7 +98,7 @@ function Hero() {
           style={{ background: "radial-gradient(ellipse 70% 96% at 16% 50%, rgba(246,243,236,0.97) 0%, rgba(246,243,236,0.86) 50%, rgba(246,243,236,0) 82%)" }}
         />
       </div>
-      <div className="relative mx-auto grid max-w-[1240px] items-center gap-10 px-4 pb-14 pt-8 sm:px-8 sm:pt-10 lg:min-h-[min(calc(100svh-4.5rem),900px)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12 lg:pb-24 lg:pt-16">
+      <div className="relative mx-auto grid grid-cols-1 max-w-[1240px] items-center gap-10 px-4 pb-14 pt-8 sm:px-8 sm:pt-10 lg:min-h-[min(calc(100svh-4.5rem),900px)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12 lg:pb-24 lg:pt-16">
         <div className="flex max-w-[36rem] flex-col gap-6 motion-safe:animate-rise-in">
           {/* The promise in the other language too, as a quotation (its own quotation marks, no closing stop). */}
           <p lang={other} className={cn("text-lg font-semibold leading-[1.55] text-clay-deep sm:text-xl", other === "km" && "font-khmer")}>
@@ -379,7 +379,7 @@ function Subjects() {
   return (
     <Section id="subjects">
       <Heading title={m.title} lead={m.lead} />
-      <ul className="mt-12 grid gap-6 md:grid-cols-3">
+      <ul className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
         {subjects.map((s) => (
           <li key={s.key} className={cn("flex flex-col overflow-hidden rounded-[24px] bg-white shadow-paper ring-1 ring-line/70", !s.ready && "bg-white/80")}>
             <div className={cn("flex h-32 items-end justify-center sm:h-44", s.ready ? "bg-[#EAF3E4]" : "bg-paper")}>
@@ -426,7 +426,7 @@ function Schools() {
   ];
   return (
     <section id="schools" className="scroll-mt-20 bg-tonle-900 px-4 py-20 text-white sm:px-8 sm:py-28">
-      <div className="mx-auto grid max-w-[1240px] gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
+      <div className="mx-auto grid grid-cols-1 max-w-[1240px] gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
         <div className="flex flex-col gap-8">
           <div className="flex max-w-xl flex-col gap-4">
             <h2 className="font-display text-[2.1rem] font-bold leading-[1.08] sm:text-[2.9rem]">{m.title}</h2>
@@ -542,7 +542,7 @@ function Plans() {
   return (
     <Section id="plans">
       <Heading title={m.title} lead={m.lead} />
-      <div className="mt-12 grid gap-6 md:grid-cols-2">
+      <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2">
         {sheets.map((s) => (
           <article key={s.name} aria-labelledby={`plan-${s.name}`} className={cn("flex flex-col gap-6 rounded-[24px] p-7 sm:p-9", s.tone)}>
             <div className="flex flex-col gap-1">

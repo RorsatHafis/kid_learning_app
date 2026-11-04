@@ -205,7 +205,7 @@ export function PlayGallery() {
   return (
     <div className="relative min-h-screen bg-paper">
       <PaintedBackdrop />
-      <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-2">
+      <div className="relative mx-auto grid grid-cols-1 max-w-6xl gap-8 px-4 py-10 lg:grid-cols-2">
         {items.flatMap(({ item, results }) =>
           results.map((result, i) => (
             <section key={`${item.activityItemId}-${i}`} className="rounded-[32px] bg-[#FFFBF3] px-5 py-9 shadow-lift ring-1 ring-[#EADFCB] sm:px-10">

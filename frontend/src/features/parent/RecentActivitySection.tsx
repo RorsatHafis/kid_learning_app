@@ -84,7 +84,7 @@ function ActivityRow({ activity, childId }: { activity: CompletedActivity; child
   const m = useMessages(familyMessages).recent;
   const minutes = Math.max(1, Math.round((new Date(activity.completedAt).getTime() - new Date(activity.startedAt).getTime()) / 60_000));
   return (
-    <li className="relative grid gap-1 py-4 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-8">
+    <li className="relative grid grid-cols-1 gap-1 py-4 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-8">
       <p className="tabular text-sm text-ink-faint sm:pt-0.5 sm:text-right">{formatDay(activity.completedAt)}</p>
       <span aria-hidden className="absolute left-[calc(6rem-4.5px)] top-[1.5rem] hidden h-2.5 w-2.5 rounded-full bg-white ring-2 ring-tonle-400 sm:block" />
       <div className="flex flex-col gap-1.5">

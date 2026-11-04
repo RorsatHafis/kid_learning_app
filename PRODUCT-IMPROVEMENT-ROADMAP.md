@@ -2562,3 +2562,15 @@ Dependencies:
   (production build + rebuilt backend, 360 px): year 0019 when adding a child -> 400, "Enter the child's real date of
   birth" in English and "សូមបញ្ចូលថ្ងៃខែឆ្នាំកំណើតពិតប្រាកដរបស់កុមារ" in Khmer (PD-14 draft); no child added. Seed
   accounts restored to English afterwards.
+- 2026-11-04: **Every page works at 320 px (WCAG 1.4.10), in English and Khmer.** Earlier sweeps ran at 360 px; many
+  budget phones are narrower. A 320 px check of 23 pages per language (public site, parent, child incl. sorting and
+  matching questions, teacher, principal, admin, each role's account) found two: the account page's settings rows
+  ("Your family's day": the time-zone picker's long option made the row wider than its card, which cut it off) and
+  the principal's school picker (a long school name pushed the page 20 px sideways). Cause in both: a box that sizes
+  to its content. Fixed: the settings row has `grid-cols-1` below its breakpoint; the school picker and its label may
+  shrink (`min-w-0 max-w-full`). The same pattern - a grid with columns only from a breakpoint up - was in 14 more
+  places (landing sections, payments, storage, class and school lists): each now also says `grid-cols-1`, which
+  changes nothing at wider widths (checked: the landing's grids keep their 2-5 columns at 1280 px). New
+  `components/ui/gridColumns.test.ts` reads every screen's source so a new such grid fails the suite. **Tested**: full
+  frontend 479/479 (incl. the new 2), tsc. **Browser verified** (production build, 320 px, English and Khmer): 23 + 23
+  pages, no sideways scroll, nothing cut off. Seed accounts back on English.
