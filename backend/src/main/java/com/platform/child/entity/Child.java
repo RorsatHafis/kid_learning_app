@@ -73,6 +73,8 @@ public class Child extends AuditableEntity {
         Assert.hasText(displayName, "displayName must not be blank");
         Assert.notNull(dateOfBirth, "dateOfBirth must not be null");
         Assert.isTrue(!dateOfBirth.isAfter(LocalDate.now()), "dateOfBirth must not be in the future");
+        // The same floor as a correction (below): a mistyped year ("0019") is not a child's birthday.
+        Assert.isTrue(dateOfBirth.isAfter(LocalDate.of(1900, 1, 1)), "Enter the child's real date of birth");
 
         return new Child(familyId, displayName, dateOfBirth);
 

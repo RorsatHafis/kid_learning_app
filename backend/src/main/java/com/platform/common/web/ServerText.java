@@ -164,6 +164,9 @@ public final class ServerText {
             Map.entry(FILTER_RATE_LIMITED, "មានសំណើច្រើនពេកពីបណ្ដាញនេះ។ សូមរង់ចាំបន្តិច ហើយព្យាយាមម្ដងទៀត។"),
             Map.entry(FILTER_BODY_TOO_LARGE, "សំណើនោះធំពេកមិនអាចទទួលបានទេ។"),
             Map.entry("This device can only open one child's learning space", "ឧបករណ៍នេះអាចបើកបានតែកន្លែងរៀនរបស់កុមារម្នាក់ប៉ុណ្ណោះ"),
+            // A child's date of birth (Child: an Assert, shown as the 400's detail).
+            Map.entry("Enter the child's real date of birth", "សូមបញ្ចូលថ្ងៃខែឆ្នាំកំណើតពិតប្រាកដរបស់កុមារ"),
+            Map.entry("The date of birth can't be in the future", "ថ្ងៃខែឆ្នាំកំណើតមិនអាចជាថ្ងៃនៅពេលអនាគតបានទេ"),
             Map.entry("Enter your password again to do this", "សូមបញ្ចូលពាក្យសម្ងាត់របស់អ្នកម្ដងទៀត ដើម្បីធ្វើការនេះ"),
             // M9b: a phone number on the account
             Map.entry("Enter a phone number that can receive a text message, with its country code if it isn't Cambodian",

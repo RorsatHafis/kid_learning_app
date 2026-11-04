@@ -2548,3 +2548,17 @@ Dependencies:
   every question answered, the connection cut as the child taps Finish - "We couldn't save your activity just now."
   with Try again, axe clean; back online, Try again resumes the server's attempt and shows the completion with every
   answer counted once. **Tested** locally against the production build: desktop and phone, 4/4 in the file.
+- 2026-11-04: **A child's date of birth: a mistyped year is refused when the child is added, and the reason reads in
+  Khmer.** Correcting a date of birth already refused dates before 1900 ("Enter the child's real date of birth"), but
+  adding a child accepted any past date: "0019-03-14" (a typo for 2019) was stored, making a 2,000-year-old child whose
+  age then decides which paths fit. `Child.enroll` now applies the same floor (no new rule: the correction's own). Both
+  birth-date sentences are `Assert`s, which the Khmer coverage test doesn't scan (it reads `new ...Exception("...")`
+  only), so a Khmer parent got the generic "This request is invalid..." instead of the reason: Khmer added to
+  `ServerText` for both, and the new `ServerTextAssertCoverageTests` scans asserted sentences so the next one can't
+  miss it (it found exactly these two). A browser `min` on the date fields was tried and dropped: the protected
+  `childEdit.test.tsx` expects the server's own words for an impossible date, which also read in the parent's
+  language where a browser's native message may not. **Tested**: new `ChildBirthDateTests` (2),
+  `ServerTextAssertCoverageTests` (1), `ServerTextCoverageTests` 3/3, parent Vitest 72/72. **Browser verified**
+  (production build + rebuilt backend, 360 px): year 0019 when adding a child -> 400, "Enter the child's real date of
+  birth" in English and "សូមបញ្ចូលថ្ងៃខែឆ្នាំកំណើតពិតប្រាកដរបស់កុមារ" in Khmer (PD-14 draft); no child added. Seed
+  accounts restored to English afterwards.
