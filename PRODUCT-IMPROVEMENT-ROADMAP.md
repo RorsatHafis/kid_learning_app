@@ -2530,3 +2530,9 @@ Dependencies:
   `loginErrors.test.tsx` (502, 503, 500 -> something went wrong; 401 with and without words); auth Vitest 11/11.
   **Browser verified** on the production build at 360 px, English and Khmer: a 503 from the host -> the new line; a
   real wrong password -> "Invalid email or password".
+- 2026-11-04: **Page titles and the account pages checked.** Correction to the landmark entry above: its "account"
+  page was the not-found page (the account lives at `/<role>/account`). Checked now: every role's account page at
+  360 and 1280 px - axe at every impact level incl. best practice clean, no overflow. Every page visited across the
+  five roles and the public site has its own title naming the place (WCAG 2.4.2): "Sophea's path", "Grade 1 A",
+  "Media library"... no two alike. Full frontend suite **477/477**, tsc clean, eslint 0 errors (8 existing
+  fast-refresh warnings).
