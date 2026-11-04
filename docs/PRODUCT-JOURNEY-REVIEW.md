@@ -218,6 +218,7 @@ timetables and rooms.
 | L-3 (2026-11-03) | Landing page FAQ and editable lists | words only (today) / items admins add, remove, reorder | An FAQ section and item lists in the existing site-copy model, EN/KM | Those sections | Editing today's words |
 | SUB-1 (2026-11-03) | Landing page subjects | fixed three with hard-coded "ready" (today) / from published curricula | From published curricula, words still editable (close to P-1) | That section | - |
 | **New: P-1** | Landing prices from plan records | copy (today) / from plan records | From plan records, copy for the words around them | Small change | - |
+| A11Y-1 (2026-11-04) | What a screen reader hears after an answer | the feedback's live region holds its own continue button (today: "...Let's keep going! Finish Why...") / the region holds verdict, answer and why; the button follows it, focus still moves there | The second - it is built and was reverted only because the protected `m2.test.tsx` asserts the button is inside the region; needs approval to update that test | That change | Everything else |
 
 ## 6. Roadmap (phases; no dates or costs invented)
 
