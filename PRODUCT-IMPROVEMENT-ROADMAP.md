@@ -2544,3 +2544,7 @@ Dependencies:
   phone): a new family's child, on the seeded Maths path, checks an answer with the connection cut - told it wasn't
   sent, answer kept, axe clean on that state; back online, the same Check sends it, feedback shows, exactly one
   answer recorded (one 201). **Tested** locally against the production build: 2/2.
+- 2026-11-04: **Regression test: finishing an activity while offline** - a second test in `e2e/answer-offline.spec.ts`:
+  every question answered, the connection cut as the child taps Finish - "We couldn't save your activity just now."
+  with Try again, axe clean; back online, Try again resumes the server's attempt and shows the completion with every
+  answer counted once. **Tested** locally against the production build: desktop and phone, 4/4 in the file.

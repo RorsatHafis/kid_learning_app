@@ -44,3 +44,41 @@ test("an answer checked while offline is kept, then sent once when the connectio
   await expect(page.getByText(/got it|right|great/i).filter({ visible: true }).first()).toBeVisible();
   expect(recorded).toEqual([201]);
 });
+
+/**
+ * The connection drops as the child finishes the activity: the child is told it wasn't saved and can try again; once
+ * back online, trying again finishes it (the server's attempt is resumed, nothing is answered twice).
+ */
+test("finishing while offline can be tried again, and finishes once back online @phone", async ({ page, context }) => {
+  await page.goto("/register");
+  await page.getByLabel("Email").fill(uniqueEmail("offline-finish"));
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await page.getByRole("button", { name: /create/i }).click();
+  await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
+  await addChild(page, "Bopha", "2019-06-11", /Maths - Junior/);
+
+  await page.getByRole("link", { name: "Start Bopha's session" }).click();
+  await openSubject(page, "Maths");
+  await page.getByRole("link", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Let's go" }).click();
+
+  let answered = 0;
+  for (;;) {
+    await page.getByRole("textbox").fill(answerFor((await page.locator("#question-prompt").innerText()).trim()));
+    await page.getByRole("button", { name: "Check" }).click();
+    await expect(page.getByText(/got it|right|great/i).filter({ visible: true }).first()).toBeVisible();
+    answered++;
+    if (await page.getByRole("button", { name: /finish/i }).isVisible()) break;
+    await page.getByRole("button", { name: /next/i }).click();
+  }
+
+  await context.setOffline(true);
+  await page.getByRole("button", { name: /finish/i }).click();
+  await expect(page.getByText("We couldn't save your activity just now.", { exact: false })).toBeVisible();
+  await expectNoViolations(page, "child: an activity that couldn't be saved");
+
+  await context.setOffline(false);
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.locator("#done-title")).toBeVisible();
+  await expect(page.getByText(new RegExp(`${answered} of ${answered}`)).first()).toBeVisible();
+});
