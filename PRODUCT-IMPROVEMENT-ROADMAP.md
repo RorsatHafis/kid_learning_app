@@ -2629,3 +2629,9 @@ Dependencies:
   Recorded idea **PERF-1** (not built): the attempt start could return the answers already recorded on it - one round
   trip less per activity start (about 0.6 s on slow 3G) - an additive change to the attempt contract (Battle 2A's
   path), worth doing with its own integration tests when activity start speed matters more than now.
+- 2026-11-04: **A visitor's first minute on a slow phone, and the e2e run on the final build.** Slow-3G phone profile,
+  production build: the landing page's headline shows 2.5 s after a cold open (138 KB), the page settles at 5.4 s;
+  "Try a lesson" opens in under 0.1 s. Full local e2e on the final build: 24 passed, 23 skipped (administrator
+  credentials not set locally), 1 failed - `language.spec`, which looks for "Maths - Junior" on a Khmer page: the
+  local data gives that curriculum a Khmer name ("គណិតវិទ្យា - កម្រិតដំបូង", checked in the database) that CI's seed
+  doesn't have; CI ran it green on `6f12c98`.
