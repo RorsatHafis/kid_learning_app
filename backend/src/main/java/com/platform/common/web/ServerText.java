@@ -166,6 +166,12 @@ public final class ServerText {
             Map.entry("This device can only open one child's learning space", "ឧបករណ៍នេះអាចបើកបានតែកន្លែងរៀនរបស់កុមារម្នាក់ប៉ុណ្ណោះ"),
             // A child's date of birth (Child: an Assert, shown as the 400's detail).
             Map.entry("Enter the child's real date of birth", "សូមបញ្ចូលថ្ងៃខែឆ្នាំកំណើតពិតប្រាកដរបស់កុមារ"),
+            // LAND-1: the landing page's questions and answers (SiteFaqService).
+            Map.entry("A question needs its question and answer in English and Khmer", "សំណួរមួយត្រូវការសំណួរ និងចម្លើយរបស់វា ជាភាសាអង់គ្លេស និងភាសាខ្មែរ"),
+            Map.entry("A question can be at most 200 characters in each language", "សំណួរមួយអាចមានយ៉ាងច្រើន 200 តួអក្សរ ក្នុងភាសានីមួយៗ"),
+            Map.entry("An answer can be at most 1000 characters in each language", "ចម្លើយមួយអាចមានយ៉ាងច្រើន 1000 តួអក្សរ ក្នុងភាសានីមួយៗ"),
+            Map.entry("This question was changed by someone else meanwhile. Reload it and try again.",
+                    "សំណួរនេះត្រូវបានអ្នកផ្សេងផ្លាស់ប្ដូរក្នុងពេលនេះ។ សូមផ្ទុកវាឡើងវិញ ហើយព្យាយាមម្ដងទៀត។"),
             Map.entry("The date of birth can't be in the future", "ថ្ងៃខែឆ្នាំកំណើតមិនអាចជាថ្ងៃនៅពេលអនាគតបានទេ"),
             Map.entry("Enter your password again to do this", "សូមបញ្ចូលពាក្យសម្ងាត់របស់អ្នកម្ដងទៀត ដើម្បីធ្វើការនេះ"),
             // M9b: a phone number on the account

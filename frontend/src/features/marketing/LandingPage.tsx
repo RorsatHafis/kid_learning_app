@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpenCheck, Check, Coffee, Download, Hand, Languages, ShieldCheck, Sprout } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Check, Coffee, Download, Hand, Languages, Plus, ShieldCheck, Sprout } from "lucide-react";
 import { PaintedScene } from "@/features/world/PaintedWorld";
 import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { BUDDY_KINDS, type BuddyKind } from "@/features/buddy/kinds";
@@ -56,6 +56,7 @@ export function LandingPage() {
         <Safety />
         <Subjects />
         <Plans />
+        <Questions />
         <Schools />
         <Closing />
       </main>
@@ -672,6 +673,39 @@ function PlanRecords({
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * LAND-1: the questions administrators keep (Operations -> Landing page), in the reader's language - each opens in
+ * place. Nothing shows when there are none, or they can't be read (the page loses nothing it needs).
+ */
+function Questions() {
+  const m = useMessages(marketingMessages).faq;
+  const locale = useLocale();
+  const faq = useAsync(() => siteApi.faq(), []);
+  if (!faq.data || faq.data.length === 0) return null;
+  return (
+    <Section id="questions" tone="white">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+        <Heading title={m.title} lead={m.lead} />
+        <ul className="flex flex-col divide-y divide-line border-y border-line">
+          {faq.data.map((item) => (
+            <li key={item.id}>
+              <details className="group py-5">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-6 rounded-[8px] text-left font-display text-xl font-bold text-tonle-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tonle-600 focus-visible:ring-offset-4 [&::-webkit-details-marker]:hidden">
+                  <span className="[overflow-wrap:anywhere]">{locale === "km" ? item.questionKm : item.questionEn}</span>
+                  <Plus size={22} aria-hidden className="mt-1 shrink-0 text-tonle-600 transition-transform duration-200 group-open:rotate-45" />
+                </summary>
+                <p className="mt-3 max-w-prose leading-relaxed text-ink-soft motion-safe:animate-rise-in">
+                  {locale === "km" ? item.answerKm : item.answerEn}
+                </p>
+              </details>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Section>
   );
 }
 

@@ -24,13 +24,15 @@ import java.util.UUID;
 public class SiteController {
 
     private final SiteStatementService statements;
+    private final SiteFaqService faq;
     private final SiteCopyService copy;
     private final com.platform.subscription.service.PublicPlans plans;
     private final com.platform.curriculum.service.PublicSubjects subjects;
 
-    public SiteController(SiteStatementService statements, SiteCopyService copy, com.platform.subscription.service.PublicPlans plans,
+    public SiteController(SiteStatementService statements, SiteFaqService faq, SiteCopyService copy, com.platform.subscription.service.PublicPlans plans,
                           com.platform.curriculum.service.PublicSubjects subjects) {
         this.plans = plans;
+        this.faq = faq;
         this.subjects = subjects;
         this.statements = statements;
         this.copy = copy;
@@ -115,6 +117,48 @@ public class SiteController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal UUID adminId, @PathVariable UUID id) {
         statements.delete(adminId, id);
+    }
+
+    // ------------------------------------------------------------------ LAND-1: questions and answers
+
+    public record FaqRequest(@NotNull @Size(max = 200) String questionEn, @NotNull @Size(max = 200) String questionKm,
+                             @NotNull @Size(max = 1000) String answerEn, @NotNull @Size(max = 1000) String answerKm,
+                             @Min(0) Integer position, Boolean visible, Long version) {
+        SiteFaqService.Draft draft() {
+            return new SiteFaqService.Draft(questionEn, questionKm, answerEn, answerKm, position == null ? 0 : position,
+                    Boolean.TRUE.equals(visible));
+        }
+    }
+
+    /** The questions shown on the landing page, read by anyone. */
+    @GetMapping("/api/v1/site/faq")
+    public List<SiteFaqService.PublicFaq> visibleFaq() {
+        return faq.visible();
+    }
+
+    @GetMapping("/api/v1/admin/site-faq")
+    public List<SiteFaqService.Faq> allFaq(@AuthenticationPrincipal UUID adminId) {
+        return faq.all(adminId);
+    }
+
+    @PostMapping("/api/v1/admin/site-faq")
+    @ResponseStatus(HttpStatus.CREATED)
+    public SiteFaqService.Faq createFaq(@AuthenticationPrincipal UUID adminId, @Valid @RequestBody FaqRequest request) {
+        return faq.create(adminId, request.draft());
+    }
+
+    @PutMapping("/api/v1/admin/site-faq/{id}")
+    public SiteFaqService.Faq updateFaq(@AuthenticationPrincipal UUID adminId, @PathVariable UUID id, @Valid @RequestBody FaqRequest request) {
+        if (request.version() == null) {
+            throw new IllegalArgumentException("version is required");
+        }
+        return faq.update(adminId, id, request.version(), request.draft());
+    }
+
+    @DeleteMapping("/api/v1/admin/site-faq/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFaq(@AuthenticationPrincipal UUID adminId, @PathVariable UUID id) {
+        faq.delete(adminId, id);
     }
 
 }

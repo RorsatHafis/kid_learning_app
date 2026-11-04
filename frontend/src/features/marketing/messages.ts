@@ -133,6 +133,10 @@ export const marketingMessages = defineMessages(
         h: "Many questions written at once: paste them from a spreadsheet, in English and Khmer, then check and publish.",
       },
     },
+    faq: {
+      title: "Questions families ask.",
+      lead: "Short answers to what parents ask before they start.",
+    },
     promises: {
       title: "What we promise.",
       learningFirst: "Learning first",
@@ -269,6 +273,10 @@ export const marketingMessages = defineMessages(
         g: "សំណួរដែលថ្នាក់មួយយល់ថាពិបាកបំផុតលើជំនាញមួយ - អ្វីដែលត្រូវបង្រៀនម្ដងទៀត ក្បែរកុមារដែលត្រូវការការអនុវត្ត។",
         h: "សរសេរសំណួរជាច្រើនក្នុងពេលតែមួយ៖ បិទភ្ជាប់វាពីតារាងទិន្នន័យ ជាភាសាអង់គ្លេស និងខ្មែរ រួចពិនិត្យ ហើយផ្សាយ។",
       },
+    },
+    faq: {
+      title: "សំណួរដែលគ្រួសារសួរ។",
+      lead: "ចម្លើយខ្លីៗ ចំពោះអ្វីដែលឪពុកម្ដាយសួរ មុនពេលពួកគេចាប់ផ្ដើម។",
     },
     promises: {
       title: "អ្វីដែលយើងសន្យា។",

@@ -2819,3 +2819,17 @@ Then defects, then simplification. Push at the end of the window; CI once.
   preparation; read by anyone), `AuthorizationSweepIntegrationTests` 2/2 (public allowlist +1, owner-approved); new
   `landingSubjects.test.tsx`; marketing + i18n Vitest 153/153. **Browser verified** (production build, 1280 px):
   every join between sections screened - no hard edge left.
+- 2026-11-04: **LAND-1 FAQ built - questions and answers administrators keep, EN/KM (settles L-3 for the landing).**
+  V86 `site_faq` (question and answer in both languages required, position, shown/hidden, version; six first
+  questions answered only with what the product does - ages, cost via the plans above, safety, what a parent sees,
+  languages, schools; Khmer drafts for PD-14). `SiteFaqService` like the statements: administrators only, each
+  change audited, an edit over someone else's refused (409). Public `GET /api/v1/site/faq`; admin
+  `GET/POST /api/v1/admin/site-faq`, `PUT/DELETE /api/v1/admin/site-faq/{id}`. Landing: "Questions families ask." -
+  each question opens in place (native disclosure: keyboard and screen readers), in the reader's language, hidden
+  when there are none. Operations -> Landing page: a Questions and answers panel (add, edit, order, show/hide,
+  delete with confirmation). The sweep's public allowlist gained the endpoint; the protected `m2.test.tsx` admin test's
+  mock answers the new read (owner-approved test updates). **Tested**: new `SiteFaqIntegrationTests` (seeded and
+  public; create, hide, stale edit 409, missing Khmer 400, a parent refused, delete), sweep 2/2, `ServerText*`
+  coverage 4/4; new `landingFaq.test.tsx` (order, opens in place; admin adds in both languages); marketing + admin +
+  i18n Vitest 265/265. **Browser verified** (production build, V86 applied to the dev database): 1280 px EN and
+  390 px KM - six questions, one opened, axe clean, no sideways scroll.

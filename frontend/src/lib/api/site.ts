@@ -91,7 +91,34 @@ export interface PublicSubject {
   maxAge: number | null;
 }
 
+/** LAND-1: a question and its answer, in both languages (site/SiteFaqService). */
+export interface PublicFaq {
+  id: string;
+  questionEn: string;
+  questionKm: string;
+  answerEn: string;
+  answerKm: string;
+}
+
+export interface Faq extends PublicFaq {
+  position: number;
+  visible: boolean;
+  version: number;
+  updatedAt: string;
+}
+
+export interface FaqDraft {
+  questionEn: string;
+  questionKm: string;
+  answerEn: string;
+  answerKm: string;
+  position: number;
+  visible: boolean;
+  version?: number;
+}
+
 export const siteApi = {
+  faq: () => apiClient.get<PublicFaq[]>("/site/faq", { skipAuth: true }),
   subjects: () => apiClient.get<PublicSubject[]>("/site/subjects", { skipAuth: true }),
   statements: () => apiClient.get<PublicStatement[]>("/site/statements", { skipAuth: true }),
   plans: () => apiClient.get<PublicPlan[]>("/site/plans", { skipAuth: true }),
@@ -102,6 +129,10 @@ export const siteApi = {
 };
 
 export const siteAdminApi = {
+  faq: () => apiClient.get<Faq[]>("/admin/site-faq"),
+  createFaq: (draft: FaqDraft) => apiClient.post<Faq>("/admin/site-faq", draft),
+  updateFaq: (id: string, draft: FaqDraft) => apiClient.put<Faq>(`/admin/site-faq/${id}`, draft),
+  removeFaq: (id: string) => apiClient.delete<void>(`/admin/site-faq/${id}`),
   statements: () => apiClient.get<Statement[]>("/admin/site-statements"),
   create: (draft: StatementDraft) => apiClient.post<Statement>("/admin/site-statements", draft),
   update: (id: string, draft: StatementDraft) => apiClient.put<Statement>(`/admin/site-statements/${id}`, draft),

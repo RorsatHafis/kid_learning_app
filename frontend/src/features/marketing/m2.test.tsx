@@ -142,6 +142,7 @@ describe("Operations → Landing page (M2)", () => {
     const candidates = ["One", "Two", "Three", "Four"].map((title, i) => ({ activityVersionId: `av-${i}`, title, versionNumber: 1, chosen: false }));
     const calls = server({
       "GET /admin/site-statements": respond(200, []),
+      "GET /admin/site-faq": respond(200, []),
       "GET /admin/demo-activities": respond(200, candidates),
       "PUT /admin/demo-activities": (body) => respond(200, (body as { activityVersionIds: string[] }).activityVersionIds),
     });
