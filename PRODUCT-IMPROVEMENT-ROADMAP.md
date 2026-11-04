@@ -2613,3 +2613,13 @@ Dependencies:
   it never shows. They now load lazily - a hidden lazy picture is never fetched; on a large screen they are in the
   first view and load at once (both shown 232 ms after navigation at 1280 px). Phone first view: **508 KB** (to the
   end of the page 760 KB, was 851). **Tested**: marketing Vitest. **Browser verified** (production build).
+- 2026-11-04: **Opening the app straight at a page starts that page's code at once.** Measured cold loads showed the
+  page's code (each area - family, child's space, teacher, principal, admin - is its own download) requested only
+  after the session check came back: a round trip in a row for every reload, bookmark and, above all, a child's own
+  device (M10a), which opens straight into `/learn/...` each time. `preloadAreaFor` (`routes/areas.ts`, called in
+  `main.tsx`) starts the area of the opening address beside the session check; the route's lazy import then finds it
+  loaded (a failed early download changes nothing - the route loads it again with its own error handling). On the
+  slow-3G phone profile: a cold reload into an activity **5.5 s -> 4.85 s**, the child home 6.4 -> 5.8 s. **Tested**:
+  new `routes/areas.test.ts` (addresses to areas, inherited names like "/constructor" are no area, the download
+  starts and a second call is harmless); full frontend 493/493, tsc, eslint. **Runtime verified** (production build,
+  throttled, twice): the child-space code and the session refresh now go out together.

@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { preloadAreaFor } from "./routes/areas";
 // Fonts are served from this app, never a third party: loading them from Google would send
 // every visitor's address (children's included) to Google on each page view.
 import "@fontsource-variable/alegreya/index.css";
@@ -14,6 +15,8 @@ try {
 } catch {
   // Storage unavailable — nothing to clear.
 }
+
+preloadAreaFor(window.location.pathname);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

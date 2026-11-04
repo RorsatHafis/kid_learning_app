@@ -16,7 +16,7 @@ import { ChildDevicePage } from "@/features/child/ChildDevicePage";
 import { StepUpProvider } from "@/components/StepUpProvider";
 import { roleHomePath } from "@/features/auth/roleHomePath";
 import { ConfirmEmailChangePage } from "@/features/auth/ConfirmEmailChangePage";
-import { loadChildArea, loadParentArea } from "@/routes/areas";
+import { loadAdminArea, loadChildArea, loadParentArea, loadPrincipalArea, loadTeacherArea } from "@/routes/areas";
 import { useMessages } from "@/i18n/catalog";
 import { common } from "@/components/ui/messages";
 
@@ -25,14 +25,14 @@ import { common } from "@/components/ui/messages";
 // console or the principal console, and a teacher never loads the child's space.
 const ParentArea = lazy(loadParentArea);
 const ChildArea = lazy(loadChildArea);
-const AdminArea = lazy(() => import("@/features/admin/AdminArea"));
+const AdminArea = lazy(loadAdminArea);
 const TryPage = lazy(() => import("@/features/marketing/TryPage").then((m) => ({ default: m.TryPage })));
 const ParentDemoPage = lazy(() => import("@/features/marketing/ParentDemoPage").then((m) => ({ default: m.ParentDemoPage })));
 // Design tools for development only: in a production build these imports are dead code and dropped.
 const BrandSheet = import.meta.env.DEV ? lazy(() => import("@/features/brand/BrandSheet").then((m) => ({ default: m.BrandSheet }))) : null;
 const PlayGallery = import.meta.env.DEV ? lazy(() => import("@/features/brand/PlayGallery").then((m) => ({ default: m.PlayGallery }))) : null;
-const TeacherArea = lazy(() => import("@/features/teacher/TeacherArea"));
-const PrincipalArea = lazy(() => import("@/features/principal/PrincipalArea"));
+const TeacherArea = lazy(loadTeacherArea);
+const PrincipalArea = lazy(loadPrincipalArea);
 
 function AreaLoading({ children }: { children: ReactNode }) {
   return <Suspense fallback={<LoadingState />}>{children}</Suspense>;
