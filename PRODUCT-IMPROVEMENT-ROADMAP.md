@@ -2603,3 +2603,7 @@ Dependencies:
   and the child's space at 640 px (200% zoom of a laptop, where the `sm:` layouts start) and 768 px: nothing cut off,
   no sideways scroll, no serious axe violation. **Tested**: child Vitest 56/56. **Browser verified** (production
   build).
+- 2026-11-04: **Focus through an activity, by keyboard - checked, no change needed.** A new sample family's child on
+  the seeded Maths path, keys only: after "Let's go" focus is on the first question's answer; after Check, on the
+  button that goes on (Next / Finish); after Next, on the next question's answer - never dropped to the page. Emails
+  checked by reading `AccountRecoveryService`: each is written in its recipient's interface language (INSPECTED).
