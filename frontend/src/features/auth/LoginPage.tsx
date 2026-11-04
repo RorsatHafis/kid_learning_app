@@ -46,6 +46,10 @@ export function LoginPage() {
           setFormError(rateLimitedMessage(err));
         } else if (err.status === 423) {
           setFormError(err.problem?.lockedUntil ? m.login.lockedUntil(formatTime(err.problem.lockedUntil)) : m.login.lockedShort);
+        } else if (err.status >= 500) {
+          // The server (or the host in front of it, while it restarts) failed - not the details typed. Saying they
+          // were wrong would send a parent to reset a password that works.
+          setFormError(m.somethingWentWrong);
         } else {
           // 401 for wrong credentials — GlobalExceptionHandler keeps the
           // detail generic on purpose (no "email not found" vs "wrong

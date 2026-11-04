@@ -2521,3 +2521,12 @@ Dependencies:
   (one 201, one answer row). An attempt whose questions are all answered is completed when reopened and shows its
   result (as designed). **Runtime verified** (Chromium, isolated stack); no automated test added (the existing
   resume and failure tests cover the code paths).
+- 2026-11-04: **Sign-in no longer blames the details when the server fails.** Any refusal other than a rate limit, a
+  lockout or a field error fell back to "Couldn't log you in with those details." - including a host's 502/503 while
+  the backend restarts or deploys (no problem body). A parent with a working password would be sent to reset it. A
+  server error (5xx) now reads "Something went wrong. Please try again."; a 401 still shows the server's own words (or
+  the wrong-details line when it gives none), so account enumeration protection is unchanged. Registration ("Couldn't
+  create that account.") and reset are left as they are - neither points the person the wrong way. **Tested**: new
+  `loginErrors.test.tsx` (502, 503, 500 -> something went wrong; 401 with and without words); auth Vitest 11/11.
+  **Browser verified** on the production build at 360 px, English and Khmer: a 503 from the host -> the new line; a
+  real wrong password -> "Invalid email or password".
