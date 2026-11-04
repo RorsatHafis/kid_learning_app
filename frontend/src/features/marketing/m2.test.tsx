@@ -64,7 +64,9 @@ describe("the public demo (M2)", () => {
     const verdict = await screen.findByRole("status");
     expect(within(verdict).getByText(/The answer is 3/)).toBeInTheDocument();
     expect(within(verdict).getByText("Two and one more make three.")).toBeInTheDocument();
-    await userEvent.click(within(verdict).getByRole("button", { name: /Finish/ }));
+    // A11Y-1 (owner-approved 2026-11-04): the verdict says what happened and why; its button follows it, outside.
+    expect(within(verdict).queryByRole("button", { name: /Finish/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Finish/ }));
     expect(await screen.findByRole("heading", { name: "That's how a lesson goes" })).toBeInTheDocument();
     expect(screen.getByText("0 of 1 right.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Create a family account/ })).toHaveAttribute("href", "/register");

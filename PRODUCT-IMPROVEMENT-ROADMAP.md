@@ -2785,3 +2785,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   a clipped navigation bar (header 73 px, sticky, nothing cut at any measured size) - the owner's screenshot did not
   arrive; to recheck with it. **Tested**: marketing Vitest. **Browser verified** (production build): 12 sizes x 2
   languages, no sideways scroll, axe clean; screenshots at 1024, 1280, 1366 x 657 and 1920.
+- 2026-11-04: **A11Y-1 done (owner approved updating existing tests where an approved change needs it).** The
+  answer feedback's live region now holds what happened and why - the verdict, the answer, the explanation - and its
+  continue button follows it (focus still moves there), so a screen reader no longer reads the button's label into
+  the announcement. Restores `f610025`'s `AnswerVerdict.tsx`; `m2.test.tsx` now asserts the button is outside the
+  region. **Tested**: marketing + child Vitest 69/69.
