@@ -2700,3 +2700,6 @@ Dependencies:
 - 2026-11-04: **The administrator's staff page says when principal applications couldn't be read** (same scan):
   schools waiting for their principal's approval looked like none. Now "Principal applications couldn't be loaded."
   with Try again (Khmer drafted). **Tested**: admin + i18n Vitest 253/253, tsc, eslint. Not browser verified.
+- 2026-11-04: **CI fully green on `7fc6de4`** (run 41784095600): backend unit + integration, frontend, deployment
+  files, end-to-end and accessibility - PERF-1 and the failed-read fixes included. `b70302a` (staff page) pushed
+  after it; its CI was not checked in this window.
