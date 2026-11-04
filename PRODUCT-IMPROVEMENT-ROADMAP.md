@@ -2589,3 +2589,11 @@ Dependencies:
   tests), the grid guard. **Browser verified** (production build): screenshots at 320, 360 and 390 px (whole words,
   nothing cut off); the text-spacing check now finds nothing on any of the 17 pages. Note: the 320 px crawl above
   compares elements with the screen's edge only, so a card cutting off its own content can still slip past it.
+- 2026-11-04: **The 320/360 px crawl now also catches content a card cuts off - one more fix.** The crawl's check
+  compares every text element with any ancestor that hides its overflow (not only the screen's edge), allowing
+  regions that scroll on purpose (tables, the Studio's tabs) and deliberate ellipses. It found one more: the
+  principal's class list at 320 px, where a long academic-year name widened the class's year picker beyond its
+  card. Fixed like the school picker (label and picker may shrink; the word "Academic year" keeps its width).
+  **Tested**: principal Vitest 22/22. **Browser verified** (production build): every role's pages (54) at 320 and
+  360 px in English and Khmer, plus the child's space (5 pages reachable from the home) at 320 and 360 - no
+  sideways scroll, nothing cut off, no serious axe violation, no error.

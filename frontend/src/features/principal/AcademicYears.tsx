@@ -354,14 +354,14 @@ export function ClassYearSelect({
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pb-3.5 text-sm">
-      <label className="flex items-center gap-2 text-ink-soft">
-        <span>{m.classYear}</span>
+      <label className="flex min-w-0 max-w-full items-center gap-2 text-ink-soft">
+        <span className="shrink-0">{m.classYear}</span>
         <select
           aria-label={m.classYearFor(className)}
           value={value ?? ""}
           disabled={busy}
           onChange={(e) => void place(e.target.value)}
-          className="h-9 rounded-[10px] bg-white px-2 text-sm text-ink ring-1 ring-inset ring-line-strong"
+          className="h-9 min-w-0 max-w-full rounded-[10px] bg-white px-2 text-sm text-ink ring-1 ring-inset ring-line-strong"
         >
           <option value="">{m.noYear}</option>
           {offered.map((y) => (
