@@ -2503,3 +2503,15 @@ Dependencies:
   (school, 3) and `mediaUnsaved.test.tsx` (2); school and Studio Vitest 98/98; tsc; eslint. **Browser verified**
   (Chromium): principal at 360 px - typed school name, Escape -> prompt, Stay kept the text, Leave closed; admin at
   1280 px - typed media title, backdrop click -> prompt, Stay kept, Leave closed. Khmer prompt drafted (PD-14).
+- 2026-11-04: **Phase 1 acceptance "a full session plays on a phone over a mobile connection" - measured, and the
+  child's space gains its main landmark.** On the production build (gzipped), at 390 px with a "Fast 3G"-like network
+  (563 ms round trip, 1.6 Mb/s) and a 4x slower CPU, a child's whole session plays without an error: child home 6.3 s
+  on first visit (~370 KB, 123 KB cached), tapping a book to its first question 2.6 s, answer to feedback 1.3 s, 578 KB
+  in all (figures in `docs/SECURITY-AND-RELIABILITY.md` section 3). Nothing changed for speed: the slowest step is
+  round trips that depend on each other, not size. **Fixed** (found while measuring): the child's space had no `main`
+  landmark - the page sat in a plain `div` after the space's controls, so a screen reader couldn't jump past them to
+  the activity, the shelf or the home (WCAG 2.4.1). `ChildSpaceLayout` now holds the page in `<main>`. **Tested**: new
+  `childLandmarks.test.tsx` (one main, holding the page, the controls outside it; with and without the focus header);
+  child Vitest 56/56. **Browser verified**: axe `landmark-one-main`, `region`, `bypass`, duplicate/top-level main on 17
+  pages across the public site, parent, child (home, shelf, buddy, a question), teacher, principal and admin - all
+  pass.

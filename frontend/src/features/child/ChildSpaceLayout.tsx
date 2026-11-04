@@ -85,7 +85,8 @@ export function ChildSpaceLayout({
             </div>
           </header>
         )}
-        <div className="relative z-10">{children}</div>
+        {/* The page itself, after the space's controls: a screen reader's "main" jumps straight to it. */}
+        <main className="relative z-10">{children}</main>
       </div>
     </BuddyKindProvider>
   );

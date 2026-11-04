@@ -73,6 +73,14 @@ code or configuration only. Nothing here is claimed beyond its level.
 Performance measured on the dev data (160 curricula, 50+ classes): every endpoint timed answered under 50 ms (the
 heaviest, learning operations, 46 ms); a parent's first load is about 170 KB gzipped (workspaces load on demand).
 
+**A child's session on a phone over a slow mobile connection** (2026-11-04, RUNTIME: the production build served
+gzipped, Chromium at 390 px, "Fast 3G"-like network - 563 ms round trip, 1.6 Mb/s down - and a 4x slower CPU): sign-in
+page cold 2.3 s (138 KB); sign-in to the parent home 1.1 s; the child home 6.3-6.5 s on first visit (about 370 KB: the
+child space's code and the painted village; 123 KB once cached); **tapping a book to its first question 2.6 s** (three
+round trips - next activity, the attempt, the activity with its answers - each needing the one before); an answer to
+its feedback 1.3 s; the end of the activity 0.6 s; 578 KB for the whole session, no errors. A cold reload straight into
+an activity takes 5.5 s (seven round trips in a row); a child normally arrives from the home instead.
+
 ## 4. Open items (to the roadmap)
 
 | # | Item | Severity | Owner / next |
