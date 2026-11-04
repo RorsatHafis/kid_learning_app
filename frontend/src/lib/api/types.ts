@@ -242,6 +242,11 @@ export interface ActivityAttempt {
   score: number | null;
 }
 
+/** A start (new or resumed attempt) with the answers already recorded on it (PERF-1); absent from an older server. */
+export interface StartedAttempt extends ActivityAttempt {
+  answers?: AnswerRecord[];
+}
+
 /** Feedback on an answer already given (learning/service/AnswerFeedbackService):
  * the correct answer, so a mistake can be explained. Only ever present on a
  * recorded answer — the content endpoint never carries an answer key. */

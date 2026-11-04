@@ -6,7 +6,7 @@ import { ProgressBuds, Bud } from "@/features/world/ProgressBuds";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
-import type { ActivityVersionDetail, AnswerRecord, Chapter, EnrollmentOverview, JourneyStep, QuestionType } from "@/lib/api/types";
+import type { ActivityVersionDetail, AnswerRecord, Chapter, EnrollmentOverview, JourneyStep, QuestionType, StartedAttempt } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { play as playCue } from "@/features/buddy/sound";
 import { childReason } from "@/features/learning/explain";
@@ -36,6 +36,11 @@ import { childBreakMessages, childDayMessages } from "@/features/parent/breaks.m
 
 /** Why loading or saving stopped: a key into the child's words, so the line follows the language. */
 type TroubleKey = "loadFailed" | "saveFailed";
+
+/** The answers already recorded on a started attempt: carried by the start (PERF-1), or asked for when it isn't. */
+function answersOf(attempt: StartedAttempt): Promise<AnswerRecord[]> {
+  return attempt.answers ? Promise.resolve(attempt.answers) : activityAttemptApi.listAnswers(attempt.id);
+}
 /** A line computed from the path when it is shown (so it is in the language on screen then). */
 type Line = () => string;
 
@@ -227,18 +232,21 @@ export function PlaySession() {
       }
 
       try {
+        // The start returns the answers already recorded (PERF-1), so the activity is asked for beside it - one round
+        // trip less before the question. The child may read it because it is on their path (LearnerContentReadGuard).
+        const reads = Promise.all([
+          activityContentApi.getVersion(item.activityVersionId, childId),
+          overviewOfPath(),
+          childrenApi.today(childId).catch(() => null),
+        ]);
+        reads.catch(() => undefined); // awaited below; if the start fails first, that is what is reported
         // Returns the existing IN_PROGRESS attempt for this path item if there is
         // one (Battle 2A) — this is also the resume path.
         const attempt = await activityAttemptApi.start(childId, {
           activityVersionId: item.activityVersionId,
           learningPathItemId: item.id,
         });
-        const [activity, answers, overview, today] = await Promise.all([
-          activityContentApi.getVersion(item.activityVersionId, childId),
-          activityAttemptApi.listAnswers(attempt.id),
-          overviewOfPath(),
-          childrenApi.today(childId).catch(() => null),
-        ]);
+        const [[activity, overview, today], answers] = await Promise.all([reads, answersOf(attempt)]);
         const next = overview?.nextStep ?? null;
 
         const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
@@ -471,6 +479,10 @@ export function PracticeSession() {
     loadInFlight.current = true;
     setPhase({ kind: "loading" });
     try {
+      // Asked for beside the start (PERF-1: the start brings its answers); a child may read what they may practise.
+      // If the start is refused, that is what the child is told and these go unused.
+      const reads = Promise.all([activityContentApi.getVersion(activityVersionId, childId), childrenApi.today(childId).catch(() => null)]);
+      reads.catch(() => undefined);
       let attempt;
       try {
         // No path item: free practice. An unfinished practice of this book is resumed.
@@ -487,11 +499,7 @@ export function PracticeSession() {
         }
         return;
       }
-      const [activity, answers, today] = await Promise.all([
-        activityContentApi.getVersion(activityVersionId, childId),
-        activityAttemptApi.listAnswers(attempt.id),
-        childrenApi.today(childId).catch(() => null),
-      ]);
+      const [[activity, today], answers] = await Promise.all([reads, answersOf(attempt)]);
       const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
       const ordered = { ...activity, items };
       const answered = new Set(answers.map((answer) => answer.questionVersionId));

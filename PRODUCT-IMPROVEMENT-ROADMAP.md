@@ -2641,3 +2641,17 @@ Dependencies:
 - 2026-11-04: **CI fully green on `6507a60`** (run 41778528827): backend unit + integration (Testcontainers),
   frontend (lint, types, tests, build, audit), deployment files, end-to-end journeys and accessibility on the Docker
   stack - including the new offline e2e tests. Everything built on 2026-11-04 through `6507a60` is CI-verified.
+- 2026-11-04: **PERF-1 built: starting an activity is one round trip shorter.** The attempt start
+  (`POST /children/{id}/activity-attempts`) now answers with the answers already recorded on the attempt
+  (`StartedAttemptResponse.answers`: empty for a new attempt, exactly what `GET /activity-attempts/{id}/answers`
+  returns for a resumed one - Battle 2A unchanged). Additive: every earlier field is as it was. The players use them
+  (`answersOf`: falls back to asking when a start has none, e.g. an older server during a deploy) and so ask for the
+  activity beside the start instead of after it - the child may read it because it is on their path or allowed as
+  practice (`LearnerContentReadGuard`), attempt or not. Slow-3G phone, production build: **tapping a book 2.6 ->
+  2.05 s**; a cold reload into an activity 4.85 -> 4.36 s (5.5 s this morning). **Tested**: new
+  `StartAttemptAnswersIntegrationTests` (new attempt: none; resumed: the same attempt, its answer, identical to the
+  answers endpoint; another family can't start and learns nothing), `PlayAgainVersionIntegrationTests`,
+  `ReadQueryScalingIntegrationTests`, `AuthorizationSweepIntegrationTests`; backend unit 206/206; new
+  `startAnswers.test.tsx` (answers carried -> no second request, resumes at question 2; without -> asks, same
+  result); full frontend 495/495, tsc, eslint; local e2e golden, offline, journey-stop, review and accessibility
+  journeys 18 passed / 7 skipped (admin credentials). **Runtime verified** (rebuilt backend + production build).

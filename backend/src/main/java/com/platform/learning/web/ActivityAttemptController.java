@@ -24,6 +24,7 @@ import static com.platform.learning.web.ActivityAttemptDtos.AnswerRecordResponse
 import static com.platform.learning.web.ActivityAttemptDtos.AttemptResponse;
 import static com.platform.learning.web.ActivityAttemptDtos.SmartReviewCheckResponse;
 import static com.platform.learning.web.ActivityAttemptDtos.StartAttemptRequest;
+import static com.platform.learning.web.ActivityAttemptDtos.StartedAttemptResponse;
 import static com.platform.learning.web.ActivityAttemptDtos.SubmitAnswerRequest;
 
 /**
@@ -65,7 +66,7 @@ public class ActivityAttemptController {
     }
 
     @PostMapping("/api/v1/children/{childId}/activity-attempts")
-    public ResponseEntity<AttemptResponse> startAttempt(@PathVariable UUID childId,
+    public ResponseEntity<StartedAttemptResponse> startAttempt(@PathVariable UUID childId,
                                                           @Valid @RequestBody StartAttemptRequest request,
                                                           @AuthenticationPrincipal UUID accountId) {
         childAccess.requireLearner(accountId, childId);
@@ -73,7 +74,10 @@ public class ActivityAttemptController {
         ActivityAttempt attempt = activityAttemptService.startAttempt(
                 childId, request.activityVersionId(), request.learningPathItemId(), request.learningSessionId());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(AttemptResponse.from(attempt));
+        List<AnswerRecordResponse> answers = activityAttemptService.listAnswers(attempt.getId()).stream()
+                .map(this::toResponse)
+                .toList();
+        return ResponseEntity.status(HttpStatus.CREATED).body(StartedAttemptResponse.from(attempt, answers));
     }
 
     @GetMapping("/api/v1/activity-attempts/{attemptId}")

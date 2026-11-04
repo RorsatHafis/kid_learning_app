@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -52,6 +53,29 @@ public final class ActivityAttemptDtos {
             return new AttemptResponse(attempt.getId(), attempt.getChildId(), attempt.getActivityVersionId(),
                     attempt.getLearningPathItemId(), attempt.getStatus(), attempt.getStartedAt(),
                     attempt.getCompletedAt(), attempt.getScore());
+        }
+    }
+
+    /**
+     * The attempt a start returns (new, or the unfinished one resumed - Battle 2A), with the answers already recorded
+     * on it (empty for a new attempt): the player resumes at the first unanswered question without asking for them
+     * separately - one round trip less before a child sees the question (PERF-1).
+     */
+    public record StartedAttemptResponse(
+            UUID id,
+            UUID childId,
+            UUID activityVersionId,
+            UUID learningPathItemId,
+            ActivityAttemptStatus status,
+            Instant startedAt,
+            Instant completedAt,
+            BigDecimal score,
+            List<AnswerRecordResponse> answers
+    ) {
+        public static StartedAttemptResponse from(ActivityAttempt attempt, List<AnswerRecordResponse> answers) {
+            return new StartedAttemptResponse(attempt.getId(), attempt.getChildId(), attempt.getActivityVersionId(),
+                    attempt.getLearningPathItemId(), attempt.getStatus(), attempt.getStartedAt(),
+                    attempt.getCompletedAt(), attempt.getScore(), answers);
         }
     }
 

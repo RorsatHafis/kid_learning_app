@@ -7,6 +7,7 @@ import type {
   SecondFactorStatus,
   PhoneStatus,
   ActivityAttempt,
+  StartedAttempt,
   ActivityVersionDetail,
   AnswerRecord,
   AuthResponse,
@@ -219,7 +220,7 @@ export const activityContentApi = {
 // learning/web/ActivityAttemptController.java
 export const activityAttemptApi = {
   start: (childId: string, input: { activityVersionId: string; learningPathItemId?: string }) =>
-    apiClient.post<ActivityAttempt>(`/children/${childId}/activity-attempts`, input),
+    apiClient.post<StartedAttempt>(`/children/${childId}/activity-attempts`, input),
   get: (attemptId: string) => apiClient.get<ActivityAttempt>(`/activity-attempts/${attemptId}`),
   listAnswers: (attemptId: string) => apiClient.get<AnswerRecord[]>(`/activity-attempts/${attemptId}/answers`),
   /** submittedAnswer per question type (backend AnswerScoringService):
