@@ -2536,3 +2536,7 @@ Dependencies:
   five roles and the public site has its own title naming the place (WCAG 2.4.2): "Sophea's path", "Grade 1 A",
   "Media library"... no two alike. Full frontend suite **477/477**, tsc clean, eslint 0 errors (8 existing
   fast-refresh warnings).
+- 2026-11-04: **Keyboard focus and reduced motion checked at runtime** (production build, Chromium 1280 px): tabbing
+  through the landing page, sign-in, the parent home, a child's page for the parent, the child home and a sorting
+  question - 78 controls - every one looks different when focused than at rest (outline, ring or colour); with
+  `prefers-reduced-motion: reduce`, no animation is running on any of those pages once loaded. No change needed.
