@@ -2681,3 +2681,11 @@ Dependencies:
   **Tested**: new `paymentsUnknown.test.tsx` (payments fail: alert, Choose disabled; Try again: the waiting payment and
   its reference; ways of paying fail: alert, nothing to choose), `homeSkillsFailed.test.tsx`; parent + i18n Vitest
   221/221 incl. the protected payment and family-home tests.
+- 2026-11-04: **School billing: a part that couldn't be read says so.** Same scan: the school's ways to pay
+  (`SchoolRenew`, the only way a school waiting to pay gets paid) and its payments (`SchoolInvoices`, where a
+  waiting payment shows its reference) rendered nothing when their read failed. Each now says what couldn't be loaded
+  with Try again, as a line within the card (the app's pattern for part of a page; an alert box there would also
+  compete with the page's own alerts - the protected `principal.test.tsx` expects the limit reason to be the one
+  alert, and passes). Khmer drafted (PD-14). **Tested**: new `schoolBillingFailed.test.tsx` (payments fail -> the line;
+  Try again -> the waiting payment's reference; ways to pay fail -> the line; Try again -> the plan to choose); school,
+  principal and i18n Vitest 181/181.

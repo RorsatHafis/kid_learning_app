@@ -47,6 +47,7 @@ export const schoolPlanMessages = defineMessages(
     renewed: "The payment has started. Follow the invoice's instructions below; the school's services open once it is confirmed.",
     renewFailed: "That didn't work just now. Please try again.",
     askTeam: "To start a plan, ask the Bookeyond team for an invoice.",
+    payingFailed: "The ways to pay couldn't be loaded.",
     // M4: a school chooses its first plan itself (the plans the Bookeyond team offers schools, at their prices).
     chooseTitle: "Choose the school's plan",
     chooseLead: "Each plan's price and what it includes are set by the Bookeyond team.",
@@ -99,6 +100,7 @@ export const schoolPlanMessages = defineMessages(
     renewed: "ការបង់ប្រាក់បានចាប់ផ្ដើមហើយ។ សូមធ្វើតាមការណែនាំនៃវិក្កយបត្រខាងក្រោម។ សេវាកម្មរបស់សាលានឹងបើកនៅពេលវាត្រូវបានបញ្ជាក់។",
     renewFailed: "មិនដំណើរការនៅពេលនេះទេ។ សូមព្យាយាមម្ដងទៀត។",
     askTeam: "ដើម្បីចាប់ផ្ដើមកញ្ចប់ សូមស្នើសុំវិក្កយបត្រពីក្រុម Bookeyond។",
+    payingFailed: "មិនអាចផ្ទុកវិធីបង់ប្រាក់បានទេ។",
     chooseTitle: "ជ្រើសរើសកញ្ចប់របស់សាលា",
     chooseLead: "តម្លៃ និងអ្វីដែលកញ្ចប់នីមួយៗរួមបញ្ចូល ត្រូវបានកំណត់ដោយក្រុម Bookeyond។",
     choosePlan: "កញ្ចប់",

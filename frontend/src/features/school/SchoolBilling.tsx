@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { CreditCard, PauseCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { common } from "@/components/ui/messages";
 import { useMessages } from "@/i18n/catalog";
 import { paymentsApi, type PaymentMethod, type SchoolPlanChoice } from "@/lib/api/payments";
 import { entitlementLabel, priceText, type OwnSchoolPlan } from "@/lib/api/subscriptions";
@@ -21,6 +22,7 @@ import { SchoolInvoices } from "./SchoolInvoices";
 export function SchoolRenew({ schoolId, first, onStarted }: { schoolId: string; first: boolean; onStarted: () => void }) {
   const m = useMessages(schoolPlanMessages);
   const pay = useMessages(paymentMessages);
+  const tryAgain = useMessages(common).tryAgain;
   const choices = useAsync(() => paymentsApi.schoolRenewals(schoolId), [schoolId]);
   const methods = useAsync(() => paymentsApi.methods(), []);
   const available = [...(methods.data?.methods ?? [])].sort((a, b) => Number(a === "DEV_SIMULATOR") - Number(b === "DEV_SIMULATOR"));
@@ -33,6 +35,25 @@ export function SchoolRenew({ schoolId, first, onStarted }: { schoolId: string; 
   const plan = plans.find((p) => p.id === planId) ?? plans[0];
   const chosen = method ?? available[0] ?? null;
 
+  // The way to pay: if it can't be read, say so - a school waiting to pay must not just see nothing.
+  const failed = choices.error ?? methods.error;
+  if (failed) {
+    return (
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-soft">
+        {m.payingFailed}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            if (choices.error) choices.refetch();
+            if (methods.error) methods.refetch();
+          }}
+        >
+          {tryAgain}
+        </Button>
+      </p>
+    );
+  }
   if (!choices.data || !methods.data) return null;
   if (!plan || !chosen) return <p className="text-sm text-ink-soft">{m.askTeam}</p>;
 

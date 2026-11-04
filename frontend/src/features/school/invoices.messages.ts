@@ -6,6 +6,7 @@ export const invoiceMessages = defineMessages(
   "features/school/invoices",
   {
     title: "Invoices",
+    loadFailed: "The school's payments couldn't be loaded.",
     waiting: (plan: string) => `Invoice for ${plan}`,
     reference: "Payment reference",
     payBy: (when: string) => `Pay by ${when}`,
@@ -26,6 +27,7 @@ export const invoiceMessages = defineMessages(
   },
   {
     title: "វិក្កយបត្រ",
+    loadFailed: "មិនអាចផ្ទុកការបង់ប្រាក់របស់សាលាបានទេ។",
     waiting: (plan: string) => `វិក្កយបត្រសម្រាប់ ${plan}`,
     reference: "លេខយោងការបង់ប្រាក់",
     payBy: (when: string) => `បង់មុន ${when}`,

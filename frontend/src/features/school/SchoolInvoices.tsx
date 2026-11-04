@@ -5,6 +5,7 @@ import { useMessages } from "@/i18n/catalog";
 import { formatDate, formatDateTime } from "@/i18n/format";
 import { orderPriceText, paymentsApi, type PaymentOrder } from "@/lib/api/payments";
 import { Pager } from "@/components/ui/Pager";
+import { common } from "@/components/ui/messages";
 import { TransferInstructions } from "@/features/payments/TransferInstructions";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { errorText } from "@/features/admin/studio/studioLogic";
@@ -16,11 +17,23 @@ import { invoiceMessages } from "./invoices.messages";
  */
 export function SchoolInvoices({ schoolId }: { schoolId: string }) {
   const m = useMessages(invoiceMessages);
+  const tryAgain = useMessages(common).tryAgain;
   const [page, setPage] = useState(0);
   // Page 0 also says whether a payment waits: a pending one is always the newest (only one at a time).
   const first = useAsync(() => paymentsApi.schoolOrders(schoolId), [schoolId]);
   const later = useAsync(() => (page === 0 ? Promise.resolve(null) : paymentsApi.schoolOrders(schoolId, page)), [schoolId, page]);
   const titleId = useId();
+  // A waiting payment (with the reference to quote) is on page 0: if that can't be read, say so rather than nothing.
+  if (first.error) {
+    return (
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-4 text-sm text-ink-soft">
+        {m.loadFailed}
+        <Button size="sm" variant="outline" onClick={first.refetch}>
+          {tryAgain}
+        </Button>
+      </p>
+    );
+  }
   if (!first.data || first.data.total === 0) return null;
   const pending = first.data.items.find((order) => order.status === "PENDING");
   const shown = page === 0 ? first.data : later.data;
