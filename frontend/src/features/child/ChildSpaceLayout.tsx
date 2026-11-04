@@ -78,7 +78,7 @@ export function ChildSpaceLayout({
             </div>
             <BrandMark size={34} className="hidden sm:block" title="Bookeyond Kid" />
             <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-              <LanguageToggle className={cn(chip, "justify-center px-3 text-sm font-semibold sm:px-3.5")} />
+              <LanguageToggle className={cn(chip, "min-w-11 justify-center px-3 text-sm font-semibold sm:px-3.5")} />
               <SoundToggle />
               {/* M10a: a child's own device has no grown-up area to go to. */}
               {!onDevice && <GrownUpGate to={`/parent/children/${childId}`} />}

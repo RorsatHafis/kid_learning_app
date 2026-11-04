@@ -2597,3 +2597,9 @@ Dependencies:
   **Tested**: principal Vitest 22/22. **Browser verified** (production build): every role's pages (54) at 320 and
   360 px in English and Khmer, plus the child's space (5 pages reachable from the home) at 320 and 360 - no
   sideways scroll, nothing cut off, no serious axe violation, no error.
+- 2026-11-04: **Touch targets in the child's space: every control at least 44 x 44 px.** Checked at 360 px on the
+  home, shelf, buddy chooser and in each question type (introduction and question): the language switch was 42 px
+  wide (the word "ខ្មែរ" is short) - now at least 44. Every other control already met it. Also crawled every role
+  and the child's space at 640 px (200% zoom of a laptop, where the `sm:` layouts start) and 768 px: nothing cut off,
+  no sideways scroll, no serious axe violation. **Tested**: child Vitest 56/56. **Browser verified** (production
+  build).
