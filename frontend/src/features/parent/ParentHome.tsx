@@ -250,7 +250,13 @@ function ChildSummary({ child }: { child: Child }) {
           {last && <p className="text-sm leading-snug text-ink-soft">{o.last(last.title, last.correctAnswers, last.totalAnswers, lastPlayedText(last.completedAt))}</p>}
         </Cell>
         <Cell title={o.shows}>
-          {skills.data ? <SkillTally progress={skills.data} childName={child.displayName} /> : <p className="text-sm text-ink-faint">{m.loadingLearning}</p>}
+          {skills.data ? (
+            <SkillTally progress={skills.data} childName={child.displayName} />
+          ) : skills.error ? (
+            <p className="text-sm text-ink-soft">{o.showsFailed}</p>
+          ) : (
+            <p className="text-sm text-ink-faint">{m.loadingLearning}</p>
+          )}
         </Cell>
         <Cell title={o.lately}>
           <Lately childId={child.id} progress={skills.data} />

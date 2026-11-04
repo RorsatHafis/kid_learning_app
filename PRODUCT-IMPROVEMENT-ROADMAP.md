@@ -2671,3 +2671,13 @@ Dependencies:
   parent Vitest 72/72 incl. the protected `addChild.test.tsx`. **Browser verified** (production build, 360 px, a new
   sample family): plan read failed -> "That didn't load · Something went wrong · Try again", no Finish; Try again,
   Start -> the child's page shows "Up next".
+- 2026-11-04: **Reads whose failure looked like an answer - family screens fixed.** A scan for `useAsync` reads whose
+  error a screen never looks at found 41; read one by one, most are optional extras (a title's name, a meter, a
+  tip). Two on family screens could mislead, now fixed: **the family's payments** - when its payments or the ways of
+  paying couldn't be read, a payment already waiting (with the reference the family quotes) looked absent and the
+  plan choices unlocked; now it says so with Try again and offers no plan until both are known (the server would
+  refuse a second waiting payment anyway). **The family home's "What the answers show"** said "Loading..." for ever
+  when the skills couldn't be read; now "What the answers show couldn't be loaded." (Khmer drafted, PD-14).
+  **Tested**: new `paymentsUnknown.test.tsx` (payments fail: alert, Choose disabled; Try again: the waiting payment and
+  its reference; ways of paying fail: alert, nothing to choose), `homeSkillsFailed.test.tsx`; parent + i18n Vitest
+  221/221 incl. the protected payment and family-home tests.

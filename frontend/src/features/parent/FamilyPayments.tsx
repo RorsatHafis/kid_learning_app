@@ -34,6 +34,10 @@ export function FamilyPlanWithPayments() {
   const m = useMessages(paymentMessages);
   // A pending payment is always the newest (no new one starts while it waits), so page 0 shows it.
   const pending = orders.data?.items.find((order) => order.status === "PENDING") ?? null;
+  // Until the family's payments and the ways of paying are known, nothing new is offered: a payment already waiting
+  // (with the reference the family quotes) must never look absent because it couldn't be read.
+  const paymentsKnown = orders.data !== null && methods.data !== null;
+  const paymentsError = orders.error ?? methods.error;
   // Real ways of paying first; a test payment (never offered in production) last.
   const available = [...(methods.data?.methods ?? [])].sort((a, b) => Number(a === "DEV_SIMULATOR") - Number(b === "DEV_SIMULATOR"));
 
@@ -49,6 +53,15 @@ export function FamilyPlanWithPayments() {
     <div className="flex flex-col gap-5">
       {plan.isLoading && !plan.data && <LoadingState label={m.loading} />}
       {plan.error && <ErrorState error={plan.error} onRetry={plan.refetch} />}
+      {paymentsError && (
+        <ErrorState
+          error={paymentsError}
+          onRetry={() => {
+            if (orders.error) orders.refetch();
+            if (methods.error) methods.refetch();
+          }}
+        />
+      )}
       {outcome && (
         <p
           role="status"
@@ -84,7 +97,7 @@ export function FamilyPlanWithPayments() {
           onChanged={() => setVersion((v) => v + 1)}
           purchase={{
             methods: available,
-            locked: pending !== null || buying !== null,
+            locked: pending !== null || buying !== null || !paymentsKnown,
             onChoose: (offer) => {
               setOutcome(null);
               setBuying(offer);
