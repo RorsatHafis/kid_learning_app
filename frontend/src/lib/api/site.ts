@@ -81,7 +81,18 @@ export interface PublicPlan {
   limits: { key: EntitlementKey; limit: number | null }[];
 }
 
+/** SUB-1: a subject in the catalog - available with the ages its curricula cover, or in preparation. */
+export interface PublicSubject {
+  code: string;
+  name: string;
+  description: string | null;
+  available: boolean;
+  minAge: number | null;
+  maxAge: number | null;
+}
+
 export const siteApi = {
+  subjects: () => apiClient.get<PublicSubject[]>("/site/subjects", { skipAuth: true }),
   statements: () => apiClient.get<PublicStatement[]>("/site/statements", { skipAuth: true }),
   plans: () => apiClient.get<PublicPlan[]>("/site/plans", { skipAuth: true }),
   copy: () => apiClient.get<Omit<SiteCopy, "version" | "updatedAt">[]>("/site/copy", { skipAuth: true }),

@@ -26,15 +26,24 @@ public class SiteController {
     private final SiteStatementService statements;
     private final SiteCopyService copy;
     private final com.platform.subscription.service.PublicPlans plans;
+    private final com.platform.curriculum.service.PublicSubjects subjects;
 
-    public SiteController(SiteStatementService statements, SiteCopyService copy, com.platform.subscription.service.PublicPlans plans) {
+    public SiteController(SiteStatementService statements, SiteCopyService copy, com.platform.subscription.service.PublicPlans plans,
+                          com.platform.curriculum.service.PublicSubjects subjects) {
         this.plans = plans;
+        this.subjects = subjects;
         this.statements = statements;
         this.copy = copy;
     }
 
     /** F1a: one entry's words; a blank language keeps its default. {@code version}: absent to create. */
     public record CopyRequest(@Size(max = 600) String textEn, @Size(max = 600) String textKm, Long version) {
+    }
+
+    /** SUB-1 / FLEX-1: the subjects in the catalog - available with their ages, or in preparation (read by anyone). */
+    @GetMapping("/api/v1/site/subjects")
+    public List<com.platform.curriculum.service.PublicSubjects.PublicSubject> offeredSubjects() {
+        return subjects.offered();
     }
 
     /** P-1 / LAND-1: the plans on offer, from the plan records, for the public pages (read by anyone). */

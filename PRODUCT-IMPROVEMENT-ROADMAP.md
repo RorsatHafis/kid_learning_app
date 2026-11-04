@@ -2804,3 +2804,18 @@ Then defects, then simplification. Push at the end of the window; CI once.
   `AuthorizationSweepIntegrationTests` 2/2; new `landingPlans.test.tsx` (records shown with price and limits; no school
   offer -> the copy; read fails -> no price); marketing + i18n Vitest 151/151. **Browser verified** (production build,
   1280 px, EN/KM): the section lists the dev database's plans with their prices.
+- 2026-11-04: **SUB-1 / FLEX-1 done, and the landing page reads as one page (owner: "blend together").**
+  Subjects: new public `GET /api/v1/site/subjects` (`PublicSubjects`) - every active subject in the catalog, as many as
+  there are: available (a published family curriculum - platform content only, teachers' own not public) with the
+  ages its curricula cover, or in preparation; names and descriptions in the reader's language. The section shows
+  them (painted place for Maths/Khmer/English, the places in turn for any other subject; the copy's short text where
+  the catalog has no description), at most six with "And N more subjects in the app", "The subjects couldn't be
+  loaded just now" on failure - no fixed three anywhere. Note: Khmer and English are not subjects in the catalog yet,
+  so their cards appear (as "in preparation") once they are added in the Studio. Plans: at most three per audience.
+  Blend: the sections share one paper ground - the light bands (for parents, safety, for children) fade in from it
+  and back out instead of starting on a line, the dark bands (statements, schools) meet it along a soft river bank,
+  the children's painting and the closing scene fade into and out of the paper. **Tested**: new
+  `PublicSubjectsIntegrationTests` (available with ages 5-10 across two curricula; a subject without one in
+  preparation; read by anyone), `AuthorizationSweepIntegrationTests` 2/2 (public allowlist +1, owner-approved); new
+  `landingSubjects.test.tsx`; marketing + i18n Vitest 153/153. **Browser verified** (production build, 1280 px):
+  every join between sections screened - no hard edge left.

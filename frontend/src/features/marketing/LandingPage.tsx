@@ -196,7 +196,9 @@ function Statements() {
   const by = (s: PublicStatement) => (locale === "km" ? s.attributionKm : s.attributionEn);
   const other = locale === "km" ? "en" : "km";
   return (
-    <section aria-label={l.statementsLabel} className="bg-tonle-900 px-4 py-16 text-white sm:px-8 sm:py-20">
+    <section aria-label={l.statementsLabel} className="relative bg-tonle-900 px-4 py-24 text-white sm:px-8 sm:py-28">
+      <RiverBank edge="top" />
+      <RiverBank edge="bottom" />
       <div className="mx-auto flex max-w-[1100px] flex-col gap-10">
         <figure className="flex flex-col gap-4">
           <blockquote className="font-display text-[clamp(2rem,1.5rem+2.4vw,3.4rem)] font-bold leading-[1.08] tracking-[-0.01em] text-balance">
@@ -229,11 +231,38 @@ function Statements() {
   );
 }
 
-function Section({ id, className, children }: { id?: string; className?: string; children: ReactNode }) {
+/**
+ * The page's sections share one paper ground; a section with its own tone fades in from it and back out to it, so the
+ * page reads as one place rather than blocks stacked on each other.
+ */
+const TONES = {
+  paper: "",
+  white: "bg-[linear-gradient(to_bottom,#F6F3EC_0,#FFFFFF_9rem,#FFFFFF_calc(100%-9rem),#F6F3EC_100%)]",
+  mint: "bg-[linear-gradient(to_bottom,#F6F3EC_0,#E7F1EC_10rem,#E7F1EC_calc(100%-10rem),#F6F3EC_100%)]",
+} as const;
+
+function Section({ id, className, tone = "paper", children }: { id?: string; className?: string; tone?: keyof typeof TONES; children: ReactNode }) {
   return (
-    <section id={id} className={cn("scroll-mt-20 px-4 py-20 sm:px-8 sm:py-28", className)}>
+    <section id={id} className={cn("scroll-mt-20 px-4 py-20 sm:px-8 sm:py-28", TONES[tone], className)}>
       <div className="mx-auto max-w-[1240px]">{children}</div>
     </section>
+  );
+}
+
+/** Where a dark band meets the paper ground: a soft, uneven bank, like the river's edge - not a ruled line. */
+function RiverBank({ edge }: { edge: "top" | "bottom" }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 1440 48"
+      preserveAspectRatio="none"
+      className={cn("pointer-events-none absolute inset-x-0 h-8 w-full text-paper sm:h-12", edge === "top" ? "top-0" : "bottom-0 rotate-180")}
+    >
+      <path
+        fill="currentColor"
+        d="M0 0h1440v18c-96 14-190 22-300 16-118-6-196-26-318-24-128 2-206 30-336 28C368 36 292 14 180 12 108 11 52 18 0 26Z"
+      />
+    </svg>
   );
 }
 
@@ -272,7 +301,7 @@ function ForParents() {
     [m.rule4When, m.rule4Then],
   ];
   return (
-    <Section id="for-parents" className="bg-white">
+    <Section id="for-parents" tone="white">
       <div className="grid grid-cols-1 gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
         <div className="flex flex-col gap-10">
           <Heading title={m.title} lead={m.lead} />
@@ -321,7 +350,7 @@ function ForChildren() {
   const b = useMessages(buddyMessages);
   const [chosen, setChosen] = useState<BuddyKind | null>(null);
   return (
-    <section id="for-children" className="relative scroll-mt-16 overflow-hidden bg-[#E7F1EC]">
+    <section id="for-children" className={cn("relative scroll-mt-16 overflow-hidden", TONES.mint)}>
       <div className="relative mx-auto max-w-[1240px] px-4 pb-0 pt-20 sm:px-8 sm:pt-28">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
           <Heading title={m.title} lead={m.lead} />
@@ -362,27 +391,41 @@ function ForChildren() {
       <div aria-hidden className="mt-6 h-40 overflow-hidden sm:h-56">
         <div className="relative h-full w-full">
           <PaintedScene scene="bend" position="50% 70%" />
+          {/* The river runs on into the page below: the painting fades into the paper, and in from the mint above. */}
+          <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-[#E7F1EC] to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-paper to-transparent" />
         </div>
       </div>
     </section>
   );
 }
 
-const SUBJECTS: { key: "maths" | "khmer" | "english"; ready: boolean; place: PlaceKind }[] = [
-  { key: "maths", ready: true, place: "bridge" },
-  { key: "khmer", ready: false, place: "pavilion" },
-  { key: "english", ready: false, place: "treehouse" },
-];
+/** A subject's painted place where one was drawn for it; any other subject takes the places in turn. */
+const PLACES: Record<string, PlaceKind> = { MATHS: "bridge", KHMER: "pavilion", ENGLISH: "treehouse" };
+const PLACE_CYCLE: PlaceKind[] = ["bridge", "pavilion", "treehouse"];
+/** The copy's own short description for the first subjects, when the catalog has none. */
+const COPY_TEXT: Record<string, "mathsText" | "khmerText" | "englishText"> = { MATHS: "mathsText", KHMER: "khmerText", ENGLISH: "englishText" };
 
 function Subjects() {
   const m = useMessages(marketingMessages).subjects;
   const locale = useLocale();
-  const other = locale === "km" ? "en" : "km";
-  const inOther = messagesIn(marketingMessages, other).subjects;
-  const subjects = SUBJECTS.map(({ key, ready, place }) => ({ key, ready, place, name: m[key], other: inOther[key], text: m[`${key}Text`] }));
+  // SUB-1 / FLEX-1: as many subjects as the catalog has - available ones with their ages, the rest in preparation.
+  const catalog = useAsync(() => siteApi.subjects(), [locale]);
+  // At most six on the page - available ones first (the server orders them) - and how many more the app has.
+  const SHOWN = 6;
+  const hidden = Math.max(0, (catalog.data?.length ?? 0) - SHOWN);
+  const subjects = (catalog.data ?? []).slice(0, SHOWN).map((s, i) => ({
+    key: s.code,
+    ready: s.available,
+    place: PLACES[s.code] ?? PLACE_CYCLE[i % PLACE_CYCLE.length],
+    name: s.name,
+    ages: s.available && s.minAge !== null ? m.ages(s.minAge, s.maxAge) : null,
+    text: s.description ?? (COPY_TEXT[s.code] ? m[COPY_TEXT[s.code]] : null),
+  }));
   return (
     <Section id="subjects">
       <Heading title={m.title} lead={m.lead} />
+      {catalog.error && <p className="mt-10 text-ink-soft">{m.failed}</p>}
       <ul className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
         {subjects.map((s) => (
           <li key={s.key} className={cn("flex flex-col overflow-hidden rounded-[24px] bg-white shadow-paper ring-1 ring-line/70", !s.ready && "bg-white/80")}>
@@ -391,11 +434,9 @@ function Subjects() {
             </div>
             <div className="flex flex-1 flex-col gap-2 p-6">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-display text-2xl font-bold text-tonle-950">{s.name}</p>
-                  <p lang={other} className={cn("text-sm text-ink-soft", other === "km" && "font-khmer")}>
-                    {s.other}
-                  </p>
+                <div className="min-w-0">
+                  <p className="font-display text-2xl font-bold text-tonle-950 [overflow-wrap:anywhere]">{s.name}</p>
+                  {s.ages && <p className="text-sm text-ink-soft">{s.ages}</p>}
                 </div>
                 <span
                   className={cn(
@@ -406,11 +447,12 @@ function Subjects() {
                   {s.ready ? m.availableNow : m.inPreparation}
                 </span>
               </div>
-              <p className="text-[0.9375rem] leading-relaxed text-ink-soft">{s.text}</p>
+              {s.text && <p className="text-[0.9375rem] leading-relaxed text-ink-soft">{s.text}</p>}
             </div>
           </li>
         ))}
       </ul>
+      {hidden > 0 && <p className="mt-6 text-ink-soft">{m.more(hidden)}</p>}
     </Section>
   );
 }
@@ -429,7 +471,9 @@ function Schools() {
     l.schoolCapabilities.h,
   ];
   return (
-    <section id="schools" className="scroll-mt-20 bg-tonle-900 px-4 py-20 text-white sm:px-8 sm:py-28">
+    <section id="schools" className="relative scroll-mt-20 bg-tonle-900 px-4 py-24 text-white sm:px-8 sm:py-32">
+      <RiverBank edge="top" />
+      <RiverBank edge="bottom" />
       <div className="mx-auto grid grid-cols-1 max-w-[1240px] gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
         <div className="flex flex-col gap-8">
           <div className="flex max-w-xl flex-col gap-4">
@@ -511,7 +555,7 @@ function Safety() {
     { icon: Languages, ...m.items.language },
   ];
   return (
-    <Section id="safety" className="bg-white">
+    <Section id="safety" tone="white">
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-20">
         <div className="flex flex-col gap-8">
           <Heading title={m.title} lead={m.lead} />
@@ -557,7 +601,7 @@ function Plans() {
                 {s.name}
               </h3>
               <PlanRecords
-                plans={offered.data?.filter((p) => p.audience === s.audience) ?? null}
+                plans={offered.data?.filter((p) => p.audience === s.audience).slice(0, 3) ?? null}
                 failed={offered.error !== null}
                 loading={offered.isLoading && !offered.data}
                 fallback={{ plan: s.plan, price: s.price }}
@@ -639,6 +683,8 @@ function Closing() {
       <section className="relative overflow-hidden bg-[#DCEDEC]">
         <div aria-hidden className="absolute inset-0">
           <PaintedScene scene="bend" position="60% 55%" />
+          {/* The closing scene emerges from the page above rather than starting at a line. */}
+          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-paper to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#F4F6F1]/95 via-[#F4F6F1]/70 to-transparent" />
         </div>
         <div className="relative mx-auto flex max-w-[1240px] flex-col items-start gap-6 px-4 py-24 sm:px-8 sm:py-32">

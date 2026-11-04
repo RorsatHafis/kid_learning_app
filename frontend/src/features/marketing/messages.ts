@@ -99,6 +99,9 @@ export const marketingMessages = defineMessages(
       englishText: "Everyday words and phrases, with audio.",
       availableNow: "Available now",
       inPreparation: "In preparation",
+      ages: (min: number, max: number | null) => (max === null ? `Ages ${min} and up` : `Ages ${min}-${max}`),
+      failed: "The subjects couldn't be loaded just now.",
+      more: (n: number) => (n === 1 ? "And 1 more subject in the app." : `And ${n} more subjects in the app.`),
     },
     schools: {
       title: "Schools, in early access.",
@@ -232,6 +235,9 @@ export const marketingMessages = defineMessages(
       english: "ភាសាអង់គ្លេស",
       englishText: "ពាក្យ និងឃ្លាប្រចាំថ្ងៃ ជាមួយសំឡេង។",
       availableNow: "មានឥឡូវនេះ",
+      ages: (min: number, max: number | null) => (max === null ? `អាយុ ${min} ឆ្នាំឡើងទៅ` : `អាយុ ${min}-${max} ឆ្នាំ`),
+      failed: "មិនអាចផ្ទុកមុខវិជ្ជាបាននៅពេលនេះទេ។",
+      more: (n: number) => `និងមុខវិជ្ជា ${n} ទៀតនៅក្នុងកម្មវិធី។`,
       inPreparation: "កំពុងរៀបចំ",
     },
     schools: {

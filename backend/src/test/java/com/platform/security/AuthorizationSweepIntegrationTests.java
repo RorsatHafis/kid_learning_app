@@ -83,7 +83,7 @@ class AuthorizationSweepIntegrationTests {
             "/api/v1/account", "/api/v1/account/second-factor", "/api/v1/account/phone", "/api/v1/account/devices",
             "/api/v1/account/data-export", "/api/v1/children", "/api/v1/caregiving", "/api/v1/family/plan",
             "/api/v1/family/payments", "/api/v1/family/learning-day", "/api/v1/payments/methods", "/api/v1/curricula",
-            "/api/v1/site/statements", "/api/v1/site/copy", "/api/v1/site/plans", "/api/v1/demo/activities", "/api/v1/auth/legal");
+            "/api/v1/site/statements", "/api/v1/site/copy", "/api/v1/site/plans", "/api/v1/site/subjects", "/api/v1/demo/activities", "/api/v1/auth/legal");
 
     @Value("${local.server.port}") private int port;
     @Autowired private AccountRepository accountRepository;
