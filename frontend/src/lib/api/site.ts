@@ -1,5 +1,6 @@
 import { apiClient } from "./client";
 import type { ActivityVersionDetail, CorrectAnswer } from "./types";
+import type { EntitlementKey } from "./subscriptions";
 
 // ---- site/SiteController.java, content/demo/PublicDemoController.java (M2) ----
 
@@ -67,8 +68,22 @@ export interface SiteCopy {
 const copyQuery = (namespace: string, key: string) =>
   `namespace=${encodeURIComponent(namespace)}&key=${encodeURIComponent(key)}`;
 
+/** P-1: a plan on offer, from the plan records (subscription/service/PublicPlans). amountMinor null: nothing to pay. */
+export interface PublicPlan {
+  code: string;
+  audience: "FAMILY" | "SCHOOL";
+  name: string;
+  description: string | null;
+  isDefault: boolean;
+  amountMinor: number | null;
+  currency: string | null;
+  billingInterval: "MONTH" | "YEAR" | null;
+  limits: { key: EntitlementKey; limit: number | null }[];
+}
+
 export const siteApi = {
   statements: () => apiClient.get<PublicStatement[]>("/site/statements", { skipAuth: true }),
+  plans: () => apiClient.get<PublicPlan[]>("/site/plans", { skipAuth: true }),
   copy: () => apiClient.get<Omit<SiteCopy, "version" | "updatedAt">[]>("/site/copy", { skipAuth: true }),
   demoActivities: () => apiClient.get<ActivityVersionDetail[]>("/demo/activities", { skipAuth: true }),
   checkDemo: (activityVersionId: string, questionVersionId: string, submittedAnswer: string) =>

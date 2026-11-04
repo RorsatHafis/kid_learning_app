@@ -25,14 +25,22 @@ public class SiteController {
 
     private final SiteStatementService statements;
     private final SiteCopyService copy;
+    private final com.platform.subscription.service.PublicPlans plans;
 
-    public SiteController(SiteStatementService statements, SiteCopyService copy) {
+    public SiteController(SiteStatementService statements, SiteCopyService copy, com.platform.subscription.service.PublicPlans plans) {
+        this.plans = plans;
         this.statements = statements;
         this.copy = copy;
     }
 
     /** F1a: one entry's words; a blank language keeps its default. {@code version}: absent to create. */
     public record CopyRequest(@Size(max = 600) String textEn, @Size(max = 600) String textKm, Long version) {
+    }
+
+    /** P-1 / LAND-1: the plans on offer, from the plan records, for the public pages (read by anyone). */
+    @GetMapping("/api/v1/site/plans")
+    public List<com.platform.subscription.service.PublicPlans.PublicPlan> offeredPlans() {
+        return plans.offered(com.platform.identity.UiLanguage.ofCurrentRequest());
     }
 
     /** The public pages' word overrides (F1a), read by anyone - the pages lay them over their defaults. */

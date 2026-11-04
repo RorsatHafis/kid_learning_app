@@ -2790,3 +2790,17 @@ Then defects, then simplification. Push at the end of the window; CI once.
   continue button follows it (focus still moves there), so a screen reader no longer reads the button's label into
   the announcement. Restores `f610025`'s `AnswerVerdict.tsx`; `m2.test.tsx` now asserts the button is outside the
   region. **Tested**: marketing + child Vitest 69/69.
+- 2026-11-04: **P-1 done (LAND-1): the landing page's plans are the plan records.** New public, read-only
+  `GET /api/v1/site/plans` (`PublicPlans`): what is on offer now - each audience's default plan and the plans people
+  choose themselves, active and inside their offer dates (the rule a family's own plan page uses) - with name and
+  description in the reader's language (V82 Khmer where written), price or nothing to pay, and what it includes; no
+  internal fields. The plans section shows those records (name, price, limits worded as on the family's plan page);
+  the words around them - title, lead, sheet names, points, notes, CTAs - stay editable copy. An audience with nothing
+  on offer (schools arranged with the team) keeps the copy's own wording; when the plans can't be read the section
+  says "Prices couldn't be loaded just now" and shows no price. A price changed in Admin -> Plans is the price the
+  landing shows. The authorization sweep's public allowlist gained the endpoint (owner-approved test update).
+  **Tested**: new `PublicPlansIntegrationTests` (anyone reads it; an active self-service plan with its price; a draft,
+  an admin-assigned plan and a retired one absent; the default shown; no internal fields),
+  `AuthorizationSweepIntegrationTests` 2/2; new `landingPlans.test.tsx` (records shown with price and limits; no school
+  offer -> the copy; read fails -> no price); marketing + i18n Vitest 151/151. **Browser verified** (production build,
+  1280 px, EN/KM): the section lists the dev database's plans with their prices.

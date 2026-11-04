@@ -60,6 +60,8 @@ export const trustMessages = defineMessages(
     },
     plans: {
       title: "Plans",
+      noLimit: "no limit",
+      pricesFailed: "Prices couldn't be loaded just now. Creating an account shows them.",
       lead: "Bookeyond Kid is in early access. Here is exactly what that means for a family and for a school.",
       family: {
         name: "Families",
@@ -140,6 +142,8 @@ export const trustMessages = defineMessages(
     },
     plans: {
       title: "កញ្ចប់",
+      noLimit: "គ្មានដែនកំណត់",
+      pricesFailed: "មិនអាចផ្ទុកតម្លៃបាននៅពេលនេះទេ។ ការបង្កើតគណនីនឹងបង្ហាញវា។",
       lead: "Bookeyond Kid កំពុងស្ថិតក្នុងដំណាក់កាលចូលប្រើដំបូង។ នេះជាអត្ថន័យពិតប្រាកដសម្រាប់គ្រួសារ និងសម្រាប់សាលា។",
       family: {
         name: "គ្រួសារ",

@@ -23,7 +23,8 @@ import { Plant } from "@/features/world/Plant";
 import { messagesIn, useLocale, useMessages } from "@/i18n/catalog";
 import { marketingMessages } from "./messages";
 import { trustMessages } from "./trust.messages";
-import { siteApi, type PublicStatement } from "@/lib/api/site";
+import { siteApi, type PublicPlan, type PublicStatement } from "@/lib/api/site";
+import { entitlementLabel, priceText } from "@/lib/api/subscriptions";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { withoutClosingStop } from "./quote";
 import { usePublicCopy } from "./publicCopy";
@@ -538,10 +539,13 @@ function Safety() {
  */
 function Plans() {
   const m = useMessages(trustMessages).plans;
+  const locale = useLocale();
+  // P-1: names, prices and what each plan includes come from the plan records - the words around them are copy.
+  const offered = useAsync(() => siteApi.plans(), [locale]);
   const sheets = [
-    { ...m.family, to: "/register", tone: "bg-white ring-1 ring-line", solid: true },
-    { ...m.school, to: "/register?as=principal", tone: "bg-tonle-50 ring-1 ring-tonle-100", solid: false },
-  ];
+    { ...m.family, audience: "FAMILY", to: "/register", tone: "bg-white ring-1 ring-line", solid: true },
+    { ...m.school, audience: "SCHOOL", to: "/register?as=principal", tone: "bg-tonle-50 ring-1 ring-tonle-100", solid: false },
+  ] as const;
   return (
     <Section id="plans">
       <Heading title={m.title} lead={m.lead} />
@@ -552,8 +556,12 @@ function Plans() {
               <h3 id={`plan-${s.name}`} className="text-[0.9375rem] font-semibold text-tonle-700">
                 {s.name}
               </h3>
-              <p className="font-display text-[2.25rem] font-bold leading-tight text-tonle-950">{s.plan}</p>
-              <p className="text-lg font-semibold text-ink">{s.price}</p>
+              <PlanRecords
+                plans={offered.data?.filter((p) => p.audience === s.audience) ?? null}
+                failed={offered.error !== null}
+                loading={offered.isLoading && !offered.data}
+                fallback={{ plan: s.plan, price: s.price }}
+              />
             </div>
             <ul className="flex flex-col gap-3 border-t border-line pt-6">
               {[s.points.a, s.points.b, s.points.c].map((point) => (
@@ -571,6 +579,55 @@ function Plans() {
         ))}
       </div>
     </Section>
+  );
+}
+
+/**
+ * One audience's plans as the records hold them: name, price (or nothing to pay), what it includes. None on offer
+ * (schools arranged with the team): the copy's own words. Not loaded: no price is guessed - it says so.
+ */
+function PlanRecords({
+  plans,
+  failed,
+  loading,
+  fallback,
+}: {
+  plans: PublicPlan[] | null;
+  failed: boolean;
+  loading: boolean;
+  fallback: { plan: string; price: string };
+}) {
+  const m = useMessages(trustMessages).plans;
+  if (loading) return <p className="h-12 w-2/3 animate-pulse rounded-[10px] bg-tonle-950/5" aria-hidden />;
+  if (failed || !plans) return <p className="text-[0.9375rem] text-ink-soft">{m.pricesFailed}</p>;
+  if (plans.length === 0) {
+    return (
+      <>
+        <p className="font-display text-[2.25rem] font-bold leading-tight text-tonle-950">{fallback.plan}</p>
+        <p className="text-lg font-semibold text-ink">{fallback.price}</p>
+      </>
+    );
+  }
+  return (
+    <ul className="flex flex-col gap-4">
+      {plans.map((plan) => {
+        const price =
+          plan.amountMinor === null || !plan.currency || !plan.billingInterval
+            ? fallback.price
+            : priceText({ amountMinor: plan.amountMinor, currency: plan.currency, interval: plan.billingInterval });
+        return (
+          <li key={plan.code} className="flex flex-col gap-0.5">
+            <p className="font-display text-[2rem] font-bold leading-tight text-tonle-950 [overflow-wrap:anywhere]">{plan.name}</p>
+            <p className="text-lg font-semibold text-ink">{price}</p>
+            {plan.limits.length > 0 && (
+              <p className="text-sm text-ink-soft">
+                {plan.limits.map((l) => `${entitlementLabel(l.key)}: ${l.limit === null ? m.noLimit : l.limit}`).join(" · ")}
+              </p>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
