@@ -2655,3 +2655,9 @@ Dependencies:
   `startAnswers.test.tsx` (answers carried -> no second request, resumes at question 2; without -> asks, same
   result); full frontend 495/495, tsc, eslint; local e2e golden, offline, journey-stop, review and accessibility
   journeys 18 passed / 7 skipped (admin credentials). **Runtime verified** (rebuilt backend + production build).
+- 2026-11-04: **Every page when the server is down - checked, no change needed.** Each role's pages were opened
+  with every data read failing (503 with no body, as a host answers while the backend restarts; sign-in state
+  still answering): 27 pages across parent, teacher, principal and administrator each say "That didn't load ·
+  Something went wrong" with Try again - no blank page, no crash. (The administrator's accounts page reads nothing
+  until a search, so it has nothing to fail.) Coverage note: pages linked only from inside a loaded page were not
+  reached in this run, because links are read from the failed page. **Runtime verified** (production build, 390 px).
