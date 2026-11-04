@@ -569,6 +569,22 @@ reuses the container name of another local project.
 
 # CURRENT VERIFIED PROJECT STATE
 
+> **Update 2026-11-04.** CI was fully green on `6f12c98` (backend, frontend, deployment, e2e). Built since, under the
+> owner's "build first, CI last" rule (local commits, pushed at the end of the window): the landing page says what
+> schools and parents now get; unsaved text in the rename and media dialogs is no longer lost to a stray close;
+> the child's space has a `main` landmark; a child's whole session measured on a slow 3G phone (book to first
+> question 2.6 s, 578 KB); sign-in no longer blames the details when the server fails; a mistyped birth year
+> ("0019") is refused when a child is added, with its reason in Khmer (and a new test so asserted sentences can't
+> lack Khmer); every page works at 320 px in English and Khmer (16 grids, two pickers, the child's shelf), checked by
+> a crawl that also catches content a card cuts off; text spacing (WCAG 1.4.12), keyboard focus, reduced motion,
+> page titles and 44 px touch targets in the child's space checked; the landing's phone first view is 90 KB lighter.
+> New regression tests: offline answer and offline finish (e2e), grid columns, login errors, dialog guards, child
+> landmarks, birth dates. The answer-feedback live-region change was reverted - it needs the owner (A11Y-1, protected
+> `m2.test.tsx`). **Verified 2026-11-04, locally**: backend `-Pintegration` 542/542 (3 proxy tests pass alone - local
+> connection limit), unit 206/206, Vitest 479/479, tsc, eslint 0 errors; e2e 24 passed, 23 skipped (admin
+> credentials), 1 local-only failure (`language.spec`: the local data names "Maths - Junior" in Khmer). Flyway V85.
+> Levels per item in `PRODUCT-IMPROVEMENT-ROADMAP.md`.
+>
 > **Update 2026-11-03.** Current state still lives in `PRODUCT-IMPROVEMENT-ROADMAP.md` (dated log with levels). Since
 > 2026-10-27, through commit `6f12c98`: learning-from-mistakes for child, parent and teacher; content production
 > tooling (paste questions from a spreadsheet or CSV into the bank or an activity, template, publish the ready ones,
