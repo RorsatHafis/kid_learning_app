@@ -224,10 +224,11 @@ timetables and rooms.
 **Phase 1 - Launchable family product (essential)**
 - Objectives: real families can sign up, children learn real content in EN and KM, parents see true progress.
 - Work: D-19 content (owner); launch operations (deployment, mail, monitoring, backups rehearsed, legal texts
-  published, Khmer native review); landing prices from plan records (P-1); unsaved-guard for dialogs; remove or
+  published, Khmer native review); landing prices from plan records (P-1); unsaved-guard for dialogs (**built** 2026-11-04); remove or
   park the unused streak backend; teacher/school first-run guidance.
 - Acceptance: a stranger registers, verifies email, adds a child 3-12 and finds age-appropriate content in both
-  languages; a full session plays on a phone over a mobile connection; prices shown equal what is charged; backups
+  languages; a full session plays on a phone over a mobile connection (**measured** 2026-11-04: see
+  `SECURITY-AND-RELIABILITY.md`); prices shown equal what is charged; backups
   restore; legal texts accepted at registration.
 - Decisions: D-19, P-1 (and D-20/D-18 recommended before launch, since they shape the child's experience).
 
