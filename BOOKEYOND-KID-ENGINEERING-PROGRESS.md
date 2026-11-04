@@ -569,6 +569,19 @@ reuses the container name of another local project.
 
 # CURRENT VERIFIED PROJECT STATE
 
+> **Update 2026-11-04 (second window, owner direction "features first, then experience").** Pushed `75d54b8`.
+> Built: **STREAK-1** slice 1 (learning streak on the child's learning day - was UTC; live count; flame in the child
+> header, a moment after each activity, milestones; reduced motion still); **LAND-1** hero composition (fits short
+> laptop windows, screens and buddies composed, scene eases into the page), the page blended into one (feathered
+> bands, river-bank edges), **FAQ** (V86 `site_faq`, admin panel, EN/KM); **P-1** landing prices from the plan
+> records (`GET /api/v1/site/plans`); **SUB-1/FLEX-1** subjects from the catalog, any number
+> (`GET /api/v1/site/subjects`); **A11Y-1** (owner approved editing existing tests when an approved change needs it).
+> Verified locally: backend unit 209/209, the new and affected integration suites (streak, caregiver, sweep, public
+> plans/subjects, FAQ, ServerText coverage), Vitest 515 (journey.test.tsx flaky under load, passes alone), tsc;
+> browser checks per item in the roadmap. Not run locally this window: the full backend integration suite and the
+> full e2e suite (CI runs both). Next: WORLD-1 (connected child environments), EXP-1 (transitions and motion),
+> STREAK-1 slice 2 (milestone moment on home/shelf, parent mention).
+>
 > **Update 2026-11-04.** CI was fully green on `6f12c98` (backend, frontend, deployment, e2e). Built since, under the
 > owner's "build first, CI last" rule (local commits, pushed at the end of the window): the landing page says what
 > schools and parents now get; unsaved text in the rename and media dialogs is no longer lost to a stray close;
