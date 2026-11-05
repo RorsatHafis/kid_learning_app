@@ -104,6 +104,8 @@ export function LookAgain({ introduction, lang }: { introduction: ActivityIntrod
       </button>
       {present && (
         <div
+          // while it leaves (EXP-1), assistive tech no longer meets it
+          aria-hidden={leaving || undefined}
           className={cn(
             "fixed inset-0 z-40 flex items-end justify-center bg-tonle-950/40 p-4 sm:items-center",
             leaving ? "pointer-events-none motion-safe:animate-fade-out" : "motion-safe:animate-fade-in",
