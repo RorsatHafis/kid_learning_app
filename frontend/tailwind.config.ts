@@ -148,7 +148,7 @@ export default {
           "0%": { transform: "scale(0.94)", opacity: "0" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
-        // EXP-1: a closing dialog settles back a little as it fades - the reverse of arriving, quicker.
+        // EXP-1: a closing card (not a modal dialog - that must release the page at once) settles back as it fades.
         "pop-out": {
           "0%": { transform: "scale(1)", opacity: "1" },
           "100%": { transform: "scale(0.97)", opacity: "0" },
