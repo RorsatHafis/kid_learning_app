@@ -2865,3 +2865,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   scene zooms in toward the path and gives way to the activity's introduction. Ordinary link without support or with
   reduced motion. **Tested**: child Vitest 63/63. **Browser verified** (production build): village -> bridge -> Play:
   two view transitions, the activity's "Let's go" introduction reached; with reduced motion none, same destination.
+- 2026-11-05: **STREAK-1 slice 2 - parents see it too, worded as activity.** Each child on the family home reads
+  "Learned N days in a row" (with the small flame) from two days up - the same server count the child sees, labelled
+  as days with learning, not as understanding; nothing for a single day, or when it can't be read (a caregiver who
+  only views progress is refused it). The completion screen's milestone moment already celebrates 3, 7, 14, 21, 30...
+  **Tested**: new `homeStreak.test.tsx`; parent + i18n Vitest 223/223.

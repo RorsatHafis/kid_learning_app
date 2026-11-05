@@ -52,6 +52,8 @@ export const familyMessages = defineMessages(
       age: (age: number) => `Age ${age}`,
       played: (when: string) => `Played ${when}`,
       notPlayed: "Hasn't played yet",
+      // STREAK-1: days with learning in them - activity, not a measure of understanding.
+      streak: (days: number) => `Learned ${days} days in a row`,
       loadingLearning: "Loading learning…",
       learningFailed: "Couldn't load learning right now.",
       noPath: "No learning path chosen yet.",
@@ -436,6 +438,7 @@ export const familyMessages = defineMessages(
       age: (age: number) => `អាយុ ${age} ឆ្នាំ`,
       played: (when: string) => `បានលេង ${when}`,
       notPlayed: "មិនទាន់បានលេងនៅឡើយទេ",
+      streak: (days: number) => `បានរៀន ${days} ថ្ងៃជាប់គ្នា`,
       loadingLearning: "កំពុងផ្ទុកការរៀន…",
       learningFailed: "មិនអាចផ្ទុកការរៀនបាននៅពេលនេះទេ។",
       noPath: "មិនទាន់បានជ្រើសរើសផ្លូវរៀននៅឡើយទេ។",

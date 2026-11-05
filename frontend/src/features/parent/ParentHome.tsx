@@ -2,7 +2,8 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CreditCard, Play, Plus, School, Sparkles } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
-import { childrenApi, learningApi } from "@/lib/api/endpoints";
+import { childrenApi, learningApi, progressApi } from "@/lib/api/endpoints";
+import { StreakFlame } from "@/features/child/StreakFlame";
 import { CaringSection } from "./Caregivers";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { buttonClasses } from "@/components/ui/Button";
@@ -197,6 +198,8 @@ function ChildSummary({ child }: { child: Child }) {
   // The most recent finished activity only - what the child did last.
   const recent = useAsync(() => learningApi.history(child.id, 1), [child.id]);
   const skills = useAsync(() => learningApi.skills(child.id), [child.id]);
+  // STREAK-1: shown from two days in a row; not readable (a caregiver who only views progress) - not shown.
+  const streak = useAsync(() => progressApi.streak(child.id), [child.id]);
   const last = recent.data?.[0] ?? null;
   const m = useMessages(familyMessages).home;
   const o = useMessages(overviewMessages);
@@ -219,6 +222,15 @@ function ChildSummary({ child }: { child: Child }) {
                 <>
                   <span aria-hidden>·</span>
                   <span>{m.notPlayed}</span>
+                </>
+              )}
+              {(streak.data?.currentStreak ?? 0) >= 2 && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span className="inline-flex items-center gap-1">
+                    <StreakFlame lit size={13} className="-mt-0.5" />
+                    {m.streak(streak.data!.currentStreak)}
+                  </span>
                 </>
               )}
             </p>
