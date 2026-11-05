@@ -2955,3 +2955,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   (403 px). It now has its own size and line height (1.32, so stacked consonants don't touch the line below).
   Measured in Khmer, first action's bottom: 390x844 476, 768x1024 484, 1024x768 611 (was 795), 1280x720 498,
   1440x900 593 - all in the first screen, no horizontal overflow. English unchanged. **Browser verified** (dev).
+- 2026-11-05: **Defect fixed - on a phone, the chosen child tab could sit off-screen.** At 360 px the three tabs
+  don't fit and scroll sideways (by design); opening "School & settings" left it past the edge. The tabs now
+  scroll sideways to keep the chosen one in view (the page doesn't move). **Sweeps (dev server)**: parent pages in
+  Khmer at 360 px - no errors, failed calls or horizontal overflow; the child's space in Khmer at 360 and 1280 px
+  (village, place, shelf, garden) - no overflow, clipping or cramped Khmer lines; public pages in Khmer at 390 and
+  1280 px - no cramped Khmer lines.

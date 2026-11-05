@@ -152,6 +152,10 @@ function ChildTabs({ base }: { base: string }) {
     if (!el) return;
     const place = () => {
       const active = el.querySelector<HTMLElement>('[aria-current="page"]');
+      // On a narrow screen the tabs scroll sideways: keep the chosen one in view (sideways only - the page stays).
+      if (active && (active.offsetLeft < el.scrollLeft || active.offsetLeft + active.offsetWidth > el.scrollLeft + el.clientWidth)) {
+        el.scrollLeft = Math.max(0, active.offsetLeft + active.offsetWidth / 2 - el.clientWidth / 2);
+      }
       setPill((before) => (active ? { left: active.offsetLeft, width: active.offsetWidth, moved: before !== null } : null));
     };
     place();
