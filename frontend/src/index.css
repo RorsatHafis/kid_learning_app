@@ -229,3 +229,13 @@ html[data-transition="enter-child"]::view-transition-new(world) {
 html[data-transition="leave-child"]::view-transition-old(world) {
   animation: hand-back-out 300ms cubic-bezier(0.4, 0, 1, 1) both;
 }
+
+/* WORLD-1: back from a place to the village - the place steps back and fades; the village pulls out from that
+   place's landmark (--travel-origin), the reverse of going in. Reduced motion: none (the rule above). */
+html[data-transition="travel-back"]::view-transition-old(world) {
+  animation: hand-over-out 300ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+html[data-transition="travel-back"]::view-transition-new(world) {
+  animation: travel-out 600ms cubic-bezier(0.2, 0, 0, 1) reverse both;
+  transform-origin: var(--travel-origin, 50% 50%);
+}

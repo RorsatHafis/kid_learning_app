@@ -7,7 +7,7 @@ import { flushSync } from "react-dom";
  * 600 ms) so the place, not a loading screen, is what arrives. Returns false when it doesn't run (no browser support,
  * or reduced motion): the caller then navigates as usual.
  */
-export function handOver(kind: "enter-child" | "leave-child" | null, go: () => void, preload?: () => Promise<unknown>): boolean {
+export function handOver(kind: "enter-child" | "leave-child" | "travel-back" | null, go: () => void, preload?: () => Promise<unknown>): boolean {
   const reduce = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (typeof document.startViewTransition !== "function" || reduce) return false;
   const root = document.documentElement;

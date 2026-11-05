@@ -115,7 +115,7 @@ export function ChildHome() {
 
   return (
     <ChildSpaceLayout childId={childId} childName={name} childLanguage={language} buddy={buddy} backdrop={false}>
-      <JourneyStage key={selected.enrollmentId} childId={childId} name={name} overview={selected} switcher={<BackToSubjects childId={childId} />} />
+      <JourneyStage key={selected.enrollmentId} childId={childId} name={name} overview={selected} switcher={<BackToSubjects childId={childId} anchor={villageAnchor(paths, selected)} />} />
     </ChildSpaceLayout>
   );
 }
@@ -135,12 +135,29 @@ function DayDone({ childId }: { childId: string }) {
   );
 }
 
-/** From a subject's journey back to the entrance, where every subject is. */
-function BackToSubjects({ childId }: { childId: string }) {
+/** Where a subject's place stands in the village painting - computed as the village itself places them. */
+function villageAnchor(paths: EnrollmentOverview[], path: EnrollmentOverview) {
+  const places = placesFor(paths.map((p) => subjectTheme(p.curriculum.subjectCode, p.curriculum.subjectName).motif));
+  return places[paths.findIndex((p) => p.enrollmentId === path.enrollmentId)]?.anchor;
+}
+
+/**
+ * From a subject's journey back to the entrance, where every subject is. WORLD-1: the way back is travel too - the
+ * place steps back and the village pulls out from that place's landmark (`anchor`), the reverse of going in.
+ */
+function BackToSubjects({ childId, anchor }: { childId: string; anchor?: { x: number; y: number } }) {
   const e = useMessages(entranceMessages);
+  const navigate = useNavigate();
+  const to = `/learn/${childId}`;
+  function back(event: MouseEvent<HTMLAnchorElement>) {
+    if (!anchor || !plainClick(event)) return;
+    document.documentElement.style.setProperty("--travel-origin", `${anchor.x}% ${anchor.y}%`);
+    if (handOver("travel-back", () => navigate(to))) event.preventDefault();
+  }
   return (
     <Link
-      to={`/learn/${childId}`}
+      to={to}
+      onClick={back}
       className="-mt-1 inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
     >
       <LayoutGrid size={16} aria-hidden /> {e.allSubjects}

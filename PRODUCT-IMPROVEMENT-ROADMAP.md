@@ -2986,3 +2986,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   inline "use your phone / your email instead" buttons were 20 px tall; their hit area is now 44 px (padding with a
   matching negative margin - the text doesn't move). The 32 px language buttons meet WCAG 2.5.8 (24 px) and stay.
   Also: the public try lesson played to completion at 360 px - no overflow or errors.
+- 2026-11-05: **WORLD-1 - the way back is travel too.** "All my subjects" from a place now steps the place back and
+  pulls the village out from that place's landmark (the reverse of going in: `travel-back`, the landmark's spot in
+  the village computed as the village places it). Ordinary link without support, with reduced motion or a
+  new-tab click. **Tested**: child Vitest. **Browser verified** (dev server): village -> bridge -> All my subjects:
+  transitions enter-child, travel, travel-back (origin 43% 46%, the bridge), back on the village; none with
+  reduced motion.
