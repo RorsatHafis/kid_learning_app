@@ -19,6 +19,7 @@ import { play as playCue } from "@/features/buddy/sound";
 import { Nav } from "./sections/Nav";
 import { tryMessages } from "./try.messages";
 import { usePublicCopy } from "./publicCopy";
+import { CopyPreviewNotice } from "./CopyPreviewNotice";
 import { LearnCard, LookAgain } from "@/features/child/Learn";
 
 const goButton = buttonClasses("accent", "lg", "px-8 text-[1.0625rem]");
@@ -36,7 +37,7 @@ type Phase =
  * evidence a family can read - and offers to create one. No trial or price is promised here.
  */
 export function TryPage() {
-  usePublicCopy();
+  const previewing = usePublicCopy();
   const t = useMessages(tryMessages);
   useDocumentTitle(t.documentTitle);
   const activities = useAsync(() => siteApi.demoActivities(), []);
@@ -47,6 +48,7 @@ export function TryPage() {
     <div className="relative min-h-screen bg-paper">
       <PaintedBackdrop />
       <SkipLink />
+      <CopyPreviewNotice show={previewing} />
       <div className="relative">
         <Nav />
         <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 pb-20 pt-8 sm:px-8 sm:pt-12">

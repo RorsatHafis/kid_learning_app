@@ -28,6 +28,7 @@ import { entitlementLabel, priceText } from "@/lib/api/subscriptions";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { withoutClosingStop } from "./quote";
 import { usePublicCopy } from "./publicCopy";
+import { CopyPreviewNotice } from "./CopyPreviewNotice";
 import { LoopDemo } from "./LoopDemo";
 
 /**
@@ -36,7 +37,7 @@ import { LoopDemo } from "./LoopDemo";
  * uses, so nothing here promises more than a family will find inside.
  */
 export function LandingPage() {
-  usePublicCopy();
+  const previewing = usePublicCopy();
   const m = useMessages(marketingMessages);
   // The front door keeps the full name and promise (other pages set "Page · Bookeyond Kid").
   useEffect(() => {
@@ -45,6 +46,7 @@ export function LandingPage() {
   return (
     <div className="overflow-x-clip bg-paper">
       <SkipLink />
+      <CopyPreviewNotice show={previewing} />
       <Nav />
       <main id="main" tabIndex={-1}>
         <Hero />

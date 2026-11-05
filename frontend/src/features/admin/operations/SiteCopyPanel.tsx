@@ -11,6 +11,7 @@ import { trustMessages } from "@/features/marketing/trust.messages";
 import { tryMessages } from "@/features/marketing/try.messages";
 import { parentDemoMessages } from "@/features/marketing/parentDemo.messages";
 import { siteCopyMessages } from "./siteCopy.messages";
+import { storeCopyPreview } from "@/features/marketing/publicCopy";
 
 /** The public pages' catalogs, as the server accepts them (SiteCopyService.NAMESPACES). */
 const CATALOGS = [
@@ -19,6 +20,14 @@ const CATALOGS = [
   { group: "tryLesson", catalog: tryMessages },
   { group: "parentDemo", catalog: parentDemoMessages },
 ] as const;
+
+/** LAND-1 preview: the public page each catalog's words appear on. */
+const PAGE_OF: Record<(typeof CATALOGS)[number]["group"], string> = {
+  landing: "/",
+  trust: "/",
+  tryLesson: "/try",
+  parentDemo: "/try/parent",
+};
 
 interface Entry {
   namespace: string;
@@ -177,6 +186,12 @@ function CopyRow({ entry, override, onChanged }: { entry: Entry; override?: Site
     setEditing(true);
   }
 
+  /** LAND-1: the words as typed, shown on their page in a new tab - in this browser only, nothing saved. */
+  function preview() {
+    storeCopyPreview({ namespace: entry.namespace, key: entry.key, textEn: en.trim() || null, textKm: km.trim() || null });
+    window.open(`${PAGE_OF[entry.group]}?preview=copy`, "_blank", "noopener");
+  }
+
   async function save(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -259,9 +274,13 @@ function CopyRow({ entry, override, onChanged }: { entry: Entry; override?: Site
           />
           <p className="text-xs text-ink-faint">{c.keepOriginal}</p>
           {entry.takesValues && <p className="text-xs text-ink-faint">{c.placeholders}</p>}
+          <p className="text-xs text-ink-faint">{c.previewHint}</p>
           <div className="flex flex-wrap gap-2">
             <Button type="submit" size="sm" disabled={busy}>
               {busy ? c.saving : c.save}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={preview} disabled={busy}>
+              {c.preview}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)} disabled={busy}>
               {c.cancel}

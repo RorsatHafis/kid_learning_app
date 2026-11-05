@@ -12,6 +12,7 @@ import { HelpAtHome } from "@/features/parent/HelpAtHome";
 import { Nav } from "./sections/Nav";
 import { parentDemoMessages } from "./parentDemo.messages";
 import { usePublicCopy } from "./publicCopy";
+import { CopyPreviewNotice } from "./CopyPreviewNotice";
 
 const goButton = buttonClasses("accent", "lg", "px-8 text-[1.0625rem]");
 const quietButton = buttonClasses("outline", "lg", "bg-white/90");
@@ -35,7 +36,7 @@ const SKILLS: { key: SkillKey; standing: SkillStanding; evidence: EvidenceLevel 
  * no real child's data anywhere near it.
  */
 export function ParentDemoPage() {
-  usePublicCopy();
+  const previewing = usePublicCopy();
   const m = useMessages(parentDemoMessages);
   useDocumentTitle(m.documentTitle);
 
@@ -43,6 +44,7 @@ export function ParentDemoPage() {
     <div className="relative min-h-screen bg-paper">
       <PaintedBackdrop />
       <SkipLink />
+      <CopyPreviewNotice show={previewing} />
       <div className="relative">
         <Nav />
         <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 pb-20 pt-8 sm:px-8 sm:pt-12">

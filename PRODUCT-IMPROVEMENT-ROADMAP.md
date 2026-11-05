@@ -2875,3 +2875,11 @@ Then defects, then simplification. Push at the end of the window; CI once.
   `places.ts` (the pond for every other subject), the landing's places (taken in turn) and short texts (the
   catalog's description first). The landing's subjects, the child's subjects and the parent's paths all come from
   the server's records. The hero's status line ("Early maths today...") is editable copy for the owner to keep true.
+- 2026-11-05: **LAND-1 preview before publishing site words.** In Operations -> Landing page -> words, an entry being
+  changed has "Preview on the page": the words as typed are kept in that administrator's own browser (localStorage,
+  never sent anywhere; ignored after two hours) and the page they belong to (landing/trust `/`, try `/try`, sample
+  parent view `/try/parent`) opens in a new tab with `?preview=copy`, showing them in place under a notice ("not
+  published yet - only you see them") with "Leave the preview". Without the parameter, or for any other visitor, the
+  page shows only the published words. Nothing about saving changed. **Tested**: new `copyPreview.test.tsx` (3);
+  admin + marketing Vitest 123/123 (one earlier run had a single failure under load that three reruns didn't repeat).
+  **Browser verified** (dev server): a stored pending headline shown on `/?preview=copy` with the notice.
