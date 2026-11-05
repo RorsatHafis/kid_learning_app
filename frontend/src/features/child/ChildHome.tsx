@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, type MouseEvent } from "react";
+import { handOver, plainClick } from "@/components/motion/handOver";
 import { useGrowth } from "./growth";
-import { flushSync } from "react-dom";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Moon, Play } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
@@ -329,11 +329,9 @@ function ChapterDots({ growthKey, done, total, label }: { growthKey: string; don
 function useTravel() {
   const navigate = useNavigate();
   return (to: string, anchor: { x: number; y: number }) => (event: MouseEvent<HTMLAnchorElement>) => {
-    const reduce = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (typeof document.startViewTransition !== "function" || reduce || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
-    event.preventDefault();
+    if (!plainClick(event)) return;
     document.documentElement.style.setProperty("--travel-origin", `${anchor.x}% ${anchor.y}%`);
-    document.startViewTransition(() => flushSync(() => navigate(to)));
+    if (handOver(null, () => navigate(to))) event.preventDefault();
   };
 }
 

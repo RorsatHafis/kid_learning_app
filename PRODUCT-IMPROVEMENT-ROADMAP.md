@@ -2913,3 +2913,11 @@ Then defects, then simplification. Push at the end of the window; CI once.
   `growth.test.tsx` (2); child Vitest 65/65 (+2). **Browser verified** (dev server, new local test family): place ->
   Play -> finish -> "My path": one `light-up` running on the step just done.
   Same for the bud row under the scene ("N of M lit"): the buds opened since open in turn (browser: 2 `light-up`).
+- 2026-11-05: **Simplification - one way to transition a navigation.** The village's travel (`useTravel`) and the
+  parent <-> child hand-over now share `components/motion/handOver.ts` (support and reduced-motion check, optional
+  preload, optional page-wide kind) and `plainClick` (new-tab clicks stay links); the duplicated checks in
+  ChildHome and EnterChildLink are gone. Menus deliberately keep closing at once (choosing an item should feel
+  immediate, and an in-flow menu lingering would shift the anchor it scrolls to). **Tested**: child + parent Vitest
+  143/143. **Browser verified** (dev server): enter-child -> travel -> Play (3 transitions), back to the grown-ups
+  (leave-child); none with reduced motion. **Sweep**: 15 family and public pages at 1280 and 390 px on a new test
+  family - no page errors, console errors/warnings, failed API calls or horizontal overflow.
