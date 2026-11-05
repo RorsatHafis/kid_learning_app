@@ -3,6 +3,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { PaintedBackdrop } from "@/features/world/PaintedWorld";
 import { PlaceWorld } from "@/features/world/PlaceWorld";
+import { PLACE_KEYS } from "@/features/world/places";
 import { QuestionView, type AnswerResult } from "@/features/child/QuestionView";
 import type { ActivityItem, MediaRef } from "@/lib/api/types";
 
@@ -227,7 +228,7 @@ export function PlayGallery() {
       <DialogSpecimen />
       {/* WORLD-1: every place, for design review (development builds only). */}
       <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 pt-10">
-        {(["bridge", "pavilion", "treehouse", "pond"] as const).map((place) => (
+        {PLACE_KEYS.map((place) => (
           <figure key={place} data-review-place={place} className="overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
             <PlaceWorld place={place} />
           </figure>

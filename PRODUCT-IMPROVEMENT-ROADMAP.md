@@ -3047,3 +3047,23 @@ Then defects, then simplification. Push at the end of the window; CI once.
   child + i18n Vitest 218/218. **Browser verified** (dev server, new local test family, 1280 and 360 px): "Light
   your flame" before, "1 day of learning ... glowing" after finishing an activity, on the village and the shelf;
   no overflow.
+- 2026-11-05 (window 4): **WORLD-1 - six distinct places, from the owner's own artwork.** The unused Figma exports
+  (`D:/bk-work/figma-assets`) held a sapling with its roots, a pavilion on its own island and a second painting -
+  the open river with a jetty. Now: Maths at the bridge, Khmer at the pavilion, English in the treehouse, **science in
+  the garden** (the sapling, on the river path's green bank, fresh morning light, drifting seeds and two
+  butterflies), **the arts on the island** (the island pavilion in the open-river painting, warm evening light,
+  glints), every other subject at the lotus pond. New landmarks stand on the village painting (garden on the left
+  bank, island in the open water) and the dev gallery `/__play` shows all six (`PLACE_KEYS`). **Activities too**:
+  an activity's cover now opens onto its subject's own place (its painting, light and landmark, the buddy beside
+  the landmark) instead of one river picture for every subject; practice (no path) keeps the river. Art converted to
+  WebP in the browser (sapling trimmed of its empty margins): `science-garden.webp` 56 KB, `arts-island.webp` 37 KB,
+  `open-river.webp` 27 KB. **Tested**: new `places.test.tsx` (mapping, six distinct landmarks, each scene renders);
+  child/world/brand Vitest. **Browser verified** (dev server): garden and island scenes at 1280 and 390 px; a Maths
+  activity's cover opens onto the bridge at 1280 and 360 px, no overflow. Science/arts subjects are not in the dev
+  catalog, so their places were checked in the gallery, not through a real path.
+  **Asset requirements still open (owner/illustrator)**, Figma style of the existing set:
+  1. *Open river* panorama at 1584 x 672 (plus 900 x 382) - only a 512 x 217 export exists; it is soft on large
+     screens (blurred as distance, acceptable for now).
+  2. *Garden* backdrop painting 1584 x 672 (+ 900 x 382) - the garden borrows the river path's bank today.
+  3. *Rice fields* place (owner's list): a landmark (transparent PNG, ~640 px wide, like the bridge) and its
+     backdrop (1584 x 672 + 900 x 382), then one entry in `places.ts` and its scene in `PlaceWorld.tsx`.

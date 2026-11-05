@@ -19,7 +19,7 @@ export const entranceMessages = defineMessages(
     where: "Where shall we go today?",
     // Y44: the painted river village - each subject at its place.
     river: "Your river of discovery",
-    places: { bridge: "The bridge", pavilion: "The pavilion", treehouse: "The treehouse", pond: "The lotus pond" },
+    places: { bridge: "The bridge", pavilion: "The pavilion", treehouse: "The treehouse", garden: "The garden", island: "The island", pond: "The lotus pond" },
     youAreHere: "You are here",
     continueEyebrow: (subject: string, chapter: string | null) => (chapter ? `${subject} · ${chapter}` : subject),
     continueLearning: "Continue learning",
@@ -47,7 +47,7 @@ export const entranceMessages = defineMessages(
     replay: "លេងសៀវភៅណាមួយម្ដងទៀតពីធ្នើររបស់ប្អូន",
     where: "ថ្ងៃនេះ យើងទៅណាដែរ?",
     river: "ទន្លេនៃការរកឃើញរបស់ប្អូន",
-    places: { bridge: "ស្ពាន", pavilion: "ពន្លា", treehouse: "ផ្ទះលើដើមឈើ", pond: "ស្រះឈូក" },
+    places: { bridge: "ស្ពាន", pavilion: "ពន្លា", treehouse: "ផ្ទះលើដើមឈើ", garden: "សួនច្បារ", island: "កោះ", pond: "ស្រះឈូក" },
     youAreHere: "ប្អូននៅទីនេះ",
     continueEyebrow: (subject: string, chapter: string | null) => (chapter ? `${subject} · ${chapter}` : subject),
     continueLearning: "បន្តរៀន",

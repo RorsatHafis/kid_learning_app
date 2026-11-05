@@ -3,14 +3,20 @@ import mathsBridge from "@/assets/world/maths-bridge.webp";
 import khmerPavilion from "@/assets/world/khmer-pavilion.webp";
 import englishTreehouse from "@/assets/world/english-treehouse.webp";
 import lotusPond from "@/assets/world/lotus-pond.webp";
+import scienceGarden from "@/assets/world/science-garden.webp";
+import artsIsland from "@/assets/world/arts-island.webp";
 
 /**
- * Each subject's place in the river village (Y44), from the owner's Figma artwork: Maths at the bridge, Khmer at the
- * pavilion, English in the treehouse, and every other subject at the lotus pond. A place is only ever a subject the
+ * Each subject's place in the river village (Y44, WORLD-1), from the owner's Figma artwork: Maths at the bridge, Khmer
+ * at the pavilion, English in the treehouse, science in the garden (the sapling), the arts on the island (the island
+ * pavilion), and every other subject at the lotus pond. A place is only ever a subject the
  * child really has; nothing is invented for decoration. `anchor` is where its landmark stands in the village
  * painting (river-village.webp), in percent of the painting's width and height.
  */
-export type PlaceKey = "bridge" | "pavilion" | "treehouse" | "pond";
+export type PlaceKey = "bridge" | "pavilion" | "treehouse" | "garden" | "island" | "pond";
+
+/** Every place, in the order the world introduces them. */
+export const PLACE_KEYS: PlaceKey[] = ["bridge", "pavilion", "treehouse", "garden", "island", "pond"];
 
 export interface Place {
   key: PlaceKey;
@@ -22,6 +28,8 @@ const PLACES: Record<PlaceKey, Place> = {
   bridge: { key: "bridge", art: mathsBridge, anchor: { x: 43, y: 46 } },
   pavilion: { key: "pavilion", art: khmerPavilion, anchor: { x: 74, y: 31 } },
   treehouse: { key: "treehouse", art: englishTreehouse, anchor: { x: 90, y: 38 } },
+  garden: { key: "garden", art: scienceGarden, anchor: { x: 18, y: 58 } },
+  island: { key: "island", art: artsIsland, anchor: { x: 56, y: 68 } },
   pond: { key: "pond", art: lotusPond, anchor: { x: 71, y: 60 } },
 };
 
@@ -29,8 +37,8 @@ const BY_MOTIF: Record<SubjectMotif, PlaceKey> = {
   maths: "bridge",
   khmer: "pavilion",
   english: "treehouse",
-  science: "pond",
-  arts: "pond",
+  science: "garden",
+  arts: "island",
   book: "pond",
 };
 

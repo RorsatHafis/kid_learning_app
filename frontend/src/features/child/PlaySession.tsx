@@ -32,6 +32,9 @@ import { trickyOnes, type Tricky } from "./tricky";
 import { gardenMessages } from "./garden.messages";
 import { Plant } from "@/features/world/Plant";
 import coverArt from "@/assets/world/river-path.webp";
+import { PlaceWorld } from "@/features/world/PlaceWorld";
+import { subjectTheme } from "@/features/learning/subjectTheme";
+import { placesFor, type PlaceKey } from "@/features/world/places";
 import type { CurriculumProgress } from "@/lib/api/types";
 import { childBreakMessages, childDayMessages } from "@/features/parent/breaks.messages";
 
@@ -61,6 +64,8 @@ type Phase =
       reason: Line | null;
       /** M3: the server says only a few minutes of today's learning time are left. */
       lastOne?: boolean;
+      /** WORLD-1: the subject's place, when the path is known - the book's cover opens onto it. */
+      place?: PlaceKey;
     }
   | {
       kind: "playing";
@@ -283,7 +288,8 @@ export function PlaySession() {
             : ofThis
               ? () => childReason(ofThis)
               : null;
-          setPhase({ kind: "intro", attemptId: attempt.id, itemId: item.id, activity: ordered, reason, lastOne: today?.nearEnd ?? false });
+          const place = overview ? placesFor([subjectTheme(overview.curriculum.subjectCode, overview.curriculum.subjectName).motif])[0].key : undefined;
+          setPhase({ kind: "intro", attemptId: attempt.id, itemId: item.id, activity: ordered, reason, lastOne: today?.nearEnd ?? false, place });
           return;
         }
         setPhase({
@@ -348,6 +354,7 @@ export function PlaySession() {
           activity={phase.activity}
           reason={phase.reason}
           lastOne={phase.lastOne}
+          place={phase.place}
           journeyHref={journeyHref}
           onStart={() =>
             setPhase({
@@ -651,12 +658,14 @@ function Intro({
   activity,
   reason,
   lastOne,
+  place,
   journeyHref,
   onStart,
 }: {
   activity: ActivityVersionDetail;
   reason: Line | null;
   lastOne?: boolean;
+  place?: PlaceKey;
   journeyHref: string;
   onStart: () => void;
 }) {
@@ -668,11 +677,17 @@ function Intro({
     <div className="px-4 pb-16 pt-6 sm:pt-10">
       {/* Not overflow-hidden: the start button below sticks to the bottom of a phone's screen (the cover clips itself). */}
       <Page labelledBy="activity-title" className="px-0 pb-10 text-center motion-safe:animate-page-in sm:pb-12">
-        {/* Y44: the book's cover - a window onto the river, with the buddy standing on the path. */}
+        {/* Y44 / WORLD-1: the book's cover - a window onto the subject's own place (its painting, light and landmark),
+            or onto the river when the place isn't known (practice), with the buddy standing on the path. */}
         <div aria-hidden className="relative h-44 overflow-hidden rounded-t-[32px] sm:h-56">
-          <img src={coverArt} alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_62%]" />
+          {place ? (
+            <PlaceWorld place={place} className="!absolute inset-0 !aspect-auto h-full" />
+          ) : (
+            <img src={coverArt} alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_62%]" />
+          )}
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#FFFDF8] to-transparent" />
-          <LearningBuddy mood="happy" size={150} className="absolute bottom-1 left-1/2 h-auto w-[118px] -translate-x-1/2 sm:w-[150px]" />
+          {/* beside the place's landmark (bottom right), not in front of it */}
+          <LearningBuddy mood="happy" size={150} className={cn("absolute bottom-1 h-auto w-[118px] -translate-x-1/2 sm:w-[150px]", place ? "left-[30%]" : "left-1/2")} />
         </div>
         <div className="px-6 sm:px-14">
         {reason && <p className="mx-auto mt-2 w-fit rounded-pill bg-tonle-50 px-4 py-1.5 text-sm font-semibold text-tonle-800">{reason()}</p>}

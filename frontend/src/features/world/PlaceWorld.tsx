@@ -3,6 +3,8 @@ import villageLarge from "@/assets/world/river-village.webp";
 import villageSmall from "@/assets/world/river-village-sm.webp";
 import bendLarge from "@/assets/world/river-bend.webp";
 import bendSmall from "@/assets/world/river-bend-sm.webp";
+import riverPath from "@/assets/world/river-path.webp";
+import openRiver from "@/assets/world/open-river.webp";
 import { cn } from "@/lib/utils/cn";
 import { placeByKey, type PlaceKey } from "./places";
 
@@ -41,6 +43,20 @@ const ENVIRONMENTS: Record<PlaceKey, Environment> = {
     position: "12% 55%",
     zoom: 1.8,
     atmosphere: "radial-gradient(ellipse 60% 70% at 85% 10%, rgba(255,246,200,0.35), transparent 70%), linear-gradient(to bottom, rgba(40,90,60,0.12), transparent 50%)",
+  },
+  garden: {
+    // the river path's green bank, close: fresh morning light
+    art: { large: riverPath, small: riverPath },
+    position: "22% 82%",
+    zoom: 1.45,
+    atmosphere: "radial-gradient(ellipse 70% 60% at 20% 10%, rgba(255,250,215,0.5), transparent 70%), linear-gradient(to bottom, rgba(220,240,200,0.28), transparent 55%)",
+  },
+  island: {
+    // the open river with its jetty - a different painting from the village - in warm evening light
+    art: { large: openRiver, small: openRiver },
+    position: "50% 60%",
+    zoom: 1.08,
+    atmosphere: "linear-gradient(to bottom, rgba(255,205,150,0.4), rgba(255,226,190,0.12) 45%, transparent 70%), radial-gradient(ellipse 60% 40% at 80% 25%, rgba(255,190,130,0.35), transparent 70%)",
   },
   pond: {
     art: { large: bendLarge, small: bendSmall },
@@ -164,6 +180,41 @@ function Foreground({ place }: { place: PlaceKey }) {
               className="absolute top-0 h-2 w-3 rounded-[60%_10%] bg-[#6E9A63] opacity-0 motion-safe:animate-confetti-fall"
               style={{ left, animationDelay: `${i * 2.2}s`, animationDuration: "9s", animationIterationCount: "infinite" }}
             />
+          ))}
+        </>
+      );
+    case "garden":
+      return (
+        <>
+          {/* seeds drifting up from the grass, and two butterflies */}
+          {["12%", "28%", "46%", "64%", "80%"].map((left, i) => (
+            <span
+              key={left}
+              className="absolute bottom-[12%] h-1.5 w-1.5 rounded-full bg-white opacity-0 shadow-[0_0_6px_2px_rgba(255,255,255,0.7)] motion-safe:animate-drift-up"
+              style={{ left, animationDelay: `${i * 1.3}s`, animationDuration: "7.5s", animationIterationCount: "infinite" }}
+            />
+          ))}
+          {[{ left: "22%", top: "40%", delay: "0s", tint: "#F2A65A" }, { left: "58%", top: "30%", delay: "-3s", tint: "#E89AAE" }].map((b) => (
+            <span key={b.delay} className="absolute motion-safe:animate-dragonfly" style={{ left: b.left, top: b.top, animationDelay: b.delay }}>
+              <svg viewBox="0 0 16 12" className="h-3 w-4">
+                <ellipse cx="5" cy="5" rx="4.5" ry="3.5" fill={b.tint} opacity="0.9" />
+                <ellipse cx="11" cy="5" rx="4.5" ry="3.5" fill={b.tint} opacity="0.9" />
+                <rect x="7.4" y="3" width="1.2" height="7" rx="0.6" fill="#5A3A22" />
+              </svg>
+            </span>
+          ))}
+        </>
+      );
+    case "island":
+      return (
+        <>
+          <Clouds tint="rgba(255,226,196,0.9)" />
+          {[
+            { left: "18%", top: "72%", delay: "0s" },
+            { left: "40%", top: "66%", delay: "1.4s" },
+            { left: "63%", top: "78%", delay: "2.6s" },
+          ].map((g) => (
+            <span key={g.delay} className="absolute h-[2px] w-12 rounded-full bg-[#FFE1B0]/90 opacity-0 motion-safe:animate-glint" style={{ left: g.left, top: g.top, animationDelay: g.delay }} />
           ))}
         </>
       );
