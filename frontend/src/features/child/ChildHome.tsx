@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { TransitionLink } from "@/components/motion/TransitionLink";
 import { BuddyButton, useBuddyHello } from "./BuddyHello";
 import { useGrowth } from "./growth";
+import { StreakCard } from "./StreakMoment";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Moon, Play } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
@@ -186,12 +187,15 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
   return (
     <section aria-labelledby="greeting" className="mx-auto flex w-full max-w-[88rem] flex-col gap-6 px-4 pb-14 pt-4 sm:px-8 sm:pt-6">
       {/* Arriving in the child's own space: the greeting, then the world, rise in (gone under reduced motion). */}
-      <div className="motion-safe:animate-rise-in">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 motion-safe:animate-rise-in">
+      <div>
         <p className="text-sm font-bold uppercase tracking-[0.14em] text-palm-deep">{e.river}</p>
         <h1 id="greeting" className="mt-1 font-display text-[clamp(2.4rem,1.8rem+2.4vw,3.6rem)] font-bold leading-[1.02] tracking-[-0.015em] text-tonle-950">
           {m.home.hi(name ?? "")}
         </h1>
         <p className="mt-1.5 text-lg font-semibold text-ink-soft">{paths.length > 1 ? e.where : e.askOne}</p>
+      </div>
+        <StreakCard childId={childId} />
       </div>
       <DayDone childId={childId} />
 

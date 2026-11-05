@@ -3038,3 +3038,12 @@ Then defects, then simplification. Push at the end of the window; CI once.
   (top bar, dots, celebration overflow, chosen tab, auth targets). Held for the owner: streak milestone on
   home/shelf (and whether "best" may show); landmark art for more places. Next: check CI; then Priority 3/4 -
   staff workspaces at 360 px (needs an authenticator code), further simplification of ChildHome.tsx (large).
+- 2026-11-05 (window 4): **STREAK-1 - the current streak on the child's home and shelf (owner, 2026-11-05).**
+  `StreakCard`: the animated flame with the server's current streak - "N days in a row" glowing, then "You learned
+  today - your flame is glowing." or the invitation "Learn today and your flame grows."; no streak: an unlit ember,
+  "Light your flame - finish an activity and it lights up." No best-ever count, no loss words, and the milestone
+  celebration stays on the completion screen only. On the village beside the greeting and on the shelf under its
+  heading. **Tested**: new `streakCard.test.tsx` (3: none / lit not today / today; no "best", "lose", "miss");
+  child + i18n Vitest 218/218. **Browser verified** (dev server, new local test family, 1280 and 360 px): "Light
+  your flame" before, "1 day of learning ... glowing" after finishing an activity, on the village and the shelf;
+  no overflow.

@@ -17,6 +17,11 @@ export const childMessages = defineMessages(
       grew: (n: number) => `Your flame grew - ${n} days in a row!`,
       milestone: (n: number) => `${n} days of learning. What a flame!`,
       best: (n: number) => `Your best: ${n} days`,
+      inARow: (n: number) => (n === 1 ? "1 day of learning" : `${n} days in a row`),
+      glowingToday: "You learned today - your flame is glowing.",
+      growToday: "Learn today and your flame grows.",
+      lightIt: "Light your flame",
+      lightItHow: "Finish an activity and it lights up.",
     },
     space: {
       soundOn: "Sound is on. Turn sound off",
@@ -245,6 +250,11 @@ export const childMessages = defineMessages(
       grew: (n: number) => `ភ្លើងរបស់ប្អូនធំឡើង - ${n} ថ្ងៃជាប់គ្នា!`,
       milestone: (n: number) => `រៀនបាន ${n} ថ្ងៃ។ ភ្លើងដ៏អស្ចារ្យ!`,
       best: (n: number) => `ល្អបំផុតរបស់ប្អូន៖ ${n} ថ្ងៃ`,
+      inARow: (n: number) => (n === 1 ? "រៀនបាន 1 ថ្ងៃ" : `${n} ថ្ងៃជាប់គ្នា`),
+      glowingToday: "ប្អូនបានរៀនថ្ងៃនេះ - ភ្លើងរបស់ប្អូនកំពុងភ្លឺ។",
+      growToday: "រៀនថ្ងៃនេះ ហើយភ្លើងរបស់ប្អូននឹងធំឡើង។",
+      lightIt: "បំភ្លឺភ្លើងរបស់ប្អូន",
+      lightItHow: "បញ្ចប់សកម្មភាពមួយ ហើយវានឹងភ្លឺឡើង។",
     },
     space: {
       soundOn: "សំឡេងកំពុងបើក។ បិទសំឡេង",

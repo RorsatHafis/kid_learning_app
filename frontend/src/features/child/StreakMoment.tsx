@@ -85,3 +85,34 @@ export function StreakMoment({ childId, before }: { childId: string; before: Str
     </div>
   );
 }
+
+/**
+ * STREAK-1 on the child's home and shelf: the flame, a little bigger than in the header, with the real current streak
+ * as the server counts it. Lit: the days in a row, glowing; whether today counts yet is said as an invitation, never
+ * as something to lose. No streak: an unlit ember and how to light it. No best-ever count (owner, 2026-11-05) and no
+ * repeat of the completion celebration - that stays on the screen after an activity. Nothing while it can't be read.
+ */
+export function StreakCard({ childId, className }: { childId: string; className?: string }) {
+  const streak = useStreak(childId);
+  const m = useMessages(childMessages).streak;
+  if (!streak.data) return null;
+  const days = streak.data.currentStreak;
+  const lit = days > 0;
+  return (
+    <p
+      className={cn(
+        "flex w-fit max-w-full items-center gap-3 rounded-[20px] py-2 pl-2.5 pr-4 ring-1",
+        lit ? "bg-[#FFF6E8] ring-[#F6C98E]" : "bg-white/85 ring-tonle-950/10",
+        className,
+      )}
+    >
+      <StreakFlame lit={lit} size={34} />
+      <span className="min-w-0 leading-snug">
+        <span className="block font-display text-base font-bold text-tonle-950">{lit ? m.inARow(days) : m.lightIt}</span>
+        <span className="block text-sm font-medium text-ink-soft">
+          {lit ? (streak.data.learnedToday ? m.glowingToday : m.growToday) : m.lightItHow}
+        </span>
+      </span>
+    </p>
+  );
+}

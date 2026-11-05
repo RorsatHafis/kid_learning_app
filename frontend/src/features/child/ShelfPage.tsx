@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { StreakCard } from "./StreakMoment";
 import { TransitionLink } from "@/components/motion/TransitionLink";
 import { ArrowLeft, Check, Play, RotateCcw } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -91,6 +92,7 @@ function Shelves({
             <p className="max-w-md text-lg font-medium text-ink-soft">
               {lit === 0 ? m.firstBookWillShine(name) : m.litSoFar(lit)}
             </p>
+            <StreakCard childId={childId} className="mt-1" />
           </div>
           {next && (
             <Link
