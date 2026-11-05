@@ -2945,3 +2945,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   (`learning`: "Progressing", "Enough evidence"...), and the menu buttons' labels (`common`). Changing them on the
   landing alone would show families words the product doesn't use. The page carries no statistics. Layout with
   longer and shorter words: checked for the hero (LAND-1 slice 1) and the FAQ in Khmer at 390 px.
+- 2026-11-05: **LAND-1 - the hero holds with a much longer headline.** Checked with the new preview (a 120-character
+  headline and a lead twice as long, at 390, 1280x720 and 1440x900): no overflow or overlap, but the headline grew
+  into a block that pushed the actions out of the first screen. A headline over 72 characters (the original is 57)
+  now steps down a size; the actions stay in the first screen at all three sizes (bottom 614/665/711 px).
+  **Browser verified** (dev server, preview mode).

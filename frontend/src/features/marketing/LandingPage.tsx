@@ -106,7 +106,18 @@ function Hero() {
             {withoutClosingStop(messagesIn(marketingMessages, other).hero.title)}
             <span aria-hidden className="text-clay">{other === "km" ? " »" : "”"}</span>
           </p>
-          <h1 className="font-display text-[2.45rem] font-bold leading-[1.02] tracking-[-0.02em] text-tonle-950 sm:text-[3.6rem] lg:text-[clamp(3rem,9.4svh,4.5rem)]">{m.hero.title}</h1>
+          {/* LAND-1: the headline is editable; a much longer one steps down a size so the hero still holds its actions
+              in the first screen (the original is 57 characters). */}
+          <h1
+            className={cn(
+              "font-display font-bold leading-[1.02] tracking-[-0.02em] text-tonle-950",
+              m.hero.title.length > 72
+                ? "text-[2.1rem] sm:text-[3rem] lg:text-[clamp(2.4rem,6.6svh,3.4rem)]"
+                : "text-[2.45rem] sm:text-[3.6rem] lg:text-[clamp(3rem,9.4svh,4.5rem)]",
+            )}
+          >
+            {m.hero.title}
+          </h1>
           <p className="max-w-[31rem] text-[1.0625rem] leading-relaxed text-ink-soft sm:text-[1.1875rem]">{m.hero.lead}</p>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link to="/register" className={goButton}>
