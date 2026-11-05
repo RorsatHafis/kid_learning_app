@@ -573,6 +573,8 @@ reuses the container name of another local project.
 > Later the same window: the buddy answers a tap (authored line), Khmer hero size, long-headline step-down, child
 > top bar one row under 400 px, step dots fit, completion celebration within the screen, chosen tab kept in view,
 > way back to the village travels too; sweeps (EN/KM, 360-1440 px) and axe 0 violations on the changed screens.
+> CI on `4c6bea8` found one defect of mine (dialog exit kept the page inert; e2e plan-journey phone) - fixed in
+> `dd93c92` (Dialog closes at once again). Shelf/buddy step in and out; one `TransitionLink` for all page travel.
 > Built: **WORLD-1** each subject's place in its own scene with its landmark (blurred painting crop, atmosphere,
 > living foreground, parallax), village -> place travel; **EXP-1** Play goes into the activity, dialogs leave
 > (`usePresence`), parent <-> child hand-over both ways (`handOver.ts`), steps and buds lit since light up
