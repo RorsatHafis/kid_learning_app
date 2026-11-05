@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, type MouseEvent } from "react";
+import { flushSync } from "react-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Moon, Play } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -181,12 +182,12 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
       <DayDone childId={childId} />
 
       {/* The world. Large screens: the places stand on their landmarks; the card and Momo sit on the painting. */}
-      <div className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10 motion-safe:animate-rise-in motion-safe:[animation-delay:90ms]">
+      <div style={{ viewTransitionName: "world" }} className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10 motion-safe:animate-rise-in motion-safe:[animation-delay:90ms]">
         <PaintedWorld>
           <div className="hidden lg:contents">
             {paths.map((path, i) => (
               <OnWorld key={path.enrollmentId} x={places[i].anchor.x} y={places[i].anchor.y}>
-                <PlaceMarker childId={childId} path={path} placeName={e.places[places[i].key]} here={path === current} />
+                <PlaceMarker childId={childId} path={path} placeName={e.places[places[i].key]} here={path === current} anchor={places[i].anchor} />
               </OnWorld>
             ))}
           </div>
@@ -232,7 +233,7 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
         <h2 className="font-display text-2xl font-bold text-tonle-950">{e.subjects}</h2>
         <ul aria-label={e.subjects} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {paths.map((path, i) => (
-            <SubjectDoor key={path.enrollmentId} childId={childId} path={path} art={places[i].art} placeName={e.places[places[i].key]} />
+            <SubjectDoor key={path.enrollmentId} childId={childId} path={path} art={places[i].art} placeName={e.places[places[i].key]} anchor={places[i].anchor} />
           ))}
         </ul>
       </div>
@@ -308,15 +309,33 @@ function ChapterDots({ done, total, label }: { done: number; total: number; labe
 }
 
 /** A subject's place on the painting: its name, where it is, and how it stands - the way in on a large screen. */
-function PlaceMarker({ childId, path, placeName, here }: { childId: string; path: EnrollmentOverview; placeName: string; here: boolean }) {
+/**
+ * WORLD-1: going into a place travels there - the village zooms toward the place's landmark and the place settles in
+ * (a view transition, styled in index.css). Without the browser's support, or with reduced motion, it is an ordinary
+ * link. BrowserRouter has no view-transition support of its own, so the navigation runs inside the transition here.
+ */
+function useTravel() {
+  const navigate = useNavigate();
+  return (to: string, anchor: { x: number; y: number }) => (event: MouseEvent<HTMLAnchorElement>) => {
+    const reduce = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (typeof document.startViewTransition !== "function" || reduce || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    document.documentElement.style.setProperty("--travel-origin", `${anchor.x}% ${anchor.y}%`);
+    document.startViewTransition(() => flushSync(() => navigate(to)));
+  };
+}
+
+function PlaceMarker({ childId, path, placeName, here, anchor }: { childId: string; path: EnrollmentOverview; placeName: string; here: boolean; anchor: { x: number; y: number } }) {
   const e = useMessages(entranceMessages);
   const t = subjectTheme(path.curriculum.subjectCode, path.curriculum.subjectName);
   const subject = path.curriculum.subjectName ?? path.curriculum.name;
   const state = path.nextStep === null ? e.allDone : path.completedSteps === 0 ? e.start : e.booksLit(path.completedSteps, path.totalSteps);
+  const travel = useTravel();
   return (
     <div className="flex flex-col items-center gap-1.5">
       <Link
         to={`/learn/${childId}?path=${path.enrollmentId}`}
+        onClick={travel(`/learn/${childId}?path=${path.enrollmentId}`, anchor)}
         aria-label={e.goTo(subject, placeName, state)}
         className="group flex min-h-12 items-center gap-2.5 rounded-[16px] bg-[#FFFDF8]/95 py-2 pl-2 pr-3.5 shadow-lift ring-1 ring-tonle-950/10 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 focus-visible:-translate-y-0.5 motion-reduce:hover:translate-y-0"
       >
@@ -341,7 +360,7 @@ function PlaceMarker({ childId, path, placeName, here }: { childId: string; path
 }
 
 /** One subject as a big card with its place's painting: how far, and what's next. */
-function SubjectDoor({ childId, path, art, placeName }: { childId: string; path: EnrollmentOverview; art: string; placeName: string }) {
+function SubjectDoor({ childId, path, art, placeName, anchor }: { childId: string; path: EnrollmentOverview; art: string; placeName: string; anchor: { x: number; y: number } }) {
   const e = useMessages(entranceMessages);
   const t = subjectTheme(path.curriculum.subjectCode, path.curriculum.subjectName);
   const subject = path.curriculum.subjectName ?? path.curriculum.name;
@@ -350,10 +369,12 @@ function SubjectDoor({ childId, path, art, placeName }: { childId: string; path:
   const total = Math.min(path.totalSteps, 10);
   const done = path.totalSteps > 0 ? Math.round((path.completedSteps / path.totalSteps) * total) : 0;
   const next = path.nextStep;
+  const travel = useTravel();
   return (
     <li className="min-w-0">
       <Link
         to={`/learn/${childId}?path=${path.enrollmentId}`}
+        onClick={travel(`/learn/${childId}?path=${path.enrollmentId}`, anchor)}
         aria-label={e.goTo(subject, placeName, state)}
         className="group flex h-full items-stretch overflow-hidden rounded-[26px] bg-[#FFFDF8] shadow-lift ring-1 ring-tonle-950/5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 active:translate-y-0 motion-reduce:hover:translate-y-0"
       >
@@ -431,10 +452,10 @@ function JourneyStage({
         <DayDone childId={childId} />
 
         {/* The river bend, with the buddy on the bank; the card says where the child is and carries them on. */}
-        <div className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
+        <div style={{ viewTransitionName: "world" }} className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
           {/* WORLD-1: the subject's own place - its landmark, light and living foreground - not one scene for all. */}
           <PlaceWorld place={place.key}>
-            <OnWorld x={next ? 66 : 50} y={97}>
+            <OnWorld x={46} y={97}>
               <div className="flex items-end gap-1">
                 <LearningBuddy mood={next ? "happy" : "cheer"} size={170} className="hidden h-auto w-[clamp(96px,11vw,170px)] sm:block" />
                 <LearningBuddy mood={next ? "happy" : "cheer"} size={92} className="sm:hidden" />

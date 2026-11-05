@@ -2850,3 +2850,12 @@ Then defects, then simplification. Push at the end of the window; CI once.
   with shade and drifting leaves, the pond in mist with a dragonfly. **Browser verified** (dev gallery `/__play`,
   development builds only): all four at 1280 and 390 px; about 60 frames a second with the motion running.
   **Tested**: child + world + i18n Vitest.
+- 2026-11-05: **WORLD-1 slice 2 - going into a place travels there.** Tapping a subject in the village (a marker on
+  the painting, or a subject card on phones) runs a view transition: the village zooms toward that place's landmark
+  and gives way, the place comes into view from a little nearer (`index.css` `::view-transition-*(world)`; both scene
+  boxes share the name). `BrowserRouter` has no view-transition support of its own, so the link starts it
+  (`useTravel`: `startViewTransition` + `flushSync(navigate)`); without browser support, with reduced motion, or a
+  modified click, it is an ordinary link. In the place, Momo now stands between the continue card and the landmark
+  instead of on it. **Tested**: child Vitest 63/63, tsc, eslint. **Browser verified** (production build, 1280 px, a new
+  sample family): one view transition on entering Maths, origin at the bridge (43% 46%), arrival at the bridge scene;
+  with reduced motion none ran and the link still went there.
