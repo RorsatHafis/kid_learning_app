@@ -2883,3 +2883,12 @@ Then defects, then simplification. Push at the end of the window; CI once.
   page shows only the published words. Nothing about saving changed. **Tested**: new `copyPreview.test.tsx` (3);
   admin + marketing Vitest 123/123 (one earlier run had a single failure under load that three reruns didn't repeat).
   **Browser verified** (dev server): a stored pending headline shown on `/?preview=copy` with the notice.
+- 2026-11-05: **EXP-1 - dialogs leave instead of vanishing.** New `usePresence` (components/motion/presence.ts): a
+  closing surface stays for 150 ms while its exit plays, then goes; at once with reduced motion (or where motion
+  can't be detected). The shared `Dialog` settles back and fades (`pop-out`) with its backdrop (`fade-in`/`fade-out`
+  on `::backdrop`); clicks and Escape are ignored while it leaves; focus still returns to the opener after. The
+  child's "Show me again" card does the same. Arriving and leaving classes are exclusive (both set `animation`).
+  The dev-only `/__play` gallery has a dialog specimen for review. **Tested**: new `presence.test.tsx` (3); full
+  Vitest 525/525 (`--maxWorkers=4`; with default workers this loaded machine times out unrelated studio tests at 5 s -
+  they pass alone). `homeStreak.test.tsx` (mine, last commit) waits up to 4 s for the family's reads. **Browser
+  verified** (dev server): dialog animation `pop-in` open, `pop-out` mid-close (opacity 0.84), removed after.

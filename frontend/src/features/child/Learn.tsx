@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { usePresence } from "@/components/motion/presence";
 import { BookOpen, Play, Square, X } from "lucide-react";
 import type { ActivityIntroduction } from "@/lib/api/types";
 import { speak, stopSpeaking, usePlaying } from "./speaker";
@@ -67,6 +68,7 @@ export function LearnCard({
 export function LookAgain({ introduction, lang }: { introduction: ActivityIntroduction; lang?: string }) {
   const m = useMessages(learnMessages);
   const [open, setOpen] = useState(false);
+  const { present, leaving } = usePresence(open);
   const opener = useRef<HTMLButtonElement | null>(null);
   const close = useRef<HTMLButtonElement | null>(null);
 
@@ -100,16 +102,19 @@ export function LookAgain({ introduction, lang }: { introduction: ActivityIntrod
       >
         <BookOpen size={17} aria-hidden /> {m.again}
       </button>
-      {open && (
+      {present && (
         <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-tonle-950/40 p-4 sm:items-center"
+          className={cn(
+            "fixed inset-0 z-40 flex items-end justify-center bg-tonle-950/40 p-4 sm:items-center",
+            leaving ? "pointer-events-none motion-safe:animate-fade-out" : "motion-safe:animate-fade-in",
+          )}
           onClick={shut}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-label={m.label}
-            className="relative max-h-full w-full max-w-lg overflow-y-auto motion-safe:animate-pop-in"
+            className={cn("relative max-h-full w-full max-w-lg overflow-y-auto", leaving ? "motion-safe:animate-pop-out" : "motion-safe:animate-pop-in")}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="rounded-[28px] bg-[#FFFDF8] p-3 shadow-card">

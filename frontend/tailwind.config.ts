@@ -148,6 +148,13 @@ export default {
           "0%": { transform: "scale(0.94)", opacity: "0" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
+        // EXP-1: a closing dialog settles back a little as it fades - the reverse of arriving, quicker.
+        "pop-out": {
+          "0%": { transform: "scale(1)", opacity: "1" },
+          "100%": { transform: "scale(0.97)", opacity: "0" },
+        },
+        "fade-in": { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
+        "fade-out": { "0%": { opacity: "1" }, "100%": { opacity: "0" } },
         // A menu dropping open from the bar it belongs to: short, so a tap feels answered at once.
         "menu-in": {
           "0%": { transform: "translateY(-6px)", opacity: "0" },
@@ -295,6 +302,9 @@ export default {
       },
       animation: {
         "pop-in": "pop-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both",
+        "pop-out": "pop-out 150ms cubic-bezier(0.4, 0, 1, 1) both",
+        "fade-in": "fade-in 200ms ease-out both",
+        "fade-out": "fade-out 150ms ease-in both",
         "rise-in": "rise-in 320ms cubic-bezier(0.23, 1, 0.32, 1) both",
         "menu-in": "menu-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both",
         float: "float 4.5s ease-in-out infinite",

@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Dialog } from "@/components/ui/Dialog";
+import { Button } from "@/components/ui/Button";
 import { PaintedBackdrop } from "@/features/world/PaintedWorld";
 import { PlaceWorld } from "@/features/world/PlaceWorld";
 import { QuestionView, type AnswerResult } from "@/features/child/QuestionView";
@@ -202,10 +205,26 @@ const items: { item: ActivityItem; results: (AnswerResult | null)[] }[] = [
   },
 ];
 
+/** EXP-1: the shared dialog, to review its arrival and its exit. */
+function DialogSpecimen() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative mx-auto max-w-6xl px-4 pt-6">
+      <Button type="button" onClick={() => setOpen(true)} data-review="open-dialog">
+        Open the dialog
+      </Button>
+      <Dialog open={open} onClose={() => setOpen(false)} title="A dialog" description="It arrives, and when closed it settles back and fades.">
+        <p>Close it with the button, Escape or the backdrop.</p>
+      </Dialog>
+    </div>
+  );
+}
+
 export function PlayGallery() {
   return (
     <div className="relative min-h-screen bg-paper">
       <PaintedBackdrop />
+      <DialogSpecimen />
       {/* WORLD-1: every place, for design review (development builds only). */}
       <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 pt-10">
         {(["bridge", "pavilion", "treehouse", "pond"] as const).map((place) => (

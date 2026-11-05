@@ -3,10 +3,12 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useMessages } from "@/i18n/catalog";
 import { common } from "@/components/ui/messages";
+import { usePresence } from "@/components/motion/presence";
 
 /**
  * A modal on the browser's own <dialog>: focus moves in and stays in, Escape closes it, the page
- * behind is inert, and focus returns to what opened it. Rendered only while open.
+ * behind is inert, and focus returns to what opened it. Rendered only while open - and, closing, for the moment its
+ * exit takes (EXP-1: it settles back and the backdrop fades; at once with reduced motion).
  */
 export function Dialog({
   open,
@@ -29,10 +31,11 @@ export function Dialog({
   const m = useMessages(common);
   const titleId = useId();
   const descriptionId = useId();
+  const { present, leaving } = usePresence(open);
 
   useEffect(() => {
     const dialog = ref.current;
-    if (!open || !dialog) return;
+    if (!present || !dialog) return;
     const opener = document.activeElement as HTMLElement | null;
     // jsdom (tests) has no showModal: fall back to an open, labelled dialog.
     if (typeof dialog.showModal === "function") {
@@ -44,25 +47,30 @@ export function Dialog({
       if (typeof dialog.close === "function" && dialog.open) dialog.close();
       opener?.focus?.();
     };
-  }, [open]);
+  }, [present]);
 
-  if (!open) return null;
+  if (!present) return null;
   return (
     <dialog
       ref={ref}
+      data-leaving={leaving || undefined}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
       onCancel={(e) => {
         e.preventDefault();
-        onClose();
+        if (!leaving) onClose();
       }}
       onClick={(e) => {
         // A click on the backdrop (the dialog element itself, outside its panel) closes it.
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !leaving) onClose();
       }}
       className={cn(
         "m-auto max-h-[min(90dvh,52rem)] w-[calc(100%-2rem)] overflow-hidden rounded-[20px] bg-white p-0 text-ink shadow-lift",
-        "backdrop:bg-tonle-950/45 backdrop:backdrop-blur-[2px] motion-safe:animate-pop-in",
+        "backdrop:bg-tonle-950/45 backdrop:backdrop-blur-[2px]",
+        // arriving and leaving are exclusive: both set the animation, so only one may be present
+        leaving
+          ? "pointer-events-none motion-safe:animate-pop-out motion-safe:backdrop:animate-fade-out"
+          : "motion-safe:animate-pop-in motion-safe:backdrop:animate-fade-in",
         size === "lg" ? "max-w-4xl" : "max-w-lg",
       )}
     >

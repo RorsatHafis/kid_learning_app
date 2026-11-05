@@ -34,12 +34,12 @@ afterEach(() => vi.unstubAllGlobals());
 describe("the learning streak on the family home", () => {
   it("says the days in a row from two days up", async () => {
     family(3);
-    expect(await screen.findByText("Learned 3 days in a row")).toBeInTheDocument();
+    expect(await screen.findByText("Learned 3 days in a row", undefined, { timeout: 4000 })).toBeInTheDocument();
   });
 
   it("says nothing for a single day", async () => {
     family(1);
-    await screen.findByText("Sokha");
+    await screen.findByText("Sokha", undefined, { timeout: 4000 });
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(screen.queryByText(/days in a row/)).not.toBeInTheDocument();
   });
