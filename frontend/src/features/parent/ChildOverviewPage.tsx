@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { EnterChildLink } from "./EnterChildLink";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { Arrival } from "@/components/motion/Arrival";
@@ -138,15 +138,42 @@ function ChildOverview({ childId }: { childId: string }) {
 }
 
 /** The child page's sections, as tabs that are links (each section has its own address). */
+/**
+ * The child's tabs. EXP-1: the dark pill slides from the tab left to the tab chosen (continuity: the same control,
+ * now pointing elsewhere); it is placed without moving on first sight, and with reduced motion it just moves.
+ */
 function ChildTabs({ base }: { base: string }) {
   const m = useMessages(setupMessages).child;
+  const { pathname } = useLocation();
+  const nav = useRef<HTMLElement | null>(null);
+  const [pill, setPill] = useState<{ left: number; width: number; moved: boolean } | null>(null);
+  useLayoutEffect(() => {
+    const el = nav.current;
+    if (!el) return;
+    const place = () => {
+      const active = el.querySelector<HTMLElement>('[aria-current="page"]');
+      setPill((before) => (active ? { left: active.offsetLeft, width: active.offsetWidth, moved: before !== null } : null));
+    };
+    place();
+    if (typeof ResizeObserver !== "function") return;
+    const observer = new ResizeObserver(place);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [pathname]);
   const tab = ({ isActive }: { isActive: boolean }) =>
     cn(
-      "inline-flex h-11 shrink-0 items-center rounded-pill px-5 text-[0.9375rem] font-semibold transition-colors duration-150",
-      isActive ? "bg-tonle-900 text-white" : "text-ink-soft hover:bg-white hover:text-tonle-900",
+      "relative inline-flex h-11 shrink-0 items-center rounded-pill px-5 text-[0.9375rem] font-semibold transition-colors duration-200",
+      isActive ? cn("text-white", !pill && "bg-tonle-900") : "text-ink-soft hover:bg-white hover:text-tonle-900",
     );
   return (
-    <nav aria-label={m.tabs} className="-mx-1 flex gap-1 overflow-x-auto rounded-pill bg-paper-sunk p-1 sm:mx-0 sm:w-fit">
+    <nav ref={nav} aria-label={m.tabs} className="relative -mx-1 flex gap-1 overflow-x-auto rounded-pill bg-paper-sunk p-1 sm:mx-0 sm:w-fit">
+      {pill && (
+        <span
+          aria-hidden
+          className={cn("absolute left-0 top-1 h-11 rounded-pill bg-tonle-900", pill.moved && "transition-[transform,width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none")}
+          style={{ width: pill.width, transform: `translateX(${pill.left}px)` }}
+        />
+      )}
       <NavLink to={base} end className={tab}>
         {m.overview}
       </NavLink>

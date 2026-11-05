@@ -2921,3 +2921,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   143/143. **Browser verified** (dev server): enter-child -> travel -> Play (3 transitions), back to the grown-ups
   (leave-child); none with reduced motion. **Sweep**: 15 family and public pages at 1280 and 390 px on a new test
   family - no page errors, console errors/warnings, failed API calls or horizontal overflow.
+- 2026-11-05: **EXP-1 - the child's tabs: the pill slides to the tab chosen.** On a child's page (Overview / Skills
+  & progress / School & settings) the dark pill moves from the tab left to the one chosen (300 ms, the product's
+  out curve), while the tab's content arrives as before (Arrival). Placed without moving on first sight; re-placed
+  when the tabs resize (language, width); with reduced motion it just moves. **Tested**: parent Vitest 78/78.
+  **Browser verified** (dev server, 1280 and 390 px): pill mid-way between the tabs 120 ms after the click, then
+  exactly under "Skills & progress".
