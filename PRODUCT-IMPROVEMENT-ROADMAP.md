@@ -3022,3 +3022,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   button at once. `usePresence` stays for non-modal surfaces only. Also merged: village travel, Play and the way
   back use `TransitionLink` (origin option), `useTravel` removed. **Tested**: components/admin/parent Vitest 200/200,
   child + parent 144/144; travel re-checks identical. **Browser verified**: dialog gone 20 ms after closing.
+- 2026-11-05: **Phone performance of the world, measured.** 390 px, CPU throttled 4x (headless Chromium): the
+  village idle, a place arriving (blurred painting, foreground, landmark rise) and the place idle all run at
+  16.7 ms per frame (p95 16.8 ms), no frame over 50 ms. No change needed; real low-end devices remain to be tried
+  (OD: device lab).
