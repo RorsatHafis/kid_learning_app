@@ -93,7 +93,7 @@ export function ChapterTrack({ chapters, label }: { chapters: Chapter[]; label: 
                   chapter.state === "CURRENT" && "ring-2 ring-light ring-offset-1 ring-offset-white",
                 )}
               >
-                <span className="absolute inset-y-0 left-0 rounded-full bg-light" style={{ width: `${Math.round(share * 100)}%` }} />
+                <span className="absolute inset-y-0 left-0 origin-left rounded-full bg-light motion-safe:animate-fill-bar" style={{ width: `${Math.round(share * 100)}%` }} />
               </span>
             </li>
           );

@@ -2927,3 +2927,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   when the tabs resize (language, width); with reduced motion it just moves. **Tested**: parent Vitest 78/78.
   **Browser verified** (dev server, 1280 and 390 px): pill mid-way between the tabs 120 ms after the click, then
   exactly under "Skills & progress".
+- 2026-11-05: **EXP-1 - parents' progress bars fill as they arrive.** The family home's per-subject bar and the
+  chapter bars fill from the left (`fill-bar`, 700 ms, scale only - no layout work) to the server's share; the
+  numbers beside them are unchanged and read first. Reduced motion: drawn full at once. **Tested**: parent Vitest.
+  **Browser verified** (dev server, 1280 and 390 px): the family home's bar runs `fill-bar` on arrival.

@@ -408,7 +408,7 @@ function SubjectLine({ enrollment, words }: { enrollment: EnrollmentOverview; wo
           <span className="tabular text-[0.8125rem] text-ink-faint">{words.steps(enrollment.completedSteps, enrollment.totalSteps)}</span>
         </p>
         <span aria-hidden className={cn("h-1.5 overflow-hidden rounded-full", t.soft)}>
-          <span className={cn("block h-full rounded-full", t.solid)} style={{ width: `${Math.round(share * 100)}%` }} />
+          <span className={cn("block h-full origin-left rounded-full motion-safe:animate-fill-bar", t.solid)} style={{ width: `${Math.round(share * 100)}%` }} />
         </span>
         {enrollment.nextStep && <p className="truncate text-sm text-ink-soft">{pathState(enrollment, words)}</p>}
       </div>
