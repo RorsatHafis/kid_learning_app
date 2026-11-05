@@ -9,6 +9,7 @@ import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { useBuddyKind } from "@/features/buddy/kinds";
 import { buddyMessages } from "@/features/buddy/buddy.messages";
 import { OnWorld, PaintedWorld } from "@/features/world/PaintedWorld";
+import { PlaceWorld } from "@/features/world/PlaceWorld";
 import { placesFor } from "@/features/world/places";
 import { childReason, stepTag } from "@/features/learning/explain";
 import { chapterOf, focusChapter } from "@/features/learning/chapters";
@@ -431,7 +432,8 @@ function JourneyStage({
 
         {/* The river bend, with the buddy on the bank; the card says where the child is and carries them on. */}
         <div className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
-          <PaintedWorld scene="bend">
+          {/* WORLD-1: the subject's own place - its landmark, light and living foreground - not one scene for all. */}
+          <PlaceWorld place={place.key}>
             <OnWorld x={next ? 66 : 50} y={97}>
               <div className="flex items-end gap-1">
                 <LearningBuddy mood={next ? "happy" : "cheer"} size={170} className="hidden h-auto w-[clamp(96px,11vw,170px)] sm:block" />
@@ -442,7 +444,7 @@ function JourneyStage({
                 </p>
               </div>
             </OnWorld>
-          </PaintedWorld>
+          </PlaceWorld>
           <div className="relative p-3 sm:p-4 lg:absolute lg:left-5 lg:top-5 lg:w-[25rem] lg:p-0">
             {next ? (
               <ContinueCard childId={childId} path={overview} />

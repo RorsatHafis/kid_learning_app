@@ -267,6 +267,26 @@ export default {
           "55%": { transform: "scale(1.22)", filter: "brightness(1.25)" },
           "100%": { transform: "scale(1)", filter: "brightness(1)" },
         },
+        // WORLD-1: arriving at a place - the scene comes into focus from a little further away.
+        "scene-arrive": {
+          "0%": { transform: "scale(1.1)", filter: "blur(3px) saturate(0.8)", opacity: "0.4" },
+          "100%": { transform: "scale(1)", filter: "blur(0) saturate(1)", opacity: "1" },
+        },
+        "cloud-drift": {
+          "0%": { transform: "translateX(-12%)" },
+          "100%": { transform: "translateX(112%)" },
+        },
+        glint: {
+          "0%, 100%": { opacity: "0", transform: "translateX(0)" },
+          "50%": { opacity: "0.85", transform: "translateX(10px)" },
+        },
+        "dragonfly": {
+          "0%": { transform: "translate(0, 0) rotate(0deg)" },
+          "25%": { transform: "translate(60px, -18px) rotate(8deg)" },
+          "50%": { transform: "translate(110px, 6px) rotate(-4deg)" },
+          "75%": { transform: "translate(50px, 20px) rotate(6deg)" },
+          "100%": { transform: "translate(0, 0) rotate(0deg)" },
+        },
         ember: {
           "0%": { transform: "translate(0, 0) scale(1)", opacity: "0" },
           "15%": { opacity: "1" },
@@ -300,6 +320,10 @@ export default {
         "flame-glow": "flame-glow 2.4s ease-in-out infinite",
         "flame-grow": "flame-grow 900ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
         ember: "ember 1.6s ease-out infinite",
+        "scene-arrive": "scene-arrive 900ms cubic-bezier(0.23, 1, 0.32, 1) both",
+        "cloud-drift": "cloud-drift 70s linear infinite",
+        glint: "glint 3.6s ease-in-out infinite",
+        dragonfly: "dragonfly 9s ease-in-out infinite",
       },
     },
   },

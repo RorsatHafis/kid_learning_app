@@ -2833,3 +2833,12 @@ Then defects, then simplification. Push at the end of the window; CI once.
   coverage 4/4; new `landingFaq.test.tsx` (order, opens in place; admin adds in both languages); marketing + admin +
   i18n Vitest 265/265. **Browser verified** (production build, V86 applied to the dev database): 1280 px EN and
   390 px KM - six questions, one opened, axe clean, no sideways scroll.
+- 2026-11-05: **WORLD-1 slice 1 - each subject has its own place, not one scene for all.** `features/world/PlaceWorld`
+  replaces the single river-bend painting on a subject's journey: the bridge (Maths) on the river bend with drifting
+  clouds and water glints; the pavilion (Khmer) - the village seen close at the temple, morning gold, rising motes;
+  the treehouse (English) - the village's forest edge, sunbeams and a swaying leaf canopy; the pond (other subjects)
+  - mist, lily pads, a dragonfly. Depth: the painting and the foreground move apart with a fine pointer (not on touch,
+  not with reduced motion); the scene comes into focus on arrival. Child space only. **Tested**: child + world Vitest
+  65/65, tsc, eslint. **NOT yet browser verified** - next session: screenshot each place at 390/1280 px, check
+  reduced motion and performance, tune crops (`ENVIRONMENTS` position/zoom), then WORLD-1 slice 2 (the village ->
+  place travel transition) and EXP-1.
