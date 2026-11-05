@@ -2842,3 +2842,11 @@ Then defects, then simplification. Push at the end of the window; CI once.
   65/65, tsc, eslint. **NOT yet browser verified** - next session: screenshot each place at 390/1280 px, check
   reduced motion and performance, tune crops (`ENVIRONMENTS` position/zoom), then WORLD-1 slice 2 (the village ->
   place travel transition) and EXP-1.
+- 2026-11-05: **WORLD-1 slice 1 browser-checked and reworked.** Re-cropping two paintings could not make four places
+  (the treehouse still read as the pavilion), and drawn leaf and lily-pad shapes looked cheap against the paper-cut
+  art - removed. Each place now stands its own landmark (the owner's place illustrations: bridge, pavilion,
+  treehouse, lotus pond) sharp and near in front of its painted surroundings, slightly out of focus as distance:
+  the bridge on the river bend, the pavilion in the village in morning gold, the treehouse in the forest by the bend
+  with shade and drifting leaves, the pond in mist with a dragonfly. **Browser verified** (dev gallery `/__play`,
+  development builds only): all four at 1280 and 390 px; about 60 frames a second with the motion running.
+  **Tested**: child + world + i18n Vitest.

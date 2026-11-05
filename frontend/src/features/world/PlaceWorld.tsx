@@ -4,13 +4,13 @@ import villageSmall from "@/assets/world/river-village-sm.webp";
 import bendLarge from "@/assets/world/river-bend.webp";
 import bendSmall from "@/assets/world/river-bend-sm.webp";
 import { cn } from "@/lib/utils/cn";
-import type { PlaceKey } from "./places";
+import { placeByKey, type PlaceKey } from "./places";
 
 /**
  * WORLD-1: each subject's own place in the child's world - not one repeated scene. A place is the same painted world
- * seen from where its landmark stands (the bridge on the river bend, the pavilion and the treehouse in the village,
- * the lotus pond), with its own light and its own living foreground: clouds and glints on the river, morning gold and
- * rising motes at the pavilion, a swaying canopy and sunbeams at the treehouse, mist, lily pads and a dragonfly at the
+ * seen from where its landmark stands (the bridge on the river bend, the pavilion in the village, the treehouse in the
+ * forest by the bend, the lotus pond) with its own landmark standing sharp in front, with its own light and its own living foreground: clouds and glints on the river, morning gold and
+ * rising motes at the pavilion, sunbeams, forest shade and drifting leaves at the treehouse, mist and a dragonfly at the
  * pond. Layers move apart a little with the pointer (depth), and the scene comes into focus as the child arrives.
  * Decoration only: what the place is, is said in words beside it. Reduced motion: all of it stands still.
  */
@@ -37,9 +37,9 @@ const ENVIRONMENTS: Record<PlaceKey, Environment> = {
     atmosphere: "radial-gradient(ellipse 70% 60% at 70% 20%, rgba(255,214,140,0.45), transparent 70%), linear-gradient(to bottom, rgba(255,236,200,0.25), transparent 60%)",
   },
   treehouse: {
-    art: { large: villageLarge, small: villageSmall },
-    position: "92% 40%",
-    zoom: 1.7,
+    art: { large: bendLarge, small: bendSmall },
+    position: "12% 55%",
+    zoom: 1.8,
     atmosphere: "radial-gradient(ellipse 60% 70% at 85% 10%, rgba(255,246,200,0.35), transparent 70%), linear-gradient(to bottom, rgba(40,90,60,0.12), transparent 50%)",
   },
   pond: {
@@ -90,8 +90,9 @@ export function PlaceWorld({ place, className, children }: { place: PlaceKey; cl
       className={cn("relative aspect-[3/2] w-full overflow-hidden bg-[#EFE6D2] sm:aspect-[1584/672]", className)}
       style={{ ["--px" as string]: "0", ["--py" as string]: "0" }}
     >
-      {/* The painting, from this place's standpoint: it drifts opposite the pointer (far away). */}
-      <div aria-hidden className="absolute inset-[-3%] transition-transform duration-500 ease-out [transform:translate(calc(var(--px)*-8px),calc(var(--py)*-5px))]">
+      {/* The painting, from this place's standpoint, a little out of focus (it is the distance): it drifts opposite the
+          pointer. */}
+      <div aria-hidden className="absolute inset-[-3%] [filter:blur(1.5px)_saturate(0.9)] transition-transform duration-500 ease-out [transform:translate(calc(var(--px)*-8px),calc(var(--py)*-5px))]">
         <picture>
           <source media="(min-width: 900px)" srcSet={env.art.large} />
           <img
@@ -108,6 +109,14 @@ export function PlaceWorld({ place, className, children }: { place: PlaceKey; cl
       <div aria-hidden className="pointer-events-none absolute inset-0 transition-transform duration-500 ease-out [transform:translate(calc(var(--px)*10px),calc(var(--py)*6px))]">
         <Foreground place={place} />
       </div>
+      {/* The landmark itself, sharp and near: the place the child has come to. */}
+      <img
+        src={placeByKey(place).art}
+        alt=""
+        aria-hidden
+        draggable={false}
+        className="pointer-events-none absolute bottom-[3%] right-[3%] h-[58%] w-auto select-none drop-shadow-[0_18px_22px_rgba(16,50,58,0.28)] transition-transform duration-500 ease-out motion-safe:animate-rise-in [transform:translate(calc(var(--px)*16px),calc(var(--py)*9px))] sm:h-[84%]"
+      />
       {children}
     </div>
   );
@@ -148,22 +157,20 @@ function Foreground({ place }: { place: PlaceKey }) {
           {/* sunbeams through the canopy */}
           <span className="absolute -top-[10%] right-[18%] h-[120%] w-[14%] rotate-[18deg] bg-gradient-to-b from-[#FFF6D0]/45 to-transparent motion-safe:animate-glow-breathe" />
           <span className="absolute -top-[10%] right-[40%] h-[120%] w-[8%] rotate-[18deg] bg-gradient-to-b from-[#FFF6D0]/30 to-transparent motion-safe:animate-glow-breathe [animation-delay:1.4s]" />
-          <Canopy side="left" />
-          <Canopy side="right" />
+          <span className="absolute inset-0 bg-[radial-gradient(ellipse_80%_70%_at_50%_45%,transparent_55%,rgba(36,74,48,0.28)_100%)]" />
+          {["14%", "38%", "63%", "82%"].map((left, i) => (
+            <span
+              key={left}
+              className="absolute top-0 h-2 w-3 rounded-[60%_10%] bg-[#6E9A63] opacity-0 motion-safe:animate-confetti-fall"
+              style={{ left, animationDelay: `${i * 2.2}s`, animationDuration: "9s", animationIterationCount: "infinite" }}
+            />
+          ))}
         </>
       );
     case "pond":
       return (
         <>
           <div className="absolute inset-x-0 top-[38%] h-[24%] bg-gradient-to-b from-transparent via-white/30 to-transparent motion-safe:animate-glow-breathe" />
-          <svg viewBox="0 0 400 60" preserveAspectRatio="none" className="absolute inset-x-0 bottom-0 h-[16%] w-full">
-            {[30, 120, 210, 300, 360].map((x, i) => (
-              <ellipse key={x} cx={x} cy={38 + (i % 2) * 10} rx={26 - (i % 3) * 4} ry={8} fill="#5F8F6B" opacity={0.85} />
-            ))}
-            {[120, 300].map((x) => (
-              <circle key={x} cx={x + 6} cy={30} r={6} fill="#F2A7B8" />
-            ))}
-          </svg>
           <span className="absolute left-[30%] top-[34%] motion-safe:animate-dragonfly">
             <svg viewBox="0 0 24 12" className="h-3 w-6">
               <rect x="10" y="5" width="12" height="2" rx="1" fill="#2E6B7A" />
@@ -191,29 +198,5 @@ function Clouds({ tint = "rgba(255,255,255,0.85)" }: { tint?: string }) {
         />
       ))}
     </div>
-  );
-}
-
-/** Leaf clusters framing a top corner, swaying from where they hang. */
-function Canopy({ side }: { side: "left" | "right" }) {
-  return (
-    <svg
-      viewBox="0 0 200 120"
-      className={cn(
-        "absolute top-0 h-[42%] w-auto origin-top motion-safe:animate-sway [animation-duration:6s]",
-        side === "left" ? "-left-[2%]" : "-right-[2%] -scale-x-100",
-      )}
-    >
-      {[
-        [20, 10, 34, "#4C7A55"],
-        [60, 0, 30, "#5E8E62"],
-        [100, 18, 26, "#3F6A4A"],
-        [40, 46, 24, "#6A9B6B"],
-        [10, 60, 20, "#4C7A55"],
-        [80, 50, 18, "#79A877"],
-      ].map(([cx, cy, r, fill]) => (
-        <ellipse key={`${cx}-${cy}`} cx={cx as number} cy={cy as number} rx={r as number} ry={(r as number) * 0.62} fill={fill as string} opacity={0.92} />
-      ))}
-    </svg>
   );
 }

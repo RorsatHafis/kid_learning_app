@@ -34,6 +34,11 @@ const BY_MOTIF: Record<SubjectMotif, PlaceKey> = {
   book: "pond",
 };
 
+/** A place by its key (WORLD-1: the landmark that stands in its own scene). */
+export function placeByKey(key: PlaceKey): Place {
+  return PLACES[key];
+}
+
 export function placeFor(motif: SubjectMotif): Place {
   return PLACES[BY_MOTIF[motif]];
 }

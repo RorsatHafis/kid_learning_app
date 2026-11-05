@@ -1,4 +1,5 @@
 import { PaintedBackdrop } from "@/features/world/PaintedWorld";
+import { PlaceWorld } from "@/features/world/PlaceWorld";
 import { QuestionView, type AnswerResult } from "@/features/child/QuestionView";
 import type { ActivityItem, MediaRef } from "@/lib/api/types";
 
@@ -205,6 +206,14 @@ export function PlayGallery() {
   return (
     <div className="relative min-h-screen bg-paper">
       <PaintedBackdrop />
+      {/* WORLD-1: every place, for design review (development builds only). */}
+      <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 pt-10">
+        {(["bridge", "pavilion", "treehouse", "pond"] as const).map((place) => (
+          <figure key={place} data-review-place={place} className="overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
+            <PlaceWorld place={place} />
+          </figure>
+        ))}
+      </div>
       <div className="relative mx-auto grid grid-cols-1 max-w-6xl gap-8 px-4 py-10 lg:grid-cols-2">
         {items.flatMap(({ item, results }) =>
           results.map((result, i) => (
