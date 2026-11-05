@@ -2,6 +2,8 @@ import { useId, type ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 import { BuddyDrawing } from "./BuddyArt";
 import { BuddyKindContext, useBuddyKind, type BuddyKind, type BuddyMood } from "./kinds";
+
+export type { BuddyMood };
 import { momoArt } from "./momoArt";
 
 /**

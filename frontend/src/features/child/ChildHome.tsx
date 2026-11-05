@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, type MouseEvent } from "react";
+import { BuddyButton, useBuddyHello } from "./BuddyHello";
 import { handOver, plainClick } from "@/components/motion/handOver";
 import { useGrowth } from "./growth";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -168,7 +169,8 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
   const review = paths.find((p) => p.nextStep?.explanation.reason === "REVIEW" && p !== current);
   const places = placesFor(paths.map((p) => subjectTheme(p.curriculum.subjectCode, p.curriculum.subjectName).motif));
   const anyStarted = paths.some((p) => p.completedSteps > 0);
-  const line = !current ? e.buddyAllDone : anyStarted ? e.buddyGo : e.buddyStart;
+  const hello = useBuddyHello(!current ? e.buddyAllDone : anyStarted ? e.buddyGo : e.buddyStart);
+  const line = hello.line;
 
   return (
     <section aria-labelledby="greeting" className="mx-auto flex w-full max-w-[88rem] flex-col gap-6 px-4 pb-14 pt-4 sm:px-8 sm:pt-6">
@@ -194,16 +196,15 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
           </div>
           <OnWorld x={current ? 41 : 30} y={97}>
             <div className="flex items-end gap-1">
-              <LearningBuddy mood={current ? "happy" : "cheer"} size={170} className="hidden h-auto w-[clamp(96px,11vw,170px)] sm:block" />
-              <LearningBuddy mood={current ? "happy" : "cheer"} size={92} className="sm:hidden" />
-              <p className="mb-[clamp(2.5rem,6vw,5rem)] hidden max-w-[15rem] rounded-[18px] bg-white/95 px-4 py-2.5 text-sm font-semibold leading-snug text-tonle-950 shadow-paper ring-1 ring-tonle-950/5 md:block">
+              <BuddyButton hello={hello} mood={current ? "happy" : "cheer"} />
+              <p aria-live="polite" className="mb-[clamp(2.5rem,6vw,5rem)] hidden max-w-[15rem] rounded-[18px] bg-white/95 px-4 py-2.5 text-sm font-semibold leading-snug text-tonle-950 shadow-paper ring-1 ring-tonle-950/5 md:block">
                 {line}
                 <span className="mt-1 block text-[0.7rem] font-bold uppercase tracking-[0.12em] text-palm-deep">{e.buddyName(b.names[kind])}</span>
               </p>
             </div>
           </OnWorld>
           {/* On a phone, Momo's line sits on the painting above him. */}
-          <p className="absolute left-3 top-3 max-w-[62%] rounded-[16px] bg-white/95 px-3.5 py-2 text-sm font-semibold leading-snug text-tonle-950 shadow-paper md:hidden">
+          <p aria-live="polite" className="absolute left-3 top-3 max-w-[62%] rounded-[16px] bg-white/95 px-3.5 py-2 text-sm font-semibold leading-snug text-tonle-950 shadow-paper md:hidden">
             {line}
           </p>
         </PaintedWorld>
@@ -440,6 +441,7 @@ function JourneyStage({
   const kind = useBuddyKind();
   const focus = journey.data ? focusChapter(journey.data) : null;
   const next = overview.nextStep;
+  const placeHello = useBuddyHello(next ? e.buddyGo : e.buddyAllDone);
   const subject = overview.curriculum.subjectName ?? overview.curriculum.name;
   const place = placesFor([subjectTheme(overview.curriculum.subjectCode, overview.curriculum.subjectName).motif])[0];
 
@@ -467,10 +469,9 @@ function JourneyStage({
           <PlaceWorld place={place.key}>
             <OnWorld x={46} y={97}>
               <div className="flex items-end gap-1">
-                <LearningBuddy mood={next ? "happy" : "cheer"} size={170} className="hidden h-auto w-[clamp(96px,11vw,170px)] sm:block" />
-                <LearningBuddy mood={next ? "happy" : "cheer"} size={92} className="sm:hidden" />
-                <p className="mb-[clamp(2.5rem,6vw,5rem)] hidden max-w-[14rem] rounded-[18px] bg-white/95 px-4 py-2.5 text-sm font-semibold leading-snug text-tonle-950 shadow-paper ring-1 ring-tonle-950/5 md:block">
-                  {next ? e.buddyGo : e.buddyAllDone}
+                <BuddyButton hello={placeHello} mood={next ? "happy" : "cheer"} />
+                <p aria-live="polite" className="mb-[clamp(2.5rem,6vw,5rem)] hidden max-w-[14rem] rounded-[18px] bg-white/95 px-4 py-2.5 text-sm font-semibold leading-snug text-tonle-950 shadow-paper ring-1 ring-tonle-950/5 md:block">
+                  {placeHello.line}
                   <span className="mt-1 block text-[0.7rem] font-bold uppercase tracking-[0.12em] text-palm-deep">{e.buddyName(b.names[kind])}</span>
                 </p>
               </div>

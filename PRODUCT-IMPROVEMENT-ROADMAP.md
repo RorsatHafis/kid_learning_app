@@ -2961,3 +2961,10 @@ Then defects, then simplification. Push at the end of the window; CI once.
   Khmer at 360 px - no errors, failed calls or horizontal overflow; the child's space in Khmer at 360 and 1280 px
   (village, place, shelf, garden) - no overflow, clipping or cramped Khmer lines; public pages in Khmer at 390 and
   1280 px - no cramped Khmer lines.
+- 2026-11-05: **EXP-1 - the buddy answers a tap.** On the village and in each place the buddy is a button ("Say
+  hello to Momo"): a tap makes it cheer (the jump replays on each tap) and say its own one-line character - the
+  authored line the child read when choosing it (`buddy.characters`, EN/KM), never generated - for 4.5 s, then its
+  usual words come back. The bubble is a polite live region, so the line is read out too. Learning Buddy stays an
+  authored character, not a conversation (CLAUDE.md §19). **Tested**: new `buddyHello.test.tsx`; child Vitest 66/66.
+  **Browser verified** (dev server, new local test family): tap -> the otter's line and `cheer` running; with reduced
+  motion the line, no jump.
