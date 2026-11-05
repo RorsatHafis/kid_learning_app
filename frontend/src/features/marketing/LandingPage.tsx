@@ -111,9 +111,13 @@ function Hero() {
           <h1
             className={cn(
               "font-display font-bold leading-[1.02] tracking-[-0.02em] text-tonle-950",
-              m.hero.title.length > 72
-                ? "text-[2.1rem] sm:text-[3rem] lg:text-[clamp(2.4rem,6.6svh,3.4rem)]"
-                : "text-[2.45rem] sm:text-[3.6rem] lg:text-[clamp(3rem,9.4svh,4.5rem)]",
+              // Khmer letters stand taller (and stack below the line) than Latin ones at the same size: its own size
+              // and line height, so the same promise takes the same room.
+              other === "en"
+                ? "!leading-[1.32] text-[2.1rem] sm:text-[3rem] lg:text-[clamp(2.4rem,7.2svh,3.5rem)]"
+                : m.hero.title.length > 72
+                  ? "text-[2.1rem] sm:text-[3rem] lg:text-[clamp(2.4rem,6.6svh,3.4rem)]"
+                  : "text-[2.45rem] sm:text-[3.6rem] lg:text-[clamp(3rem,9.4svh,4.5rem)]",
             )}
           >
             {m.hero.title}

@@ -2950,3 +2950,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   into a block that pushed the actions out of the first screen. A headline over 72 characters (the original is 57)
   now steps down a size; the actions stay in the first screen at all three sizes (bottom 614/665/711 px).
   **Browser verified** (dev server, preview mode).
+- 2026-11-05: **LAND-1 defect fixed - the Khmer hero pushed its actions below the fold at 1024x768.** Cause: the
+  Khmer headline used the English size, and Khmer letters stand taller and stack below the line - four tall lines
+  (403 px). It now has its own size and line height (1.32, so stacked consonants don't touch the line below).
+  Measured in Khmer, first action's bottom: 390x844 476, 768x1024 484, 1024x768 611 (was 795), 1280x720 498,
+  1440x900 593 - all in the first screen, no horizontal overflow. English unchanged. **Browser verified** (dev).
