@@ -569,7 +569,10 @@ reuses the container name of another local project.
 
 # CURRENT VERIFIED PROJECT STATE
 
-> **Update 2026-11-05 (third window).** Pushed `962bfd6`; local after it (not yet pushed): `033af22`..`3871b94`.
+> **Update 2026-11-05 (third window).** Pushed `962bfd6` (CI green) and `a6e0264`; local after it: `3d913ad`..HEAD (docs, travel-back, forgot-page targets).
+> Later the same window: the buddy answers a tap (authored line), Khmer hero size, long-headline step-down, child
+> top bar one row under 400 px, step dots fit, completion celebration within the screen, chosen tab kept in view,
+> way back to the village travels too; sweeps (EN/KM, 360-1440 px) and axe 0 violations on the changed screens.
 > Built: **WORLD-1** each subject's place in its own scene with its landmark (blurred painting crop, atmosphere,
 > living foreground, parallax), village -> place travel; **EXP-1** Play goes into the activity, dialogs leave
 > (`usePresence`), parent <-> child hand-over both ways (`handOver.ts`), steps and buds lit since light up
