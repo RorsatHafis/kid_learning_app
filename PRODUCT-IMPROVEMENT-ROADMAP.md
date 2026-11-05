@@ -2974,3 +2974,5 @@ Then defects, then simplification. Push at the end of the window; CI once.
   readers), gaps tighten a step, and in Khmer the language button says "EN" (spoken: "Switch to English"); touch
   targets stay 44 px. **Browser verified** (dev server): one row for Dara/Sophea at 360, Chanthavy at 390, Dara at
   640; no overflow. **Tested**: child + i18n Vitest.
+  Same pass: the chapter's eight step dots wrapped at 360 px ("8" alone on a second row); below 400 px they are
+  28 px with a 4 px gap - one row at 360/390/640 (browser verified).

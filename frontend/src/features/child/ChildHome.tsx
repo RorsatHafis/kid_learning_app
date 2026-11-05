@@ -298,13 +298,13 @@ function ChapterDots({ growthKey, done, total, label }: { growthKey: string; don
   const from = useGrowth(growthKey, done);
   return (
     <div className="flex flex-col gap-1.5" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={label}>
-      <div aria-hidden className="flex flex-wrap gap-1.5">
+      <div aria-hidden className="flex flex-wrap gap-1 min-[400px]:gap-1.5">
         {Array.from({ length: shown }, (_, i) => (
           <span
             key={i}
             style={from !== null && i >= from && i <= done ? { animationDelay: `${300 + (i - from) * 160}ms` } : undefined}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
+              "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold min-[400px]:h-8 min-[400px]:w-8",
               i < done && "bg-palm text-white",
               from !== null && i >= from && i < done && "motion-safe:animate-light-up",
               i === done && "bg-tonle-900 text-light ring-4 ring-light/40",
