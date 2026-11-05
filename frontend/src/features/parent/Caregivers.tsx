@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
+import { EnterChildLink } from "./EnterChildLink";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { HeartHandshake } from "lucide-react";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -172,9 +173,9 @@ export function CaringSection({ onCount }: { onCount?: (count: number) => void }
                   {m.openProgress}
                 </Link>
                 {c.scope === "OPEN_SPACE" && (
-                  <Link to={`/learn/${c.childId}`} className={buttonClasses("solid", "sm")}>
+                  <EnterChildLink to={`/learn/${c.childId}`} className={buttonClasses("solid", "sm")}>
                     {m.openSpaceAction(c.childName)}
-                  </Link>
+                  </EnterChildLink>
                 )}
                 <Button size="sm" variant="ghost" aria-label={m.leaveLabel(c.childName)} onClick={() => void act(() => caregiversApi.leave(c.id))}>
                   {m.leave}
@@ -218,9 +219,9 @@ export function HelpingPage() {
           <p className="mt-1 max-w-prose text-ink-soft">{m.helpingLead(name)}</p>
         </div>
         {child.data.access === "OPEN_SPACE" && (
-          <Link to={`/learn/${childId}`} className={buttonClasses("solid", "lg", "max-w-full [overflow-wrap:anywhere]")}>
+          <EnterChildLink to={`/learn/${childId}`} className={buttonClasses("solid", "lg", "max-w-full [overflow-wrap:anywhere]")}>
             {m.openSpaceAction(name)}
-          </Link>
+          </EnterChildLink>
         )}
       </div>
       <ChangesSection childId={childId} childName={name} />

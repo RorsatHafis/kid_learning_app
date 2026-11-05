@@ -182,3 +182,24 @@
     animation: none !important;
   }
 }
+
+/* EXP-1: from the parent's pages into the child's space - the parent's page steps back and dims; the child's world
+   comes forward from a little nearer. Reduced motion: none (the rule above). */
+html[data-transition="enter-child"]::view-transition-old(root) {
+  animation: hand-over-out 320ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+html[data-transition="enter-child"]::view-transition-new(root) {
+  animation: hand-over-in 520ms cubic-bezier(0.2, 0, 0, 1) 120ms both;
+}
+@keyframes hand-over-out {
+  to {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+}
+@keyframes hand-over-in {
+  from {
+    transform: scale(1.05);
+    opacity: 0;
+  }
+}

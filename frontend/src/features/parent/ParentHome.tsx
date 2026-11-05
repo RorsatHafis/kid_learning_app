@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { EnterChildLink } from "./EnterChildLink";
 import { Link } from "react-router-dom";
 import { ArrowRight, CreditCard, Play, Plus, School, Sparkles } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -237,9 +238,9 @@ function ChildSummary({ child }: { child: Child }) {
           </div>
         </Link>
         <div className="flex flex-wrap items-center gap-2">
-          <Link to={`/learn/${child.id}`} className={buttonClasses("solid", "md", "max-w-full [overflow-wrap:anywhere]")}>
+          <EnterChildLink to={`/learn/${child.id}`} className={buttonClasses("solid", "md", "max-w-full [overflow-wrap:anywhere]")}>
             <Play size={16} aria-hidden /> {m.startSession(child.displayName)}
-          </Link>
+          </EnterChildLink>
           <Link to={`/parent/children/${child.id}`} className={buttonClasses("ghost", "md")}>
             {m.seeProgress} <ArrowRight size={16} aria-hidden />
           </Link>

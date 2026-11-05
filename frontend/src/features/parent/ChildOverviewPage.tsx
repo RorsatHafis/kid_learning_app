@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { EnterChildLink } from "./EnterChildLink";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { Arrival } from "@/components/motion/Arrival";
 import { ChevronRight, ExternalLink, Pencil, Play } from "lucide-react";
@@ -191,9 +192,9 @@ function OwnSpace({ child }: { child: Child }) {
         <li className="rounded-pill bg-paper px-3.5 py-1.5">{m.buddy(b.names[child.learningBuddy])}</li>
         <li className="rounded-pill bg-paper px-3.5 py-1.5">{m.language(child.preferredLanguage === "km" ? "ខ្មែរ" : "English")}</li>
       </ul>
-      <Link to={`/learn/${child.id}`} className={buttonClasses("outline", "md", "w-fit max-w-full [overflow-wrap:anywhere]")}>
+      <EnterChildLink to={`/learn/${child.id}`} className={buttonClasses("outline", "md", "w-fit max-w-full [overflow-wrap:anywhere]")}>
         <ExternalLink size={16} aria-hidden /> {m.openSpace(child.displayName)}
-      </Link>
+      </EnterChildLink>
     </section>
   );
 }
@@ -339,9 +340,9 @@ function Header({ child, onRenamed, enrollments }: { child: Child; onRenamed: ()
             ))}
           </ul>
         )}
-        <Link to={`/learn/${child.id}`} className={buttonClasses("solid", "lg", "w-full max-w-full [overflow-wrap:anywhere] sm:w-auto")}>
+        <EnterChildLink to={`/learn/${child.id}`} className={buttonClasses("solid", "lg", "w-full max-w-full [overflow-wrap:anywhere] sm:w-auto")}>
           <Play size={18} aria-hidden /> {m.startSession(child.displayName)}
-        </Link>
+        </EnterChildLink>
       </header>
     </SceneBand>
   );

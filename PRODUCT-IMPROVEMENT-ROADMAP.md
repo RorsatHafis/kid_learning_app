@@ -2892,3 +2892,11 @@ Then defects, then simplification. Push at the end of the window; CI once.
   Vitest 525/525 (`--maxWorkers=4`; with default workers this loaded machine times out unrelated studio tests at 5 s -
   they pass alone). `homeStreak.test.tsx` (mine, last commit) waits up to 4 s for the family's reads. **Browser
   verified** (dev server): dialog animation `pop-in` open, `pop-out` mid-close (opacity 0.84), removed after.
+- 2026-11-05: **EXP-1 - handing over to the child is a change of place.** The five "Start <child>'s session" links
+  (family home, child overview x2, caregivers x2) are `EnterChildLink`: the parent's page steps back and dims and
+  the child's world comes forward from a little nearer (view transition on `root`, styled under
+  `html[data-transition="enter-child"]`, attribute removed when it finishes). The child area's code is fetched first
+  (at most 600 ms) so the world, not the loading screen, is what arrives. Ordinary link without support, with
+  reduced motion or a modified click. **Tested**: parent + child Vitest 141/141. **Browser verified** (dev server,
+  new local test family): one `enter-child` transition, mid-frame shows the world arriving over the parent page;
+  with reduced motion none, same destination.
