@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { StepLink } from "./StepLink";
+import { useParams } from "react-router-dom";
 import { ArrowLeft, Check } from "lucide-react";
 import { childrenApi } from "@/lib/api/endpoints";
 import type { LearningBuddyKind } from "@/lib/api/types";
@@ -68,9 +69,9 @@ export function BuddyPage() {
       {child.error && <Trouble onRetry={child.refetch} />}
       {child.data && current && (
         <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 pb-20 pt-8 sm:px-8 sm:pt-12">
-          <Link to={`/learn/${childId}`} className={cn(quietButton, "min-h-11 w-fit px-4 text-sm")}>
+          <StepLink to={`/learn/${childId}`} direction="out" className={cn(quietButton, "min-h-11 w-fit px-4 text-sm")}>
             <ArrowLeft size={16} aria-hidden /> {b.back}
-          </Link>
+          </StepLink>
           <div className="flex flex-col gap-2 rounded-[28px] bg-white/95 p-6 shadow-lift ring-1 ring-tonle-950/5 sm:p-8">
             <h1 className="font-display text-headline font-bold text-tonle-950">{b.title}</h1>
             <p className="text-lg font-medium text-ink-soft">{b.lead}</p>

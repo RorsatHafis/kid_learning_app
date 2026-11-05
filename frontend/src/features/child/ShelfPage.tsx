@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { StepLink } from "./StepLink";
 import { ArrowLeft, Check, Play, RotateCcw } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, learningApi } from "@/lib/api/endpoints";
@@ -76,9 +77,9 @@ function Shelves({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-12 px-5 pb-20 pt-8 sm:px-8 sm:pt-12">
       <div className="flex flex-col gap-6">
-        <Link to={`/learn/${childId}`} className={cn(quietButton, "min-h-11 w-fit px-4 text-sm")}>
+        <StepLink to={`/learn/${childId}`} direction="out" className={cn(quietButton, "min-h-11 w-fit px-4 text-sm")}>
           <ArrowLeft size={16} aria-hidden /> {m.backToPath}
-        </Link>
+        </StepLink>
         <div className="relative flex flex-col gap-5 overflow-hidden rounded-[28px] bg-[#FFFDF8] p-6 pb-24 shadow-lift ring-1 ring-tonle-950/5 sm:flex-row sm:items-end sm:justify-between sm:p-8 sm:pb-24">
           {/* Y44: the shelf sits by the river - a strip of the painting under the words, the buddy at its end. */}
           <img src={shelfArt} alt="" aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-20 w-full object-cover object-[50%_80%] opacity-60 [mask-image:linear-gradient(to_top,black_45%,transparent)]" />

@@ -239,3 +239,19 @@ html[data-transition="travel-back"]::view-transition-new(world) {
   animation: travel-out 600ms cubic-bezier(0.2, 0, 0, 1) reverse both;
   transform-origin: var(--travel-origin, 50% 50%);
 }
+/* WORLD-1: into the child's own corners (shelf, buddy) and back - the same stepping as the hand-over, a little
+   quicker, the village scene moving with its page. Reduced motion: none (the rule above). */
+html[data-transition="step-in"]::view-transition-old(root),
+html[data-transition="step-in"]::view-transition-old(world) {
+  animation: hand-over-out 260ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+html[data-transition="step-in"]::view-transition-new(root) {
+  animation: hand-over-in 420ms cubic-bezier(0.2, 0, 0, 1) 90ms both;
+}
+html[data-transition="step-out"]::view-transition-old(root) {
+  animation: hand-back-out 240ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+html[data-transition="step-out"]::view-transition-new(root),
+html[data-transition="step-out"]::view-transition-new(world) {
+  animation: hand-back-in 380ms cubic-bezier(0.2, 0, 0, 1) 80ms both;
+}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { StepLink } from "./StepLink";
 import { Link, useNavigate } from "react-router-dom";
 import { Volume2, VolumeX, Lock } from "lucide-react";
 import { useChildDevice } from "@/lib/auth/AuthContext";
@@ -76,9 +77,9 @@ export function ChildSpaceLayout({
                 </span>
                 <span className="max-w-[5.5rem] truncate text-sm font-semibold sm:max-w-[9rem]">{childName ?? "…"}</span>
               </Link>
-              <Link to={`/learn/${childId}/buddy`} aria-label={b.chip(b.names[kind])} title={b.chip(b.names[kind])} className={cn(chip, "w-11 justify-center overflow-hidden")}>
+              <StepLink to={`/learn/${childId}/buddy`} direction="in" aria-label={b.chip(b.names[kind])} title={b.chip(b.names[kind])} className={cn(chip, "w-11 justify-center overflow-hidden")}>
                 <LearningBuddy mood="idle" size={40} className="!animate-none translate-y-1" />
-              </Link>
+              </StepLink>
               <StreakChip childId={childId} />
             </div>
             <BrandMark size={34} className="hidden sm:block" title="Bookeyond Kid" />

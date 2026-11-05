@@ -3004,3 +3004,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   1280 px - landing in preview mode (with its notice), child overview and Skills tabs (sliding pill), family home
   (streak line, filling bars), village after a buddy tap (live line), a place. The admin editor's Preview button was
   not scanned (staff sign-in needs an authenticator code); its Vitest passes.
+- 2026-11-05: **WORLD-1 / EXP-1 - the child's own corners are places too.** "My shelf" (village and all-done card)
+  and the buddy chip step in (the page steps back, the corner comes forward); "Back to my path" on the shelf and
+  the buddy page steps out (`StepLink`, `step-in`/`step-out` in index.css, the village scene moving with its page).
+  One view transition per move, no extra page fade. **Tested**: child Vitest 66/66. **Browser verified** (dev
+  server): enter-child, step-in (shelf), step-out, step-in (buddy), step-out - attribute cleared, back on the
+  village; none with reduced motion.
