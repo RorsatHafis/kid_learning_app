@@ -2870,3 +2870,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   as days with learning, not as understanding; nothing for a single day, or when it can't be read (a caregiver who
   only views progress is refused it). The completion screen's milestone moment already celebrates 3, 7, 14, 21, 30...
   **Tested**: new `homeStreak.test.tsx`; parent + i18n Vitest 223/223.
+- 2026-11-05: **FLEX-1 checked across child, parent and landing - no fixed three subjects.** Every subject-specific
+  map has a fallback for any other subject: `subjectTheme` (known motifs, then a colour chosen from the code),
+  `places.ts` (the pond for every other subject), the landing's places (taken in turn) and short texts (the
+  catalog's description first). The landing's subjects, the child's subjects and the parent's paths all come from
+  the server's records. The hero's status line ("Early maths today...") is editable copy for the owner to keep true.
