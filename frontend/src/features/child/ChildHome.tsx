@@ -484,7 +484,7 @@ function JourneyStage({
             ) : (
               <div className="flex flex-col gap-3 rounded-[24px] bg-[#FFFDF8]/95 p-5 shadow-lift ring-1 ring-tonle-950/5 sm:p-6">
                 <p className="text-lg font-bold leading-snug text-tonle-950">{m.home.allDone}</p>
-                <BooksLit done={overview.completedSteps} total={overview.totalSteps} label={m.home.litOnPath} />
+                <BooksLit growthKey={`${overview.enrollmentId}:path`} done={overview.completedSteps} total={overview.totalSteps} label={m.home.litOnPath} />
                 <Link to={`/learn/${childId}/shelf`} className={cn(goButton, "w-full justify-center pl-2.5 pr-7")}>
                   <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
                     <Library size={20} aria-hidden />
@@ -497,6 +497,7 @@ function JourneyStage({
         </div>
         {focus?.chapter && next && (
           <BooksLit
+            growthKey={`${overview.enrollmentId}:${focus.chapter.id}:buds`}
             done={focus.steps.filter(({ step }) => step.status === "COMPLETED").length}
             total={focus.steps.length}
             label={m.home.litInChapter(focus.chapter.position)}
@@ -515,13 +516,21 @@ function JourneyStage({
 }
 
 /** Progress as the books themselves: lit ones and the ones still waiting. */
-function BooksLit({ done, total, label, suffix }: { done: number; total: number; label: string; suffix?: string }) {
+/** Steps as buds; coming back with more done, the buds opened since open in turn (EXP-1). */
+function BooksLit({ growthKey, done, total, label, suffix }: { growthKey: string; done: number; total: number; label: string; suffix?: string }) {
   const m = useMessages(childMessages);
+  const from = useGrowth(growthKey, done);
   return (
     <div className="flex items-center gap-3" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={label}>
       <div className="flex flex-wrap items-end gap-0.5" aria-hidden>
         {Array.from({ length: Math.min(total, 12) }, (_, i) => (
-          <Bud key={i} state={i < done ? "open" : i === done ? "current" : "waiting"} size={22} />
+          <span
+            key={i}
+            className={cn("inline-flex", from !== null && i >= from && i < done && "motion-safe:animate-light-up")}
+            style={from !== null && i >= from && i < done ? { animationDelay: `${300 + (i - from) * 160}ms` } : undefined}
+          >
+            <Bud state={i < done ? "open" : i === done ? "current" : "waiting"} size={22} />
+          </span>
         ))}
       </div>
       <span className="text-sm font-semibold text-ink-soft">

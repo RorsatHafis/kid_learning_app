@@ -2912,3 +2912,4 @@ Then defects, then simplification. Push at the end of the window; CI once.
   First sight, reloads and unchanged progress don't animate; the count is always the server's. **Tested**: new
   `growth.test.tsx` (2); child Vitest 65/65 (+2). **Browser verified** (dev server, new local test family): place ->
   Play -> finish -> "My path": one `light-up` running on the step just done.
+  Same for the bud row under the scene ("N of M lit"): the buds opened since open in turn (browser: 2 `light-up`).
