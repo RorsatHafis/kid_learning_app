@@ -3000,3 +3000,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   celebrates a milestone (3, 7, 14...) the moment it is reached; repeating it on the home seconds later adds
   nothing, and a "best streak" on the shelf would show a child what they lost when the count restarts - against
   the approved "no guilt" rule. Not built; if wanted, say which (and whether "best" may ever be shown).
+- 2026-11-05: **Accessibility check of this window's screens (axe, WCAG 2.0-2.2 A/AA): 0 violations** at 390 and
+  1280 px - landing in preview mode (with its notice), child overview and Skills tabs (sliding pill), family home
+  (streak line, filling bars), village after a buddy tap (live line), a place. The admin editor's Preview button was
+  not scanned (staff sign-in needs an authenticator code); its Vitest passes.
