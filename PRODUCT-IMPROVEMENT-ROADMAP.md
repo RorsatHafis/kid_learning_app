@@ -2992,3 +2992,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   new-tab click. **Tested**: child Vitest. **Browser verified** (dev server): village -> bridge -> All my subjects:
   transitions enter-child, travel, travel-back (origin 43% 46%, the bridge), back on the village; none with
   reduced motion.
+- 2026-11-05: **For the Khmer review (PD-14) - new Khmer drafted this window** (Claude-drafted, like all Khmer so
+  far): `features/marketing/copyPreview` (notice, leave), `features/admin/operations/siteCopy` (preview,
+  previewHint), `features/child/entrance` (sayHello), plus the earlier `streak`, FAQ seed (V86) and landing
+  `noLimit/pricesFailed/ages/failed/more/faq` keys. Native review before real families, as for the rest.
