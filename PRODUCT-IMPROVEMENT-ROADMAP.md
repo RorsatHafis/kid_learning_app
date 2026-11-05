@@ -2968,3 +2968,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   authored character, not a conversation (CLAUDE.md §19). **Tested**: new `buddyHello.test.tsx`; child Vitest 66/66.
   **Browser verified** (dev server, new local test family): tap -> the otter's line and `cheer` running; with reduced
   motion the line, no jump.
+- 2026-11-05: **Defect fixed - on phones the child's top bar broke onto two rows.** At 360-390 px the name, buddy
+  and flame chips plus language, sound and grown-ups buttons didn't fit (a 6-letter name wrapped at 360, a 9-letter
+  one at 390). Below 400 px the name chip drops its initial (it repeats the name beside it, hidden from screen
+  readers), gaps tighten a step, and in Khmer the language button says "EN" (spoken: "Switch to English"); touch
+  targets stay 44 px. **Browser verified** (dev server): one row for Dara/Sophea at 360, Chanthavy at 390, Dara at
+  640; no overflow. **Tested**: child + i18n Vitest.

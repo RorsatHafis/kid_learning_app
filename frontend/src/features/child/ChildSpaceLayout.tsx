@@ -67,10 +67,11 @@ export function ChildSpaceLayout({
             <SoundToggle />
           </header>
         ) : (
-          <header className="relative z-20 mx-auto flex max-w-[88rem] flex-wrap items-center justify-between gap-x-2 gap-y-2 px-3 pt-[max(1rem,env(safe-area-inset-top))] sm:gap-x-3 sm:px-8 sm:pt-6">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <Link to={home ?? `/learn/${childId}`} className={cn(chip, "gap-2 py-1.5 pl-1.5 pr-3 sm:gap-2.5 sm:pr-4")}>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-light text-base font-bold text-light-deep">
+          <header className="relative z-20 mx-auto flex max-w-[88rem] flex-wrap items-center justify-between gap-x-1.5 gap-y-2 px-3 pt-[max(1rem,env(safe-area-inset-top))] sm:gap-x-3 sm:px-8 sm:pt-6">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Link to={home ?? `/learn/${childId}`} className={cn(chip, "gap-1.5 py-1.5 pl-1.5 pr-2.5 max-[399px]:pl-3.5 sm:gap-2.5 sm:pr-4")}>
+                {/* The initial repeats the name beside it: on the narrowest phones it gives way so the bar stays one row. */}
+                <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-full bg-light text-base font-bold text-light-deep max-[399px]:hidden">
                   {childName?.charAt(0).toUpperCase() ?? "•"}
                 </span>
                 <span className="max-w-[5.5rem] truncate text-sm font-semibold sm:max-w-[9rem]">{childName ?? "…"}</span>
@@ -81,8 +82,8 @@ export function ChildSpaceLayout({
               <StreakChip childId={childId} />
             </div>
             <BrandMark size={34} className="hidden sm:block" title="Bookeyond Kid" />
-            <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-              <LanguageToggle className={cn(chip, "min-w-11 justify-center px-3 text-sm font-semibold sm:px-3.5")} />
+            <div className="ml-auto flex items-center gap-1 sm:gap-2">
+              <LanguageToggle compact className={cn(chip, "min-w-11 justify-center px-3 text-sm font-semibold sm:px-3.5")} />
               <SoundToggle />
               {/* M10a: a child's own device has no grown-up area to go to. */}
               {!onDevice && <GrownUpGate to={`/parent/children/${childId}`} />}

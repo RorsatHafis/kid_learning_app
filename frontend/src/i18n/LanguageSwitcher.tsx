@@ -77,7 +77,10 @@ export function LanguageSwitcher({
  * too narrow for both (the site bar on a phone, the child's space). It saves like the switcher:
  * a failure is said under it and nothing changes. `className` replaces its look (night bars).
  */
-export function LanguageToggle({ className }: { className?: string }) {
+/** On a narrow screen a compact toggle names the language briefly; its spoken label stays the full one. */
+const SHORT_NAMES: Record<string, string> = { en: "EN", km: "ខ្មែរ" };
+
+export function LanguageToggle({ className, compact = false }: { className?: string; compact?: boolean }) {
   const m = useMessages(messages);
   const { locale, choose, pending, failed } = useLanguageChoice();
   const next = LOCALES.find((option) => option !== locale) ?? "en";
@@ -96,7 +99,16 @@ export function LanguageToggle({ className }: { className?: string }) {
           "disabled:cursor-wait disabled:opacity-70",
         )}
       >
-        {pending ? m.saving : LANGUAGE_NAMES[next]}
+        {pending ? (
+          m.saving
+        ) : compact ? (
+          <>
+            <span className="sm:hidden">{SHORT_NAMES[next] ?? LANGUAGE_NAMES[next]}</span>
+            <span className="hidden sm:inline">{LANGUAGE_NAMES[next]}</span>
+          </>
+        ) : (
+          LANGUAGE_NAMES[next]
+        )}
       </button>
       {failed && (
         <p
