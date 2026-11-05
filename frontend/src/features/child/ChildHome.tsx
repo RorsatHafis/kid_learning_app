@@ -261,6 +261,7 @@ function ContinueCard({ childId, path }: { childId: string; path: EnrollmentOver
   const chapterLine = chapter ? chapterOf(chapter, path.chapterCount) : null;
   // Said as it is: an activity already open, a path under way, or a first step.
   const go = next.status === "IN_PROGRESS" ? e.keepPlaying : path.completedSteps > 0 ? e.continueLearning : m.home.play;
+  const travel = useTravel();
   return (
     <div className="flex flex-col gap-2.5 rounded-[24px] bg-[#FFFDF8]/95 p-5 shadow-lift ring-1 ring-tonle-950/5 backdrop-blur-sm sm:p-6">
       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-sky-deep">
@@ -273,7 +274,12 @@ function ContinueCard({ childId, path }: { childId: string; path: EnrollmentOver
       <p className="text-base font-bold text-tonle-900">{e.next(next.title)}</p>
       <p className="line-clamp-2 text-sm leading-relaxed text-ink-soft">{childReason(next)}</p>
       {chapter && chapter.totalSteps > 0 && <ChapterDots done={chapter.completedSteps} total={chapter.totalSteps} label={e.stepsLeft(chapter.completedSteps, chapter.totalSteps)} />}
-      <Link to={`/learn/${childId}/play/${path.enrollmentId}`} className={cn(goButton, "mt-1 w-full justify-center pl-3 pr-7 text-lg")}>
+      {/* EXP-1: starting the activity goes into it - the scene zooms in toward the path and gives way to the book. */}
+      <Link
+        to={`/learn/${childId}/play/${path.enrollmentId}`}
+        onClick={travel(`/learn/${childId}/play/${path.enrollmentId}`, { x: 50, y: 78 })}
+        className={cn(goButton, "mt-1 w-full justify-center pl-3 pr-7 text-lg")}
+      >
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
           <Play size={19} fill="currentColor" aria-hidden className="translate-x-px" />
         </span>

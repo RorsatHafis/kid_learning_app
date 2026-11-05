@@ -2859,3 +2859,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   instead of on it. **Tested**: child Vitest 63/63, tsc, eslint. **Browser verified** (production build, 1280 px, a new
   sample family): one view transition on entering Maths, origin at the bridge (43% 46%), arrival at the bridge scene;
   with reduced motion none ran and the link still went there.
+- 2026-11-05: **EXP-1 slice 1 - starting an activity goes into it.** The player already moves with meaning (the
+  introduction and completion pop in, questions turn like pages, a right answer bursts, the streak flame grows); the
+  step into it was a plain page change. Play (on the village and in a place) now uses the same travel transition: the
+  scene zooms in toward the path and gives way to the activity's introduction. Ordinary link without support or with
+  reduced motion. **Tested**: child Vitest 63/63. **Browser verified** (production build): village -> bridge -> Play:
+  two view transitions, the activity's "Let's go" introduction reached; with reduced motion none, same destination.
