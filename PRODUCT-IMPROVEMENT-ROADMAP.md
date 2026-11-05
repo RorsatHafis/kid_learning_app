@@ -2981,3 +2981,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   could be dragged sideways). Their sideways reach is now kept within the screen (`clamp(-44vw, x, 44vw)`) instead
   of clipping the page. **Browser verified** (dev server, a whole activity at 360 px): completion page 360/360 px;
   the question screen settles at 0 px overflow.
+- 2026-11-05: **Sign-in pages at 360 px, EN and KM: clean; one small target enlarged.** login, register, forgot,
+  reset and verify (expired-link state): no overflow or console errors in either language. The forgot page's
+  inline "use your phone / your email instead" buttons were 20 px tall; their hit area is now 44 px (padding with a
+  matching negative margin - the text doesn't move). The 32 px language buttons meet WCAG 2.5.8 (24 px) and stay.
+  Also: the public try lesson played to completion at 360 px - no overflow or errors.

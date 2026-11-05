@@ -77,7 +77,7 @@ export function ForgotPasswordPage() {
       <AuthLayout title={f.title} subtitle={p.subtitle}>
         <PhoneReset />
         <p className="mt-6 text-center text-sm">
-          <button type="button" onClick={() => setByPhone(false)} className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+          <button type="button" onClick={() => setByPhone(false)} className="-my-3 inline-block rounded py-3 font-semibold text-tonle-700 underline-offset-4 hover:underline">
             {p.useEmail}
           </button>
         </p>
@@ -107,7 +107,7 @@ export function ForgotPasswordPage() {
         </Button>
       </form>
       <p className="mt-4 text-center text-sm">
-        <button type="button" onClick={() => setByPhone(true)} className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+        <button type="button" onClick={() => setByPhone(true)} className="-my-3 inline-block rounded py-3 font-semibold text-tonle-700 underline-offset-4 hover:underline">
           {p.usePhone}
         </button>
       </p>
