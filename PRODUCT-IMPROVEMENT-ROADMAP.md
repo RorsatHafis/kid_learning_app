@@ -3010,3 +3010,6 @@ Then defects, then simplification. Push at the end of the window; CI once.
   One view transition per move, no extra page fade. **Tested**: child Vitest 66/66. **Browser verified** (dev
   server): enter-child, step-in (shelf), step-out, step-in (buddy), step-out - attribute cleared, back on the
   village; none with reduced motion.
+- 2026-11-05: **Simplification - one transition link.** `StepLink` and `EnterChildLink`'s own handler merged into
+  `components/motion/TransitionLink` (kind + optional preload); `EnterChildLink` is now a two-line wrapper
+  (enter-child + child-area preload). Same behaviour (browser re-run identical), child + parent Vitest 144/144.

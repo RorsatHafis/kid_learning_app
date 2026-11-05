@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type MouseEvent } from "react";
-import { StepLink } from "./StepLink";
+import { TransitionLink } from "@/components/motion/TransitionLink";
 import { BuddyButton, useBuddyHello } from "./BuddyHello";
 import { handOver, plainClick } from "@/components/motion/handOver";
 import { useGrowth } from "./growth";
@@ -259,13 +259,13 @@ function Entrance({ childId, name, paths }: { childId: string; name?: string; pa
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <StepLink
+        <TransitionLink
           to={`/learn/${childId}/shelf`}
-          direction="in"
+          kind="step-in"
           className="inline-flex min-h-12 w-fit items-center gap-2 rounded-pill bg-white px-5 text-sm font-bold text-tonle-800 shadow-tight ring-1 ring-tonle-950/5 transition-colors duration-150 ease-out hover:bg-tonle-50"
         >
           <Library size={17} aria-hidden /> {m.myShelf}
-        </StepLink>
+        </TransitionLink>
         <GardenGlimpse childId={childId} skills={skills.data} />
       </div>
     </section>
@@ -503,12 +503,12 @@ function JourneyStage({
               <div className="flex flex-col gap-3 rounded-[24px] bg-[#FFFDF8]/95 p-5 shadow-lift ring-1 ring-tonle-950/5 sm:p-6">
                 <p className="text-lg font-bold leading-snug text-tonle-950">{m.home.allDone}</p>
                 <BooksLit growthKey={`${overview.enrollmentId}:path`} done={overview.completedSteps} total={overview.totalSteps} label={m.home.litOnPath} />
-                <StepLink to={`/learn/${childId}/shelf`} direction="in" className={cn(goButton, "w-full justify-center pl-2.5 pr-7")}>
+                <TransitionLink to={`/learn/${childId}/shelf`} kind="step-in" className={cn(goButton, "w-full justify-center pl-2.5 pr-7")}>
                   <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
                     <Library size={20} aria-hidden />
                   </span>
                   {m.home.seeShelf}
-                </StepLink>
+                </TransitionLink>
               </div>
             )}
           </div>
