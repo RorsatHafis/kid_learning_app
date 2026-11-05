@@ -2996,3 +2996,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   far): `features/marketing/copyPreview` (notice, leave), `features/admin/operations/siteCopy` (preview,
   previewHint), `features/child/entrance` (sayHello), plus the earlier `streak`, FAQ seed (V86) and landing
   `noLimit/pricesFailed/ages/failed/more/faq` keys. Native review before real families, as for the rest.
+- 2026-11-05: **STREAK-1 - the home/shelf milestone moment: held for the owner.** The completion screen already
+  celebrates a milestone (3, 7, 14...) the moment it is reached; repeating it on the home seconds later adds
+  nothing, and a "best streak" on the shelf would show a child what they lost when the count restarts - against
+  the approved "no guilt" rule. Not built; if wanted, say which (and whether "best" may ever be shown).
