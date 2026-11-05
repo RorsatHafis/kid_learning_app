@@ -893,7 +893,7 @@ function Question({
 
 /**
  * A moment of light when the work was all right or a chapter ends: motes of marigold and lotus rise
- * from the page and fade. Purely decorative (hidden from assistive tech) and gone under reduced motion.
+ * from the page and fade - never further sideways than the screen is wide (a phone must not scroll). Purely decorative (hidden from assistive tech) and gone under reduced motion.
  */
 function Celebration() {
   const motes = Array.from({ length: 18 }, (_, i) => {
@@ -907,7 +907,7 @@ function Celebration() {
         <span
           key={i}
           className={cn("absolute h-2.5 w-2.5 rounded-full animate-burst", mote.lotus ? "bg-lotus" : "bg-light-glow shadow-[0_0_12px_rgba(255,210,122,0.9)]")}
-          style={{ "--bx": `${mote.bx}px`, "--by": `${mote.by}px`, animationDelay: `${mote.delay}ms`, animationDuration: "1100ms" } as React.CSSProperties}
+          style={{ "--bx": `clamp(-44vw, ${mote.bx}px, 44vw)`, "--by": `${mote.by}px`, animationDelay: `${mote.delay}ms`, animationDuration: "1100ms" } as React.CSSProperties}
         />
       ))}
     </span>

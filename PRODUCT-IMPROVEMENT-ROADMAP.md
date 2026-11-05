@@ -2976,3 +2976,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   640; no overflow. **Tested**: child + i18n Vitest.
   Same pass: the chapter's eight step dots wrapped at 360 px ("8" alone on a second row); below 400 px they are
   28 px with a 4 px gap - one row at 360/390/640 (browser verified).
+- 2026-11-05: **Defect fixed - finishing an activity made a phone's page scroll sideways.** The completion
+  celebration's motes reach up to 212 px from the centre, past the edge of a 360 px screen (page 399 px wide, so it
+  could be dragged sideways). Their sideways reach is now kept within the screen (`clamp(-44vw, x, 44vw)`) instead
+  of clipping the page. **Browser verified** (dev server, a whole activity at 360 px): completion page 360/360 px;
+  the question screen settles at 0 px overflow.
