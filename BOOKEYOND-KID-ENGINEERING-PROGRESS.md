@@ -569,6 +569,18 @@ reuses the container name of another local project.
 
 # CURRENT VERIFIED PROJECT STATE
 
+> **Update 2026-11-05 (third window).** Pushed `962bfd6`; local after it (not yet pushed): `033af22`..`3871b94`.
+> Built: **WORLD-1** each subject's place in its own scene with its landmark (blurred painting crop, atmosphere,
+> living foreground, parallax), village -> place travel; **EXP-1** Play goes into the activity, dialogs leave
+> (`usePresence`), parent <-> child hand-over both ways (`handOver.ts`), steps and buds lit since light up
+> (`growth.ts`, memory only), the child's tab pill slides, parents' progress bars fill; **STREAK-1** slice 2 (family
+> home line); **FLEX-1** checked; **LAND-1** preview of site words before publishing (editor's own browser only).
+> Verified locally: backend unit 209/209; Vitest 525/525 (`--maxWorkers=4` - default workers time out unrelated
+> studio tests at 5 s on this loaded machine); tsc, eslint, production build; browser checks per item (roadmap) and a
+> console/API/overflow sweep of 15 pages at 1280 and 390 px - clean. Not run this window: full backend integration
+> suite, full e2e (CI runs both). **Owner art needed** for further WORLD-1 places (rice fields, gardens): landmark
+> paintings in the Figma style - science/arts/others share the lotus pond until then (no stand-in drawings).
+>
 > **Update 2026-11-04 (second window, owner direction "features first, then experience").** Pushed `75d54b8`.
 > Built: **STREAK-1** slice 1 (learning streak on the child's learning day - was UTC; live count; flame in the child
 > header, a moment after each activity, milestones; reduced motion still); **LAND-1** hero composition (fits short

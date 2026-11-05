@@ -2931,3 +2931,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   chapter bars fill from the left (`fill-bar`, 700 ms, scale only - no layout work) to the server's share; the
   numbers beside them are unchanged and read first. Reduced motion: drawn full at once. **Tested**: parent Vitest.
   **Browser verified** (dev server, 1280 and 390 px): the family home's bar runs `fill-bar` on arrival.
+- 2026-11-05: **WORLD-1 - what further places need: the owner's artwork.** Rice fields and gardens (owner direction)
+  need landmark paintings in the Figma style of the existing four (bridge, pavilion, treehouse, pond); drawn
+  stand-ins looked cheap and were removed earlier. Until then every subject beyond Maths, Khmer and English stands at
+  the lotus pond. Adding a place is one entry in `features/world/places.ts` plus its scene in `PlaceWorld.tsx`.
+  **Checkpoint**: backend unit 209/209, Vitest 525/525, tsc, eslint, production build - all local.
