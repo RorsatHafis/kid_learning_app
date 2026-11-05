@@ -34,7 +34,16 @@ export function TransitionLink({
     if (handOver(kind, () => navigate(to), preload)) event.preventDefault();
   }
   return (
-    <Link to={to} onClick={go} className={className} {...rest}>
+    <Link
+      to={to}
+      onClick={go}
+      // The destination's code starts downloading as soon as the link is pointed at or focused, so the transition
+      // rarely waits for it.
+      onPointerEnter={preload ? () => void preload().catch(() => undefined) : undefined}
+      onFocus={preload ? () => void preload().catch(() => undefined) : undefined}
+      className={className}
+      {...rest}
+    >
       {children}
     </Link>
   );

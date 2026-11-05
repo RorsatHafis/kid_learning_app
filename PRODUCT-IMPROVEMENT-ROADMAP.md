@@ -3026,3 +3026,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   village idle, a place arriving (blurred painting, foreground, landmark rise) and the place idle all run at
   16.7 ms per frame (p95 16.8 ms), no frame over 50 ms. No change needed; real low-end devices remain to be tried
   (OD: device lab).
+- 2026-11-05: **The hand-over rarely waits.** A `TransitionLink` with a preload (the parent's "Start <child>'s
+  session") starts downloading the child area as soon as it is pointed at or focused, so the up-to-600 ms wait
+  before the transition is usually already over by the click. **Tested**: parent + components Vitest 92/92.
+  **Browser verified**: enter-child / leave-child unchanged, none with reduced motion.
