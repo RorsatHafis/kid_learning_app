@@ -9,6 +9,8 @@ import { buddyMessages } from "@/features/buddy/buddy.messages";
 import { isMuted, setMuted } from "@/features/buddy/sound";
 import type { LearningBuddyKind } from "@/lib/api/types";
 import { cn } from "@/lib/utils/cn";
+import { handOver } from "@/components/motion/handOver";
+import { loadParentArea } from "@/routes/areas";
 import { useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
 import { chip } from "./chips";
@@ -131,7 +133,8 @@ function GrownUpGate({ to }: { to: string }) {
     setHolding(true);
     timer.current = window.setTimeout(() => {
       timer.current = null;
-      navigate(to);
+      // EXP-1: the child's world gives way and the grown-up page settles in (or, without motion, just goes)
+      if (!handOver("leave-child", () => navigate(to), loadParentArea)) navigate(to);
     }, HOLD_MS);
   }
 

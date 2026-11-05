@@ -2900,3 +2900,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   reduced motion or a modified click. **Tested**: parent + child Vitest 141/141. **Browser verified** (dev server,
   new local test family): one `enter-child` transition, mid-frame shows the world arriving over the parent page;
   with reduced motion none, same destination.
+- 2026-11-05: **EXP-1 - and back to the grown-ups.** Completing the press-and-hold "Grown-ups" gate now lets the
+  child's world give way (it lifts a little as it fades) while the grown-up page settles in (`leave-child`). Both
+  directions share `components/motion/handOver.ts` (support/reduced-motion check, area preload, attribute cleanup);
+  the village scene's own transition name moves with the page during a hand-over instead of its travel zoom.
+  **Tested**: parent + child + components Vitest. **Browser verified** (dev server): `enter-child` then
+  `leave-child`, back on the child's overview, attribute cleared; with reduced motion no transitions either way.

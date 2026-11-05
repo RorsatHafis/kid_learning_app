@@ -203,3 +203,29 @@ html[data-transition="enter-child"]::view-transition-new(root) {
     opacity: 0;
   }
 }
+/* ...and back: the child's world gives way (it lifts a little as it fades) and the grown-up page settles in. */
+html[data-transition="leave-child"]::view-transition-old(root) {
+  animation: hand-back-out 300ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+html[data-transition="leave-child"]::view-transition-new(root) {
+  animation: hand-back-in 420ms cubic-bezier(0.2, 0, 0, 1) 100ms both;
+}
+@keyframes hand-back-out {
+  to {
+    transform: scale(1.04);
+    opacity: 0;
+  }
+}
+@keyframes hand-back-in {
+  from {
+    transform: scale(0.98);
+    opacity: 0;
+  }
+}
+/* The village scene has its own transition name (WORLD-1's travel); during a hand-over it moves with the page. */
+html[data-transition="enter-child"]::view-transition-new(world) {
+  animation: hand-over-in 520ms cubic-bezier(0.2, 0, 0, 1) 120ms both;
+}
+html[data-transition="leave-child"]::view-transition-old(world) {
+  animation: hand-back-out 300ms cubic-bezier(0.4, 0, 1, 1) both;
+}
