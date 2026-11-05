@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { TransitionLink } from "@/components/motion/TransitionLink";
 import { BuddyButton, useBuddyHello } from "./BuddyHello";
-import { handOver, plainClick } from "@/components/motion/handOver";
 import { useGrowth } from "./growth";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Moon, Play } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -148,21 +147,15 @@ function villageAnchor(paths: EnrollmentOverview[], path: EnrollmentOverview) {
  */
 function BackToSubjects({ childId, anchor }: { childId: string; anchor?: { x: number; y: number } }) {
   const e = useMessages(entranceMessages);
-  const navigate = useNavigate();
-  const to = `/learn/${childId}`;
-  function back(event: MouseEvent<HTMLAnchorElement>) {
-    if (!anchor || !plainClick(event)) return;
-    document.documentElement.style.setProperty("--travel-origin", `${anchor.x}% ${anchor.y}%`);
-    if (handOver("travel-back", () => navigate(to))) event.preventDefault();
-  }
   return (
-    <Link
-      to={to}
-      onClick={back}
+    <TransitionLink
+      to={`/learn/${childId}`}
+      kind={anchor ? "travel-back" : "step-out"}
+      origin={anchor}
       className="-mt-1 inline-flex min-h-11 w-fit items-center gap-2 rounded-pill bg-tonle-50 px-4 text-sm font-semibold text-tonle-800 ring-1 ring-tonle-100 transition-colors duration-150 ease-out hover:bg-tonle-100"
     >
       <LayoutGrid size={16} aria-hidden /> {e.allSubjects}
-    </Link>
+    </TransitionLink>
   );
 }
 
@@ -282,7 +275,6 @@ function ContinueCard({ childId, path }: { childId: string; path: EnrollmentOver
   const chapterLine = chapter ? chapterOf(chapter, path.chapterCount) : null;
   // Said as it is: an activity already open, a path under way, or a first step.
   const go = next.status === "IN_PROGRESS" ? e.keepPlaying : path.completedSteps > 0 ? e.continueLearning : m.home.play;
-  const travel = useTravel();
   return (
     <div className="flex flex-col gap-2.5 rounded-[24px] bg-[#FFFDF8]/95 p-5 shadow-lift ring-1 ring-tonle-950/5 backdrop-blur-sm sm:p-6">
       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-sky-deep">
@@ -296,16 +288,17 @@ function ContinueCard({ childId, path }: { childId: string; path: EnrollmentOver
       <p className="line-clamp-2 text-sm leading-relaxed text-ink-soft">{childReason(next)}</p>
       {chapter && chapter.totalSteps > 0 && <ChapterDots growthKey={`${path.enrollmentId}:${chapter.id}`} done={chapter.completedSteps} total={chapter.totalSteps} label={e.stepsLeft(chapter.completedSteps, chapter.totalSteps)} />}
       {/* EXP-1: starting the activity goes into it - the scene zooms in toward the path and gives way to the book. */}
-      <Link
+      <TransitionLink
         to={`/learn/${childId}/play/${path.enrollmentId}`}
-        onClick={travel(`/learn/${childId}/play/${path.enrollmentId}`, { x: 50, y: 78 })}
+        kind={null}
+        origin={{ x: 50, y: 78 }}
         className={cn(goButton, "mt-1 w-full justify-center pl-3 pr-7 text-lg")}
       >
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-tonle-900 text-light">
           <Play size={19} fill="currentColor" aria-hidden className="translate-x-px" />
         </span>
         {go}
-      </Link>
+      </TransitionLink>
     </div>
   );
 }
@@ -341,31 +334,19 @@ function ChapterDots({ growthKey, done, total, label }: { growthKey: string; don
 }
 
 /** A subject's place on the painting: its name, where it is, and how it stands - the way in on a large screen. */
-/**
- * WORLD-1: going into a place travels there - the village zooms toward the place's landmark and the place settles in
- * (a view transition, styled in index.css). Without the browser's support, or with reduced motion, it is an ordinary
- * link. BrowserRouter has no view-transition support of its own, so the navigation runs inside the transition here.
- */
-function useTravel() {
-  const navigate = useNavigate();
-  return (to: string, anchor: { x: number; y: number }) => (event: MouseEvent<HTMLAnchorElement>) => {
-    if (!plainClick(event)) return;
-    document.documentElement.style.setProperty("--travel-origin", `${anchor.x}% ${anchor.y}%`);
-    if (handOver(null, () => navigate(to))) event.preventDefault();
-  };
-}
-
+/* WORLD-1: going into a place travels there - the village zooms toward the place's landmark (`origin`) and the place
+   settles in (TransitionLink, the `world` transition in index.css). */
 function PlaceMarker({ childId, path, placeName, here, anchor }: { childId: string; path: EnrollmentOverview; placeName: string; here: boolean; anchor: { x: number; y: number } }) {
   const e = useMessages(entranceMessages);
   const t = subjectTheme(path.curriculum.subjectCode, path.curriculum.subjectName);
   const subject = path.curriculum.subjectName ?? path.curriculum.name;
   const state = path.nextStep === null ? e.allDone : path.completedSteps === 0 ? e.start : e.booksLit(path.completedSteps, path.totalSteps);
-  const travel = useTravel();
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <Link
+      <TransitionLink
         to={`/learn/${childId}?path=${path.enrollmentId}`}
-        onClick={travel(`/learn/${childId}?path=${path.enrollmentId}`, anchor)}
+        kind={null}
+        origin={anchor}
         aria-label={e.goTo(subject, placeName, state)}
         className="group flex min-h-12 items-center gap-2.5 rounded-[16px] bg-[#FFFDF8]/95 py-2 pl-2 pr-3.5 shadow-lift ring-1 ring-tonle-950/10 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 focus-visible:-translate-y-0.5 motion-reduce:hover:translate-y-0"
       >
@@ -379,7 +360,7 @@ function PlaceMarker({ childId, path, placeName, here, anchor }: { childId: stri
           </span>
         </span>
         <ArrowRight size={16} aria-hidden className="text-tonle-700 transition-transform duration-200 group-hover:translate-x-0.5" />
-      </Link>
+      </TransitionLink>
       {here && (
         <span aria-hidden className="rounded-pill bg-tonle-900 px-2.5 py-1 text-[0.7rem] font-bold uppercase tracking-[0.1em] text-light shadow-tight">
           {e.youAreHere}
@@ -399,12 +380,12 @@ function SubjectDoor({ childId, path, art, placeName, anchor }: { childId: strin
   const total = Math.min(path.totalSteps, 10);
   const done = path.totalSteps > 0 ? Math.round((path.completedSteps / path.totalSteps) * total) : 0;
   const next = path.nextStep;
-  const travel = useTravel();
   return (
     <li className="min-w-0">
-      <Link
+      <TransitionLink
         to={`/learn/${childId}?path=${path.enrollmentId}`}
-        onClick={travel(`/learn/${childId}?path=${path.enrollmentId}`, anchor)}
+        kind={null}
+        origin={anchor}
         aria-label={e.goTo(subject, placeName, state)}
         className="group flex h-full items-stretch overflow-hidden rounded-[26px] bg-[#FFFDF8] shadow-lift ring-1 ring-tonle-950/5 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 active:translate-y-0 motion-reduce:hover:translate-y-0"
       >
@@ -437,7 +418,7 @@ function SubjectDoor({ childId, path, art, placeName, anchor }: { childId: strin
           )}
           {!next && path.completedSteps > 0 && <span className="mt-auto text-sm font-semibold text-ink-soft">{e.replay}</span>}
         </span>
-      </Link>
+      </TransitionLink>
     </li>
   );
 }

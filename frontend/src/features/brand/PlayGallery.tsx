@@ -205,7 +205,7 @@ const items: { item: ActivityItem; results: (AnswerResult | null)[] }[] = [
   },
 ];
 
-/** EXP-1: the shared dialog, to review its arrival and its exit. */
+/** EXP-1: the shared dialog, to review its arrival. */
 function DialogSpecimen() {
   const [open, setOpen] = useState(false);
   return (
@@ -213,7 +213,7 @@ function DialogSpecimen() {
       <Button type="button" onClick={() => setOpen(true)} data-review="open-dialog">
         Open the dialog
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="A dialog" description="It arrives, and when closed it settles back and fades.">
+      <Dialog open={open} onClose={() => setOpen(false)} title="A dialog" description="It arrives; it closes at once, so the page is never left inert.">
         <p>Close it with the button, Escape or the backdrop.</p>
       </Dialog>
     </div>

@@ -3013,3 +3013,12 @@ Then defects, then simplification. Push at the end of the window; CI once.
 - 2026-11-05: **Simplification - one transition link.** `StepLink` and `EnterChildLink`'s own handler merged into
   `components/motion/TransitionLink` (kind + optional preload); `EnterChildLink` is now a two-line wrapper
   (enter-child + child-area preload). Same behaviour (browser re-run identical), child + parent Vitest 144/144.
+- 2026-11-05: **Defect found by CI and fixed - the dialog exit kept the page inert.** CI on `4c6bea8`: backend,
+  frontend and deployment green; e2e failed on the phone run of `plan-journey` ("Find family" never enabled). Cause:
+  my dialog exit (2642d03) kept the closing `<dialog>` modal for 150 ms, so the page behind stayed inert and the
+  email typed right after the password dialog closed went into the dialog - the search box stayed empty. A closing
+  modal must release the page at once: the shared Dialog closes immediately again (its backdrop still fades in on
+  opening). The child's "Show me again" card keeps its exit - it is not a modal `<dialog>` and focus returns to its
+  button at once. `usePresence` stays for non-modal surfaces only. Also merged: village travel, Play and the way
+  back use `TransitionLink` (origin option), `useTravel` removed. **Tested**: components/admin/parent Vitest 200/200,
+  child + parent 144/144; travel re-checks identical. **Browser verified**: dialog gone 20 ms after closing.
