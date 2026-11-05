@@ -3030,3 +3030,11 @@ Then defects, then simplification. Push at the end of the window; CI once.
   session") starts downloading the child area as soon as it is pointed at or focused, so the up-to-600 ms wait
   before the transition is usually already over by the click. **Tested**: parent + components Vitest 92/92.
   **Browser verified**: enter-child / leave-child unchanged, none with reduced motion.
+- 2026-11-05: **CHECKPOINT (end of window 3) - next window starts here.** Pushed through `ab1d9ad` (CI for the
+  last pushes not checked by the owner's instruction; `962bfd6` green; `4c6bea8` e2e red - fixed in `dd93c92`,
+  check CI on the head first). Done this window: WORLD-1 places + travel in/out + corners step in/out; EXP-1 Play
+  into the activity, hand-over both ways (preloaded), steps/buds lit since, tab pill, bars fill, buddy answers a
+  tap; LAND-1 preview, inventory, long-headline and Khmer hero fixes; STREAK-1 parent line; defects at 360 px
+  (top bar, dots, celebration overflow, chosen tab, auth targets). Held for the owner: streak milestone on
+  home/shelf (and whether "best" may show); landmark art for more places. Next: check CI; then Priority 3/4 -
+  staff workspaces at 360 px (needs an authenticator code), further simplification of ChildHome.tsx (large).
