@@ -2936,3 +2936,12 @@ Then defects, then simplification. Push at the end of the window; CI once.
   stand-ins looked cheap and were removed earlier. Until then every subject beyond Maths, Khmer and English stands at
   the lotus pond. Adding a place is one entry in `features/world/places.ts` plus its scene in `PlaceWorld.tsx`.
   **Checkpoint**: backend unit 209/209, Vitest 525/525, tsc, eslint, production build - all local.
+- 2026-11-05: **LAND-1 inventory done - every landing text is editable, except the product's own words.** Editable
+  EN/KM in Operations -> Landing page: all of `features/marketing` and `trust` (nav, hero, CTAs, every section
+  heading and description, plans framing, footer), the questions (FAQ, `site_faq`), what families said
+  (statements/testimonials, M2, with who said it and permission), plans and subjects (from their records), with
+  preview before publishing. Deliberately **not** landing copy, because they are the product's own words shown as
+  the product shows them: the buddies' names and lines (`buddy`), the sample's standing and evidence labels
+  (`learning`: "Progressing", "Enough evidence"...), and the menu buttons' labels (`common`). Changing them on the
+  landing alone would show families words the product doesn't use. The page carries no statistics. Layout with
+  longer and shorter words: checked for the hero (LAND-1 slice 1) and the FAQ in Khmer at 390 px.
