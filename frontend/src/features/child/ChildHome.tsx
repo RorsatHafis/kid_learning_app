@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, type MouseEvent } from "react";
+import { useGrowth } from "./growth";
 import { flushSync } from "react-dom";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowRight, BookOpen, Check, LayoutGrid, Library, Moon, Play } from "lucide-react";
@@ -273,7 +274,7 @@ function ContinueCard({ childId, path }: { childId: string; path: EnrollmentOver
       {chapter && <h2 className="font-display text-[1.75rem] font-bold leading-tight text-tonle-950">{chapter.title}</h2>}
       <p className="text-base font-bold text-tonle-900">{e.next(next.title)}</p>
       <p className="line-clamp-2 text-sm leading-relaxed text-ink-soft">{childReason(next)}</p>
-      {chapter && chapter.totalSteps > 0 && <ChapterDots done={chapter.completedSteps} total={chapter.totalSteps} label={e.stepsLeft(chapter.completedSteps, chapter.totalSteps)} />}
+      {chapter && chapter.totalSteps > 0 && <ChapterDots growthKey={`${path.enrollmentId}:${chapter.id}`} done={chapter.completedSteps} total={chapter.totalSteps} label={e.stepsLeft(chapter.completedSteps, chapter.totalSteps)} />}
       {/* EXP-1: starting the activity goes into it - the scene zooms in toward the path and gives way to the book. */}
       <Link
         to={`/learn/${childId}/play/${path.enrollmentId}`}
@@ -290,18 +291,23 @@ function ContinueCard({ childId, path }: { childId: string; path: EnrollmentOver
 }
 
 /** The chapter's steps as dots - done (a tick), the one now (its number), still to come - with the count in words. */
-function ChapterDots({ done, total, label }: { done: number; total: number; label: string }) {
+/** The chapter's steps as dots; coming back with more done, the ones done since light up in turn (EXP-1). */
+function ChapterDots({ growthKey, done, total, label }: { growthKey: string; done: number; total: number; label: string }) {
   const shown = Math.min(total, 8);
+  const from = useGrowth(growthKey, done);
   return (
     <div className="flex flex-col gap-1.5" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={label}>
       <div aria-hidden className="flex flex-wrap gap-1.5">
         {Array.from({ length: shown }, (_, i) => (
           <span
             key={i}
+            style={from !== null && i >= from && i <= done ? { animationDelay: `${300 + (i - from) * 160}ms` } : undefined}
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
               i < done && "bg-palm text-white",
+              from !== null && i >= from && i < done && "motion-safe:animate-light-up",
               i === done && "bg-tonle-900 text-light ring-4 ring-light/40",
+              from !== null && i === done && "motion-safe:animate-pop-in",
               i > done && "border-2 border-dashed border-tonle-300 text-ink-faint",
             )}
           >

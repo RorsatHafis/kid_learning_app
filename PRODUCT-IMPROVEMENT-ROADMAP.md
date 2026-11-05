@@ -2906,3 +2906,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   the village scene's own transition name moves with the page during a hand-over instead of its travel zoom.
   **Tested**: parent + child + components Vitest. **Browser verified** (dev server): `enter-child` then
   `leave-child`, back on the child's overview, attribute cleared; with reduced motion no transitions either way.
+- 2026-11-05: **EXP-1 - coming back, the steps done since light up.** The chapter's step dots on the child's place
+  remember (in memory, this tab only - `features/child/growth.ts`, nothing stored) how many were done when last
+  shown; coming back with more done, those steps light up one after another and the next step pops in after them.
+  First sight, reloads and unchanged progress don't animate; the count is always the server's. **Tested**: new
+  `growth.test.tsx` (2); child Vitest 65/65 (+2). **Browser verified** (dev server, new local test family): place ->
+  Play -> finish -> "My path": one `light-up` running on the step just done.
