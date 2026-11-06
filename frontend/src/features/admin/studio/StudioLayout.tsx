@@ -1,4 +1,6 @@
-import { NavLink, Outlet, useNavigate, useParams } from "react-router-dom";
+import { useLayoutEffect, useRef } from "react";
+import { NavLink, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { keepInView } from "@/lib/utils/keepInView";
 import { Arrival } from "@/components/motion/Arrival";
 import { studioApi } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
@@ -23,6 +25,12 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
  */
 export function StudioLayout() {
   const { subjectId = "" } = useParams<{ subjectId: string }>();
+  // On a phone the tabs scroll sideways: the chosen one is kept in view.
+  const tabs = useRef<HTMLElement | null>(null);
+  const { pathname } = useLocation();
+  useLayoutEffect(() => {
+    if (tabs.current) keepInView(tabs.current, tabs.current.querySelector<HTMLElement>('[aria-current="page"]'), tabs.current.clientWidth * 0.18);
+  }, [pathname]);
   const navigate = useNavigate();
   const { base, catalogAdmin } = useStudioScope();
   const subjects = useAsync(() => studioApi.subjects(), []);
@@ -72,8 +80,8 @@ export function StudioLayout() {
         }
       />
 
-      <nav aria-label={m.sections} className="-mx-4 -mt-3 overflow-x-auto border-b border-line pl-4 pr-16 [mask-image:linear-gradient(to_right,black_82%,transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
-        <div className="flex gap-7">
+      <nav ref={tabs} aria-label={m.sections} className="-mx-4 -mt-3 overflow-x-auto border-b border-line pl-4 [mask-image:linear-gradient(to_right,black_82%,transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
+        <div className="flex w-max gap-7 pr-24 sm:w-auto sm:pr-0">
           <NavLink to={`${base}/studio/${subjectId}/catalog`} className={tabClass}>
             {all.skillsAndObjectives}
           </NavLink>

@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { keepInView } from "@/lib/utils/keepInView";
 import { EnterChildLink } from "./EnterChildLink";
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { Arrival } from "@/components/motion/Arrival";
@@ -153,9 +154,7 @@ function ChildTabs({ base }: { base: string }) {
     const place = () => {
       const active = el.querySelector<HTMLElement>('[aria-current="page"]');
       // On a narrow screen the tabs scroll sideways: keep the chosen one in view (sideways only - the page stays).
-      if (active && (active.offsetLeft < el.scrollLeft || active.offsetLeft + active.offsetWidth > el.scrollLeft + el.clientWidth)) {
-        el.scrollLeft = Math.max(0, active.offsetLeft + active.offsetWidth / 2 - el.clientWidth / 2);
-      }
+      keepInView(el, active);
       setPill((before) => (active ? { left: active.offsetLeft, width: active.offsetWidth, moved: before !== null } : null));
     };
     place();

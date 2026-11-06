@@ -308,7 +308,7 @@ export function ComposerPanel({
         }
       }}
       className={cn(
-        "self-start overflow-hidden rounded-[16px] bg-white shadow-[0_12px_32px_-18px_rgba(16,50,58,0.35)] ring-1 ring-tonle-200 motion-safe:animate-rise-in",
+        "w-full self-start overflow-hidden rounded-[16px] bg-white shadow-[0_12px_32px_-18px_rgba(16,50,58,0.35)] ring-1 ring-tonle-200 motion-safe:animate-rise-in",
         className,
       )}
     >

@@ -3110,3 +3110,21 @@ Then defects, then simplification. Push at the end of the window; CI once.
   Code's safety check refused that ("credential materialization"). Next step needs the owner: either allow Bash to read
   that seed file in the Claude Code permission settings, or run the staff checks themselves. Every other open item is
   the owner's (demo lessons + a live family test, place artwork, the streak decision). Production untouched.
+- 2026-11-06: **Staff workspaces at 360 px - checked, two defects fixed (local; production untouched).**
+  How, without the seed credentials: `D:/bk-work/run-staff-phone.sh` (outside the repo) starts a second local backend
+  on its own scratch database `bk_staffcheck` (recreated each run, only after checking it is exactly that database on
+  the isolated cluster D:/bk-work/pgdata:5435), whose one-time admin bootstrap creates a brand-new admin with a
+  password generated in memory for that run - never written, logged or shown. No product code was added for testing,
+  so nothing can be switched on in production. New permanent spec `e2e/staff-phone.spec.ts` (@phone, so CI runs it
+  on the phone project too): a principal signs up, the admin invoices and confirms the school's payment, a class and
+  an invited teacher; then every page each workspace links to is walked - no page may scroll sideways, show a page
+  error or a server error. Run locally at 360 x 780 with a git-excluded `playwright.local.config.ts`.
+  Result: principal 7, teacher 10, admin 24 pages, no overflow/errors. Looked at all 41 pages; fixed:
+  1. Studio tabs (admin and teacher): the chosen tab sat half off-screen (or under the "more" fade) on a phone - it is
+     now scrolled into view, and the tab row ends with room to clear the fade (`StudioLayout`). The child's tabs use
+     the same shared `keepInView` helper now.
+  2. Studio composers: "New lesson" shrank to its content on a phone (`ComposerPanel` was `self-start` without a width)
+     - every composer now fills the column up to its own max width.
+  **Tested**: tsc, eslint, full Vitest 534/534; the spec passed locally at 360 px after the fixes (and the Studio tab
+  pages re-checked by screenshot). Test-runner issues met on the way (missing waits after sign-in and after the email
+  confirmation, the scratch database keeping an earlier run's admin) were fixed in the spec/runner, not the product.
