@@ -3086,3 +3086,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   `ChildStates.tsx` 30 (Waiting/Trouble, shared by home, player, shelf, buddy page - they no longer import the home).
   Imports pruned to what each file uses. **Tested**: tsc, eslint, full Vitest 534/534. Not deployed (local; live stays
   `405718e`).
+- 2026-11-06: **Simplification - the player split: session logic vs screens (no behaviour change).** `PlaySession.tsx`
+  1,122 lines became `PlaySession.tsx` 568 (the path and practice sessions: loading, starting, resuming, finishing,
+  their phases) and `PlayScreens.tsx` 573 (Intro, Question, Completed, the celebration, garden news, journey links,
+  rest/last-one notes, and `findRecordedAnswer` used by the question screen). Screens import the session's types only
+  (`import type`), so there is no runtime cycle. **Tested**: tsc, eslint, full Vitest 534/534, production build.
+  Not deployed (live stays `405718e`).
