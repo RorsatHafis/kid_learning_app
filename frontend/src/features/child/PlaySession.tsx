@@ -139,6 +139,8 @@ export function PlaySession() {
   // React 18 StrictMode runs effects twice in development; without this guard the
   // start call could fire twice in a row for the same path item.
   const loadInFlight = useRef(false);
+  /** WORLD-1: the subject's place for this path, once known - the cover and the completion strip open onto it. */
+  const placeRef = useRef<PlaceKey | undefined>(undefined);
 
   const overviewOfPath = useCallback(async (): Promise<EnrollmentOverview | null | undefined> => {
     try {
@@ -242,6 +244,7 @@ export function PlaySession() {
         });
         const [[activity, overview, today], answers] = await Promise.all([reads, answersOf(attempt)]);
         const next = overview?.nextStep ?? null;
+        if (overview) placeRef.current = placesFor([subjectTheme(overview.curriculum.subjectCode, overview.curriculum.subjectName).motif])[0].key;
 
         const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
         const ordered = { ...activity, items };
@@ -267,8 +270,7 @@ export function PlaySession() {
             : ofThis
               ? () => childReason(ofThis)
               : null;
-          const place = overview ? placesFor([subjectTheme(overview.curriculum.subjectCode, overview.curriculum.subjectName).motif])[0].key : undefined;
-          setPhase({ kind: "intro", attemptId: attempt.id, itemId: item.id, activity: ordered, reason, lastOne: today?.nearEnd ?? false, place });
+          setPhase({ kind: "intro", attemptId: attempt.id, itemId: item.id, activity: ordered, reason, lastOne: today?.nearEnd ?? false, place: placeRef.current });
           return;
         }
         setPhase({
@@ -352,6 +354,7 @@ export function PlaySession() {
       return shell(
         <Completed
           phase={phase}
+          place={placeRef.current}
           childId={childId}
           streakBefore={streakBefore.current}
           journeyHref={journeyHref}

@@ -452,6 +452,7 @@ interface BreakSuggestion {
 
 export function Completed({
   phase,
+  place,
   childId,
   streakBefore,
   journeyHref,
@@ -459,6 +460,8 @@ export function Completed({
   breakSuggestion,
 }: {
   phase: Extract<Phase, { kind: "completed" }>;
+  /** WORLD-1: the subject's place - the books of the path rest on its painting (the river when unknown). */
+  place?: PlaceKey;
   childId: string;
   streakBefore: StreakSummary | null;
   journeyHref: string;
@@ -501,7 +504,11 @@ export function Completed({
           // The child's stretch of the path: the book just finished takes the light where it sits.
           <div className={cn("relative mt-8 overflow-hidden px-4 pt-3", next ? "rounded-t-[22px]" : "rounded-[22px] pb-3")}>
             {/* Y44: the books rest on the painted riverbank. */}
-            <img src={coverArt} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[50%_70%] opacity-70" />
+            {place ? (
+              <PlaceWorld place={place} className="!absolute inset-0 !aspect-auto h-full opacity-80" />
+            ) : (
+              <img src={coverArt} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[50%_70%] opacity-70" />
+            )}
             <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-[#FFFDF8]/30 to-[#FFFDF8]/10" />
             <div className="relative">
               <PathStrip steps={chapterSteps} justLitId={itemId} nextId={nextHere} chapterDone={finishedChapter !== null} />

@@ -57,6 +57,9 @@ test("family on a phone: the family area and the child's space fit the screen @p
     await next.click();
   }
   await page.locator("#done-title").waitFor();
+  // The books of the path rest on the subject's place, not one river for every subject.
+  await expect(page.locator('[data-place="bridge"]')).toBeVisible();
+  if (process.env.STAFF_SHOTS) await page.screenshot({ path: `${process.env.STAFF_SHOTS}/${page.viewportSize()?.width ?? 0}_done.png`, fullPage: true });
   await page.goto(`/learn/${childId}/shelf`);
   await page.getByRole("link", { name: /^Play .+ again$/ }).first().click();
   await page.getByRole("button", { name: "Let's go" }).waitFor();

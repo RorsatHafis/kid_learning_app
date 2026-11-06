@@ -3218,3 +3218,10 @@ Then defects, then simplification. Push at the end of the window; CI once.
     after finishing shows `[data-place="bridge"]`) and a Vitest case.
   - Then: a fresh P3 round - run all specs (desktop project too) through the local runner and fix what appears.
   Local runner: `bash /d/bk-work/run-staff-phone.sh "<spec regex>"` (phone-360 + tablet-768; `STAFF_KM=1` Khmer).
+- 2026-11-06: **WORLD-1 - the completion screen's books rest on the subject's place.** The path session keeps the
+  subject's place once it knows the path (`placeRef`, set for fresh starts and resumes alike); the intro's cover and the
+  completion screen's path strip both use it (`PlaceWorld` behind the books, the river when unknown). So an activity is
+  in its subject's world from its cover to its last screen. **Browser verified** (family-phone at 360 and 768: the done
+  screen shows the bridge; screenshots reviewed). **Tested**: child Vitest, tsc, eslint.
+  Next step from the window-7 checkpoint is therefore done; remaining next independent step: a fresh P3 round (all
+  specs incl. the desktop project through the local runner).
