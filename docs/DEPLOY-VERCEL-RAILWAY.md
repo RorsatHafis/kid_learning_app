@@ -226,3 +226,14 @@ Taking it down: delete the Railway project `bookeyond-kid` (removes the database
   administrator on the live site.
 - Backend now deployed from `64fb163`. A further note: 5 wrong sign-ins lock an account for 15 minutes, growing with
   more attempts (the lockout worked as designed on the owner's account).
+
+### Open issue: rate limits per client are not effective on this hosting (found 2026-11-06)
+- Check 3.4 run live: 22 wrong sign-ins in ~10 s answered 401 every time, through Vercel and straight to Railway;
+  the 21st should be 429. `AuthRateLimitFilter` keys on `getRemoteAddr()`; behind Railway's edge (and Vercel's proxy)
+  the address the backend sees evidently differs per request, so each request gets a fresh budget.
+- Still protecting the pilot: account lockout (5 wrong passwords lock the account, growing) - seen working live.
+  Not limited meanwhile: registration volume and password-reset email requests (Brevo free quota 300/day).
+- Fix needs a redeploy: first log which addresses arrive (X-Forwarded-For chain, remote address), then trust exactly
+  Railway's edge (and, if the browser keeps going through Vercel, Vercel's forwarded client address), or have the
+  browser call Railway directly (CORS, CSP connect-src, absolute media URLs). Not done without the owner's go-ahead
+  (the owner asked not to disrupt the live deployment).
