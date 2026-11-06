@@ -3248,3 +3248,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   lasting contrast defect. `expectNoViolations` now prints the flagged element's HTML with its target, so a recurrence
   names its source - then check that element's hover/transition classes. CI green on `0419b75` (all four jobs,
   including the new staff-phone and family-phone specs).
+- 2026-11-06: **For the Khmer review (PD-14) - new Khmer drafted in windows 4-7** (Claude-drafted, like all Khmer so
+  far): `features/child/messages` streak card (`inARow`, `glowingToday`, `growToday`, `lightIt`, `lightItHow`);
+  `features/child/entrance` place names `garden` ("សួនច្បារ") and `island` ("កោះ"), `sayHello`; the compact language
+  button's "EN" label stays Latin by design. Native review before real families, as for the rest.
