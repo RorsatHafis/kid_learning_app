@@ -3092,3 +3092,15 @@ Then defects, then simplification. Push at the end of the window; CI once.
   rest/last-one notes, and `findRecordedAnswer` used by the question screen). Screens import the session's types only
   (`import type`), so there is no runtime cycle. **Tested**: tsc, eslint, full Vitest 534/534, production build.
   Not deployed (live stays `405718e`).
+- 2026-11-06: **CHECKPOINT (window 4 end) - the next session starts here.** Live: https://bookeyond-kid.vercel.app,
+  deployed from `405718e` (later commits are local refactors, pushed, NOT deployed - deploy only with the owner's
+  go-ahead, from a `git archive` export: see docs/DEPLOY-VERCEL-RAILWAY.md). Done this window: StreakCard (home +
+  shelf), six places (garden, island) + activity covers onto their place + landing cards, deployment (Vercel +
+  Railway + Brevo API email + per-client rate limits), ChildHome and player split. Open, in order:
+  1. Owner: choose demo lessons (Operations), register a test parent with a real address, add a child, play; the
+     agent reads the backend logs meanwhile (`railway logs --service backend` from D:/bk-work/release).
+  2. Staff workspaces (teacher, principal, admin) at 360 px - needs a local stack with the seed admin's authenticator
+     (codes generated inside a script from the seed file, never printed).
+  3. WORLD-1 art from the owner (open-river 1584x672, garden backdrop, rice fields landmark + backdrop).
+  4. Held for the owner: streak milestone on home/shelf beyond the card ("best" never shown, as decided).
+  5. Local dev backend (port 8092) is stopped - restart per the notes before browser checks.
