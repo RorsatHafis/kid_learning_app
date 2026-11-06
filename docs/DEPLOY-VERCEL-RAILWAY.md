@@ -1,8 +1,11 @@
 # Deploying to Vercel (frontend) and Railway (backend + PostgreSQL)
 
-Status (2026-10-20): **prepared, not deployed.** The configuration below is in the repository, but no Vercel or
-Railway project exists yet: creating them needs the owner's accounts, and Railway is a paid service
-(volumes and always-on services need a paid plan). Nothing here has been verified on Vercel or Railway.
+Status (2026-11-06): **deployed for a short pilot (owner: about 10 days, then taken down).**
+- App: https://bookeyond-kid.vercel.app (Vercel project `bookeyond-kid`, team bookeyond)
+- API: https://backend-production-0be94.up.railway.app (Railway project `bookeyond-kid`, service `backend`, Railway trial)
+- Database: Railway PostgreSQL (`postgres.railway.internal`); volume `backend-volume` at `/data`
+- Deployed from clean `git archive` exports of the commits (never the working tree): backend `e9ae5af`, frontend `49aadae`.
+See "Deployment record 2026-11-06" at the end. The text below is the preparation (2026-10-20).
 
 The self-hosted path (Docker Compose behind Caddy) remains documented in [`DEPLOYMENT.md`](../DEPLOYMENT.md).
 
@@ -176,3 +179,38 @@ On the same rehearsal stack, with deletions due at once and a sweep every minute
 Railway bills usage on a paid plan; a volume and an always-on backend plus PostgreSQL need one. Vercel's free
 plan is for personal, non-commercial use; a business serving families may need a paid plan. Check both
 providers' current pricing and approve the spend before creating the projects.
+
+## Deployment record 2026-11-06
+
+How it was done (CLI, the owner signed in; secrets set by the owner's own script, never seen by the agent):
+1. `railway init` (project), `railway add --database postgres`, `railway add --service backend`, volume at `/data`,
+   `railway domain --port 8080`; variables as in section 1 (JWT secret generated and piped in, never printed); the
+   owner ran `D:/bk-work/release/set-secrets.sh` (Brevo SMTP: `MAIL_HOST=smtp-relay.brevo.com`, login, key, sender;
+   the admin password, shown only to the owner).
+2. Backend: `railway up ./backend --path-as-root --service backend` from a `git archive HEAD backend` export. Two
+   fixes on the way: uploading the release root found no Dockerfile (use `--path-as-root`), and Railway refuses
+   BuildKit cache mounts without its own id scheme (removed from `backend/Dockerfile`, e9ae5af).
+3. Frontend: `vercel.json` proxies `/api` to the Railway domain (6509a5d); `vercel deploy --prod` from a
+   `git archive HEAD frontend` export linked to the project.
+4. The first administrator was created by the bootstrap at the first start; then `PLATFORM_BOOTSTRAPADMIN_ENABLED=false`
+   and the password variable deleted.
+
+Verified live (2026-11-06):
+- `/actuator/health` and `/readiness` UP; `/actuator/metrics`, `/actuator/env`, `/api/v1/children` and the payment
+  simulator refused (401). Startup: prod profile, started in 17 s.
+- Migrations: the newest seed (V86 FAQ) is served; plans and the Maths catalog come through the Vercel proxy.
+- Landing in English and Khmer (`lang=km`, Khmer font) at 390 and 1280 px: no horizontal overflow, axe (WCAG A/AA)
+  0 violations, no console errors after the font fix; deep links reload; security headers (CSP, HSTS, frame denial).
+- Defect found live and fixed: Vite inlined a font subset under 4 KB as a `data:` URL and the CSP refused it -
+  fonts are never inlined now (49aadae, redeployed, console clean).
+- The sign-in page renders; a child address without a session goes to sign-in.
+- Try a lesson: empty ("There's no lesson to try right now") until an administrator chooses demo lessons in
+  Operations - by design.
+
+Not verified by the agent (needs accounts on production, which the agent must not create or sign in to):
+registration with real email delivery, the administrator's sign-in (and authenticator enrolment), a parent and child
+journey, an activity played with evidence, uploads through Vercel (largest size), rate limits per client (section 3.4),
+`/data` persisting across a restart. The owner does these; the agent can read the backend logs meanwhile.
+
+Taking it down: delete the Railway project `bookeyond-kid` (removes the database and volume) and the Vercel project
+`bookeyond-kid`. The Railway trial stops the services when its credit or time runs out.

@@ -3071,3 +3071,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   subject beyond Maths, Khmer and English one of those three landmarks in turn (a science card could show the Maths
   bridge). They now use the same mapping as the child's world (`subjectTheme` -> `placeFor`): science the garden,
   the arts the island, others the pond. **Tested**: marketing Vitest 15/15, tsc.
+- 2026-11-06: **DEPLOYED for a short pilot (owner: about 10 days).** https://bookeyond-kid.vercel.app (Vercel) -> /api
+  -> https://backend-production-0be94.up.railway.app (Railway, PostgreSQL, /data volume, trial). The record, what was
+  verified and what the owner still checks: `docs/DEPLOY-VERCEL-RAILWAY.md`, "Deployment record 2026-11-06". Fixed on
+  the way: Dockerfile cache mounts (Railway), fonts inlined as data: URLs refused by the CSP (seen live). Owner next:
+  sign in as administrator, choose demo lessons, register a parent with a real address (Brevo delivery), add a child,
+  play. Development continues from the roadmap checkpoint (the window-4 items above).
