@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import {
   ADMIN_EMAIL,
   ADMIN_PASSWORD,
@@ -11,6 +11,7 @@ import {
   schoolIdByName,
   uniqueEmail,
   waitForEmail,
+  walkPages,
   workspaceLink,
 } from "./support";
 
@@ -19,50 +20,6 @@ import {
  * links to, and no page may scroll sideways, show a page error or a server error. Run on the phone project (and at
  * 360 px locally). The school is set up the way school-journey.spec does it.
  */
-
-/** Visits every same-workspace page reachable by links from `start` (ids kept, so pages really open). */
-async function walk(page: Page, start: string, scope: RegExp, limit = 40): Promise<string[]> {
-  const problems: string[] = [];
-  let current = start;
-  page.on("pageerror", (e) => problems.push(`${current}: page error ${e.message}`));
-  page.on("response", (r) => {
-    if (r.status() >= 500) problems.push(`${current}: ${r.status()} from ${r.url()}`);
-  });
-  const shape = (p: string) => p.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, ":id");
-  const seen = new Set<string>();
-  const queue = [start];
-  while (queue.length > 0 && seen.size < limit) {
-    const path = queue.shift()!;
-    if (seen.has(shape(path))) continue;
-    seen.add(shape(path));
-    current = path;
-    await page.goto(path);
-    await page.waitForLoadState("networkidle");
-    const wide = await page.evaluate(() => {
-      const over = document.documentElement.scrollWidth - document.documentElement.clientWidth;
-      if (over <= 1) return null;
-      // The widest element that sticks out, outside anything that scrolls on its own.
-      const culprits = [...document.querySelectorAll("body *")]
-        .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1)
-        .filter((el) => !el.parentElement?.closest("[class*=overflow-x-auto],[class*=overflow-auto],[class*=overflow-hidden],[class*=overflow-x-clip]"))
-        .slice(0, 3)
-        .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).split(" ").slice(0, 3).join(".")}`);
-      return `${over}px wider (${culprits.join(", ")})`;
-    });
-    if (wide) problems.push(`${path}: ${wide}`);
-    // Locally, STAFF_SHOTS=<folder> keeps a picture of each page for a human look (never set in CI).
-    if (process.env.STAFF_SHOTS) {
-      await page.screenshot({ path: `${process.env.STAFF_SHOTS}/${shape(path).replace(/[/:]+/g, "_")}.png`, fullPage: true });
-    }
-    const hrefs = await page.locator("a[href]").evaluateAll((links) => links.map((l) => l.getAttribute("href") ?? ""));
-    for (const href of hrefs) {
-      const target = href.split("#")[0].split("?")[0];
-      if (target.startsWith("/") && scope.test(target) && !seen.has(shape(target))) queue.push(target);
-    }
-  }
-  expect(problems, `pages visited: ${[...seen].join(", ")}`).toEqual([]);
-  return [...seen];
-}
 
 test("staff on a phone: principal, teacher and administrator pages fit the screen @phone", async ({ page, browser, request }) => {
   test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
@@ -135,9 +92,9 @@ test("staff on a phone: principal, teacher and administrator pages fit the scree
   }
 
   // Every page of each workspace, on this phone.
-  const principalPages = await walk(page, "/principal", /^\/principal/);
-  const teacherPages = await walk(teacher, "/teacher", /^\/teacher/);
-  const adminPages = await walk(admin, "/admin", /^\/admin/, 60);
+  const principalPages = await walkPages(page, "/principal", /^\/principal/);
+  const teacherPages = await walkPages(teacher, "/teacher", /^\/teacher/);
+  const adminPages = await walkPages(admin, "/admin", /^\/admin/, 60);
   console.log(`phone walk: principal ${principalPages.length}, teacher ${teacherPages.length}, admin ${adminPages.length} pages`);
   await teacherContext.close();
   await adminContext.close();

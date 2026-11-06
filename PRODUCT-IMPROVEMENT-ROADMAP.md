@@ -3140,3 +3140,23 @@ Then defects, then simplification. Push at the end of the window; CI once.
   4. Next independent task for the agent: staff workspaces at tablet width (768 px) and the parent area at 768 px -
      run the same spec with a 768 x 1024 project in the local config; fix what it finds.
   Deploying any of this needs the owner's go-ahead (production is the owner's; see docs/DEPLOY-VERCEL-RAILWAY.md).
+- 2026-11-06: **Tablet width (768 px) and the family area - one defect fixed, one under investigation.**
+  - Staff at 768 x 1024 (same spec, local project `tablet-768`): principal 7, teacher 10, admin 24 pages - no overflow
+    or errors; screenshots coherent (checked at contact-sheet scale).
+  - **Fixed**: every family page at 768 px was 159 px wider than the screen - the "Please confirm your email" banner's
+    text was `sm:flex-none`, so the sentence and the address could never wrap. Now `sm:flex-initial` (same look when it
+    fits, wraps when it doesn't). Re-run: the family walk passes at 768 px.
+  - The page walker moved to `e2e/support.ts` (`walkPages`) for the staff and family specs; when nothing outside a
+    scroller sticks out it now names whatever reaches furthest right.
+  - **Under investigation (not fixed)**: at 360 px with phone emulation (Pixel 7 device, isMobile), the activity
+    introduction (`/learn/:child/play/:path`, before "Let's go") is 376 px wide - scrollWidth 376, innerWidth 376
+    (the browser zooms out to fit), clientWidth 360. Measured: no element box and no text run reaches past 360 px;
+    hiding the whole activity sheet (`Page` section) restores 360, hiding any single element inside it does not (the
+    largest single change is 3 px) - so two or more full-width parts overlap, or it is an emulation effect. Without
+    phone emulation the same screen measured 0 px at 360 earlier the same day (cover-check). Next step: bisect in
+    pairs inside the sheet (cover, content, sticky start bar), then try a real phone.
+    `e2e/family-phone.spec.ts` (family area + child's space walk) is written but left uncommitted (untracked) until
+    this is understood, so CI doesn't go red on an unexplained case.
+- 2026-11-06: **CHECKPOINT (window 5 end)** - next task: the 376 px activity-intro case above, then commit
+  `family-phone.spec.ts`. Owner items unchanged (demo lessons + live family test; WORLD-1 art; streak decision).
+  Production untouched (`405718e`).

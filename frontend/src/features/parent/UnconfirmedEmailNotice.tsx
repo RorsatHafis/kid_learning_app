@@ -23,7 +23,7 @@ export function UnconfirmedEmailNotice() {
     <div className="border-b border-tonle-100 bg-tonle-50">
       <p className="mx-auto flex max-w-[1180px] items-start gap-2 px-4 py-2.5 text-sm text-ink sm:items-center sm:px-8">
         <MailWarning size={16} className="mt-0.5 shrink-0 text-tonle-600 sm:mt-0" aria-hidden />
-        <span className="min-w-0 flex-1 sm:flex-none">
+        <span className="min-w-0 flex-1 sm:flex-initial">
           <span className="sm:hidden">{m.short} </span>
           <span className="hidden sm:inline">
             {m.before} <strong className="break-all">{profile.data.email}</strong> {m.after}{" "}
