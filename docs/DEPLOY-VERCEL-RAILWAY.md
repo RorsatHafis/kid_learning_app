@@ -237,3 +237,17 @@ Taking it down: delete the Railway project `bookeyond-kid` (removes the database
   Railway's edge (and, if the browser keeps going through Vercel, Vercel's forwarded client address), or have the
   browser call Railway directly (CORS, CSP connect-src, absolute media URLs). Not done without the owner's go-ahead
   (the owner asked not to disrupt the live deployment).
+
+### Resolved: rate limits per client (2026-11-06)
+- Cause measured with a temporary header echo on Railway (deleted after): Railway forwards `X-Forwarded-For: <client>,
+  <Railway edge>` and the edge address rotates within 152.233.x.x, so the backend took the edge as the client; behind
+  Vercel the client was a rotating Vercel address.
+- Fix: `SERVER_TOMCAT_REMOTEIP_TRUSTED_PROXIES=152\.233\.\d{1,3}\.\d{1,3}` (trust exactly Railway's edge); the browser
+  calls the Railway API directly (`VITE_API_ORIGIN` in Vercel production; `client.ts`), Vercel proxies only
+  `/api/v1/media/*`, the CSP's `connect-src` allows the Railway origin, CORS allows `X-Step-Up` (405718e).
+- Verified live: 30 parallel wrong sign-ins against Railway -> 20 x 401, 10 x 429, logged "from <the real client
+  address>"; POST /api/v1/auth/login through Vercel -> 405; pages at 390 and 1280 px call only the Railway host, no
+  console/CSP/CORS errors; CORS preflight with x-step-up -> 200.
+- If Railway's edge moves out of 152.233.0.0/16, limits fall back to "each request new" (fail-open, not spoofable):
+  re-check with the burst above after any Railway networking change.
+- Deployed: backend and frontend from `405718e`.

@@ -3077,3 +3077,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   the way: Dockerfile cache mounts (Railway), fonts inlined as data: URLs refused by the CSP (seen live). Owner next:
   sign in as administrator, choose demo lessons, register a parent with a real address (Brevo delivery), add a child,
   play. Development continues from the roadmap checkpoint (the window-4 items above).
+- 2026-11-06: **Live fixes after deployment.** Email over Brevo's HTTPS API (Railway's trial blocks SMTP), the owner's
+  admin sign-in verified, and per-client rate limits made effective on Railway (trusted edge + the browser calling the
+  API directly; Vercel proxies media only). Details: `docs/DEPLOY-VERCEL-RAILWAY.md`. Live = `405718e`. Development
+  resumes from the window-4 checkpoint; nothing is redeployed without the owner's say-so.
