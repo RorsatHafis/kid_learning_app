@@ -214,3 +214,15 @@ journey, an activity played with evidence, uploads through Vercel (largest size)
 
 Taking it down: delete the Railway project `bookeyond-kid` (removes the database and volume) and the Vercel project
 `bookeyond-kid`. The Railway trial stops the services when its credit or time runs out.
+
+### Email on Railway (2026-11-06, later the same day)
+- Railway's trial blocks outgoing SMTP: Brevo on 587 and 2525 both timed out ("Connect timed out").
+- Fix (64fb163): `EmailDispatcher` sends over Brevo's HTTPS API when `MAIL_BREVO_API_KEY` is set (SMTP otherwise; real
+  delivery either way; `MAIL_HOST` still required). The owner set the key with `D:/bk-work/release/set-brevo-key.sh`.
+- Brevo then refused the call from Railway's IP ("unrecognised IP address"); the owner authorised Railway's address in
+  Brevo -> Security -> Authorised IPs. **If Railway's outgoing address changes, email stops with a 401 in the log** -
+  authorise the new address in Brevo, or turn the IP restriction off.
+- Verified: a password-reset email "Sent ... (Brevo API)" at 03:15 UTC; the owner reset the password and signed in as
+  administrator on the live site.
+- Backend now deployed from `64fb163`. A further note: 5 wrong sign-ins lock an account for 15 minutes, growing with
+  more attempts (the lockout worked as designed on the owner's account).
