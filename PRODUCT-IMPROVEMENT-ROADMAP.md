@@ -3067,3 +3067,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   2. *Garden* backdrop painting 1584 x 672 (+ 900 x 382) - the garden borrows the river path's bank today.
   3. *Rice fields* place (owner's list): a landmark (transparent PNG, ~640 px wide, like the bridge) and its
      backdrop (1584 x 672 + 900 x 382), then one entry in `places.ts` and its scene in `PlaceWorld.tsx`.
+- 2026-11-06: **WORLD-1 on the landing - each subject shows its own place.** The landing's subject cards gave any
+  subject beyond Maths, Khmer and English one of those three landmarks in turn (a science card could show the Maths
+  bridge). They now use the same mapping as the child's world (`subjectTheme` -> `placeFor`): science the garden,
+  the arts the island, others the pond. **Tested**: marketing Vitest 15/15, tsc.

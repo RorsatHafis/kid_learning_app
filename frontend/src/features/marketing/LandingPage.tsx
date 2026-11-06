@@ -1,4 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { placeFor } from "@/features/world/places";
+import { subjectTheme } from "@/features/learning/subjectTheme";
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpenCheck, Check, Coffee, Download, Hand, Languages, Plus, ShieldCheck, Sprout } from "lucide-react";
 import { PaintedScene } from "@/features/world/PaintedWorld";
@@ -418,9 +420,6 @@ function ForChildren() {
   );
 }
 
-/** A subject's painted place where one was drawn for it; any other subject takes the places in turn. */
-const PLACES: Record<string, PlaceKind> = { MATHS: "bridge", KHMER: "pavilion", ENGLISH: "treehouse" };
-const PLACE_CYCLE: PlaceKind[] = ["bridge", "pavilion", "treehouse"];
 /** The copy's own short description for the first subjects, when the catalog has none. */
 const COPY_TEXT: Record<string, "mathsText" | "khmerText" | "englishText"> = { MATHS: "mathsText", KHMER: "khmerText", ENGLISH: "englishText" };
 
@@ -432,10 +431,11 @@ function Subjects() {
   // At most six on the page - available ones first (the server orders them) - and how many more the app has.
   const SHOWN = 6;
   const hidden = Math.max(0, (catalog.data?.length ?? 0) - SHOWN);
-  const subjects = (catalog.data ?? []).slice(0, SHOWN).map((s, i) => ({
+  const subjects = (catalog.data ?? []).slice(0, SHOWN).map((s) => ({
     key: s.code,
     ready: s.available,
-    place: PLACES[s.code] ?? PLACE_CYCLE[i % PLACE_CYCLE.length],
+    // the same place the child meets for this subject (WORLD-1) - never another subject's landmark
+    place: placeFor(subjectTheme(s.code, s.name).motif).key as PlaceKind,
     name: s.name,
     ages: s.available && s.minAge !== null ? m.ages(s.minAge, s.maxAge) : null,
     text: s.description ?? (COPY_TEXT[s.code] ? m[COPY_TEXT[s.code]] : null),
