@@ -3225,3 +3225,21 @@ Then defects, then simplification. Push at the end of the window; CI once.
   screen shows the bridge; screenshots reviewed). **Tested**: child Vitest, tsc, eslint.
   Next step from the window-7 checkpoint is therefore done; remaining next independent step: a fresh P3 round (all
   specs incl. the desktop project through the local runner).
+- 2026-11-06: **Desktop round (all specs at 1280 px, local): 25 pass, 3 skipped by design (legal, review, preview seed
+  - features off locally), 1 failing - under investigation.** `accessibility.spec.ts` "family and child screens" fails
+  at 1280 px only (passes at 360 and 768): on the add-child review step axe reports `color-contrast (serious)` on an
+  element with class `bg-tonle-900`, white 16 px *normal-weight* text, measured background `#eff6f6`, ratio 1.09.
+  Reproduces on rerun inside that spec; does **not** reproduce in an isolated replay of the same steps (with or without
+  a pause, no animations running). The helper already waits for finite animations. Not the solid button (its label
+  is semibold) and not the child-page tab pill (not on this screen). Leading hypothesis, unconfirmed: a hover state -
+  after the click on "Next: review the plan" the pointer rests where an element of the review step appears and its
+  `hover:` colours apply. **Next step:** in the spec's flow, log axe's `n.html` and `n.target` for that node (edit the
+  summary in `expectNoViolations` to include `html`), then check its hover classes; fix the element's hover state if
+  so (white text needs a dark hover background), or move the pointer in the helper only if the state is not reachable
+  by a real user. CI's desktop accessibility run passed on earlier commits.
+- 2026-11-06: **CHECKPOINT (window 7 end) - the next session starts here.** Latest pushed: this commit (after
+  `d3e3127`). Live unchanged (`405718e`). Done this window: Khmer family walk; practice cover and completion strip on the
+  subject's place (WORLD-1, browser-verified); desktop round. **Exact next step:** the 1280 px add-child review
+  contrast finding above. Then: owner items (demo lessons + live family test; WORLD-1 art; streak decision; M11; M12;
+  legal review). Local runner: `PW_PROJECT=<desktop-1280|phone-360|tablet-768> bash /d/bk-work/run-staff-phone.sh
+  "<spec regex>"` (projects in the git-excluded `frontend/playwright.local.config.ts`; `STAFF_KM=1` for Khmer).
