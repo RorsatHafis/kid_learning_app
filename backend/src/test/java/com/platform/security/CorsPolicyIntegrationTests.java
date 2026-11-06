@@ -70,6 +70,14 @@ class CorsPolicyIntegrationTests {
     }
 
     @Test
+    void preflightFromTheProductionOriginAllowsTheStepUpProof() throws Exception {
+        HttpResponse<String> res = preflight("/api/v1/account/email", PROD_ORIGIN, "PUT", "authorization,content-type,x-step-up");
+
+        assertThat(res.statusCode()).isEqualTo(200);
+        assertThat(res.headers().firstValue("Access-Control-Allow-Headers").orElse("")).containsIgnoringCase("x-step-up");
+    }
+
+    @Test
     void preflightFromAnUntrustedOriginIsRefused() throws Exception {
         for (String origin : new String[] {UNTRUSTED_ORIGIN, "null", "http://localhost:5174",
                 "http://app.bk-test.invalid", "https://app.bk-test.invalid.evil.example"}) {

@@ -3,7 +3,10 @@ import { ApiError } from "./ApiError";
 import { tokenStore } from "./tokenStore";
 import type { ApiProblem, AuthResponse } from "./types";
 
-const API_BASE = "/api/v1";
+// The API's origin: empty (same origin - the dev server and nginx proxy /api) unless the build sets VITE_API_ORIGIN.
+// The Vercel + Railway deployment sets it, so the browser calls Railway directly and rate limits see each family's own
+// address (behind Vercel's proxy every request came from a rotating Vercel address). Media links stay relative.
+const API_BASE = `${import.meta.env.VITE_API_ORIGIN ?? ""}/api/v1`;
 
 /** Fired when a refresh attempt fails outright (per AuthController: an
  * invalid/expired/reused/revoked refresh token always means "sign in

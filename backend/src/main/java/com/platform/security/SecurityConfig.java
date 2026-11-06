@@ -83,7 +83,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(requireExactOrigins(allowedOrigins));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+        // X-Step-Up: the re-entered password's proof for sensitive actions - sent cross-origin when the browser calls
+        // the API directly (the Vercel + Railway deployment, so rate limits see each family's own address).
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key", "X-Step-Up"));
         configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L);
 
