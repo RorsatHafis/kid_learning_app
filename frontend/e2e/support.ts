@@ -372,7 +372,7 @@ export async function walkPages(page: Page, start: string, scope: RegExp, limit 
     if (wide) problems.push(`${path}: ${wide}`);
     // Locally, STAFF_SHOTS=<folder> keeps a picture of each page for a human look (never set in CI).
     if (process.env.STAFF_SHOTS) {
-      await page.screenshot({ path: `${process.env.STAFF_SHOTS}/${shape(path).replace(/[/:]+/g, "_")}.png`, fullPage: true });
+      await page.screenshot({ path: `${process.env.STAFF_SHOTS}/${page.viewportSize()?.width ?? 0}${shape(path).replace(/[/:]+/g, "_")}.png`, fullPage: true });
     }
     const hrefs = await page.locator("a[href]").evaluateAll((links) => links.map((l) => l.getAttribute("href") ?? ""));
     for (const href of hrefs) {

@@ -3160,3 +3160,18 @@ Then defects, then simplification. Push at the end of the window; CI once.
 - 2026-11-06: **CHECKPOINT (window 5 end)** - next task: the 376 px activity-intro case above, then commit
   `family-phone.spec.ts`. Owner items unchanged (demo lessons + live family test; WORLD-1 art; streak decision).
   Production untouched (`405718e`).
+- 2026-11-06: **Resolved - the activity introduction widened a phone's page (a real defect, not the test).**
+  Evidence (local diagnostic at 360 px, run with phone emulation and as a plain 360 px window): with phone emulation
+  `innerWidth` 376, `html.scrollWidth` 376, `body.scrollWidth` 360, `clientWidth` 360, visual viewport 360 at scale 1,
+  dpr 2.625, touch 1, meta `width=device-width, initial-scale=1`; at rest every part fit (sheet 16..344 px) and any
+  layout change at all - hiding the cover, the content or the start bar, or the sheet's shadow - brought it back to
+  360. The plain window was 360 throughout. Cause: the sheet arrives with `page-in`, starting at `translateX(28px)
+  rotate(0.6deg)`; for those 420 ms its right edge is ~376 px, and a phone browser widens the page's layout to fit it
+  and keeps that width until the next layout - so the page could be dragged sideways on a real phone. The question
+  sheet uses the same animation (the "transient 5 px" seen earlier). Fix: the wrappers around both sheets are
+  `overflow-x-clip` (`PlayScreens`: Intro, Question) - the slide is kept, its few pixels past the edge are clipped;
+  clip is not a scroll container, so the sticky start bar keeps working. Verified: with phone emulation 360/360/360
+  afterwards. New permanent spec `e2e/family-phone.spec.ts` (@phone): a parent signs up and adds a child; the family
+  area (7 pages) and the child's space (4) are walked; then the activity starts from its introduction and the first
+  question shows, with no sideways overflow. **Tested**: family-phone at 360 and 768 px (pass), staff-phone at 360
+  and 768 (pass), child Vitest 69/69, tsc, eslint; 22 family/child screenshots reviewed (360 + 768), no issues.

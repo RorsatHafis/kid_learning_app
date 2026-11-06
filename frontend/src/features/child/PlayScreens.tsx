@@ -125,7 +125,10 @@ export function Intro({
   useEffect(() => startRef.current?.focus(), []);
   const n = activity.items.length;
   return (
-    <div className="px-4 pb-16 pt-6 sm:pt-10">
+    // overflow-x-clip: the sheet arrives sliding in from the right (page-in); clipped here, so a phone never widens the
+    // page to fit it mid-slide (seen at 360 px: 376 px wide until the next layout). Not a scroll container - the start
+    // bar stays sticky.
+    <div className="overflow-x-clip px-4 pb-16 pt-6 sm:pt-10">
       {/* Not overflow-hidden: the start button below sticks to the bottom of a phone's screen (the cover clips itself). */}
       <Page labelledBy="activity-title" className="px-0 pb-10 text-center motion-safe:animate-page-in sm:pb-12">
         {/* Y44 / WORLD-1: the book's cover - a window onto the subject's own place (its painting, light and landmark),
@@ -296,7 +299,8 @@ export function Question({
   const mood = result ? (result.correct ? "cheer" : "encourage") : isSubmitting ? "thinking" : "idle";
   const buddyLine = result ? (result.correct ? m.buddyRight : m.buddyTogether) : isSubmitting ? m.buddyChecking : m.buddyTakeYourTime;
   return (
-    <div className="relative flex flex-col gap-5 px-4 pb-16 pt-1 sm:gap-7">
+    // overflow-x-clip: as in Intro - the question sheet slides in from the right without widening a phone's page.
+    <div className="relative flex flex-col gap-5 overflow-x-clip px-4 pb-16 pt-1 sm:gap-7">
       {/* Y44: on a large screen the buddy keeps the child company beside the page, with a word for the moment. */}
       <div aria-hidden className="pointer-events-none absolute left-[max(1rem,calc(50%-36rem))] top-36 hidden flex-col items-center gap-2 xl:flex">
         <p key={buddyLine} className="max-w-[11rem] rounded-[18px] bg-white/95 px-4 py-2.5 text-center text-base font-semibold leading-snug text-tonle-950 shadow-paper ring-1 ring-tonle-950/5 motion-safe:animate-pop-in">
