@@ -59,6 +59,7 @@ public class ConfigurationContract {
         variables.put("MAIL_SMTP_STARTTLS", "spring.mail.properties[mail.smtp.starttls.enable]");
         variables.put("MAIL_FROM", "platform.mail.from");
         variables.put("APP_PUBLIC_URL", "platform.mail.public-url");
+        variables.put("MAIL_BREVO_API_KEY", "platform.mail-api.brevo-key");
         variables.put("MEDIA_ROOT", "platform.media.root");
         variables.put("MASTERY_LEARNING_RATE", "platform.mastery.learning-rate");
         variables.put("MASTERY_CONFIDENCE_SATURATION_COUNT", "platform.mastery.confidence-saturation-count");

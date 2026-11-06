@@ -118,6 +118,10 @@ platform:
     from: ${MAIL_FROM}
     # Required. The origin families open the app at; links in emails point here.
     public-url: ${APP_PUBLIC_URL}
+  # Optional. With a Brevo API key, email goes over Brevo's HTTPS API instead of SMTP (for hosts that block
+  # outgoing SMTP, such as Railway's trial and Hobby plans). MAIL_HOST stays required either way.
+  mail-api:
+    brevo-key: ${MAIL_BREVO_API_KEY:}
   http:
     # The largest request body other than an upload (RequestSizeLimitFilter): 413 above it, before it is read. As the
     # nginx front allows for /api - and the hosted path (Vercel -> Railway) has no nginx in front.
