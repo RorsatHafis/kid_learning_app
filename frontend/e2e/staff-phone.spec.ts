@@ -125,6 +125,15 @@ test("staff on a phone: principal, teacher and administrator pages fit the scree
   await page.getByRole("button", { name: "Assign", exact: true }).click();
   await expect(page.getByText(teacherEmail).first()).toBeVisible();
 
+  // Locally, STAFF_KM=1 walks the workspaces in Khmer (longer words): each person chooses it in their own account.
+  if (process.env.STAFF_KM) {
+    for (const [who, area] of [[page, "principal"], [teacher, "teacher"], [admin, "admin"]] as const) {
+      await who.goto(`/${area}/account`);
+      await who.getByRole("group", { name: /^(Language|ភាសា)$/ }).getByRole("button", { name: "ខ្មែរ", exact: true }).click();
+      await expect(who.locator("html")).toHaveAttribute("lang", "km");
+    }
+  }
+
   // Every page of each workspace, on this phone.
   const principalPages = await walk(page, "/principal", /^\/principal/);
   const teacherPages = await walk(teacher, "/teacher", /^\/teacher/);

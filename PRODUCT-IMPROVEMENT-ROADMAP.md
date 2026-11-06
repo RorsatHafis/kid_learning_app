@@ -3128,3 +3128,15 @@ Then defects, then simplification. Push at the end of the window; CI once.
   **Tested**: tsc, eslint, full Vitest 534/534; the spec passed locally at 360 px after the fixes (and the Studio tab
   pages re-checked by screenshot). Test-runner issues met on the way (missing waits after sign-in and after the email
   confirmation, the scratch database keeping an earlier run's admin) were fixed in the spec/runner, not the product.
+  Also in Khmer: `STAFF_KM=1` (local only) has each staff member choose Khmer in their account before the walk -
+  principal 7, teacher 10, admin 24 pages, no overflow or errors at 360 px; screenshots show Khmer throughout.
+- 2026-11-06: **CHECKPOINT (window 5) - the next session starts here.** Live unchanged (`405718e`). Done since window 4:
+  staff workspaces at 360 px checked (EN + KM) with the new `staff-phone.spec.ts` and the local runner
+  `D:/bk-work/run-staff-phone.sh` (`STAFF_KM=1` for Khmer, `STAFF_SHOTS` set inside for screenshots); fixed Studio tabs
+  and composer width. Open, in order:
+  1. Owner: demo lessons (Operations); a live family test (register, child, play) - the agent reads the logs meanwhile.
+  2. Owner: WORLD-1 artwork (open-river 1584x672, garden backdrop, rice-fields landmark + backdrop).
+  3. Owner decision: any streak milestone on home/shelf beyond the card ("best" never shown).
+  4. Next independent task for the agent: staff workspaces at tablet width (768 px) and the parent area at 768 px -
+     run the same spec with a 768 x 1024 project in the local config; fix what it finds.
+  Deploying any of this needs the owner's go-ahead (production is the owner's; see docs/DEPLOY-VERCEL-RAILWAY.md).
