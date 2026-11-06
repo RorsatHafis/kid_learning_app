@@ -3192,3 +3192,7 @@ Then defects, then simplification. Push at the end of the window; CI once.
   answer-offline (2), golden journeys (family to evidence, email change, deleting), journey-stop, language, plans (2),
   studio (2) - each at phone-360 (Pixel 7 emulation, 360 x 780) and tablet-768. Next independent task: none left that
   doesn't need the owner - pick up the owner items, or a fresh round of P3/P4 from new findings.
+- 2026-11-06: **Family walk in Khmer at 360 and 768 px: pass, no defects.** `STAFF_KM=1` (local only) now also has the
+  parent choose Khmer in Account and the child choose it in their own space before each walk (`lang=km` asserted);
+  22 screenshots reviewed - Khmer wraps cleanly, the child header shows the compact "EN" switch. The activity start
+  check stays English-only (its button names); the Khmer walk covers that page's width.

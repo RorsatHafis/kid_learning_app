@@ -14,11 +14,25 @@ test("family on a phone: the family area and the child's space fit the screen @p
   await addChild(page, "Dara", "2019-03-14", /Maths/);
   const childId = new URL(page.url()).pathname.split("/").pop()!;
 
+  // Locally, STAFF_KM=1 walks in Khmer: the parent chooses it in their account, the child in their own space.
+  if (process.env.STAFF_KM) {
+    await page.goto("/parent/account");
+    await page.getByRole("group", { name: /^(Language|ភាសា)$/ }).getByRole("button", { name: "ខ្មែរ", exact: true }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "km");
+  }
   const familyPages = await walkPages(page, "/parent", /^\/parent/);
+  if (process.env.STAFF_KM) {
+    await page.goto(`/learn/${childId}`);
+    await page.getByRole("button", { name: /English|ខ្មែរ/ }).first().waitFor();
+    if ((await page.locator("html").getAttribute("lang")) !== "km") await page.getByRole("button", { name: /ខ្មែរ/ }).first().click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "km");
+  }
   const childPages = await walkPages(page, `/learn/${childId}`, new RegExp(`^/learn/${childId}`));
   expect(childPages.length).toBeGreaterThan(1);
 
   // The activity still starts from its (clipped) introduction: the sticky start button works on this screen.
+  // (English names below; in Khmer the walk above already covered the activity page's width.)
+  if (process.env.STAFF_KM) return;
   await page.goto(`/learn/${childId}`);
   await page.locator("a[href*='?path=']:visible").first().click();
   // The walk above opened the activity, so it may already be under way ("Keep playing" resumes it).
