@@ -3081,3 +3081,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   admin sign-in verified, and per-client rate limits made effective on Railway (trusted edge + the browser calling the
   API directly; Vercel proxies media only). Details: `docs/DEPLOY-VERCEL-RAILWAY.md`. Live = `405718e`. Development
   resumes from the window-4 checkpoint; nothing is redeployed without the owner's say-so.
+- 2026-11-06: **Simplification - ChildHome.tsx split along its seams (no behaviour change).** 751 lines became
+  `ChildHome.tsx` 546 (the village and the journey stage), `JourneyList.tsx` 192 ("My path": chapters and steps) and
+  `ChildStates.tsx` 30 (Waiting/Trouble, shared by home, player, shelf, buddy page - they no longer import the home).
+  Imports pruned to what each file uses. **Tested**: tsc, eslint, full Vitest 534/534. Not deployed (local; live stays
+  `405718e`).

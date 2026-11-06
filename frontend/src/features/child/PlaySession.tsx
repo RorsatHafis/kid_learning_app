@@ -17,7 +17,7 @@ import { PathStrip } from "@/features/world/PathStrip";
 import type { PathStep } from "@/features/world/PathOfBooks";
 import { cn } from "@/lib/utils/cn";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
-import { Trouble, Waiting } from "./ChildHome";
+import { Trouble, Waiting } from "./ChildStates";
 import { QuestionView, type AnswerResult } from "./QuestionView";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { useChildDevice } from "@/lib/auth/AuthContext";

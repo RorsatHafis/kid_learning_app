@@ -12,7 +12,7 @@ import { LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { BUDDY_KINDS } from "@/features/buddy/kinds";
 import { buddyMessages } from "@/features/buddy/buddy.messages";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
-import { Trouble, Waiting } from "./ChildHome";
+import { Trouble, Waiting } from "./ChildStates";
 import { quietButton } from "./chips";
 import { childMessages } from "./messages";
 

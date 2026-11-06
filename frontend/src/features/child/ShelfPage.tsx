@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils/cn";
 import { SkillGarden } from "./SkillGarden";
 import { ChildSpaceLayout } from "./ChildSpaceLayout";
 import { goButton, quietButton } from "./chips";
-import { Trouble, Waiting } from "./ChildHome";
+import { Trouble, Waiting } from "./ChildStates";
 import { SHELF_SPINES, milestones, nextLanterns, type Shelf } from "./shelf";
 import { useMessages } from "@/i18n/catalog";
 import { childMessages } from "./messages";
