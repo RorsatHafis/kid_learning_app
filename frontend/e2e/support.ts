@@ -122,7 +122,7 @@ export async function expectNoViolations(page: Page, screen: string) {
     (v) =>
       `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes
         .slice(0, 5)
-        .map((n) => `${n.target.join(" ")} - ${n.any[0]?.message ?? n.failureSummary ?? ""}`)
+        .map((n) => `${n.target.join(" ")} - ${n.any[0]?.message ?? n.failureSummary ?? ""}\n    ${n.html.slice(0, 200)}`)
         .join("\n  ")}`,
   );
   expect(summary, `${screen} accessibility violations`).toEqual([]);

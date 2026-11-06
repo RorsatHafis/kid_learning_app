@@ -3243,3 +3243,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   contrast finding above. Then: owner items (demo lessons + live family test; WORLD-1 art; streak decision; M11; M12;
   legal review). Local runner: `PW_PROJECT=<desktop-1280|phone-360|tablet-768> bash /d/bk-work/run-staff-phone.sh
   "<spec regex>"` (projects in the git-excluded `frontend/playwright.local.config.ts`; `STAFF_KM=1` for Khmer).
+- 2026-11-06: **The 1280 px add-child contrast finding is intermittent.** Rerun after the CI run: accessibility 4/4 pass
+  at 1280 px (it had failed twice in a row before; CI's desktop run passes too). It is a transient state, not a
+  lasting contrast defect. `expectNoViolations` now prints the flagged element's HTML with its target, so a recurrence
+  names its source - then check that element's hover/transition classes. CI green on `0419b75` (all four jobs,
+  including the new staff-phone and family-phone specs).
