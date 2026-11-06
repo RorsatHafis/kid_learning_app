@@ -40,5 +40,26 @@ test("family on a phone: the family area and the child's space fit the screen @p
   await page.getByRole("button", { name: "Let's go" }).click();
   await expect(page.locator("#question-prompt")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+
+  // Finish the book, then play it again from the shelf: its cover opens onto the subject's place (Maths: the bridge).
+  for (let i = 0; i < 12; i++) {
+    const prompt = (await page.locator("#question-prompt").innerText()).trim();
+    const sum = prompt.match(/(\d+)\s*\+\s*(\d+)/);
+    await page.getByRole("textbox").fill(sum ? String(Number(sum[1]) + Number(sum[2])) : "1");
+    await page.getByRole("button", { name: "Check" }).click();
+    const finish = page.getByRole("button", { name: /finish/i });
+    const next = page.getByRole("button", { name: /next/i });
+    await expect(finish.or(next)).toBeVisible();
+    if (await finish.isVisible()) {
+      await finish.click();
+      break;
+    }
+    await next.click();
+  }
+  await page.locator("#done-title").waitFor();
+  await page.goto(`/learn/${childId}/shelf`);
+  await page.getByRole("link", { name: /^Play .+ again$/ }).first().click();
+  await page.getByRole("button", { name: "Let's go" }).waitFor();
+  await expect(page.locator('[data-place="bridge"]')).toBeVisible();
   console.log(`phone walk: family ${familyPages.length}, child ${childPages.length} pages`);
 });

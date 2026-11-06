@@ -3200,5 +3200,5 @@ Then defects, then simplification. Push at the end of the window; CI once.
   the subject's place in the link's navigation state (nothing in the address, nothing on the server); the practice
   introduction's cover then opens onto that place (painting, light, landmark), as on the path. Unknown or absent (a
   reload, a typed address) - the river cover, as before. **Tested**: two new cases in `practice.test.tsx` (a named
-  place is drawn; an unknown one keeps the river); child Vitest 71/71, tsc, eslint. **Not browser-verified** yet (needs
-  a finished activity to replay - add to the family phone spec next session).
+  place is drawn; an unknown one keeps the river); child Vitest 71/71, tsc, eslint. (Was not browser-verified until
+  the family spec learned to finish and replay a book, same day.)
