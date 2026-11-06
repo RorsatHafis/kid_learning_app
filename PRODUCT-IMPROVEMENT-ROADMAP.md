@@ -3175,3 +3175,15 @@ Then defects, then simplification. Push at the end of the window; CI once.
   area (7 pages) and the child's space (4) are walked; then the activity starts from its introduction and the first
   question shows, with no sideways overflow. **Tested**: family-phone at 360 and 768 px (pass), staff-phone at 360
   and 768 (pass), child Vitest 69/69, tsc, eslint; 22 family/child screenshots reviewed (360 + 768), no issues.
+  Checked the same failure class everywhere: of the keyframes that move sideways, `nudge` moves left (never widens a
+  page) and `cloud-drift`, `glint`, `dragonfly` run only inside the place scenes, whose root clips them - `page-in` was
+  the only case.
+- 2026-11-06: **CHECKPOINT (window 6) - the next session starts here.** Live unchanged (`405718e`); latest pushed
+  `729f9ac`+. Done: staff (EN/KM) and family phone-width checks at 360 and 768 px, both now permanent @phone specs
+  (`staff-phone.spec.ts`, `family-phone.spec.ts`, shared `walkPages` in `e2e/support.ts`); fixes - Studio tabs, composer
+  width, email banner on tablets, sliding activity sheets widening phones. Local runner:
+  `bash /d/bk-work/run-staff-phone.sh "<spec regex>"` (projects phone-360 + tablet-768 in the git-excluded
+  `frontend/playwright.local.config.ts`; `STAFF_KM=1` for Khmer; screenshots in D:/bk-work/staff-shots).
+  Next independent task: run the other @phone e2e journeys (golden-journeys, journey-stop, answer-offline, language,
+  plan-journey, studio-journey, accessibility) through the same runner at 360 px and fix what they find.
+  Owner items unchanged: demo lessons + a live family test; WORLD-1 art; streak milestone decision.
