@@ -2,10 +2,11 @@
 FROM maven:3.9.16-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .
-# Dependencies are cached between builds, so a code change doesn't download them again.
-RUN --mount=type=cache,target=/root/.m2 mvn -q -B dependency:go-offline
+# Dependencies are their own layer (pom.xml first), so a code change doesn't download them again. No BuildKit
+# cache mounts: Railway's builder refuses them without its own id scheme, and the layer cache does the job.
+RUN mvn -q -B dependency:go-offline
 COPY src ./src
-RUN --mount=type=cache,target=/root/.m2 mvn -q -B -DskipTests package && cp target/*-SNAPSHOT.jar /app/app.jar
+RUN mvn -q -B -DskipTests package && cp target/*-SNAPSHOT.jar /app/app.jar
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
