@@ -3104,3 +3104,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   3. WORLD-1 art from the owner (open-river 1584x672, garden backdrop, rice fields landmark + backdrop).
   4. Held for the owner: streak milestone on home/shelf beyond the card ("best" never shown, as decided).
   5. Local dev backend (port 8092) is stopped - restart per the notes before browser checks.
+- 2026-11-06 (window 5 start): **Staff workspaces at 360 px - blocked on a permission.** The local stack is up again
+  (PostgreSQL 5435, backend 8092 rebuilt from `4e8f4bb`), but signing in as the local seed administrator, principal and
+  teacher means reading `D:/bk-work/m5b-seed.txt` (passwords, authenticator secret) inside a test script, and Claude
+  Code's safety check refused that ("credential materialization"). Next step needs the owner: either allow Bash to read
+  that seed file in the Claude Code permission settings, or run the staff checks themselves. Every other open item is
+  the owner's (demo lessons + a live family test, place artwork, the streak decision). Production untouched.
