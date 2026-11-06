@@ -3202,3 +3202,19 @@ Then defects, then simplification. Push at the end of the window; CI once.
   reload, a typed address) - the river cover, as before. **Tested**: two new cases in `practice.test.tsx` (a named
   place is drawn; an unknown one keeps the river); child Vitest 71/71, tsc, eslint. (Was not browser-verified until
   the family spec learned to finish and replay a book, same day.)
+  **Update, same day: browser verified** - `family-phone.spec.ts` now finishes the book, plays it again from the
+  shelf and asserts the practice cover is the bridge (Maths), at 360 and 768 px (24a465f). The "not browser-verified"
+  note above is superseded.
+- 2026-11-06: **CHECKPOINT (window 7) - the next session starts here.** Live unchanged (`405718e`); latest pushed
+  `24a465f`+. Everything previously approved in this roadmap is built, except what waits on the owner:
+  - Owner: demo lessons in Operations + a live family test (the agent reads `railway logs` meanwhile, read-only);
+    WORLD-1 artwork (open-river 1584x672, garden backdrop, rice-fields landmark + backdrop); the streak milestone
+    decision; M11 storage provider (D-06/D-12); M12 school management phase 2 (S1-S6); legal review (F2).
+  - **Next independent implementation step (WORLD-1, approved):** the completion screen's path strip still lies on
+    the one river-path painting for every subject (`PlayScreens.tsx`, `Completed`, `coverArt`). Carry the subject's
+    `place` from the intro phase through `playing` and `done` in `PlaySession.tsx` (the `Phase` union; the
+    `setPhase` calls in `PlaySession` and `PracticeSession`) and draw the strip on that place's painting
+    (`PlaceWorld` crop, books on top), river-path when unknown. Test: extend `family-phone.spec.ts` (the done screen
+    after finishing shows `[data-place="bridge"]`) and a Vitest case.
+  - Then: a fresh P3 round - run all specs (desktop project too) through the local runner and fix what appears.
+  Local runner: `bash /d/bk-work/run-staff-phone.sh "<spec regex>"` (phone-360 + tablet-768; `STAFF_KM=1` Khmer).
