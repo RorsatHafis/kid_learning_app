@@ -3187,3 +3187,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   Next independent task: run the other @phone e2e journeys (golden-journeys, journey-stop, answer-offline, language,
   plan-journey, studio-journey, accessibility) through the same runner at 360 px and fix what they find.
   Owner items unchanged: demo lessons + a live family test; WORLD-1 art; streak milestone decision.
+- 2026-11-06: **The other phone journeys at 360 and 768 px: 30/30 pass, no defects found.** Through the local runner
+  (fresh admin per run, scratch database): accessibility (public, family and child, keyboard, admin console - axe),
+  answer-offline (2), golden journeys (family to evidence, email change, deleting), journey-stop, language, plans (2),
+  studio (2) - each at phone-360 (Pixel 7 emulation, 360 x 780) and tablet-768. Next independent task: none left that
+  doesn't need the owner - pick up the owner items, or a fresh round of P3/P4 from new findings.
