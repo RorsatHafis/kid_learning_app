@@ -150,3 +150,32 @@ describe("PracticeSession (X24)", () => {
     expect(await screen.findByText("This book can't be played again just now.")).toBeInTheDocument();
   });
 });
+
+describe("PracticeSession cover (WORLD-1)", () => {
+  function renderWith(state?: unknown) {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: "/learn/c1/practice/av1", state }]}>
+        <Routes>
+          <Route path="/learn/:childId/practice/:activityVersionId" element={<PracticeSession />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+  const attempt = { id: "t1", childId: "c1", activityVersionId: "av1", learningPathItemId: null, status: "IN_PROGRESS" };
+
+  it("opens onto the subject's place the shelf named", async () => {
+    setMuted(true);
+    server(() => respond(201, attempt));
+    renderWith({ place: "garden" });
+    expect(await screen.findByText("Playing it again")).toBeInTheDocument();
+    expect(document.querySelector('[data-place="garden"]')).not.toBeNull();
+  });
+
+  it("keeps the river when no place - or an unknown one - came with it", async () => {
+    setMuted(true);
+    server(() => respond(201, attempt));
+    renderWith({ place: "nowhere" });
+    expect(await screen.findByText("Playing it again")).toBeInTheDocument();
+    expect(document.querySelector("[data-place]")).toBeNull();
+  });
+});

@@ -1,4 +1,6 @@
 import { useParams, Link } from "react-router-dom";
+import { subjectTheme } from "@/features/learning/subjectTheme";
+import { placesFor, type PlaceKey } from "@/features/world/places";
 import { StreakCard } from "./StreakMoment";
 import { TransitionLink } from "@/components/motion/TransitionLink";
 import { ArrowLeft, Check, Play, RotateCcw } from "lucide-react";
@@ -184,6 +186,7 @@ function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; s
   const placed = journey.chapters.length > 0 ? journey.steps.filter((step) => !step.chapterId) : [];
   if (placed.length > 0) groups.push({ key: "more", title: m.extraPractice, complete: false, steps: placed });
 
+  const place = placesFor([subjectTheme(overview.curriculum.subjectCode, overview.curriculum.subjectName).motif])[0].key;
   return (
     <section aria-labelledby={`shelf-${overview.enrollmentId}`} className="flex flex-col gap-5 rounded-[24px] bg-white/95 p-6 shadow-paper ring-1 ring-tonle-950/5 sm:p-7">
       <div className="flex items-center gap-3">
@@ -214,6 +217,7 @@ function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; s
               {group.steps.map((step, i) => (
                 <Book
                   childId={childId}
+                  place={place}
                   key={step.learningPathItemId}
                   step={step}
                   spine={spine}
@@ -232,12 +236,15 @@ function PathShelf({ childId, shelf, spine }: { childId: string; shelf: Shelf; s
 
 function Book({
   childId,
+  place,
   step,
   spine,
   isNext,
   index,
 }: {
   childId: string;
+  /** WORLD-1: the subject's place - playing a book again opens onto it, as on the path. */
+  place: PlaceKey;
   step: JourneyStep;
   spine: string;
   isNext: boolean;
@@ -287,6 +294,7 @@ function Book({
         {lit && replay && (
           <Link
             to={`/learn/${childId}/practice/${replay}`}
+            state={{ place }}
             aria-label={m.playAgainLabel(step.title)}
             className="inline-flex min-h-11 w-fit max-w-full items-center gap-1 rounded-pill bg-tonle-900 px-3 py-1 text-center text-xs font-bold leading-tight text-white transition-colors duration-150 hover:bg-tonle-800"
           >

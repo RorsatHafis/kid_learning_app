@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { Library } from "lucide-react";
 import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, learningApi, progressApi } from "@/lib/api/endpoints";
 import { StreakMoment } from "./StreakMoment";
@@ -22,7 +22,7 @@ import { breakDue, readSitting, sittingMinutes, useBreakReminder } from "./break
 import { afterActivity, type GardenNews } from "./garden";
 import { trickyOnes, type Tricky } from "./tricky";
 import { subjectTheme } from "@/features/learning/subjectTheme";
-import { placesFor, type PlaceKey } from "@/features/world/places";
+import { PLACE_KEYS, placesFor, type PlaceKey } from "@/features/world/places";
 import type { CurriculumProgress } from "@/lib/api/types";
 import { Completed, Intro, JourneyLink, Page, Question, RestForToday } from "./PlayScreens";
 
@@ -403,6 +403,10 @@ type PracticePhase =
  */
 export function PracticeSession() {
   const { childId = "", activityVersionId = "" } = useParams<{ childId: string; activityVersionId: string }>();
+  // WORLD-1: the shelf says which place this book belongs to (navigation state only); unknown or absent - a reload,
+  // a typed address - keeps the river cover.
+  const sentPlace = (useLocation().state as { place?: unknown } | null)?.place;
+  const place = PLACE_KEYS.includes(sentPlace as PlaceKey) ? (sentPlace as PlaceKey) : undefined;
   const child = useAsync(() => childrenApi.get(childId), [childId]);
   const [phase, setPhase] = useState<PracticePhase>({ kind: "loading" });
   const m = useMessages(childMessages);
@@ -462,7 +466,7 @@ export function PracticeSession() {
         await finish(attempt.id, activity.title);
       } else if (resumeIndex === 0) {
         setPhase({ kind: "intro", attemptId: attempt.id, itemId: "", activity: ordered, reason: () => messagesNow(childMessages).play.playingAgain,
-          lastOne: today?.nearEnd ?? false });
+          lastOne: today?.nearEnd ?? false, place });
       } else {
         setPhase({ kind: "playing", attemptId: attempt.id, itemId: "", activity: ordered, index: resumeIndex, result: null, startedAt: Date.now() });
       }
@@ -516,6 +520,7 @@ export function PracticeSession() {
           activity={phase.activity}
           reason={phase.reason}
           lastOne={phase.lastOne}
+          place={phase.place}
           journeyHref={shelfHref}
           onStart={() =>
             setPhase({ kind: "playing", attemptId: phase.attemptId, itemId: "", activity: phase.activity, index: 0, result: null, startedAt: Date.now() })

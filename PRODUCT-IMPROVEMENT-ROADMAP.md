@@ -3196,3 +3196,9 @@ Then defects, then simplification. Push at the end of the window; CI once.
   parent choose Khmer in Account and the child choose it in their own space before each walk (`lang=km` asserted);
   22 screenshots reviewed - Khmer wraps cleanly, the child header shows the compact "EN" switch. The activity start
   check stays English-only (its button names); the Khmer walk covers that page's width.
+- 2026-11-06: **WORLD-1 - playing a book again opens onto its subject's place too.** The shelf's "Play again" passes
+  the subject's place in the link's navigation state (nothing in the address, nothing on the server); the practice
+  introduction's cover then opens onto that place (painting, light, landmark), as on the path. Unknown or absent (a
+  reload, a typed address) - the river cover, as before. **Tested**: two new cases in `practice.test.tsx` (a named
+  place is drawn; an unknown one keeps the river); child Vitest 71/71, tsc, eslint. **Not browser-verified** yet (needs
+  a finished activity to replay - add to the family phone spec next session).
