@@ -14,6 +14,12 @@ export default defineConfig(({ mode }) => {
       // it doesn't teach the bundler about it, so both need it kept in sync.
       alias: { "@": path.resolve(__dirname, "./src") },
     },
+    build: {
+      // Fonts are never inlined as data: URLs - the Content-Security-Policy allows fonts from the site itself only
+      // (font-src 'self'), so an inlined small font subset would be refused (seen on the live site, 2026-11-06).
+      // Other small assets keep Vite's default (inlined under 4 KB; images may be data: URLs).
+      assetsInlineLimit: (file: string) => (/\.(woff2?|ttf|otf|eot)$/i.test(file) ? false : undefined),
+    },
     server: {
       port: 5173,
       proxy: {
