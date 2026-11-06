@@ -66,7 +66,8 @@ const ENVIRONMENTS: Record<PlaceKey, Environment> = {
   },
 };
 
-export function PlaceWorld({ place, className, children }: { place: PlaceKey; className?: string; children?: ReactNode }) {
+/** `landmark="wide"`: the landmark stands only on wider screens - where something else (a strip of books) fills a phone's narrow scene. */
+export function PlaceWorld({ place, className, children, landmark = "always" }: { place: PlaceKey; className?: string; children?: ReactNode; landmark?: "always" | "wide" }) {
   const env = ENVIRONMENTS[place];
   const box = useRef<HTMLDivElement | null>(null);
   // Depth: the painting and its foreground move apart slightly with a fine pointer (never on touch, never with
@@ -131,7 +132,7 @@ export function PlaceWorld({ place, className, children }: { place: PlaceKey; cl
         alt=""
         aria-hidden
         draggable={false}
-        className="pointer-events-none absolute bottom-[3%] right-[3%] h-[58%] w-auto select-none drop-shadow-[0_18px_22px_rgba(16,50,58,0.28)] transition-transform duration-500 ease-out motion-safe:animate-rise-in [transform:translate(calc(var(--px)*16px),calc(var(--py)*9px))] sm:h-[84%]"
+        className={cn(landmark === "wide" && "max-sm:hidden", "pointer-events-none absolute bottom-[3%] right-[3%] h-[58%] w-auto select-none drop-shadow-[0_18px_22px_rgba(16,50,58,0.28)] transition-transform duration-500 ease-out motion-safe:animate-rise-in [transform:translate(calc(var(--px)*16px),calc(var(--py)*9px))] sm:h-[84%]")}
       />
       {children}
     </div>

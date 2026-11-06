@@ -505,7 +505,7 @@ export function Completed({
           <div className={cn("relative mt-8 overflow-hidden px-4 pt-3", next ? "rounded-t-[22px]" : "rounded-[22px] pb-3")}>
             {/* Y44: the books rest on the painted riverbank. */}
             {place ? (
-              <PlaceWorld place={place} className="!absolute inset-0 !aspect-auto h-full opacity-80" />
+              <PlaceWorld place={place} landmark="wide" className="!absolute inset-0 !aspect-auto h-full opacity-80" />
             ) : (
               <img src={coverArt} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[50%_70%] opacity-70" />
             )}

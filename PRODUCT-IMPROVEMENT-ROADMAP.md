@@ -3252,3 +3252,8 @@ Then defects, then simplification. Push at the end of the window; CI once.
   far): `features/child/messages` streak card (`inARow`, `glowingToday`, `growToday`, `lightIt`, `lightItHow`);
   `features/child/entrance` place names `garden` ("សួនច្បារ") and `island` ("កោះ"), `sayHello`; the compact language
   button's "EN" label stays Latin by design. Native review before real families, as for the rest.
+- 2026-11-06: **WORLD-1 polish - on a phone the completion strip's landmark gives way to the books.** At 360 px the
+  subject's landmark overlapped the last books on the path strip. `PlaceWorld` takes `landmark="wide"` (landmark hidden
+  below 640 px, `max-sm:hidden`); the completion strip uses it, the cover and the places keep theirs. **Browser
+  verified** (family-phone at 360, 768, 1280 pass; done screens reviewed: clean books at 360, landmark beside them
+  from 640 px). **Tested**: world + child Vitest 76/76, tsc.
