@@ -56,6 +56,7 @@ class PublicSubjectsIntegrationTests {
     @Autowired private ActivityService activities;
 
     private final HttpClient http = HttpClient.newHttpClient();
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @Test
     void eachSubjectInTheCatalogIsShownAvailableWithItsAgesOrInPreparation() throws Exception {
@@ -66,6 +67,15 @@ class PublicSubjectsIntegrationTests {
         AgeHub older = ageHubs.save(AgeHub.create("SCO_" + suffix, "Older " + suffix, 8, 10, 99));
         publish(science, young, "Science - Young " + suffix);
         publish(science, older, "Science - Older " + suffix);
+        try {
+            shownWithAges(science, music);
+        } finally {
+            // Out of the family catalog again: curricula for real children's ages would change other tests' catalogs.
+            jdbc.update("update curriculums set status = 'ARCHIVED' where subject_id = ?", science.getId());
+        }
+    }
+
+    private void shownWithAges(Subject science, Subject music) throws Exception {
 
         HttpResponse<String> response = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/site/subjects")).GET().build(),
                 HttpResponse.BodyHandlers.ofString());

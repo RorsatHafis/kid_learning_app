@@ -99,6 +99,15 @@ class CurriculumAgesIntegrationTests {
     void theAgesDecideWhatIsMadeForAChildAndChangingThemIsAuditedAndAdminOnlyForPlatformCurricula() throws Exception {
         String admin = token(PlatformRole.ADMIN);
         Made made = made(5, 7);
+        try {
+            agesDecide(admin, made);
+        } finally {
+            // Out of the family catalog again: a curriculum for real children's ages would change other tests' catalogs.
+            jdbc.update("update curriculums set status = 'ARCHIVED' where id = ?::uuid", UUID.fromString(made.curriculumId()));
+        }
+    }
+
+    private void agesDecide(String admin, Made made) throws Exception {
         String parent = registerParent("ages-parent-" + UUID.randomUUID() + "@example.com");
         String childId = json(post("/api/v1/children", "{\"displayName\":\"Dara\",\"dateOfBirth\":\"" + LocalDate.now().minusYears(6)
                 + "\",\"familyChoosesSubjects\":true}", parent), 201).get("id").asString();

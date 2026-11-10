@@ -118,7 +118,7 @@ class PlayAgainVersionIntegrationTests {
     private Offered publishedCurriculum() {
         String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         UUID subjectId = subjectRepository.save(Subject.create("RPL_" + suffix, "Replay " + suffix, null)).getId();
-        UUID ageHubId = ageHubRepository.save(AgeHub.create("RPL_" + suffix, "Replay " + suffix, 0, 99, 99)).getId();
+        UUID ageHubId = ageHubRepository.save(AgeHub.create("RPL_" + suffix, "Replay " + suffix, 90, 99, 99)).getId();
         LearningObjective objective = learningObjectiveService.create(subjectId, "RPL_OBJ_" + suffix, "Objective " + suffix, null);
         Skill skill = skillService.createSkill(subjectId, "RPL_" + suffix, "Skill " + suffix, null);
         learningObjectiveSkillService.link(objective.getId(), skill.getId());
