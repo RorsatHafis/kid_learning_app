@@ -3257,3 +3257,37 @@ Then defects, then simplification. Push at the end of the window; CI once.
   below 640 px, `max-sm:hidden`); the completion strip uses it, the cover and the places keep theirs. **Browser
   verified** (family-phone at 360, 768, 1280 pass; done screens reviewed: clean books at 360, landmark beside them
   from 640 px). **Tested**: world + child Vitest 76/76, tsc.
+
+## Owner requirements 2026-11-10 - registration, free plan, subject plans, curriculum ages, mobile Studio (APPROVED)
+
+Approved product requirements (owner, 2026-11-10), in this order: (1) email verified BEFORE registration; (2) default
+plan for parents without a subscription: 1 child, up to 3 learning options, one active at a time; (3) subjects assigned
+to existing plans in the Studio; (4) curricula with free min/max ages; (5) mobile Content Studio UI. Local only; no
+deploy. Design (from the code, 2026-11-10):
+
+1. **Pre-registration verification.** Today `/api/v1/auth/register` creates the account at once and the address is
+   confirmed afterwards (`AccountActionToken`, per account). New: table `registration_verifications` (V87; no account
+   yet): normalized email, link-token hash + expiry + used-at, grant hash + expiry + used-at, requested IP. Flow:
+   `POST /api/v1/auth/registration/start {email, preferredLanguage}` -> always 202 (no enumeration); an existing
+   account's owner gets a "you already have an account - sign in / reset" email instead of a link; 60 s gap and 5/hour
+   per address (as `AccountRecoveryService`), per-IP budget via `AuthRateLimitFilter` (recovery bucket). Link
+   `/register/continue?token=...` (any device) -> `POST /api/v1/auth/registration/verify {token}` -> single use, 30 min,
+   returns a registration grant (single use, 30 min) + the email; refuses if an account now exists (409).
+   `POST /api/v1/auth/register` REQUIRES `registrationGrant`; the email comes from the grant; the grant is consumed in
+   the account-creating transaction; the account starts with its email verified (principals ACTIVE too - the M4
+   "pending until confirmed" is satisfied up front). Only hashes are stored. Tests: the 59 integration tests that
+   register through the API get a shared test helper that runs start + verify the real way (token read from the test
+   mail capture), never a bypass.
+2. **Free plan.** Exists: `EntitlementService.effectivePlan` (no subscription -> default plan), `CHILDREN_MAX`,
+   `JOURNEYS_PER_CHILD_MAX` (active + paused enrolments), enforced in services, M6 paywall messages. New: key
+   `ACTIVE_JOURNEYS_PER_CHILD_MAX` (V88 widens `ck_plan_entitlements_key`); V88 sets the default FAMILY plan to
+   CHILDREN_MAX 1, JOURNEYS_PER_CHILD_MAX 3, ACTIVE_JOURNEYS_PER_CHILD_MAX 1 (other plans untouched; nothing existing
+   is removed - limits apply when adding/activating). Switching = pause the active one + activate the chosen one,
+   atomically, server-side.
+3. **Subject plans.** New `subject_plans (subject_id, plan_id)` (V89). No rows = every plan (backward compatible:
+   existing subjects stay available; the Studio says so plainly - flag for the owner to confirm). Enforced when
+   enrolling/activating and when starting an attempt in that subject; catalog/parent/child lists show only the
+   family's plan's subjects. Plans load from the plan records; no names/prices copied.
+4. **Curriculum ages.** Today via fixed `age_hubs` (V10). New: `curricula.min_age/max_age` (V90), backfilled from the
+   hub, check min <= max; Studio min/max fields; eligibility/discovery/filtering use them; hubs kept for compatibility.
+5. **Mobile Studio** at 360/390/768/desktop, EN/KM - inspect first, then fix labels/fields/hierarchy.
