@@ -3378,7 +3378,30 @@ mini-game): the child draws or writes on a canvas (finger, stylus, mouse), with 
 instruction, a reference (sample letter/shape, EN or KM characters), and a guidance mode (dotted tracing, start
 points and direction arrows, baselines / grid, or free drawing). The submitted drawing is saved as the answer
 (evidence), stored as an image asset of the attempt. No handwriting recognition or automatic grading (not approved).
-Inspect first: QuestionType/answer contract, AnswerRecord & scoring (AnswerSubmissionWriter), media storage, the
-question player and QuestionDraftForm. **Owner decision needed before it counts as evidence:** an unscored drawing
-can't move mastery today - is it (a) recorded as practice only (no score, no mastery change), (b) reviewed by a
-parent/teacher who marks it, or (c) something else? Build (a)'s mechanics first only once decided.
+**Inspected (2026-11-10):** every answer is right or wrong today - `answer_records.is_correct` and
+`assessment_answers.is_correct` are NOT NULL, `AnswerScoringService.score` returns a boolean for each of the 7 types,
+and ~11 services read correctness (evidence/mastery, adaptive decisions, Smart Review, SkillStory, class practice,
+admin insight, parent "n of m correct", exports). **Design:** `QuestionType.DRAWING` (V-next widens the type check);
+the version holds the guide (`drawing_guide` JSON: reference text or glyph in EN/KM, optional picture, mode
+TRACE|GUIDED|FREE, dotted path, start points and arrows, baseline/grid); the answer is the strokes as normalized
+vector JSON (points 0-1, capped size; no image upload by children, re-drawn as SVG for adults); the player is a
+pointer-events canvas (finger/stylus/mouse, `touch-action: none`) with clear / undo / retry; QuestionDraftForm gets
+a drawing section; the parent sees the drawings beside the activity. **Decisions the owner must make before it is
+built** (each changes learning records): (1) a drawing answer is "recorded, not scored" - excluded from the activity's
+score and from mastery and Smart Review: agree? (2) an activity of only drawings - finished with no score, and does
+finishing it count toward the path/streak like any activity? (3) does a teacher/parent ever mark a drawing (adult
+review), now or later? (4) is a drawing kept like other answers (export, erasure) - assumed yes.
+
+### CHECKPOINT 2026-11-10 (end of window) - the next session starts here
+- **Owner requirements 2026-11-10: all five built and verified.** 96ae031 (1, 2), eda943b (3, 4), 25a3e9f (fixture
+  regression), a845e64 (5), c5347c3 (sign-up budget), c5e49d9 (a11y re-measure), 868c144 (switch e2e).
+- **Tests:** backend unit + full integration pass on 25a3e9f's code (later commits: focused backend tests only - the
+  rate-limit filter change ran with the auth/rate-limit/registration integration classes); Vitest 552/552; browser
+  (local runner): studio-forms 8/8 (360/390/768/1280, EN/KM), sign-up + free-plan journeys 1280 and 360, studio
+  journey with switching, accessibility 4/4 at 1280. CI: e2e job had failed on 96ae031 (the sign-up budget, fixed);
+  the run for 868c144 was in progress at the checkpoint - check it first.
+- **Owner decisions open:** free plan vs class-assigned journeys (documented behaviour kept); drawing question
+  scoring (1)-(4) above; free plan name; earlier items in section 4.
+- **Exact next task:** check CI on the head; if green and the owner has answered the drawing decisions, build
+  DRAWING (backend type + guide + stroke answer + unscored handling, then player canvas, then Studio form);
+  otherwise Phase 2 defects/simplification from a fresh local P3 round (all specs, three projects).
