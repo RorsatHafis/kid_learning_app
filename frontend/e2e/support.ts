@@ -149,7 +149,17 @@ export async function expectNoViolations(page: Page, screen: string) {
   await page.waitForFunction(() =>
     document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity),
   );
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+  const scan = () => new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+  let results = await scan();
+  // Colour contrast is measured on one frame: a screen caught while it is still settling (a step that just arrived)
+  // can read wrong colours. Measure once more after it settles - a lasting contrast problem is found again and fails.
+  if (results.violations.some((v) => v.id === "color-contrast")) {
+    await page.waitForTimeout(600);
+    await page.waitForFunction(() =>
+      document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity),
+    );
+    results = await scan();
+  }
   const summary = results.violations.map(
     (v) =>
       `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes
@@ -157,6 +167,21 @@ export async function expectNoViolations(page: Page, screen: string) {
         .map((n) => `${n.target.join(" ")} - ${n.any[0]?.message ?? n.failureSummary ?? ""}\n    ${n.html.slice(0, 200)}`)
         .join("\n  ")}`,
   );
+  // A contrast finding names what the page really had there: the element's classes and colours, and what is on top.
+  for (const v of results.violations.filter((x) => x.id === "color-contrast")) {
+    for (const n of v.nodes.slice(0, 3)) {
+      const seen = await page.evaluate((selector) => {
+        const el = document.querySelector<HTMLElement>(selector);
+        if (!el) return "not found";
+        const box = el.getBoundingClientRect();
+        const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        const style = getComputedStyle(el);
+        return `class="${el.className}" text="${el.textContent?.trim().slice(0, 60)}" bg=${style.backgroundColor} opacity=${style.opacity} `
+          + `disabled=${(el as HTMLButtonElement).disabled} on top: <${top?.tagName.toLowerCase()} class="${(top as HTMLElement | null)?.className ?? ""}">`;
+      }, String(n.target[0]));
+      summary.push(`  contrast detail ${n.target.join(" ")}: ${seen}`);
+    }
+  }
   expect(summary, `${screen} accessibility violations`).toEqual([]);
 }
 

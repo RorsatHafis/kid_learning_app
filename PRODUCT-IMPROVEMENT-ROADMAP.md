@@ -3357,6 +3357,13 @@ signing several people up was refused after a few - it now has the sign-up budge
 its own bucket); per-address pacing (1/min, 5/hour) is unchanged. Once, school-journey stalled at its last step in a
 combined run (not reproduced in two reruns) - intermittent, watch.
 
+**The 1280 px add-child contrast finding - settled (2026-11-10).** It now reproduced consistently, so it was measured
+on the page: the flagged "Start <child>'s learning" button had its own opaque dark background (rgb 16,50,58), opacity
+1, enabled and on top - white on it is about 13:1; axe had sampled a frame of the step arriving. `expectNoViolations`
+now re-measures once after the screen settles when contrast is flagged (a lasting problem still fails) and prints the
+element's classes, computed colours and what lies on top. accessibility.spec 4/4 at 1280 px; studio-journey,
+resilience, answer-offline pass.
+
 **NEW (owner, 2026-11-10): Drawing / Handwriting question type - planned, not started.** A real question type (not a
 mini-game): the child draws or writes on a canvas (finger, stylus, mouse), with clear / undo / retry; authors set the
 instruction, a reference (sample letter/shape, EN or KM characters), and a guidance mode (dotted tracing, start
