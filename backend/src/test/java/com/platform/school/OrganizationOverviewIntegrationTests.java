@@ -176,8 +176,8 @@ class OrganizationOverviewIntegrationTests {
 
     private User parent() throws Exception {
         String email = "overview-parent-" + UUID.randomUUID() + "@example.com";
-        JsonNode body = json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\","
-                + "\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201);
+        JsonNode body = com.platform.TestPlans.everythingIncluded(jdbc, json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD + "\","
+                + "\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201));
         return new User(body.get("accountId").asString(), email, PlatformRole.PARENT, body.get("accessToken").asString());
     }
 

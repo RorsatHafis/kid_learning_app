@@ -92,6 +92,10 @@ class AdminOperationsIntegrationTests {
         String pendingPrincipal = "pending-" + UUID.randomUUID() + "@example.com";
         post("/api/v1/auth/register", "{\"email\":\"" + pendingPrincipal + "\",\"password\":\"" + PASSWORD
                 + "\",\"role\":\"PRINCIPAL\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null);
+        // A principal still waiting to confirm the address: since 2026-11-10 only one who signed up before that.
+        Account waiting = accountRepository.findByNormalizedEmail(pendingPrincipal).orElseThrow();
+        waiting.markPendingApproval();
+        accountRepository.save(waiting);
         String pendingId = json(get("/api/v1/admin/accounts?email=" + enc(pendingPrincipal), admin), 200).get("id").asString();
         User teacher = user(PlatformRole.TEACHER);
 

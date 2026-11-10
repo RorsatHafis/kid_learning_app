@@ -161,8 +161,8 @@ class ClassHardestQuestionsIntegrationTests {
 
     private Parent parent() throws Exception {
         String email = "hardest-parent-" + UUID.randomUUID() + "@example.com";
-        String token = json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
-                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201).get("accessToken").asString();
+        String token = com.platform.TestPlans.everythingIncluded(jdbc, json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
+                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201)).get("accessToken").asString();
         UUID id = jdbc.queryForObject("select id from accounts where normalized_email = ?", UUID.class, email);
         return new Parent(id, token);
     }

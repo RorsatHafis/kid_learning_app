@@ -37,9 +37,12 @@ public class EnrollmentController {
     private final FamilyAccessGuard familyAccessGuard;
     private final com.platform.family.service.ChildAccess childAccess;
     private final com.platform.learning.service.JourneyStopService journeyStops;
+    private final com.platform.learning.service.JourneySwitchService journeySwitches;
 
     public EnrollmentController(EnrollmentService enrollmentService, LearningPathService learningPathService,
-                                 FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess, com.platform.learning.service.JourneyStopService journeyStops) {
+                                 FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess, com.platform.learning.service.JourneyStopService journeyStops,
+                                 com.platform.learning.service.JourneySwitchService journeySwitches) {
+        this.journeySwitches = journeySwitches;
         this.journeyStops = journeyStops;
         this.enrollmentService = enrollmentService;
         this.learningPathService = learningPathService;
@@ -77,6 +80,9 @@ public class EnrollmentController {
         if (enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.WITHDRAWN) {
             throw new IllegalStateException("This path has been stopped.");
         }
+        if (enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.PAUSED) {
+            throw new IllegalStateException("This path is waiting. A grown-up can switch to it.");
+        }
         LearningPath learningPath = enrollmentService.getLearningPath(enrollmentId);
         LearningPathItem nextItem = learningPathService.getNextItem(learningPath.getId());
 
@@ -90,6 +96,18 @@ public class EnrollmentController {
         familyAccessGuard.requireChildAccess(accountId, enrollment.getChildId());
 
         return ResponseEntity.ok(EnrollmentResponse.from(journeyStops.stop(enrollmentId)));
+    }
+
+    /**
+     * V88 (owner 2026-11-10): the family switches the child to a waiting journey; on a plan with one active journey at
+     * a time the one being learned waits instead. Nothing is lost on either.
+     */
+    @PostMapping("/api/v1/enrollments/{enrollmentId}/switch")
+    public ResponseEntity<EnrollmentResponse> switchTo(@PathVariable UUID enrollmentId, @AuthenticationPrincipal UUID accountId) {
+        Enrollment enrollment = enrollmentService.getEnrollment(enrollmentId);
+        familyAccessGuard.requireChildAccess(accountId, enrollment.getChildId());
+
+        return ResponseEntity.ok(EnrollmentResponse.from(journeySwitches.switchTo(enrollmentId)));
     }
 
 }

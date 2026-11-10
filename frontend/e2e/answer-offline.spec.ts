@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PASSWORD, addChild, expectNoViolations, openSubject, uniqueEmail } from "./support";
+import { addChild, expectNoViolations, openSubject, uniqueEmail, registerThroughEmail } from "./support";
 
 /** "3 + 4 = ?" -> "7". The seeded Maths path asks sums; anything else gets a plain guess. */
 function answerFor(prompt: string): string {
@@ -12,10 +12,7 @@ function answerFor(prompt: string): string {
  * the answer; once back online the same Check sends it, and it is recorded once.
  */
 test("an answer checked while offline is kept, then sent once when the connection returns @phone", async ({ page, context }) => {
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(uniqueEmail("offline"));
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(page, uniqueEmail("offline"));
   await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
   await addChild(page, "Chantrea", "2019-04-20", /Maths - Junior/);
 
@@ -50,10 +47,7 @@ test("an answer checked while offline is kept, then sent once when the connectio
  * back online, trying again finishes it (the server's attempt is resumed, nothing is answered twice).
  */
 test("finishing while offline can be tried again, and finishes once back online @phone", async ({ page, context }) => {
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(uniqueEmail("offline-finish"));
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(page, uniqueEmail("offline-finish"));
   await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
   await addChild(page, "Bopha", "2019-06-11", /Maths - Junior/);
 

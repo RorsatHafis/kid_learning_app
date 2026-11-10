@@ -588,6 +588,8 @@ export interface ApiProblem {
   lockedUntil?: string;
   /** 429 only (security/ratelimit/AuthRateLimitFilter.java), mirrors Retry-After. */
   retryAfterSeconds?: number;
+  /** 400 only (2026-11-10, RegistrationNotVerifiedException): the registration's email confirmation is missing, used or expired. */
+  registrationNotVerified?: boolean;
   /** 402 only (Y44, SchoolPaymentRequiredException): the school's services wait for payment. */
   schoolPaymentRequired?: boolean;
   /** M8: 403 when the action needs the password re-entered (a step-up). */

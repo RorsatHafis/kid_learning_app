@@ -36,6 +36,7 @@ class ChildSubjectChoiceIntegrationTests {
     private static final String PASSWORD = "Subject-Test-Lotus-Pond-2026";
 
     @Value("${local.server.port}") private int port;
+    @org.springframework.beans.factory.annotation.Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     private final HttpClient http = HttpClient.newHttpClient();
 
@@ -87,8 +88,8 @@ class ChildSubjectChoiceIntegrationTests {
 
     private String register() throws Exception {
         String email = "subjects-" + UUID.randomUUID() + "@example.com";
-        return json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
-                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201).get("accessToken").asString();
+        return com.platform.TestPlans.everythingIncluded(jdbc, json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
+                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201)).get("accessToken").asString();
     }
 
     private URI uri(String path) {

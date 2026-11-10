@@ -710,9 +710,9 @@ class ContentStudioIntegrationTests {
     }
 
     private String registerParent() throws Exception {
-        return json(post("/api/v1/auth/register", "{\"email\":\"studio-parent-" + UUID.randomUUID()
+        return com.platform.TestPlans.everythingIncluded(jdbc, json(post("/api/v1/auth/register", "{\"email\":\"studio-parent-" + UUID.randomUUID()
                 + "@example.com\",\"password\":\"" + PASSWORD + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}",
-                null), 201).get("accessToken").asString();
+                null), 201)).get("accessToken").asString();
     }
 
     // ------------------------------------------------------------------ HTTP

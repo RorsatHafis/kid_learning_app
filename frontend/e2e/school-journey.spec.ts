@@ -14,8 +14,7 @@ import {
   schoolIdByName,
   uniqueEmail,
   waitForEmail,
-  workspaceLink,
-} from "./support";
+  workspaceLink, registerThroughEmail } from "./support";
 
 /**
  * The school side end to end: a principal signs up and confirms their email (M4: no approval), sets
@@ -37,23 +36,11 @@ test("school: principal signs up, confirms their email, sets up the school; an i
   const teacherEmail = uniqueEmail("teacher");
   const schoolName = `E2E Primary ${Date.now().toString(36)}`;
 
-  // M4: self-service - no account to use until the address is confirmed, then no administrator's approval.
-  await page.goto("/register");
-  await page.getByRole("button", { name: "I'm a principal" }).click();
-  await expect(page.getByRole("button", { name: "I'm a principal" })).toHaveAttribute("aria-pressed", "true");
-  await page.getByLabel("Email").fill(principalEmail);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create/i }).click();
-  await expect(page.getByText("Check your email")).toBeVisible();
-  await logIn(page, principalEmail, PASSWORD);
-  // Refused until the address is confirmed.
-  await expect(page.getByRole("alert").first()).toBeVisible();
-  await expect(page).toHaveURL(/\/login/);
-  await page.goto(linkIn(await waitForEmail(request, principalEmail, "Confirm your email"), "/verify-email"));
-  await expect(page.getByText(/confirmed/i).first()).toBeVisible();
+  // M4: self-service, no administrator's approval. Since 2026-11-10 the address is confirmed before the account
+  // exists, so the new account opens straight away, signed in.
+  await registerThroughEmail(page, principalEmail, { principal: true });
 
   // The principal's console, loaded on demand.
-  await logIn(page, principalEmail, PASSWORD);
   await expect(page.getByRole("heading", { name: "Set up your school" })).toBeVisible();
   await expectNoViolations(page, "principal: set up school");
   await page.getByLabel("School name").fill(schoolName);
@@ -144,13 +131,8 @@ test("school: principal signs up, confirms their email, sets up the school; an i
   const parentEmail = uniqueEmail("parent");
   const familyContext = await browser.newContext();
   const parent = await familyContext.newPage();
-  await parent.goto("/register");
-  await parent.getByLabel("Email").fill(parentEmail);
-  await parent.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await parent.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(parent, parentEmail);
   await expect(parent.getByRole("heading", { name: "Your family" })).toBeVisible();
-  await parent.goto(linkIn(await waitForEmail(request, parentEmail, "Confirm your email"), "/verify-email"));
-  await expect(parent.getByText(/confirmed/i).first()).toBeVisible();
   // No subject chosen at home: the class's own learning arrives when Rithy joins it.
   await addChild(parent, "Rithy", "2019-05-02");
   await parent.getByRole("link", { name: "School & settings" }).click();

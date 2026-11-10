@@ -14,6 +14,11 @@ public enum EntitlementKey {
     CHILDREN_MAX(PlanAudience.FAMILY),
     /** How many journeys (active or paused enrolments) a child can follow at once. */
     JOURNEYS_PER_CHILD_MAX(PlanAudience.FAMILY),
+    /**
+     * How many of a child's journeys can be active at once (V88, owner 2026-11-10); the others wait, paused, until
+     * the family switches to one.
+     */
+    ACTIVE_JOURNEYS_PER_CHILD_MAX(PlanAudience.FAMILY),
     /** How many children a school can have access to (each counted once, however many classes). */
     SCHOOL_CHILDREN_MAX(PlanAudience.SCHOOL),
     /** How many teachers a school can have on its staff (active, or invited and not yet answered). */

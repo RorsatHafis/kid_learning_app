@@ -41,9 +41,18 @@ public record RegisterRequest(
         @jakarta.validation.constraints.Size(max = 40) String acceptedLegalVersion,
 
         /** The language chosen on the sign-up page (en or km); the account keeps it. English when absent. */
-        @jakarta.validation.constraints.Pattern(regexp = com.platform.identity.UiLanguage.PATTERN) String preferredLanguage
+        @jakarta.validation.constraints.Pattern(regexp = com.platform.identity.UiLanguage.PATTERN) String preferredLanguage,
+
+        /** 2026-11-10: the grant a verified email's link gave (POST /auth/registration/verify); required. */
+        @jakarta.validation.constraints.Size(max = 128) String registrationGrant
 
 ) {
+
+    /** The request before 2026-11-10 (no grant: refused at registration - the email must be verified first). */
+    public RegisterRequest(String email, String password, String familyName, String idempotencyKey, String role,
+                           String acceptedLegalVersion, String preferredLanguage) {
+        this(email, password, familyName, idempotencyKey, role, acceptedLegalVersion, preferredLanguage, null);
+    }
 
     /** The request before Y15: no agreement given. */
     public RegisterRequest(String email, String password, String familyName, String idempotencyKey, String role) {

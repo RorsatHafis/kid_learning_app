@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, addChild, expectNoViolations, linkIn, logIn, openSubject, uniqueEmail, waitForEmail, workspaceLink } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, addChild, expectNoViolations, linkIn, logIn, openSubject, uniqueEmail, waitForEmail, workspaceLink, registerThroughEmail } from "./support";
 
 /** "3 + 4 = ?" → "7". The seeded Maths path asks sums; anything else gets a plain guess. */
 function answerFor(prompt: string): string {
@@ -8,30 +8,26 @@ function answerFor(prompt: string): string {
 }
 
 async function registerParent(page: import("@playwright/test").Page, email: string) {
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create/i }).click();
+  const link = await registerThroughEmail(page, email);
   await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
+  return link;
 }
 
 test.describe("golden journeys", () => {
-  test("a family: register, confirm the email, add a child, the child learns, the parent sees the evidence @phone", async ({
+  test("a family: confirm the email, register, add a child, the child learns, the parent sees the evidence @phone", async ({
     page,
-    request,
+    browser,
   }) => {
     const email = uniqueEmail("parent");
-    await registerParent(page, email);
-
-    // The confirmation email really arrives, and its link confirms the address.
-    const confirm = linkIn(await waitForEmail(request, email, "Confirm your email"), "/verify-email");
-    await page.goto(confirm);
-    await expect(page.getByText(/confirmed/i).first()).toBeVisible();
-    // A link works once. (A fresh page: on the same page only the fragment would change.)
-    const again = await page.context().newPage();
-    await again.goto(confirm);
-    await expect(again.getByText(/can.t be used|no longer|already/i).first()).toBeVisible();
-    await again.close();
+    // 2026-11-10: the email is confirmed before the account exists - the emailed link opens the form.
+    const confirm = await registerParent(page, email);
+    // A link works once - opened again elsewhere (a fresh browser context keeps nothing of this sign-up).
+    const elsewhere = await (await browser.newContext()).newPage();
+    await elsewhere.goto(confirm);
+    await expect(elsewhere.getByText("This link can't be used")).toBeVisible();
+    await elsewhere.context().close();
+    // The account starts with its address confirmed: no reminder to confirm it.
+    await expect(page.getByText("Confirm your email so password-reset links reach you.")).toHaveCount(0);
 
     // The family chooses what the child learns as they add them (iteration 2).
     await addChild(page, "Sokha", "2019-03-14", /Maths - Junior/);

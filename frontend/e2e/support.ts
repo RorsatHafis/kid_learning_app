@@ -99,6 +99,38 @@ export async function crawl(page: Page, start: string, scope: RegExp, limit = 60
   return [...seen];
 }
 
+/**
+ * Creating an account as a visitor does since 2026-11-10 - the email is confirmed BEFORE the account exists: the
+ * address on /register, the link out of the email Mailpit caught, then the finishing form (role, password, agreement
+ * when legal documents are published). Ends on the submitted form; the caller waits for where it should land.
+ * `khmer` walks the same screens in Khmer (the page must already be in Khmer). Returns the emailed link (single use).
+ */
+export async function registerThroughEmail(
+  page: Page,
+  email: string,
+  options: { password?: string; principal?: boolean; khmer?: boolean; familyName?: string } = {},
+): Promise<string> {
+  const km = options.khmer === true;
+  if (new URL(page.url()).pathname !== "/register") await page.goto("/register");
+  if (options.principal) await page.getByRole("button", { name: km ? "ខ្ញុំជានាយកសាលា" : "I'm a principal" }).click();
+  await page.getByLabel(km ? "អ៊ីមែល" : "Email").fill(email);
+  await page.getByRole("button", { name: km ? "ផ្ញើតំណមកខ្ញុំ" : "Email me a link" }).click();
+  await expect(page.getByText(km ? "សូមពិនិត្យអ៊ីមែលរបស់អ្នក" : "Check your email").first()).toBeVisible();
+  const mail = await waitForEmail(page.request, email, km ? "បញ្ជាក់អ៊ីមែលរបស់អ្នក" : "Confirm your email to create");
+  const link = linkIn(mail, "/register/continue");
+  await page.goto(link);
+  await expect(page.getByText(km ? "បញ្ចប់ការបង្កើតគណនីរបស់អ្នក" : "Finish creating your account").first()).toBeVisible();
+  if (options.principal) {
+    await expect(page.getByRole("button", { name: km ? "ខ្ញុំជានាយកសាលា" : "I'm a principal" })).toHaveAttribute("aria-pressed", "true");
+  }
+  if (options.familyName) await page.getByLabel(km ? "ឈ្មោះគ្រួសារ (មិនចាំបាច់)" : "Family name (optional)").fill(options.familyName);
+  await page.getByLabel(km ? "ពាក្យសម្ងាត់" : "Password", { exact: true }).fill(options.password ?? PASSWORD);
+  const agree = page.getByRole("checkbox", { name: /I agree|ខ្ញុំយល់ព្រម/ });
+  if (await agree.isVisible()) await agree.check();
+  await page.getByRole("button", { name: km ? "បង្កើតគណនី" : "Create account" }).click();
+  return link;
+}
+
 export async function logIn(page: Page, email: string, password: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);

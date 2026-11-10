@@ -97,12 +97,6 @@ public class AccountRecoveryService {
 
     // ------------------------------------------------------------------ email verification
 
-    /** Sends the first confirmation link, inside the registration transaction. */
-    @Transactional(propagation = Propagation.MANDATORY)
-    public void sendVerificationForNewAccount(Account account) {
-        sendVerification(account, null, Instant.now());
-    }
-
     /**
      * The signed-in account asks for a new confirmation link. Refused when the address is
      * already confirmed (409) or an email was sent too recently (429 with a wait).

@@ -13,6 +13,9 @@ public class PlanLimitException extends RuntimeException {
             case CHILDREN_MAX -> limit == 1 ? "Your family's plan includes one child." : "Your family's plan includes up to " + limit + " children.";
             case JOURNEYS_PER_CHILD_MAX -> limit == 1 ? "Your family's plan includes one journey per child at a time."
                     : "Your family's plan includes up to " + limit + " journeys per child at a time.";
+            case ACTIVE_JOURNEYS_PER_CHILD_MAX -> limit == 1
+                    ? "Your family's plan includes one active journey per child at a time. Switch to another to learn it."
+                    : "Your family's plan includes up to " + limit + " active journeys per child at a time. Switch to another to learn it.";
             case SCHOOL_CHILDREN_MAX -> limit == 1 ? "Your school's plan includes one child." : "Your school's plan includes up to " + limit + " children.";
             case SCHOOL_TEACHERS_MAX -> limit == 1 ? "Your school's plan includes one teacher." : "Your school's plan includes up to " + limit + " teachers.";
             case SCHOOL_CLASSES_MAX -> limit == 1 ? "Your school's plan includes one class in use."

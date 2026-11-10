@@ -222,8 +222,8 @@ class ChildDeviceLinkIntegrationTests {
 
     private String registerParent() throws Exception {
         String email = "device-" + UUID.randomUUID() + "@example.com";
-        return json(send("POST", "/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
-                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null, null), 201).get("accessToken").asString();
+        return com.platform.TestPlans.everythingIncluded(jdbc, json(send("POST", "/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
+                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null, null), 201)).get("accessToken").asString();
     }
 
     private String createChild(String parent, String name) throws Exception {

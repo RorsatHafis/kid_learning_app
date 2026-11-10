@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, expectNoViolations, logIn, openSubject, uniqueEmail } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, expectNoViolations, logIn, openSubject, uniqueEmail, registerThroughEmail } from "./support";
 
 test.describe("accessibility @phone", () => {
   // Scan the settled screens: with reduced motion the app skips entrance animations, whose
@@ -21,10 +21,7 @@ test.describe("accessibility @phone", () => {
   });
 
   test("family and child screens", async ({ page }) => {
-    await page.goto("/register");
-    await page.getByLabel("Email").fill(uniqueEmail("a11y"));
-    await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-    await page.getByRole("button", { name: /create/i }).click();
+    await registerThroughEmail(page, uniqueEmail("a11y"));
     await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
     await expectNoViolations(page, "family home (empty)");
 

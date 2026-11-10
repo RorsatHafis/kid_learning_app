@@ -104,10 +104,11 @@ class PlanKhmerIntegrationTests {
         String parent = registerParent(email);
         String familyId = json(get("/api/v1/admin/families?parentEmail=" + URLEncoder.encode(email, StandardCharsets.UTF_8), admin, null),
                 200).get("familyId").asString();
-        // Before: the default plan, which has no Khmer, reads in English for a Khmer reader.
+        // Before: the default plan (V88's free plan, written in both languages) reads in the reader's language.
         JsonNode defaultKm = json(get("/api/v1/family/plan", parent, "km"), 200).get("plan");
         JsonNode defaultEn = json(get("/api/v1/family/plan", parent, "en"), 200).get("plan");
-        assertThat(defaultKm.get("name").asString()).isEqualTo(defaultEn.get("name").asString());
+        assertThat(defaultEn.get("name").asString()).isEqualTo("Free");
+        assertThat(defaultKm.get("name").asString()).isEqualTo("ឥតគិតថ្លៃ");
         json(post("/api/v1/admin/families/" + familyId + "/subscription", "{\"planId\":\"" + planId + "\"}", admin, null), 200);
         JsonNode km = json(get("/api/v1/family/plan", parent, "km"), 200).get("plan");
         assertThat(km.get("name").asString()).isEqualTo("គ្រួសារ បូក");

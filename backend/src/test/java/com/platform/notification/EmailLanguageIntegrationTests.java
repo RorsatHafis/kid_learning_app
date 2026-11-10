@@ -46,7 +46,7 @@ class EmailLanguageIntegrationTests {
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final String PASSWORD = "Email-Language-Mango-2026";
     private static final String NEW_PASSWORD = "Email-Language-Papaya-2026";
-    private static final Pattern LINK = Pattern.compile("(http://localhost:5173/[a-z-]+)#token=([A-Za-z0-9_-]+)");
+    private static final Pattern LINK = Pattern.compile("(http://localhost:5173/[a-z/-]+)#token=([A-Za-z0-9_-]+)");
 
     @Value("${local.server.port}") private int port;
     @Autowired private org.springframework.context.ApplicationContext context;
@@ -60,12 +60,13 @@ class EmailLanguageIntegrationTests {
     @Test
     void aKhmerAccountGetsKhmerEmailsWithTheSameWorkingLinks() throws Exception {
         String email = register("km");
+        // 2026-11-10: the address is confirmed before the account exists, in the language chosen on the sign-up page.
         MimeMessage verify = awaitMail(email, "បញ្ជាក់អ៊ីមែល");
-        assertThat(verify.getSubject()).isEqualTo("បញ្ជាក់អ៊ីមែលរបស់អ្នកសម្រាប់ Bookeyond Kid");
-        assertThat(body(verify)).startsWith("សួស្ដី,").contains("24 ម៉ោង").doesNotContain("Hello", "Please confirm");
-        assertThat(link(verify).page()).isEqualTo("http://localhost:5173/verify-email");
-        assertThat(post("/api/v1/auth/email-verification/confirm", "{\"token\":\"" + link(verify).token() + "\"}", null, null)
-                .statusCode()).as("the Khmer email's link works").isEqualTo(204);
+        assertThat(verify.getSubject()).isEqualTo("បញ្ជាក់អ៊ីមែលរបស់អ្នក ដើម្បីបង្កើតគណនី Bookeyond Kid");
+        assertThat(body(verify)).startsWith("សួស្ដី,").contains("30 នាទី").doesNotContain("Hello");
+        assertThat(link(verify).page()).isEqualTo("http://localhost:5173/register/continue");
+        assertThat(jdbc.queryForObject("select email_verified_at is not null from accounts where normalized_email = ?",
+                Boolean.class, email)).as("the Khmer email's link worked: the account exists, its address confirmed").isTrue();
 
         assertThat(post("/api/v1/auth/password-reset", "{\"email\":\"" + email + "\"}", null, null).statusCode()).isEqualTo(202);
         MimeMessage reset = awaitMail(email, "កំណត់ពាក្យសម្ងាត់");
@@ -83,7 +84,7 @@ class EmailLanguageIntegrationTests {
     void anEnglishAccountKeepsEnglishEmailsWhateverLanguageTheRequestAsksIn() throws Exception {
         String email = register(null);
         MimeMessage verify = awaitMail(email, "Confirm your email");
-        assertThat(body(verify)).startsWith("Hello,").contains("expires in 24 hours");
+        assertThat(body(verify)).startsWith("Hello,").contains("expires in 30 minutes");
 
         // The recipient's saved language decides, not the language of whoever triggered the email.
         assertThat(post("/api/v1/auth/password-reset", "{\"email\":\"" + email + "\"}", null, "km").statusCode()).isEqualTo(202);

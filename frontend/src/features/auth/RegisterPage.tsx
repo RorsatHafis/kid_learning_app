@@ -1,136 +1,158 @@
 /**
- * Creating a family account: email, password (with the policy explained) and agreement to the current legal
- * documents once they are published.
+ * Creating an account, step 1 (owner requirement 2026-11-10): the email is confirmed BEFORE the account exists.
+ * The visitor types an address and is emailed a single-use link; the account is created from that link
+ * ({@link RegisterContinuePage}), on this device or any other. The answer here is the same whether or not the
+ * address already has an account - that owner is emailed how to log in instead - so the page never says which.
  */
-import { useState, type FormEvent } from "react";
-import { LegalAgreement } from "@/features/legal/Legal";
-import { useLegal } from "@/features/legal/useLegal";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { MailCheck } from "lucide-react";
 import { AuthLayout } from "./AuthLayout";
 import { FormField } from "./FormField";
 import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils/cn";
-import { useAuth } from "@/lib/auth/AuthContext";
+import { authApi } from "@/lib/api/endpoints";
 import { ApiError, rateLimitedMessage } from "@/lib/api/ApiError";
-import { roleHomePath } from "./roleHomePath";
+import { currentLocale } from "@/i18n/store";
 import { useMessages } from "@/i18n/catalog";
 import { authMessages } from "./messages";
+import { RoleChoice } from "./RoleChoice";
+import { rememberRegistrationRole, rememberedRegistrationRole, type RegistrationRole } from "./registrationRole";
+
+/** The server sends at most one email a minute per address (RegistrationVerificationService). */
+const RESEND_GAP_SECONDS = 60;
 
 export function RegisterPage() {
-  const { register } = useAuth();
   const m = useMessages(authMessages);
   const r = m.register;
-  const navigate = useNavigate();
 
   // ?as=principal (the landing page's "Register your school") opens on the school application.
   const [params] = useSearchParams();
-  const [role, setRole] = useState<"PARENT" | "PRINCIPAL">(params.get("as") === "principal" ? "PRINCIPAL" : "PARENT");
+  const [role, setRole] = useState<RegistrationRole>(() =>
+    params.get("as") === "principal" ? "PRINCIPAL" : params.get("as") === "parent" ? "PARENT" : rememberedRegistrationRole(),
+  );
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [familyName, setFamilyName] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [sentAgain, setSentAgain] = useState(false);
+  const [wait, setWait] = useState(0);
+  const [fieldError, setFieldError] = useState<string | undefined>();
   const [formError, setFormError] = useState<string | null>(null);
-  const [pendingConfirmation, setPendingConfirmation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const legal = useLegal();
-  const [agreed, setAgreed] = useState(false);
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    if (wait <= 0) return;
+    const timer = window.setTimeout(() => setWait((s) => s - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [wait]);
+
+  function chooseRole(next: RegistrationRole) {
+    setRole(next);
+    rememberRegistrationRole(next);
+  }
+
+  async function send(address: string, again: boolean) {
     setFormError(null);
-    setFieldErrors({});
-    const version = legal.data?.version ?? undefined;
-    if (version && !agreed) {
-      setFieldErrors({ acceptedLegalVersion: r.agreeFirst });
-      return;
-    }
+    setFieldError(undefined);
     setIsSubmitting(true);
     try {
-      const result = await register({
-        email,
-        password,
-        familyName: role === "PARENT" ? familyName || undefined : undefined,
-        role,
-        acceptedLegalVersion: version,
-      });
-      if (result === "PENDING_CONFIRMATION") {
-        setPendingConfirmation(true);
-      } else {
-        navigate(roleHomePath(result.platformRole), { replace: true });
-      }
+      await authApi.startRegistration(address, currentLocale());
+      rememberRegistrationRole(role);
+      setSentTo(address);
+      setSentAgain(again);
+      setWait(RESEND_GAP_SECONDS);
     } catch (err) {
-      if (err instanceof ApiError && err.validationErrors) {
-        setFieldErrors(err.validationErrors);
+      if (err instanceof ApiError && err.validationErrors?.email) {
+        setFieldError(err.validationErrors.email);
       } else if (err instanceof ApiError && err.isRateLimited) {
         setFormError(rateLimitedMessage(err));
-      } else if (err instanceof ApiError) {
-        setFormError(err.problem?.detail ?? r.failed);
       } else {
-        setFormError(m.somethingWentWrong);
+        setFormError(r.sendFailed);
       }
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  if (pendingConfirmation) {
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    void send(email.trim(), false);
+  }
+
+  if (sentTo) {
     return (
-      <AuthLayout title={r.pendingTitle} subtitle={r.pendingSubtitle}>
-        <p className="text-center text-sm leading-relaxed text-ink-soft">
-          {r.pendingBody} <span className="font-semibold text-ink">{email}</span>
+      <AuthLayout title={r.sentTitle} subtitle={r.sentSubtitle}>
+        <div className="flex flex-col gap-4 text-sm text-ink">
+          <p role="status" className="flex items-start gap-3 rounded-[14px] bg-tonle-50 p-4 ring-1 ring-tonle-100">
+            <MailCheck size={20} className="mt-0.5 shrink-0 text-palm-deep" aria-hidden />
+            <span>
+              {r.sentBefore} <strong className="break-all">{sentTo}</strong>
+            </span>
+          </p>
+          <p className="leading-relaxed text-ink-soft">{r.sentNext}</p>
+          <p className="leading-relaxed text-ink-soft">{r.noEmail}</p>
+          {sentAgain && wait > 0 && (
+            <p role="status" className="font-semibold text-palm-deep">
+              {r.sentAgain}
+            </p>
+          )}
+          {formError && (
+            <p role="alert" className="font-medium text-brick-deep">
+              {formError}
+            </p>
+          )}
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
+              variant="outline"
+              size="lg"
+              disabled={wait > 0 || isSubmitting}
+              onClick={() => void send(sentTo, true)}
+              className="w-full sm:w-auto"
+            >
+              {isSubmitting ? r.sending : wait > 0 ? r.sendAgainIn(wait) : r.sendAgain}
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={() => {
+                setSentTo(null);
+                setFormError(null);
+              }}
+              className="w-full sm:w-auto"
+            >
+              {r.differentEmail}
+            </Button>
+          </div>
+        </div>
+        <p className="mt-6 text-center text-sm text-ink-soft">
+          {r.haveAccount}{" "}
+          <Link to="/login" className="font-semibold text-tonle-700">
+            {m.logIn}
+          </Link>
         </p>
-        <p className="mt-3 text-center text-sm leading-relaxed text-ink-soft">{r.pendingNext}</p>
-        <Link to="/" className="mt-6 block text-center text-sm font-semibold text-tonle-700">
-          {r.backHome}
-        </Link>
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout title={r.title} subtitle={role === "PRINCIPAL" ? r.principalSubtitle : r.subtitle}>
-      <div role="group" aria-label={r.accountType} className="mb-7 grid grid-cols-2 gap-1 rounded-[14px] bg-tonle-50 p-1 ring-1 ring-inset ring-line">
-        <button
-          type="button"
-          aria-pressed={role === "PARENT"}
-          onClick={() => setRole("PARENT")}
-          className={cn("h-10 rounded-[10px] text-sm font-semibold transition-[background-color,color,box-shadow] duration-150", role === "PARENT" ? "bg-white text-tonle-900 shadow-tight ring-1 ring-line" : "text-ink-soft hover:text-tonle-900")}
-        >
-          {r.parent}
-        </button>
-        <button
-          type="button"
-          aria-pressed={role === "PRINCIPAL"}
-          onClick={() => setRole("PRINCIPAL")}
-          className={cn("h-10 rounded-[10px] text-sm font-semibold transition-[background-color,color,box-shadow] duration-150", role === "PRINCIPAL" ? "bg-white text-tonle-900 shadow-tight ring-1 ring-line" : "text-ink-soft hover:text-tonle-900")}
-        >
-          {r.principal}
-        </button>
-      </div>
-
+      <RoleChoice role={role} onChange={chooseRole} />
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        {/* A principal names their school after signing in (M4): the server has nowhere to keep it before. */}
-        {role === "PARENT" && (
-          <FormField label={r.familyName} value={familyName} onChange={(e) => setFamilyName(e.target.value)} error={fieldErrors.familyName} />
-        )}
-        <FormField label={m.email} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} error={fieldErrors.email} />
         <FormField
-          label={m.password}
-          type="password"
+          label={m.email}
+          type="email"
+          autoComplete="email"
           required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          error={fieldErrors.password}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={fieldError}
         />
-        <LegalAgreement checked={agreed} onChange={setAgreed} error={fieldErrors.acceptedLegalVersion} />
-        {formError && <p className="text-sm font-medium text-brick-deep">{formError}</p>}
-        {role === "PRINCIPAL" && (
-          <p className="text-xs text-ink-soft">{r.principalNext}</p>
+        <p className="text-xs leading-relaxed text-ink-soft">{r.startHint}</p>
+        {formError && (
+          <p role="alert" className="text-sm font-medium text-brick-deep">
+            {formError}
+          </p>
         )}
-        {/* What a family is asked for - true to docs/legal/DATA-INVENTORY.md; nothing about a child before registering. */}
-        {role === "PARENT" && <p className="text-xs text-ink-soft">{r.parentNext}</p>}
-        <Button type="submit" size="lg" disabled={isSubmitting} className="mt-2 w-full">
-          {isSubmitting ? r.submitting : r.submit}
+        <Button type="submit" size="lg" disabled={isSubmitting || !email.trim()} className="mt-2 w-full">
+          {isSubmitting ? r.sending : r.sendLink}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-ink-soft">

@@ -3291,3 +3291,36 @@ deploy. Design (from the code, 2026-11-10):
 4. **Curriculum ages.** Today via fixed `age_hubs` (V10). New: `curricula.min_age/max_age` (V90), backfilled from the
    hub, check min <= max; Studio min/max fields; eligibility/discovery/filtering use them; hubs kept for compatibility.
 5. **Mobile Studio** at 360/390/768/desktop, EN/KM - inspect first, then fix labels/fields/hierarchy.
+
+### 2026-11-10 progress (local only; nothing deployed)
+
+**(1) Email verified before registration - DONE (backend + frontend + tests).**
+- V87 `registration_verifications`; `RegistrationVerificationService` (start / verify / consumeGrant), controller
+  `/api/v1/auth/registration/{start,verify}`; `/api/v1/auth/register` refuses without a grant (400,
+  `registrationNotVerified: true`, EN/KM). The link is `/register/continue#token=...` (fragment, like every emailed
+  link). New accounts start with the address confirmed; principals start ACTIVE (M4's wait is met up front).
+  The old confirm-after-registering flow stays for accounts made before (resend + confirm, pending principals).
+- Frontend: `/register` asks only for the address (+ account type) and offers "send again" after the server's one
+  minute; `/register/continue` uses the link once (StrictMode-safe), keeps the 30-min grant for the tab (a reload
+  doesn't lose it), shows the confirmed address read-only, then role / family name / password / agreement. Expired or
+  used confirmation, already-registered address and unusable link each say what to do next.
+- Tests: `RegistrationVerificationIntegrationTests` (7), `AccountRecoveryIntegrationTests` re-based on accounts from
+  before the change, `PublicRegistrationRoleSecurityTests` (principal now opens at once), email-language tests; a
+  TEST-ONLY filter (`VerifiedRegistrationTestFilter`) runs the real start -> email -> verify for tests that register
+  through the API. Vitest: register/continue/legal. E2E: `registerThroughEmail` (support.ts) reads the link from
+  Mailpit; every spec that registered through the UI uses it.
+
+**(2) Free plan - backend DONE, UI in progress.**
+- V88: new limit `ACTIVE_JOURNEYS_PER_CHILD_MAX`; a NEW default family plan `FAMILY_FREE_2026_11` ("Free", EN/KM
+  description) with CHILDREN_MAX 1, JOURNEYS_PER_CHILD_MAX 3, ACTIVE_JOURNEYS_PER_CHILD_MAX 1. "Early access" is not
+  edited (an offered plan is frozen, V79): it stays active, non-default, never self-service; whoever has it keeps it.
+  Existing family plans get ACTIVE_JOURNEYS = unlimited (unchanged behaviour). Nothing existing is removed or paused.
+- A journey beyond the active limit starts PAUSED ("Waiting"); `POST /api/v1/enrollments/{id}/switch` (family access
+  only) activates it and pauses the family journey active longest, in one transaction under the child-row lock
+  (concurrent switches tested). A waiting journey can't be started or served (409). Upgrade: more active at once;
+  expiry: back to the free plan's limits for new additions, nothing taken away.
+- **Owner questions (not decided in code):** (a) the free plan's name "Free" / Khmer "ឥតគិតថ្លៃ" and its description
+  are mine - rename in Admin > Plans by a new version if wanted; (b) a journey a class assigns counts toward the
+  family's limits (as journeys did before) and is never paused by a switch - if those alone fill the free plan's one
+  active place, the family can't switch to its own subject until the class ends. Confirm or decide otherwise.
+- Khmer strings added (plan description, waiting/switch, server texts) join the native review list (PD-14).

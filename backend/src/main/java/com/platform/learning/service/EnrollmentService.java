@@ -75,6 +75,7 @@ public class EnrollmentService {
         // A family starting another journey is a plan-limited action (§3); re-asking for one the
         // child already follows is not, so it stays idempotent at any limit.
         CurriculumVersion published = curriculumService.getPublishedVersion(curriculumId);
+        boolean startsWaiting = false;
         // Y19: a journey the family stopped counts as a new one when it is chosen again.
         if (enrollmentRepository.findByChildIdAndCurriculumVersionId(childId, published.getId())
                 .map(existing -> existing.getStatus() == com.platform.learning.entity.EnrollmentStatus.WITHDRAWN)
@@ -84,8 +85,18 @@ public class EnrollmentService {
                 throw new IllegalStateException("This learning path is no longer offered.");
             }
             entitlementService.requireRoomForJourney(childId);
+            // V88 (owner 2026-11-10): when the plan's active journeys are all in use, the new one waits, paused, until
+            // the family switches to it (JourneySwitchService). The child row is locked above, so two enrolments at
+            // once can't both take the last active place.
+            Integer activeLimit = entitlementService.activeJourneyLimit(childId);
+            startsWaiting = activeLimit != null && entitlementService.activeJourneysOf(childId) >= activeLimit;
         }
-        return enroll(childId, curriculumId);
+        Enrollment enrollment = enroll(childId, curriculumId);
+        if (startsWaiting && enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.ACTIVE) {
+            enrollment.pause();
+            enrollment = enrollmentRepository.saveAndFlush(enrollment);
+        }
+        return enrollment;
     }
 
     /**

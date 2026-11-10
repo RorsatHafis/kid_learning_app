@@ -94,8 +94,9 @@ class FamilyDataExportIntegrationTests {
         assertThat(access.get(0).get("endedAt").isNull()).isFalse();
         assertThat(access.get(0).get("classNames")).isEmpty();
         assertThat(export.get("children").get(1).get("schoolAccess")).isEmpty();
-        assertThat(export.get("plan").get("onDefaultPlan").asBoolean()).isTrue();
-        assertThat(export.get("plan").get("plan").get("name").asString()).isNotBlank();
+        // This family was granted "Early access" (two children: TestPlans); the export says which plan it is on.
+        assertThat(export.get("plan").get("onDefaultPlan").asBoolean()).isFalse();
+        assertThat(export.get("plan").get("plan").get("name").asString()).isEqualTo("Early access");
 
         // Nothing of the other family; no answer key, password or session material.
         assertThat(res.body()).doesNotContain(strangerChild).doesNotContain("Stranger Child").doesNotContain(stranger.email())
@@ -145,8 +146,8 @@ class FamilyDataExportIntegrationTests {
 
     private Parent registerParent() throws Exception {
         String email = "export-" + UUID.randomUUID() + "@example.com";
-        JsonNode body = json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
-                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201);
+        JsonNode body = com.platform.TestPlans.everythingIncluded(jdbc, json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
+                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201));
         return new Parent(body.get("accountId").asString(), email, body.get("accessToken").asString(),
                 body.get("refreshToken").asString());
     }

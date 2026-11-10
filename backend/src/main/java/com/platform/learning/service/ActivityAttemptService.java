@@ -266,6 +266,10 @@ public class ActivityAttemptService {
         if (enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.WITHDRAWN) {
             throw new IllegalStateException("This path has been stopped.");
         }
+        // V88: a waiting journey is played once the family switches to it.
+        if (enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.PAUSED) {
+            throw new IllegalStateException("This path is waiting. A grown-up can switch to it.");
+        }
         if (!item.getActivityVersionId().equals(activityVersionId)) {
             throw new IllegalArgumentException(
                     "ActivityVersion %s does not match the activity version %s carried by learning path item %s"

@@ -105,6 +105,8 @@ public class EntitlementService {
         usage.put(EntitlementKey.CHILDREN_MAX, (int) children.countByFamilyIdAndStatus(familyId, ChildStatus.ACTIVE));
         int busiest = children.findByFamilyId(familyId).stream().mapToInt(child -> journeysOf(child.getId())).max().orElse(0);
         usage.put(EntitlementKey.JOURNEYS_PER_CHILD_MAX, busiest);
+        int busiestActive = children.findByFamilyId(familyId).stream().mapToInt(child -> activeJourneysOf(child.getId())).max().orElse(0);
+        usage.put(EntitlementKey.ACTIVE_JOURNEYS_PER_CHILD_MAX, busiestActive);
         return usage;
     }
 
@@ -130,6 +132,23 @@ public class EntitlementService {
         if (limit != null && journeysOf(childId) >= limit) {
             throw new PlanLimitException(EntitlementKey.JOURNEYS_PER_CHILD_MAX, limit);
         }
+    }
+
+    /**
+     * How many of the child's journeys may be active at once on the family's plan ({@code null}: no limit). V88 (owner
+     * 2026-11-10): beyond it a new journey waits, paused, until the family switches to it.
+     */
+    @Transactional(readOnly = true)
+    public Integer activeJourneyLimit(UUID childId) {
+        Child child = children.findById(childId).orElseThrow(() -> new ResourceNotFoundException("Child", childId));
+        return effectivePlan(child.getFamilyId()).limit(EntitlementKey.ACTIVE_JOURNEYS_PER_CHILD_MAX);
+    }
+
+    /** Journeys a child is learning now: active enrolments (paused ones wait; finished and stopped ones don't count). */
+    public int activeJourneysOf(UUID childId) {
+        return (int) enrollments.findByChildId(childId).stream()
+                .filter(enrollment -> enrollment.getStatus() == EnrollmentStatus.ACTIVE)
+                .count();
     }
 
     /** Journeys a child is following: active or paused enrolments (finished and withdrawn ones don't count). */

@@ -1,15 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { PASSWORD, addChild, expectNoViolations, uniqueEmail } from "./support";
+import { addChild, expectNoViolations, uniqueEmail, registerThroughEmail } from "./support";
 
 /**
  * Y19: a family stops a path (to change subject within its plan) and, choosing it again, the child
  * carries on where they stopped. Stopping is said before it happens; nothing is deleted.
  */
 test("a family stops a path and starting it again carries on where it stopped @phone", async ({ page }) => {
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(uniqueEmail("stop"));
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(page, uniqueEmail("stop"));
   await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
   await addChild(page, "Vanna", "2019-05-02", /Maths - Junior/);
 

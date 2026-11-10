@@ -42,17 +42,7 @@ public class JourneyStopService {
         if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
             throw new IllegalStateException("This path is finished; there is nothing to stop.");
         }
-        List<String> assignedBy = jdbc.queryForList("""
-                select sc.name || ' at ' || s.name
-                from class_enrollments ce
-                join school_classes sc on sc.id = ce.school_class_id and sc.status = 'ACTIVE'
-                join schools s on s.id = sc.school_id
-                join school_child_access g on g.child_id = ce.child_id and g.school_id = sc.school_id and g.status = 'ACTIVE'
-                join class_curriculum_assignments k on k.school_class_id = sc.id and k.status = 'ACTIVE'
-                join curriculum_versions cv on cv.curriculum_id = k.curriculum_id
-                where ce.child_id = :child and ce.status = 'ACTIVE' and cv.id = :version
-                order by 1
-                """, Map.of("child", enrollment.getChildId(), "version", enrollment.getCurriculumVersionId()), String.class);
+        List<String> assignedBy = assignedBy(enrollment);
         if (!assignedBy.isEmpty()) {
             throw new IllegalStateException(assignedBy.getFirst() + " assigns this path, so it stays while the class does. "
                     + "To stop it, end the school's access on this page.");
@@ -66,6 +56,21 @@ public class JourneyStopService {
                     where p.enrollment_id = :enrollment)
                 """, Map.of("enrollment", enrollmentId));
         return enrollments.saveAndFlush(enrollment);
+    }
+
+    /** The classes ("Grade 1 at Sala") that assign this journey to the child now - empty for a family's own choice. */
+    public List<String> assignedBy(Enrollment enrollment) {
+        return jdbc.queryForList("""
+                select sc.name || ' at ' || s.name
+                from class_enrollments ce
+                join school_classes sc on sc.id = ce.school_class_id and sc.status = 'ACTIVE'
+                join schools s on s.id = sc.school_id
+                join school_child_access g on g.child_id = ce.child_id and g.school_id = sc.school_id and g.status = 'ACTIVE'
+                join class_curriculum_assignments k on k.school_class_id = sc.id and k.status = 'ACTIVE'
+                join curriculum_versions cv on cv.curriculum_id = k.curriculum_id
+                where ce.child_id = :child and ce.status = 'ACTIVE' and cv.id = :version
+                order by 1
+                """, Map.of("child", enrollment.getChildId(), "version", enrollment.getCurriculumVersionId()), String.class);
     }
 
 }

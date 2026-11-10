@@ -160,11 +160,11 @@ class CaregiverIntegrationTests {
 
     private Person register(boolean confirmed) throws Exception {
         String email = "care-" + UUID.randomUUID() + "@example.com";
-        String token = json(send("POST", "/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
-                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201).get("accessToken").asString();
-        if (confirmed) {
-            jdbc.update("update accounts set email_verified_at = now() where normalized_email = ?", email);
-        }
+        String token = com.platform.TestPlans.everythingIncluded(jdbc, json(send("POST", "/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
+                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201)).get("accessToken").asString();
+        // Since 2026-11-10 every new account's address is confirmed before it exists; an unconfirmed one is an
+        // account from before that.
+        jdbc.update("update accounts set email_verified_at = " + (confirmed ? "now()" : "null") + " where normalized_email = ?", email);
         return new Person(email, token);
     }
 

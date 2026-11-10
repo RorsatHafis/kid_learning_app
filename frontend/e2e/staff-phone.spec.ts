@@ -8,6 +8,7 @@ import {
   ensurePricedSchoolPlan,
   linkIn,
   logIn,
+  registerThroughEmail,
   schoolIdByName,
   uniqueEmail,
   waitForEmail,
@@ -29,15 +30,7 @@ test("staff on a phone: principal, teacher and administrator pages fit the scree
   const schoolName = `E2E Phone School ${Date.now().toString(36)}`;
 
   // A principal with a paid school, a class and an assigned teacher (as in school-journey.spec).
-  await page.goto("/register");
-  await page.getByRole("button", { name: "I'm a principal" }).click();
-  await page.getByLabel("Email").fill(principalEmail);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create/i }).click();
-  await expect(page.getByText("Check your email")).toBeVisible();
-  await page.goto(linkIn(await waitForEmail(request, principalEmail, "Confirm your email"), "/verify-email"));
-  await expect(page.getByText(/confirmed/i).first()).toBeVisible();
-  await logIn(page, principalEmail, PASSWORD);
+  await registerThroughEmail(page, principalEmail, { principal: true });
   await expect(page.getByRole("heading", { name: "Set up your school" })).toBeVisible();
   await page.getByLabel("School name").fill(schoolName);
   await page.getByRole("button", { name: "Create school" }).click();

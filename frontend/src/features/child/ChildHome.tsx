@@ -48,7 +48,8 @@ export function ChildHome() {
   // X25: a review that fell due after the last step is placed first, so it is there to play. Never blocks the home.
   const enrollments = useAsync(async () => {
     await learningApi.placeDueReviews(childId).catch(() => null);
-    return learningApi.enrollments(childId);
+    // V88: a path waiting for the family to switch to it isn't one the child can play now (its books stay on the shelf).
+    return (await learningApi.enrollments(childId)).filter((e) => e.status !== "PAUSED");
   }, [childId]);
 
   // The home is an entrance: the child's subjects first. A subject's journey opens with ?path= (from a

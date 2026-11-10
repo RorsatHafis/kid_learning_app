@@ -12,7 +12,9 @@ export const apiMessages = defineMessages(
     waitAMoment: "Please wait a moment and try again.",
     entitlement: {
       CHILDREN_MAX: "Children",
-      JOURNEYS_PER_CHILD_MAX: "Journeys per child at a time",
+      // V88: the journeys a child has chosen (learning or waiting), and how many of them are learned at once.
+      JOURNEYS_PER_CHILD_MAX: "Journeys per child (learning or waiting)",
+      ACTIVE_JOURNEYS_PER_CHILD_MAX: "Journeys per child learned at a time",
       SCHOOL_CHILDREN_MAX: "Children in the school",
       SCHOOL_TEACHERS_MAX: "Teachers",
       SCHOOL_CLASSES_MAX: "Classes in use",
@@ -21,6 +23,7 @@ export const apiMessages = defineMessages(
     entitlementShort: {
       CHILDREN_MAX: "Children",
       JOURNEYS_PER_CHILD_MAX: "Journeys",
+      ACTIVE_JOURNEYS_PER_CHILD_MAX: "Learned at a time",
       SCHOOL_CHILDREN_MAX: "Children",
       SCHOOL_TEACHERS_MAX: "Teachers",
       SCHOOL_CLASSES_MAX: "Classes",
@@ -39,7 +42,8 @@ export const apiMessages = defineMessages(
     waitAMoment: "សូមរង់ចាំបន្តិច ហើយព្យាយាមម្ដងទៀត។",
     entitlement: {
       CHILDREN_MAX: "កូន",
-      JOURNEYS_PER_CHILD_MAX: "ដំណើររៀនក្នុងមួយកូនក្នុងពេលតែមួយ",
+      JOURNEYS_PER_CHILD_MAX: "ដំណើររៀនក្នុងមួយកូន (កំពុងរៀន ឬកំពុងរង់ចាំ)",
+      ACTIVE_JOURNEYS_PER_CHILD_MAX: "ដំណើររៀនក្នុងមួយកូនដែលរៀនក្នុងពេលតែមួយ",
       SCHOOL_CHILDREN_MAX: "កុមារក្នុងសាលា",
       SCHOOL_TEACHERS_MAX: "គ្រូ",
       SCHOOL_CLASSES_MAX: "ថ្នាក់ដែលកំពុងប្រើ",
@@ -48,6 +52,7 @@ export const apiMessages = defineMessages(
     entitlementShort: {
       CHILDREN_MAX: "កូន",
       JOURNEYS_PER_CHILD_MAX: "ដំណើររៀន",
+      ACTIVE_JOURNEYS_PER_CHILD_MAX: "រៀនក្នុងពេលតែមួយ",
       SCHOOL_CHILDREN_MAX: "កុមារ",
       SCHOOL_TEACHERS_MAX: "គ្រូ",
       SCHOOL_CLASSES_MAX: "ថ្នាក់",

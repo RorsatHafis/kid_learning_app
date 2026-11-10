@@ -121,6 +121,14 @@ export const familyMessages = defineMessages(
       hidePath: "Hide the full path",
       showPath: "Show the full path",
       stopFailed: "That didn't work. Please try again.",
+      // V88 (owner 2026-11-10): on a plan with one active subject at a time, the others wait.
+      waiting: "Waiting",
+      waitingExplain: (child: string, path: string) =>
+        `${child} learns one subject at a time on your plan. Switch to ${path} and the subject ${child} is learning now waits instead - nothing is lost on either, and you can switch back at any time.`,
+      switchTo: "Learn this now",
+      switching: "Switching…",
+      switchFailed: "That didn't switch. Please try again.",
+      morePlans: "Plans with more subjects at once",
       stop: "Stop this path…",
       stopLabel: (name: string) => `Stop ${name}`,
       stopExplain: (child: string, path: string) =>
@@ -507,6 +515,13 @@ export const familyMessages = defineMessages(
       hidePath: "លាក់ផ្លូវរៀនទាំងមូល",
       showPath: "បង្ហាញផ្លូវរៀនទាំងមូល",
       stopFailed: "មិនដំណើរការទេ។ សូមព្យាយាមម្ដងទៀត។",
+      waiting: "កំពុងរង់ចាំ",
+      waitingExplain: (child: string, path: string) =>
+        `${child} រៀនម្ដងមួយមុខវិជ្ជា តាមកញ្ចប់របស់អ្នក។ ប្ដូរទៅ ${path} ហើយមុខវិជ្ជាដែល ${child} កំពុងរៀនឥឡូវនឹងរង់ចាំជំនួសវិញ - គ្មានអ្វីបាត់បង់ទេ ហើយអ្នកអាចប្ដូរត្រឡប់មកវិញបានគ្រប់ពេល។`,
+      switchTo: "រៀនមុខវិជ្ជានេះឥឡូវ",
+      switching: "កំពុងប្ដូរ…",
+      switchFailed: "ការប្ដូរមិនដំណើរការទេ។ សូមព្យាយាមម្ដងទៀត។",
+      morePlans: "កញ្ចប់ដែលរៀនបានច្រើនមុខវិជ្ជាក្នុងពេលតែមួយ",
       stop: "បញ្ឈប់ផ្លូវរៀននេះ…",
       stopLabel: (name: string) => `បញ្ឈប់ ${name}`,
       stopExplain: (child: string, path: string) =>

@@ -105,6 +105,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(com.platform.identity.registration.RegistrationNotVerifiedException.class)
+    public ResponseEntity<Object> handleRegistrationNotVerified(
+            com.platform.identity.registration.RegistrationNotVerifiedException ex, WebRequest request) {
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Email Not Verified");
+        problem.setProperty("registrationNotVerified", true);
+
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+
+    }
+
     @ExceptionHandler(EmailAlreadyRegisteredException.class)
     public ResponseEntity<Object> handleEmailAlreadyRegistered(EmailAlreadyRegisteredException ex, WebRequest request) {
 

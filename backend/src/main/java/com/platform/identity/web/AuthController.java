@@ -118,7 +118,8 @@ public class AuthController {
         }
         Account account = registerAccountService.register(new RegisterAccountCommand(
                 request.email(), request.password(), request.familyName(), request.idempotencyKey(),
-                requestedRole, legal.configured() ? legal.version() : null, request.preferredLanguage()));
+                requestedRole, legal.configured() ? legal.version() : null, request.preferredLanguage(),
+                request.registrationGrant()));
 
         if (account.getStatus() != com.platform.identity.entity.AccountStatus.ACTIVE) {
             // Pending accounts (a principal who hasn't confirmed their address yet) get no

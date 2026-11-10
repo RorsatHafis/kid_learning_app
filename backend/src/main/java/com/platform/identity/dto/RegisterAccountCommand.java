@@ -15,7 +15,9 @@ public record RegisterAccountCommand(
     /** The legal documents' version the person agreed to; null when none are configured (Y15). */
     String acceptedLegalVersion,
     /** en or km: the language chosen when signing up. */
-    String preferredLanguage
+    String preferredLanguage,
+    /** 2026-11-10: the verified email's registration grant, used up by the registration. */
+    String registrationGrant
 ) {
 
     private static final String DEFAULT_FAMILY_NAME = "My Family";

@@ -97,8 +97,8 @@ class AddChildOnceIntegrationTests {
 
     private String parent() throws Exception {
         String email = "add-once-" + UUID.randomUUID() + "@example.com";
-        String token = json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
-                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201).get("accessToken").asString();
+        String token = com.platform.TestPlans.everythingIncluded(jdbc, json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
+                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201)).get("accessToken").asString();
         jdbc.update("update accounts set email_verified_at = now() where normalized_email = ?", email);
         return token;
     }

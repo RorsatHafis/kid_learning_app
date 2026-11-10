@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ChevronDown, Plus } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { enrollmentApi, learningApi } from "@/lib/api/endpoints";
@@ -115,7 +115,14 @@ function EnrollmentCard({
           <div className="flex items-center gap-4">
             <SubjectEmblem code={curriculum.subjectCode} name={curriculum.subjectName} size={56} />
             <div>
-              <h3 className="font-display text-xl font-bold text-tonle-950">{curriculum.name}</h3>
+              <h3 className="font-display text-xl font-bold text-tonle-950">
+                {curriculum.name}
+                {enrollment.status === "PAUSED" && (
+                  <span className="ml-2 inline-block rounded-full bg-tonle-50 px-2.5 py-0.5 align-middle font-sans text-xs font-semibold text-tonle-800 ring-1 ring-inset ring-line">
+                    {m.waiting}
+                  </span>
+                )}
+              </h3>
               <p className="mt-0.5 text-sm text-ink-faint">{[curriculum.subjectName, curriculum.ageHubName].filter(Boolean).join(" · ")}</p>
             </div>
           </div>
@@ -123,6 +130,8 @@ function EnrollmentCard({
             {m.completed(completedSteps, totalSteps)}
           </p>
         </div>
+
+        {enrollment.status === "PAUSED" && <SwitchToPath enrollment={enrollment} childName={childName} onSwitched={onStopped} />}
 
         {enrollment.ageFit && !enrollment.ageFit.forChildAge && (
           <AgeFitNote childId={childId} childName={childName} curriculumName={curriculum.name} fit={enrollment.ageFit} onChosen={onStopped} />
@@ -228,6 +237,56 @@ function StopPath({
         >
           {m.keep}
         </Button>
+      </div>
+      {error && (
+        <p role="alert" className="text-sm font-medium text-brick-deep">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * V88 (owner 2026-11-10): a subject waiting on a one-at-a-time plan, and the family's switch to it. The server makes
+ * the switch (and refuses one the plan can't hold); the page shows the outcome it returns.
+ */
+function SwitchToPath({
+  enrollment,
+  childName,
+  onSwitched,
+}: {
+  enrollment: EnrollmentOverview;
+  childName: string;
+  onSwitched: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const m = useMessages(familyMessages).learningNow;
+
+  async function switchTo() {
+    setBusy(true);
+    setError(null);
+    try {
+      await enrollmentApi.switchTo(enrollment.enrollmentId);
+      onSwitched();
+    } catch (err) {
+      setError(problemMessage(err, m.switchFailed));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-[12px] bg-paper p-4 ring-1 ring-line">
+      <p className="text-sm leading-relaxed text-ink">{m.waitingExplain(childName, enrollment.curriculum.name)}</p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Button size="md" disabled={busy} onClick={() => void switchTo()}>
+          {busy ? m.switching : m.switchTo}
+          <span className="sr-only">: {enrollment.curriculum.name}</span>
+        </Button>
+        <Link to="/parent/account#plan" className="text-sm font-semibold text-tonle-700 underline-offset-4 hover:underline">
+          {m.morePlans}
+        </Link>
       </div>
       {error && (
         <p role="alert" className="text-sm font-medium text-brick-deep">

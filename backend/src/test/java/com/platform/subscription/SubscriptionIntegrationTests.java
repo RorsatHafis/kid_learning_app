@@ -51,15 +51,16 @@ class SubscriptionIntegrationTests {
     private final HttpClient http = HttpClient.newHttpClient();
 
     @Test
-    void aFamilyWithoutASubscriptionHasTheDefaultPlanWithEverythingIncluded() throws Exception {
+    void aFamilyWithoutASubscriptionHasTheDefaultPlanAndUsesNothingYet() throws Exception {
         String parent = registerParent("default-" + UUID.randomUUID() + "@example.com");
 
+        // V88: the default is the free plan (its limits: FreePlanIntegrationTests).
         JsonNode plan = json(get("/api/v1/family/plan", parent), 200);
         assertThat(plan.get("onDefaultPlan").asBoolean()).isTrue();
-        assertThat(plan.get("plan").get("code").asString()).isEqualTo("EARLY_ACCESS");
+        assertThat(plan.get("plan").get("code").asString()).isEqualTo("FAMILY_FREE_2026_11");
         assertThat(plan.get("subscription").isNull()).isTrue();
+        assertThat(plan.get("entitlements")).hasSize(3);
         for (JsonNode entitlement : plan.get("entitlements")) {
-            assertThat(entitlement.get("limit").isNull()).as(entitlement.toString()).isTrue();
             assertThat(entitlement.get("used").asInt()).isZero();
         }
     }
@@ -205,7 +206,7 @@ class SubscriptionIntegrationTests {
         assertThat(plan.get("subscription").has("note")).isFalse();
         assertThat(plan.get("subscription").has("id")).isFalse();
         assertThat(Instant.parse(plan.get("subscription").get("currentPeriodEnd").asString())).isEqualTo(until);
-        assertThat(plan.get("afterwards").get("plan").get("code").asString()).isEqualTo("EARLY_ACCESS");
+        assertThat(plan.get("afterwards").get("plan").get("code").asString()).as("the default plan (V88)").isEqualTo("FAMILY_FREE_2026_11");
         List<String> choices = new ArrayList<>();
         plan.get("choices").forEach(choice -> choices.add(choice.get("plan").get("id").asString()));
         assertThat(choices).contains(choosable).doesNotContain(granted);

@@ -42,6 +42,8 @@ export const setupMessages = defineMessages(
       lead: (name: string) =>
         `This is what ${name} will find in their own space. Each subject starts at its first chapter, and the platform adapts from ${name}'s answers.`,
       none: (name: string) => `No subjects yet. You can add them any time from ${name}'s learning plan.`,
+      oneAtATime: (name: string, limit: number) =>
+        `On your plan, ${name} learns ${limit === 1 ? "one subject" : `${limit} subjects`} at a time. ${limit === 1 ? "One starts" : `${limit} start`} now; the others wait on ${name}'s learning plan, where you can switch at any time.`,
       start: (name: string) => `Start ${name}'s learning`,
       finish: "Finish",
       starting: "Starting…",
@@ -126,6 +128,8 @@ export const setupMessages = defineMessages(
       lead: (name: string) =>
         `នេះជាអ្វីដែល ${name} នឹងឃើញនៅក្នុងកន្លែងរបស់ពួកគេ។ មុខវិជ្ជានីមួយៗចាប់ផ្ដើមពីជំពូកទីមួយ ហើយប្រព័ន្ធសម្របតាមចម្លើយរបស់ ${name}។`,
       none: (name: string) => `មិនទាន់មានមុខវិជ្ជានៅឡើយទេ។ អ្នកអាចបន្ថែមវាបានគ្រប់ពេល ពីផែនការរៀនរបស់ ${name}។`,
+      oneAtATime: (name: string, limit: number) =>
+        `តាមកញ្ចប់របស់អ្នក ${name} រៀនម្ដង ${limit === 1 ? "មួយមុខវិជ្ជា" : `${limit} មុខវិជ្ជា`}។ ${limit === 1 ? "មួយមុខវិជ្ជា" : `${limit} មុខវិជ្ជា`}ចាប់ផ្ដើមឥឡូវ ហើយមុខវិជ្ជាផ្សេងទៀតរង់ចាំនៅលើផែនការរៀនរបស់ ${name} ដែលអ្នកអាចប្ដូរបានគ្រប់ពេល។`,
       start: (name: string) => `ចាប់ផ្ដើមការរៀនរបស់ ${name}`,
       finish: "បញ្ចប់",
       starting: "កំពុងចាប់ផ្ដើម…",

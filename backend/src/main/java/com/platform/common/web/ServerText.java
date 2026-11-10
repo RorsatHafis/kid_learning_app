@@ -109,6 +109,9 @@ public final class ServerText {
             rule("Your storage is full: (\\S+) MB of (\\S+) MB is used, and this file needs (\\S+) MB\\. Remove media you no longer use, or ask for more space\\.",
                     m -> "កន្លែងផ្ទុករបស់អ្នកពេញហើយ៖ បានប្រើ " + m.group(1) + " MB ក្នុងចំណោម " + m.group(2) + " MB ហើយឯកសារនេះត្រូវការ "
                             + m.group(3) + " MB។ សូមលុបមេឌៀដែលអ្នកលែងប្រើ ឬស្នើសុំកន្លែងបន្ថែម។"),
+            rule("Your family's plan includes up to (\\d+) active journeys per child at a time\\. Switch to another to learn it\\.",
+                    m -> "កញ្ចប់របស់គ្រួសារអ្នករួមបញ្ចូលផ្លូវសិក្សាសកម្មរហូតដល់ " + m.group(1)
+                            + " សម្រាប់កូនម្នាក់ៗក្នុងពេលតែមួយ។ សូមប្ដូរទៅផ្លូវមួយទៀត ដើម្បីរៀនវា។"),
             rule("Your family's plan includes up to (\\d+) journeys per child at a time\\.",
                     m -> "កញ្ចប់របស់គ្រួសារអ្នករួមបញ្ចូលផ្លូវសិក្សារហូតដល់ " + m.group(1) + " សម្រាប់កូនម្នាក់ៗក្នុងពេលតែមួយ។"),
             rule("(A picture|A recording) can be at most (\\d+) MB\\.",
@@ -153,6 +156,7 @@ public final class ServerText {
             Map.entry(GlobalExceptionHandler.NOT_FOUND_DETAIL, "រកមិនឃើញទេ។ វាប្រហែលជាត្រូវបានលុប ឬមិនអាចប្រើបានសម្រាប់អ្នក។"),
             Map.entry("You do not have access to this resource", "អ្នកមិនមានសិទ្ធិចូលប្រើការនេះទេ"),
             Map.entry("Validation failed", "សូមពិនិត្យព័ត៌មានដែលបានបញ្ចូល"),
+            Map.entry("Confirm your email before creating an account", "សូមបញ្ជាក់អ៊ីមែលរបស់អ្នក មុនពេលបង្កើតគណនី"),
             Map.entry("An unexpected error occurred", "មានបញ្ហាដែលមិនបានរំពឹងទុកបានកើតឡើង"),
             Map.entry("The request conflicts with existing data", "សំណើនេះផ្ទុយនឹងទិន្នន័យដែលមានរួចហើយ"),
             Map.entry("A file can be at most 5 MB (a picture at most 2 MB).", "ឯកសារមួយអាចមានទំហំយ៉ាងច្រើន 5 MB (រូបភាពយ៉ាងច្រើន 2 MB)។"),
@@ -267,6 +271,10 @@ public final class ServerText {
             Map.entry("A school plan can be chosen by schools only once it has a price", "សាលាអាចជ្រើសរើសកញ្ចប់សាលាបាន លុះត្រាតែវាមានតម្លៃ"),
             Map.entry("A note is required when changing a storage allowance", "ត្រូវការកំណត់ចំណាំ នៅពេលផ្លាស់ប្ដូរកន្លែងផ្ទុកដែលបានអនុញ្ញាត"),
             Map.entry("Only teachers and principals keep media of their own", "មានតែគ្រូ និងនាយកសាលាប៉ុណ្ណោះដែលរក្សាមេឌៀផ្ទាល់ខ្លួន"),
+            Map.entry("Your family's plan includes one active journey per child at a time. Switch to another to learn it.",
+                    "កញ្ចប់របស់គ្រួសារអ្នករួមបញ្ចូលផ្លូវសិក្សាសកម្មមួយ សម្រាប់កូនម្នាក់ៗក្នុងពេលតែមួយ។ សូមប្ដូរទៅផ្លូវមួយទៀត ដើម្បីរៀនវា។"),
+            Map.entry("This path is waiting. A grown-up can switch to it.", "ផ្លូវសិក្សានេះកំពុងរង់ចាំ។ មនុស្សពេញវ័យអាចប្ដូរទៅវាបាន។"),
+            Map.entry("Only a waiting path can be switched to.", "អាចប្ដូរទៅបានតែផ្លូវសិក្សាដែលកំពុងរង់ចាំប៉ុណ្ណោះ។"),
             Map.entry("Your family's plan includes one journey per child at a time.",
                     "កញ្ចប់របស់គ្រួសារអ្នករួមបញ្ចូលផ្លូវសិក្សាមួយ សម្រាប់កូនម្នាក់ៗក្នុងពេលតែមួយ។"),
             Map.entry("This class is archived: restore it before adding to it.", "ថ្នាក់នេះត្រូវបានទុកក្នុងបណ្ណសារ៖ សូមស្ដារវាវិញ មុននឹងបន្ថែមអ្វីទៅក្នុងវា។"),

@@ -106,7 +106,9 @@ class SchoolAccessIntegrationTests {
                 parent.token()), 201);
         String codeBody = "{\"code\":\"" + code.substring(0, 4).toLowerCase() + "-" + code.substring(4) + "\"}";
 
-        // Joining needs a confirmed email address (PD-22); previewing doesn't, and changes nothing.
+        // Joining needs a confirmed email address (PD-22); previewing doesn't, and changes nothing. (Since 2026-11-10
+        // new accounts start confirmed; an unconfirmed one is from before that.)
+        jdbc.update("update accounts set email_verified_at = null where id = ?", parent.id());
         JsonNode preview = json(post("/api/v1/children/" + childId + "/schools/preview", codeBody, parent.token()), 200);
         assertThat(preview.get("schoolName").asString()).isEqualTo("Access School");
         assertThat(preview.get("className").asString()).isEqualTo("Grade 1");

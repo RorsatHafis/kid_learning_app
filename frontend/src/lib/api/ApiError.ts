@@ -44,6 +44,11 @@ export class ApiError extends Error {
     return this.status === 409 && this.problem?.dailyLimitReached === true;
   }
 
+  /** 400 (2026-11-10): registering needs a fresh email confirmation - the one held is missing, used or expired. */
+  get isRegistrationNotVerified() {
+    return this.status === 400 && this.problem?.registrationNotVerified === true;
+  }
+
   get isSchoolPaymentRequired() {
     return this.status === 402 && this.problem?.schoolPaymentRequired === true;
   }

@@ -35,6 +35,19 @@ public class TestcontainersConfiguration {
 		
 	}
 
+	/** 2026-11-10: tests that register through the API go through the real email verification first (see the filter). */
+	@Bean
+	org.springframework.boot.web.servlet.FilterRegistrationBean<VerifiedRegistrationTestFilter> verifiedRegistrationTestFilter(
+			org.springframework.beans.factory.ObjectProvider<com.platform.identity.registration.RegistrationVerificationService> verifications,
+			org.springframework.beans.factory.ObjectProvider<com.platform.identity.repository.AccountRepository> accounts,
+			org.springframework.beans.factory.ObjectProvider<GreenMail> greenMail,
+			org.springframework.beans.factory.ObjectProvider<org.springframework.jdbc.core.JdbcTemplate> jdbc) {
+		var registration = new org.springframework.boot.web.servlet.FilterRegistrationBean<>(
+				new VerifiedRegistrationTestFilter(verifications, accounts, greenMail, jdbc));
+		registration.setOrder(org.springframework.core.Ordered.HIGHEST_PRECEDENCE);
+		return registration;
+	}
+
 	/**
 	 * A real SMTP server inside the test JVM, one per application context, on a free
 	 * port. Mail is delivered to it over SMTP exactly as to a production relay, and

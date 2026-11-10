@@ -6,6 +6,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { ApiError } from "@/lib/api/ApiError";
 import { childrenApi, enrollmentApi } from "@/lib/api/endpoints";
+import { familyPlanApi } from "@/lib/api/subscriptions";
 import type { ApiProblem, Child, CurriculumChoice } from "@/lib/api/types";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
@@ -365,6 +366,9 @@ function ReviewStep({ child, chosen, onBack }: { child: Child; chosen: string[];
   const navigate = useNavigate();
   const catalog = useAsync(() => childrenApi.curricula(child.id), [child.id]);
   const picked = useMemo(() => (catalog.data ?? []).filter((c) => chosen.includes(c.id)), [catalog.data, chosen]);
+  // V88: how many subjects the family's plan has learned at once (the free plan: one). Unknown -> nothing said.
+  const plan = useAsync(() => familyPlanApi.get(), []);
+  const activeLimit = plan.data?.entitlements?.find((e) => e.key === "ACTIVE_JOURNEYS_PER_CHILD_MAX")?.limit ?? null;
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState<{ choice: CurriculumChoice; reason: string; planLimit: ApiProblem | null }[]>([]);
   const [started, setStarted] = useState<string[]>([]);
@@ -399,6 +403,11 @@ function ReviewStep({ child, chosen, onBack }: { child: Child; chosen: string[];
           {m.heading(child.displayName)}
         </h2>
         <p className="mt-1.5 max-w-xl text-ink-soft">{m.lead(child.displayName)}</p>
+        {activeLimit !== null && picked.length > activeLimit && (
+          <p className="mt-3 max-w-xl rounded-[14px] bg-tonle-50 p-4 text-sm leading-relaxed text-ink ring-1 ring-inset ring-line">
+            {m.oneAtATime(child.displayName, activeLimit)}
+          </p>
+        )}
       </div>
       {catalog.isLoading && <LoadingState />}
       {/* The chosen subjects couldn't be read: say so - finishing now would leave them unstarted, unannounced. */}

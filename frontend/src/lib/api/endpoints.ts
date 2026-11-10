@@ -47,12 +47,25 @@ export const authApi = {
     familyName?: string;
     role?: "PARENT" | "PRINCIPAL";
     acceptedLegalVersion?: string;
+    /** 2026-11-10: proof that the address was confirmed first (registration/verify); single use. */
+    registrationGrant: string;
     /** The language chosen before signing up; the account keeps it. */
     preferredLanguage?: Locale;
   }) =>
     apiClient.post<AuthResponse>(
       "/auth/register",
       { ...input, idempotencyKey: crypto.randomUUID() },
+      { skipAuth: true },
+    ),
+  // identity/registration/RegistrationVerificationController.java (2026-11-10): the email is confirmed before the
+  // account exists. start is always 202 - whether or not the address has an account (that owner is emailed instead).
+  startRegistration: (email: string, preferredLanguage: Locale) =>
+    apiClient.post<void>("/auth/registration/start", { email, preferredLanguage }, { skipAuth: true }),
+  // Opening the emailed link: single use. 400 for an unusable link, 409 when the address has an account by now.
+  verifyRegistration: (token: string) =>
+    apiClient.post<{ registrationGrant: string; email: string; grantExpiresAt: string }>(
+      "/auth/registration/verify",
+      { token },
       { skipAuth: true },
     ),
   login: (input: { email: string; password: string }) =>
@@ -204,6 +217,8 @@ export const enrollmentApi = {
   get: (enrollmentId: string) => apiClient.get<Enrollment>(`/enrollments/${enrollmentId}`),
   /** Y19: the family stops a journey; nothing is deleted, and choosing the curriculum again carries on. */
   stop: (enrollmentId: string) => apiClient.post<Enrollment>(`/enrollments/${enrollmentId}/stop`),
+  /** V88: the family switches to a waiting journey; on a one-at-a-time plan the one being learned waits instead. */
+  switchTo: (enrollmentId: string) => apiClient.post<Enrollment>(`/enrollments/${enrollmentId}/switch`),
   /** 200 with the next pending item, or whatever the backend currently
    * has queued — see LearningPathItemResponse. */
   nextActivity: (enrollmentId: string) =>

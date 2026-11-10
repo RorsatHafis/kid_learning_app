@@ -289,8 +289,8 @@ class FamilyErasureIntegrationTests {
 
     private Parent registerParent() throws Exception {
         String email = "erasure-" + UUID.randomUUID() + "@example.com";
-        JsonNode body = json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
-                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201);
+        JsonNode body = com.platform.TestPlans.everythingIncluded(jdbc, json(post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
+                + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201));
         jdbc.update("update accounts set email_verified_at = now() where normalized_email = ?", email);
         return new Parent(body.get("accountId").asString(), email, body.get("accessToken").asString(),
                 body.get("refreshToken").asString());

@@ -518,9 +518,9 @@ class QuestionMediaAndOrderingIntegrationTests {
     }
 
     private String registerParent() throws Exception {
-        return json(post("/api/v1/auth/register", "{\"email\":\"media-parent-" + UUID.randomUUID()
+        return com.platform.TestPlans.everythingIncluded(jdbc, json(post("/api/v1/auth/register", "{\"email\":\"media-parent-" + UUID.randomUUID()
                 + "@example.com\",\"password\":\"" + PASSWORD + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}",
-                null), 201).get("accessToken").asString();
+                null), 201)).get("accessToken").asString();
     }
 
     private static JsonNode json(HttpResponse<String> response, int expectedStatus) {

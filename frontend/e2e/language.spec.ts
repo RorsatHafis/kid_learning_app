@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, enterPasswordAgain, expectNoViolations, linkIn, logIn, uniqueEmail, waitForEmail } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, enterPasswordAgain, expectNoViolations, linkIn, logIn, registerThroughEmail, uniqueEmail, waitForEmail } from "./support";
 
 /**
  * Khmer and English end to end. The browser asks for English (Playwright's en-US), so every Khmer
@@ -59,6 +59,12 @@ test("language: a visitor switches to Khmer, signs up in Khmer and keeps it @pho
   await switchTo(page, "English");
   await expect(page.getByLabel("Email")).toHaveValue(email);
   await switchTo(page, "ខ្មែរ");
+  // 2026-11-10: the email first - its link, sent in Khmer, opens the rest of the form.
+  await page.getByRole("button", { name: "ផ្ញើតំណមកខ្ញុំ" }).click();
+  await expect(page.getByText("សូមពិនិត្យអ៊ីមែលរបស់អ្នក").first()).toBeVisible();
+  await expectNoViolations(page, "register in Khmer - the link is sent");
+  await page.goto(linkIn(await waitForEmail(request, email, "បញ្ជាក់អ៊ីមែលរបស់អ្នក"), "/register/continue"));
+  await expect(page.getByText("បញ្ចប់ការបង្កើតគណនីរបស់អ្នក").first()).toBeVisible();
   await page.getByLabel("ពាក្យសម្ងាត់", { exact: true }).fill("abcabcabcabc");
   await agreeIfAsked(page);
   await page.getByRole("button", { name: "បង្កើតគណនី" }).click();
@@ -75,9 +81,6 @@ test("language: a visitor switches to Khmer, signs up in Khmer and keeps it @pho
   await expect(page.getByRole("heading", { name: "គ្រួសាររបស់អ្នក" })).toBeVisible();
   await expectNoViolations(page, "family home in Khmer");
 
-  // The confirmation email is in the language the account was created in.
-  linkIn(await waitForEmail(request, email, "បញ្ជាក់អ៊ីមែលរបស់អ្នក"), "/verify-email");
-
   // Signing in on a browser that asks for English: the account's language wins, and stays on refresh.
   const elsewhere = await browser.newContext({ locale: "en-US" });
   const other = await elsewhere.newPage();
@@ -92,11 +95,7 @@ test("language: a visitor switches to Khmer, signs up in Khmer and keeps it @pho
 test("language: a parent and a child each keep their own language; nothing carries to the next person", async ({ page }) => {
   // An English-speaking family, signed up in English.
   const englishEmail = uniqueEmail("en-parent");
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(englishEmail);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await agreeIfAsked(page);
-  await page.getByRole("button", { name: "Create account" }).click();
+  await registerThroughEmail(page, englishEmail);
   await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
   await logOut(page);
 
@@ -104,10 +103,7 @@ test("language: a parent and a child each keep their own language; nothing carri
   const email = uniqueEmail("km-family");
   await page.goto("/register");
   await switchTo(page, "ខ្មែរ");
-  await page.getByLabel("អ៊ីមែល").fill(email);
-  await page.getByLabel("ពាក្យសម្ងាត់", { exact: true }).fill(PASSWORD);
-  await agreeIfAsked(page);
-  await page.getByRole("button", { name: "បង្កើតគណនី" }).click();
+  await registerThroughEmail(page, email, { khmer: true });
   await expect(page.getByRole("heading", { name: "គ្រួសាររបស់អ្នក" })).toBeVisible();
 
   // A child added in Khmer starts in Khmer.

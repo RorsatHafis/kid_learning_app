@@ -15,8 +15,7 @@ import {
   authenticatorKey,
   stepUpProof,
   turnOnAuthenticator,
-  waitForEmail,
-} from "./support";
+  waitForEmail, registerThroughEmail } from "./support";
 
 /**
  * Y45: test accounts for a coworker preview, made through the product's own flows on an isolated stack - never a
@@ -122,13 +121,8 @@ test("preview seed: an account for each role", async ({ page, browser, request }
   const parent = { email: `parent-${tag}@bk-preview.test`, password: password() };
   const family = await browser.newContext();
   const home = await family.newPage();
-  await home.goto("/register");
-  await home.getByLabel("Email").fill(parent.email);
-  await home.getByLabel("Password", { exact: true }).fill(parent.password);
-  await home.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(home, parent.email, { password: parent.password });
   await expect(home.getByRole("heading", { name: "Your family" })).toBeVisible();
-  await home.goto(linkIn(await waitForEmail(request, parent.email, "Confirm your email"), "/verify-email"));
-  await expect(home.getByText(/confirmed/i).first()).toBeVisible();
   await addChild(home, "Sophea", "2019-03-14", /Maths - Junior/);
   await home.getByRole("link", { name: "Start Sophea's session" }).click();
   await openSubject(home, "Maths");

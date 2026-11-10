@@ -221,9 +221,9 @@ class QuestionGuidanceIntegrationTests {
                 "{\"objectiveIds\":[\"" + catalog.objectiveId() + "\"]}", admin), 200);
         json(post("/api/v1/studio/curriculum-versions/" + curriculumVersionId + "/publish", "", admin), 200);
 
-        String parent = json(post("/api/v1/auth/register", "{\"email\":\"guide-parent-" + UUID.randomUUID()
+        String parent = com.platform.TestPlans.everythingIncluded(jdbc, json(post("/api/v1/auth/register", "{\"email\":\"guide-parent-" + UUID.randomUUID()
                 + "@example.com\",\"password\":\"" + PASSWORD + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}",
-                null), 201).get("accessToken").asString();
+                null), 201)).get("accessToken").asString();
         String childId = json(post("/api/v1/children", "{\"displayName\":\"Guide Child\",\"dateOfBirth\":\""
                 + LocalDate.now().minusYears(6) + "\"}", parent), 201).get("id").asString();
         String enrollmentId = json(post("/api/v1/children/" + childId + "/enrollments",

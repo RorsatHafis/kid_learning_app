@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, enterPasswordAgain, expectNoViolations, logIn, uniqueEmail, workspaceLink } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, enterPasswordAgain, expectNoViolations, logIn, uniqueEmail, workspaceLink, registerThroughEmail } from "./support";
 
 const isoDay = (daysFromNow: number) => {
   const d = new Date();
@@ -19,10 +19,7 @@ test("plans: an administrator gives a dated plan, the family sees its end and wh
 }) => {
   test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
   const email = uniqueEmail("plan-family");
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(page, email);
   await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
 
   const suffix = Date.now().toString(36).toUpperCase();
@@ -106,10 +103,7 @@ test("plans: a family asks for an offered plan, an administrator answers it from
   await enterPasswordAgain(operator, ADMIN_PASSWORD);
 
   const email = uniqueEmail("plan-asker");
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(page, email);
   await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
   await page.goto("/parent/account#plan");
   const plan = page.getByRole("region", { name: "Your plan" });

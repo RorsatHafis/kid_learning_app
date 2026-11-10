@@ -9,6 +9,7 @@ import { RequireRole } from "@/routes/RequireRole";
 import { LandingPage } from "@/features/marketing/LandingPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RegisterPage } from "@/features/auth/RegisterPage";
+import { RegisterContinuePage } from "@/features/auth/RegisterContinuePage";
 import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { ResetPasswordPage, SetUpAccountPage } from "@/features/auth/ResetPasswordPage";
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
@@ -92,6 +93,7 @@ export default function App() {
             />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/register/continue" element={<RegisterContinuePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/set-up-account" element={<SetUpAccountPage />} />

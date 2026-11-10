@@ -36,13 +36,14 @@ class AccountRegistrationWriter  {
     private final AuditService auditService;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
-    private final AccountRecoveryService recovery;
+    private final com.platform.identity.registration.RegistrationVerificationService registrations;
  
     AccountRegistrationWriter(AccountRepository accountRepository, FamilyRepository familyRepository,
                                MembershipRepository membershipRepository, IdempotencyService idempotencyService,
                                AuditService auditService, PasswordEncoder passwordEncoder,
-                               PasswordPolicy passwordPolicy, AccountRecoveryService recovery) {
-                                
+                               PasswordPolicy passwordPolicy,
+                               com.platform.identity.registration.RegistrationVerificationService registrations) {
+
         this.accountRepository = accountRepository;
         this.familyRepository = familyRepository;
         this.membershipRepository = membershipRepository;
@@ -50,7 +51,7 @@ class AccountRegistrationWriter  {
         this.auditService = auditService;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
-        this.recovery = recovery;
+        this.registrations = registrations;
 
     }
 
@@ -64,6 +65,11 @@ class AccountRegistrationWriter  {
 
         }
 
+        // 2026-11-10: only an address proven before registration gets an account; the grant is used up here, in the
+        // same transaction that creates it (a refused or failed registration leaves the grant unused).
+        registrations.consumeGrant(command.registrationGrant(), normalizedEmail);
+        java.time.Instant verifiedAt = java.time.Instant.now();
+
         PlatformRole role = command.resolvedPlatformRole();
  
         Account registered = Account.register(command.email(), passwordEncoder.encode(command.rawPassword()), role);
@@ -71,10 +77,8 @@ class AccountRegistrationWriter  {
             registered.acceptLegal(command.acceptedLegalVersion(), java.time.Instant.now());
         }
         registered.changeLanguage(com.platform.identity.UiLanguage.orDefault(command.preferredLanguage()));
+        registered.markEmailVerified(verifiedAt);
         Account account = accountRepository.saveAndFlush(registered);
-        if (role == PlatformRole.PRINCIPAL) {
-            account.markPendingApproval();
-        }
 
         // Family membership is a PARENT-only concept (see PlatformRole's javadoc) -
         // TEACHER/PRINCIPAL/ADMIN accounts are scoped through the school domain
@@ -97,8 +101,8 @@ class AccountRegistrationWriter  {
                 account.getId(), auditDetails));
  
 
-        // Delivered only if this registration commits.
-        recovery.sendVerificationForNewAccount(account);
+        // The address was proven before the account existed: no confirmation email follows, and principals start
+        // active (M4's "no access until the address is confirmed" is met up front).
 
         idempotencyService.complete(guardId);
  

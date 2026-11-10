@@ -7,7 +7,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth/AuthContext";
-import { RegisterPage } from "@/features/auth/RegisterPage";
+import { RegisterContinuePage } from "@/features/auth/RegisterContinuePage";
 import { LegalLinks, LegalUpdateNotice } from "./Legal";
 
 function respond(status: number, body?: unknown) {
@@ -20,7 +20,10 @@ function respond(status: number, body?: unknown) {
 const PUBLISHED = { privacyUrl: "https://example.org/privacy", termsUrl: "https://example.org/terms", version: "2026-10" };
 const NONE = { privacyUrl: null, termsUrl: null, version: null };
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  window.sessionStorage.clear();
+});
 
 describe("Privacy notice and terms (Y15)", () => {
   it("shows nothing at all while none are published", async () => {
@@ -51,16 +54,20 @@ describe("Privacy notice and terms (Y15)", () => {
         return respond(404, { status: 404 });
       }),
     );
+    // 2026-11-10: the agreement is on the form the confirmed email's link opens.
+    window.sessionStorage.setItem(
+      "bk.register.grant",
+      JSON.stringify({ registrationGrant: "g1", email: "p@example.com", grantExpiresAt: "2099-01-01T00:00:00Z" }),
+    );
     render(
       <MemoryRouter>
         <AuthProvider>
-          <RegisterPage />
+          <RegisterContinuePage />
         </AuthProvider>
       </MemoryRouter>,
     );
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Email"), "p@example.com");
-    await user.type(screen.getByLabelText(/^Password/), "A-Long-Password-2026");
+    await user.type(await screen.findByLabelText(/^Password/), "A-Long-Password-2026");
 
     await user.click(screen.getByRole("button", { name: "Create account" }));
     expect(await screen.findByText(/Agree to the terms of use and the privacy notice/)).toBeInTheDocument();

@@ -64,8 +64,8 @@ class AccountRecoveryIntegrationTests {
     // ------------------------------------------------------------------ verification
 
     @Test
-    void registeringSendsAConfirmationLinkThatConfirmsTheAddressOnce() throws Exception {
-        Session parent = register("PARENT");
+    void anAccountFromBeforeVerifiedRegistrationConfirmsItsAddressOnce() throws Exception {
+        Session parent = unconfirmedLegacyAccount("PARENT");
         Link link = onlyLink(parent.email(), "Confirm your email");
         assertThat(link.page()).isEqualTo("http://localhost:5173/verify-email");
         assertThat(me(parent).get("emailVerifiedAt").isNull()).isTrue();
@@ -85,7 +85,7 @@ class AccountRecoveryIntegrationTests {
 
     @Test
     void onlyTheDigestOfALinkIsStored() throws Exception {
-        Session parent = register("PARENT");
+        Session parent = unconfirmedLegacyAccount("PARENT");
         Link link = onlyLink(parent.email(), "Confirm your email");
 
         List<String> stored = jdbc.queryForList(
@@ -94,13 +94,14 @@ class AccountRecoveryIntegrationTests {
         assertThat(link.token()).hasSizeGreaterThanOrEqualTo(43);
     }
 
-    /** M4 replaced the administrator's approval of principals (Y-era) with self-service: the confirmed address opens it. */
+    /**
+     * M4 replaced the administrator's approval of principals (Y-era) with self-service: the confirmed address opens it.
+     * Since 2026-11-10 a new principal proves the address before the account exists (RegistrationVerificationIntegrationTests);
+     * a principal who registered before that and is still waiting opens the account the same way as then.
+     */
     @Test
-    void confirmingTheAddressOpensANewPrincipalsAccount() throws Exception {
-        String email = "principal-" + UUID.randomUUID() + "@example.com";
-        HttpResponse<String> registered = post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\""
-                + PASSWORD + "\",\"role\":\"PRINCIPAL\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null);
-        assertThat(registered.statusCode()).isEqualTo(202);
+    void confirmingTheAddressOpensAWaitingPrincipalsAccount() throws Exception {
+        String email = pendingLegacyPrincipal().email();
 
         assertThat(loginStatus(email, PASSWORD)).as("not before the address is confirmed").isEqualTo(401);
 
@@ -117,7 +118,7 @@ class AccountRecoveryIntegrationTests {
 
     @Test
     void aNewConfirmationLinkWaitsAMinuteAndReplacesTheOldOne() throws Exception {
-        Session parent = register("PARENT");
+        Session parent = unconfirmedLegacyAccount("PARENT");
         Link first = onlyLink(parent.email(), "Confirm your email");
 
         HttpResponse<String> tooSoon = post("/api/v1/account/email-verification", "", parent.accessToken());
@@ -138,7 +139,7 @@ class AccountRecoveryIntegrationTests {
 
     @Test
     void noMoreThanFiveConfirmationEmailsAnHour() throws Exception {
-        Session parent = register("PARENT");
+        Session parent = unconfirmedLegacyAccount("PARENT");
         onlyLink(parent.email(), "Confirm your email");
         for (int i = 2; i <= 5; i++) {
             spaceOutLinks(parent);
@@ -211,7 +212,7 @@ class AccountRecoveryIntegrationTests {
 
     @Test
     void aLinkOnlyWorksForItsOwnPurpose() throws Exception {
-        Session parent = register("PARENT");
+        Session parent = unconfirmedLegacyAccount("PARENT");
         Link confirm = onlyLink(parent.email(), "Confirm your email");
         requestReset(parent.email());
         Link resetLink = onlyLink(parent.email(), "Reset your");
@@ -297,9 +298,9 @@ class AccountRecoveryIntegrationTests {
 
     @Test
     void aPendingPrincipalCanResetButStillCannotSignInUntilTheAddressIsConfirmed() throws Exception {
-        String email = "principal-" + UUID.randomUUID() + "@example.com";
-        post("/api/v1/auth/register", "{\"email\":\"" + email + "\",\"password\":\"" + PASSWORD
-                + "\",\"role\":\"PRINCIPAL\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null);
+        Session principal = pendingLegacyPrincipal();
+        String email = principal.email();
+        backdateLinks(principal, 61);
 
         requestReset(email);
         assertThat(reset(onlyLink(email, "Reset your").token(), NEW_PASSWORD).statusCode()).isEqualTo(204);
@@ -397,7 +398,7 @@ class AccountRecoveryIntegrationTests {
 
     @Test
     void afterTheMoveLinksSentToTheOldAddressStopWorkingAndANewerChangeLinkReplacesTheOlder() throws Exception {
-        Session parent = register("PARENT");
+        Session parent = unconfirmedLegacyAccount("PARENT");
         requestReset(parent.email());
         Link resetToOldAddress = onlyLink(parent.email(), "Reset your");
         String first = "first-" + UUID.randomUUID() + "@example.com";
@@ -512,6 +513,25 @@ class AccountRecoveryIntegrationTests {
                 + "\",\"role\":\"" + role + "\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", null), 201);
         return new Session(body.get("accountId").asString(), email, body.get("accessToken").asString(),
                 body.get("refreshToken").asString());
+    }
+
+    /**
+     * An account as registration made it before 2026-11-10: the address not yet confirmed, one confirmation link sent
+     * (asked for here through the signed-in endpoint, as the app's banner does).
+     */
+    private Session unconfirmedLegacyAccount(String role) throws Exception {
+        Session session = register(role);
+        jdbc.update("update accounts set email_verified_at = null where id = ?::uuid", UUID.fromString(session.accountId()));
+        assertThat(post("/api/v1/account/email-verification", "", session.accessToken()).statusCode()).isEqualTo(202);
+        return session;
+    }
+
+    /** A principal who signed up before 2026-11-10 and has not confirmed yet: waiting, with a confirmation link. */
+    private Session pendingLegacyPrincipal() throws Exception {
+        Session principal = unconfirmedLegacyAccount("PRINCIPAL");
+        jdbc.update("update accounts set status = 'PENDING_VERIFICATION' where id = ?::uuid",
+                UUID.fromString(principal.accountId()));
+        return principal;
     }
 
     private Session login(String email, String password) throws Exception {

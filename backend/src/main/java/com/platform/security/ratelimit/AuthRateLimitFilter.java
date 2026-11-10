@@ -64,6 +64,9 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
                 Map.entry("/api/v1/auth/email-change/confirm", login),
                 Map.entry("/api/v1/auth/register", new TokenBucketLimiter(properties.registerPerHour(), Duration.ofHours(1), nanoClock)),
                 Map.entry("/api/v1/auth/password-reset", recovery),
+                // 2026-11-10: each start may send an email (recovery budget); opening the link is sign-in-like.
+                Map.entry("/api/v1/auth/registration/start", recovery),
+                Map.entry("/api/v1/auth/registration/verify", login),
                 Map.entry("/api/v1/auth/password-reset/phone", recovery),
                 // Logout presents a refresh token too; it shares the refresh budget.
                 Map.entry("/api/v1/auth/refresh", refresh),

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PASSWORD, addChild, uniqueEmail, walkPages } from "./support";
+import { addChild, uniqueEmail, walkPages, registerThroughEmail } from "./support";
 
 /**
  * A family on a phone: a parent signs up and adds a child with a subject, then every page the family area and the
@@ -7,10 +7,7 @@ import { PASSWORD, addChild, uniqueEmail, walkPages } from "./support";
  */
 test("family on a phone: the family area and the child's space fit the screen @phone", async ({ page }) => {
   test.setTimeout(300_000);
-  await page.goto("/register");
-  await page.getByLabel("Email").fill(uniqueEmail("family"));
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(page, uniqueEmail("family"));
   await addChild(page, "Dara", "2019-03-14", /Maths/);
   const childId = new URL(page.url()).pathname.split("/").pop()!;
 

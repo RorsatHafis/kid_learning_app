@@ -6,13 +6,13 @@ import { apiMessages } from "./messages";
 // ---- subscription/web/SubscriptionDtos.java ----
 
 /** The product's levers (subscription/entity/EntitlementKey.java); each belongs to one audience. */
-export type FamilyEntitlementKey = "CHILDREN_MAX" | "JOURNEYS_PER_CHILD_MAX";
+export type FamilyEntitlementKey = "CHILDREN_MAX" | "JOURNEYS_PER_CHILD_MAX" | "ACTIVE_JOURNEYS_PER_CHILD_MAX";
 export type SchoolEntitlementKey = "SCHOOL_CHILDREN_MAX" | "SCHOOL_TEACHERS_MAX" | "SCHOOL_CLASSES_MAX" | "TEACHER_STORAGE_MB";
 export type EntitlementKey = FamilyEntitlementKey | SchoolEntitlementKey;
 /** Who a plan is for (V59): a family's plan or a school's. */
 export type PlanAudience = "FAMILY" | "SCHOOL";
 export const ENTITLEMENT_KEYS: Record<PlanAudience, EntitlementKey[]> = {
-  FAMILY: ["CHILDREN_MAX", "JOURNEYS_PER_CHILD_MAX"],
+  FAMILY: ["CHILDREN_MAX", "JOURNEYS_PER_CHILD_MAX", "ACTIVE_JOURNEYS_PER_CHILD_MAX"],
   SCHOOL: ["SCHOOL_CHILDREN_MAX", "SCHOOL_TEACHERS_MAX", "SCHOOL_CLASSES_MAX", "TEACHER_STORAGE_MB"],
 };
 export type PlanStatus = "DRAFT" | "ACTIVE" | "RETIRED";

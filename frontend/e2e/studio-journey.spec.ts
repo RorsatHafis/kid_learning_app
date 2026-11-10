@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { ADMIN_EMAIL, ADMIN_PASSWORD, PASSWORD, addChild, expectNoViolations, logIn, openSubject, uniqueEmail, workspaceLink } from "./support";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, addChild, expectNoViolations, logIn, openSubject, uniqueEmail, workspaceLink, registerThroughEmail } from "./support";
 
 /**
  * Content golden journey: an administrator authors a small maths path in the Content Studio
@@ -148,10 +148,7 @@ test("studio: author, check, publish; a child plays exactly what was published @
   // A family chooses the new path; the child plays exactly the published question.
   const familyContext = await browser.newContext({ reducedMotion: "reduce" });
   const family = await familyContext.newPage();
-  await family.goto("/register");
-  await family.getByLabel("Email").fill(uniqueEmail("studio-family"));
-  await family.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await family.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(family, uniqueEmail("studio-family"));
   // The family chooses the newly published path as it adds the child (iteration 2).
   await addChild(family, "Vanna", "2019-04-04", new RegExp(`Counting stars ${tag}`));
   const vannaPage = family.url();
@@ -319,10 +316,7 @@ test("studio: multiple choice, true or false, short answer and matching - author
   // A family starts the path; the child answers all four kinds, one of them wrong on purpose.
   const familyContext = await browser.newContext({ reducedMotion: "reduce" });
   const family = await familyContext.newPage();
-  await family.goto("/register");
-  await family.getByLabel("Email").fill(uniqueEmail("types-family"));
-  await family.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await family.getByRole("button", { name: /create/i }).click();
+  await registerThroughEmail(family, uniqueEmail("types-family"));
   await addChild(family, "Rith", "2019-05-05", new RegExp(`Word play ${tag}`));
   const childPage = family.url();
   // Started: its learning plan card.
