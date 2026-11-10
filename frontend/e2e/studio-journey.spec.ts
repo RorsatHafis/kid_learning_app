@@ -204,6 +204,17 @@ test("studio: author, check, publish; a child plays exactly what was published @
   await expect(family.getByText("3 of 3 answers correct").first()).toBeVisible();
   await expect(family.getByText(skill).first()).toBeVisible();
   await expectNoViolations(family, "parent: evidence from number, ordering and sorting questions");
+
+  // V88 free plan: a second subject waits; the family switches, and the first waits instead - nothing lost.
+  await family.goto(vannaPage);
+  await family.getByRole("button", { name: "Add a subject" }).click();
+  await family.getByRole("listitem").filter({ hasText: "Maths - Junior" }).getByRole("button", { name: "Start this path" }).click();
+  const card = (name: string | RegExp) => family.getByRole("article").filter({ has: family.getByRole("heading", { name }) });
+  await expect(card("Maths - Junior").getByText("Waiting", { exact: true })).toBeVisible();
+  await expectNoViolations(family, "parent: a subject waiting on the free plan");
+  await card("Maths - Junior").getByRole("button", { name: /^Learn this now/ }).click();
+  await expect(card(new RegExp(`Counting stars ${tag}`)).getByText("Waiting", { exact: true })).toBeVisible();
+  await expect(card("Maths - Junior").getByText("Waiting", { exact: true })).toHaveCount(0);
   await familyContext.close();
 
   // X14: a question is archived (out of the bank, its activity untouched) and restored, from the Studio.

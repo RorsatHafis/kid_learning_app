@@ -3364,6 +3364,15 @@ now re-measures once after the screen settles when contrast is flagged (a lastin
 element's classes, computed colours and what lies on top. accessibility.spec 4/4 at 1280 px; studio-journey,
 resilience, answer-offline pass.
 
+**For the Khmer review (PD-14) - Khmer drafted 2026-11-10** (Claude-drafted): `features/auth/messages` register
+(`startHint` ... `newLink`: the email-first sign-up), `features/auth/formField.messages` ("ត្រូវតែបំពេញ"),
+`features/parent/messages` learningNow (`waiting`, `waitingExplain`, `switchTo`, `switching`, `switchFailed`,
+`morePlans`, `notInPlanBadge`, `notInPlan`, `seePlans`), `features/parent/setup.messages` review.`oneAtATime`,
+`lib/api/messages` entitlement labels for the active-journeys limit, `features/admin/studio/subjectPlans.messages`,
+`features/admin/studio/ageRange.messages`; backend: the registration emails (`RegistrationVerificationService`),
+V88's plan name/description ("ឥតគិតថ្លៃ"), and `ServerText` entries for the waiting/switch, subject-plan and age
+messages.
+
 **NEW (owner, 2026-11-10): Drawing / Handwriting question type - planned, not started.** A real question type (not a
 mini-game): the child draws or writes on a canvas (finger, stylus, mouse), with clear / undo / retry; authors set the
 instruction, a reference (sample letter/shape, EN or KM characters), and a guidance mode (dotted tracing, start
