@@ -3349,6 +3349,14 @@ the shared SearchField use the system; the subject picker stacks its label on ph
 curricula, so new 6-year-olds matched several and (rightly, Battle 2B) weren't auto-enrolled. Fixtures moved to the
 reserved 90-99 ages; tests that need real ages archive their curricula after. Full unit + integration suites pass.
 
+**Requirements 1-2 browser-verified end to end (2026-11-10).** Local runner, sign-up through the emailed link (Mailpit),
+free plan: desktop-1280 `language|school-journey|plan-journey` 6/6 and golden-journeys + legal (9 pass, legal skipped
+- no legal documents locally); phone-360 `golden-journeys|language|plan-journey|family-phone|journey-stop|school-journey`
+9/9. Defect found and fixed: `/registration/start` was on the per-network password-recovery budget, so a network
+signing several people up was refused after a few - it now has the sign-up budget (`RATE_LIMIT_REGISTER_PER_HOUR`,
+its own bucket); per-address pacing (1/min, 5/hour) is unchanged. Once, school-journey stalled at its last step in a
+combined run (not reproduced in two reruns) - intermittent, watch.
+
 **NEW (owner, 2026-11-10): Drawing / Handwriting question type - planned, not started.** A real question type (not a
 mini-game): the child draws or writes on a canvas (finger, stylus, mouse), with clear / undo / retry; authors set the
 instruction, a reference (sample letter/shape, EN or KM characters), and a guidance mode (dotted tracing, start
