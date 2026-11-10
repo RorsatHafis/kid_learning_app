@@ -203,8 +203,9 @@ export function PlaySession() {
       setPhase({
         kind: "completed",
         title,
-        correct: answers.filter((answer) => answer.correct).length,
-        total: answers.length,
+        // V91: drawings aren't scored, so they're outside "n of m right".
+        correct: answers.filter((answer) => answer.scored !== false && answer.correct).length,
+        total: answers.filter((answer) => answer.scored !== false).length,
         itemId,
         garden: afterActivity(skillsBefore.current, skillsAfter),
         tricky: trickyOnes(answers, activity),
@@ -432,7 +433,12 @@ export function PracticeSession() {
     }
     playCue("complete");
     const answers = await activityAttemptApi.listAnswers(attemptId).catch(() => [] as AnswerRecord[]);
-    setPhase({ kind: "done", title, correct: answers.filter((a) => a.correct).length, total: answers.length });
+    setPhase({
+      kind: "done",
+      title,
+      correct: answers.filter((a) => a.scored !== false && a.correct).length,
+      total: answers.filter((a) => a.scored !== false).length,
+    });
   }, []);
 
   const load = useCallback(async () => {

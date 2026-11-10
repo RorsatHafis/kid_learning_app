@@ -117,6 +117,7 @@ export const AUTHORABLE_TYPES: QuestionType[] = [
   "MATCHING",
   "ORDERING",
   "SORTING",
+  "DRAWING",
 ];
 
 /**

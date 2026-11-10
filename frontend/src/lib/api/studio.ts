@@ -332,6 +332,8 @@ export interface SortItemDetail {
 }
 
 export interface QuestionVersionDetail extends VersionSummary {
+  /** V91: a DRAWING's guide; null for other types. */
+  drawingGuide?: import("@/features/drawing/drawing").DrawingGuide | null;
   prompt: string;
   correctAnswer: string | null;
   difficultyLevel: number | null;
@@ -782,6 +784,9 @@ export const studioApi = {
   tagQuestionSkill: (id: string, skillId: string) => apiClient.post<QuestionDetail>(`${S}/questions/${id}/skills/${skillId}`),
   untagQuestionSkill: (id: string, skillId: string) =>
     apiClient.delete<QuestionDetail>(`${S}/questions/${id}/skills/${skillId}`),
+  // V91: a drawing question's guide.
+  setDrawingGuide: (versionId: string, guide: import("@/features/drawing/drawing").DrawingGuide) =>
+    apiClient.put<QuestionDetail>(`${S}/question-versions/${versionId}/drawing-guide`, guide),
   reviseQuestionDraft: (versionId: string, body: QuestionDraftInput) =>
     apiClient.put<QuestionDetail>(`${S}/question-versions/${versionId}`, body),
   validateQuestionVersion: (versionId: string) =>

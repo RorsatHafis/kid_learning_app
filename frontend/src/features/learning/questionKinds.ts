@@ -1,4 +1,4 @@
-import { ArrowDownToLine, Hash, Link2, ListOrdered, Pencil, Pointer, ThumbsUp, type LucideIcon } from "lucide-react";
+import { ArrowDownToLine, Brush, Hash, Link2, ListOrdered, Pencil, Pointer, ThumbsUp, type LucideIcon } from "lucide-react";
 import type { QuestionType } from "@/lib/api/types";
 
 /**
@@ -13,4 +13,5 @@ export const KIND_PICTURE: Record<QuestionType, LucideIcon> = {
   ORDERING: ListOrdered,
   MATCHING: Link2,
   SORTING: ArrowDownToLine,
+  DRAWING: Brush,
 };

@@ -160,7 +160,7 @@ public class ClassPracticeService {
                 FROM answer_records r
                 JOIN activity_attempts a ON a.id = r.activity_attempt_id
                 JOIN question_version_skills qs ON qs.question_version_id = r.question_version_id AND qs.skill_id = :skill
-                WHERE a.child_id IN (:children)
+                WHERE a.child_id IN (:children) AND r.scored
                 GROUP BY r.question_version_id
                 HAVING count(DISTINCT a.child_id) FILTER (WHERE NOT r.is_correct) > 0
                 ORDER BY wrong DESC, answered DESC, r.question_version_id

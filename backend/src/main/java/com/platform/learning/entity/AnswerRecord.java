@@ -44,6 +44,10 @@ public class AnswerRecord extends ImmutableEvent {
     @Column(name = "hint_used", updatable = false)
     private Boolean hintUsed;
 
+    /** V91: false for a DRAWING answer - recorded, never scored; every reader of correctness counts scored ones only. */
+    @Column(name = "scored", nullable = false, updatable = false)
+    private boolean scored = true;
+
     protected AnswerRecord() {
         // JPA
     }
@@ -86,6 +90,18 @@ public class AnswerRecord extends ImmutableEvent {
 
     public boolean isCorrect() {
         return correct;
+    }
+
+    public boolean isScored() {
+        return scored;
+    }
+
+    /** V91: a drawing - the child's answer, kept like any other, with no right or wrong. */
+    public static AnswerRecord unscored(UUID activityAttemptId, UUID questionVersionId, String submittedAnswer,
+                                        Integer timeSpentSeconds) {
+        AnswerRecord record = record(activityAttemptId, questionVersionId, submittedAnswer, false, timeSpentSeconds, false);
+        record.scored = false;
+        return record;
     }
 
     public Integer getTimeSpentSeconds() {

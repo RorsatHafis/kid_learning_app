@@ -101,6 +101,7 @@ export const builderMessages = defineMessages(
       MATCHING: { name: "Match pairs", what: "Join each thing to its partner.", example: "2 ↔ ●●" },
       ORDERING: { name: "Put in order", what: "Tap things into the right order.", example: "1 → 2 → 3" },
       SORTING: { name: "Sort into groups", what: "Put each thing in the right basket.", example: "Even · Odd" },
+      DRAWING: { name: "Draw or write", what: "Draw or write it on the screen - kept, never scored.", example: "Trace A" },
     } satisfies Record<QuestionType, { name: string; what: string; example: string }>,
   },
   {
@@ -196,6 +197,7 @@ export const builderMessages = defineMessages(
       MATCHING: { name: "ផ្គូផ្គង", what: "ភ្ជាប់របស់នីមួយៗទៅនឹងគូរបស់វា។", example: "2 ↔ ●●" },
       ORDERING: { name: "តម្រៀបតាមលំដាប់", what: "ចុចលើរបស់ទាំងនោះតាមលំដាប់ត្រឹមត្រូវ។", example: "1 → 2 → 3" },
       SORTING: { name: "ចែកជាក្រុម", what: "ដាក់របស់នីមួយៗក្នុងកន្ត្រកត្រឹមត្រូវ។", example: "គូ · សេស" },
+      DRAWING: { name: "គូរ ឬសរសេរ", what: "គូរ ឬសរសេរវានៅលើអេក្រង់ - រក្សាទុក មិនដាក់ពិន្ទុទេ។", example: "គូរតាម ក" },
     },
   },
 );

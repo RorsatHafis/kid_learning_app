@@ -84,6 +84,8 @@ public class FamilyDataExportService {
     private final com.platform.child.service.ChildSettingsService childSettings;
     private final com.platform.child.service.DailyLearningTimeService dailyTime;
     private final com.platform.child.caregiver.CaregiverService caregivers;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.jdbc.core.JdbcTemplate drawingFeedback;
 
     public FamilyDataExportService(AccountRepository accounts, ChildService childService, FamilyAccessGuard familyAccessGuard,
                                    LearningJourneyService journeys, SkillProgressService skills, ParentInsightService insights,
@@ -139,8 +141,9 @@ public class FamilyDataExportService {
 
     /** One answer as the child gave it. {@code answer} is readable text; {@code submitted} is the raw value stored. */
     /** {@code hintUsed} (D-16): the child opened the hint first; false also for answers from before it was recorded. */
+    /** {@code scored}: false for a drawing (V91) - kept as drawn, with no right or wrong; {@code feedback}: grown-ups' words on it. */
     public record AnswerData(Instant answeredAt, UUID attemptId, String activity, String question, String answer,
-                             String submitted, boolean correct, boolean hintUsed) {
+                             String submitted, boolean correct, boolean hintUsed, boolean scored, List<String> feedback) {
     }
 
     @Transactional
@@ -220,8 +223,11 @@ public class FamilyDataExportService {
                                         questionOptions::findByQuestionVersionIdOrderByDisplayOrderAsc);
                                 return new AnswerData(record.getOccurredAt(), attempt.getId(), title,
                                         question.map(QuestionVersion::getPrompt).orElse(null),
-                                        readable(record.getSubmittedAnswer(), choices), record.getSubmittedAnswer(), record.isCorrect(),
-                                        record.isHintUsed());
+                                        record.isScored() ? readable(record.getSubmittedAnswer(), choices) : "(a drawing)",
+                                        record.getSubmittedAnswer(), record.isCorrect(), record.isHintUsed(), record.isScored(),
+                                        record.isScored() ? List.of() : drawingFeedback.queryForList(
+                                                "select body from drawing_feedback where answer_record_id = ? order by created_at, id",
+                                                String.class, record.getId()));
                             });
                 })
                 .toList();

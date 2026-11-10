@@ -22,6 +22,8 @@ import { errorText, questionTypeLabel, reportFromError, useStudio } from "./stud
 import { Panel, SkillChips, StatusBadge, ValidationPanel, VersionHistory } from "./shared";
 import { useMessages } from "@/i18n/catalog";
 import { editorMessages } from "./editor.messages";
+import { drawingMessages } from "@/features/drawing/drawing.messages";
+import { DrawingGuideEditor } from "./DrawingGuideEditor";
 
 export function QuestionEditor() {
   const { questionId = "" } = useParams<{ questionId: string }>();
@@ -55,6 +57,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
   const [message, setMessage] = useState<{ tone: "error" | "ok"; text: string } | null>(null);
   const [skillToAdd, setSkillToAdd] = useState("");
   const m = useMessages(editorMessages).editor;
+  const drawWords = useMessages(drawingMessages);
   const navigate = useNavigate();
   // Arriving from "Make a copy": say what the copy is (once, on this question's page).
   const copiedHere = (useLocation().state as { copiedFrom?: string } | null)?.copiedFrom !== undefined;
@@ -153,6 +156,17 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
+          {detail.questionType === "DRAWING" && (
+            <Panel title={drawWords.guideTitle}>
+              <DrawingGuideEditor
+                key={latest.id}
+                versionId={latest.id}
+                initial={latest.drawingGuide ?? null}
+                editable={isDraft}
+                onSaved={(saved) => (onChange(saved), setRevision((r) => r + 1))}
+              />
+            </Panel>
+          )}
           <Panel title={isDraft ? m.draftVersion(latest.versionNumber) : m.content}>
             {isDraft ? (
               <QuestionDraftForm

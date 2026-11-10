@@ -252,8 +252,10 @@ export function Question({
   if (!item) return null;
 
   function reveal(record: AnswerRecord, submitted: string) {
-    playCue(record.correct ? "correct" : "incorrect");
-    onAnswered({ submitted, correct: record.correct, correctAnswer: record.correctAnswer, explanation: record.explanation ?? null });
+    // V91: a drawing is kept, never marked - it is met like a right answer, with no verdict on it.
+    const scored = record.scored !== false;
+    playCue(!scored || record.correct ? "correct" : "incorrect");
+    onAnswered({ submitted, correct: record.correct, scored, correctAnswer: record.correctAnswer, explanation: record.explanation ?? null });
   }
 
   async function handleAnswer(submittedAnswer: string) {

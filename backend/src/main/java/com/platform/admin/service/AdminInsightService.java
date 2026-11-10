@@ -189,7 +189,7 @@ public class AdminInsightService {
                 FROM activity_attempts WHERE started_at >= :since OR (status = 'COMPLETED' AND completed_at >= :since)
                 """, params);
         Map<String, Object> answers = jdbc.queryForMap("""
-                SELECT count(*) AS answers, count(*) FILTER (WHERE is_correct) AS correct FROM answer_records WHERE occurred_at >= :since
+                SELECT count(*) AS answers, count(*) FILTER (WHERE is_correct) AS correct FROM answer_records WHERE scored AND occurred_at >= :since
                 """, params);
         Map<String, Long> placements = new LinkedHashMap<>();
         for (String source : List.of("CURRICULUM", "ADAPTIVE", "REVIEW", "TEACHER_ASSIGNED")) {

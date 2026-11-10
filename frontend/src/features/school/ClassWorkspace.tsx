@@ -1,3 +1,6 @@
+import { drawingsApi } from "@/lib/api/drawings";
+import { DrawingsReview } from "@/features/drawing/DrawingsReview";
+import { drawingMessages } from "@/features/drawing/drawing.messages";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Copy, KeyRound, Users } from "lucide-react";
@@ -632,5 +635,21 @@ export function MemberLearningView({ classId, childId, onRemoved }: { classId: s
         </WorkspaceSection>
       )}
     </div>
+  );
+}
+
+// ------------------------------------------------------------------ drawings (V91)
+
+/** The class's drawings - made in learning this class assigns - with the school's feedback; never graded. */
+export function ClassDrawingsPanel({ classId }: { classId: string }) {
+  const d = useMessages(drawingMessages);
+  return (
+    <WorkspaceSection id="class-drawings" title={d.drawingsTitle} description={d.notScored}>
+      <DrawingsReview
+        showChild
+        load={() => drawingsApi.forClass(classId)}
+        send={(drawing, body) => drawingsApi.classFeedback(classId, drawing.answerId, body)}
+      />
+    </WorkspaceSection>
   );
 }

@@ -202,7 +202,9 @@ public class PostCompletionService {
      * without the hint (D-16), since a review asks whether the child remembers it on their own.
      */
     private boolean wasSuccessful(ActivityAttempt attempt) {
-        List<AnswerRecord> answers = answerRecordRepository.findByActivityAttemptId(attempt.getId());
+        // V91: drawings aren't scored, so they say nothing about remembering.
+        List<AnswerRecord> answers = answerRecordRepository.findByActivityAttemptId(attempt.getId()).stream()
+                .filter(AnswerRecord::isScored).toList();
         return !answers.isEmpty() && answers.stream().filter(AnswerRecord::isCorrectUnaided).count() * 2 >= answers.size();
     }
 

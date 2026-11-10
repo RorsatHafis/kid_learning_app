@@ -8,7 +8,7 @@ import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
-import { ClassCurriculaPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
+import { ClassCurriculaPanel, ClassDrawingsPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
 import { ArchivedClassNotice, ManageClassButton } from "@/features/school/ClassLifecycle";
 import { SectionIndex } from "@/features/school/SectionIndex";
 import { useMessages } from "@/i18n/catalog";
@@ -150,6 +150,7 @@ export function PrincipalClassPage() {
             memberHref={(childId) => `/principal/classes/${classId}/children/${childId}`}
             skillHref={(skillId) => `/principal/classes/${classId}/skills/${skillId}`}
           />
+          <ClassDrawingsPanel classId={classId} />
           <ClassCurriculaPanel
             classId={classId}
             archived={schoolClass.data.archived}

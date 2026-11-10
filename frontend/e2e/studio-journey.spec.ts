@@ -251,6 +251,7 @@ test("studio: multiple choice, true or false, short answer and matching - author
     trueFalse: `The sun is hot (${tag})`,
     short: `What shines in the day? (${tag})`,
     matching: `Match each number to its word (${tag})`,
+    drawing: `Trace the letter A (${tag})`,
   };
 
   await logIn(page, ADMIN_EMAIL, ADMIN_PASSWORD);
@@ -265,7 +266,7 @@ test("studio: multiple choice, true or false, short answer and matching - author
   await page.locator("select").filter({ hasText: "Add a skill…" }).first().selectOption({ label: skill });
   await page.getByRole("button", { name: "Add", exact: true }).first().click();
 
-  async function newQuestion(type: string, prompt: string, fill: (composer: Locator) => Promise<void>) {
+  async function newQuestion(type: string, prompt: string, fill: (composer: Locator) => Promise<void>, beforePublish?: () => Promise<void>) {
     await studioTab(page, "Questions");
     const opener = page.getByRole("button", { name: "New question" });
     const composer = page.getByRole("region", { name: "New question" });
@@ -278,6 +279,7 @@ test("studio: multiple choice, true or false, short answer and matching - author
     await composer.getByRole("checkbox", { name: skill }).check();
     await composer.getByRole("button", { name: "Create draft" }).click();
     await expect(page.getByRole("heading", { name: "Checks" })).toBeVisible();
+    if (beforePublish) await beforePublish();
     await publish(page);
   }
   await newQuestion("Multiple choice", prompts.choice, async (c) => {
@@ -296,6 +298,14 @@ test("studio: multiple choice, true or false, short answer and matching - author
     await c.getByLabel("Pair 1: its match").fill("one");
     await c.getByLabel("Pair 2: item").fill("2");
     await c.getByLabel("Pair 2: its match").fill("two");
+  });
+  // V91: a drawing - its guide set in the editor (dotted tracing of "A"), then published like the rest.
+  await newQuestion("Draw or write", prompts.drawing, async () => {}, async () => {
+    await page.getByRole("radio", { name: /Dotted tracing/ }).check();
+    await page.getByLabel("Letter, number or word to copy (English)").fill("A");
+    await page.getByRole("button", { name: "Save how the child draws" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
+    await expectNoViolations(page, "studio: a drawing question's guide");
   });
 
   await studioTab(page, "Activities");
@@ -365,6 +375,20 @@ test("studio: multiple choice, true or false, short answer and matching - author
   await family.getByRole("button", { name: /^two, not matched/ }).click();
   await family.getByRole("button", { name: "Check my matches" }).click();
   await expect(family.getByText(right)).toBeVisible();
+  await family.getByRole("button", { name: "Next" }).click();
+
+  // V91: the drawing - traced with the pointer, kept, never marked.
+  await expect(family.getByText(prompts.drawing)).toBeVisible();
+  const space = family.getByRole("img", { name: "Drawing space: A" });
+  await expect(family.getByRole("button", { name: /I'm done/ })).toBeDisabled();
+  await expectNoViolations(family, "child: a drawing question");
+  const box = (await space.boundingBox())!;
+  await family.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.2);
+  await family.mouse.down();
+  for (const [x, y] of [[0.4, 0.45], [0.3, 0.7], [0.25, 0.8]]) await family.mouse.move(box.x + box.width * x, box.y + box.height * y, { steps: 4 });
+  await family.mouse.up();
+  await family.getByRole("button", { name: /I'm done/ }).click();
+  await expect(family.getByText("Saved!")).toBeVisible();
   await family.getByRole("button", { name: "Finish" }).click();
 
   // The parent sees the evidence: three of four right, on the skill it was about.
@@ -374,6 +398,13 @@ test("studio: multiple choice, true or false, short answer and matching - author
   await expect(family.getByText("3 of 4 answers correct").first()).toBeVisible();
   await expect(family.getByText(skill).first()).toBeVisible();
   await expectNoViolations(family, "parent: evidence from four kinds of question");
+  // The drawing is outside "3 of 4" and shown to the family, who leave a few words on it.
+  const drawings = family.getByRole("region", { name: "Drawings" });
+  await expect(drawings.getByRole("heading", { name: prompts.drawing })).toBeVisible();
+  await drawings.getByLabel("Your words about this drawing").fill("Lovely A!");
+  await drawings.getByRole("button", { name: "Save" }).click();
+  await expect(drawings.getByText("Lovely A!")).toBeVisible();
+  await expectNoViolations(family, "parent: a drawing with feedback");
   await familyContext.close();
 
   // Y16: a published question found to be wrong is taken down - with a reason - and later restored.

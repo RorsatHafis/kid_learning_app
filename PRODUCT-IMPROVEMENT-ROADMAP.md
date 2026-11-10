@@ -3392,6 +3392,27 @@ score and from mastery and Smart Review: agree? (2) an activity of only drawings
 finishing it count toward the path/streak like any activity? (3) does a teacher/parent ever mark a drawing (adult
 review), now or later? (4) is a drawing kept like other answers (export, erasure) - assumed yes.
 
+### 2026-11-10 (later): Drawing / Handwriting question type - BUILT (owner decisions 1-4 approved)
+- **Backend (V91):** `QuestionType.DRAWING`; `question_versions.drawing_guide` (normalized JSON: FREE | TRACE | GUIDED,
+  reference EN/KM, optional author-drawn template, start points, arrows, baseline, grid; frozen with the version, copied
+  to new drafts); `answer_records.scored` (false for drawings: recorded through the normal submit path with its
+  idempotency, never scored, no mastery evidence; the attempt score is over scored answers only, null for a
+  drawing-only activity; completion still needs every question answered, so drawings count toward finishing, the path
+  and the streak; a blank or malformed drawing is refused with 422). Correctness readers count scored answers only:
+  attempt score, parent "n of m correct", PostCompletion review success, admin insight, skill story, class practice.
+  `drawing_feedback` (FAMILY | SCHOOL side, cascades with the answer, author nulled on erasure). Review API:
+  `/api/v1/children/{id}/drawings` (family and viewing caregivers; family writes feedback) and
+  `/api/v1/schools/classes/{id}/drawings` (the class's teachers/principal: only drawings in learning the class
+  assigns, only school feedback). Export: "(a drawing)" with `scored:false` and its feedback. Studio:
+  `PUT /api/v1/studio/question-versions/{id}/drawing-guide`; publish check `DRAWING_GUIDE_MISSING`.
+- **Frontend:** `features/drawing` (DrawingCanvas: pointer events for finger/stylus/mouse, coalesced points, guides,
+  dotted tracing, numbered start points, arrows, read-only view), the child's DrawingQuestion (undo, start again, I'm
+  done; "Saved!" verdict, no right/wrong), the Studio's DrawingGuideEditor (mode, references EN/KM, writing guides,
+  template / start point / arrow tools on the same canvas), DrawingsReview for parents (Skills & progress) and for
+  class pages (teacher, principal), with feedback. EN/KM throughout (Khmer for PD-14 review).
+- **Tests:** DrawingQuestionIntegrationTests 3/3, ClassDrawingReviewIntegrationTests (class scope), Vitest
+  drawingQuestion + drawingGuide; studio-journey e2e authors, plays and reviews a drawing.
+
 ### CHECKPOINT 2026-11-10 (end of window) - the next session starts here
 - **Owner requirements 2026-11-10: all five built and verified.** 96ae031 (1, 2), eda943b (3, 4), 25a3e9f (fixture
   regression), a845e64 (5), c5347c3 (sign-up budget), c5e49d9 (a11y re-measure), 868c144 (switch e2e).

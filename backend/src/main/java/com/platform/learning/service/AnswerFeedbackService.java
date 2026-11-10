@@ -102,6 +102,8 @@ public class AnswerFeedbackService {
         java.util.function.Function<QuestionOption, String> label = o -> khmer != null && khmer.label(o) != null ? khmer.label(o) : o.getLabel();
 
         return switch (question.getQuestionType()) {
+            // V91: a drawing has no right answer to show.
+            case DRAWING -> new CorrectAnswer(List.of(), null);
             case MULTIPLE_CHOICE -> {
                 List<QuestionOption> correct = questionOptionRepository
                         .findByQuestionVersionIdOrderByDisplayOrderAsc(version.getId()).stream()

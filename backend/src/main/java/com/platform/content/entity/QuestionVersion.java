@@ -57,6 +57,10 @@ public class QuestionVersion extends PublishableVersion {
     @Column(name = "explanation", columnDefinition = "text")
     private String explanation;
 
+    /** DRAWING (V91): the author's guide, normalized JSON (DrawingGuides); null for every other type. */
+    @Column(name = "drawing_guide", columnDefinition = "text")
+    private String drawingGuide;
+
     protected QuestionVersion() {
         // JPA
     }
@@ -104,6 +108,16 @@ public class QuestionVersion extends PublishableVersion {
         requireStatus(com.platform.common.entity.PublicationStatus.DRAFT, "edited");
         this.hint = newHint == null || newHint.isBlank() ? null : newHint.strip();
         this.explanation = newExplanation == null || newExplanation.isBlank() ? null : newExplanation.strip();
+    }
+
+    /** V91: part of the version like its text - set on a draft, carried to the next draft, frozen once published. */
+    public void setDrawingGuide(String normalizedGuide) {
+        requireStatus(com.platform.common.entity.PublicationStatus.DRAFT, "edited");
+        this.drawingGuide = normalizedGuide;
+    }
+
+    public String getDrawingGuide() {
+        return drawingGuide;
     }
 
     public String getHint() {

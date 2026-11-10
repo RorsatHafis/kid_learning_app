@@ -897,7 +897,8 @@ public class StudioService {
                             sorting ? options.stream().filter(o -> o.getSortRole() == SortRole.ITEM)
                                     .map(item -> new SortItemDetail(item.getId(), item.getLabel(), item.getSortGroup(),
                                             refs.get(item.getImageAssetId()), refs.get(item.getAudioAssetId()))).toList() : List.of(),
-                            version.getHint(), version.getExplanation(), khmerDetail(question.getQuestionType(), version, options));
+                            version.getHint(), version.getExplanation(), khmerDetail(question.getQuestionType(), version, options),
+                            version.getDrawingGuide());
                 })
                 .toList(), question.getStatus() == CatalogStatus.ARCHIVED);
     }
@@ -1039,6 +1040,18 @@ public class StudioService {
         guard.requireQuestionWrite(accountId, questionId);
         questionService.openDraft(questionId);
         return question(accountId, questionId);
+    }
+
+    /** V91: a DRAWING draft's guide - checked and normalized (Drawings), like the rest of the draft only while a draft. */
+    @Transactional
+    public QuestionDetail setDrawingGuide(UUID accountId, UUID questionVersionId, tools.jackson.databind.JsonNode guide) {
+        QuestionVersion version = questionService.getVersion(questionVersionId);
+        Question question = guard.requireQuestionWrite(accountId, version.getQuestionId());
+        if (question.getQuestionType() != QuestionType.DRAWING) {
+            throw new IllegalArgumentException("Only a drawing question has a drawing guide.");
+        }
+        questionService.setDrawingGuide(questionVersionId, com.platform.content.drawing.Drawings.normalizeGuide(guide));
+        return question(accountId, question.getId());
     }
 
     @Transactional

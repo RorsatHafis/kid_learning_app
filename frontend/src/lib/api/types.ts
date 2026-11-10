@@ -153,7 +153,7 @@ export interface LearningPathItem {
 
 // ---- content/entity/QuestionType.java, content/web/ActivityContentDtos.java ----
 
-export type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "NUMERIC" | "MATCHING" | "ORDERING" | "SORTING";
+export type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "NUMERIC" | "MATCHING" | "ORDERING" | "SORTING" | "DRAWING";
 
 /** content/media/MediaService.MediaRef — an uploaded picture or recording, fetched by its signed URL (expires within hours). */
 export interface MediaRef {
@@ -202,6 +202,8 @@ export interface ActivityItem {
    * Studio); null when unknown (older content, possibly typed in Khmer) - then nothing is marked, never guessed.
    */
   writtenIn?: "en" | null;
+  /** V91: a DRAWING's guide (features/drawing); null for other types. */
+  drawingGuide?: import("@/features/drawing/drawing").DrawingGuide | null;
 }
 
 export interface ActivityVersionDetail {
@@ -273,6 +275,8 @@ export interface AnswerRecord {
   hintUsed?: boolean;
   /** The answer as recorded, exactly as it was sent. */
   submittedAnswer?: string;
+  /** V91: false for a drawing - kept as the answer, never scored ({@code correct} means nothing then). */
+  scored?: boolean;
 }
 
 // ---- learning/service/LearningJourneyService.java (records served as-is by LearningJourneyController) ----

@@ -261,7 +261,9 @@ public class LearningJourneyService {
     public record CompletedActivity(UUID attemptId, UUID activityVersionId, String title, String subjectName,
                                     LearningPathItemSource source, BigDecimal score, int correctAnswers,
                                     int totalAnswers, Instant startedAt, Instant completedAt, List<SkillRef> skills,
-                                    DecisionSummary decision, int hintedAnswers) {
+                                    DecisionSummary decision, int hintedAnswers,
+                                    /** V91: drawings in it - answers, not scored, so not in correct/total. */
+                                    int drawings) {
     }
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -562,6 +564,8 @@ public class LearningJourneyService {
                                                 LearningPathItemSource source) {
         ActivityVersion version = lookups.version(attempt.getActivityVersionId());
         Activity activity = lookups.activity(version.getActivityId());
+        int drawings = (int) answers.stream().filter(answer -> !answer.isScored()).count();
+        answers = answers.stream().filter(AnswerRecord::isScored).toList();
         int correct = (int) answers.stream().filter(AnswerRecord::isCorrect).count();
 
         DecisionSummary decision = lookups.decisionOf(attempt.getId())
@@ -576,7 +580,7 @@ public class LearningJourneyService {
         String subjectName = lookups.subjectName(activity.getSubjectId());
         return new CompletedActivity(attempt.getId(), version.getId(), titleFor(activity, version), subjectName, source,
                 attempt.getScore(), correct, answers.size(), attempt.getStartedAt(), attempt.getCompletedAt(),
-                lookups.skillsOf(version.getId()), decision, (int) answers.stream().filter(AnswerRecord::isHintUsed).count());
+                lookups.skillsOf(version.getId()), decision, (int) answers.stream().filter(AnswerRecord::isHintUsed).count(), drawings);
     }
 
     /** Null for a class's (teacher-owned) path, whose fit is the school's to judge, or when the child's age is unknown. */

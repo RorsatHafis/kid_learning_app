@@ -96,6 +96,19 @@ class AnswerSubmissionWriter {
         Question question = questionRepository.findById(version.getQuestionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Question", version.getQuestionId()));
 
+        // V91: a drawing is the child's answer, recorded as drawn - never scored, no mastery (owner-approved 2026-11-10).
+        if (question.getQuestionType() == com.platform.content.entity.QuestionType.DRAWING) {
+            String drawing;
+            try {
+                drawing = com.platform.content.drawing.Drawings.normalizeAnswer(submittedAnswer);
+            } catch (IllegalArgumentException blankOrMalformed) {
+                throw new com.platform.learning.exception.InvalidAnswerException(blankOrMalformed.getMessage());
+            }
+            AnswerRecord drawn = answerRecordRepository.save(
+                    AnswerRecord.unscored(activityAttemptId, questionVersionId, drawing, timeSpentSeconds));
+            idempotencyService.complete(guardId);
+            return drawn;
+        }
         boolean correct = scoringService.score(question.getQuestionType(), version, submittedAnswer);
 
         AnswerRecord record = answerRecordRepository.save(

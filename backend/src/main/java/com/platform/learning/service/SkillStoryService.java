@@ -133,6 +133,7 @@ public class SkillStoryService {
                 JOIN activity_attempts a ON a.id = r.activity_attempt_id AND a.child_id = :child
                 JOIN activity_versions av ON av.id = a.activity_version_id
                 JOIN activities act ON act.id = av.activity_id
+                WHERE r.scored
                 GROUP BY a.id, act.title, av.id, a.completed_at
                 ORDER BY at DESC, a.id DESC
                 LIMIT :limit

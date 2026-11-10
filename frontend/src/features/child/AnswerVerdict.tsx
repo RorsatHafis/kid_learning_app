@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils/cn";
 import { useMessages } from "@/i18n/catalog";
 import { goButton } from "./chips";
 import { childMessages } from "./messages";
+import { drawingMessages } from "@/features/drawing/drawing.messages";
 import { Explanation } from "./Explanation";
 import type { AnswerResult } from "./QuestionView";
 
@@ -34,30 +35,36 @@ export function AnswerVerdict({
 }) {
   const m = useMessages(childMessages).play;
   const q = useMessages(childMessages).question;
+  const d = useMessages(drawingMessages);
   // A wrong answer on a question its author explained shows why; one without an explanation shows the author's hint
   // (a way to think it through, which never gives the answer away), so a mistake is met with a strategy rather than
   // only the right answer. Both are the educator's own words; nothing is made up here.
-  const strategy = !result.correct && !result.explanation ? item.hint?.trim() || null : null;
+  const strategy = !result.correct && result.scored !== false && !result.explanation ? item.hint?.trim() || null : null;
+  // V91: a drawing is kept, never marked: met warmly, with no right or wrong and no answer to show.
+  const kept = result.scored === false;
+  const happy = kept || result.correct;
   return (
     <div
       className={cn(
         "flex flex-col gap-5 rounded-b-[32px] px-6 pb-7 pt-6 motion-safe:animate-rise-in sm:px-12",
-        result.correct ? "bg-light-soft" : "bg-tonle-50",
+        happy ? "bg-light-soft" : "bg-tonle-50",
       )}
     >
       {/* What a screen reader announces: the verdict, the answer and why - not the button after it, which takes focus. */}
       <div role="status" className="flex flex-col gap-5">
         <div className="flex flex-col items-center gap-5 sm:flex-row">
           {/* Y40: the verdict as a picture, for a child who can't read the words yet. */}
-          <span aria-hidden className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-full ring-4 ring-white", result.correct ? "bg-white motion-safe:animate-pop-in" : "bg-white/80")}>
-            <Bud state={result.correct ? "open" : "current"} size={44} />
+          <span aria-hidden className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-full ring-4 ring-white", happy ? "bg-white motion-safe:animate-pop-in" : "bg-white/80")}>
+            <Bud state={happy ? "open" : "current"} size={44} />
           </span>
           <div className="flex-1 text-center sm:text-left">
-            <p className={cn("font-display text-[1.875rem] font-bold leading-tight", result.correct ? "text-light-deep" : "text-tonle-800")}>
-              {result.correct ? m[RIGHT_HEADLINES[index % RIGHT_HEADLINES.length]] : m.notQuite}
+            <p className={cn("font-display text-[1.875rem] font-bold leading-tight", happy ? "text-light-deep" : "text-tonle-800")}>
+              {kept ? d.savedHeadline : result.correct ? m[RIGHT_HEADLINES[index % RIGHT_HEADLINES.length]] : m.notQuite}
             </p>
             <p className="mt-1 text-lg font-medium text-ink">
-              {result.correct
+              {kept
+                ? d.savedText
+                : result.correct
                 ? m.lanternLit
                 : result.correctAnswer?.matches?.length
                   ? m.matchesMixed

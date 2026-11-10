@@ -14,7 +14,7 @@ export interface Tricky {
 export function trickyOnes(answers: AnswerRecord[], activity: ActivityVersionDetail): Tricky[] {
   return activity.items.flatMap((item) => {
     const answer = answers.find((a) => a.questionVersionId === item.questionVersionId);
-    if (!answer || answer.correct) return [];
+    if (!answer || answer.correct || answer.scored === false) return [];
     return [{
       id: answer.id,
       prompt: item.prompt,

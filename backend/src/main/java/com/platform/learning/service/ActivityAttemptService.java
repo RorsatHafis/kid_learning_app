@@ -387,14 +387,20 @@ public class ActivityAttemptService {
                             .formatted(attempt.getId(), unanswered.size(), requiredItems.size()));
         }
 
-        long correctCount = requiredItems.stream()
-                .map(ActivityItem::getQuestionVersionId)
-                .filter(questionVersionId -> answersByQuestion.get(questionVersionId).isCorrect())
-                .count();
+        // V91: drawings are required to finish, but never scored - the score is over the scored answers only, and an
+        // activity of drawings only has none (null, as for an activity without questions).
+        List<AnswerRecord> scored = requiredItems.stream()
+                .map(item -> answersByQuestion.get(item.getQuestionVersionId()))
+                .filter(AnswerRecord::isScored)
+                .toList();
+        if (scored.isEmpty()) {
+            return null;
+        }
+        long correctCount = scored.stream().filter(AnswerRecord::isCorrect).count();
 
         return BigDecimal.valueOf(correctCount)
                 .multiply(BigDecimal.valueOf(100))
-                .divide(BigDecimal.valueOf(requiredItems.size()), 2, RoundingMode.HALF_UP);
+                .divide(BigDecimal.valueOf(scored.size()), 2, RoundingMode.HALF_UP);
     }
 
     @Transactional

@@ -96,14 +96,16 @@ public final class ActivityAttemptDtos {
             AnswerFeedbackService.CorrectAnswer correctAnswer,
             String explanation,
             boolean hintUsed,
-            String submittedAnswer
+            String submittedAnswer,
+            /* V91: false for a drawing - recorded, with no right or wrong ({@code correct} means nothing then). */
+            boolean scored
     ) {
         public static AnswerRecordResponse from(AnswerRecord record, AnswerFeedbackService.CorrectAnswer correctAnswer,
                                                 String explanation) {
             return new AnswerRecordResponse(
                     record.getId(), record.getQuestionVersionId(), record.isCorrect(),
                     record.getTimeSpentSeconds(), record.getOccurredAt(), correctAnswer, explanation, record.isHintUsed(),
-                    record.getSubmittedAnswer());
+                    record.getSubmittedAnswer(), record.isScored());
         }
     }
 

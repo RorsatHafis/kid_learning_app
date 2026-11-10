@@ -88,6 +88,9 @@ public class FamilyErasureService {
             "delete from recommendations where recommendation_request_id in " + REQUESTS,
             "delete from recommendation_requests where child_id = :c",
             "delete from adaptation_decisions where child_id = :c or activity_attempt_id in " + ATTEMPTS,
+            // V91: grown-ups' words on the child's drawings go with the drawings.
+            "delete from drawing_feedback where answer_record_id in (select id from answer_records where activity_attempt_id in "
+                    + ATTEMPTS + ")",
             "delete from answer_records where activity_attempt_id in " + ATTEMPTS,
             "delete from activity_events where activity_attempt_id in " + ATTEMPTS,
             "delete from activity_attempts where child_id = :c",
@@ -133,7 +136,7 @@ public class FamilyErasureService {
     static final Set<String> CHILD_TABLES = Set.of("account_sessions", "activity_attempts", "activity_events", "adaptation_decisions",
             "answer_records", "assessment_answers", "assessment_attempts", "assessment_results",
             "assessment_skill_results", "child_caregivers", "child_daily_extensions", "child_device_codes", "child_goals", "child_preferences", "child_preferred_subjects", "child_settings",
-            "children", "class_enrollments", "consent_records", "enrollments", "learner_objective_states",
+            "children", "class_enrollments", "drawing_feedback", "consent_records", "enrollments", "learner_objective_states",
             "learner_profiles", "learner_skill_history", "learner_skill_states", "learner_streaks", "learning_path_items",
             "learning_paths", "learning_sessions", "parent_alerts", "parent_insights", "progress_snapshots",
             "recommendation_outcomes", "recommendation_requests", "recommendations", "review_attempts", "review_items",

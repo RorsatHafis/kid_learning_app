@@ -5,7 +5,7 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { schoolApi } from "@/lib/api/endpoints";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
-import { ClassCurriculaPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
+import { ClassCurriculaPanel, ClassDrawingsPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
 import { ArchivedClassNotice } from "@/features/school/ClassLifecycle";
 import { SectionIndex } from "@/features/school/SectionIndex";
 import { useMessages } from "@/i18n/catalog";
@@ -50,6 +50,7 @@ export function ClassRosterPage() {
             archived={schoolClass.data.archived}
             onChanged={() => setRefreshKey((k) => k + 1)}
           />
+          <ClassDrawingsPanel classId={classId} />
           {!schoolClass.data.archived && <JoinCodePanel classId={classId} className={schoolClass.data.name} />}
         </>
       )}

@@ -256,7 +256,9 @@ public final class StudioDtos {
                                         MediaRef promptImage, String promptImageDescription, MediaRef promptAudio,
                                         List<OptionDetail> options, List<MatchPairDetail> pairs, List<OrderItemDetail> items,
                                         List<UUID> skillIds, List<SortGroupDetail> groups, List<SortItemDetail> sortItems,
-                                        String hint, String explanation, KhmerDetail khmer) {
+                                        String hint, String explanation, KhmerDetail khmer,
+                                        /** V91: a DRAWING's guide as JSON; null for other types. */
+                                        @com.fasterxml.jackson.annotation.JsonRawValue String drawingGuide) {
     }
 
     /**

@@ -277,6 +277,14 @@ public class QuestionService {
         return questionVersionRepository.saveAndFlush(version);
     }
 
+    /** V91: a DRAWING draft's guide (already validated and normalized by DrawingGuides). */
+    @Transactional
+    public QuestionVersion setDrawingGuide(UUID questionVersionId, String normalizedGuide) {
+        QuestionVersion version = getVersion(questionVersionId);
+        version.setDrawingGuide(normalizedGuide);
+        return questionVersionRepository.saveAndFlush(version);
+    }
+
     /** A draft's hint and explanation (Y41); blank removes one. */
     @Transactional
     public QuestionVersion setGuidance(UUID questionVersionId, String hint, String explanation) {
@@ -338,6 +346,9 @@ public class QuestionService {
             draft.setGuidance(latest.getHint(), latest.getExplanation());
             questionVersionRepository.saveAndFlush(draft);
         }
+        if (latest.getDrawingGuide() != null) {
+            draft.setDrawingGuide(latest.getDrawingGuide());
+        }
         // The same text, so the same known (or unknown) language (V83).
         draft.sameTextLanguageAs(latest);
         questionVersionRepository.saveAndFlush(draft);
@@ -366,6 +377,9 @@ public class QuestionService {
         }
         if (source.getHint() != null || source.getExplanation() != null) {
             draft.setGuidance(source.getHint(), source.getExplanation());
+        }
+        if (source.getDrawingGuide() != null) {
+            draft.setDrawingGuide(source.getDrawingGuide());
         }
         draft.sameTextLanguageAs(source);
         questionVersionRepository.saveAndFlush(draft);

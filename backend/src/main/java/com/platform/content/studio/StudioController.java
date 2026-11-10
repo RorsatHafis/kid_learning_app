@@ -342,6 +342,13 @@ public class StudioController {
         return studio.reviseQuestionDraft(accountId, versionId, request);
     }
 
+    /** V91: a drawing question's guide (mode, what to copy, template, start points, arrows, writing guides). */
+    @PutMapping("/question-versions/{versionId}/drawing-guide")
+    public QuestionDetail setDrawingGuide(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId,
+                                          @RequestBody tools.jackson.databind.JsonNode guide) {
+        return studio.setDrawingGuide(accountId, versionId, guide);
+    }
+
     @GetMapping("/question-versions/{versionId}/validation")
     public ValidationReport validateQuestionVersion(@AuthenticationPrincipal UUID accountId, @PathVariable UUID versionId) {
         return studio.validateQuestionVersion(accountId, versionId);

@@ -73,6 +73,8 @@ public class AnswerScoringService {
             case MATCHING -> scoreMatching(version.getId(), submittedAnswer);
             case ORDERING -> scoreOrdering(version.getId(), submittedAnswer);
             case SORTING -> scoreSorting(version.getId(), submittedAnswer);
+            // V91: never scored - AnswerSubmissionWriter records a drawing unscored and never asks.
+            case DRAWING -> throw new IllegalStateException("A drawing is not scored");
         };
     }
 

@@ -44,6 +44,10 @@ public final class QuestionCompleteness {
                                 .formatted(correctCount), Map.of("count", correctCount))
                         : null;
             }
+            // V91: a drawing needs its guide (checked whole when it is saved); it has no answer to score.
+            case DRAWING -> version.getDrawingGuide() == null
+                    ? new Issue("DRAWING_GUIDE_MISSING", "Choose how the child draws: free, tracing or guided.")
+                    : null;
             case MATCHING -> matchingProblem(options);
             case ORDERING -> orderingProblem(options);
             case SORTING -> sortingProblem(options);

@@ -16,6 +16,7 @@ import type { Child } from "@/lib/api/types";
 import { LearningNowSection } from "./LearningNowSection";
 import { ChangesSection } from "./ChangesSection";
 import { SkillsSection } from "./SkillsSection";
+import { ChildDrawings } from "./ChildDrawings";
 import { RecentActivitySection } from "./RecentActivitySection";
 import { InsightsSection } from "./InsightsSection";
 import { SchoolAccessSection } from "./SchoolAccessSection";
@@ -113,6 +114,7 @@ function ChildOverview({ childId }: { childId: string }) {
               <div className="flex flex-col gap-12">
                 <SkillsSection childId={childId} childName={data.displayName} />
                 <RecentActivitySection childId={childId} />
+                <ChildDrawings childId={childId} childName={data.displayName} />
               </div>
             }
           />

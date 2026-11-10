@@ -5,6 +5,7 @@ import type { ActivityItem, CorrectAnswer, MediaRef } from "@/lib/api/types";
 import { MatchingQuestion } from "./MatchingQuestion";
 import { OrderingQuestion } from "./OrderingQuestion";
 import { SortingQuestion } from "./SortingQuestion";
+import { DrawingQuestion } from "./DrawingQuestion";
 import { ListenButton, PromptFrame } from "./PromptMedia";
 import { useReadAloud } from "./speaker";
 import { useMessages } from "@/i18n/catalog";
@@ -20,6 +21,8 @@ import { childMessages } from "./messages";
 export interface AnswerResult {
   submitted: string;
   correct: boolean;
+  /** V91: false for a drawing - kept, never marked right or wrong. */
+  scored?: boolean;
   correctAnswer: CorrectAnswer | null;
   /** Y41: the author's explanation, with the answer; null when the question has none. */
   explanation?: string | null;
@@ -180,6 +183,13 @@ function QuestionBody({
         <div className="flex flex-col gap-6">
           {prompt}
           <SortingQuestion item={item} onAnswer={onAnswer} disabled={disabled} result={result} />
+        </div>
+      );
+    case "DRAWING":
+      return (
+        <div className="flex flex-col gap-6">
+          {prompt}
+          <DrawingQuestion item={item} onAnswer={onAnswer} disabled={disabled} result={result} />
         </div>
       );
     default:
