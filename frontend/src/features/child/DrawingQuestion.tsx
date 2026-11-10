@@ -51,6 +51,7 @@ export function DrawingQuestion({
           readOnly={!!result || disabled}
           language={item.language}
           label={result ? m.yourDrawing : reference ? m.areaWith(reference) : m.area}
+          keyboardHelp={m.keyboardHelp}
           onStroke={(stroke) => setStrokes((current) => [...current, stroke])}
         />
       </div>

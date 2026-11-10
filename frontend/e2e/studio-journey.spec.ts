@@ -379,7 +379,7 @@ test("studio: multiple choice, true or false, short answer and matching - author
 
   // V91: the drawing - traced with the pointer, kept, never marked.
   await expect(family.getByText(prompts.drawing)).toBeVisible();
-  const space = family.getByRole("img", { name: "Drawing space: A" });
+  const space = family.getByRole("application", { name: "Drawing space: A" });
   await expect(family.getByRole("button", { name: /I'm done/ })).toBeDisabled();
   await expectNoViolations(family, "child: a drawing question");
   const box = (await space.boundingBox())!;

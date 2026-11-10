@@ -43,7 +43,7 @@ describe("a drawing question (V91)", () => {
     const onAnswer = vi.fn();
     render(<DrawingQuestion item={item} onAnswer={onAnswer} disabled={false} result={null} />);
     const user = userEvent.setup();
-    const area = screen.getByRole("img", { name: "Drawing space: A" });
+    const area = screen.getByRole("application", { name: "Drawing space: A" });
     const done = screen.getByRole("button", { name: /I'm done/ });
     expect(done).toBeDisabled();
     expect(screen.getByText("Draw first, then tap I'm done.")).toBeInTheDocument();
@@ -64,6 +64,21 @@ describe("a drawing question (V91)", () => {
     expect(sent.strokes).toHaveLength(1);
     expect(sent.strokes[0][0]).toEqual([0.5, 0.1]);
     expect(sent.strokes[0].at(-1)).toEqual([0.2, 0.9]);
+  });
+
+  it("draws with the keyboard alone: arrows move the pen, Space puts it down and lifts it", async () => {
+    const onAnswer = vi.fn();
+    render(<DrawingQuestion item={item} onAnswer={onAnswer} disabled={false} result={null} />);
+    const user = userEvent.setup();
+    const area = screen.getByRole("application", { name: "Drawing space: A" });
+    expect(area).toHaveAccessibleDescription(/arrow keys move the pen/);
+    area.focus();
+    await user.keyboard(" ");
+    await user.keyboard("{ArrowDown}{ArrowDown}{ArrowRight}");
+    await user.keyboard(" ");
+    await user.click(screen.getByRole("button", { name: /I'm done/ }));
+    const sent = JSON.parse(onAnswer.mock.calls[0][0] as string);
+    expect(sent.strokes[0]).toEqual([[0.5, 0.5], [0.5, 0.54], [0.5, 0.58], [0.54, 0.58]]);
   });
 
   it("shows the example beside the space in guided writing, in the question's language", () => {

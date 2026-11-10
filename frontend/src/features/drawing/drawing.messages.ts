@@ -6,6 +6,7 @@ export const drawingMessages = defineMessages(
   {
     // the child
     area: "Drawing space",
+    keyboardHelp: "To draw with the keyboard: arrow keys move the pen, Space puts it down or lifts it, Shift with an arrow moves it a little.",
     areaWith: (what: string) => `Drawing space: ${what}`,
     yourDrawing: "Your drawing",
     example: "Look first",
@@ -58,6 +59,7 @@ export const drawingMessages = defineMessages(
   },
   {
     area: "កន្លែងគូររូប",
+    keyboardHelp: "ដើម្បីគូរដោយក្ដារចុច៖ គ្រាប់ចុចព្រួញផ្លាស់ទីប៊ិច ដកឃ្លា (Space) ដាក់ប៊ិចចុះ ឬលើកវាឡើង Shift ជាមួយព្រួញផ្លាស់ទីវាបន្តិច។",
     areaWith: (what: string) => `កន្លែងគូររូប៖ ${what}`,
     yourDrawing: "រូបគំនូររបស់អ្នក",
     example: "មើលជាមុនសិន",

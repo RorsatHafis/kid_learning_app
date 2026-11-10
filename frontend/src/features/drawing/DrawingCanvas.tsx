@@ -3,7 +3,7 @@
  * scroll while drawing), over the author's guides - grid, baseline, the reference to trace (dotted), the author's own
  * tracing template, start points and direction arrows. Read-only, it shows a finished drawing the same way.
  */
-import { useId, useRef, useState, type PointerEvent } from "react";
+import { useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { cn } from "@/lib/utils/cn";
 import { clampPoint, pathOf, referenceFor, type DrawingGuide, type Stroke } from "./drawing";
 
@@ -14,6 +14,7 @@ export function DrawingCanvas({
   readOnly,
   language,
   label,
+  keyboardHelp,
   className,
   showReference = true,
   ink = "child",
@@ -27,6 +28,8 @@ export function DrawingCanvas({
   language?: string | null;
   /** What a screen reader says about the area. */
   label: string;
+  /** How to draw with the keyboard (read with the space when it takes focus); drawing by keys needs it. */
+  keyboardHelp?: string;
   className?: string;
   /** TRACE shows its reference dotted on the area; off where it is shown elsewhere. */
   showReference?: boolean;
@@ -77,19 +80,61 @@ export function DrawingCanvas({
     onStroke?.(stroke);
   }
 
+  // Drawing without a pointer: the arrow keys move a pen (Shift: smaller steps), Space puts it down or lifts it -
+  // while it is down the line follows it. Enter lifts it too. The finished line is the same as a drawn one.
+  const [pen, setPen] = useState<[number, number] | null>(null);
+  const penDown = useRef(false);
+  const helpId = useId();
+
+  function key(e: KeyboardEvent<HTMLDivElement>) {
+    if (readOnly) return;
+    const at = pen ?? [0.5, 0.5];
+    const step = e.shiftKey ? 0.01 : 0.04;
+    const moves: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    if (moves[e.key]) {
+      e.preventDefault();
+      const next = clampPoint(at[0] + moves[e.key][0], at[1] + moves[e.key][1]);
+      setPen(next);
+      if (penDown.current && drawing.current) {
+        drawing.current.push(next);
+        setCurrent([...drawing.current]);
+      }
+    } else if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      if (penDown.current) {
+        penDown.current = false;
+        up();
+      } else if (e.key === " ") {
+        penDown.current = true;
+        drawing.current = [at];
+        setPen(at);
+        setCurrent([at]);
+      }
+    }
+  }
+
   const line = ink === "child" ? 26 : 16;
   return (
     <div
       ref={box}
-      role="img"
+      role={readOnly ? "img" : "application"}
       aria-label={label}
+      aria-describedby={!readOnly && keyboardHelp ? helpId : undefined}
+      tabIndex={readOnly ? undefined : 0}
+      onKeyDown={key}
+      onBlur={() => {
+        if (penDown.current) {
+          penDown.current = false;
+          up();
+        }
+      }}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
       onPointerCancel={up}
       className={cn(
         "relative aspect-square w-full select-none overflow-hidden rounded-[24px] bg-white ring-2 ring-inset ring-line",
-        !readOnly && "cursor-crosshair touch-none",
+        !readOnly && "cursor-crosshair touch-none focus:outline-none focus-visible:ring-4 focus-visible:ring-tonle-500",
         className,
       )}
     >
@@ -165,6 +210,9 @@ export function DrawingCanvas({
               </text>
             </g>
           ))}
+        {pen && !readOnly && (
+          <circle cx={pen[0] * 1000} cy={pen[1] * 1000} r={penDown.current ? 18 : 22} className={penDown.current ? "fill-tonle-900" : "fill-none stroke-tonle-700"} strokeWidth={6} />
+        )}
         {[...strokes, ...(current ? [current] : [])].map((stroke, i) => (
           <path
             key={`d${i}`}
@@ -177,6 +225,11 @@ export function DrawingCanvas({
           />
         ))}
       </svg>
+      {!readOnly && keyboardHelp && (
+        <span id={helpId} className="sr-only">
+          {keyboardHelp}
+        </span>
+      )}
     </div>
   );
 }

@@ -146,7 +146,7 @@ export function DrawingGuideEditor({
             </div>
           )}
           <div className="w-full max-w-sm">
-            <DrawingCanvas guide={guide} strokes={[]} ink="author" readOnly={!editable} label={m.preview} onStroke={stroke} />
+            <DrawingCanvas guide={guide} strokes={[]} ink="author" readOnly={!editable} label={m.preview} keyboardHelp={m.keyboardHelp} onStroke={stroke} />
           </div>
           {editable && (
             <div className="flex flex-wrap gap-2">

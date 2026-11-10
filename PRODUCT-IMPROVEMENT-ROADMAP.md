@@ -3411,7 +3411,11 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   template / start point / arrow tools on the same canvas), DrawingsReview for parents (Skills & progress) and for
   class pages (teacher, principal), with feedback. EN/KM throughout (Khmer for PD-14 review).
 - **Tests:** DrawingQuestionIntegrationTests 3/3, ClassDrawingReviewIntegrationTests (class scope), Vitest
-  drawingQuestion + drawingGuide; studio-journey e2e authors, plays and reviews a drawing.
+  drawingQuestion + drawingGuide; studio-journey e2e authors, plays and reviews a drawing (1280 and 360 px).
+- **Keyboard drawing:** the drawing space is focusable (role application, described): arrow keys move a pen (Shift:
+  small steps), Space puts it down / lifts it, so a child who can't use a pointer can still answer.
+- **Fresh full e2e round (local, 2026-11-10):** desktop-1280 28 passed / 3 skipped by design; phone-360 23 passed /
+  2 skipped. No failures. The "More settings unsaved" note above is already done (detailsUnsaved.test.tsx).
 
 ### CHECKPOINT 2026-11-10 (end of window) - the next session starts here
 - **Owner requirements 2026-11-10: all five built and verified.** 96ae031 (1, 2), eda943b (3, 4), 25a3e9f (fixture

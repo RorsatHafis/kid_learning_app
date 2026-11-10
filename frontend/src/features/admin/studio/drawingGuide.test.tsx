@@ -52,7 +52,7 @@ describe("how the child draws (V91)", () => {
     await user.click(screen.getByRole("radio", { name: /Guided writing/ }));
     await user.type(screen.getByLabelText("Letter, number or word to copy (English)"), "B");
     await user.type(screen.getByLabelText("Letter, number or word to copy (Khmer)"), "ខ");
-    const area = screen.getByRole("img", { name: "What the child sees" });
+    const area = screen.getByRole("application", { name: "What the child sees" });
     gesture(area, [[50, 10]]); // the start point tool is chosen first: a tap places it
     await user.click(screen.getByRole("button", { name: "Arrow" }));
     gesture(area, [[50, 10], [50, 50], [50, 90]]);
