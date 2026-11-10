@@ -129,8 +129,9 @@ class AdminInsightIntegrationTests {
                 objectiveId, skillId);
         String ageHubId = jdbc.queryForObject("select id from age_hubs order by display_order limit 1", String.class);
         String curriculumId = UUID.randomUUID().toString();
-        jdbc.update("insert into curriculums (id, subject_id, age_hub_id, name, status, owner_account_id) values "
-                + "(?::uuid, ?::uuid, ?::uuid, ?, 'ACTIVE', ?)", curriculumId, subjectId, ageHubId, "Ops curriculum " + suffix, author.id());
+        jdbc.update("insert into curriculums (id, subject_id, age_hub_id, name, status, owner_account_id, min_age, max_age) "
+                + "select ?::uuid, ?::uuid, h.id, ?, 'ACTIVE', ?, h.min_age, h.max_age from age_hubs h where h.id = ?::uuid",
+                curriculumId, subjectId, "Ops curriculum " + suffix, author.id(), ageHubId);
         String versionId = UUID.randomUUID().toString();
         jdbc.update("insert into curriculum_versions (id, curriculum_id, version_number, status, published_at) values (?::uuid, ?::uuid, 1, 'PUBLISHED', now())",
                 versionId, curriculumId);

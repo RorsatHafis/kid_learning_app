@@ -77,7 +77,10 @@ export interface CurriculumSummary {
   id: string;
   name: string;
   subjectId: string;
-  ageHubId: string;
+  /** An older curriculum's age-group label; null for a new one (V90). */
+  ageHubId: string | null;
+  minAge: number;
+  maxAge: number | null;
   versions: VersionSummary[];
   archived?: boolean;
   khmer?: KhmerName;
@@ -91,7 +94,9 @@ export interface CurriculumDetail {
   id: string;
   name: string;
   subjectId: string;
-  ageHubId: string;
+  ageHubId: string | null;
+  minAge: number;
+  maxAge: number | null;
   versions: CurriculumVersionDetail[];
   archived?: boolean;
   khmer?: KhmerName;
@@ -561,6 +566,14 @@ export interface MediaQuery {
 const S = "/studio";
 
 /** X14: what can be renamed, archived and restored in the Studio, by its API path. */
+/** subscription/subjects/SubjectPlans.Assignment (V89). */
+export interface SubjectPlanAssignment {
+  subjectId: string;
+  everyPlan: boolean;
+  planIds: string[];
+  plans: { id: string; code: string; name: string; nameKm: string | null; status: "DRAFT" | "ACTIVE" | "RETIRED"; defaultPlan: boolean }[];
+}
+
 export type ManagedKind = "subjects" | "skills" | "objectives" | "curricula" | "lessons" | "activities" | "questions";
 
 // ---- content/review/ContentReviewController.java (Y14) ----
@@ -642,6 +655,10 @@ export const studioApi = {
   createSubject: (body: { code: string; name: string; description?: string; khmer?: KhmerNameBody }) =>
     apiClient.post<Subject>(`${S}/subjects`, body),
   ageHubs: () => apiClient.get<AgeHub[]>(`${S}/age-hubs`),
+  // V89: the family plans that include a subject (administrators).
+  subjectPlans: (subjectId: string) => apiClient.get<SubjectPlanAssignment>(`${S}/subjects/${subjectId}/plans`),
+  assignSubjectPlans: (subjectId: string, body: { everyPlan: true } | { everyPlan: false; planIds: string[] }) =>
+    apiClient.put<SubjectPlanAssignment>(`${S}/subjects/${subjectId}/plans`, body),
   catalog: (subjectId: string, archived = false) =>
     apiClient.get<Catalog>(`${S}/subjects/${subjectId}/catalog${archived ? "?archived=true" : ""}`),
   createSkill: (subjectId: string, body: { code: string; name: string; description?: string; khmer?: KhmerNameBody }) =>
@@ -655,7 +672,10 @@ export const studioApi = {
 
   curricula: (archived = false) => apiClient.get<CurriculumSummary[]>(`${S}/curricula${archived ? "?archived=true" : ""}`),
   curriculum: (id: string) => apiClient.get<CurriculumDetail>(`${S}/curricula/${id}`),
-  createCurriculum: (body: { subjectId: string; ageHubId: string; name: string; khmer?: KhmerNameBody }) =>
+  // V90: the curriculum's ages.
+  changeCurriculumAges: (curriculumId: string, body: { minAge: number; maxAge: number | null }) =>
+    apiClient.put<CurriculumDetail>(`${S}/curricula/${curriculumId}/ages`, body),
+  createCurriculum: (body: { subjectId: string; minAge: number; maxAge: number | null; name: string; khmer?: KhmerNameBody }) =>
     apiClient.post<CurriculumDetail>(`${S}/curricula`, body),
   openCurriculumDraft: (id: string) => apiClient.post<CurriculumDetail>(`${S}/curricula/${id}/draft`),
   replaceCurriculumObjectives: (versionId: string, objectiveIds: string[]) =>

@@ -114,8 +114,9 @@ export interface CurriculumSummary {
   name: string;
   subjectCode: string;
   subjectName: string;
-  ageHubCode: string;
-  ageHubName: string;
+  /** An older curriculum's age-group label; null for one made with its own ages (V90). */
+  ageHubCode: string | null;
+  ageHubName: string | null;
 }
 
 /** curriculum/web/CurriculumDtos.CurriculumChoiceResponse: a curriculum as offered for one child. */
@@ -287,6 +288,9 @@ export interface CurriculumRef {
   subjectCode: string | null;
   subjectName: string | null;
   ageHubName: string | null;
+  /** V90: the ages it is made for. */
+  minAge?: number | null;
+  maxAge?: number | null;
 }
 
 /** Why a step is on the path — each value maps to a recorded cause. */
@@ -380,6 +384,8 @@ export interface EnrollmentOverview {
   chapters: Chapter[];
   /** A family path's fit with the child's age now; null for a class's path. */
   ageFit: AgeFit | null;
+  /** V89: whether the family's plan includes the subject (always true for a class's path). Absent from older servers. */
+  inPlan?: boolean;
 }
 
 /** learning/service/LearningJourneyService.AgeFit: whether a family path is for the child's age now. */
@@ -590,6 +596,8 @@ export interface ApiProblem {
   retryAfterSeconds?: number;
   /** 400 only (2026-11-10, RegistrationNotVerifiedException): the registration's email confirmation is missing, used or expired. */
   registrationNotVerified?: boolean;
+  /** 409 only (V89, SubjectNotInPlanException): the family's plan doesn't include the subject. */
+  subjectNotInPlan?: boolean;
   /** 402 only (Y44, SchoolPaymentRequiredException): the school's services wait for payment. */
   schoolPaymentRequired?: boolean;
   /** M8: 403 when the action needs the password re-entered (a step-up). */

@@ -320,7 +320,8 @@ public class StudioService {
                 .map(curriculum -> new CurriculumSummary(curriculum.getId(), curriculum.getName(), curriculum.getSubjectId(),
                         curriculum.getAgeHubId(), curriculumService.listVersions(curriculum.getId()).stream()
                         .map(VersionSummary::of).toList(), curriculum.getStatus() == CatalogStatus.ARCHIVED,
-                        khmerName(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId())))
+                        khmerName(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId()),
+                        curriculum.getMinAge(), curriculum.getMaxAge()))
                 .toList();
     }
 
@@ -334,20 +335,44 @@ public class StudioService {
                 .toList();
         return new CurriculumDetail(curriculum.getId(), curriculum.getName(), curriculum.getSubjectId(),
                 curriculum.getAgeHubId(), versions, curriculum.getStatus() == CatalogStatus.ARCHIVED,
-                khmerName(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId()));
+                khmerName(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId()),
+                curriculum.getMinAge(), curriculum.getMaxAge());
+    }
+
+    /** V90: the ages a curriculum is made for - what families' discovery and eligibility use from now on. */
+    @Transactional
+    public CurriculumDetail changeCurriculumAges(UUID accountId, UUID curriculumId, int minAge, Integer maxAge) {
+        Account author = guard.requireAuthor(accountId);
+        Curriculum curriculum = guard.requireCurriculumWrite(accountId, curriculumId);
+        Map<String, Object> before = new java.util.HashMap<>();
+        before.put("minAge", curriculum.getMinAge());
+        before.put("maxAge", curriculum.getMaxAge());
+        curriculum.changeAges(minAge, maxAge);
+        Map<String, Object> details = new java.util.HashMap<>();
+        details.put("before", before);
+        details.put("minAge", minAge);
+        details.put("maxAge", maxAge);
+        record(author, "CURRICULUM_AGES_CHANGED", "CURRICULUM", curriculumId, details);
+        return curriculum(accountId, curriculumId);
     }
 
     @Transactional
     public CurriculumDetail createCurriculum(UUID accountId, CreateCurriculumRequest request) {
         Account author = guard.requireAuthor(accountId);
         subjectService.getById(request.subjectId());
-        if (!ageHubs.existsById(request.ageHubId())) {
-            throw new ResourceNotFoundException("AgeHub", request.ageHubId());
-        }
         UUID owner = guard.authoringOwner(author);
-        Curriculum curriculum = owner == null
-                ? curriculumService.createCurriculum(request.subjectId(), request.ageHubId(), request.name().strip())
-                : curriculumService.createOwnedCurriculum(request.subjectId(), request.ageHubId(), request.name().strip(), owner);
+        Curriculum curriculum;
+        if (request.minAge() != null) {
+            // V90: the curriculum's own ages; an age group isn't needed.
+            curriculum = curriculumService.createCurriculum(request.subjectId(), null, request.name().strip(), request.minAge(),
+                    request.maxAge(), owner);
+        } else if (request.ageHubId() != null) {
+            var hub = ageHubs.findById(request.ageHubId()).orElseThrow(() -> new ResourceNotFoundException("AgeHub", request.ageHubId()));
+            curriculum = curriculumService.createCurriculum(request.subjectId(), hub.getId(), request.name().strip(),
+                    hub.getMinAge(), hub.getMaxAge(), owner);
+        } else {
+            throw new IllegalArgumentException("Enter the youngest age the curriculum is for.");
+        }
         curriculumService.createDraftVersion(curriculum.getId());
         if (request.khmer() != null) {
             catalogNames.set(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId(), request.khmer().name(), null);

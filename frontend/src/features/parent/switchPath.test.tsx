@@ -70,6 +70,19 @@ describe("Switching between subjects (V88)", () => {
     expect(refetch).toHaveBeenCalled();
   });
 
+  it("a subject the plan no longer includes says so, keeps its learning, and offers no switch (V89)", () => {
+    const outside = { ...enrollment("e3", "Science - Junior", "PAUSED"), inPlan: false } as EnrollmentOverview;
+    render(
+      <MemoryRouter>
+        <LearningNowSection childId="child-1" childName="Dara" enrollments={{ data: [outside], error: null, isLoading: false, refetch: vi.fn() }} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("Not in your plan")).toBeInTheDocument();
+    expect(screen.getByText(/Your plan doesn't include Science - Junior now, so Dara can't play it. Nothing is lost/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Learn this now/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See the plans" })).toHaveAttribute("href", "/parent/account#plan");
+  });
+
   it("shows the server's refusal and changes nothing", async () => {
     const detail = "Your family's plan includes one active journey per child at a time. Switch to another to learn it.";
     vi.stubGlobal("fetch", vi.fn(async () => respond(409, { status: 409, detail, entitlement: "ACTIVE_JOURNEYS_PER_CHILD_MAX", limit: 1 })));

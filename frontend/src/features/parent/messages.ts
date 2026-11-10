@@ -129,6 +129,11 @@ export const familyMessages = defineMessages(
       switching: "Switching…",
       switchFailed: "That didn't switch. Please try again.",
       morePlans: "Plans with more subjects at once",
+      // V89: a subject the family's plan no longer includes.
+      notInPlanBadge: "Not in your plan",
+      notInPlan: (child: string, path: string) =>
+        `Your plan doesn't include ${path} now, so ${child} can't play it. Nothing is lost: everything ${child} learned in it is kept, and it carries on where it was if your plan includes it again.`,
+      seePlans: "See the plans",
       stop: "Stop this path…",
       stopLabel: (name: string) => `Stop ${name}`,
       stopExplain: (child: string, path: string) =>
@@ -522,6 +527,10 @@ export const familyMessages = defineMessages(
       switching: "កំពុងប្ដូរ…",
       switchFailed: "ការប្ដូរមិនដំណើរការទេ។ សូមព្យាយាមម្ដងទៀត។",
       morePlans: "កញ្ចប់ដែលរៀនបានច្រើនមុខវិជ្ជាក្នុងពេលតែមួយ",
+      notInPlanBadge: "មិននៅក្នុងកញ្ចប់របស់អ្នក",
+      notInPlan: (child: string, path: string) =>
+        `កញ្ចប់របស់អ្នកមិនរួមបញ្ចូល ${path} ឥឡូវនេះទេ ដូច្នេះ ${child} មិនអាចលេងវាបានទេ។ គ្មានអ្វីបាត់បង់ទេ៖ អ្វីៗដែល ${child} បានរៀនក្នុងនោះត្រូវបានរក្សាទុក ហើយវានឹងបន្តពីកន្លែងដដែល ប្រសិនបើកញ្ចប់របស់អ្នករួមបញ្ចូលវាម្ដងទៀត។`,
+      seePlans: "មើលកញ្ចប់",
       stop: "បញ្ឈប់ផ្លូវរៀននេះ…",
       stopLabel: (name: string) => `បញ្ឈប់ ${name}`,
       stopExplain: (child: string, path: string) =>

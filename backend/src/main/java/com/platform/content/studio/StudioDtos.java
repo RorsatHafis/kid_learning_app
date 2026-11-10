@@ -85,7 +85,7 @@ public final class StudioDtos {
     // ------------------------------------------------------------------ curricula
 
     public record CurriculumSummary(UUID id, String name, UUID subjectId, UUID ageHubId, List<VersionSummary> versions,
-                                    boolean archived, KhmerName khmer) {
+                                    boolean archived, KhmerName khmer, int minAge, Integer maxAge) {
     }
 
     public record CurriculumVersionDetail(UUID id, int versionNumber, PublicationStatus status, Instant publishedAt,
@@ -93,15 +93,33 @@ public final class StudioDtos {
     }
 
     public record CurriculumDetail(UUID id, String name, UUID subjectId, UUID ageHubId,
-                                   List<CurriculumVersionDetail> versions, boolean archived, KhmerName khmer) {
+                                   List<CurriculumVersionDetail> versions, boolean archived, KhmerName khmer,
+                                   int minAge, Integer maxAge) {
     }
 
-    public record CreateCurriculumRequest(@NotNull UUID subjectId, @NotNull UUID ageHubId,
+    /** The ages a curriculum is authored for in the Studio (V90): 0-18, the maximum optional and not below the minimum. */
+    public static final int STUDIO_MAX_AGE = 18;
+
+    /**
+     * V90: the ages ({@code minAge}, {@code maxAge}); an older client may send an age group ({@code ageHubId}) instead,
+     * whose ages are then used. One of the two is required.
+     */
+    public record CreateCurriculumRequest(@NotNull UUID subjectId, UUID ageHubId,
                                           @NotBlank @Size(max = 160) String name,
-                                          @jakarta.validation.Valid KhmerNameRequest khmer) {
+                                          @jakarta.validation.Valid KhmerNameRequest khmer,
+                                          @jakarta.validation.constraints.Min(0) @jakarta.validation.constraints.Max(STUDIO_MAX_AGE) Integer minAge,
+                                          @jakarta.validation.constraints.Min(0) @jakarta.validation.constraints.Max(STUDIO_MAX_AGE) Integer maxAge) {
         public CreateCurriculumRequest(UUID subjectId, UUID ageHubId, String name) {
-            this(subjectId, ageHubId, name, null);
+            this(subjectId, ageHubId, name, null, null, null);
         }
+
+        public CreateCurriculumRequest(UUID subjectId, UUID ageHubId, String name, KhmerNameRequest khmer) {
+            this(subjectId, ageHubId, name, khmer, null, null);
+        }
+    }
+
+    public record CurriculumAgesRequest(@NotNull @jakarta.validation.constraints.Min(0) @jakarta.validation.constraints.Max(STUDIO_MAX_AGE) Integer minAge,
+                                        @jakarta.validation.constraints.Min(0) @jakarta.validation.constraints.Max(STUDIO_MAX_AGE) Integer maxAge) {
     }
 
     public record ReplaceObjectivesRequest(@NotNull @Size(max = 200) List<@NotNull UUID> objectiveIds) {

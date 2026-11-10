@@ -50,17 +50,15 @@ public class PublicSubjects {
             return List.of();
         }
         Map<UUID, List<Curriculum>> published = curricula.listFamilyCatalog().stream().collect(Collectors.groupingBy(Curriculum::getSubjectId));
-        Map<UUID, AgeHub> hubs = ageHubs.findAllById(published.values().stream().flatMap(List::stream).map(Curriculum::getAgeHubId).distinct().toList())
-                .stream().collect(Collectors.toMap(AgeHub::getId, Function.identity()));
         names.prefetch(LocalizableContentType.SUBJECT, active.stream().map(Subject::getId).toList());
         return active.stream()
                 .map(subject -> {
-                    List<AgeHub> covered = published.getOrDefault(subject.getId(), List.of()).stream()
-                            .map(c -> hubs.get(c.getAgeHubId())).filter(java.util.Objects::nonNull).toList();
-                    boolean available = !published.getOrDefault(subject.getId(), List.of()).isEmpty();
-                    Integer min = covered.stream().map(AgeHub::getMinAge).min(Integer::compare).orElse(null);
-                    Integer max = covered.isEmpty() || covered.stream().anyMatch(h -> h.getMaxAge() == null) ? null
-                            : covered.stream().map(AgeHub::getMaxAge).max(Integer::compare).orElse(null);
+                    // V90: the ages the subject's published curricula are made for.
+                    List<Curriculum> covered = published.getOrDefault(subject.getId(), List.of());
+                    boolean available = !covered.isEmpty();
+                    Integer min = covered.stream().map(Curriculum::getMinAge).min(Integer::compare).orElse(null);
+                    Integer max = covered.isEmpty() || covered.stream().anyMatch(c -> c.getMaxAge() == null) ? null
+                            : covered.stream().map(Curriculum::getMaxAge).max(Integer::compare).orElse(null);
                     return new PublicSubject(subject.getCode(),
                             names.name(LocalizableContentType.SUBJECT, subject.getId(), subject.getName()),
                             names.description(LocalizableContentType.SUBJECT, subject.getId(), subject.getDescription()),

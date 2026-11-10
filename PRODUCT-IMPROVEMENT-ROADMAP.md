@@ -3324,3 +3324,19 @@ deploy. Design (from the code, 2026-11-10):
   family's limits (as journeys did before) and is never paused by a switch - if those alone fill the free plan's one
   active place, the family can't switch to its own subject until the class ends. Confirm or decide otherwise.
 - Khmer strings added (plan description, waiting/switch, server texts) join the native review list (PD-14).
+
+**(3) Subject -> plan assignment - DONE.** V89 `subject_plans` (no rows = every family plan; nothing changed for existing
+subjects). Studio tab "Family plans" (admins; plans read from plan records, EN/KM names). Enforced on enrol, switch,
+next-activity and attempt start (409 `subjectNotInPlan`, data kept); child catalog filtered; journeys marked `inPlan`
+(parent "Not in your plan" note, hidden from the child home). A plan's new version copies its subjects. Class-assigned
+journeys are not checked (owner question (b) still open). Tests: SubjectPlansIntegrationTests, subjectPlans/switchPath vitest.
+
+**(4) Curriculum age ranges - DONE.** V90 `curriculums.min_age/max_age` backfilled from the age group; age_hub_id now an
+optional label. Studio create/edit (AgeRangeFields, 0-18, oldest optional) + PUT /studio/curricula/{id}/ages (audited).
+Child catalog, auto-enrolment, age-fit note, public subjects and admin readiness use the curriculum's ages.
+Tests: CurriculumAgesIntegrationTests, updated catalog/age-fit/admin-insight fixtures, ageRange vitest.
+
+**(5) Mobile Content Studio - NOT STARTED beyond inspection.** Found: SelectField/TextAreaField use a different style
+and 14px text (iOS zooms on focus), no error state or required marker; 31 raw inputs in Studio, 14 with ad-hoc
+`border` styles. Next task: unify them on `fieldClasses` with 16px text on phones, error + required props, then
+verify at 360/390/768/desktop in EN/KM.

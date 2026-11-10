@@ -8,7 +8,9 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
 import { CatalogNameFields } from "./CatalogNameFields";
 import { khmerNameBody } from "./bilingual";
-import { ComposerPanel, NewButton, Panel, SelectField, StatusBadge } from "./shared";
+import { ComposerPanel, NewButton, Panel, StatusBadge } from "./shared";
+import { AgeRangeFields, ageRangeBody, ageRangeError, type AgeRangeValue } from "./AgeRangeFields";
+import { ageRangeMessages } from "./ageRange.messages";
 import { currentStatus, errorText, useStudio, useComposer, useArchivedView } from "./studioLogic";
 import { ArchivedSwitch } from "./Lifecycle";
 import { useMessages } from "@/i18n/catalog";
@@ -22,9 +24,8 @@ export function CurriculaPage() {
   const { catalog } = useStudio();
   const [archived, setArchived] = useArchivedView();
   const curricula = useAsync(() => studioApi.curricula(archived), [archived]);
-  const ageHubs = useAsync(() => studioApi.ageHubs(), []);
   const mine = (curricula.data ?? []).filter((c) => c.subjectId === catalog.subject.id);
-  const hubName = (id: string) => ageHubs.data?.find((h) => h.id === id)?.name ?? "";
+  const ages = useMessages(ageRangeMessages);
   const composer = useComposer(!archived && !!curricula.data && mine.length === 0);
   const m = useMessages(studioMessages).curricula;
 
@@ -59,7 +60,7 @@ export function CurriculaPage() {
                   <span className="min-w-0">
                     <span className="block truncate font-semibold text-ink">{curriculum.name}</span>
                     <span className="text-xs text-ink-soft">
-                      {hubName(curriculum.ageHubId)} · {status.label}
+                      {ages.range(curriculum.minAge, curriculum.maxAge)} · {status.label}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
@@ -74,31 +75,21 @@ export function CurriculaPage() {
       </Panel>
       {composer.open && (
         <div className="order-first lg:order-none">
-          <NewCurriculum ageHubs={ageHubs.data ?? []} onClose={composer.hide} focusOnOpen={composer.requested} />
+          <NewCurriculum onClose={composer.hide} focusOnOpen={composer.requested} />
         </div>
       )}
     </div>
   );
 }
 
-function NewCurriculum({
-  ageHubs,
-  onClose,
-  focusOnOpen,
-}: {
-  ageHubs: {
-    id: string;
-    name: string;
-    minAge: number;
-    maxAge: number | null;
-  }[];
-  onClose: () => void;
-  focusOnOpen: boolean;
-}) {
+function NewCurriculum({ onClose, focusOnOpen }: { onClose: () => void; focusOnOpen: boolean }) {
   const { catalog } = useStudio();
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const [ageHubId, setAgeHubId] = useState("");
+  // V90: the curriculum's own ages (no fixed age group).
+  const [ages, setAges] = useState<AgeRangeValue>({ min: "", max: "" });
+  const [tried, setTried] = useState(false);
+  const ageWords = useMessages(ageRangeMessages);
   const [nameKm, setNameKm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,12 +97,14 @@ function NewCurriculum({
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    setTried(true);
+    if (ageRangeError(ages, ageWords)) return;
     setBusy(true);
     setError(null);
     try {
       const created = await studioApi.createCurriculum({
         subjectId: catalog.subject.id,
-        ageHubId,
+        ...ageRangeBody(ages),
         name: name.trim(),
         ...(nameKm.trim() && { khmer: khmerNameBody(undefined, nameKm) }),
       });
@@ -126,20 +119,13 @@ function NewCurriculum({
     <ComposerPanel title={m.newCurriculum} onClose={onClose} focusOnOpen={focusOnOpen}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <CatalogNameFields nameLabel={m.nameFamilies} nameMax={160} name={name} onName={setName} nameKm={nameKm} onNameKm={setNameKm} />
-        <SelectField label={m.ageGroup} value={ageHubId} required onChange={(e) => setAgeHubId(e.target.value)}>
-          <option value="">{m.choose}</option>
-          {ageHubs.map((hub) => (
-            <option key={hub.id} value={hub.id}>
-              {hub.name} ({m.ages(hub.minAge, hub.maxAge)})
-            </option>
-          ))}
-        </SelectField>
+        <AgeRangeFields value={ages} onChange={setAges} showError={tried} />
         {error && (
           <p role="alert" className="text-sm font-medium text-brick-deep">
             {error}
           </p>
         )}
-        <Button type="submit" disabled={busy || !name.trim() || !ageHubId} className="w-fit">
+        <Button type="submit" disabled={busy || !name.trim()} className="w-fit">
           <Plus size={16} aria-hidden /> {busy ? m.creating : m.createDraft}
         </Button>
       </form>

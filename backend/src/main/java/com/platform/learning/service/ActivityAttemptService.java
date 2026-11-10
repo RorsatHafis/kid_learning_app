@@ -67,6 +67,10 @@ public class ActivityAttemptService {
     @Autowired(required = false)
     private LearnerStreakService learnerStreakService;
 
+    /** V89: play only while the family's plan includes the journey's subject (absent in unit tests). */
+    @Autowired(required = false)
+    private JourneyPlanCheck journeyPlanCheck;
+
     private final com.platform.content.withdrawal.WithdrawnContent withdrawn;
     private final com.platform.child.service.DailyLearningTimeService dailyLearningTime;
 
@@ -269,6 +273,9 @@ public class ActivityAttemptService {
         // V88: a waiting journey is played once the family switches to it.
         if (enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.PAUSED) {
             throw new IllegalStateException("This path is waiting. A grown-up can switch to it.");
+        }
+        if (journeyPlanCheck != null) {
+            journeyPlanCheck.requireInPlan(enrollment);
         }
         if (!item.getActivityVersionId().equals(activityVersionId)) {
             throw new IllegalArgumentException(

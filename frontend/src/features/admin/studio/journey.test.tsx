@@ -63,6 +63,8 @@ const DETAIL: CurriculumDetail = {
   name: "Maths - Junior",
   subjectId: "subject",
   ageHubId: "hub",
+  minAge: 4,
+  maxAge: 9,
   versions: [{ id: "v1", versionNumber: 1, status: "DRAFT", publishedAt: null, objectiveIds: ["o1", "o2"] }],
 };
 

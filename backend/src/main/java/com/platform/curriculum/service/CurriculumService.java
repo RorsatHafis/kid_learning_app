@@ -47,14 +47,36 @@ public class CurriculumService {
         this.learningObjectiveRepository = learningObjectiveRepository;
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.curriculum.repository.AgeHubRepository ageHubs;
+
+    /** A platform curriculum for an age group's ages (the group kept as its label). */
     @Transactional
     public Curriculum createCurriculum(UUID subjectId, UUID ageHubId, String name) {
-        return curriculumRepository.save(Curriculum.create(subjectId, ageHubId, name));
+        var hub = ageHubs.findById(ageHubId).orElseThrow(() -> new ResourceNotFoundException("AgeHub", ageHubId));
+        return curriculumRepository.save(Curriculum.create(subjectId, ageHubId, name, hub.getMinAge(), hub.getMaxAge(), null));
     }
 
+    /** A teacher's curriculum for an age group's ages (the group kept as its label). */
     @Transactional
     public Curriculum createOwnedCurriculum(UUID subjectId, UUID ageHubId, String name, UUID ownerAccountId) {
-        return curriculumRepository.save(Curriculum.createOwned(subjectId, ageHubId, name, ownerAccountId));
+        var hub = ageHubs.findById(ageHubId).orElseThrow(() -> new ResourceNotFoundException("AgeHub", ageHubId));
+        return curriculumRepository.save(Curriculum.create(subjectId, ageHubId, name, hub.getMinAge(), hub.getMaxAge(), ownerAccountId));
+    }
+
+    /**
+     * V90: a curriculum for the ages given; {@code ageHubId} an optional age-group label, {@code ownerAccountId} null
+     * for a platform curriculum.
+     */
+    @Transactional
+    public Curriculum createCurriculum(UUID subjectId, UUID ageHubId, String name, int minAge, Integer maxAge, UUID ownerAccountId) {
+        return curriculumRepository.save(Curriculum.create(subjectId, ageHubId, name, minAge, maxAge, ownerAccountId));
+    }
+
+    /** Platform curricula offered to families (active, published) whose ages include {@code age}. */
+    @Transactional(readOnly = true)
+    public List<Curriculum> familyCatalogForAge(int age) {
+        return listFamilyCatalog().stream().filter(curriculum -> curriculum.fitsAge(age)).toList();
     }
 
     @Transactional(readOnly = true)

@@ -39,6 +39,8 @@ public class StudioController {
     private final StudioService studio;
     private final JourneyBuilderService journeys;
     private final ContentLifecycleService lifecycle;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.subscription.subjects.SubjectPlans subjectPlans;
 
     public StudioController(StudioService studio, JourneyBuilderService journeys, ContentLifecycleService lifecycle) {
         this.studio = studio;
@@ -109,6 +111,13 @@ public class StudioController {
     public CurriculumDetail createCurriculum(@AuthenticationPrincipal UUID accountId,
                                              @Valid @RequestBody CreateCurriculumRequest request) {
         return studio.createCurriculum(accountId, request);
+    }
+
+    /** V90: the ages a curriculum is made for. */
+    @PutMapping("/curricula/{curriculumId}/ages")
+    public CurriculumDetail changeCurriculumAges(@AuthenticationPrincipal UUID accountId, @PathVariable UUID curriculumId,
+                                                 @Valid @RequestBody StudioDtos.CurriculumAgesRequest request) {
+        return studio.changeCurriculumAges(accountId, curriculumId, request.minAge(), request.maxAge());
     }
 
     @GetMapping("/curricula/{curriculumId}")
@@ -361,6 +370,23 @@ public class StudioController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateSubject(@AuthenticationPrincipal UUID accountId, @PathVariable UUID subjectId, @Valid @RequestBody DetailsRequest request) {
         lifecycle.updateSubject(accountId, subjectId, request.name(), request.description(), request.khmer());
+    }
+
+    /** V89 (owner 2026-11-10): the family plans that include the subject - every plan, or the chosen ones. Administrators. */
+    @GetMapping("/subjects/{subjectId}/plans")
+    public com.platform.subscription.subjects.SubjectPlans.Assignment subjectPlans(@AuthenticationPrincipal UUID accountId,
+                                                                                  @PathVariable UUID subjectId) {
+        return subjectPlans.view(accountId, subjectId);
+    }
+
+    public record SubjectPlansRequest(boolean everyPlan, @Size(max = 50) java.util.List<UUID> planIds) {
+    }
+
+    @PutMapping("/subjects/{subjectId}/plans")
+    public com.platform.subscription.subjects.SubjectPlans.Assignment assignSubjectPlans(@AuthenticationPrincipal UUID accountId,
+                                                                                        @PathVariable UUID subjectId,
+                                                                                        @Valid @RequestBody SubjectPlansRequest request) {
+        return subjectPlans.assign(accountId, subjectId, request.everyPlan(), request.planIds());
     }
 
     @PostMapping("/subjects/{subjectId}/archive")

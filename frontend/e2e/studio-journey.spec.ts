@@ -129,7 +129,8 @@ test("studio: author, check, publish; a child plays exactly what was published @
   // A curriculum for the Junior age group with the objective.
   await studioTab(page, "Curricula");
   await page.getByLabel("Name families will see").fill(`Counting stars ${tag}`);
-  await page.getByLabel("Age group").selectOption({ label: "Junior (4–9 years)" });
+  await page.getByLabel("Youngest age").fill("4");
+  await page.getByLabel(/Oldest age/).fill("9");
   await page.getByRole("button", { name: "Create draft" }).click();
   // The journey builder: a chapter is an objective; the unsaved order is previewed, then saved.
   await page.getByLabel("Add a chapter").selectOption({ label: `Counts small sets ${tag}` });
@@ -305,7 +306,8 @@ test("studio: multiple choice, true or false, short answer and matching - author
 
   await studioTab(page, "Curricula");
   await page.getByLabel("Name families will see").fill(`Word play ${tag}`);
-  await page.getByLabel("Age group").selectOption({ label: "Junior (4–9 years)" });
+  await page.getByLabel("Youngest age").fill("4");
+  await page.getByLabel(/Oldest age/).fill("9");
   await page.getByRole("button", { name: "Create draft" }).click();
   await page.getByLabel("Add a chapter").selectOption({ label: `Knows words ${tag}` });
   await page.getByRole("button", { name: "Add at the end" }).click();

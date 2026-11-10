@@ -51,6 +51,8 @@ public class SubscriptionService {
     private static final String RESOURCE = "FAMILY_SUBSCRIPTION";
 
     private final SubscriptionPlanRepository plans;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.platform.subscription.subjects.SubjectPlans subjectPlans;
     private final PlanEntitlementRepository entitlements;
     private final FamilySubscriptionRepository subscriptions;
     private final FamilyRepository families;
@@ -181,10 +183,14 @@ public class SubscriptionService {
         if (plans.findByCode(normalized).isPresent()) {
             throw new IllegalStateException("A plan with the code " + normalized + " already exists");
         }
-        SubscriptionPlan copy = plans.save(SubscriptionPlan.duplicateOf(source, normalized, name));
+        SubscriptionPlan copy = plans.saveAndFlush(SubscriptionPlan.duplicateOf(source, normalized, name));
         Map<EntitlementKey, Integer> limits = entitlementService.limitsOf(sourceId);
         for (EntitlementKey key : EntitlementKey.of(copy.getAudience())) {
             entitlements.save(PlanEntitlement.of(copy.getId(), key, limits.get(key)));
+        }
+        // V89: the new version includes the subjects its source included.
+        if (subjectPlans != null) {
+            subjectPlans.copyToNewVersion(sourceId, copy.getId());
         }
         record(adminId, "PLAN_DUPLICATED", copy.getId(), Map.of("code", normalized, "from", source.getCode(),
                 "audience", copy.getAudience().name()));

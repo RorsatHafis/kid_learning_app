@@ -25,6 +25,7 @@ import { ActivitiesPage } from "./studio/ActivitiesPage";
 import { ActivityEditor } from "./studio/ActivityEditor";
 import { CurriculaPage } from "./studio/CurriculaPage";
 import { CurriculumEditor } from "./studio/CurriculumEditor";
+import { SubjectPlansPage } from "./studio/SubjectPlansPage";
 import { useMessages } from "@/i18n/catalog";
 import { common } from "@/components/ui/messages";
 
@@ -50,6 +51,7 @@ export default function AdminArea() {
           <Route path="activities/:activityId" element={<ActivityEditor />} />
           <Route path="curricula" element={<CurriculaPage />} />
           <Route path="curricula/:curriculumId" element={<CurriculumEditor />} />
+          <Route path="plans" element={<SubjectPlansPage />} />
         </Route>
         <Route path="staff" element={<StaffPage />} />
         <Route path="accounts" element={<AccountsPage />} />

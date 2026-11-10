@@ -142,7 +142,13 @@ public class LearningJourneyService {
     public record SkillRef(UUID id, String name) {
     }
 
-    public record CurriculumRef(UUID id, String name, String subjectCode, String subjectName, String ageHubName) {
+    /** {@code ageHubName}: an older curriculum's age-group label (null for most new ones); the ages are V90's own. */
+    public record CurriculumRef(UUID id, String name, String subjectCode, String subjectName, String ageHubName,
+                                Integer minAge, Integer maxAge) {
+        /** Without the ages (a reference where they don't matter). */
+        public CurriculumRef(UUID id, String name, String subjectCode, String subjectName, String ageHubName) {
+            this(id, name, subjectCode, subjectName, ageHubName, null, null);
+        }
     }
 
     /** Why a step is on the path. Each value corresponds to a recorded cause. */
@@ -231,7 +237,9 @@ public class LearningJourneyService {
     /** {@code ageFit}: for a family (platform) path, whether it is for the child's age now; null for a class's path. */
     public record EnrollmentOverview(UUID enrollmentId, CurriculumRef curriculum, EnrollmentStatus status,
                                      Instant enrolledAt, int completedSteps, int totalSteps, JourneyStep nextStep,
-                                     Chapter currentChapter, int chapterCount, List<Chapter> chapters, AgeFit ageFit) {
+                                     Chapter currentChapter, int chapterCount, List<Chapter> chapters, AgeFit ageFit,
+                                     /** V89: whether the family's plan includes the subject (a class's journey: always). */
+                                     boolean inPlan) {
     }
 
     /**
@@ -255,6 +263,9 @@ public class LearningJourneyService {
                                     int totalAnswers, Instant startedAt, Instant completedAt, List<SkillRef> skills,
                                     DecisionSummary decision, int hintedAnswers) {
     }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private JourneyPlanCheck planCheck;
 
     // ------------------------------------------------------------------ queries
 
@@ -281,7 +292,8 @@ public class LearningJourneyService {
                     return new EnrollmentOverview(enrollment.getId(), journey.curriculum(), enrollment.getStatus(),
                             enrollment.getEnrolledAt(), journey.completedSteps(), journey.totalSteps(), next,
                             current, journey.chapters().size(), journey.chapters(),
-                            ageFit(enrollment.getCurriculumVersionId(), childAge, onCurricula));
+                            ageFit(enrollment.getCurriculumVersionId(), childAge, onCurricula),
+                            planCheck == null || planCheck.inPlan(enrollment));
                 })
                 .toList();
     }
@@ -573,18 +585,13 @@ public class LearningJourneyService {
         if (curriculum.getOwnerAccountId() != null || childAge == null) {
             return null;
         }
-        AgeHub hub = ageHubRepository.findById(curriculum.getAgeHubId()).orElse(null);
-        if (hub == null) {
-            return null;
-        }
-        java.util.Optional<AgeHub> childHub = ageHubRepository.findForAge(childAge);
-        boolean fits = childHub.map(h -> h.getId().equals(hub.getId())).orElse(false);
-        Curriculum suggested = fits || childHub.isEmpty() ? null : curriculumService.listActiveForAgeHub(childHub.get().getId()).stream()
-                .filter(other -> other.getOwnerAccountId() == null && other.getSubjectId().equals(curriculum.getSubjectId()))
-                .filter(other -> !onCurricula.contains(other.getId()) && curriculumService.hasPublishedVersion(other.getId()))
+        // V90: the curriculum's own ages (was: its age group's).
+        boolean fits = curriculum.fitsAge(childAge);
+        Curriculum suggested = fits ? null : curriculumService.familyCatalogForAge(childAge).stream()
+                .filter(other -> other.getSubjectId().equals(curriculum.getSubjectId()) && !onCurricula.contains(other.getId()))
                 .min(Comparator.comparing(Curriculum::getName, String.CASE_INSENSITIVE_ORDER))
                 .orElse(null);
-        return new AgeFit(fits, childAge, hub.getMinAge(), hub.getMaxAge(), suggested == null ? null : suggested.getId(),
+        return new AgeFit(fits, childAge, curriculum.getMinAge(), curriculum.getMaxAge(), suggested == null ? null : suggested.getId(),
                 suggested == null ? null : suggested.getName());
     }
 
@@ -593,11 +600,11 @@ public class LearningJourneyService {
         Curriculum curriculum = curriculumService.getCurriculum(
                 curriculumService.getVersion(curriculumVersionId).getCurriculumId());
         Subject subject = subjectRepository.findById(curriculum.getSubjectId()).orElse(null);
-        AgeHub ageHub = ageHubRepository.findById(curriculum.getAgeHubId()).orElse(null);
+        AgeHub ageHub = curriculum.getAgeHubId() == null ? null : ageHubRepository.findById(curriculum.getAgeHubId()).orElse(null);
         return new CurriculumRef(curriculum.getId(), catalogNames.name(com.platform.content.entity.LocalizableContentType.CURRICULUM, curriculum.getId(), curriculum.getName()),
                 subject == null ? null : subject.getCode(),
                 subject == null ? null : catalogNames.name(com.platform.content.entity.LocalizableContentType.SUBJECT, subject.getId(), subject.getName()),
-                ageHub == null ? null : ageHub.getName());
+                ageHub == null ? null : ageHub.getName(), curriculum.getMinAge(), curriculum.getMaxAge());
     }
 
     private static UUID contextId(AdaptationDecision decision, String key) {

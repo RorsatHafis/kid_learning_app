@@ -58,14 +58,14 @@ class FamilyCurriculumCatalogIntegrationTests {
 
         JsonNode choices = json(get("/api/v1/children/" + childId + "/curricula", parent), 200);
         assertThat(choices.size()).isPositive();
-        // The same rule as automatic enrolment: the first age group (display order) including age 6.
-        UUID expectedHub = jdbc.queryForObject("select id from age_hubs where min_age <= 6 and (max_age is null or max_age >= 6) "
-                + "order by display_order limit 1", UUID.class);
-        String expectedCode = jdbc.queryForObject("select code from age_hubs where id = ?", String.class, expectedHub);
+        // The same rule as automatic enrolment (V90): the curriculum's own ages include the child's (6).
         boolean seenOther = false;
         for (JsonNode choice : choices) {
-            assertThat(choice.get("forChildAge").asBoolean()).as(choice.toString())
-                    .isEqualTo(choice.get("ageHubCode").asString().equals(expectedCode));
+            Boolean fits = jdbc.queryForObject("select min_age <= 6 and (max_age is null or max_age >= 6) from curriculums where id = ?::uuid",
+                    Boolean.class, UUID.fromString(choice.get("id").asString()));
+            assertThat(choice.get("forChildAge").asBoolean()).as(choice.toString()).isEqualTo(fits);
+            assertThat(choice.get("minAge").asInt()).isEqualTo(jdbc.queryForObject("select min_age from curriculums where id = ?::uuid",
+                    Integer.class, UUID.fromString(choice.get("id").asString())));
             // For-this-age first: once another age group appears, none of the child's follows.
             if (!choice.get("forChildAge").asBoolean()) {
                 seenOther = true;
@@ -73,8 +73,23 @@ class FamilyCurriculumCatalogIntegrationTests {
                 assertThat(seenOther).as("a curriculum for the child's age after other ages").isFalse();
             }
         }
-        // The same curricula as the general catalog, nothing more (platform-owned, published).
-        assertThat(choices.size()).isEqualTo(json(get("/api/v1/curricula", parent), 200).size());
+        // The general catalog's curricula (platform-owned, published), less those of subjects the family's plan doesn't
+        // include (V89) - nothing more.
+        java.util.Set<String> general = new java.util.HashSet<>();
+        json(get("/api/v1/curricula", parent), 200).forEach(c -> general.add(c.get("id").asString()));
+        java.util.Set<String> offered = new java.util.HashSet<>();
+        choices.forEach(c -> offered.add(c.get("id").asString()));
+        assertThat(general).containsAll(offered);
+        for (String left : general) {
+            if (!offered.contains(left)) {
+                assertThat(jdbc.queryForObject("""
+                        select exists (select 1 from subject_plans sp join curriculums c on c.subject_id = sp.subject_id where c.id = ?::uuid)
+                           and not exists (select 1 from subject_plans sp join curriculums c on c.subject_id = sp.subject_id
+                                           join subscription_plans p on p.id = sp.plan_id and p.audience = 'FAMILY' and p.is_default
+                                           where c.id = ?::uuid)
+                        """, Boolean.class, UUID.fromString(left), UUID.fromString(left))).as("left out: not in the free plan").isTrue();
+            }
+        }
 
         String stranger = registerParent();
         assertThat(get("/api/v1/children/" + childId + "/curricula", stranger).statusCode()).isEqualTo(404);
@@ -105,7 +120,7 @@ class FamilyCurriculumCatalogIntegrationTests {
             for (int i = 0; i < 12; i++) {
                 UUID curriculum = UUID.randomUUID();
                 curricula.add(curriculum);
-                jdbc.update("insert into curriculums (id, subject_id, age_hub_id, name) values (?, ?, ?, ?)",
+                jdbc.update("insert into curriculums (id, subject_id, age_hub_id, name, min_age, max_age) values (?, ?, ?, ?, 90, 99)",
                         curriculum, subject, hub, "Catalog " + suffix + " " + i);
                 jdbc.update("insert into curriculum_versions (id, curriculum_id, version_number, status, published_at) "
                         + "values (?, ?, 1, 'PUBLISHED', now())", UUID.randomUUID(), curriculum);

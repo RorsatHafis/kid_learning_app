@@ -24,8 +24,17 @@ public class Curriculum extends AuditableEntity {
     @Column(name = "subject_id", nullable = false, updatable = false)
     private UUID subjectId;
 
-    @Column(name = "age_hub_id", nullable = false, updatable = false)
+    /** Older curricula's age group (V10), kept as a label; a new curriculum needs none (V90). */
+    @Column(name = "age_hub_id", updatable = false)
     private UUID ageHubId;
+
+    /** V90 (owner 2026-11-10): the ages the curriculum is made for - what discovery and eligibility use. */
+    @Column(name = "min_age", nullable = false)
+    private Integer minAge;
+
+    /** Null: no upper age. */
+    @Column(name = "max_age")
+    private Integer maxAge;
 
     @Column(name = "owner_account_id", updatable = false)
     private UUID ownerAccountId;
@@ -42,19 +51,45 @@ public class Curriculum extends AuditableEntity {
         // JPA
     }
 
-    private Curriculum(UUID subjectId, UUID ageHubId, String name, UUID ownerAccountId) {
+    private Curriculum(UUID subjectId, UUID ageHubId, String name, UUID ownerAccountId, int minAge, Integer maxAge) {
         this.subjectId = subjectId;
         this.ageHubId = ageHubId;
+        changeAges(minAge, maxAge);
         this.name = name;
         this.ownerAccountId = ownerAccountId;
         this.status = CatalogStatus.ACTIVE;
     }
 
-    public static Curriculum create(UUID subjectId, UUID ageHubId, String name) {
+    /** A curriculum for the ages {@code minAge}-{@code maxAge} (null: no upper age); {@code ageHubId} is an optional label. */
+    public static Curriculum create(UUID subjectId, UUID ageHubId, String name, int minAge, Integer maxAge, UUID ownerAccountId) {
         Assert.notNull(subjectId, "subjectId must not be null");
-        Assert.notNull(ageHubId, "ageHubId must not be null");
         Assert.hasText(name, "name must not be blank");
-        return new Curriculum(subjectId, ageHubId, name, null);
+        return new Curriculum(subjectId, ageHubId, name, ownerAccountId, minAge, maxAge);
+    }
+
+    /** The ages it is made for (min at least 0; max, when given, not below min). */
+    public void changeAges(int minAge, Integer maxAge) {
+        if (minAge < 0) {
+            throw new IllegalArgumentException("The minimum age can't be below 0.");
+        }
+        if (maxAge != null && maxAge < minAge) {
+            throw new IllegalArgumentException("The maximum age can't be below the minimum age.");
+        }
+        this.minAge = minAge;
+        this.maxAge = maxAge;
+    }
+
+    /** Whether a child of {@code age} is in the curriculum's range. */
+    public boolean fitsAge(int age) {
+        return age >= minAge && (maxAge == null || age <= maxAge);
+    }
+
+    public int getMinAge() {
+        return minAge;
+    }
+
+    public Integer getMaxAge() {
+        return maxAge;
     }
 
     public void rename(String newName) {
@@ -83,10 +118,6 @@ public class Curriculum extends AuditableEntity {
         return subjectId;
     }
 
-    public static Curriculum createOwned(UUID subjectId, UUID ageHubId, String name, UUID ownerAccountId) {
-        Assert.notNull(ownerAccountId, "ownerAccountId must not be null");
-        return new Curriculum(subjectId, ageHubId, name, ownerAccountId);
-    }
 
     public UUID getOwnerAccountId() { return ownerAccountId; }
 

@@ -16,6 +16,7 @@ import { ChapterTrack } from "./ui";
 import { chapterRuns } from "@/features/learning/chapters";
 import { useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
+import { ageRangeMessages } from "@/features/admin/studio/ageRange.messages";
 import { SubjectEmblem } from "@/features/learning/SubjectEmblem";
 import { subjectTheme } from "@/features/learning/subjectTheme";
 
@@ -106,6 +107,7 @@ function EnrollmentCard({
   const { curriculum, completedSteps, totalSteps, nextStep } = enrollment;
   const m = useMessages(familyMessages).learningNow;
   const ch = useMessages(familyMessages).chapters;
+  const ageWords = useMessages(ageRangeMessages);
 
   return (
     <article className="overflow-hidden rounded-paper bg-white shadow-card">
@@ -117,13 +119,13 @@ function EnrollmentCard({
             <div>
               <h3 className="font-display text-xl font-bold text-tonle-950">
                 {curriculum.name}
-                {enrollment.status === "PAUSED" && (
+                {(enrollment.status === "PAUSED" || enrollment.inPlan === false) && (
                   <span className="ml-2 inline-block rounded-full bg-tonle-50 px-2.5 py-0.5 align-middle font-sans text-xs font-semibold text-tonle-800 ring-1 ring-inset ring-line">
-                    {m.waiting}
+                    {enrollment.inPlan === false ? m.notInPlanBadge : m.waiting}
                   </span>
                 )}
               </h3>
-              <p className="mt-0.5 text-sm text-ink-faint">{[curriculum.subjectName, curriculum.ageHubName].filter(Boolean).join(" · ")}</p>
+              <p className="mt-0.5 text-sm text-ink-faint">{[curriculum.subjectName, curriculum.ageHubName ?? (curriculum.minAge != null ? ageWords.range(curriculum.minAge, curriculum.maxAge ?? null) : null)].filter(Boolean).join(" · ")}</p>
             </div>
           </div>
           <p className="tabular text-sm font-semibold text-ink">
@@ -131,7 +133,15 @@ function EnrollmentCard({
           </p>
         </div>
 
-        {enrollment.status === "PAUSED" && <SwitchToPath enrollment={enrollment} childName={childName} onSwitched={onStopped} />}
+        {enrollment.inPlan === false && (
+          <div className="flex flex-col gap-2 rounded-[12px] bg-paper p-4 ring-1 ring-line">
+            <p className="text-sm leading-relaxed text-ink">{m.notInPlan(childName, curriculum.name)}</p>
+            <Link to="/parent/account#plan" className="w-fit text-sm font-semibold text-tonle-700 underline-offset-4 hover:underline">
+              {m.seePlans}
+            </Link>
+          </div>
+        )}
+        {enrollment.status === "PAUSED" && enrollment.inPlan !== false && <SwitchToPath enrollment={enrollment} childName={childName} onSwitched={onStopped} />}
 
         {enrollment.ageFit && !enrollment.ageFit.forChildAge && (
           <AgeFitNote childId={childId} childName={childName} curriculumName={curriculum.name} fit={enrollment.ageFit} onChosen={onStopped} />

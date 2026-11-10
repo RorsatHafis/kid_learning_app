@@ -1,0 +1,50 @@
+/** V89: a subject's family plans, in the Studio. Khmer drafted, not yet reviewed (PD-14). */
+import { defineMessages } from "@/i18n/catalog";
+
+export const subjectPlansMessages = defineMessages(
+  "features/admin/studio/subjectPlans",
+  {
+    tab: "Family plans",
+    title: "Family plans",
+    loading: "Loading the plans…",
+    lead: (subject: string) =>
+      `Which family plans include ${subject}. A family whose plan doesn't include it won't see it to choose, and a child can't play it; what a child already learned in it is kept. A journey a school class assigns is the school's and isn't affected.`,
+    whoGetsIt: "Who gets this subject",
+    everyPlan: "Every family plan",
+    everyPlanHint: "Every family sees it, whatever their plan - including families without a subscription.",
+    onlyThese: "Only the plans chosen below",
+    onlyTheseHint: "Plans are managed in Admin > Plans; their names and limits are their own.",
+    plans: "Plans",
+    required: "choose at least one",
+    noPlans: "There are no family plans yet.",
+    defaultPlan: "For families without a subscription",
+    draft: "Draft",
+    retired: "Retired",
+    chooseOne: "Choose at least one plan, or every plan.",
+    save: "Save plans",
+    saving: "Saving…",
+    saved: "Saved",
+  },
+  {
+    tab: "កញ្ចប់គ្រួសារ",
+    title: "កញ្ចប់គ្រួសារ",
+    loading: "កំពុងផ្ទុកកញ្ចប់…",
+    lead: (subject: string) =>
+      `កញ្ចប់គ្រួសារណាខ្លះដែលរួមបញ្ចូល ${subject}។ គ្រួសារដែលកញ្ចប់របស់ខ្លួនមិនរួមបញ្ចូលវា នឹងមិនឃើញវាដើម្បីជ្រើសរើសទេ ហើយកូនមិនអាចលេងវាបានទេ។ អ្វីដែលកូនបានរៀនរួចហើយត្រូវបានរក្សាទុក។ ដំណើររៀនដែលថ្នាក់រៀនរបស់សាលាដាក់ឱ្យ ជារបស់សាលា ហើយមិនរងផលប៉ះពាល់ទេ។`,
+    whoGetsIt: "អ្នកណាទទួលបានមុខវិជ្ជានេះ",
+    everyPlan: "កញ្ចប់គ្រួសារទាំងអស់",
+    everyPlanHint: "គ្រួសារទាំងអស់មើលឃើញវា មិនថាកញ្ចប់អ្វីទេ - រួមទាំងគ្រួសារដែលមិនទាន់ជាវ។",
+    onlyThese: "តែកញ្ចប់ដែលបានជ្រើសរើសខាងក្រោម",
+    onlyTheseHint: "កញ្ចប់ត្រូវបានគ្រប់គ្រងនៅក្នុង អ្នកគ្រប់គ្រង > កញ្ចប់ ហើយឈ្មោះ និងដែនកំណត់ជារបស់កញ្ចប់ផ្ទាល់។",
+    plans: "កញ្ចប់",
+    required: "ជ្រើសរើសយ៉ាងហោចណាស់មួយ",
+    noPlans: "មិនទាន់មានកញ្ចប់គ្រួសារនៅឡើយទេ។",
+    defaultPlan: "សម្រាប់គ្រួសារដែលមិនទាន់ជាវ",
+    draft: "សេចក្ដីព្រាង",
+    retired: "បានឈប់ប្រើ",
+    chooseOne: "សូមជ្រើសរើសកញ្ចប់យ៉ាងហោចណាស់មួយ ឬកញ្ចប់ទាំងអស់។",
+    save: "រក្សាទុកកញ្ចប់",
+    saving: "កំពុងរក្សាទុក…",
+    saved: "បានរក្សាទុក",
+  },
+);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { PublishControl } from "./Review";
 import { Link, useParams } from "react-router-dom";
 import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, ChevronDown, FilePlus2, Lightbulb, Plus, Trash2 } from "lucide-react";
@@ -22,6 +22,8 @@ import { chapterChanges, durationText, issueAction, warningsOf } from "./journey
 import { ArchivedBadge, ManageButton } from "./Lifecycle";
 import { useMessages } from "@/i18n/catalog";
 import { journeyMessages } from "./journey.messages";
+import { AgeRangeFields, ageRangeBody, ageRangeError, type AgeRangeValue } from "./AgeRangeFields";
+import { ageRangeMessages } from "./ageRange.messages";
 
 /**
  * The journey builder (PLATFORM-EXPANSION.md §5): a curriculum version as the journey a child will
@@ -438,12 +440,72 @@ function JourneyBuilder({
               <p className="mt-3 text-xs text-ink-soft">{m.keepIt(published?.versionNumber ?? 0)}</p>
             </Panel>
           )}
+          <AgesPanel detail={detail} onChange={onChange} />
           <Panel title={m.versions}>
             <VersionHistory versions={detail.versions} />
           </Panel>
         </div>
       </div>
     </div>
+  );
+}
+
+/** V90: the ages the curriculum is made for - saved on their own (not a new version: they decide who is offered it). */
+function AgesPanel({ detail, onChange }: { detail: CurriculumDetail; onChange: (d: CurriculumDetail) => void }) {
+  const words = useMessages(ageRangeMessages);
+  const initial = { min: String(detail.minAge), max: detail.maxAge === null ? "" : String(detail.maxAge) };
+  const [value, setValue] = useState<AgeRangeValue>(initial);
+  const [tried, setTried] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const changed = value.min.trim() !== initial.min || value.max.trim() !== initial.max;
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setTried(true);
+    setError(null);
+    if (ageRangeError(value, words)) return;
+    setBusy(true);
+    try {
+      onChange(await studioApi.changeCurriculumAges(detail.id, ageRangeBody(value)));
+      setSaved(true);
+      setTried(false);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Panel title={words.title}>
+      <form onSubmit={(e) => void save(e)} className="flex flex-col gap-4">
+        <AgeRangeFields
+          value={value}
+          onChange={(next) => {
+            setValue(next);
+            setSaved(false);
+          }}
+          showError={tried}
+        />
+        {error && (
+          <p role="alert" className="text-sm font-medium text-brick-deep">
+            {error}
+          </p>
+        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" size="md" variant="outline" disabled={busy || !changed}>
+            {busy ? words.saving : words.save}
+          </Button>
+          {saved && !changed && (
+            <span role="status" className="text-sm font-semibold text-palm-deep">
+              {words.saved}
+            </span>
+          )}
+        </div>
+      </form>
+    </Panel>
   );
 }
 

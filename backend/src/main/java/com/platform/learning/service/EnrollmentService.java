@@ -43,6 +43,8 @@ public class EnrollmentService {
     private final PathContentScope pathContentScope;
     private final com.platform.subscription.service.EntitlementService entitlementService;
     private final CurriculumPathPlanner pathPlanner;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.subscription.subjects.SubjectPlans subjectPlans;
 
     public EnrollmentService(EnrollmentRepository enrollmentRepository, LearningPathRepository learningPathRepository,
                               LearningPathService learningPathService, CurriculumService curriculumService,
@@ -84,6 +86,10 @@ public class EnrollmentService {
             if (curriculumService.getCurriculum(curriculumId).getStatus() == com.platform.common.entity.CatalogStatus.ARCHIVED) {
                 throw new IllegalStateException("This learning path is no longer offered.");
             }
+            // V89: a subject the family's plan includes (no subject is checked for a class's journey: SchoolService enrols).
+            subjectPlans.requireInFamilyPlan(childRepository.findById(childId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Child", childId)).getFamilyId(),
+                    curriculumService.getCurriculum(curriculumId).getSubjectId());
             entitlementService.requireRoomForJourney(childId);
             // V88 (owner 2026-11-10): when the plan's active journeys are all in use, the new one waits, paused, until
             // the family switches to it (JourneySwitchService). The child row is locked above, so two enrolments at
@@ -168,15 +174,8 @@ public class EnrollmentService {
     public Optional<Enrollment> autoEnrollIfUnambiguous(Child child) {
         int age = child.ageInYears(LocalDate.now());
 
-        Optional<AgeHub> ageHub = ageHubRepository.findForAge(age);
-        if (ageHub.isEmpty()) {
-            return Optional.empty();
-        }
-
-        List<Curriculum> candidates = curriculumService.listActiveForAgeHub(ageHub.get().getId()).stream()
-                .filter(curriculum -> curriculum.getOwnerAccountId() == null)
-                .filter(curriculum -> curriculumService.hasPublishedVersion(curriculum.getId()))
-                .toList();
+        // V90: the published platform curricula whose own ages include the child's (was: the child's age group's).
+        List<Curriculum> candidates = curriculumService.familyCatalogForAge(age);
         if (candidates.size() != 1) {
             return Optional.empty();
         }

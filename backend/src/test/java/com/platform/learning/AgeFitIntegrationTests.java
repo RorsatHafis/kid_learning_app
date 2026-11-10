@@ -90,7 +90,8 @@ class AgeFitIntegrationTests {
     /** A platform curriculum with a published (empty) version, as the seed data writes them. */
     private UUID curriculum(UUID subject, UUID ageHub, String name) {
         UUID id = UUID.randomUUID();
-        jdbc.update("insert into curriculums (id, subject_id, age_hub_id, name, status) values (?, ?, ?, ?, 'ACTIVE')", id, subject, ageHub, name);
+        jdbc.update("insert into curriculums (id, subject_id, age_hub_id, name, status, min_age, max_age) "
+                + "select ?, ?, h.id, ?, 'ACTIVE', h.min_age, h.max_age from age_hubs h where h.id = ?", id, subject, name, ageHub);
         jdbc.update("insert into curriculum_versions (id, curriculum_id, version_number, status, published_at) values (?, ?, 1, 'PUBLISHED', now())",
                 UUID.randomUUID(), id);
         return id;

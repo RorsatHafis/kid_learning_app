@@ -31,9 +31,11 @@ public class JourneySwitchService {
     private final ChildRepository children;
     private final EntitlementService entitlements;
     private final JourneyStopService stops;
+    private final JourneyPlanCheck planCheck;
 
     public JourneySwitchService(EnrollmentRepository enrollments, ChildRepository children, EntitlementService entitlements,
-                                JourneyStopService stops) {
+                                JourneyStopService stops, JourneyPlanCheck planCheck) {
+        this.planCheck = planCheck;
         this.enrollments = enrollments;
         this.children = children;
         this.entitlements = entitlements;
@@ -54,6 +56,8 @@ public class JourneySwitchService {
         if (target.getStatus() != EnrollmentStatus.PAUSED) {
             throw new IllegalStateException("Only a waiting path can be switched to.");
         }
+        // V89: only to a subject the family's plan includes.
+        planCheck.requireInPlan(target);
 
         Integer limit = entitlements.activeJourneyLimit(childId);
         if (limit != null) {

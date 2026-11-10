@@ -54,6 +54,8 @@ public class CurriculumController {
     private final AgeHubRepository ageHubRepository;
     private final FamilyAccessGuard familyAccessGuard;
     private final CatalogNames catalogNames;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.subscription.subjects.SubjectPlans subjectPlans;
 
     public CurriculumController(CurriculumService curriculumService, SubjectRepository subjectRepository,
                                 AgeHubRepository ageHubRepository, FamilyAccessGuard familyAccessGuard, CatalogNames catalogNames) {
@@ -83,16 +85,19 @@ public class CurriculumController {
     @Transactional(readOnly = true)
     public List<CurriculumChoiceResponse> listForChild(@PathVariable UUID childId, @AuthenticationPrincipal UUID accountId) {
         Child child = familyAccessGuard.requireChildAccess(accountId, childId);
-        Optional<UUID> childAgeHub = ageHubRepository.findForAge(child.ageInYears(LocalDate.now())).map(AgeHub::getId);
-        List<Curriculum> catalog = curriculumService.listFamilyCatalog();
+        int childAge = child.ageInYears(LocalDate.now());
+        // V89: only the subjects the family's plan includes.
+        java.util.Set<UUID> outside = subjectPlans.subjectsOutsideFamilyPlan(child.getFamilyId());
+        List<Curriculum> catalog = curriculumService.listFamilyCatalog().stream()
+                .filter(curriculum -> !outside.contains(curriculum.getSubjectId())).toList();
         Lookups lookups = lookups(catalog);
         return catalog.stream()
                 .map(curriculum -> {
-                    AgeHub hub = lookups.ageHubs().get(curriculum.getAgeHubId());
+                    // V90: the curriculum's own ages decide whether it is for the child (the age group is only a label).
                     CurriculumSummaryResponse summary = toSummary(curriculum, lookups);
                     return new CurriculumChoiceResponse(summary.id(), summary.name(), summary.subjectCode(), summary.subjectName(),
-                            summary.ageHubCode(), summary.ageHubName(), hub.getMinAge(), hub.getMaxAge(),
-                            childAgeHub.map(id -> id.equals(hub.getId())).orElse(false), hub.getDisplayOrder());
+                            summary.ageHubCode(), summary.ageHubName(), curriculum.getMinAge(), curriculum.getMaxAge(),
+                            curriculum.fitsAge(childAge), curriculum.getMinAge());
                 })
                 .sorted(Comparator.comparing((CurriculumChoiceResponse choice) -> !choice.forChildAge())
                         .thenComparing(CurriculumChoiceResponse::subjectName, String.CASE_INSENSITIVE_ORDER)
@@ -119,9 +124,10 @@ public class CurriculumController {
 
     private static CurriculumSummaryResponse toSummary(Curriculum curriculum, Lookups lookups) {
         Subject subject = lookups.subjects().get(curriculum.getSubjectId());
-        AgeHub ageHub = lookups.ageHubs().get(curriculum.getAgeHubId());
+        AgeHub ageHub = curriculum.getAgeHubId() == null ? null : lookups.ageHubs().get(curriculum.getAgeHubId());
         return new CurriculumSummaryResponse(curriculum.getId(), lookups.curriculumNames().get(curriculum.getId()),
-                subject.getCode(), lookups.subjectNames().get(subject.getId()), ageHub.getCode(), ageHub.getName());
+                subject.getCode(), lookups.subjectNames().get(subject.getId()), ageHub == null ? null : ageHub.getCode(),
+                ageHub == null ? null : ageHub.getName());
     }
 
 }

@@ -237,6 +237,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    @ExceptionHandler(com.platform.subscription.subjects.SubjectNotInPlanException.class)
+    public ResponseEntity<Object> handleSubjectNotInPlan(com.platform.subscription.subjects.SubjectNotInPlanException ex,
+                                                         WebRequest request) {
+        // V89: the family's plan doesn't include the subject; what the child already learned in it is kept.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Not In Your Plan");
+        problem.setProperty("reason", "SUBJECT_NOT_IN_PLAN");
+        problem.setProperty("subjectNotInPlan", true);
+        problem.setProperty("audience", "FAMILY");
+        problem.setProperty("dataKept", true);
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.CONFLICT, request);
+    }
+
     /** The offers never decide the refusal: if they can't be read, the refusal is still answered, without them. */
     private java.util.List<com.platform.subscription.service.PlanOffers.Offer> unlocking(com.platform.subscription.service.PlanLimitException ex) {
         try {

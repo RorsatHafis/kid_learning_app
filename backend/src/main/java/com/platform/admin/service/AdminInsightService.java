@@ -245,13 +245,16 @@ public class AdminInsightService {
                    boolean explained, boolean hinted, boolean readAloud, UUID subjectId) {
         }
         List<Row> rows = jdbc.query("""
-                SELECT DISTINCT cu.id AS curriculum_id, cu.name AS curriculum, cu.subject_id, ah.name AS age_group, ah.display_order,
+                SELECT DISTINCT cu.id AS curriculum_id, cu.name AS curriculum, cu.subject_id,
+                       -- V90: a curriculum without an age group is labelled by its own ages ("4-9", "10+").
+                       COALESCE(ah.name, cu.min_age || CASE WHEN cu.max_age IS NULL THEN '+' ELSE '-' || cu.max_age END) AS age_group,
+                       COALESCE(ah.display_order, cu.min_age) AS display_order,
                        qv.id AS question_version_id, q.question_type,
                        (qv.explanation IS NOT NULL AND btrim(qv.explanation) <> '') AS explained,
                        (qv.hint IS NOT NULL AND btrim(qv.hint) <> '') AS hinted,
                        (qv.prompt_audio_asset_id IS NOT NULL) AS read_aloud
                 FROM curriculums cu
-                JOIN age_hubs ah ON ah.id = cu.age_hub_id
+                LEFT JOIN age_hubs ah ON ah.id = cu.age_hub_id
                 JOIN curriculum_versions cv ON cv.curriculum_id = cu.id AND cv.status = 'PUBLISHED'
                 JOIN curriculum_objectives co ON co.curriculum_version_id = cv.id
                 JOIN learning_objective_skills los ON los.learning_objective_id = co.learning_objective_id

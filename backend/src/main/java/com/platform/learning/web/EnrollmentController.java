@@ -38,6 +38,8 @@ public class EnrollmentController {
     private final com.platform.family.service.ChildAccess childAccess;
     private final com.platform.learning.service.JourneyStopService journeyStops;
     private final com.platform.learning.service.JourneySwitchService journeySwitches;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.learning.service.JourneyPlanCheck journeyPlanCheck;
 
     public EnrollmentController(EnrollmentService enrollmentService, LearningPathService learningPathService,
                                  FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess, com.platform.learning.service.JourneyStopService journeyStops,
@@ -83,6 +85,7 @@ public class EnrollmentController {
         if (enrollment.getStatus() == com.platform.learning.entity.EnrollmentStatus.PAUSED) {
             throw new IllegalStateException("This path is waiting. A grown-up can switch to it.");
         }
+        journeyPlanCheck.requireInPlan(enrollment);
         LearningPath learningPath = enrollmentService.getLearningPath(enrollmentId);
         LearningPathItem nextItem = learningPathService.getNextItem(learningPath.getId());
 

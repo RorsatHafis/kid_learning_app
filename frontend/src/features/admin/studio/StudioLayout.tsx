@@ -1,3 +1,4 @@
+import { subjectPlansMessages } from "./subjectPlans.messages";
 import { useLayoutEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { keepInView } from "@/lib/utils/keepInView";
@@ -38,6 +39,7 @@ export function StudioLayout() {
 
   const all = useMessages(studioMessages);
   const m = all.layout;
+  const plansWords = useMessages(subjectPlansMessages);
   const context: StudioContext | null = catalog.data ? { catalog: catalog.data, refreshCatalog: catalog.refetch } : null;
 
   return (
@@ -94,6 +96,12 @@ export function StudioLayout() {
           <NavLink to={`${base}/studio/${subjectId}/curricula`} className={tabClass}>
             {m.curricula}
           </NavLink>
+          {/* V89: which family plans include the subject - administrators only. */}
+          {catalogAdmin && (
+            <NavLink to={`${base}/studio/${subjectId}/plans`} className={tabClass}>
+              {plansWords.tab}
+            </NavLink>
+          )}
         </div>
       </nav>
 
