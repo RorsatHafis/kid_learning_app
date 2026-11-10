@@ -9,7 +9,7 @@ import { SearchField } from "@/components/ui/SearchField";
 import { cn } from "@/lib/utils/cn";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/features/auth/FormField";
+import { FormField } from "./shared";
 import { ComposerPanel, NewButton, Panel, SkillChips, StatusBadge } from "./shared";
 import { currentStatus, errorText, useStudio, useStudioScope, useComposer, useArchivedView } from "./studioLogic";
 import { CopiedBadge, LessonVisibilityControl, SharedByColleagues } from "./LessonSharing";

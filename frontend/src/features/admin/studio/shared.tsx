@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { useEffect, useId, useRef, type ComponentProps, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import {
+  FieldLabel,
+  FieldNote,
+  FormField as BaseFormField,
+  describedBy,
+  selectClasses,
+  textareaClasses,
+} from "@/features/auth/FormField";
 import { AlertTriangle, CheckCircle2, CircleAlert, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { Catalog, PublicationStatus, ValidationReport, VersionSummary } from "@/lib/api/studio";
@@ -175,36 +183,40 @@ export function SkillChips({
   );
 }
 
+/** The Studio's text field: the shared field, with "Required" shown beside a required field's label. */
+export function FormField(props: ComponentProps<typeof BaseFormField>) {
+  return <BaseFormField markRequired {...props} />;
+}
+
 export function SelectField({
   label,
   hint,
+  error,
   children,
+  className,
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
   /** Plain help under the field, read with it. */
   hint?: string;
+  /** What is wrong with the choice, tied to the field. */
+  error?: string;
   children: ReactNode;
 }) {
   const id = useId();
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold text-ink">
-        {label}
-      </label>
+    <div className="flex min-w-0 flex-col gap-2">
+      <FieldLabel htmlFor={id} label={label} required={props.required} markRequired />
       <select
         id={id}
-        aria-describedby={hint ? `${id}-hint` : undefined}
-        className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-11 px-3.5 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(id, hint, error)}
+        className={cn(selectClasses, className)}
         {...props}
       >
         {children}
       </select>
-      {hint && (
-        <span id={`${id}-hint`} className="text-xs text-ink-soft">
-          {hint}
-        </span>
-      )}
+      <FieldNote id={id} hint={hint} error={error} />
     </div>
   );
 }
@@ -212,28 +224,26 @@ export function SelectField({
 export function TextAreaField({
   label,
   hint,
+  error,
+  className,
   ...props
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string;
   hint?: string;
+  error?: string;
 }) {
   const id = useId();
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold text-ink">
-        {label}
-      </label>
+    <div className="flex min-w-0 flex-col gap-2">
+      <FieldLabel htmlFor={id} label={label} required={props.required} markRequired />
       <textarea
         id={id}
-        aria-describedby={hint ? `${id}-hint` : undefined}
-        className="min-h-[88px] rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] px-4 py-3 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(id, hint, error)}
+        className={cn(textareaClasses, className)}
         {...props}
       />
-      {hint && (
-        <span id={`${id}-hint`} className="text-xs text-ink-soft">
-          {hint}
-        </span>
-      )}
+      <FieldNote id={id} hint={hint} error={error} />
     </div>
   );
 }

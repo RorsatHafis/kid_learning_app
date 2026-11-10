@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMessages } from "@/i18n/catalog";
-import { FormField } from "@/features/auth/FormField";
+import { FormField } from "./shared";
 import { ContentLanguageSwitch, Translated, type ContentLanguage } from "./BilingualFields";
 import { khmerCount } from "./bilingual";
 import { formMessages } from "./form.messages";

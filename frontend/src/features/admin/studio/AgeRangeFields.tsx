@@ -7,6 +7,8 @@ import { useId } from "react";
 import { useMessages } from "@/i18n/catalog";
 import { cn } from "@/lib/utils/cn";
 import { ageRangeMessages } from "./ageRange.messages";
+import { fieldClasses } from "@/features/auth/FormField";
+import { formFieldMessages } from "@/features/auth/formField.messages";
 
 export const STUDIO_MAX_AGE = 18;
 
@@ -46,18 +48,18 @@ export function AgeRangeFields({
   showError: boolean;
 }) {
   const m = useMessages(ageRangeMessages);
+  const required = useMessages(formFieldMessages);
   const minId = useId();
   const maxId = useId();
   const hintId = useId();
   const errorId = useId();
   const error = showError ? ageRangeError(value, m) : null;
-  const input =
-    "h-12 w-full rounded-[12px] border bg-white px-3.5 text-base text-ink tabular shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] focus:outline-none focus-visible:ring-2 focus-visible:ring-tonle-500";
+  const input = cn(fieldClasses, "h-12 tabular");
 
   return (
     <fieldset className="flex flex-col gap-2" aria-describedby={error ? `${hintId} ${errorId}` : hintId}>
-      <legend className="mb-1 text-sm font-semibold text-ink">
-        {m.legend} <span aria-hidden className="text-brick-deep">*</span>
+      <legend className="mb-1 flex w-full flex-wrap items-baseline justify-between gap-x-3 text-sm font-semibold text-ink">
+        {m.legend} <span aria-hidden className="text-xs font-medium text-ink-soft">{required.required}</span>
       </legend>
       <div className="grid grid-cols-2 gap-3">
         <div className="flex min-w-0 flex-col gap-1.5">
@@ -74,7 +76,7 @@ export function AgeRangeFields({
             value={value.min}
             onChange={(e) => onChange({ ...value, min: e.target.value })}
             aria-invalid={!!error && (value.min.trim() === "" || error !== m.maxBelowMin)}
-            className={cn(input, error ? "border-brick" : "border-line-strong")}
+            className={input}
           />
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">
@@ -90,7 +92,7 @@ export function AgeRangeFields({
             value={value.max}
             onChange={(e) => onChange({ ...value, max: e.target.value })}
             aria-invalid={!!error && error === m.maxBelowMin}
-            className={cn(input, error === m.maxBelowMin ? "border-brick" : "border-line-strong")}
+            className={input}
           />
         </div>
       </div>

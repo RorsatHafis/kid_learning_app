@@ -1,9 +1,10 @@
+import { textareaClasses } from "@/features/auth/FormField";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { BookOpen } from "lucide-react";
 import { studioApi, type ActivityDetail, type ActivityVersionDetail } from "@/lib/api/studio";
 import type { MediaRef } from "@/lib/api/types";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/features/auth/FormField";
+import { FormField } from "./shared";
 import { useMessages } from "@/i18n/catalog";
 import { MediaSlot } from "./MediaSlot";
 import { errorText } from "./studioLogic";
@@ -130,7 +131,7 @@ export function IntroductionEditor({
             rows={4}
             onChange={(e) => (language === "km" ? setTextKm(e.target.value) : setText(e.target.value))}
             placeholder={language === "km" ? text || m.placeholder : m.placeholder}
-            className="rounded-[12px] border border-line-strong bg-white px-3 py-2.5 text-[0.9375rem] leading-relaxed text-ink"
+            className={textareaClasses}
           />
           <span id={`${textId}-hint`} className="text-xs text-ink-faint">
             {m.textHint((language === "km" ? textKm : text).length)}

@@ -46,7 +46,7 @@ export function SearchField({
   return (
     <label
       className={cn(
-        "flex h-11 min-w-0 items-center gap-2 rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white px-3 focus-within:border-tonle-600 focus-within:ring-2 focus-within:ring-tonle-600/15",
+        "flex h-11 min-w-0 items-center gap-2 rounded-[12px] bg-white px-3 shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] ring-1 ring-inset ring-line-strong transition-shadow duration-150 hover:ring-tonle-300 focus-within:ring-2 focus-within:ring-tonle-600 focus-within:shadow-[0_0_0_4px_rgba(34,99,110,0.12)]",
         className,
       )}
     >
@@ -58,7 +58,8 @@ export function SearchField({
         onChange={(e) => setDraft(e.target.value)}
         maxLength={maxLength}
         placeholder={placeholder}
-        className="w-full min-w-0 bg-transparent text-sm outline-none"
+        // 16px on phones: smaller text makes iOS zoom the page on focus. The whole field (the label) is the target.
+        className="h-full w-full min-w-0 bg-transparent text-base outline-none sm:text-sm"
       />
     </label>
   );

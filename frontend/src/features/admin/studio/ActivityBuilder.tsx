@@ -1,3 +1,4 @@
+import { compactSelectClasses } from "@/features/auth/FormField";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowDown, ArrowUp, CheckCircle2, CircleAlert, ExternalLink, Pencil, Plus, Send, Trash2, X } from "lucide-react";
@@ -489,7 +490,7 @@ function Reuse({ subjectId, taken, busy, onAdd }: { subjectId: string; taken: st
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={b.search}
-          className="h-10 rounded-[12px] border border-line-strong bg-white px-3 text-sm text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+          className={compactSelectClasses}
         />
         {questions.data && choosable.length === 0 && <p className="text-sm text-ink-soft">{settled.trim() ? b.noMatch : b.nothingToReuse}</p>}
         <ul className="flex max-h-60 flex-col gap-1 overflow-y-auto">

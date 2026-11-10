@@ -1,3 +1,5 @@
+import { fieldLook } from "@/features/auth/FormField";
+import { cn } from "@/lib/utils/cn";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, CircleAlert, ClipboardCopy, Download, FileUp } from "lucide-react";
@@ -267,7 +269,7 @@ export function QuestionImport() {
                 setRefusal(null);
               }}
               spellCheck={false}
-              className="min-h-[160px] rounded-[12px] border border-line-strong px-4 py-3 font-mono text-xs text-ink outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15"
+              className={cn(fieldLook, "min-h-[160px] w-full rounded-[14px] px-4 py-3 font-mono leading-relaxed sm:text-xs")}
             />
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <label

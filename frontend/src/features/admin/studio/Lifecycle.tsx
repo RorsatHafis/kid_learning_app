@@ -6,7 +6,7 @@ import { studioMessages, type SwitchList } from "./messages";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
-import { FormField } from "@/features/auth/FormField";
+import { FormField } from "./shared";
 import { cn } from "@/lib/utils/cn";
 import { TextAreaField } from "./shared";
 import { CatalogNameFields } from "./CatalogNameFields";

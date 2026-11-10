@@ -5,7 +5,7 @@ import { studioApi } from "@/lib/api/studio";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Button, buttonClasses } from "@/components/ui/Button";
-import { FormField } from "@/features/auth/FormField";
+import { FormField } from "./shared";
 import { ComposerPanel, NewButton } from "./shared";
 import { CatalogNameFields } from "./CatalogNameFields";
 import { khmerNameBody } from "./bilingual";

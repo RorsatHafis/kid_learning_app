@@ -1,3 +1,4 @@
+import { compactSelectClasses } from "@/features/auth/FormField";
 import { useEffect, useState, type FormEvent } from "react";
 import { WithdrawalPanel } from "./Withdrawal";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -11,7 +12,7 @@ import {
 import { useAsync } from "@/lib/hooks/useAsync";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/features/auth/FormField";
+import { FormField } from "./shared";
 import { ChildPreview } from "./ChildPreview";
 import { DIFFICULTIES, errorText, reportFromError, useStudio, useStudioScope } from "./studioLogic";
 import { Panel, SelectField, SkillChips, StatusBadge, TextAreaField, VersionHistory } from "./shared";
@@ -125,7 +126,7 @@ function Editor({ detail, onChange, onReload }: { detail: ActivityDetail; onChan
               id="add-activity-skill"
               value={skillToAdd}
               onChange={(e) => setSkillToAdd(e.target.value)}
-              className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-10 px-3 text-sm text-ink"
+              className={compactSelectClasses}
             >
               <option value="">{m.addSkillMenu}</option>
               {available.map((s) => (

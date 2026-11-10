@@ -1,3 +1,4 @@
+import { compactSelectClasses } from "@/features/auth/FormField";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Archive, AudioLines, Play, RotateCcw, Square, Trash2, Upload } from "lucide-react";
@@ -11,7 +12,7 @@ import { Pager } from "@/components/ui/Pager";
 import { SearchField } from "@/components/ui/SearchField";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { PageHeader } from "@/components/workspace/WorkspaceShell";
-import { FormField } from "@/features/auth/FormField";
+import { FormField } from "./shared";
 import { speak, stopSpeaking, usePlaying } from "@/features/child/speaker";
 import { cn } from "@/lib/utils/cn";
 import { StatusBadge, TextAreaField } from "./shared";
@@ -103,7 +104,7 @@ export function MediaLibraryPage() {
           <select
             value={show}
             onChange={(e) => update({ show: e.target.value || undefined })}
-            className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white px-3 py-2 text-sm focus:border-tonle-600 focus:outline-none focus:ring-2 focus:ring-tonle-600/15"
+            className={compactSelectClasses}
           >
             <option value="">{m.inLibrary}</option>
             <option value="unused">{m.unused}</option>

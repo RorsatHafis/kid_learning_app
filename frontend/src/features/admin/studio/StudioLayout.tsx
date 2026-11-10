@@ -1,3 +1,4 @@
+import { compactSelectClasses } from "@/features/auth/FormField";
 import { subjectPlansMessages } from "./subjectPlans.messages";
 import { useLayoutEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -63,12 +64,13 @@ export function StudioLayout() {
             )}
           {subjects.data &&
           subjects.data.length > 1 && (
-            <label className="flex items-center gap-2 text-sm font-medium text-ink-soft">
-              {m.subject}
+            // Above the picker on a phone (a Khmer word is never split beside it), beside it on wider screens.
+            <label className="flex w-full min-w-0 flex-col gap-1.5 text-sm font-semibold text-ink sm:w-auto sm:flex-row sm:items-center sm:gap-2 sm:font-medium sm:text-ink-soft">
+              <span className="whitespace-nowrap">{m.subject}</span>
               <select
                 value={subjectId}
                 onChange={(e) => navigate(`${base}/studio/${e.target.value}/${catalogAdmin ? "catalog" : "questions"}`)}
-                className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-10 px-3 text-sm text-ink"
+                className={compactSelectClasses}
               >
                 {subjects.data.map((s) => (
                   <option key={s.id} value={s.id}>

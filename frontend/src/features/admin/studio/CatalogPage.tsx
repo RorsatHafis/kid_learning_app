@@ -1,8 +1,9 @@
+import { compactSelectClasses } from "@/features/auth/FormField";
 import { useState, type FormEvent } from "react";
 import { Plus } from "lucide-react";
 import { studioApi, type CatalogObjective, type CatalogSkill } from "@/lib/api/studio";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/features/auth/FormField";
+import { FormField } from "./shared";
 import { ComposerPanel, NewButton, Panel, SkillChips } from "./shared";
 import { CatalogNameFields } from "./CatalogNameFields";
 import { khmerNameBody } from "./bilingual";
@@ -223,7 +224,7 @@ function SkillRow({ skill }: { skill: CatalogSkill }) {
             id={`pre-${skill.id}`}
             value={prerequisite}
             onChange={(e) => setPrerequisite(e.target.value)}
-            className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-10 px-3 text-sm text-ink"
+            className={compactSelectClasses}
           >
             <option value="">{m.addPrerequisite}</option>
             {candidates.map((s) => (
@@ -303,7 +304,7 @@ function ObjectiveRow({ objective }: { objective: CatalogObjective }) {
             id={`obj-${objective.id}`}
             value={skill}
             onChange={(e) => setSkill(e.target.value)}
-            className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-10 px-3 text-sm text-ink"
+            className={compactSelectClasses}
           >
             <option value="">{m.addSkill}</option>
             {candidates.map((s) => (

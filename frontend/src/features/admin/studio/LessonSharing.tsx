@@ -1,3 +1,4 @@
+import { compactSelectClasses } from "@/features/auth/FormField";
 import { useState } from "react";
 import { Copy, Users } from "lucide-react";
 import { studioApi, type LessonSummary, type LessonVisibility } from "@/lib/api/studio";
@@ -43,7 +44,7 @@ export function LessonVisibilityControl({ lesson, onChanged }: { lesson: LessonS
           value={value}
           disabled={busy}
           onChange={(e) => void change(e.target.value as LessonVisibility)}
-          className="h-9 rounded-[10px] border border-line-strong bg-white px-2 text-sm text-ink disabled:opacity-60"
+          className={compactSelectClasses}
         >
           <option value="PRIVATE">{m.onlyYou}</option>
           <option value="SCHOOL">{m.school}</option>

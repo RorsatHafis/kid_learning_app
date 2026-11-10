@@ -1,9 +1,10 @@
+import { compactSelectClasses, fieldClasses } from "@/features/auth/FormField";
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import type { MediaRef, QuestionType } from "@/lib/api/types";
 import type { KhmerDraft, MediaItem, QuestionDraftInput } from "@/lib/api/studio";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/features/auth/FormField";
+import { FormField } from "./shared";
 import { SelectField, TextAreaField } from "./shared";
 import { DIFFICULTIES } from "./studioLogic";
 import { MediaSlot } from "./MediaSlot";
@@ -22,8 +23,8 @@ const MAX_GROUPS = 4;
 const MIN_SORT_ITEMS = 4;
 const MAX_SORT_ITEMS = 10;
 
-const fieldClass =
-  "flex-1 rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] px-4 py-2.5 text-sm outline-none focus:border-tonle-600 focus:ring-2 focus:ring-tonle-600/15";
+// The shared field look (16px on phones), one line tall: answer options, pairs, groups.
+const fieldClass = `flex-1 h-12 sm:h-11 ${fieldClasses}`;
 const inputClass = `min-w-0 ${fieldClass}`;
 const removeClass = "rounded-full p-2 text-ink-soft hover:bg-tonle-50 hover:text-ink disabled:opacity-40";
 const addClass = "flex w-fit items-center gap-1 rounded-pill px-2 py-1 text-sm font-semibold text-tonle-700 hover:bg-tonle-50";
@@ -615,7 +616,7 @@ export function QuestionDraftForm({
                       setSortItems(sortItems.map((it, i) => (i === index ? { ...it, group: Number(e.target.value) } : it)))
                     }
                     aria-label={m.groupFor(index + 1)}
-                    className="h-[42px] rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white px-2 text-sm text-ink"
+                    className={compactSelectClasses}
                   >
                     {groups.map((g, gi) => (
                       <option key={gi} value={gi}>

@@ -3,6 +3,7 @@
  * and explanation), checks, review and publishing. A published version is read-only; changing it opens a new
  * draft.
  */
+import { compactSelectClasses } from "@/features/auth/FormField";
 import { useEffect, useState } from "react";
 import { WithdrawalPanel } from "./Withdrawal";
 import { PublishControl } from "./Review";
@@ -203,7 +204,7 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
                     id="add-question-skill"
                     value={skillToAdd}
                     onChange={(e) => setSkillToAdd(e.target.value)}
-                    className="rounded-[12px] border border-line-strong shadow-[inset_0_1px_2px_rgba(16,50,58,0.05)] bg-white h-10 px-3 text-sm text-ink"
+                    className={compactSelectClasses}
                   >
                     <option value="">{m.addSkillMenu}</option>
                     {available.map((s) => (

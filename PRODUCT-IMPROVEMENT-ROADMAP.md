@@ -3336,7 +3336,25 @@ optional label. Studio create/edit (AgeRangeFields, 0-18, oldest optional) + PUT
 Child catalog, auto-enrolment, age-fit note, public subjects and admin readiness use the curriculum's ages.
 Tests: CurriculumAgesIntegrationTests, updated catalog/age-fit/admin-insight fixtures, ageRange vitest.
 
-**(5) Mobile Content Studio - NOT STARTED beyond inspection.** Found: SelectField/TextAreaField use a different style
-and 14px text (iOS zooms on focus), no error state or required marker; 31 raw inputs in Studio, 14 with ad-hoc
-`border` styles. Next task: unify them on `fieldClasses` with 16px text on phones, error + required props, then
-verify at 360/390/768/desktop in EN/KM.
+**(5) Mobile Content Studio - DONE (2026-11-10).** One field system in `features/auth/FormField.tsx`: `fieldClasses`,
+`selectClasses` (own chevron, `.field-select`), `compactSelectClasses` (toolbars, >=44px on phones),
+`textareaClasses`; 16px text on phones (no iOS zoom), one border/focus/invalid look; `FieldLabel` (always-visible
+label + "Required"/"ត្រូវតែបំពេញ" outside the label) and `FieldNote` (hint/error tied by id). Studio `FormField`
+marks required fields; `SelectField`/`TextAreaField` gained error states; every ad-hoc Studio select/textarea and
+the shared SearchField use the system; the subject picker stacks its label on phones. Verified in the browser:
+`e2e/studio-forms.spec.ts` opens the new-subject, skill, question, curriculum and family-plans forms at 360, 390,
+768 and 1280 px in EN and KM - no overflow, every field labelled, 16px on phones, >=44px targets, axe clean (8/8).
+
+**Regression fixed (25a3e9f):** eda943b broke 18 integration tests - fixtures published "ages 0-99" catalog
+curricula, so new 6-year-olds matched several and (rightly, Battle 2B) weren't auto-enrolled. Fixtures moved to the
+reserved 90-99 ages; tests that need real ages archive their curricula after. Full unit + integration suites pass.
+
+**NEW (owner, 2026-11-10): Drawing / Handwriting question type - planned, not started.** A real question type (not a
+mini-game): the child draws or writes on a canvas (finger, stylus, mouse), with clear / undo / retry; authors set the
+instruction, a reference (sample letter/shape, EN or KM characters), and a guidance mode (dotted tracing, start
+points and direction arrows, baselines / grid, or free drawing). The submitted drawing is saved as the answer
+(evidence), stored as an image asset of the attempt. No handwriting recognition or automatic grading (not approved).
+Inspect first: QuestionType/answer contract, AnswerRecord & scoring (AnswerSubmissionWriter), media storage, the
+question player and QuestionDraftForm. **Owner decision needed before it counts as evidence:** an unscored drawing
+can't move mastery today - is it (a) recorded as practice only (no score, no mastery change), (b) reviewed by a
+parent/teacher who marks it, or (c) something else? Build (a)'s mechanics first only once decided.
