@@ -7,6 +7,7 @@ import { orderPriceText, paymentsApi, type PaymentOrder } from "@/lib/api/paymen
 import { Pager } from "@/components/ui/Pager";
 import { common } from "@/components/ui/messages";
 import { TransferInstructions } from "@/features/payments/TransferInstructions";
+import { PaywayCheckout } from "@/features/payments/PaywayCheckout";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { errorText } from "@/features/admin/studio/studioLogic";
 import { invoiceMessages } from "./invoices.messages";
@@ -102,6 +103,8 @@ function PendingInvoice({ orderId }: { orderId: string }) {
       </p>
       <p className="text-sm text-ink-soft">{m.lead}</p>
       {data.checkout?.instructions && <TransferInstructions order={data} />}
+      {/* A school paying online: the same hosted checkout as families. */}
+      <PaywayCheckout order={data} />
       <form onSubmit={save} className="flex flex-col items-start gap-2">
         <div className="w-full">
           <FormField label={m.noteLabel} hint={m.noteHint} value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} />

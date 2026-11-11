@@ -10,6 +10,7 @@ import { planChoiceApi } from "@/lib/api/planChoice";
 import { orderPriceText, paymentsApi, type PaymentMethod, type PaymentOrder } from "@/lib/api/payments";
 import { Pager } from "@/components/ui/Pager";
 import { TransferInstructions } from "@/features/payments/TransferInstructions";
+import { PaywayCheckout } from "@/features/payments/PaywayCheckout";
 import type { Page } from "@/lib/api/types";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { cn } from "@/lib/utils/cn";
@@ -345,17 +346,7 @@ function PendingPayment({
         </>
       )}
 
-      {data.method === "ABA_PAYWAY" && checkout?.action && checkout.fields && (
-        <form method="post" action={checkout.action} className="flex flex-col items-start gap-2">
-          {Object.entries(checkout.fields).map(([field, value]) => (
-            <input key={field} type="hidden" name={field} value={value} />
-          ))}
-          <p className="text-sm text-ink-soft">{m.paywayLead}</p>
-          <Button type="submit" variant="accent">
-            <CreditCard size={16} aria-hidden /> {m.payway}
-          </Button>
-        </form>
-      )}
+      <PaywayCheckout order={data} />
 
       {data.method === "DEV_SIMULATOR" && (
         <div className="flex flex-col gap-2 rounded-[12px] border border-dashed border-light/70 bg-light-soft/30 px-4 py-3">

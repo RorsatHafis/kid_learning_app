@@ -143,17 +143,49 @@ Built from ABA's developer documentation (Purchase and Check Transaction, read 2
   4 refunded → refunded, 2 pending → no change; anything else changes nothing.
 - An administrator can ask PayWay about one order ("Ask PayWay now").
 - The site's Content-Security-Policy allows the checkout form to post to ABA's sandbox host only.
+- One checkout form (`features/payments/PaywayCheckout.tsx`) for both families (plan page) and schools
+  (invoices); it posts as `multipart/form-data`, which ABA's purchase API requires.
+
+Re-checked 2026-11-11 against ABA's current Developer Suite: the purchase address
+(`/api/payment-gateway/v1/payments/purchase`), the 24 hashed purchase fields and their order, the
+Check Transaction address (`/api/payment-gateway/v1/payments/check-transaction-2`), its hash
+(`req_time + merchant_id + tran_id`) and its status codes all match the code. The form was then found to post
+URL-encoded instead of multipart; fixed, with a test.
 
 Tested: request signing and response interpretation against hand-computed values (`PaymentContractTests`), and
 that a forged notice changes nothing. **Not tested:** anything against ABA's servers.
 
-Before PayWay can take real money:
+### Go-live checklist (owner + ABA; nothing here is filled in by the code)
 
-1. ABA issues sandbox merchant credentials; set them in the environment (not in chat or the repository).
-2. Run a sandbox purchase end to end: pay, notice, check, plan granted; then a declined and a cancelled one.
-3. Confirm the exact production host from ABA, add it to the CSP `form-action` (nginx and `vercel.json`), and
-   switch `ABA_PAYWAY_BASE_URL`.
-4. Decide refunds (ABA refund API or manual) and the refund policy.
+**From ABA** [OWNER: apply for a PayWay merchant account in the legal entity's name]:
+
+| Item | Where it goes | Note |
+|---|---|---|
+| Sandbox merchant ID and API key | `ABA_PAYWAY_MERCHANT_ID`, `ABA_PAYWAY_API_KEY` on the backend host | Secrets: the hosting dashboard only, never chat, the repository or a screenshot |
+| Production merchant ID and API key | the same variables, replacing the sandbox ones at switch-over | Issued after ABA approves the sandbox test |
+| Production checkout host | `ABA_PAYWAY_BASE_URL`; CSP `form-action` in `frontend/vercel.json` and `frontend/nginx/security-headers.conf` | Not published on ABA's public pages; take it from ABA in writing. Until it is in the CSP, the browser refuses to post the form |
+| Whether ABA must allow-list the backend's outgoing IP for Check Transaction | ABA's merchant portal | Ask ABA; Railway's outgoing address is not fixed on every plan |
+
+**Settings we set** (no ABA input):
+
+| Variable | Value |
+|---|---|
+| `ABA_PAYWAY_RETURN_URL` | `https://<backend host>/api/v1/payments/callbacks/aba-payway` (form, multipart or JSON notices are accepted) |
+| `ABA_PAYWAY_SUCCESS_URL` | the site's plan page, `https://<site>/parent/account#plan` (the payer's browser lands here; it proves nothing) |
+| `ABA_PAYWAY_ENABLED` | `true` only once the four variables above are set (the server refuses to start otherwise) |
+
+**Sandbox test, in order** (on a non-production deployment with the sandbox credentials):
+
+1. A family chooses a paid plan before registering, registers and pays with ABA's sandbox test account: the
+   order goes to `SUCCEEDED` only after the server's own Check Transaction, and the plan is active.
+2. The same for a school invoice from the principal's invoices page.
+3. A declined payment → `FAILED`; a cancelled one → `CANCELLED`; neither grants anything.
+4. Closing the checkout without paying leaves the order pending; it expires after `PAYMENTS_PENDING_LIFETIME`.
+5. An administrator's "Ask PayWay now" on each order returns the same answer.
+6. A hand-made notice for an unpaid order (curl to the callback) changes nothing.
+
+**Still to decide**: refunds (ABA's refund API or manual, and the refund policy - PayWay refunds are refused
+here until decided), and the receipt/invoice a Cambodian sale requires [OWNER + accountant].
 
 ## Before charging families
 
