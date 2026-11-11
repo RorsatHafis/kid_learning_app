@@ -6,6 +6,7 @@ import { FormField } from "@/features/auth/FormField";
 import { useMessages } from "@/i18n/catalog";
 import { formatDate, formatDateTime } from "@/i18n/format";
 import { familyPlanApi, priceText, type PlanOffer } from "@/lib/api/subscriptions";
+import { planChoiceApi } from "@/lib/api/planChoice";
 import { orderPriceText, paymentsApi, type PaymentMethod, type PaymentOrder } from "@/lib/api/payments";
 import { Pager } from "@/components/ui/Pager";
 import { TransferInstructions } from "@/features/payments/TransferInstructions";
@@ -14,6 +15,7 @@ import { useAsync } from "@/lib/hooks/useAsync";
 import { cn } from "@/lib/utils/cn";
 import { errorText } from "@/features/admin/studio/studioLogic";
 import { PlanDetails } from "./PlanDetails";
+import { PlanChoiceNotice } from "@/features/plans/ChosenPlan";
 import { paymentMessages } from "./payments.messages";
 
 const dateOnly = (iso: string) => formatDate(iso, { day: "numeric", month: "long", year: "numeric" });
@@ -28,6 +30,9 @@ export function FamilyPlanWithPayments() {
   const plan = useAsync(() => familyPlanApi.get(), [version]);
   const methods = useAsync(() => paymentsApi.methods(), []);
   const orders = useAsync(() => paymentsApi.familyOrders(), [version]);
+  // 2026-11-11: a paid plan chosen before registering opens its checkout once, when nothing else is under way.
+  const choice = useAsync(() => planChoiceApi.mine(), [version]);
+  const openedChoice = useRef(false);
   const [buying, setBuying] = useState<PlanOffer | null>(null);
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null);
   const [justStarted, setJustStarted] = useState(false);
@@ -40,6 +45,12 @@ export function FamilyPlanWithPayments() {
   const paymentsError = orders.error ?? methods.error;
   // Real ways of paying first; a test payment (never offered in production) last.
   const available = [...(methods.data?.methods ?? [])].sort((a, b) => Number(a === "DEV_SIMULATOR") - Number(b === "DEV_SIMULATOR"));
+  const chosenOffer = choice.data ? (plan.data?.choices.find((offer) => offer.plan.id === choice.data!.id && offer.plan.price) ?? null) : null;
+  useEffect(() => {
+    if (openedChoice.current || !chosenOffer || !paymentsKnown || pending || buying || available.length === 0) return;
+    openedChoice.current = true;
+    setBuying(chosenOffer);
+  }, [chosenOffer, paymentsKnown, pending, buying, available.length]);
 
   function settled(order: PaymentOrder) {
     setBuying(null);
@@ -72,6 +83,10 @@ export function FamilyPlanWithPayments() {
         >
           {outcome.text}
         </p>
+      )}
+      {/* While its payment waits, the payment itself is the next step: no second notice. */}
+      {choice.data && !pending && (
+        <PlanChoiceNotice level={3} key={`choice-${version}`} onKept={() => setVersion((v) => v + 1)} />
       )}
       {pending && <PendingPayment key={pending.id} orderId={pending.id} onSettled={settled} focusOnShow={justStarted} />}
       {buying && available.length > 0 && (

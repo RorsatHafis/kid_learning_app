@@ -28,14 +28,25 @@ public class PublicPlans {
     public record Limit(String key, Integer limit) {
     }
 
-    /** {@code amountMinor} null: nothing to pay. {@code limits}: what the plan includes; a null limit is unlimited. */
+    /**
+     * {@code amountMinor} null: nothing to pay. {@code limits}: what the plan includes; a null limit is unlimited.
+     * {@code subjects} (family plans, 2026-11-11): the codes of the subjects families can learn now that the plan
+     * includes (V89); null for a school plan. {@code chooseable}: it can be chosen before registering (the free
+     * default, or a priced plan people choose themselves).
+     */
     public record PublicPlan(String code, String audience, String name, String description, boolean isDefault,
-                             Long amountMinor, String currency, String billingInterval, List<Limit> limits) {
+                             Long amountMinor, String currency, String billingInterval, List<Limit> limits,
+                             List<String> subjects, boolean chooseable) {
     }
 
     private final SubscriptionPlanRepository plans;
     private final PlanEntitlementRepository entitlements;
     private final Clock clock;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.curriculum.service.PublicSubjects publicSubjects;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @org.springframework.beans.factory.annotation.Autowired
     public PublicPlans(SubscriptionPlanRepository plans, PlanEntitlementRepository entitlements) {
@@ -57,6 +68,20 @@ public class PublicPlans {
         if (shown.isEmpty()) {
             return List.of();
         }
+        // The subjects families can learn now, and per family plan the ones it leaves out (V89: no rows - every plan).
+        List<String> learnable = publicSubjects == null ? List.of() : publicSubjects.offered().stream()
+                .filter(com.platform.curriculum.service.PublicSubjects.PublicSubject::available)
+                .map(com.platform.curriculum.service.PublicSubjects.PublicSubject::code).toList();
+        Map<UUID, java.util.Set<String>> outside = new java.util.HashMap<>();
+        if (jdbc != null) {
+            jdbc.query("""
+                    select p.id as plan_id, s.code from subscription_plans p
+                    join subjects s on exists (select 1 from subject_plans x where x.subject_id = s.id)
+                    where not exists (select 1 from subject_plans x where x.subject_id = s.id and x.plan_id = p.id)
+                    """, rs -> {
+                outside.computeIfAbsent(rs.getObject("plan_id", UUID.class), id -> new java.util.HashSet<>()).add(rs.getString("code"));
+            });
+        }
         Map<UUID, List<PlanEntitlement>> byPlan = entitlements.findByPlanIdIn(shown.stream().map(SubscriptionPlan::getId).toList())
                 .stream().collect(Collectors.groupingBy(PlanEntitlement::getPlanId));
         return shown.stream()
@@ -69,7 +94,11 @@ public class PublicPlans {
                         plan.getBillingInterval() == null ? null : plan.getBillingInterval().name(),
                         byPlan.getOrDefault(plan.getId(), List.of()).stream()
                                 .sorted(Comparator.comparing(e -> e.getKey().name()))
-                                .map(e -> new Limit(e.getKey().name(), e.getLimitValue())).toList()))
+                                .map(e -> new Limit(e.getKey().name(), e.getLimitValue())).toList(),
+                        plan.getAudience() == com.platform.subscription.entity.PlanAudience.FAMILY
+                                ? learnable.stream().filter(code -> !outside.getOrDefault(plan.getId(), java.util.Set.of()).contains(code)).toList()
+                                : null,
+                        com.platform.subscription.choice.PlanChoices.chooseable(plan, now)))
                 .toList();
     }
 }

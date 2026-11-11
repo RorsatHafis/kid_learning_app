@@ -17,6 +17,11 @@ import { useMessages } from "@/i18n/catalog";
 import { authMessages } from "./messages";
 import { RoleChoice } from "./RoleChoice";
 import { rememberRegistrationRole, rememberedRegistrationRole, type RegistrationRole } from "./registrationRole";
+import { siteApi } from "@/lib/api/site";
+import { useAsync } from "@/lib/hooks/useAsync";
+import { useLocale } from "@/i18n/catalog";
+import { ChosenPlanSummary } from "@/features/plans/ChosenPlan";
+import { plansMessages } from "@/features/plans/plans.messages";
 
 /** The server sends at most one email a minute per address (RegistrationVerificationService). */
 const RESEND_GAP_SECONDS = 60;
@@ -30,6 +35,17 @@ export function RegisterPage() {
   const [role, setRole] = useState<RegistrationRole>(() =>
     params.get("as") === "principal" ? "PRINCIPAL" : params.get("as") === "parent" ? "PARENT" : rememberedRegistrationRole(),
   );
+  // 2026-11-11: ?plan=CODE from the plans page. Shown from the public plan records; the server checks the code again
+  // and keeps it with the request - nothing here sets a price.
+  const p = useMessages(plansMessages);
+  const locale = useLocale();
+  const planCode = params.get("plan");
+  const offered = useAsync(() => (planCode ? siteApi.plans() : Promise.resolve(null)), [planCode, locale]);
+  const chosen = offered.data?.find((plan) => plan.code === planCode && plan.chooseable !== false) ?? null;
+  const planGone = !!planCode && offered.data !== null && offered.data !== undefined && !chosen;
+  useEffect(() => {
+    if (chosen) setRole(chosen.audience === "SCHOOL" ? "PRINCIPAL" : "PARENT");
+  }, [chosen]);
   const [email, setEmail] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [sentAgain, setSentAgain] = useState(false);
@@ -54,7 +70,7 @@ export function RegisterPage() {
     setFieldError(undefined);
     setIsSubmitting(true);
     try {
-      await authApi.startRegistration(address, currentLocale());
+      await authApi.startRegistration(address, currentLocale(), chosen?.code);
       rememberRegistrationRole(role);
       setSentTo(address);
       setSentAgain(again);
@@ -64,6 +80,9 @@ export function RegisterPage() {
         setFieldError(err.validationErrors.email);
       } else if (err instanceof ApiError && err.isRateLimited) {
         setFormError(rateLimitedMessage(err));
+      } else if (err instanceof ApiError && err.status === 400 && chosen) {
+        // The plan stopped being offered between the plans page and now.
+        setFormError(p.planGone);
       } else {
         setFormError(r.sendFailed);
       }
@@ -134,7 +153,26 @@ export function RegisterPage() {
 
   return (
     <AuthLayout title={r.title} subtitle={role === "PRINCIPAL" ? r.principalSubtitle : r.subtitle}>
-      <RoleChoice role={role} onChange={chooseRole} />
+      {chosen ? (
+        <div className="mb-5">
+          <ChosenPlanSummary
+            plan={{ ...chosen, billingInterval: chosen.billingInterval }}
+            changeTo={chosen.audience === "SCHOOL" ? "/plans?for=school" : "/plans"}
+          />
+        </div>
+      ) : (
+        <>
+          {planGone && (
+            <p role="status" className="mb-4 rounded-[12px] bg-light-soft/60 px-4 py-3 text-sm text-ink ring-1 ring-light/40">
+              {p.planGone}{" "}
+              <Link to="/plans" className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+                {p.seePlans}
+              </Link>
+            </p>
+          )}
+          <RoleChoice role={role} onChange={chooseRole} />
+        </>
+      )}
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField
           label={m.email}

@@ -25,6 +25,7 @@ import { schoolPlansApi } from "@/lib/api/subscriptions";
 import { principalWorkspaceMessages } from "./workspace.messages";
 import { AcademicYears, ClassYearSelect } from "./AcademicYears";
 import { Branches } from "./Branches";
+import { PlanChoiceNotice } from "@/features/plans/ChosenPlan";
 import { academicYearsApi, type AcademicYear } from "@/lib/api/academicYears";
 
 const SCHOOL_KEY = "bk.principal.school";
@@ -132,6 +133,8 @@ export function PrincipalHome() {
       {(school, refresh) => (
         <>
           {overview.error && <ErrorState error={overview.error} onRetry={overview.refetch} />}
+          {/* 2026-11-11: a school plan chosen before registering, waiting for its payment. */}
+          <PlanChoiceNotice payAt="/principal/plan" school />
           {overview.data && (
             <SchoolFirstSteps
               key={`steps-${school.id}`}

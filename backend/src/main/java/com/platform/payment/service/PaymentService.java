@@ -82,6 +82,8 @@ public class PaymentService {
     private final PlanRequestService planRequests;
     private final AuditService audit;
     private final PaymentInstructionsService instructions;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.subscription.choice.PlanChoices planChoices;
 
     public PaymentService(PaymentOrderRepository orders, PaymentEventRepository events, List<PaymentProvider> providers,
                           SubscriptionPlanRepository plans, EntitlementService entitlements, FamilyRepository families,
@@ -642,6 +644,7 @@ public class PaymentService {
                         order.getProvider().name(), order.getReference()));
             }
 
+            planChoices.settledForFamily(order.getFamilyId(), order.getPlanId());
             // A family's open request for this plan is answered when an administrator confirms its payment.
             if (actorType(actor) == AuditActorType.ADMIN) {
                 planRequests.onGranted(actor, order.getFamilyId(), order.getPlanId());
@@ -660,6 +663,7 @@ public class PaymentService {
                 schoolSubscriptions.save(SchoolSubscription.fromPayment(order.getSchoolId(), order.getPlanId(), now, end,
                         order.getProvider().name(), order.getReference()));
             }
+            planChoices.settledForSchool(order.getSchoolId(), order.getPlanId());
         }
 
         audit(actor, "SUBSCRIPTION_PAID", order, Map.of("plan", order.getPlanCode(), "until", order.getPeriodEnd().toString()));

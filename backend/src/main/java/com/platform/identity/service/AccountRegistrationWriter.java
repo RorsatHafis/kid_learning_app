@@ -37,12 +37,15 @@ class AccountRegistrationWriter  {
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
     private final com.platform.identity.registration.RegistrationVerificationService registrations;
+    private final com.platform.subscription.choice.PlanChoices planChoices;
  
     AccountRegistrationWriter(AccountRepository accountRepository, FamilyRepository familyRepository,
                                MembershipRepository membershipRepository, IdempotencyService idempotencyService,
                                AuditService auditService, PasswordEncoder passwordEncoder,
                                PasswordPolicy passwordPolicy,
-                               com.platform.identity.registration.RegistrationVerificationService registrations) {
+                               com.platform.identity.registration.RegistrationVerificationService registrations,
+                               com.platform.subscription.choice.PlanChoices planChoices) {
+        this.planChoices = planChoices;
 
         this.accountRepository = accountRepository;
         this.familyRepository = familyRepository;
@@ -67,10 +70,21 @@ class AccountRegistrationWriter  {
 
         // 2026-11-10: only an address proven before registration gets an account; the grant is used up here, in the
         // same transaction that creates it (a refused or failed registration leaves the grant unused).
-        registrations.consumeGrant(command.registrationGrant(), normalizedEmail);
+        UUID chosenPlanId = registrations.consumeGrant(command.registrationGrant(), normalizedEmail);
         java.time.Instant verifiedAt = java.time.Instant.now();
 
         PlatformRole role = command.resolvedPlatformRole();
+        // 2026-11-11: a plan chosen before registering decides the kind of account - a school plan is a school's
+        // (its principal registers), a family plan a family's. Refused here, the grant stays unused (rolled back).
+        if (chosenPlanId != null) {
+            boolean schoolPlan = planChoices.audienceOf(chosenPlanId) == com.platform.subscription.entity.PlanAudience.SCHOOL;
+            if (schoolPlan && role != PlatformRole.PRINCIPAL) {
+                throw new IllegalArgumentException("The plan you chose is for schools: register your school instead.");
+            }
+            if (!schoolPlan && role != PlatformRole.PARENT) {
+                throw new IllegalArgumentException("The plan you chose is for families: register as a parent instead.");
+            }
+        }
  
         Account registered = Account.register(command.email(), passwordEncoder.encode(command.rawPassword()), role);
         if (command.acceptedLegalVersion() != null) {
@@ -79,6 +93,10 @@ class AccountRegistrationWriter  {
         registered.changeLanguage(com.platform.identity.UiLanguage.orDefault(command.preferredLanguage()));
         registered.markEmailVerified(verifiedAt);
         Account account = accountRepository.saveAndFlush(registered);
+        if (chosenPlanId != null) {
+            // A paid plan waits for its payment; the free plan applies by itself.
+            planChoices.keepForNewAccount(account.getId(), chosenPlanId);
+        }
 
         // Family membership is a PARENT-only concept (see PlatformRole's javadoc) -
         // TEACHER/PRINCIPAL/ADMIN accounts are scoped through the school domain

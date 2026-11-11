@@ -8,6 +8,7 @@ import com.platform.identity.exception.InvalidActionLinkException;
 import com.platform.identity.repository.AccountRepository;
 import com.platform.notification.EmailMessage;
 import com.platform.notification.PlatformMailProperties;
+import com.platform.subscription.choice.PlanChoices;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
@@ -48,23 +49,40 @@ public class RegistrationVerificationService {
     private final AccountRepository accounts;
     private final PlatformMailProperties mail;
     private final ApplicationEventPublisher events;
+    private final PlanChoices planChoices;
     private final SecureRandom random = new SecureRandom();
 
     public RegistrationVerificationService(RegistrationVerificationRepository verifications, AccountRepository accounts,
-                                           PlatformMailProperties mail, ApplicationEventPublisher events) {
+                                           PlatformMailProperties mail, ApplicationEventPublisher events,
+                                           PlanChoices planChoices) {
+        this.planChoices = planChoices;
         this.verifications = verifications;
         this.accounts = accounts;
         this.mail = mail;
         this.events = events;
     }
 
-    /** What opening a link gives the registration form: the grant and the address it proves. */
-    public record Verified(String registrationGrant, String email, Instant grantExpiresAt) {
+    /**
+     * What opening a link gives the registration form: the grant, the address it proves and (2026-11-11) the plan
+     * chosen before registering, as the plan record holds it now (null: none chosen).
+     */
+    public record Verified(String registrationGrant, String email, Instant grantExpiresAt, PlanChoices.ChosenPlan plan) {
     }
 
-    /** Sends the verification link (or, for an address with an account, a "sign in instead" note). Says nothing back. */
+    /** Sends the verification link without a chosen plan. */
     @Transactional
     public void start(String email, String preferredLanguage, String requestedIp) {
+        start(email, preferredLanguage, requestedIp, null);
+    }
+
+    /**
+     * Sends the verification link (or, for an address with an account, a "sign in instead" note). Says nothing back.
+     * 2026-11-11: a plan chosen before registering ({@code planCode}, optional) must be one on offer to choose now;
+     * it is kept with the request, so the browser's word about it is never needed again.
+     */
+    @Transactional
+    public void start(String email, String preferredLanguage, String requestedIp, String planCode) {
+        java.util.UUID chosenPlanId = planCode == null || planCode.isBlank() ? null : planChoices.requireChooseable(planCode).getId();
         String normalized = Account.normalize(email);
         Instant now = Instant.now();
         if (tooSoon(normalized, now)) {
@@ -75,7 +93,7 @@ public class RegistrationVerificationService {
         // A row is kept even for an address that already has an account (its link is never sent): the same
         // per-address pace then applies to both answers, and neither reveals which one was given.
         verifications.save(RegistrationVerification.issue(normalized, RequestFingerprint.sha256Hex(raw), now,
-                now.plus(LINK_TTL), requestedIp));
+                now.plus(LINK_TTL), requestedIp, chosenPlanId));
         boolean khmer = UiLanguage.isKhmer(preferredLanguage);
         if (accounts.findByNormalizedEmail(normalized).isPresent()) {
             events.publishEvent(alreadyRegistered(email.strip(), khmer));
@@ -106,9 +124,14 @@ public class RegistrationVerificationService {
                 """.formatted(mail.link("/register/continue", raw))));
     }
 
-    /** Opening the link: used once, yields the registration grant. */
     @Transactional
     public Verified verify(String rawToken) {
+        return verify(rawToken, null);
+    }
+
+    /** Opening the link: used once, yields the registration grant (and the chosen plan, in {@code language}). */
+    @Transactional
+    public Verified verify(String rawToken, String language) {
         if (rawToken == null || rawToken.isBlank()) {
             throw new InvalidActionLinkException();
         }
@@ -122,15 +145,17 @@ public class RegistrationVerificationService {
             // The address got an account meanwhile: the person signs in instead. The link stays used.
             throw new EmailAlreadyRegisteredException();
         }
-        return new Verified(grant, v.getNormalizedEmail(), v.getGrantExpiresAt());
+        return new Verified(grant, v.getNormalizedEmail(), v.getGrantExpiresAt(),
+                planChoices.describe(v.getChosenPlanId(), language).orElse(null));
     }
 
     /**
      * Uses the grant for {@code normalizedEmail}, in the caller's transaction (the one creating the account): a missing,
-     * used, expired grant, or one for another address, is refused like a bad link.
+     * used, expired grant, or one for another address, is refused like a bad link. Returns the plan chosen before
+     * registering (null: none).
      */
     @Transactional(propagation = Propagation.MANDATORY)
-    public void consumeGrant(String rawGrant, String normalizedEmail) {
+    public java.util.UUID consumeGrant(String rawGrant, String normalizedEmail) {
         if (rawGrant == null || rawGrant.isBlank()) {
             throw new RegistrationNotVerifiedException();
         }
@@ -139,6 +164,7 @@ public class RegistrationVerificationService {
                 .filter(found -> found.grantUsable(now) && found.getNormalizedEmail().equals(normalizedEmail))
                 .orElseThrow(RegistrationNotVerifiedException::new);
         v.useGrant(now);
+        return v.getChosenPlanId();
     }
 
     private boolean tooSoon(String normalized, Instant now) {

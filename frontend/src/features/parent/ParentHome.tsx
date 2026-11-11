@@ -1,3 +1,4 @@
+import { PlanChoiceNotice } from "@/features/plans/ChosenPlan";
 import { useState, type ReactNode } from "react";
 import { EnterChildLink } from "./EnterChildLink";
 import { Link } from "react-router-dom";
@@ -62,6 +63,9 @@ export function ParentHome() {
           </p>
         </div>
       </SceneBand>
+
+      {/* 2026-11-11: a paid plan chosen before registering, waiting for its payment. */}
+      <PlanChoiceNotice payAt="/parent/account#plan" />
 
       {/* M10b: children this adult helps with in another family, and invitations to. */}
       <CaringSection onCount={setHelping} />

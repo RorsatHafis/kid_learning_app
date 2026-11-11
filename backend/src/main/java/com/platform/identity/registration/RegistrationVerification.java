@@ -47,11 +47,15 @@ public class RegistrationVerification {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    /** V92: the plan chosen before registering (checked against the plan records when chosen); null: none chosen. */
+    @Column(name = "chosen_plan_id", updatable = false)
+    private UUID chosenPlanId;
+
     protected RegistrationVerification() {
     }
 
     public static RegistrationVerification issue(String normalizedEmail, String linkTokenHash, Instant now,
-                                                 Instant linkExpiresAt, String requestedIp) {
+                                                 Instant linkExpiresAt, String requestedIp, UUID chosenPlanId) {
         RegistrationVerification v = new RegistrationVerification();
         v.id = UUID.randomUUID();
         v.normalizedEmail = normalizedEmail;
@@ -59,6 +63,7 @@ public class RegistrationVerification {
         v.linkExpiresAt = linkExpiresAt;
         v.requestedIp = requestedIp == null ? null : requestedIp.substring(0, Math.min(64, requestedIp.length()));
         v.createdAt = now;
+        v.chosenPlanId = chosenPlanId;
         return v;
     }
 
@@ -93,6 +98,10 @@ public class RegistrationVerification {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public UUID getChosenPlanId() {
+        return chosenPlanId;
     }
 
     public Instant getGrantExpiresAt() {

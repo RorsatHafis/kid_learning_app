@@ -156,6 +156,8 @@ public class FamilyErasureService {
             "delete from account_recovery_codes where account_id = :a",
             "delete from account_second_factors where account_id = :a",
             "delete from idempotency_records where actor_id = :a",
+            // V92: a plan chosen before registering, still waiting for its payment.
+            "delete from plan_choices where account_id = :a",
             // M10b: whom this person helped with, and invitations to their address.
             "delete from child_caregivers where account_id = :a or invited_email = (select normalized_email from accounts where id = :a)",
             // Y43: payment records stay (financial facts), without the person: their name leaves the ledger.

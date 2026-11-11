@@ -7,6 +7,7 @@ import { useMessages } from "@/i18n/catalog";
 import { paymentsApi, type PaymentMethod, type SchoolPlanChoice } from "@/lib/api/payments";
 import { entitlementLabel, priceText, type OwnSchoolPlan } from "@/lib/api/subscriptions";
 import { useAsync } from "@/lib/hooks/useAsync";
+import { planChoiceApi } from "@/lib/api/planChoice";
 import { errorText } from "@/features/admin/studio/studioLogic";
 import { paymentMessages } from "@/features/parent/payments.messages";
 import { schoolPlanMessages } from "./plan.messages";
@@ -25,6 +26,8 @@ export function SchoolRenew({ schoolId, first, onStarted }: { schoolId: string; 
   const tryAgain = useMessages(common).tryAgain;
   const choices = useAsync(() => paymentsApi.schoolRenewals(schoolId), [schoolId]);
   const methods = useAsync(() => paymentsApi.methods(), []);
+  // 2026-11-11: a plan chosen before registering is offered first.
+  const choice = useAsync(() => planChoiceApi.mine(), []);
   const available = [...(methods.data?.methods ?? [])].sort((a, b) => Number(a === "DEV_SIMULATOR") - Number(b === "DEV_SIMULATOR"));
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -32,7 +35,7 @@ export function SchoolRenew({ schoolId, first, onStarted }: { schoolId: string; 
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
   const plans = choices.data ?? [];
-  const plan = plans.find((p) => p.id === planId) ?? plans[0];
+  const plan = plans.find((p) => p.id === planId) ?? plans.find((p) => p.id === choice.data?.id) ?? plans[0];
   const chosen = method ?? available[0] ?? null;
 
   // The way to pay: if it can't be read, say so - a school waiting to pay must not just see nothing.

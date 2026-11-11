@@ -1,5 +1,6 @@
 import type { Locale } from "../../i18n/store";
 import { apiClient } from "./client";
+import type { ChosenPlan } from "./planChoice";
 import type {
   LearningToday,
   FamilyLearningDay,
@@ -59,11 +60,13 @@ export const authApi = {
     ),
   // identity/registration/RegistrationVerificationController.java (2026-11-10): the email is confirmed before the
   // account exists. start is always 202 - whether or not the address has an account (that owner is emailed instead).
-  startRegistration: (email: string, preferredLanguage: Locale) =>
-    apiClient.post<void>("/auth/registration/start", { email, preferredLanguage }, { skipAuth: true }),
+  // 2026-11-11: planCode - the plan chosen on the plans page; the server checks it against the plan records (400 when
+  // it isn't offered to choose now) and keeps it with the request.
+  startRegistration: (email: string, preferredLanguage: Locale, planCode?: string) =>
+    apiClient.post<void>("/auth/registration/start", { email, preferredLanguage, planCode }, { skipAuth: true }),
   // Opening the emailed link: single use. 400 for an unusable link, 409 when the address has an account by now.
   verifyRegistration: (token: string) =>
-    apiClient.post<{ registrationGrant: string; email: string; grantExpiresAt: string }>(
+    apiClient.post<{ registrationGrant: string; email: string; grantExpiresAt: string; plan: ChosenPlan | null }>(
       "/auth/registration/verify",
       { token },
       { skipAuth: true },

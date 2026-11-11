@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/lib/auth/AuthContext";
 import { LoadingState } from "@/components/ui/States";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { RequireRole } from "@/routes/RequireRole";
+import { PlansPage } from "./features/plans/PlansPage";
 import { LandingPage } from "@/features/marketing/LandingPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { RegisterPage } from "@/features/auth/RegisterPage";
@@ -92,6 +93,8 @@ export default function App() {
               }
             />
             <Route path="/login" element={<LoginPage />} />
+            {/* 2026-11-11: the plans, chosen before registering. */}
+            <Route path="/plans" element={<PlansPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/register/continue" element={<RegisterContinuePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />

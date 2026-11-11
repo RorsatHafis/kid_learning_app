@@ -3459,3 +3459,30 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   Khmer native review (PD-14), subscription items SB1-SB9 / FEATURE_NOT_IN_PLAN, D-08, D-12 (QR library), D-14, D-19,
   device speech, M12 school phases (S1-S6), customer payment-screenshot upload.
 - **Exact next task:** build whichever of the above the owner answers first; otherwise a fresh defect round.
+
+### 2026-11-11: owner decisions, and plans chosen before registering (built)
+- **Owner decisions (2026-11-11):** school-assigned learning does not consume family Free-plan limits (the documented
+  behaviour stays: `JourneyPlanCheck` skips class-assigned journeys); the Free plan keeps its name; **D-18** - revisit
+  non-secure skills with adaptive spaced review; **D-20** - one retry with feedback, a second-attempt correct answer
+  is weaker mastery evidence; streak milestones stay on activity completion only, never repeated on home/shelf, best
+  streak hidden; essential learning stays free - no invented premium restrictions. Artwork and Khmer review pending.
+- **Plans before registering (owner requirement):** `/plans` (Family | School) lists the plans from the records
+  (`GET /site/plans`, now with each family plan's included subjects and whether it can be chosen); landing and nav
+  lead there. Choosing passes only the plan's code to `/register`; `POST /auth/registration/start` checks it
+  (`PlanChoices.requireChooseable`: the audience's free default, or an active self-service priced plan inside its
+  offer dates; 400 otherwise, nothing sent) and keeps it on the verification row (V92 `chosen_plan_id`). Opening the
+  link returns the plan as the record holds it; registration decides the account from it (school plan -> principal,
+  family plan -> parent; otherwise 400 and the grant stays unused) and keeps a paid choice on the account
+  (`plan_choices`). Free starts at once. A paid family plan goes straight to its checkout (existing payments: one
+  pending order per customer, idempotency key, price frozen from the plan); the plan starts only from a confirmed
+  payment (`PaymentService.fulfil`), which settles the choice. A failed or abandoned payment leaves the choice to
+  resume; "Keep the free plan" (`DELETE /account/plan-choice`) sets it aside. Parent home and principal home show the
+  waiting choice; the school Plan page offers the chosen plan first. Erasure deletes `plan_choices`.
+- **School billing dependency (genuine):** schools pay from their Plan page by bank transfer (the team confirms the
+  receipt) or invoice; online card/KHQR checkout needs the ABA PayWay merchant account - owner credentials, not built
+  around.
+- **Tests:** PlanChoiceBeforeRegistrationIntegrationTests 4/4 (paid waits, failed payment resumes, confirmed starts
+  and settles; free needs nothing; set aside; refused codes send nothing; school plan -> principal only, grant kept),
+  with RegistrationVerification 7, Payment 4, FamilyErasure 6, ServerTextCoverage 3, PublicPlans 1; backend unit
+  suite green; Vitest 567/567 (planChoice.test 4); e2e plan-choice.spec 2/2 at 1280 and 360 (landing -> plans ->
+  register -> email link -> checkout -> bank transfer confirmed by an administrator; keep free; axe clean).

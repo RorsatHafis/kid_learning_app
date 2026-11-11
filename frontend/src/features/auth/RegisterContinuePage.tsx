@@ -22,7 +22,11 @@ import { roleHomePath } from "./roleHomePath";
 import { RoleChoice } from "./RoleChoice";
 import { rememberRegistrationRole, rememberedRegistrationRole, type RegistrationRole } from "./registrationRole";
 
-type Grant = { registrationGrant: string; email: string; grantExpiresAt: string };
+import { ChosenPlanSummary } from "@/features/plans/ChosenPlan";
+import { chosenPrice, type ChosenPlan } from "@/lib/api/planChoice";
+
+/** plan (2026-11-11): the plan chosen before registering, as the server kept it - it decides the kind of account. */
+type Grant = { registrationGrant: string; email: string; grantExpiresAt: string; plan?: ChosenPlan | null };
 type Stage =
   | { kind: "checking" }
   | { kind: "ready"; grant: Grant }
@@ -90,7 +94,10 @@ export function RegisterContinuePage() {
   });
   const [attempt, setAttempt] = useState(0);
 
-  const [role, setRole] = useState<RegistrationRole>(() => rememberedRegistrationRole());
+  const [chosenRole, setRole] = useState<RegistrationRole>(() => rememberedRegistrationRole());
+  const chosenPlan = stage.kind === "ready" ? (stage.grant.plan ?? null) : null;
+  // A chosen plan settles the kind of account (the server refuses any other).
+  const role: RegistrationRole = chosenPlan ? (chosenPlan.audience === "SCHOOL" ? "PRINCIPAL" : "PARENT") : chosenRole;
   const [password, setPassword] = useState("");
   const [familyName, setFamilyName] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -150,7 +157,9 @@ export function RegisterContinuePage() {
         registrationGrant: grant.registrationGrant,
       });
       forgetGrant();
-      navigate(result === "PENDING_CONFIRMATION" ? "/login" : roleHomePath(result.platformRole), { replace: true });
+      // A paid family plan goes straight to its checkout (it starts only once the payment is confirmed).
+      const toCheckout = result !== "PENDING_CONFIRMATION" && grant.plan && grant.plan.audience === "FAMILY" && chosenPrice(grant.plan) !== null;
+      navigate(result === "PENDING_CONFIRMATION" ? "/login" : toCheckout ? "/parent/account#plan" : roleHomePath(result.platformRole), { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.isRegistrationNotVerified) {
         forgetGrant();
@@ -230,7 +239,13 @@ export function RegisterContinuePage() {
   const { grant } = stage;
   return (
     <AuthLayout title={r.finishTitle} subtitle={r.finishSubtitle}>
-      <RoleChoice role={role} onChange={chooseRole} />
+      {grant.plan ? (
+        <div className="mb-5">
+          <ChosenPlanSummary plan={grant.plan} />
+        </div>
+      ) : (
+        <RoleChoice role={role} onChange={chooseRole} />
+      )}
       <form onSubmit={(e) => void onSubmit(e, grant)} className="flex flex-col gap-4">
         <div className="rounded-[14px] bg-palm-soft p-3 ring-1 ring-inset ring-line">
           <p className="text-xs font-semibold text-ink-soft">{r.confirmedEmail}</p>

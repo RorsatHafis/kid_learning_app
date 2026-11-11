@@ -22,7 +22,9 @@ public class RegistrationVerificationController {
         this.verifications = verifications;
     }
 
-    public record StartRequest(@NotBlank @Email @Size(max = 320) String email, @Size(max = 8) String preferredLanguage) {
+    /** {@code planCode} (2026-11-11, optional): the plan chosen on the plans page - checked against the records. */
+    public record StartRequest(@NotBlank @Email @Size(max = 320) String email, @Size(max = 8) String preferredLanguage,
+                               @Size(max = 64) String planCode) {
     }
 
     public record VerifyRequest(@NotBlank @Size(max = 128) String token) {
@@ -31,13 +33,13 @@ public class RegistrationVerificationController {
     /** Always 202: the same answer whether or not the address has an account, or was asked about a moment ago. */
     @PostMapping("/start")
     public ResponseEntity<Void> start(@Valid @RequestBody StartRequest request, HttpServletRequest http) {
-        verifications.start(request.email(), request.preferredLanguage(), http.getRemoteAddr());
+        verifications.start(request.email(), request.preferredLanguage(), http.getRemoteAddr(), request.planCode());
         return ResponseEntity.accepted().build();
     }
 
     /** The emailed link, opened: the registration grant and the address it proves. */
     @PostMapping("/verify")
     public RegistrationVerificationService.Verified verify(@Valid @RequestBody VerifyRequest request) {
-        return verifications.verify(request.token());
+        return verifications.verify(request.token(), com.platform.identity.UiLanguage.ofCurrentRequest());
     }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { common } from "@/components/ui/messages";
@@ -14,6 +14,9 @@ export function Nav() {
   const m = useMessages(marketingMessages).nav;
   const label = useSectionLabel();
   const c = useMessages(common);
+  // The section links are the landing page's: from another public page they lead back to it.
+  const onLanding = useLocation().pathname === "/";
+  const sectionHref = (href: string) => (onLanding ? href : `/${href}`);
 
   useEffect(() => {
     if (!open) return;
@@ -33,7 +36,7 @@ export function Nav() {
           className="hidden items-center gap-6 whitespace-nowrap text-[0.9375rem] font-medium text-ink-soft lg:flex xl:gap-7"
         >
           {sectionLinks.map((link) => (
-            <a key={link.href} href={link.href} className="rounded-[6px] transition-colors duration-150 hover:text-tonle-950">
+            <a key={link.href} href={sectionHref(link.href)} className="rounded-[6px] transition-colors duration-150 hover:text-tonle-950">
               {label(link.key)}
             </a>
           ))}
@@ -47,7 +50,7 @@ export function Nav() {
             {m.logIn}
           </Link>
           <Link
-            to="/register"
+            to="/plans"
             className="flex h-10 items-center rounded-[10px] bg-tonle-800 px-4 text-[0.9375rem] font-semibold text-white transition-colors duration-150 hover:bg-tonle-900"
           >
             {m.getStarted}
@@ -76,7 +79,7 @@ export function Nav() {
           {sectionLinks.map((link) => (
             <a
               key={link.href}
-              href={link.href}
+              href={sectionHref(link.href)}
               onClick={() => setOpen(false)}
               className="border-b border-tonle-950/10 py-3.5 text-base font-medium text-ink hover:text-tonle-700"
             >
@@ -92,7 +95,7 @@ export function Nav() {
             {m.logIn}
           </Link>
           <Link
-            to="/register"
+            to="/plans"
             className="flex h-12 items-center justify-center rounded-[12px] bg-tonle-800 font-semibold text-white"
           >
             {m.getStarted}

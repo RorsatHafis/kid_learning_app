@@ -126,7 +126,7 @@ function Hero() {
           </h1>
           <p className="max-w-[31rem] text-[1.0625rem] leading-relaxed text-ink-soft sm:text-[1.1875rem]">{m.hero.lead}</p>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Link to="/register" className={goButton}>
+            <Link to="/plans" className={goButton}>
               {l.forFamilies} <ArrowRight size={18} aria-hidden />
             </Link>
             <a href="#schools" className={quietButton}>
@@ -507,7 +507,7 @@ function Schools() {
             ))}
           </ul>
           <div className="flex flex-wrap items-center gap-4">
-            <Link to="/register?as=principal" className={goButton}>
+            <Link to="/plans?for=school" className={goButton}>
               {m.register} <ArrowRight size={18} aria-hidden />
             </Link>
             <span className="text-sm font-medium text-tonle-200">{m.earlyAccess}</span>
@@ -605,8 +605,9 @@ function Plans() {
   // P-1: names, prices and what each plan includes come from the plan records - the words around them are copy.
   const offered = useAsync(() => siteApi.plans(), [locale]);
   const sheets = [
-    { ...m.family, audience: "FAMILY", to: "/register", tone: "bg-white ring-1 ring-line", solid: true },
-    { ...m.school, audience: "SCHOOL", to: "/register?as=principal", tone: "bg-tonle-50 ring-1 ring-tonle-100", solid: false },
+    // 2026-11-11: each way in leads to that audience's plans, chosen before registering.
+    { ...m.family, audience: "FAMILY", to: "/plans", tone: "bg-white ring-1 ring-line", solid: true },
+    { ...m.school, audience: "SCHOOL", to: "/plans?for=school", tone: "bg-tonle-50 ring-1 ring-tonle-100", solid: false },
   ] as const;
   return (
     <Section id="plans">
@@ -633,7 +634,10 @@ function Plans() {
                 </li>
               ))}
             </ul>
-            <p className="text-sm leading-relaxed text-ink-soft">{s.note}</p>
+            {/* The copy's "nothing to pay" note only while the records offer no priced plan for this audience. */}
+            {!offered.data?.some((p) => p.audience === s.audience && p.amountMinor !== null) && (
+              <p className="text-sm leading-relaxed text-ink-soft">{s.note}</p>
+            )}
             <Link to={s.to} className={buttonClasses(s.solid ? "solid" : "outline", "lg", "mt-auto w-fit")}>
               {s.cta} <ArrowRight size={18} aria-hidden />
             </Link>
@@ -741,7 +745,7 @@ function Closing() {
         <div className="relative mx-auto flex max-w-[1240px] flex-col items-start gap-6 px-4 py-24 sm:px-8 sm:py-32">
           <p className="max-w-xl font-display text-[2.4rem] font-bold leading-[1.05] text-tonle-950 sm:text-[3.4rem]">{m.closingTitle}</p>
           <p className="max-w-md text-lg text-ink-soft">{m.closingLead}</p>
-          <Link to="/register" className={goButton}>
+          <Link to="/plans" className={goButton}>
             {all.nav.getStarted}
           </Link>
         </div>

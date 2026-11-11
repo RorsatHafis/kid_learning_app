@@ -79,6 +79,10 @@ export interface PublicPlan {
   currency: string | null;
   billingInterval: "MONTH" | "YEAR" | null;
   limits: { key: EntitlementKey; limit: number | null }[];
+  /** 2026-11-11 (family plans): codes of the subjects families can learn now that the plan includes; null for schools. */
+  subjects?: string[] | null;
+  /** 2026-11-11: it can be chosen before registering (the free default, or a priced plan people choose themselves). */
+  chooseable?: boolean;
 }
 
 /** SUB-1: a subject in the catalog - available with the ages its curricula cover, or in preparation. */
