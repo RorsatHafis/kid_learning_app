@@ -58,7 +58,9 @@ parents; the daily learning time used (M3 limits). Schools see a child's learnin
 
 - **Backend, database and uploaded media**: Railway (`docs/DEPLOY-VERCEL-RAILWAY.md`: backend service, Railway
   PostgreSQL, a volume at `/data` for media and the erasure ledger). **Region: [OWNER: confirm in the Railway
-  dashboard - not recorded in the repository].**
+  dashboard - not recorded in the repository].** Measured 2026-11-11: requests enter Railway's Singapore edge but the
+  backend answers ~300 ms later, so it is very likely *not* in Singapore (probably the US) - see
+  `docs/HOSTING-AND-STORAGE-PROPOSAL.md`.
 - **Web app**: Vercel (`frontend/vercel.json`), which also passes media requests through to Railway.
   **Region(s): [OWNER: confirm in the Vercel dashboard].**
 - **Email**: Brevo SMTP (`smtp-relay.brevo.com`, per the deployment record). **Data location: [OWNER/REVIEW: Brevo's
