@@ -1,6 +1,6 @@
 # Launch checklist
 
-(Reviewed 2026-10-28 against the improvement program; the business reference is
+(Reviewed 2026-10-28 against the improvement program, short list updated 2026-11-11; the business reference is
 [docs/BUSINESS-REQUIREMENTS.md](docs/BUSINESS-REQUIREMENTS.md).)
 
 What is left before real families use Bookeyond Kid. The software side is built and verified locally
@@ -8,6 +8,43 @@ What is left before real families use Bookeyond Kid. The software side is built 
 [DEPLOYMENT.md](DEPLOYMENT.md) section 5a; the Vercel + Railway shape was rehearsed locally on 2026-10-20 -
 [docs/DEPLOY-VERCEL-RAILWAY.md](docs/DEPLOY-VERCEL-RAILWAY.md)). Everything below needs you: an account, a payment, a
 domain, a legal text or a decision. Nothing here has been done yet.
+
+## What still needs you (2026-11-11) - the short list
+
+The roadmap's software is built. Each item below is an account, a payment, a fact, a review or a decision
+that only the owner can give; nothing in it has been filled in or guessed. Details are in the linked documents.
+
+**Before real families (launch blockers)**
+
+| # | What | Where it is prepared |
+|---|---|---|
+| 1 | Confirm the Railway backend + PostgreSQL region (very likely not Singapore today); approve a move to Singapore and a downtime window | [docs/HOSTING-AND-STORAGE-PROPOSAL.md](docs/HOSTING-AND-STORAGE-PROPOSAL.md) section 1 |
+| 2 | Move the web app off Vercel's Hobby plan (non-commercial use only) - Vercel Pro or another host | same, section 2 |
+| 3 | Legal facts: the operator's legal name, registered address, registration number, privacy contact (email + postal), effective dates and version, hosting regions (from 1), Brevo's processing locations | `[OWNER]` placeholders in [docs/legal/](docs/legal/) |
+| 4 | A qualified Cambodian legal review of the privacy notice, terms and school agreement (the `[REVIEW]` questions), including their Khmer | [docs/legal/](docs/legal/) |
+| 5 | Retention numbers: deletion waiting period (7 days today), how long backups keep erased data, sign-in records, payment records after erasure | B2 below; `docs/legal/DATA-INVENTORY.md` |
+| 6 | A native Khmer reviewer and a date (the whole Khmer interface is Claude-drafted) | [docs/KHMER-REVIEW-CHECKLIST.md](docs/KHMER-REVIEW-CHECKLIST.md) |
+| 7 | The curriculum: educators to author and publish real content (only a sample Maths path ships) | B3 below |
+
+**Before charging money**
+
+| # | What | Where it is prepared |
+|---|---|---|
+| 8 | ABA PayWay merchant account (in the legal entity's name): sandbox credentials, then production credentials and ABA's production checkout host (needed in the site's CSP); a sandbox run | [docs/PAYMENTS.md](docs/PAYMENTS.md) "Go-live checklist" |
+| 9 | Prices on each plan (none are set), refund policy, the receipt/invoice a Cambodian sale needs (with an accountant) | C1 below |
+| 10 | Real bank-transfer / KHQR instructions, entered in the app by an administrator | step 11b below |
+| 11 | Storage allowances per school plan (proposal: 1 GB / 2 GB per teacher, no overage) and whether to move hosted media to R2/B2 | proposal section 5 |
+
+**For the child's world and naming (not blockers)**
+
+| # | What | Where it is prepared |
+|---|---|---|
+| 12 | Three pieces of artwork from the illustrator (open-river backdrop, garden backdrop, rice-fields place), their licence, and which subject the rice fields belong to | [docs/ARTWORK-SPEC.md](docs/ARTWORK-SPEC.md) |
+| 13 | The Learning Buddy's names (PD-13) | `KHMER-REVIEW-Y33.md` |
+| 14 | Optional: an SMS provider (D-04) if phone verification should work in production | E7 below |
+
+Note: production already runs on Vercel + Railway ([docs/DEPLOY-VERCEL-RAILWAY.md](docs/DEPLOY-VERCEL-RAILWAY.md)); the
+server steps 2-8 below describe the self-hosted alternative and apply only if that path is chosen.
 
 ## A. External actions, in order
 
@@ -71,7 +108,7 @@ domain, a legal text or a decision. Nothing here has been done yet.
 | # | Decision | What is ready for it |
 |---|---|---|
 | C1 | **Prices, plans and a payment provider** (PD-09), refunds and cancellation terms (part of B1), receipts/invoices required in Cambodia, and how long anonymised payment records are kept after erasure. | Y43: a payment lifecycle that grants a plan only on a confirmed payment, bank transfer confirmed by an administrator against the receipt, school invoices, refunds that take back exactly what was paid, an append-only ledger. Prices are set per plan; none are set. ABA PayWay is prepared but untested: it needs ABA's sandbox credentials and a sandbox run ([docs/PAYMENTS.md](docs/PAYMENTS.md)). |
-| C2 | Whether a path a child's **class** assigns counts against the family's plan (part of PD-09). | Counted today; no effect while the default plan is unlimited. |
+| C2 | ~~Whether a path a child's **class** assigns counts against the family's plan.~~ **Decided 2026-11-11:** it does not. | Built. |
 | C3 | **Schools pay before using school services (Y44).** Set a price on each school plan, then invoice each school and confirm its payment against the receipt. Upgrading an environment that already has schools pauses them (principals see the payment panel, teachers a notice) until they are paid: administrator-granted school plans no longer count. | Invoices, confirmation by an administrator, renewal by the principal, and the paused state are built and tested ([docs/PAYMENTS.md](docs/PAYMENTS.md)). Families' own learning is never paused. |
 
 ### Required for legal compliance
@@ -90,10 +127,10 @@ domain, a legal text or a decision. Nothing here has been done yet.
 | E2 | PD-27: more practice when a child has played every published step. |
 | E3 | PD-04: whether evidence gathered from a version later taken down still counts. |
 | E4 | PD-30: handing a school to a new principal. (PD-29, a second parent or carer, is built: M10b caregivers.) |
-| E5 | PD-13 the Learning Buddy's name, PD-16 one retry before the answer is shown, PD-23 landing-page wording. |
+| E5 | PD-13 the Learning Buddy's name, PD-23 landing-page wording. (PD-16/D-20, one retry with feedback, decided and built 2026-11-11.) |
 | E6 | Moving to Tailwind 4, to clear two build-time-only dependency advisories (DEPLOYMENT.md section 7a). |
-| E7 | D-04: an SMS provider, if phone verification and reset-by-text should work in production (built, test sender only). D-06/D-12 (M11): object storage for media instead of the server disk. |
-| E8 | D-18 (bring a skill back on another day to confirm "secure"), D-19 (who authors the real curriculum). |
+| E7 | D-04: an SMS provider, if phone verification and reset-by-text should work in production (built, test sender only). (D-06/D-12, M11 hybrid storage: decided and built.) |
+| E8 | D-19 (who authors the real curriculum). (D-18, bringing a skill back on another day, decided and built.) |
 
 Full records: the decision list at the end of
 [BOOKEYOND-KID-ENGINEERING-PROGRESS.md](BOOKEYOND-KID-ENGINEERING-PROGRESS.md) and the table in
