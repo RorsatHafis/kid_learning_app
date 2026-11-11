@@ -3540,3 +3540,27 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
 - **F2:** documents prepared with marked placeholders for owner facts (entity, address, contact); data-hosting
   locations taken from the infrastructure configuration; a qualified Cambodian legal professional reviews Privacy,
   Terms, children's data and school agreements before publication (external owner dependency).
+
+### 2026-11-11 (late): M11, M12 attendance and F2 preparation - built on the owner's decisions
+- **M11 hybrid storage (V94):** `StorageProvider` - Bookeyond-hosted disk (`MediaStorage`, the default) and
+  `S3StorageProvider` (AWS SDK 2.57.0, URL-connection client). A principal connects the school's own S3-compatible
+  storage: endpoint checked (https, no address on the platform's network after DNS - re-checked on every use;
+  `STORAGE_ALLOW_PRIVATE_ENDPOINTS` local/test only, refused in production), a write/read/delete check before anything
+  is kept, the access key sealed with AES-256-GCM (`STORAGE_CREDENTIALS_KEY`, bound to the connection's fields) and
+  never returned. Connections are immutable; each file records where it was written (`content_assets.storage_connection_id`)
+  and is served through the same signed links; switching changes only where new files go. Own storage is outside the
+  hosted allowance (no invented quotas or overage). Routing: a teacher's upload goes to their school's own storage
+  only when they work at exactly one active school. Principal UI on the Plan page; administrators see it read-only.
+  Tests: StorageSafetyTests, SchoolStorageChoiceIntegrationTests, SchoolOwnStorageIntegrationTests (MinIO via
+  Testcontainers - runs where Docker is available, i.e. CI).
+- **M12 attendance (V95) and the consent link (V96):** school student records (name, optional school number,
+  class history), per-day attendance (present/absent/late/excused, notes), corrections only with a reason
+  (append-only, audited), monthly summary; class teachers and the principal only (never platform admins, parents or
+  other schools); archived classes read-only. A record is connected with a family's child only by the parent's
+  explicit consent (school asks for a sharing child in the class; parent connects/declines; either disconnects; ends
+  with the school's access; erased with the child; in the family export). Tests: AttendanceIntegrationTests,
+  StudentLinkIntegrationTests, attendance/schoolRecordLinks Vitest, school-journey e2e at 360 px.
+- **F2:** DATA-INVENTORY.md brought up to date (new data, providers from the deployment configuration, regions left
+  to the owner), privacy draft processors filled, SCHOOL-AGREEMENT-DRAFT.md added - all for qualified Cambodian review.
+- **Still owner-dependent:** hosting regions (Railway/Vercel/Brevo), legal facts and review, artwork, Khmer review,
+  ABA PayWay credentials, pricing decisions on storage quotas, school trials (not built, per decision).
