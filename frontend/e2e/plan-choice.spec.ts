@@ -119,3 +119,68 @@ test("plans: a paid choice can be set aside for the free plan @phone", async ({ 
   await page.reload();
   await expect(page.getByRole("heading", { name: new RegExp(`You chose ${plan.name}`) })).toHaveCount(0);
 });
+
+test("plans: a school plan chosen before registering is the one the principal pays for once the school is set up @phone", async ({ page, request }) => {
+  test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, "set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
+  const token = await adminToken(request);
+  const auth = { Authorization: `Bearer ${token}` };
+  const suffix = Date.now().toString(36).toUpperCase();
+  const code = `E2E_SCHOOL_CHOICE_${suffix}`;
+  const name = `E2E School ${suffix}`;
+  const created = await request.post("/api/v1/admin/plans", { headers: auth, data: { code, name, audience: "SCHOOL" } });
+  expect(created.ok(), await created.text()).toBe(true);
+  const id = (await created.json()).plan.id as string;
+  expect((await request.put(`/api/v1/admin/plans/${id}`, {
+    headers: auth,
+    data: { name, description: null, selfService: true, priceAmountMinor: 9000, priceCurrency: "USD", billingInterval: "YEAR", limits: {} },
+  })).ok()).toBe(true);
+  const proof = await stepUpProof(request, token, ADMIN_EMAIL, ADMIN_PASSWORD);
+  expect((await request.post(`/api/v1/admin/plans/${id}/activate`, { headers: { ...auth, "X-Step-Up": proof } })).ok()).toBe(true);
+
+  // A visitor chooses the school plan.
+  await page.goto("/plans?for=school");
+  const card = page.getByRole("article", { name });
+  await expect(card.getByText("$90.00")).toBeVisible();
+  await expectNoViolations(page, "plans page: schools");
+  await card.getByRole("link", { name: `Choose ${name}` }).click();
+  await expect(page.getByRole("region", { name: "Your plan" })).toContainText(name);
+  await expect(page.getByRole("button", { name: "I'm a parent" })).toHaveCount(0);
+  const email = uniqueEmail("school-choice");
+  await page.getByLabel("Email").fill(email);
+  await page.getByRole("button", { name: "Email me a link" }).click();
+  await page.goto(linkIn(await waitForEmail(page.request, email, "Confirm your email to create"), "/register/continue"));
+  await expect(page.getByRole("region", { name: "Your plan" })).toContainText(name);
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  const agree = page.getByRole("checkbox", { name: /I agree/ });
+  if (await agree.isVisible()) await agree.check();
+  await page.getByRole("button", { name: "Create account" }).click();
+
+  // Registered as the school's principal; once the school exists, its payment starts with the chosen plan.
+  const schoolName = `E2E Choice School ${suffix}`;
+  await expect(page.getByRole("heading", { name: "Set up your school" })).toBeVisible();
+  await page.getByLabel("School name").fill(schoolName);
+  await page.getByRole("button", { name: "Create school" }).click();
+  await expect(page.getByRole("heading", { name: `Choose a plan to open ${schoolName}` })).toBeVisible();
+  await expect(page.getByRole("radio", { name: new RegExp(name) })).toBeChecked();
+  const bank = page.getByRole("radio", { name: "Bank transfer" });
+  if (await bank.isVisible()) await bank.check();
+  await page.getByRole("button", { name: `Pay for ${name} · $90.00 / year` }).click();
+  await expect(page.getByText(/The payment has started/)).toBeVisible();
+  await expectNoViolations(page, "principal: chosen plan's payment started");
+
+  // Only the confirmed payment opens the school.
+  const pending = (await (await request.get("/api/v1/admin/payments?status=PENDING&size=100", { headers: auth })).json()) as {
+    items: { id: string; planCode: string }[];
+  };
+  const order = pending.items.find((o) => o.planCode === code);
+  expect(order, "the school's transfer waits for confirmation").toBeTruthy();
+  const confirmProof = await stepUpProof(request, token, ADMIN_EMAIL, ADMIN_PASSWORD);
+  const confirmed = await request.post(`/api/v1/admin/payments/${order!.id}/confirm`, {
+    headers: { ...auth, "X-Step-Up": confirmProof },
+    data: { receiptReference: `E2E-RECEIPT-${Date.now()}`, amountReceivedMinor: 9000, currency: "USD" },
+  });
+  expect(confirmed.ok(), await confirmed.text()).toBe(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: `Choose a plan to open ${schoolName}` })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: new RegExp(`You chose ${name}`) })).toHaveCount(0);
+});
