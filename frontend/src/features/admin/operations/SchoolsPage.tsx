@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils/cn";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { adminMessages } from "../messages";
 import { SchoolPlanPanel } from "./SchoolPlanPanel";
+import { SchoolStorageSummary } from "@/features/school/SchoolStorage";
 import { organizationsApi } from "@/lib/api/organizations";
 
 /** Archived by its principal (PD-26, Y17): it takes nothing new, so it has nothing left to set up. */
@@ -179,6 +180,8 @@ export function SchoolDetailPage() {
         <OrganizationPanel organizationId={data.school.organizationId} name={data.school.organizationName ?? ""} schoolId={schoolId} />
       )}
       {data && <SchoolPlanPanel schoolId={schoolId} />}
+      {/* M11: where the school's media is kept - read-only for support; the principal chooses. */}
+      {data && <SchoolStorageSummary schoolId={schoolId} />}
     </div>
   );
 }

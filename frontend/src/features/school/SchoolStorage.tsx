@@ -204,3 +204,38 @@ function ConnectForm({ schoolId, onCancel, onConnected }: { schoolId: string; on
     </form>
   );
 }
+
+/**
+ * For platform administrators supporting a school (read-only): where its teachers' new files go and whether its own
+ * storage last checked out. The choice stays the principal's; nothing here can change it or show the access key.
+ */
+export function SchoolStorageSummary({ schoolId }: { schoolId: string }) {
+  const m = useMessages(schoolStorageMessages);
+  const storage = useAsync(() => schoolStorageApi.get(schoolId), [schoolId]);
+  if (storage.error) return <ErrorState error={storage.error} onRetry={storage.refetch} />;
+  if (!storage.data) return null;
+  const current = storage.data.current;
+  return (
+    <section aria-labelledby="admin-school-storage" className="flex flex-col gap-2 rounded-[16px] bg-white p-5 ring-1 ring-line">
+      <h2 id="admin-school-storage" className="font-display text-lg font-bold text-tonle-950">
+        {m.title}
+      </h2>
+      {current ? (
+        <>
+          <p className="text-sm font-semibold text-ink">{m.own}</p>
+          <p className="text-sm text-ink [overflow-wrap:anywhere]">{m.ownWhere(current.endpoint, current.bucket)}</p>
+          <p className="text-sm text-ink-soft">{m.ownUse(current.files, sizeText(current.bytes))}</p>
+          {current.lastCheckedAt && (
+            <p className={current.lastCheckOk ? "text-sm text-palm-deep" : "text-sm font-medium text-brick-deep"}>
+              {current.lastCheckOk
+                ? m.checkedOk(formatDateTime(current.lastCheckedAt))
+                : m.checkedFailed(formatDateTime(current.lastCheckedAt), current.lastCheckError ?? "")}
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="text-sm text-ink">{m.hosted}</p>
+      )}
+    </section>
+  );
+}
