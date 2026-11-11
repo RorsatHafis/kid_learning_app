@@ -298,7 +298,8 @@ export function Question({
 
   const total = activity.items.length;
   const answeredHere = result ? 1 : 0;
-  const mood = result ? (result.correct ? "cheer" : "encourage") : isSubmitting ? "thinking" : "idle";
+  // V91: a saved drawing is met with cheer - it has no right or wrong.
+  const mood = result ? (result.correct || result.scored === false ? "cheer" : "encourage") : isSubmitting ? "thinking" : "idle";
   const buddyLine = result ? (result.correct ? m.buddyRight : m.buddyTogether) : isSubmitting ? m.buddyChecking : m.buddyTakeYourTime;
   return (
     // overflow-x-clip: as in Intro - the question sheet slides in from the right without widening a phone's page.

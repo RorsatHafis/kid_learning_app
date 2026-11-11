@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import villageLarge from "@/assets/world/river-village.webp";
 import villageSmall from "@/assets/world/river-village-sm.webp";
 import bendLarge from "@/assets/world/river-bend.webp";
@@ -67,8 +67,25 @@ const ENVIRONMENTS: Record<PlaceKey, Environment> = {
 };
 
 /** `landmark="wide"`: the landmark stands only on wider screens - where something else (a strip of books) fills a phone's narrow scene. */
-export function PlaceWorld({ place, className, children, landmark = "always" }: { place: PlaceKey; className?: string; children?: ReactNode; landmark?: "always" | "wide" }) {
+/**
+ * `respond` (EXP-1, responsive objects): the landmark answers a tap - a little bounce and light rising from it - and
+ * is a button with that name. Without it the landmark is scenery only.
+ */
+export function PlaceWorld({
+  place,
+  className,
+  children,
+  landmark = "always",
+  respond,
+}: {
+  place: PlaceKey;
+  className?: string;
+  children?: ReactNode;
+  landmark?: "always" | "wide";
+  respond?: { label: string };
+}) {
   const env = ENVIRONMENTS[place];
+  const [taps, setTaps] = useState(0);
   const box = useRef<HTMLDivElement | null>(null);
   // Depth: the painting and its foreground move apart slightly with a fine pointer (never on touch, never with
   // reduced motion) - set as two CSS variables, so React doesn't re-render as the pointer moves.
@@ -127,55 +144,176 @@ export function PlaceWorld({ place, className, children, landmark = "always" }: 
         <Foreground place={place} />
       </div>
       {/* The landmark itself, sharp and near: the place the child has come to. */}
-      <img
-        src={placeByKey(place).art}
-        alt=""
-        aria-hidden
-        draggable={false}
-        className={cn(landmark === "wide" && "max-sm:hidden", "pointer-events-none absolute bottom-[3%] right-[3%] h-[58%] w-auto select-none drop-shadow-[0_18px_22px_rgba(16,50,58,0.28)] transition-transform duration-500 ease-out motion-safe:animate-rise-in [transform:translate(calc(var(--px)*16px),calc(var(--py)*9px))] sm:h-[84%]")}
-      />
+      {respond ? (
+        <button
+          type="button"
+          aria-label={respond.label}
+          onClick={() => setTaps((n) => n + 1)}
+          className={cn(
+            landmark === "wide" && "max-sm:hidden",
+            "group absolute bottom-[3%] right-[3%] h-[58%] rounded-[24px] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/90 sm:h-[84%]",
+          )}
+        >
+          <img
+            key={taps}
+            src={placeByKey(place).art}
+            alt=""
+            draggable={false}
+            className={cn(
+              "h-full w-auto select-none drop-shadow-[0_18px_22px_rgba(16,50,58,0.28)] transition-[filter] duration-300",
+              taps === 0
+                ? "motion-safe:animate-rise-in"
+                : "motion-safe:animate-landmark-tap motion-reduce:brightness-110",
+            )}
+          />
+          {taps > 0 && (
+            <span key={`light-${taps}`} aria-hidden className="pointer-events-none absolute inset-x-[20%] bottom-[30%] top-[10%] motion-reduce:hidden">
+              {["12%", "30%", "48%", "66%", "84%"].map((left, i) => (
+                <span
+                  key={left}
+                  className="absolute bottom-0 h-2 w-2 rounded-full bg-[#FFE7A8] opacity-0 shadow-[0_0_10px_3px_rgba(255,214,130,0.8)] motion-safe:animate-drift-up"
+                  style={{ left, animationDelay: `${i * 70}ms`, animationIterationCount: 1 }}
+                />
+              ))}
+            </span>
+          )}
+        </button>
+      ) : (
+        <img
+          src={placeByKey(place).art}
+          alt=""
+          aria-hidden
+          draggable={false}
+          className={cn(landmark === "wide" && "max-sm:hidden", "pointer-events-none absolute bottom-[3%] right-[3%] h-[58%] w-auto select-none drop-shadow-[0_18px_22px_rgba(16,50,58,0.28)] transition-transform duration-500 ease-out motion-safe:animate-rise-in [transform:translate(calc(var(--px)*16px),calc(var(--py)*9px))] sm:h-[84%]")}
+        />
+      )}
       {children}
     </div>
   );
 }
 
+/**
+ * WORLD-1's environment system: a place's living layer is a list of reusable ambient layers, so a new place (the rice
+ * fields, when its art comes) is its painting, light and landmark plus a list here - no new drawing code. Every layer
+ * is decoration (aria-hidden by its parent) and stands still with reduced motion.
+ */
+type Spot = { left: string; top: string; delay: string };
+export type AmbientLayer =
+  | { kind: "clouds"; tint?: string }
+  | { kind: "glints"; spots: Spot[]; className: string }
+  | { kind: "motes"; lefts: string[]; className: string; every: number; duration: string }
+  | { kind: "beams" }
+  | { kind: "shade" }
+  | { kind: "leaves"; lefts: string[] }
+  | { kind: "butterflies"; flyers: { left: string; top: string; delay: string; tint: string }[] }
+  | { kind: "mist" }
+  | { kind: "dragonfly"; left: string; top: string };
+
+const LAYERS: Record<PlaceKey, AmbientLayer[]> = {
+  bridge: [
+    { kind: "clouds" },
+    {
+      kind: "glints",
+      className: "h-[2px] w-10 bg-white/80",
+      spots: [
+        { left: "22%", top: "70%", delay: "0s" },
+        { left: "48%", top: "64%", delay: "1.2s" },
+        { left: "71%", top: "76%", delay: "2.3s" },
+        { left: "36%", top: "82%", delay: "0.6s" },
+      ],
+    },
+  ],
+  pavilion: [
+    { kind: "clouds", tint: "rgba(255,244,222,0.9)" },
+    {
+      kind: "motes",
+      lefts: ["18%", "34%", "57%", "76%", "88%"],
+      className: "bottom-[18%] bg-[#FFD98A] shadow-[0_0_8px_2px_rgba(255,206,120,0.7)]",
+      every: 1.1,
+      duration: "6.5s",
+    },
+  ],
+  treehouse: [{ kind: "beams" }, { kind: "shade" }, { kind: "leaves", lefts: ["14%", "38%", "63%", "82%"] }],
+  garden: [
+    {
+      kind: "motes",
+      lefts: ["12%", "28%", "46%", "64%", "80%"],
+      className: "bottom-[12%] bg-white shadow-[0_0_6px_2px_rgba(255,255,255,0.7)]",
+      every: 1.3,
+      duration: "7.5s",
+    },
+    {
+      kind: "butterflies",
+      flyers: [
+        { left: "22%", top: "40%", delay: "0s", tint: "#F2A65A" },
+        { left: "58%", top: "30%", delay: "-3s", tint: "#E89AAE" },
+      ],
+    },
+  ],
+  island: [
+    { kind: "clouds", tint: "rgba(255,226,196,0.9)" },
+    {
+      kind: "glints",
+      className: "h-[2px] w-12 bg-[#FFE1B0]/90",
+      spots: [
+        { left: "18%", top: "72%", delay: "0s" },
+        { left: "40%", top: "66%", delay: "1.4s" },
+        { left: "63%", top: "78%", delay: "2.6s" },
+      ],
+    },
+  ],
+  pond: [{ kind: "mist" }, { kind: "dragonfly", left: "30%", top: "34%" }],
+};
+
 function Foreground({ place }: { place: PlaceKey }) {
-  switch (place) {
-    case "bridge":
+  return (
+    <>
+      {LAYERS[place].map((layer, i) => (
+        <Ambient key={i} layer={layer} />
+      ))}
+    </>
+  );
+}
+
+/** One ambient layer, drawn the same wherever it is used. */
+export function Ambient({ layer }: { layer: AmbientLayer }) {
+  switch (layer.kind) {
+    case "clouds":
+      return <Clouds tint={layer.tint} />;
+    case "glints":
       return (
         <>
-          <Clouds />
-          {[
-            { left: "22%", top: "70%", delay: "0s" },
-            { left: "48%", top: "64%", delay: "1.2s" },
-            { left: "71%", top: "76%", delay: "2.3s" },
-            { left: "36%", top: "82%", delay: "0.6s" },
-          ].map((g) => (
-            <span key={g.delay} className="absolute h-[2px] w-10 rounded-full bg-white/80 opacity-0 motion-safe:animate-glint" style={{ left: g.left, top: g.top, animationDelay: g.delay }} />
+          {layer.spots.map((g) => (
+            <span key={g.delay} className={`absolute rounded-full opacity-0 motion-safe:animate-glint ${layer.className}`} style={{ left: g.left, top: g.top, animationDelay: g.delay }} />
           ))}
         </>
       );
-    case "pavilion":
+    case "motes":
       return (
         <>
-          <Clouds tint="rgba(255,244,222,0.9)" />
-          {["18%", "34%", "57%", "76%", "88%"].map((left, i) => (
+          {layer.lefts.map((left, i) => (
             <span
               key={left}
-              className="absolute bottom-[18%] h-1.5 w-1.5 rounded-full bg-[#FFD98A] opacity-0 shadow-[0_0_8px_2px_rgba(255,206,120,0.7)] motion-safe:animate-drift-up"
-              style={{ left, animationDelay: `${i * 1.1}s`, animationDuration: "6.5s", animationIterationCount: "infinite" }}
+              className={`absolute h-1.5 w-1.5 rounded-full opacity-0 motion-safe:animate-drift-up ${layer.className}`}
+              style={{ left, animationDelay: `${i * layer.every}s`, animationDuration: layer.duration, animationIterationCount: "infinite" }}
             />
           ))}
         </>
       );
-    case "treehouse":
+    case "beams":
       return (
         <>
           {/* sunbeams through the canopy */}
           <span className="absolute -top-[10%] right-[18%] h-[120%] w-[14%] rotate-[18deg] bg-gradient-to-b from-[#FFF6D0]/45 to-transparent motion-safe:animate-glow-breathe" />
           <span className="absolute -top-[10%] right-[40%] h-[120%] w-[8%] rotate-[18deg] bg-gradient-to-b from-[#FFF6D0]/30 to-transparent motion-safe:animate-glow-breathe [animation-delay:1.4s]" />
-          <span className="absolute inset-0 bg-[radial-gradient(ellipse_80%_70%_at_50%_45%,transparent_55%,rgba(36,74,48,0.28)_100%)]" />
-          {["14%", "38%", "63%", "82%"].map((left, i) => (
+        </>
+      );
+    case "shade":
+      return <span className="absolute inset-0 bg-[radial-gradient(ellipse_80%_70%_at_50%_45%,transparent_55%,rgba(36,74,48,0.28)_100%)]" />;
+    case "leaves":
+      return (
+        <>
+          {layer.lefts.map((left, i) => (
             <span
               key={left}
               className="absolute top-0 h-2 w-3 rounded-[60%_10%] bg-[#6E9A63] opacity-0 motion-safe:animate-confetti-fall"
@@ -184,18 +322,10 @@ function Foreground({ place }: { place: PlaceKey }) {
           ))}
         </>
       );
-    case "garden":
+    case "butterflies":
       return (
         <>
-          {/* seeds drifting up from the grass, and two butterflies */}
-          {["12%", "28%", "46%", "64%", "80%"].map((left, i) => (
-            <span
-              key={left}
-              className="absolute bottom-[12%] h-1.5 w-1.5 rounded-full bg-white opacity-0 shadow-[0_0_6px_2px_rgba(255,255,255,0.7)] motion-safe:animate-drift-up"
-              style={{ left, animationDelay: `${i * 1.3}s`, animationDuration: "7.5s", animationIterationCount: "infinite" }}
-            />
-          ))}
-          {[{ left: "22%", top: "40%", delay: "0s", tint: "#F2A65A" }, { left: "58%", top: "30%", delay: "-3s", tint: "#E89AAE" }].map((b) => (
+          {layer.flyers.map((b) => (
             <span key={b.delay} className="absolute motion-safe:animate-dragonfly" style={{ left: b.left, top: b.top, animationDelay: b.delay }}>
               <svg viewBox="0 0 16 12" className="h-3 w-4">
                 <ellipse cx="5" cy="5" rx="4.5" ry="3.5" fill={b.tint} opacity="0.9" />
@@ -206,31 +336,17 @@ function Foreground({ place }: { place: PlaceKey }) {
           ))}
         </>
       );
-    case "island":
+    case "mist":
+      return <div className="absolute inset-x-0 top-[38%] h-[24%] bg-gradient-to-b from-transparent via-white/30 to-transparent motion-safe:animate-glow-breathe" />;
+    case "dragonfly":
       return (
-        <>
-          <Clouds tint="rgba(255,226,196,0.9)" />
-          {[
-            { left: "18%", top: "72%", delay: "0s" },
-            { left: "40%", top: "66%", delay: "1.4s" },
-            { left: "63%", top: "78%", delay: "2.6s" },
-          ].map((g) => (
-            <span key={g.delay} className="absolute h-[2px] w-12 rounded-full bg-[#FFE1B0]/90 opacity-0 motion-safe:animate-glint" style={{ left: g.left, top: g.top, animationDelay: g.delay }} />
-          ))}
-        </>
-      );
-    case "pond":
-      return (
-        <>
-          <div className="absolute inset-x-0 top-[38%] h-[24%] bg-gradient-to-b from-transparent via-white/30 to-transparent motion-safe:animate-glow-breathe" />
-          <span className="absolute left-[30%] top-[34%] motion-safe:animate-dragonfly">
-            <svg viewBox="0 0 24 12" className="h-3 w-6">
-              <rect x="10" y="5" width="12" height="2" rx="1" fill="#2E6B7A" />
-              <ellipse cx="9" cy="3" rx="6" ry="2" fill="#BFE3EA" opacity="0.85" />
-              <ellipse cx="9" cy="9" rx="6" ry="2" fill="#BFE3EA" opacity="0.85" />
-            </svg>
-          </span>
-        </>
+        <span className="absolute motion-safe:animate-dragonfly" style={{ left: layer.left, top: layer.top }}>
+          <svg viewBox="0 0 24 12" className="h-3 w-6">
+            <rect x="10" y="5" width="12" height="2" rx="1" fill="#2E6B7A" />
+            <ellipse cx="9" cy="3" rx="6" ry="2" fill="#BFE3EA" opacity="0.85" />
+            <ellipse cx="9" cy="9" rx="6" ry="2" fill="#BFE3EA" opacity="0.85" />
+          </svg>
+        </span>
       );
   }
 }

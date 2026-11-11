@@ -473,7 +473,7 @@ function JourneyStage({
         {/* The river bend, with the buddy on the bank; the card says where the child is and carries them on. */}
         <div style={{ viewTransitionName: "world" }} className="relative overflow-hidden rounded-[30px] shadow-lift ring-1 ring-tonle-950/10">
           {/* WORLD-1: the subject's own place - its landmark, light and living foreground - not one scene for all. */}
-          <PlaceWorld place={place.key}>
+          <PlaceWorld place={place.key} respond={{ label: e.places[place.key] }}>
             <OnWorld x={46} y={97}>
               <div className="flex items-end gap-1">
                 <BuddyButton hello={placeHello} mood={next ? "happy" : "cheer"} />

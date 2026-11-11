@@ -191,6 +191,13 @@ export default {
           "60%": { filter: "brightness(1.25) saturate(1.1)", transform: "scale(1.03)" },
           "100%": { filter: "brightness(1) saturate(1)", transform: "scale(1)" },
         },
+        // EXP-1: a landmark answers a tap - squashes a little and springs back.
+        "landmark-tap": {
+          "0%": { transform: "scale(1, 1)" },
+          "30%": { transform: "scale(1.05, 0.95) translateY(2%)" },
+          "60%": { transform: "scale(0.98, 1.04) translateY(-3%)" },
+          "100%": { transform: "scale(1, 1)" },
+        },
         "drift-up": {
           "0%": { transform: "translateY(0) scale(0.9)", opacity: "0" },
           "15%": { opacity: "1" },
@@ -314,6 +321,7 @@ export default {
         "glow-breathe": "glow-breathe 3.2s ease-in-out infinite",
         "light-up": "light-up 700ms cubic-bezier(0.23, 1, 0.32, 1) both",
         "drift-up": "drift-up 2.6s cubic-bezier(0.23, 1, 0.32, 1) forwards",
+        "landmark-tap": "landmark-tap 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
         "fill-bar": "fill-bar 700ms cubic-bezier(0.23, 1, 0.32, 1) both",
         "confetti-fall": "confetti-fall 1.6s ease-in forwards",
         "fade-in-late": "fade-in-late 500ms ease-out both",
