@@ -6,12 +6,20 @@
 import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { ErrorState, LoadingState } from "@/components/ui/States";
-import { FormField, textareaClasses } from "@/features/auth/FormField";
+import { FormField, selectClasses, textareaClasses } from "@/features/auth/FormField";
 import { errorText } from "@/features/admin/studio/studioLogic";
 import { useMessages } from "@/i18n/catalog";
 import { cn } from "@/lib/utils/cn";
 import { useAsync } from "@/lib/hooks/useAsync";
-import { ATTENDANCE_STATUSES, attendanceApi, type AttendanceStatus, type Register, type SchoolStudent } from "@/lib/api/attendance";
+import {
+  ATTENDANCE_STATUSES,
+  attendanceApi,
+  schoolLinksApi,
+  type AttendanceStatus,
+  type ClassStudentLink,
+  type Register,
+  type SchoolStudent,
+} from "@/lib/api/attendance";
 import { WorkspaceSection } from "./ClassWorkspace";
 import { attendanceMessages } from "./attendance.messages";
 
@@ -21,6 +29,7 @@ export function ClassStudentsPanel({ classId, archived, onChanged }: { classId: 
   const m = useMessages(attendanceMessages);
   const [version, setVersion] = useState(0);
   const students = useAsync(() => attendanceApi.students(classId), [classId, version]);
+  const links = useAsync(() => schoolLinksApi.forClass(classId), [classId, version]);
   const changed = () => {
     setVersion((v) => v + 1);
     onChanged?.();
@@ -36,7 +45,8 @@ export function ClassStudentsPanel({ classId, archived, onChanged }: { classId: 
           ) : (
             <ul className="flex flex-col divide-y divide-line rounded-[14px] ring-1 ring-line">
               {students.data.map((student) => (
-                <StudentRow key={student.id} classId={classId} student={student} archived={archived} onChanged={changed} />
+                <StudentRow key={student.id} classId={classId} student={student} archived={archived} onChanged={changed}
+                  link={links.data?.links.find((l) => l.studentId === student.id) ?? null} candidates={links.data?.candidates ?? []} />
               ))}
             </ul>
           )}
@@ -47,9 +57,25 @@ export function ClassStudentsPanel({ classId, archived, onChanged }: { classId: 
   );
 }
 
-function StudentRow({ classId, student, archived, onChanged }: { classId: string; student: SchoolStudent; archived: boolean; onChanged: () => void }) {
+function StudentRow({
+  classId,
+  student,
+  archived,
+  onChanged,
+  link,
+  candidates,
+}: {
+  classId: string;
+  student: SchoolStudent;
+  archived: boolean;
+  onChanged: () => void;
+  /** M12: this record's connection with a family's child, by the family's consent. */
+  link: ClassStudentLink | null;
+  candidates: { childId: string; childName: string }[];
+}) {
   const m = useMessages(attendanceMessages);
-  const [mode, setMode] = useState<"view" | "edit" | "leave">("view");
+  const [mode, setMode] = useState<"view" | "edit" | "leave" | "link">("view");
+  const [childId, setChildId] = useState("");
   const [name, setName] = useState(student.name);
   const [number, setNumber] = useState(student.number ?? "");
   const [busy, setBusy] = useState(false);
@@ -107,6 +133,56 @@ function StudentRow({ classId, student, archived, onChanged }: { classId: string
             </div>
           )}
         </div>
+      )}
+      {link && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className={link.status === "ACTIVE" ? "text-palm-deep" : "text-ink-soft"}>
+            {link.status === "ACTIVE" ? m.linkedTo(link.childName) : m.linkPending(link.childName)}
+          </span>
+          {!archived && (
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => void act(() => schoolLinksApi.end(classId, student.id))}>
+              {link.status === "ACTIVE" ? m.linkEnd : m.linkWithdraw}
+            </Button>
+          )}
+        </div>
+      )}
+      {!link && !archived && candidates.length > 0 && mode === "view" && (
+        <Button size="sm" variant="outline" className="w-fit" onClick={() => setMode("link")}>
+          {m.linkAsk}
+        </Button>
+      )}
+      {mode === "link" && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (childId) void act(() => schoolLinksApi.ask(classId, student.id, childId));
+          }}
+          className="flex flex-col gap-2 rounded-[12px] bg-paper p-3 ring-1 ring-line"
+        >
+          <label htmlFor={`link-${student.id}`} className="text-sm font-semibold text-ink">
+            {m.linkWho}
+          </label>
+          <select id={`link-${student.id}`} value={childId} onChange={(e) => setChildId(e.target.value)} className={selectClasses}
+            aria-describedby={`link-hint-${student.id}`}>
+            <option value="">—</option>
+            {candidates.map((c) => (
+              <option key={c.childId} value={c.childId}>
+                {c.childName}
+              </option>
+            ))}
+          </select>
+          <p id={`link-hint-${student.id}`} className="text-[0.8125rem] text-ink-soft">
+            {m.linkWhoHint}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="sm" disabled={busy || !childId}>
+              {m.linkSend}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setMode("view")} disabled={busy}>
+              {m.cancel}
+            </Button>
+          </div>
+        </form>
       )}
       {mode === "leave" && (
         <div role="group" aria-label={m.leave} className="flex flex-col gap-2 rounded-[12px] bg-paper p-3 ring-1 ring-line">

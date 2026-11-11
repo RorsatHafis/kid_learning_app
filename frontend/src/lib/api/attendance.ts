@@ -64,3 +64,39 @@ export const attendanceApi = {
   month: (classId: string, month?: string) =>
     apiClient.get<AttendanceMonth>(`/schools/classes/${classId}/attendance/month${month ? `?month=${month}` : ""}`),
 };
+
+// ---- school/attendance/StudentLinkController.java (M12): a school record connected to a family's child by consent ----
+
+export interface ClassStudentLink {
+  studentId: string;
+  status: "PENDING" | "ACTIVE";
+  childId: string;
+  /** The child's name as the family shares it with the school. */
+  childName: string;
+}
+
+export interface ClassLinks {
+  links: ClassStudentLink[];
+  /** The class's learners whose families share them with the school, not yet connected or asked about. */
+  candidates: { childId: string; childName: string }[];
+}
+
+export interface FamilySchoolLink {
+  id: string;
+  schoolName: string;
+  studentName: string;
+  status: "PENDING" | "ACTIVE";
+  requestedAt: string;
+  decidedAt: string | null;
+}
+
+export const schoolLinksApi = {
+  forClass: (classId: string) => apiClient.get<ClassLinks>(`/schools/classes/${classId}/student-links`),
+  ask: (classId: string, studentId: string, childId: string) =>
+    apiClient.post<ClassLinks>(`/schools/classes/${classId}/students/${studentId}/link`, { childId }),
+  end: (classId: string, studentId: string) => apiClient.delete<ClassLinks>(`/schools/classes/${classId}/students/${studentId}/link`),
+  forChild: (childId: string) => apiClient.get<FamilySchoolLink[]>(`/children/${childId}/school-links`),
+  connect: (childId: string, linkId: string) => apiClient.post<FamilySchoolLink[]>(`/children/${childId}/school-links/${linkId}/connect`),
+  decline: (childId: string, linkId: string) => apiClient.post<FamilySchoolLink[]>(`/children/${childId}/school-links/${linkId}/decline`),
+  disconnect: (childId: string, linkId: string) => apiClient.delete<FamilySchoolLink[]>(`/children/${childId}/school-links/${linkId}`),
+};

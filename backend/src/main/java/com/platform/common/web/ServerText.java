@@ -308,6 +308,8 @@ public final class ServerText {
             Map.entry("Where a file is kept is set when it is first recorded", "កន្លែងរក្សាឯកសារត្រូវបានកំណត់នៅពេលវាត្រូវបានកត់ត្រាលើកដំបូង"),
             Map.entry("A storage key could not be read: it was changed or sealed with another key", "មិនអាចអាន key កន្លែងផ្ទុកបានទេ៖ វាត្រូវបានផ្លាស់ប្ដូរ ឬបិទដោយ key ផ្សេង"),
             Map.entry("Could not seal a storage key", "មិនអាចបិទ key កន្លែងផ្ទុកបានទេ"),
+            Map.entry("Only a child in this class, whose family shares them with the school, can be asked about.", "មានតែកុមារក្នុងថ្នាក់នេះ ដែលគ្រួសាររបស់គាត់ចែករំលែកគាត់ជាមួយសាលាប៉ុណ្ណោះ ដែលអាចស្នើសុំបាន។"),
+            Map.entry("This student or this child already has a request or a connection.", "សិស្សនេះ ឬកុមារនេះមានសំណើ ឬការភ្ជាប់រួចហើយ។"),
             Map.entry("Add at least one student's name.", "សូមបន្ថែមឈ្មោះសិស្សយ៉ាងហោចណាស់ម្នាក់។"),
             Map.entry("Add at most 200 students at a time.", "សូមបន្ថែមសិស្សយ៉ាងច្រើន 200 នាក់ក្នុងមួយលើក។"),
             Map.entry("A student's name can be at most 120 characters.", "ឈ្មោះសិស្សអាចមានយ៉ាងច្រើន 120 តួ។"),

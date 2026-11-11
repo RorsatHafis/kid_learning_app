@@ -77,6 +77,9 @@ public class SchoolJoinService {
     private final AuditService audit;
     private final LearningPathItemRepository pathItems;
     private final SecureRandom random = new SecureRandom();
+    /** M12 (V96): links between the school's records and the child end with the school's access. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.platform.school.attendance.StudentLinkService studentLinks;
     private final com.platform.subscription.service.SchoolEntitlementService entitlements;
 
     /** Code lookups per parent account: enough for typos, far too few to guess a code (31^8). */
@@ -285,6 +288,7 @@ public class SchoolJoinService {
                 .orElseThrow(() -> new ResourceNotFoundException("School access", schoolId));
         grant.revoke(accountId, Instant.now());
         classEnrollments.findActiveInSchool(childId, schoolId).forEach(ClassEnrollment::remove);
+        if (studentLinks != null) studentLinks.endForSchoolAccess(accountId, childId, schoolId);
         int withdrawn = withdrawClassPractice(classes.findBySchoolId(schoolId).stream().map(SchoolClass::getId).toList(), childId);
         record(accountId, "SCHOOL_ACCESS_REVOKED", "SCHOOL_CHILD_ACCESS", grant.getId(),
                 Map.of("schoolId", schoolId, "childId", childId, "practiceWithdrawn", withdrawn));
@@ -302,6 +306,7 @@ public class SchoolJoinService {
             UUID schoolId = grant.getSchoolId();
             grant.revoke(accountId, now);
             classEnrollments.findActiveInSchool(childId, schoolId).forEach(ClassEnrollment::remove);
+            if (studentLinks != null) studentLinks.endForSchoolAccess(accountId, childId, schoolId);
             int withdrawn = withdrawClassPractice(classes.findBySchoolId(schoolId).stream().map(SchoolClass::getId).toList(), childId);
             record(accountId, "SCHOOL_ACCESS_REVOKED", "SCHOOL_CHILD_ACCESS", grant.getId(),
                     Map.of("schoolId", schoolId, "childId", childId, "practiceWithdrawn", withdrawn, "reason", "CHILD_DELETION"));

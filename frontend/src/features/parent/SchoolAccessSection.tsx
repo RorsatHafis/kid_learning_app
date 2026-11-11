@@ -12,6 +12,7 @@ import { SectionTitle } from "./SectionTitle";
 import { messagesNow, useMessages } from "@/i18n/catalog";
 import { familyMessages } from "./messages";
 import { accountApi } from "@/lib/api/endpoints";
+import { SchoolRecordLinks } from "./SchoolRecordLinks";
 
 /**
  * Which schools can see this child's school-assigned learning, joining a class with the code a
@@ -75,6 +76,8 @@ export function SchoolAccessSection({
       {schools.data && schools.data.length === 0 && !joining && (
         <p className="max-w-2xl text-[0.9375rem] leading-relaxed text-ink-soft">{m.none(childName)}</p>
       )}
+      {/* M12: a school asking to connect its record of the child - the parent decides. */}
+      <SchoolRecordLinks childId={childId} childName={childName} refreshKey={schools.data?.length} />
       {schools.data && schools.data.length > 0 && (
         <ul className="flex flex-col gap-3">
           {schools.data.map((school) => (

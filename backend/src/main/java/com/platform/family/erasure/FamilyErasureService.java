@@ -127,6 +127,8 @@ public class FamilyErasureService {
             "delete from parent_alerts where child_id = :c",
             "delete from parent_insights where child_id = :c",
             "delete from progress_snapshots where child_id = :c",
+            // V96: links between a school's records and the child (the school's record itself is the school's).
+            "delete from school_student_links where child_id = :c",
             "delete from school_child_access where child_id = :c",
             "delete from children where id = :c");
 
@@ -142,7 +144,7 @@ public class FamilyErasureService {
             "learner_profiles", "learner_skill_history", "learner_skill_states", "learner_streaks", "learning_path_items",
             "learning_paths", "learning_sessions", "parent_alerts", "parent_insights", "progress_snapshots",
             "recommendation_outcomes", "recommendation_requests", "recommendations", "review_attempts", "review_items",
-            "review_schedules", "school_child_access");
+            "review_schedules", "school_child_access", "school_student_links");
 
     /** What an account erasure deletes besides its family's children, children of rows first. */
     private static final List<String> ACCOUNT_ERASURE = List.of(

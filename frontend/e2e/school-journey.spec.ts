@@ -183,6 +183,22 @@ test("school: principal signs up, confirms their email, sets up the school; an i
   await expect(overTime.getByRole("rowheader", { name: "Now" })).toBeVisible();
   await expectNoViolations(teacher, "teacher class page with a child");
 
+  // M12 (owner decision 2026-11-11): the school's record is connected with Rithy only when the family agrees.
+  const records = teacher.getByRole("region", { name: "Students" });
+  const sokha = records.getByRole("listitem").filter({ hasText: "Sokha Chan" });
+  await sokha.getByRole("button", { name: "Ask a family to connect" }).click();
+  await sokha.getByLabel("Which child in this class is this student?").selectOption({ label: "Rithy" });
+  await sokha.getByRole("button", { name: "Ask the family" }).click();
+  await expect(sokha.getByText("Waiting for Rithy's family to agree.")).toBeVisible();
+  await parent.reload();
+  const recordLinks = parent.getByRole("region", { name: "The school's records" });
+  await expect(recordLinks.getByText(/asks to connect its record "Sokha Chan" with Rithy/)).toBeVisible();
+  await expectNoViolations(parent, "parent: a school asks to connect its record");
+  await recordLinks.getByRole("button", { name: "Connect" }).click();
+  await expect(recordLinks.getByText(/is connected with Rithy/)).toBeVisible();
+  await teacher.reload();
+  await expect(teacher.getByRole("region", { name: "Students" }).getByText("Connected with Rithy in Bookeyond (the family agreed).")).toBeVisible();
+
   // X21: the principal sees learning across the school, class by class.
   await page.goto("/principal");
   const across = page.getByRole("region", { name: "Learning across the school" });
