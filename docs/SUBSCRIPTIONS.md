@@ -43,7 +43,7 @@ never Bookeyond revenue, and a Bookeyond invoice is never a school fee.
 | Customer-facing upgrade path when a limit is reached | **Partial** | The refusal names the limit and the family's account page shows the plan and choices; schools are told to ask the Bookeyond team |
 | Subscription history per customer | **Built in parts (2026-10-29)** | A family's and a school's subscription history (audit) on their admin views; a school's invoices and payments on its admin page, linked to the Payments page filtered to that school; each plan's own history on the Plans page. Not one merged timeline |
 | Organization (multi-branch) audience and organization-level subscriptions | **Designed, not built** (§5) | decision SB1 / B1 |
-| Feature and module entitlements (on/off, not just limits) | **Designed, not built** (§4) | decision SB4 |
+| Feature and module entitlements (on/off, not just limits) | **Not built, by decision** (§4) - owner 2026-11-11: essential learning stays available on Free; no premium feature restrictions are invented | decision SB4 |
 | Offer dates (from / until) deciding who new can take a plan up | **Built (slice 2, 2026-10-29)** | V80, `PUT /admin/plans/{id}/availability` (step-up), Plans → "When it is offered" |
 | Renewal of a retired version (grandfathering) or move to its successor | **Designed, not built** (§7) | decision SB2 |
 | Trials, introductory prices, promotions / discount codes | **Designed, not built** (§8) | decisions SB5, SB6 |

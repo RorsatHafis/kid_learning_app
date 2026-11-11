@@ -89,6 +89,43 @@ describe("one more go after a wrong answer (D-20)", () => {
     expect(calls.find((c) => c.path.endsWith("/retry"))?.body).toMatchObject({ submittedAnswer: "4", hintUsed: false });
   });
 
+  it("picks up an open second try when the child comes back, instead of moving on", async () => {
+    setMuted(true);
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = init?.method ?? "GET";
+        const path = String(url).replace(/^.*\/api\/v1/, "");
+        calls.push(method + " " + path);
+        if (path === "/children/c1") return respond(200, { id: "c1", displayName: "Sokha" });
+        if (method === "POST" && path === "/children/c1/activity-attempts") return respond(201, { id: "t1", status: "IN_PROGRESS" });
+        if (path === "/activity-versions/av1?childId=c1") {
+          return respond(200, { activityVersionId: "av1", activityId: "a1", title: "Adding", instructions: null, items: [SUM] });
+        }
+        if (method === "GET" && path === "/activity-attempts/t1/answers") return respond(200, [{ ...OPEN, submittedAnswer: "5" }]);
+        if (method === "POST" && path === "/activity-attempts/t1/answers/r1/retry") {
+          return respond(200, { ...OPEN, retryAvailable: false, retry: { submittedAnswer: "4", correct: true, hintUsed: false }, correctAnswer: { optionIds: [], text: "4" } });
+        }
+        return respond(404, { status: 404 });
+      }),
+    );
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/learn/c1/practice/av1"]}>
+        <Routes>
+          <Route path="/learn/:childId/practice/:activityVersionId" element={<PracticeSession />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("Not quite — have another go!")).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox"), "4");
+    await user.click(screen.getByRole("button", { name: "Check" }));
+    expect(await screen.findByText("You got it on your second try!")).toBeInTheDocument();
+    expect(calls).toContain("POST /activity-attempts/t1/answers/r1/retry");
+    expect(calls.filter((c) => c === "POST /activity-attempts/t1/answers")).toHaveLength(0);
+  });
+
   it("can show the answer instead", async () => {
     server("reveal");
     const user = await firstTry();

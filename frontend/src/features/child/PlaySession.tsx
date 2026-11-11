@@ -5,7 +5,7 @@ import { activityAttemptApi, activityContentApi, childrenApi, enrollmentApi, lea
 import { StreakMoment } from "./StreakMoment";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAsync } from "@/lib/hooks/useAsync";
-import type { ActivityVersionDetail, AnswerRecord, Chapter, EnrollmentOverview, JourneyStep, StartedAttempt, StreakSummary } from "@/lib/api/types";
+import type { ActivityItem, ActivityVersionDetail, AnswerRecord, Chapter, EnrollmentOverview, JourneyStep, StartedAttempt, StreakSummary } from "@/lib/api/types";
 import { BuddySays, LearningBuddy } from "@/features/buddy/LearningBuddy";
 import { play as playCue } from "@/features/buddy/sound";
 import { childReason } from "@/features/learning/explain";
@@ -63,6 +63,8 @@ export type Phase =
       index: number;
       result: AnswerResult | null;
       startedAt: number;
+      /** D-20: resuming at a question whose one more go is still open (the server's record of the first answer). */
+      resumeRetry?: AnswerRecord | null;
     }
   | { kind: "completing" }
   | {
@@ -98,6 +100,18 @@ export type Phase =
  * the server has recorded, so a reload, a lost response or a second tab never
  * loses or duplicates work (directive §12.5).
  */
+/**
+ * D-20: where a resumed activity picks up - a question whose one more go is still open (so the child can still use it),
+ * otherwise the first question not answered yet (-1: all answered).
+ */
+function resumePoint(items: ActivityItem[], answers: AnswerRecord[]): { index: number; retry: AnswerRecord | null } {
+  const open = answers.find((answer) => answer.retryAvailable);
+  const openIndex = open ? items.findIndex((question) => question.questionVersionId === open.questionVersionId) : -1;
+  if (open && openIndex >= 0) return { index: openIndex, retry: open };
+  const answered = new Set(answers.map((answer) => answer.questionVersionId));
+  return { index: items.findIndex((question) => !answered.has(question.questionVersionId)), retry: null };
+}
+
 export function PlaySession() {
   const { childId = "", enrollmentId = "" } = useParams<{ childId: string; enrollmentId: string }>();
   const child = useAsync(() => childrenApi.get(childId), [childId]);
@@ -249,8 +263,7 @@ export function PlaySession() {
 
         const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
         const ordered = { ...activity, items };
-        const answered = new Set(answers.map((answer) => answer.questionVersionId));
-        const resumeIndex = items.findIndex((question) => !answered.has(question.questionVersionId));
+        const { index: resumeIndex, retry: resumeRetry } = resumePoint(items, answers);
 
         if (resumeIndex === -1) {
           // Every question already answered (the child left on the last feedback
@@ -258,7 +271,7 @@ export function PlaySession() {
           await finishAttempt(attempt.id, activity, item.id);
           return;
         }
-        if (resumeIndex === 0) {
+        if (resumeIndex === 0 && !resumeRetry) {
           const ofThis = next && next.learningPathItemId === item.id ? next : null;
           // The first book of a chapter opens the chapter: the child meets its name here.
           const chapter = ofThis?.chapterId ? overview?.chapters.find((c) => c.id === ofThis.chapterId) : undefined;
@@ -282,6 +295,7 @@ export function PlaySession() {
           index: resumeIndex,
           result: null,
           startedAt: Date.now(),
+          resumeRetry,
         });
       } catch (err) {
         setPhase(err instanceof ApiError && err.isDailyLimitReached ? { kind: "rest" } : { kind: "error", message: "loadFailed" });
@@ -469,15 +483,14 @@ export function PracticeSession() {
       const [[activity, today], answers] = await Promise.all([reads, answersOf(attempt)]);
       const items = [...activity.items].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
       const ordered = { ...activity, items };
-      const answered = new Set(answers.map((answer) => answer.questionVersionId));
-      const resumeIndex = items.findIndex((question) => !answered.has(question.questionVersionId));
+      const { index: resumeIndex, retry: resumeRetry } = resumePoint(items, answers);
       if (resumeIndex === -1) {
         await finish(attempt.id, activity.title);
-      } else if (resumeIndex === 0) {
+      } else if (resumeIndex === 0 && !resumeRetry) {
         setPhase({ kind: "intro", attemptId: attempt.id, itemId: "", activity: ordered, reason: () => messagesNow(childMessages).play.playingAgain,
           lastOne: today?.nearEnd ?? false, place });
       } else {
-        setPhase({ kind: "playing", attemptId: attempt.id, itemId: "", activity: ordered, index: resumeIndex, result: null, startedAt: Date.now() });
+        setPhase({ kind: "playing", attemptId: attempt.id, itemId: "", activity: ordered, index: resumeIndex, result: null, startedAt: Date.now(), resumeRetry });
       }
     } catch {
       setPhase({ kind: "error", message: "loadFailed", retry: true });

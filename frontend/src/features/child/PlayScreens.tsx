@@ -244,9 +244,16 @@ export function Question({
   const idempotencyKeys = useRef(new Map<string, { key: string; hintUsed: boolean }>());
   const [hintOpenedFor, setHintOpenedFor] = useState<string | null>(null);
   // D-20: a wrong first answer the server offered one more try at (cleared when the question changes).
-  const [retrying, setRetrying] = useState<{ record: AnswerRecord; submitted: string; hintOpened: boolean } | null>(null);
+  const [retrying, setRetrying] = useState<{ record: AnswerRecord; submitted: string; hintOpened: boolean } | null>(() =>
+    phase.resumeRetry ? { record: phase.resumeRetry, submitted: phase.resumeRetry.submittedAnswer ?? "", hintOpened: false } : null,
+  );
   const [revealing, setRevealing] = useState(false);
-  useEffect(() => setRetrying(null), [index]);
+  // A new question starts without a retry (not the first render: a resumed one may open on its retry).
+  const shownIndex = useRef(index);
+  useEffect(() => {
+    if (shownIndex.current !== index) setRetrying(null);
+    shownIndex.current = index;
+  }, [index]);
   const continueRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {

@@ -3500,7 +3500,7 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   once on one skill). Player: "Not quite - have another go!", a clear question, "Show me the answer", "You got it on
   your second try!". Parent recent activity: "n more right on a second try"; the family export includes each second
   try. Endpoints `POST /activity-attempts/{id}/answers/{answerId}/retry|reveal` (learner only; authorization sweep
-  covers them). Resuming skips past an answered question: its open retry then closes as a miss.
+  covers them). Resuming opens on a question whose second try is still open (resumePoint; secondTry.test).
 - **D-18:** Smart Review revisits every skill the evidence doesn't show secure (EvidenceStandard: needs practice or
   progressing, D-17's one-day case included) - failing skills (mastery < 0.5) due at once as before, others first on
   the child's next learning day, then SM-2 spacing by outcome - and retires a review only once the skill is secure.
