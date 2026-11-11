@@ -13,7 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Owner requirement 2026-11-11: a visitor chooses a plan before registering (V92). What can be chosen is decided here,
- * from the plan records only: an audience's default plan (free - nothing to pay, it applies by itself) or a priced plan
+ * from the plan records only: the family default plan (free - nothing to pay, it applies by itself; a school has no free
+ * plan, its services open only once a payment is confirmed, Y44) or a priced plan
  * people may choose themselves, active and inside its offer dates (the plans the public pages show). The browser names
  * a plan by its code; every price, limit and audience is read from the record.
  *
@@ -109,7 +110,9 @@ public class PlanChoices {
     /** The one rule for what can be chosen before registering (the public plans page shows it too). */
     public static boolean chooseable(SubscriptionPlan plan, Instant now) {
         if (!plan.offeredAt(now)) return false;
-        return plan.isDefaultPlan() || (plan.isSelfService() && plan.getPriceAmountMinor() != null
+        // Free: the family default only - a school opens only once a payment is confirmed (Y44).
+        if (plan.isDefaultPlan()) return plan.getAudience() == PlanAudience.FAMILY;
+        return (plan.isSelfService() && plan.getPriceAmountMinor() != null
                 && plan.getPriceCurrency() != null && plan.getBillingInterval() != null);
     }
 }

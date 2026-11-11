@@ -3518,7 +3518,11 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   retry (resume included; parent recent activity, skill story, export, Studio note), D-18 spaced review of non-secure
   skills, admin self-service wording corrected, SB4 recorded (no premium feature restrictions).
 - Head 98015e2 pushed for the milestone CI run (backend unit + integration, frontend, e2e stack).
+- Schools have no free plan (Y44: services open once a payment is confirmed): the school default plan is no longer
+  shown or choosable on the public plans page. Browser-verified journeys (plan-choice.spec, 1280): family Free,
+  family paid (bank transfer confirmed by an administrator), paid choice set aside for Free, principal paid school plan.
 - **Left, each waiting on an owner input:** WORLD-1 artwork; Khmer native review (PD-14); ABA PayWay merchant
-  credentials (online card/KHQR - bank transfer and invoices work now); D-08, D-12 (QR library), D-14, D-19; device
+  credentials (online card/KHQR - bank transfer and invoices work now); whether schools should ever have a free
+  plan (Y44 says no today); D-08, D-12 (QR library), D-14, D-19; device
   speech; M12 school phases S1-S6; SB1-SB3, SB5-SB9 (only needed when those features are wanted).
 - **Exact next task:** check the milestone CI; then build whichever owner input arrives first.

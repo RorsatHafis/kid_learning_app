@@ -184,3 +184,27 @@ test("plans: a school plan chosen before registering is the one the principal pa
   await expect(page.getByRole("heading", { name: `Choose a plan to open ${schoolName}` })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: new RegExp(`You chose ${name}`) })).toHaveCount(0);
 });
+
+test("plans: a family choosing Free is active at once, with nothing to pay and nothing waiting @phone", async ({ page }) => {
+  await page.goto("/plans");
+  const free = page.getByRole("article").filter({ has: page.getByText("Starts with every account") });
+  await expect(free.getByText("Nothing to pay")).toBeVisible();
+  await free.getByRole("link", { name: /^Choose / }).click();
+  await expect(page.getByRole("region", { name: "Your plan" })).toContainText("Nothing to pay");
+  const email = uniqueEmail("plan-free");
+  await page.getByLabel("Email").fill(email);
+  await page.getByRole("button", { name: "Email me a link" }).click();
+  await page.goto(linkIn(await waitForEmail(page.request, email, "Confirm your email to create"), "/register/continue"));
+  await expect(page.getByRole("region", { name: "Your plan" })).toContainText(/starts as soon as you create your account/);
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  const agree = page.getByRole("checkbox", { name: /I agree/ });
+  if (await agree.isVisible()) await agree.check();
+  await page.getByRole("button", { name: "Create account" }).click();
+  // Straight into the family's space - no checkout, no plan waiting for a payment.
+  await page.waitForURL(/\/parent(\/|\?|$)/);
+  await expect(page.getByRole("heading", { name: "Your family" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^You chose / })).toHaveCount(0);
+  // And schools are never offered a free plan: their services open once a payment is confirmed (Y44).
+  await page.goto("/plans?for=school");
+  await expect(page.getByText("Starts with every account")).toHaveCount(0);
+});

@@ -111,6 +111,16 @@ class PlanChoiceBeforeRegistrationIntegrationTests {
     }
 
     @Test
+    void aSchoolHasNoFreePlanToChooseItsServicesOpenOnlyOncePaid() throws Exception {
+        String schoolDefault = jdbc.queryForObject("select code from subscription_plans where audience = 'SCHOOL' and is_default",
+                String.class);
+        for (JsonNode plan : json(get("/api/v1/site/plans", null), 200)) {
+            assertThat(plan.get("code").asString()).as("the school default is not offered as a free school plan").isNotEqualTo(schoolDefault);
+        }
+        assertThat(post("/api/v1/auth/registration/start", startBody(unique("school-free"), schoolDefault), null).statusCode()).isEqualTo(400);
+    }
+
+    @Test
     void onlyAPlanOnOfferToChooseCanBeChosen() throws Exception {
         String admin = admin();
         String email = unique("refused");

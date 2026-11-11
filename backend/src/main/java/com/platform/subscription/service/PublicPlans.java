@@ -63,7 +63,10 @@ public class PublicPlans {
     public List<PublicPlan> offered(String language) {
         Instant now = clock.instant();
         List<SubscriptionPlan> shown = plans.findAllByOrderByCreatedAtAsc().stream()
-                .filter(plan -> plan.offeredAt(now) && (plan.isDefaultPlan() || plan.isSelfService()))
+                // Y44: a school's services need a confirmed payment, so the school default plan is not something a school can
+                // take up - never shown as a free school plan; schools see the plans they can choose and pay for.
+                .filter(plan -> plan.offeredAt(now) && ((plan.isDefaultPlan() && plan.getAudience() == com.platform.subscription.entity.PlanAudience.FAMILY)
+                        || plan.isSelfService()))
                 .toList();
         if (shown.isEmpty()) {
             return List.of();
