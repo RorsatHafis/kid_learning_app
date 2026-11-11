@@ -95,7 +95,7 @@ test("plans: a family asks for an offered plan, an administrator answers it from
   await operator.getByLabel("Name families will see").fill(planName);
   await operator.getByLabel(/^Code/).fill(`E2E_FAMILY_${suffix}`);
   await operator.getByRole("button", { name: "Create draft plan" }).click();
-  await operator.getByLabel(/Families can ask for it/).check();
+  await operator.getByLabel(/Families can choose it themselves/).check();
   await operator.getByRole("button", { name: "Save draft" }).click();
   await expect(operator.getByText("Saved.")).toBeVisible();
   await operator.getByRole("button", { name: "Activate…" }).click();
