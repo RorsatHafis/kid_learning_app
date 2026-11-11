@@ -112,6 +112,28 @@ test("school: principal signs up, confirms their email, sets up the school; an i
   await teacher.reload();
   await expect(teacher.getByText("Grade 1 A")).toBeVisible();
 
+  // M12 (owner decisions 2026-11-11): the teacher adds the class's students - the school's own records - and takes
+  // today's attendance; a saved mark changes only with a reason.
+  await teacher.getByRole("link", { name: /Grade 1 A/ }).first().click();
+  const students = teacher.getByRole("region", { name: "Students" });
+  await students.getByLabel("Names, one per line").fill("Sokha Chan, S-001\nDara Kim");
+  await students.getByRole("button", { name: "Add students" }).click();
+  await expect(students.getByRole("status")).toHaveText("2 students added.");
+  const attendance = teacher.getByRole("region", { name: "Attendance" });
+  await teacher.reload();
+  await expect(attendance.getByText(/2 not marked yet/)).toBeVisible();
+  await attendance.getByRole("button", { name: "Mark the rest present" }).click();
+  await attendance.getByRole("group", { name: "Dara Kim" }).getByText("Absent").click();
+  await attendance.getByRole("button", { name: "Save attendance" }).click();
+  await expect(attendance.getByText("Attendance saved.")).toBeVisible();
+  await expect(attendance.getByText(/Everyone is marked/)).toBeVisible();
+  await expectNoViolations(teacher, "teacher: attendance taken");
+  await attendance.getByRole("group", { name: "Dara Kim" }).getByText("Late").click();
+  await attendance.getByLabel(/Why is a saved mark being changed/).fill("Arrived after the register");
+  await attendance.getByRole("button", { name: "Save attendance" }).click();
+  await expect(attendance.getByRole("group", { name: /Dara Kim/ }).getByText("Changed")).toBeVisible();
+  await teacher.goto("/teacher");
+
   // PD-01: the class assigns a curriculum and hands out a code...
   const assign = page.getByLabel("Assign a curriculum");
   await assign.selectOption({ index: 1 });

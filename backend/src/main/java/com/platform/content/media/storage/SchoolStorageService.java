@@ -168,8 +168,9 @@ public class SchoolStorageService {
     }
 
     private UUID currentConnection(UUID schoolId) {
+        // A school on Bookeyond-hosted storage has a NULL here: one row holding null, not an empty result.
         return jdbc.queryForList("select storage_connection_id from schools where id = ?", UUID.class, schoolId).stream()
-                .findFirst().orElse(null);
+                .filter(java.util.Objects::nonNull).findFirst().orElse(null);
     }
 
     private void record(UUID accountId, UUID schoolId, String action, Map<String, Object> details) {

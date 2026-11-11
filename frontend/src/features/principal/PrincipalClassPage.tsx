@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { problemMessage } from "@/lib/api/problemMessage";
 import { useDocumentTitle } from "@/lib/hooks/useDocumentTitle";
 import { ClassCurriculaPanel, ClassDrawingsPanel, ClassLearningPanel, JoinCodePanel } from "@/features/school/ClassWorkspace";
+import { ClassAttendancePanel, ClassStudentsPanel } from "@/features/school/ClassAttendance";
 import { ArchivedClassNotice, ManageClassButton } from "@/features/school/ClassLifecycle";
 import { SectionIndex } from "@/features/school/SectionIndex";
 import { useMessages } from "@/i18n/catalog";
@@ -143,6 +144,7 @@ export function PrincipalClassPage() {
             )}
           </section>
 
+          <ClassAttendancePanel classId={classId} refreshKey={refreshKey} />
           <ClassLearningPanel
             classId={classId}
             archived={schoolClass.data.archived}
@@ -151,6 +153,7 @@ export function PrincipalClassPage() {
             skillHref={(skillId) => `/principal/classes/${classId}/skills/${skillId}`}
           />
           <ClassDrawingsPanel classId={classId} />
+          <ClassStudentsPanel classId={classId} archived={schoolClass.data.archived} onChanged={() => setRefreshKey((k) => k + 1)} />
           <ClassCurriculaPanel
             classId={classId}
             archived={schoolClass.data.archived}
