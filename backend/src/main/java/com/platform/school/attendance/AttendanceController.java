@@ -39,6 +39,9 @@ public class AttendanceController {
     public record MoveStudentsRequest(@NotNull UUID fromClassId, @NotNull @Size(max = 200) List<@NotNull UUID> studentIds) {
     }
 
+    public record ReturnStudentsRequest(@NotNull @Size(max = 200) List<@NotNull UUID> studentIds) {
+    }
+
     public record UpdateStudentRequest(@Size(max = 120) String name, @Size(max = 40) String number) {
     }
 
@@ -65,6 +68,20 @@ public class AttendanceController {
     public AttendanceService.Added move(@AuthenticationPrincipal UUID accountId, @PathVariable UUID classId,
                                         @Valid @RequestBody MoveStudentsRequest request) {
         return attendance.move(accountId, classId, request.fromClassId(), request.studentIds());
+    }
+
+    @GetMapping("/api/v1/schools/{schoolId}/students")
+    public com.platform.common.web.PageResponse<AttendanceService.SchoolStudentRow> schoolStudents(
+            @AuthenticationPrincipal UUID accountId, @PathVariable UUID schoolId, @RequestParam(required = false) String q,
+            @RequestParam(required = false) String which, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return attendance.schoolStudents(accountId, schoolId, q, which, page, size);
+    }
+
+    @PostMapping("/api/v1/schools/classes/{classId}/students/return")
+    public AttendanceService.Added returnToClass(@AuthenticationPrincipal UUID accountId, @PathVariable UUID classId,
+                                                 @Valid @RequestBody ReturnStudentsRequest request) {
+        return attendance.returnToClass(accountId, classId, request.studentIds());
     }
 
     @PutMapping("/api/v1/schools/classes/{classId}/students/{studentId}")

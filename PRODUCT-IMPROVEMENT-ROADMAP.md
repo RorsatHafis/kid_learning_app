@@ -3579,3 +3579,9 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   (+4), school-journey e2e at 360 px (move step with axe) - passed locally. EN/KM; Khmer joins the PD-14 review.
 - **Owner decision surfaced (not built):** whether parents see their child's school attendance or send absence notes
   through the consent link (the module map lists "absence reasons from guardians"; today the link shares nothing).
+- **The school's records as a whole (principal only):** `/principal/students` - every record with its classes (links),
+  a family connection, and for someone in no class in use the class they left and when; search by name or number
+  (text, never a pattern), current / left filter, paged. A former student is put back into a class as the same record
+  (`POST .../students/return`, principal only; someone in a class in use is moved instead, 409). Not administrators,
+  not teachers (`SchoolAccessGuard.requireSchoolPrincipal`). Known limit: a teacher retyping a student who has left the
+  school is not held back (only names in a class are); the principal returns former students from this page.

@@ -313,6 +313,13 @@ test("school: principal signs up, confirms their email, sets up the school; an i
   await expect(moved.getByText("No. S-001")).toBeVisible();
   await page.goto(classUrl);
   await expect(page.getByRole("region", { name: "Students" }).getByText("Sokha Chan")).toHaveCount(0);
+  // The principal's view of every record: who is in which class.
+  await page.goto("/principal/students");
+  const everyone = page.getByRole("region", { name: "Search students" });
+  await expect(everyone.getByRole("listitem").filter({ hasText: "Sokha Chan" }).getByRole("link", { name: "Grade 2 A" })).toBeVisible();
+  await expect(everyone.getByRole("listitem").filter({ hasText: "Dara Kim" }).getByRole("link", { name: "Grade 1 Lotus" })).toBeVisible();
+  await expectNoViolations(page, "principal: the school's students");
+  await page.goto(classUrl);
 
   // X22: the teacher's own content, on the Studio's screens - the platform's catalog read-only to them.
   await teacher.goto("/teacher/studio");

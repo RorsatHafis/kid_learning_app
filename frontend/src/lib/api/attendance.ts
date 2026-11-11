@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import type { Page } from "./types";
 
 // ---- school/attendance/AttendanceController.java (M12, owner decisions 2026-11-11) ----
 // The school's own student records (separate from families' children) and their per-day attendance.
@@ -57,7 +58,32 @@ export interface AddedStudents {
   atSchool: { name: string; classId: string; className: string }[];
 }
 
+/** One of the school's student records (principal's view): classes now, a family connection, where they left. */
+export interface SchoolStudentRow {
+  id: string;
+  name: string;
+  number: string | null;
+  classes: { id: string; name: string; archived: boolean }[];
+  connected: boolean;
+  /** For someone in no class in use: the last class they left, and when. */
+  lastClass: { id: string; name: string; archived: boolean } | null;
+  leftOn: string | null;
+}
+
+export type StudentsShown = "ALL" | "CURRENT" | "FORMER";
+
 export const attendanceApi = {
+  /** The school's records as a whole - its principal only. */
+  schoolStudents: (schoolId: string, { q, which, page }: { q?: string; which?: StudentsShown; page?: number }) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (which && which !== "ALL") params.set("which", which);
+    params.set("page", String(page ?? 0));
+    return apiClient.get<Page<SchoolStudentRow>>(`/schools/${schoolId}/students?${params}`);
+  },
+  /** Puts former students (in no class in use) into this class as the same records - the principal only. */
+  returnStudents: (classId: string, studentIds: string[]) =>
+    apiClient.post<AddedStudents>(`/schools/classes/${classId}/students/return`, { studentIds }),
   students: (classId: string) => apiClient.get<SchoolStudent[]>(`/schools/classes/${classId}/students`),
   /** `sameNameIsNew`: these are new students even though the name is already in another of the school's classes. */
   addStudents: (classId: string, students: { name: string; number?: string | null }[], sameNameIsNew = false) =>

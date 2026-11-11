@@ -227,6 +227,59 @@ class AttendanceIntegrationTests {
                 .isEqualTo(records + 1);
     }
 
+    @Test
+    void thePrincipalSeesEveryRecordOfTheSchoolAndPutsAFormerStudentBackInAClass() throws Exception {
+        Staff principal = staff(PlatformRole.PRINCIPAL);
+        Staff teacher = staff(PlatformRole.TEACHER);
+        SchoolClass grade1 = classTaughtBy(principal, teacher);
+        String classPath = "/api/v1/schools/classes/" + grade1.getId();
+        String list = "/api/v1/schools/" + grade1.getSchoolId() + "/students";
+        JsonNode added = json(post(classPath + "/students", "{\"students\":[{\"name\":\"Sokha Chan\",\"number\":\"S-201\"},{\"name\":\"Dara Kim\"},"
+                + "{\"name\":\"Vannak Ly\"}]}", teacher.token()), 201);
+        String sokha = added.get("added").get(0).get("id").asString();
+        String dara = added.get("added").get(1).get("id").asString();
+        assertThat(post(classPath + "/students/" + dara + "/leave", "", teacher.token()).statusCode()).isEqualTo(204);
+
+        // Everyone, in name order: Dara is in no class and says where they were last.
+        JsonNode all = json(get(list, principal.token()), 200);
+        assertThat(all.get("total").asLong()).isEqualTo(3);
+        JsonNode daraRow = all.get("items").get(0);
+        assertThat(daraRow.get("name").asString()).isEqualTo("Dara Kim");
+        assertThat(daraRow.get("classes")).isEmpty();
+        assertThat(daraRow.get("lastClass").get("name").asString()).isEqualTo("Grade 1");
+        assertThat(daraRow.get("leftOn").asString()).isEqualTo(LocalDate.now(ZoneId.of(zone)).toString());
+        assertThat(all.get("items").get(1).get("classes").get(0).get("name").asString()).isEqualTo("Grade 1");
+        assertThat(json(get(list + "?which=FORMER", principal.token()), 200).get("total").asLong()).isEqualTo(1);
+        assertThat(json(get(list + "?which=CURRENT", principal.token()), 200).get("total").asLong()).isEqualTo(2);
+        assertThat(json(get(list + "?q=s-201", principal.token()), 200).get("items").get(0).get("id").asString()).isEqualTo(sokha);
+        // A search is text, never a pattern.
+        assertThat(json(get(list + "?q=%25", principal.token()), 200).get("total").asLong()).isZero();
+        assertThat(json(get(list + "?size=1&page=2", principal.token()), 200).get("items").get(0).get("name").asString()).isEqualTo("Vannak Ly");
+        assertThat(get(list + "?which=SOMETIMES", principal.token()).statusCode()).isEqualTo(400);
+
+        // The principal only: not the class's teacher, an administrator or another school's principal.
+        assertThat(get(list, teacher.token()).statusCode()).isIn(403, 404);
+        assertThat(get(list, staff(PlatformRole.ADMIN).token()).statusCode()).isIn(403, 404);
+        Staff stranger = staff(PlatformRole.PRINCIPAL);
+        School elsewhere = schoolService.createSchool("Another School", stranger.id());
+        PaidSchools.pay(context, elsewhere.getId());
+        assertThat(get(list, stranger.token()).statusCode()).isIn(403, 404);
+
+        // Dara comes back: the same record, into a class; a teacher can't do it, and nobody from another school can.
+        String back = "{\"studentIds\":[\"" + dara + "\"]}";
+        assertThat(post(classPath + "/students/return", back, teacher.token()).statusCode()).isIn(403, 404);
+        SchoolClass theirs = schoolService.createClass(elsewhere.getId(), "Theirs");
+        assertThat(post("/api/v1/schools/classes/" + theirs.getId() + "/students/return", back, stranger.token()).statusCode()).isEqualTo(404);
+        JsonNode returned = json(post(classPath + "/students/return", back, principal.token()), 200);
+        assertThat(returned.get("added").get(0).get("id").asString()).isEqualTo(dara);
+        assertThat(json(get(list + "?which=FORMER", principal.token()), 200).get("total").asLong()).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from school_students where school_id = ?", Integer.class, grade1.getSchoolId())).isEqualTo(3);
+        // Someone in a class in use is moved from it, not "returned".
+        SchoolClass grade2 = schoolService.createClass(grade1.getSchoolId(), "Grade 2");
+        assertThat(post("/api/v1/schools/classes/" + grade2.getId() + "/students/return", "{\"studentIds\":[\"" + sokha + "\"]}",
+                principal.token()).statusCode()).isEqualTo(409);
+    }
+
     // ---------------------------------------------------------------------------------------------------------------
 
     private record Staff(UUID id, String token) {

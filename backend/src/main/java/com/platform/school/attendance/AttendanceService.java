@@ -74,6 +74,18 @@ public class AttendanceService {
     public record AtSchool(String name, UUID classId, String className) {
     }
 
+    /** A class a student is in (or was last in). */
+    public record ClassPlace(UUID id, String name, boolean archived) {
+    }
+
+    /**
+     * One of the school's student records: the classes they are in now, whether a family has connected them (by
+     * consent), and - for someone in no class in use - the last class they left and when.
+     */
+    public record SchoolStudentRow(UUID id, String name, String number, List<ClassPlace> classes, boolean connected,
+                                   ClassPlace lastClass, LocalDate leftOn) {
+    }
+
     /** {@code status} null: not marked yet. {@code corrected}: the mark was changed after it was first recorded. */
     public record Row(Student student, String status, String note, Instant recordedAt, boolean corrected) {
     }
@@ -216,6 +228,126 @@ public class AttendanceService {
                     Map.of("count", moved.size(), "fromClassId", fromClassId.toString(), "fromArchived", source.isArchived()));
         }
         return new Added(moved, skipped, List.of());
+    }
+
+    // ------------------------------------------------------------------ the school's records as a whole
+
+    /**
+     * The school's student records, for its principal: everyone ({@code which} null), those in a class in use
+     * ({@code CURRENT}) or in none ({@code FORMER} - they left, or only last year's archived class holds them).
+     * {@code query} matches a name or the school's number.
+     */
+    @Transactional(readOnly = true)
+    public com.platform.common.web.PageResponse<SchoolStudentRow> schoolStudents(UUID accountId, UUID schoolId, String query, String which,
+                                                                                 int page, int size) {
+        guard.requireSchoolPrincipal(accountId, schoolId);
+        int pageSize = Math.clamp(size, 1, 100);
+        int pageNumber = Math.max(page, 0);
+        String inUse = """
+                exists (select 1 from class_students cs join school_classes c on c.id = cs.school_class_id
+                        where cs.student_id = s.id and cs.ended_on is null and c.status = 'ACTIVE')
+                """;
+        StringBuilder where = new StringBuilder("s.school_id = ?");
+        List<Object> args = new ArrayList<>(List.of(schoolId));
+        String q = query == null ? "" : query.strip().toLowerCase(Locale.ROOT);
+        if (q.length() > 120) {
+            throw new IllegalArgumentException("Search with at most 120 characters.");
+        }
+        if (!q.isEmpty()) {
+            String like = "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+            where.append(" and (lower(s.full_name) like ? escape '\\' or lower(coalesce(s.student_number, '')) like ? escape '\\')");
+            args.add(like);
+            args.add(like);
+        }
+        if ("CURRENT".equals(which)) {
+            where.append(" and ").append(inUse);
+        } else if ("FORMER".equals(which)) {
+            where.append(" and not ").append(inUse);
+        } else if (which != null && !which.isBlank()) {
+            throw new IllegalArgumentException("Show current students, former students or everyone.");
+        }
+        long total = jdbc.queryForObject("select count(*) from school_students s where " + where, Long.class, args.toArray());
+        List<Object> pageArgs = new ArrayList<>(args);
+        pageArgs.add(pageSize);
+        pageArgs.add((long) pageNumber * pageSize);
+        List<Map<String, Object>> records = jdbc.queryForList("""
+                select s.id, s.full_name, s.student_number,
+                       exists (select 1 from school_student_links l where l.student_id = s.id and l.status = 'ACTIVE') as connected
+                from school_students s where %s
+                order by lower(s.full_name), s.id limit ? offset ?
+                """.formatted(where), pageArgs.toArray());
+        List<SchoolStudentRow> rows = new ArrayList<>();
+        for (Map<String, Object> record : records) {
+            UUID id = (UUID) record.get("id");
+            List<ClassPlace> classes = jdbc.query("""
+                    select c.id, c.name, c.status = 'ARCHIVED' from class_students cs join school_classes c on c.id = cs.school_class_id
+                    where cs.student_id = ? and cs.ended_on is null order by (c.status = 'ARCHIVED'), lower(c.name), c.id
+                    """, (rs, i) -> new ClassPlace(rs.getObject(1, UUID.class), rs.getString(2), rs.getBoolean(3)), id);
+            ClassPlace last = null;
+            LocalDate leftOn = null;
+            if (classes.stream().allMatch(ClassPlace::archived)) {
+                List<Map<String, Object>> ended = jdbc.queryForList("""
+                        select c.id, c.name, c.status = 'ARCHIVED' as archived, cs.ended_on from class_students cs
+                        join school_classes c on c.id = cs.school_class_id
+                        where cs.student_id = ? and cs.ended_on is not null order by cs.ended_on desc, cs.created_at desc limit 1
+                        """, id);
+                if (!ended.isEmpty()) {
+                    Map<String, Object> e = ended.getFirst();
+                    last = new ClassPlace((UUID) e.get("id"), (String) e.get("name"), Boolean.TRUE.equals(e.get("archived")));
+                    leftOn = ((Date) e.get("ended_on")).toLocalDate();
+                }
+            }
+            rows.add(new SchoolStudentRow(id, (String) record.get("full_name"), (String) record.get("student_number"), classes,
+                    Boolean.TRUE.equals(record.get("connected")), last, leftOn));
+        }
+        return new com.platform.common.web.PageResponse<>(rows, pageNumber, pageSize, total);
+    }
+
+    /**
+     * Puts former students of the school (in no class in use) into this class as the same records - a student who
+     * left and came back. The school's principal only: they are the one who sees every record. Someone in a class in
+     * use is moved from that class instead.
+     */
+    @Transactional
+    public Added returnToClass(UUID accountId, UUID classId, List<UUID> studentIds) {
+        SchoolClass target = writable(accountId, classId);
+        guard.requireSchoolPrincipal(accountId, target.getSchoolId());
+        if (studentIds == null || studentIds.isEmpty()) {
+            throw new IllegalArgumentException("Choose at least one student.");
+        }
+        if (studentIds.size() > MAX_ADD) {
+            throw new IllegalArgumentException("Add at most 200 students at a time.");
+        }
+        jdbc.queryForList("select id from school_classes where id = ? for update", UUID.class, classId);
+        LocalDate today = today();
+        List<Student> returned = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+        for (UUID studentId : new java.util.LinkedHashSet<>(studentIds)) {
+            List<String> names = jdbc.queryForList("select full_name from school_students where id = ? and school_id = ?", String.class,
+                    studentId, target.getSchoolId());
+            if (names.isEmpty()) {
+                throw new com.platform.common.web.ResourceNotFoundException("SchoolStudent", studentId);
+            }
+            if (Boolean.TRUE.equals(jdbc.queryForObject(
+                    "select exists (select 1 from class_students where school_class_id = ? and student_id = ? and ended_on is null)",
+                    Boolean.class, classId, studentId))) {
+                skipped.add(names.getFirst());
+                continue;
+            }
+            if (Boolean.TRUE.equals(jdbc.queryForObject("""
+                    select exists (select 1 from class_students cs join school_classes c on c.id = cs.school_class_id
+                                   where cs.student_id = ? and cs.ended_on is null and c.status = 'ACTIVE')
+                    """, Boolean.class, studentId))) {
+                throw new IllegalStateException("That student is in another class now: bring them from that class instead.");
+            }
+            jdbc.update("insert into class_students (id, school_class_id, student_id, started_on) values (?, ?, ?, ?)",
+                    UUID.randomUUID(), classId, studentId, Date.valueOf(today));
+            returned.add(studentsOn(classId, today).stream().filter(st -> st.id().equals(studentId)).findFirst().orElseThrow());
+        }
+        if (!returned.isEmpty()) {
+            record(accountId, "SCHOOL_STUDENTS_RETURNED", "SCHOOL_CLASS", classId, Map.of("count", returned.size()));
+        }
+        return new Added(returned, skipped, List.of());
     }
 
     /** Corrects a student's name or number (the school's own record). */

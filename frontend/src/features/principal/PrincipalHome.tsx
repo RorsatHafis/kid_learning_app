@@ -13,6 +13,8 @@ import { SchoolLearningSection } from "./SchoolLearningSection";
 import { SchoolFirstSteps } from "./SchoolFirstSteps";
 import { PrincipalSchoolPlan } from "@/features/school/SchoolPlanCard";
 import { SchoolPaymentRequired } from "@/features/school/SchoolBilling";
+import { SchoolStudents } from "./SchoolStudents";
+import { schoolStudentsMessages } from "./schoolStudents.messages";
 import type { SchoolClassWithTeachers } from "@/lib/api/types";
 import { LoadingState, ErrorState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
@@ -170,6 +172,13 @@ export function PrincipalTeachersPage() {
       {(school) => <Teachers key={school.id} school={school} onChanged={() => undefined} />}
     </SchoolFrame>
   );
+}
+
+/** M12: every student record the school keeps - who is in which class, and who has left. */
+export function PrincipalStudentsPage() {
+  const w = useMessages(principalWorkspaceMessages);
+  const s = useMessages(schoolStudentsMessages);
+  return <SchoolFrame title={w.nav.students} lead={s.lead}>{(school) => <SchoolStudents key={school.id} schoolId={school.id} />}</SchoolFrame>;
 }
 
 /** M12 P1: the school's academic years and terms. */

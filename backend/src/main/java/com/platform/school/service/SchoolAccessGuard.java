@@ -105,6 +105,23 @@ public class SchoolAccessGuard {
 
     }
 
+    /**
+     * The school's student records as a whole (M12): its principal only, while the school is paid. Not an
+     * administrator and not a teacher - a teacher sees the records of the classes they teach (CLAUDE.md §10, §22).
+     * Anyone else is refused as if the school did not exist to them.
+     */
+    public School requireSchoolPrincipal(UUID accountId, UUID schoolId) {
+
+        Account account = requireStaff(accountId);
+        School school = schools.findById(schoolId).orElseThrow(() -> new ResourceNotFoundException("School", schoolId));
+        if (account.getPlatformRole() != PlatformRole.PRINCIPAL || !accountId.equals(school.getPrincipalAccountId())) {
+            throw new AccessDeniedException("Only the school's principal works with all of its student records");
+        }
+        entitlements.requirePaid(schoolId);
+        return school;
+
+    }
+
     /** A class's administration: an administrator, its school's principal, or a teacher assigned to it (paid school). */
     public SchoolClass requireClassAccess(UUID accountId, UUID classId) {
 
