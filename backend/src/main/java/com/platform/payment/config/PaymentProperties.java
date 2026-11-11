@@ -53,7 +53,8 @@ public record PaymentProperties(Duration pendingLifetime, Duration manualLifetim
      * @param merchantId the merchant id ABA Bank issued
      * @param apiKey     the signing key ABA Bank issued - a secret: environment only, never logged or returned
      * @param returnUrl  where PayWay sends its notice after a payment (this API's callback address)
-     * @param successUrl where the customer's browser goes after paying (the family's plan page)
+     * @param successUrl the site's origin; after paying, the payer's browser comes back to its plan page there
+     *                   (the family's, or the school's for a school invoice) - this proves nothing about payment
      */
     public record AbaPayway(boolean enabled, String baseUrl, String merchantId, String apiKey, String returnUrl,
                             String successUrl) {

@@ -171,7 +171,7 @@ that a forged notice changes nothing. **Not tested:** anything against ABA's ser
 | Variable | Value |
 |---|---|
 | `ABA_PAYWAY_RETURN_URL` | `https://<backend host>/api/v1/payments/callbacks/aba-payway` (form, multipart or JSON notices are accepted) |
-| `ABA_PAYWAY_SUCCESS_URL` | the site's plan page, `https://<site>/parent/account#plan` (the payer's browser lands here; it proves nothing) |
+| `ABA_PAYWAY_SUCCESS_URL` | the site's origin, `https://<site>` (usually the same as `APP_PUBLIC_URL`). The payer comes back to `/parent/account#plan`, or `/principal/plan` for a school invoice; landing there proves nothing |
 | `ABA_PAYWAY_ENABLED` | `true` only once the four variables above are set (the server refuses to start otherwise) |
 
 **Sandbox test, in order** (on a non-production deployment with the sandbox credentials):

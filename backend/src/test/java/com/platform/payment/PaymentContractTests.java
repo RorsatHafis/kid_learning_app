@@ -59,6 +59,29 @@ class PaymentContractTests {
                 .hasMessageContaining("ABA_PAYWAY_MERCHANT_ID");
     }
 
+    @Test
+    void payWayBringsEachPayerBackToTheirOwnPlanPage() {
+        var payway = new PaymentProperties.AbaPayway(true, "https://checkout-sandbox.payway.com.kh/", "test-merchant",
+                "test-key", "https://api.example/api/v1/payments/callbacks/aba-payway", "https://site.example/");
+        var provider = new com.platform.payment.provider.AbaPaywayProvider(new PaymentProperties(Duration.ofMinutes(30),
+                Duration.ofDays(14), new PaymentProperties.DevSimulator(false), new PaymentProperties.Manual(false, null), payway));
+        var family = order(null);
+        var school = order(java.util.UUID.randomUUID());
+        assertThat(provider.checkout(family).fields()).containsEntry("continue_success_url", "https://site.example/parent/account#plan");
+        assertThat(provider.checkout(school).fields()).containsEntry("continue_success_url", "https://site.example/principal/plan");
+        assertThat(provider.checkout(school).action())
+                .isEqualTo("https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase");
+    }
+
+    private static com.platform.payment.entity.PaymentOrder order(java.util.UUID schoolId) {
+        var order = org.mockito.Mockito.mock(com.platform.payment.entity.PaymentOrder.class);
+        org.mockito.Mockito.when(order.getReference()).thenReturn("BKABC123");
+        org.mockito.Mockito.when(order.getAmountMinor()).thenReturn(700L);
+        org.mockito.Mockito.when(order.getCurrency()).thenReturn("USD");
+        org.mockito.Mockito.when(order.getSchoolId()).thenReturn(schoolId);
+        return order;
+    }
+
     /** The manual method with no instructions saved in the app yet. */
     private static ManualPaymentProvider manual(PaymentProperties properties) {
         var instructions = new com.platform.payment.service.PaymentInstructionsService(

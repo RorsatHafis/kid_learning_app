@@ -170,6 +170,7 @@ platform:
       merchant-id: ${ABA_PAYWAY_MERCHANT_ID:}
       api-key: ${ABA_PAYWAY_API_KEY:}
       return-url: ${ABA_PAYWAY_RETURN_URL:}
+      # The site's origin (e.g. the same value as APP_PUBLIC_URL); the payer returns to their plan page there.
       success-url: ${ABA_PAYWAY_SUCCESS_URL:}
   # Deleting a child or a family account (PD-24 as adopted, Y3). A deletion waits this long
   # before it is carried out, so a mistake can be undone (0s..90d); the sweep runs this often.

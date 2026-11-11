@@ -93,11 +93,18 @@ public class AbaPaywayProvider implements PaymentProvider {
         // "URL to receive callbacks upon payment completion, encrypted with Base64" (purchase API).
         fields.put("return_url", Base64.getEncoder().encodeToString(config.returnUrl().getBytes(StandardCharsets.UTF_8)));
         if (config.successUrl() != null && !config.successUrl().isBlank()) {
-            fields.put("continue_success_url", config.successUrl());
+            fields.put("continue_success_url", trimmed(config.successUrl()) + landingPage(order));
         }
         fields.put("currency", order.getCurrency());
         fields.put("lifetime", String.valueOf(Math.max(3, lifetime.toMinutes())));
         return fields;
+
+    }
+
+    /** Where the payer's browser comes back to: the school's plan page for a school's invoice, else the family's. */
+    static String landingPage(PaymentOrder order) {
+
+        return order.getSchoolId() != null ? "/principal/plan" : "/parent/account#plan";
 
     }
 
