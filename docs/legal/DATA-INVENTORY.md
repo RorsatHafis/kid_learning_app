@@ -32,6 +32,40 @@ parents; the daily learning time used (M3 limits). Schools see a child's learnin
 - **Audit events**: who (an id) did what to which record (an id) and when - kept after erasure; they name no one.
 - **Public pages**: the public demo (`/try`) checks answers and stores **nothing**; visitors are not tracked.
 
+## Added since 2026-10-27 (checked against the code and migrations, 2026-11-11)
+
+- **Registration** (V87, V92): the email address is confirmed *before* an account exists - a verification row keeps the
+  typed address, the requesting IP, link/grant hashes and timestamps, and the plan chosen on the plans page (if any). A
+  paid plan chosen before registering is kept on the account (`plan_choices`) until it is paid or set aside.
+- **Drawings** (V91): a drawing answer keeps the child's strokes (coordinates); parents and the class's teachers may
+  add short written feedback to it. Included in the family export and in erasure.
+- **Second tries** (V93): after a wrong answer the child's second answer (or "show me the answer") is kept beside the
+  first. Included in the family export and in erasure.
+- **Learning streaks** (STREAK-1): days on which the child finished real learning.
+- **School student records and attendance** (V95, M12 - the school's own records, *separate* from families' child
+  profiles and not linked to them): a student's name, the school's student number (optional), which class and since
+  when (history kept), one attendance mark per day (present / absent / late / excused) with an optional note, and
+  every change to a mark with the old and new values, who changed it and the reason. Entered by the school's principal
+  and the class's teachers; seen only by them. **Notes may contain health or family information** (e.g. "unwell") -
+  see question 11.
+- **A school's own storage** (V94, M11): a school may keep its teachers' pictures and recordings in its own
+  S3-compatible storage. Bookeyond keeps the address, bucket, access key ID and the secret key **encrypted**
+  (AES-256-GCM, key from the environment); the files themselves are then with the school's provider.
+- **Payments** today: bank transfer (confirmed by an administrator against the receipt) and invoices; the online
+  provider (ABA PayWay) is built but not configured. No card details are collected by the product.
+
+## Where data is hosted (from the deployment configuration, 2026-11-11)
+
+- **Backend, database and uploaded media**: Railway (`docs/DEPLOY-VERCEL-RAILWAY.md`: backend service, Railway
+  PostgreSQL, a volume at `/data` for media and the erasure ledger). **Region: [OWNER: confirm in the Railway
+  dashboard - not recorded in the repository].**
+- **Web app**: Vercel (`frontend/vercel.json`), which also passes media requests through to Railway.
+  **Region(s): [OWNER: confirm in the Vercel dashboard].**
+- **Email**: Brevo SMTP (`smtp-relay.brevo.com`, per the deployment record). **Data location: [OWNER/REVIEW: Brevo's
+  processing locations and data-processing agreement].**
+- **SMS**: none (`SMS_SENDER` is `none`; D-04). **Online payments**: none configured.
+- **A school's own storage**, when it connects one: that school's chosen provider and region (the school's choice).
+
 ## Cookies, browser storage, analytics, third parties
 
 - **No cookies** are set by the app. **No analytics, advertising, tracking pixels or third-party scripts**; fonts and
@@ -78,3 +112,13 @@ account again. **Until then nothing is shown and nothing is agreed.** A per-chil
 8. **Teacher and educator content**: licence for what they upload (pictures, recordings, lessons) - for the terms.
 9. **Hosting location** (Railway/Vercel per DEPLOY-VERCEL-RAILWAY.md, not live): cross-border transfer wording.
 10. **Language**: the notice and terms in Khmer and English - which version governs; native legal review of Khmer.
+11. **School student records and attendance** (V95): the school is presumably the controller and Bookeyond its
+    processor - confirm, with a school agreement (`SCHOOL-AGREEMENT-DRAFT.md`); retention of attendance and its
+    corrections; whether free-text notes may hold health information and what that requires; what happens to a
+    school's records when it stops its plan.
+12. **Linking a school record to a family's child** (owner decision: only with the parent/guardian's explicit consent;
+    not built yet): what that consent must say and record.
+13. **A school's own storage** (V94): the school's provider becomes the school's processor for its media; what the
+    school agreement must say about it.
+14. **Cross-border transfers**: once the regions above are confirmed, whether transfers out of Cambodia need wording or
+    safeguards.

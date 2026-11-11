@@ -91,10 +91,13 @@ data. [REVIEW: whether this storage needs consent or only notice.]
 - **You** and the other parents or caregivers you invite to your family.
 - **A school**, only for children whose family has allowed that school, and only its teachers for children in their
   class. You can withdraw that permission.
-- **Service providers** who run parts of the service for us, once in use: the email provider (email addresses and the
-  emails' content) [OWNER: name]; the hosting provider of our servers, database and backups (all data) [OWNER: name and
-  country]; an SMS provider for phone codes only if one is used [OWNER: name, or "none"].
-  [REVIEW 9: wording for data held or processed outside Cambodia.]
+- **Service providers** who run parts of the service for us: the email provider Brevo (email addresses and the
+  emails' content); Railway, which hosts our servers, database and uploaded media (all data); Vercel, which serves the
+  web app and passes media requests through. [OWNER: confirm each provider is the one in use when this is published,
+  and the country or region of each - the repository records the providers, not their regions (DATA-INVENTORY.md).]
+  No SMS provider is used today [OWNER: update if one is chosen (D-04)]. A school that connects its own storage keeps
+  its teachers' pictures and recordings with the provider it chose.
+  [REVIEW 9 and 14: wording for data held or processed outside Cambodia.]
 - **Authorities**, only where the law requires it. [REVIEW 1]
 
 Nobody else. Children cannot see other children's information, and there are no public profiles or rankings.
