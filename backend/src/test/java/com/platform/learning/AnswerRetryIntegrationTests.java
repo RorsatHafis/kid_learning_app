@@ -121,6 +121,10 @@ class AnswerRetryIntegrationTests {
         assertThat(completed.get("score").asDouble()).isEqualTo(0.0);
         assertThat(jdbc.queryForObject("select count(*) from answer_retries r join answer_records a on a.id = r.answer_record_id "
                 + "where a.activity_attempt_id = ?::uuid", Integer.class, UUID.fromString(play.attempt()))).isEqualTo(3);
+        // The parent's skill page tells it as it was: wrong first, right on the second try.
+        JsonNode story = json(get("/api/v1/children/" + play.childId() + "/skills/" + made.skills().get(0), play.parent()), 200);
+        assertThat(story.get("activities").get(0).get("correct").asInt()).isZero();
+        assertThat(story.get("activities").get(0).get("rightOnSecondTry").asInt()).isEqualTo(1);
     }
 
     @Test

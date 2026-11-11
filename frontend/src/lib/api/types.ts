@@ -488,6 +488,8 @@ export interface ActivityOnSkill {
   evidenceAfter: number;
   /** D-16: answers here given after opening the hint (counted in answers/correct, but practice, not evidence). */
   withHint?: number;
+  /** D-20: wrong first answers made right on the one more try (outside correct). */
+  rightOnSecondTry?: number;
 }
 
 export interface WaitingStep {

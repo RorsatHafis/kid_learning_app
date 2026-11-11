@@ -266,6 +266,7 @@ function ActivityRow({ activity }: { activity: ActivityOnSkill }) {
           </span>
           {m.ofAnswersRight(activity.correct, activity.answers)}
           {(activity.withHint ?? 0) > 0 && <span>· {m.withHint(activity.withHint!)}</span>}
+          {(activity.rightOnSecondTry ?? 0) > 0 && <span>· {m.secondTry(activity.rightOnSecondTry!)}</span>}
         </span>
       </span>
       <span className="flex items-center gap-2 text-sm text-ink-soft">

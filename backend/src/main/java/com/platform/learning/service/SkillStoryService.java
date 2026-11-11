@@ -41,7 +41,9 @@ public class SkillStoryService {
      * were given after opening the hint - counted in {@code answers}/{@code correct}, but practice, not evidence.
      */
     public record ActivityOnSkill(UUID attemptId, String activityTitle, Instant at, int answers, int correct,
-                                  SkillStanding standingAfter, int evidenceAfter, int withHint) {
+                                  SkillStanding standingAfter, int evidenceAfter, int withHint,
+                                  /* D-20: wrong first answers made right on the one more try (outside correct). */
+                                  int rightOnSecondTry) {
     }
 
     /** A step waiting on the child's path that practises the skill, and who put it there. */
@@ -122,13 +124,16 @@ public class SkillStoryService {
         ReaderNames names = new ReaderNames();
         MapSqlParameterSource params = new MapSqlParameterSource("child", childId).addValue("skill", skillId)
                 .addValue("limit", RECENT_ACTIVITIES);
-        record Tally(UUID attemptId, String title, UUID versionId, Instant at, int answers, int correct, int withHint) {
+        record Tally(UUID attemptId, String title, UUID versionId, Instant at, int answers, int correct, int withHint,
+                     int rightOnSecondTry) {
         }
         List<Tally> tallies = jdbc.query("""
                 SELECT a.id, act.title, av.id AS version_id, COALESCE(a.completed_at, max(r.occurred_at)) AS at,
                        count(*) AS answers, count(*) FILTER (WHERE r.is_correct) AS correct,
-                       count(*) FILTER (WHERE r.hint_used) AS with_hint
+                       count(*) FILTER (WHERE r.hint_used) AS with_hint,
+                       count(*) FILTER (WHERE x.outcome = 'RETRIED' AND x.is_correct) AS second_try
                 FROM answer_records r
+                LEFT JOIN answer_retries x ON x.answer_record_id = r.id
                 JOIN question_version_skills qs ON qs.question_version_id = r.question_version_id AND qs.skill_id = :skill
                 JOIN activity_attempts a ON a.id = r.activity_attempt_id AND a.child_id = :child
                 JOIN activity_versions av ON av.id = a.activity_version_id
@@ -138,7 +143,8 @@ public class SkillStoryService {
                 ORDER BY at DESC, a.id DESC
                 LIMIT :limit
                 """, params, (rs, i) -> new Tally(rs.getObject("id", UUID.class), rs.getString("title"),
-                rs.getObject("version_id", UUID.class), rs.getTimestamp("at").toInstant(), rs.getInt("answers"), rs.getInt("correct"), rs.getInt("with_hint")));
+                rs.getObject("version_id", UUID.class), rs.getTimestamp("at").toInstant(), rs.getInt("answers"), rs.getInt("correct"), rs.getInt("with_hint"),
+                rs.getInt("second_try")));
         Integer inAll = jdbc.queryForObject("""
                 SELECT count(DISTINCT a.id) FROM answer_records r
                 JOIN question_version_skills qs ON qs.question_version_id = r.question_version_id AND qs.skill_id = :skill
@@ -169,7 +175,7 @@ public class SkillStoryService {
             SkillStanding standing = after == null ? null
                     : evidenceStandard.standingFor(after[0], masteryAfter.get(t.attemptId()), after[1]);
             return new ActivityOnSkill(t.attemptId(), names.activity(t.versionId(), t.title()), t.at(), t.answers(), t.correct(), standing, after == null ? 0 : after[0],
-                    t.withHint());
+                    t.withHint(), t.rightOnSecondTry());
         }).toList();
 
         List<WaitingStep> waiting = jdbc.query("""
