@@ -21,19 +21,22 @@ export function DrawingsReview({
   send,
   childName,
   showChild,
+  emptyText,
 }: {
   load: () => Promise<ReviewDrawing[]>;
   send: (drawing: ReviewDrawing, body: string) => Promise<ReviewDrawing>;
   /** The child, for a family page; a class page names each drawing's child instead. */
   childName?: string;
   showChild?: boolean;
+  /** What an empty list says (a class page has no one child to name). */
+  emptyText?: string;
 }) {
   const m = useMessages(drawingMessages);
   const drawings = useAsync(load, []);
   if (drawings.isLoading && !drawings.data) return <LoadingState label={m.loading} />;
   if (drawings.error) return <ErrorState error={drawings.error} onRetry={drawings.refetch} />;
   const list = drawings.data ?? [];
-  if (list.length === 0) return <p className="rounded-[18px] bg-cream p-5 text-ink-soft">{m.noDrawings(childName ?? "")}</p>;
+  if (list.length === 0) return <p className="rounded-[18px] bg-cream p-5 text-ink-soft">{emptyText ?? m.noDrawings(childName ?? "")}</p>;
   return (
     <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2">
       {list.map((drawing) => (

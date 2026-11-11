@@ -647,6 +647,7 @@ export function ClassDrawingsPanel({ classId }: { classId: string }) {
     <WorkspaceSection id="class-drawings" title={d.drawingsTitle} description={d.notScored}>
       <DrawingsReview
         showChild
+        emptyText={d.noClassDrawings}
         load={() => drawingsApi.forClass(classId)}
         send={(drawing, body) => drawingsApi.classFeedback(classId, drawing.answerId, body)}
       />
