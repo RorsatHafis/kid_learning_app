@@ -143,6 +143,7 @@ public class SkillStoryService {
                 SELECT count(DISTINCT a.id) FROM answer_records r
                 JOIN question_version_skills qs ON qs.question_version_id = r.question_version_id AND qs.skill_id = :skill
                 JOIN activity_attempts a ON a.id = r.activity_attempt_id AND a.child_id = :child
+                WHERE r.scored
                 """, params, Integer.class);
 
         // Where the skill stood after each activity: the evidence history replayed, as StandingHistory does.

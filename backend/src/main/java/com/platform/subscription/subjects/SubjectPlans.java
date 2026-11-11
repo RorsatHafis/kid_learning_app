@@ -37,6 +37,8 @@ public class SubjectPlans {
     private final SubjectService subjects;
     private final ContentAccessGuard guard;
     private final AuditService audit;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.curriculum.service.CurriculumService curricula;
 
     public SubjectPlans(JdbcTemplate jdbc, SubscriptionPlanRepository plans, EntitlementService entitlements,
                         SubjectService subjects, ContentAccessGuard guard, AuditService audit) {
@@ -75,6 +77,20 @@ public class SubjectPlans {
                 select distinct s.subject_id from subject_plans s
                 where not exists (select 1 from subject_plans x where x.subject_id = s.subject_id and x.plan_id = ?)
                 """, UUID.class, planId));
+    }
+
+    /**
+     * How many subjects families can learn now (a published platform curriculum) that this plan doesn't include - what
+     * the family is told other plans add. Never which ones' content, only that there are more.
+     */
+    @Transactional(readOnly = true)
+    public int offeredSubjectsOutside(UUID planId) {
+        Set<UUID> outside = subjectsOutside(planId);
+        if (outside.isEmpty()) return 0;
+        return (int) curricula.listFamilyCatalog().stream()
+                .map(com.platform.curriculum.entity.Curriculum::getSubjectId)
+                .filter(outside::contains)
+                .distinct().count();
     }
 
     /** The subjects outside the family's effective plan (a subscription's, or the default one). */

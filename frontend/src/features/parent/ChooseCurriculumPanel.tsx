@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useAsync } from "@/lib/hooks/useAsync";
 import { childrenApi, enrollmentApi } from "@/lib/api/endpoints";
+import { familyPlanApi } from "@/lib/api/subscriptions";
+import { Link } from "react-router-dom";
 import type { ApiProblem, CurriculumChoice } from "@/lib/api/types";
 import { LoadingState, ErrorState, EmptyState } from "@/components/ui/States";
 import { Button } from "@/components/ui/Button";
@@ -40,6 +42,9 @@ export function ChooseCurriculumPanel({
   onCancel?: () => void;
 }) {
   const { data, error, isLoading, refetch } = useAsync(() => childrenApi.curricula(childId), [childId]);
+  // V89: subjects other plans include - said plainly, with the way to the plans (never what is inside them).
+  const plan = useAsync(() => familyPlanApi.get(), []);
+  const inOtherPlans = plan.data?.subjectsInOtherPlans ?? 0;
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [enrollError, setEnrollError] = useState<string | null>(null);
   const [planLimit, setPlanLimit] = useState<ApiProblem | null>(null);
@@ -72,6 +77,14 @@ export function ChooseCurriculumPanel({
         <div>
           <p className="font-display text-lg font-semibold text-tonle-950">{m.title}</p>
           <p className="mt-0.5 max-w-lg text-sm text-ink-soft">{m.lead}</p>
+          {inOtherPlans > 0 && (
+            <p className="mt-2 max-w-lg text-sm text-ink">
+              {m.inOtherPlans(inOtherPlans)}{" "}
+              <Link to="/parent/account#plan" className="font-semibold text-tonle-700 underline-offset-4 hover:underline">
+                {m.seePlans}
+              </Link>
+            </p>
+          )}
         </div>
         {onCancel && (
           <Button variant="ghost" size="md" onClick={onCancel}>

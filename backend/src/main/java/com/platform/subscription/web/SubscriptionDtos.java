@@ -160,16 +160,23 @@ public final class SubscriptionDtos {
 
     public record OwnFamilyPlanResponse(PlanSummary plan, boolean onDefaultPlan, OwnSubscriptionState subscription,
                                         List<Entitlement> entitlements, PlanOfferResponse afterwards,
-                                        List<PlanOfferResponse> choices, OpenPlanRequest request) {
+                                        List<PlanOfferResponse> choices, OpenPlanRequest request,
+                                        /** V89: subjects families can learn that this plan doesn't include (other plans do). */
+                                        int subjectsInOtherPlans) {
 
         public static OwnFamilyPlanResponse of(SubscriptionService.FamilyPlanView view) {
+            return of(view, 0);
+        }
+
+        public static OwnFamilyPlanResponse of(SubscriptionService.FamilyPlanView view, int subjectsInOtherPlans) {
             EntitlementService.FamilyPlan effective = view.effective();
             return new OwnFamilyPlanResponse(PlanSummary.forReader(effective.plan()), !effective.fromSubscription(),
                     effective.subscription().map(s -> OwnSubscriptionState.of(s, effective.fromSubscription())).orElse(null),
                     entitlementList(effective.limits(), view.usage()),
                     view.afterwards().map(PlanOfferResponse::of).orElse(null),
                     view.choices().stream().map(PlanOfferResponse::of).toList(),
-                    view.request().map(r -> new OpenPlanRequest(r.planId(), r.planName(), r.requestedAt())).orElse(null));
+                    view.request().map(r -> new OpenPlanRequest(r.planId(), r.planName(), r.requestedAt())).orElse(null),
+                    subjectsInOtherPlans);
         }
     }
 

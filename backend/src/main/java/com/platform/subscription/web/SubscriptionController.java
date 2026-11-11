@@ -56,13 +56,13 @@ public class SubscriptionController {
     public SubscriptionDtos.OwnFamilyPlanResponse requestPlan(@AuthenticationPrincipal UUID accountId,
                                                              @Valid @RequestBody PlanRequestBody body) {
         planRequests.request(accountId, body.planId());
-        return SubscriptionDtos.OwnFamilyPlanResponse.of(service.familyPlan(accountId));
+        return ownPlan(accountId);
     }
 
     @DeleteMapping("/api/v1/family/plan/request")
     public SubscriptionDtos.OwnFamilyPlanResponse withdrawPlanRequest(@AuthenticationPrincipal UUID accountId) {
         planRequests.withdraw(accountId);
-        return SubscriptionDtos.OwnFamilyPlanResponse.of(service.familyPlan(accountId));
+        return ownPlan(accountId);
     }
 
     @GetMapping("/api/v1/admin/plan-requests")
@@ -80,9 +80,18 @@ public class SubscriptionController {
         return ResponseEntity.noContent().build();
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.subscription.subjects.SubjectPlans subjectPlans;
+
+    /** The family's own plan view, with how many subjects other plans add (V89). */
+    private SubscriptionDtos.OwnFamilyPlanResponse ownPlan(UUID accountId) {
+        SubscriptionService.FamilyPlanView view = service.familyPlan(accountId);
+        return SubscriptionDtos.OwnFamilyPlanResponse.of(view, subjectPlans.offeredSubjectsOutside(view.effective().plan().getId()));
+    }
+
     @GetMapping("/api/v1/family/plan")
     public SubscriptionDtos.OwnFamilyPlanResponse familyPlan(@AuthenticationPrincipal UUID accountId) {
-        return SubscriptionDtos.OwnFamilyPlanResponse.of(service.familyPlan(accountId));
+        return ownPlan(accountId);
     }
 
     @GetMapping("/api/v1/admin/plans")

@@ -428,6 +428,8 @@ export interface CompletedActivity {
   decision: DecisionSummary | null;
   /** D-16: how many of the answers were given after opening the hint. */
   hintedAnswers?: number;
+  /** V91: drawings in it - kept, never scored, so outside correct/total. */
+  drawings?: number;
 }
 
 // ---- learner/service/EvidenceStandard.java, learning/service/SkillProgressService.java ----

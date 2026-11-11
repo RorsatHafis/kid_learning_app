@@ -93,14 +93,18 @@ function ActivityRow({ activity, childId }: { activity: CompletedActivity; child
           <p className="text-sm text-ink-faint">{m.minutes(minutes)}</p>
         </div>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink">
-          <span className="inline-flex items-center gap-2">
-            <span className="flex gap-[3px]" aria-hidden>
-              {Array.from({ length: activity.totalAnswers }, (_, i) => (
-                <span key={i} className={i < activity.correctAnswers ? "h-2.5 w-2.5 rounded-[2px] bg-light" : "h-2.5 w-2.5 rounded-[2px] bg-tonle-100"} />
-              ))}
+          {activity.totalAnswers > 0 && (
+            <span className="inline-flex items-center gap-2">
+              <span className="flex gap-[3px]" aria-hidden>
+                {Array.from({ length: activity.totalAnswers }, (_, i) => (
+                  <span key={i} className={i < activity.correctAnswers ? "h-2.5 w-2.5 rounded-[2px] bg-light" : "h-2.5 w-2.5 rounded-[2px] bg-tonle-100"} />
+                ))}
+              </span>
+              <span className="tabular">{m.correct(activity.correctAnswers, activity.totalAnswers)}</span>
             </span>
-            <span className="tabular">{m.correct(activity.correctAnswers, activity.totalAnswers)}</span>
-          </span>
+          )}
+          {/* V91: drawings are kept, never scored - counted apart, and shown under Drawings. */}
+          {(activity.drawings ?? 0) > 0 && <span className="text-ink-soft">{m.drawings(activity.drawings!)}</span>}
           {(activity.hintedAnswers ?? 0) > 0 && <span className="text-ink-soft">{m.withHint(activity.hintedAnswers!)}</span>}
           {activity.skills.length > 0 && <span className="text-ink-soft">{activity.skills.map((s) => s.name).join(", ")}</span>}
           {activity.source === "REVIEW" && <span className="font-semibold text-light-deep">{m.smartReview}</span>}

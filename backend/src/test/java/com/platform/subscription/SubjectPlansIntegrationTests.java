@@ -116,8 +116,9 @@ class SubjectPlansIntegrationTests {
         String childId = json(post("/api/v1/children", child("Dara"), parent), 201).get("id").asString();
         jdbc.update("update enrollments set status = 'WITHDRAWN' where child_id = ?::uuid", UUID.fromString(childId));
 
-        // On the free plan: not offered, and a direct request is refused.
+        // On the free plan: not offered (the family is told other plans add subjects), and a direct request is refused.
         assertThat(catalogIds(childId, parent)).doesNotContain(made.curriculumId());
+        assertThat(json(get("/api/v1/family/plan", parent), 200).get("subjectsInOtherPlans").asInt()).isPositive();
         JsonNode refused = json(post("/api/v1/children/" + childId + "/enrollments", choose(made.curriculumId()), parent), 409);
         assertThat(refused.get("subjectNotInPlan").asBoolean()).isTrue();
         assertThat(refused.get("detail").asString()).isEqualTo("This subject isn't part of your family's plan.");

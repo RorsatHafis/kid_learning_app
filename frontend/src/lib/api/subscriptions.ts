@@ -133,6 +133,8 @@ export interface OwnFamilyPlan {
   choices: PlanOffer[];
   /** The family's open request for one of them, if any. */
   request: { planId: string; planName: string; requestedAt: string } | null;
+  /** V89: subjects families can learn that this plan doesn't include (other plans do). */
+  subjectsInOtherPlans?: number;
 }
 
 /** subscription/service/PlanRequestService.AdminRow - an open request, oldest first. */
