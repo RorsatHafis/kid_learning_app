@@ -29,6 +29,10 @@ spring:
 # Local-only fallbacks for the values application.yaml requires. The same variables
 # still override them; TTL, lockout and mastery defaults come from application.yaml.
 platform:
+  # M11: development-only key (never used outside the local profile); a local S3-compatible server is allowed.
+  storage:
+    credentials-key: ${STORAGE_CREDENTIALS_KEY:oGXuIfEADKmzjKA3s/0qrwE02+dB0SE2yKu0HV2SV4o=}
+    allow-private-endpoints: true
   # M9b: phone codes go to the local mail catcher (sms-<digits>@sms.test), never to a phone.
   sms:
     sender: ${SMS_SENDER:local-test}

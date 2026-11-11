@@ -117,6 +117,29 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- M11 (D-06/D-12 approved 2026-11-11): S3-compatible storage - a school's own bucket. The JDK's HTTP client
+		     only (no Netty, no Apache client). Pinned; 2.57.0 was three weeks old when added. -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.57.0</version>
+			<exclusions>
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>netty-nio-client</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>apache-client</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>url-connection-client</artifactId>
+			<version>2.57.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-testcontainers</artifactId>
@@ -130,6 +153,12 @@
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- M11 (D-12 approved 2026-11-11): an S3-compatible server (MinIO) for the storage tests. -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-minio</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<!-- An in-process SMTP server: tests read the messages actually delivered over SMTP. -->

@@ -53,6 +53,8 @@ public class MediaService {
 
     private final ContentAssetRepository assets;
     private final MediaStorage storage;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.content.media.storage.StorageRouter router;
     private final ContentAccessGuard guard;
     private final StorageService storageAllowance;
     private final com.platform.identity.repository.AccountRepository accounts;
@@ -102,19 +104,27 @@ public class MediaService {
         ContentAsset asset = (owner == null ? assets.findBySha256AndOwnerAccountIdIsNull(sha256)
                 : assets.findBySha256AndOwnerAccountId(sha256, owner))
                 .map(existing -> {
-                    if (!storage.intact(existing.getStorageKey(), sha256, bytes.length)) {
-                        storage.store(sha256, bytes);
+                    // TD-26, in the storage the file was written to.
+                    var where = router.provider(existing.getStorageConnectionId());
+                    if (!where.intact(existing.getStorageKey(), sha256, bytes.length)) {
+                        where.put(existing.getStorageKey(), sha256, bytes);
                         log.warn("Media file for asset {} was missing or damaged; restored from a new upload of the same bytes",
                                 existing.getId());
                     }
                     return existing;
                 })
                 .orElseGet(() -> {
-                    // A file the owner doesn't keep yet: it must fit their allowance, checked before it is stored.
-                    storageAllowance.requireRoom(owner, bytes.length);
-                    ContentAsset created = ContentAsset.uploaded(inspected.type(), sha256, storage.store(sha256, bytes),
+                    // M11: the author's school's own storage when it has chosen one; otherwise Bookeyond-hosted, where
+                    // a file the owner doesn't keep yet must fit their allowance, checked before it is stored.
+                    UUID target = router.uploadTarget(owner);
+                    if (target == null) {
+                        storageAllowance.requireRoom(owner, bytes.length);
+                    }
+                    String key = MediaStorage.keyFor(sha256);
+                    router.provider(target).put(key, sha256, bytes);
+                    ContentAsset created = ContentAsset.uploaded(inspected.type(), sha256, key,
                             inspected.mimeType(), bytes.length, owner, author.getId())
-                            .withDimensions(inspected.width(), inspected.height());
+                            .withDimensions(inspected.width(), inspected.height()).storedIn(target);
                     created.describe(titleFrom(fileName), null);
                     return created;
                 });
@@ -129,9 +139,15 @@ public class MediaService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void deleteStoredFileIfUnused(String sha256) {
+        deleteStoredFileIfUnused(sha256, null);
+    }
+
+    /** M11: the same, in the storage the deleted file was written to (null: Bookeyond-hosted). */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void deleteStoredFileIfUnused(String sha256, UUID connectionId) {
         assets.lockContent(sha256);
-        if (!assets.existsBySha256(sha256)) {
-            storage.delete(MediaStorage.keyFor(sha256));
+        if (!assets.existsBySha256In(sha256, connectionId)) {
+            router.provider(connectionId).delete(MediaStorage.keyFor(sha256));
         }
     }
 
@@ -199,10 +215,32 @@ public class MediaService {
             return java.util.Optional.empty();
         }
         return assets.findById(assetId).filter(asset -> asset.getSha256() != null)
-                .map(asset -> new Served(storage.resolve(asset.getStorageKey()), asset.getMimeType(), expiresAt));
+                .flatMap(asset -> body(asset).map(body -> new Served(body, asset.getMimeType(), expiresAt)));
     }
 
-    public record Served(Path file, String mimeType, long expiresAt) {
+    /**
+     * The stored bytes as a resource: a file on Bookeyond-hosted disk, or read from the school's own storage (media is
+     * small). Empty when they aren't there - lost media (TD-26) is said in the log, and answered like any unknown link.
+     */
+    private java.util.Optional<org.springframework.core.io.Resource> body(ContentAsset asset) {
+        if (asset.getStorageConnectionId() == null) {
+            Path file = storage.resolve(asset.getStorageKey());
+            if (!java.nio.file.Files.isRegularFile(file)) {
+                log.warn("Media file for asset {} is missing from storage", asset.getId());
+                return java.util.Optional.empty();
+            }
+            return java.util.Optional.of(new org.springframework.core.io.FileSystemResource(file));
+        }
+        try {
+            return java.util.Optional.of(new org.springframework.core.io.ByteArrayResource(
+                    router.provider(asset.getStorageConnectionId()).read(asset.getStorageKey())));
+        } catch (RuntimeException e) {
+            log.warn("Media file for asset {} could not be read from the school's storage", asset.getId());
+            return java.util.Optional.empty();
+        }
+    }
+
+    public record Served(org.springframework.core.io.Resource body, String mimeType, long expiresAt) {
     }
 
     MediaRef ref(ContentAsset asset) {

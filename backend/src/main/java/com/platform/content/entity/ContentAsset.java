@@ -29,6 +29,10 @@ public class ContentAsset extends BaseEntity {
     @Column(name = "storage_key", nullable = false, updatable = false, length = 500)
     private String storageKey;
 
+    /** M11 (V94): the school's own storage it was written to; null: Bookeyond-hosted. */
+    @Column(name = "storage_connection_id", updatable = false)
+    private UUID storageConnectionId;
+
     @NotBlank
     @Column(name = "mime_type", nullable = false, updatable = false, length = 100)
     private String mimeType;
@@ -97,6 +101,17 @@ public class ContentAsset extends BaseEntity {
         asset.ownerAccountId = ownerAccountId;
         asset.uploadedByAccountId = uploadedByAccountId;
         return asset;
+    }
+
+    /** M11: written to a school's own storage (before it is first saved). */
+    public ContentAsset storedIn(UUID connectionId) {
+        Assert.isNull(getId(), "Where a file is kept is set when it is first recorded");
+        this.storageConnectionId = connectionId;
+        return this;
+    }
+
+    public UUID getStorageConnectionId() {
+        return storageConnectionId;
     }
 
     /** A picture's size as inspected at upload (null for recordings). */

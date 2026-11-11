@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * a file hold the content's lock ({@code ContentAssetRepository.lockContent}).
  */
 @Component
-public class MediaStorage {
+public class MediaStorage implements com.platform.content.media.storage.StorageProvider {
 
     private static final Pattern KEY = Pattern.compile("[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{64}");
 
@@ -81,7 +81,23 @@ public class MediaStorage {
         return key;
     }
 
+    /** M11: the provider form of {@link #store} (the key is the bytes' own). */
+    @Override
+    public void put(String key, String sha256, byte[] bytes) {
+        store(sha256, bytes);
+    }
+
+    @Override
+    public byte[] read(String key) {
+        try {
+            return Files.readAllBytes(resolve(key));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Could not read media " + key, e);
+        }
+    }
+
     /** Whether the file under this key holds exactly the bytes its name promises. */
+    @Override
     public boolean intact(String key, String sha256, long size) {
         return intact(resolve(key), sha256, size);
     }
@@ -104,6 +120,7 @@ public class MediaStorage {
     }
 
     /** Removes a stored file no asset refers to any more (X13: deleting unused media). */
+    @Override
     public void delete(String key) {
         try {
             Files.deleteIfExists(resolve(key));

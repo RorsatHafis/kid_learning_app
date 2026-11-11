@@ -224,6 +224,8 @@ describe("PrincipalHome", () => {
       "GET /schools/s1/classes": respond(200, []),
       "GET /schools/overview": respond(200, EMPTY_OVERVIEW),
       "GET /schools/s1/staff": respond(200, []),
+      // M11: where the school's files are kept (Bookeyond-hosted).
+      "GET /schools/s1/storage": respond(200, { schoolId: "s1", available: true, current: null, earlier: [], hostedFiles: 0, hostedBytes: 0 }),
       "POST /schools/s1/classes": respond(409, {
         status: 409,
         title: "Plan Limit Reached",

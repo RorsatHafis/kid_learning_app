@@ -3526,3 +3526,17 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   plan (Y44 says no today); D-08, D-12 (QR library), D-14, D-19; device
   speech; M12 school phases S1-S6; SB1-SB3, SB5-SB9 (only needed when those features are wanted).
 - **Exact next task:** check the milestone CI; then build whichever owner input arrives first.
+
+### Owner decisions 2026-11-11 (late): M11, M12, school plans, F2
+- **D-06 (M11): hybrid storage.** Bookeyond-hosted storage by default; schools (and other clients) may connect their own
+  S3-compatible storage and pay their provider directly. Hosted storage within plan allowances; no invented quotas or
+  overage charges (left for later pricing).
+- **D-12 (M11): approved** - an S3 client library and MinIO for local and CI tests; no paid infrastructure.
+- **M12: Attendance first.** Separate school student records (approved): a school's records are its own; linked to a
+  family's child only with explicit parent/guardian consent; staff see only their school's records; no automatic
+  merge of family learning history into school records. Later modules only within the approved roadmap.
+- **Schools: no free plan.** A paid plan with a confirmed payment before school services (Y44 stays). A time-limited
+  trial may come later as a configurable option - not built or activated now.
+- **F2:** documents prepared with marked placeholders for owner facts (entity, address, contact); data-hosting
+  locations taken from the infrastructure configuration; a qualified Cambodian legal professional reviews Privacy,
+  Terms, children's data and school agreements before publication (external owner dependency).

@@ -190,6 +190,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    /** M11: a school's own storage failed its check; nothing was kept. 422, with what failed. */
+    @ExceptionHandler(com.platform.content.media.storage.StorageCheckFailedException.class)
+    public ResponseEntity<Object> handleStorageCheckFailed(com.platform.content.media.storage.StorageCheckFailedException ex, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        problem.setTitle("Storage Check Failed");
+        return createResponseEntity(problem, new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
+    }
+
     @ExceptionHandler(UnscorableAnswerException.class)
     public ResponseEntity<Object> handleUnscorableAnswer(UnscorableAnswerException ex, WebRequest request) {
 

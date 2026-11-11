@@ -78,6 +78,8 @@ when a required value is missing or unsafe (`ConfigurationContractTests`).
 | `APP_PUBLIC_URL` | The same origin; links in emails point here |
 | `MAIL_HOST`, `MAIL_FROM` | SMTP server and the sender address |
 | `MEDIA_ROOT` | A directory the backend can write, on **persistent storage**: the pictures and recordings educators upload. The backend refuses to start if it can't write there. |
+| `STORAGE_CREDENTIALS_KEY` | Optional (M11). 32 random bytes, base64 (`openssl rand -base64 32`): seals the access keys of schools that connect their own S3-compatible storage. Unset: schools keep using Bookeyond-hosted storage and can't connect their own. Keep it with the other secrets: losing it makes connected schools' storage unreadable until they connect again. |
+| `STORAGE_ALLOW_PRIVATE_ENDPOINTS` | Leave unset (`false`). Only local and test set it; the backend refuses to start in production with it on. |
 
 **Usually needed:** `MAIL_PORT` (587), `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SMTP_AUTH`
 (true), `MAIL_SMTP_STARTTLS` (true).

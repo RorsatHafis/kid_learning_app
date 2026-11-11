@@ -191,6 +191,13 @@ Built: new, grant, payment, renewal of the same plan, replace, move end, end, re
 `TRIALING`, `PAST_DUE` and `CANCELED` exist in the schema and in the summary, but nothing sets them until trials, a
 live provider and self-service cancellation exist.
 
+## 9a. Storage (M11, owner decision 2026-11-11)
+
+Hybrid: Bookeyond-hosted storage by default, within the plan's allowance (`TEACHER_STORAGE_MB`); a school may connect its
+own S3-compatible storage and pays its provider directly - its files there are outside Bookeyond's allowance. **For later
+pricing decisions (not built):** hosted quotas per plan beyond the per-teacher allowance, overage charges, and whether own
+storage changes a school plan's price. Nothing of these is invented in the product.
+
 ## 10. Owner decisions (recommendations only; nothing is configured until approved)
 
 | # | Decision | Recommendation |

@@ -17,6 +17,10 @@ spring:
       "[mail.smtp.starttls.required]": false
 
 platform:
+  # M11: a test-only key; the test S3-compatible server (MinIO) runs on this machine.
+  storage:
+    credentials-key: qAtERQ1RUjyYDumACjvAGkpFz6ewU9FmXvjTr85ZxvE=
+    allow-private-endpoints: true
   # M9b: phone codes go to the test mail server, never to a phone.
   sms:
     sender: local-test

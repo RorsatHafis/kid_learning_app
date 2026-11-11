@@ -175,10 +175,11 @@ public class MediaLibraryService {
         assets.delete(asset);
         assets.flush();
         String sha256 = asset.getSha256();
+        UUID storedIn = asset.getStorageConnectionId();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                media.deleteStoredFileIfUnused(sha256);
+                media.deleteStoredFileIfUnused(sha256, storedIn);
             }
         });
     }

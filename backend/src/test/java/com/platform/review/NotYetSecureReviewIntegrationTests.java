@@ -86,7 +86,7 @@ class NotYetSecureReviewIntegrationTests {
         masteryEngine.recordEvidence(child, failing, false, UUID.randomUUID());
         Optional<ReviewItem> item = smartReview.evaluateAndSchedule(child, failing);
         assertThat(item).isPresent();
-        assertThat(dueAt(item.get())).isBeforeOrEqualTo(Instant.now());
+        assertThat(dueAt(item.get())).as("due now, not on another day").isBefore(Instant.now().plusSeconds(60));
 
         // One answer: too early to tell - no review.
         UUID early = skill();

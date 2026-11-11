@@ -26,6 +26,7 @@ import { principalWorkspaceMessages } from "./workspace.messages";
 import { AcademicYears, ClassYearSelect } from "./AcademicYears";
 import { Branches } from "./Branches";
 import { PlanChoiceNotice } from "@/features/plans/ChosenPlan";
+import { SchoolStorage } from "@/features/school/SchoolStorage";
 import { academicYearsApi, type AcademicYear } from "@/lib/api/academicYears";
 
 const SCHOOL_KEY = "bk.principal.school";
@@ -185,7 +186,13 @@ export function PrincipalPlanPage() {
   const w = useMessages(principalWorkspaceMessages);
   return (
     <SchoolFrame title={w.nav.plan} lead={w.planLead} billing>
-      {(school) => <PrincipalSchoolPlan key={school.id} schoolId={school.id} version={0} />}
+      {(school) => (
+        <>
+          <PrincipalSchoolPlan key={school.id} schoolId={school.id} version={0} />
+          {/* M11: where the school's pictures and recordings are kept. */}
+          <SchoolStorage key={`storage-${school.id}`} schoolId={school.id} />
+        </>
+      )}
     </SchoolFrame>
   );
 }

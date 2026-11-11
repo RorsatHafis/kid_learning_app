@@ -110,15 +110,8 @@ public class MediaController {
     @GetMapping("/api/v1/media/{assetId}")
     public ResponseEntity<Resource> fetch(@PathVariable UUID assetId, @RequestParam("e") long expiresAt,
                                           @RequestParam("s") String signature) {
+        // A valid link to a file that isn't there is lost media (TD-26): the same 404, said in the log (MediaService).
         return media.open(assetId, expiresAt, signature)
-                .filter(served -> {
-                    // A valid link to a file that isn't there is lost media (TD-26): the same 404, but said in the log.
-                    boolean present = Files.isRegularFile(served.file());
-                    if (!present) {
-                        log.warn("Media file for asset {} is missing from storage", assetId);
-                    }
-                    return present;
-                })
                 .map(served -> ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(served.mimeType()))
                         .cacheControl(CacheControl.maxAge(Duration.ofSeconds(Math.max(0,
@@ -127,7 +120,7 @@ public class MediaController {
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
                         .header("Content-Security-Policy", "default-src 'none'; sandbox")
                         .header("Cross-Origin-Resource-Policy", "same-origin")
-                        .<Resource>body(new FileSystemResource(served.file())))
+                        .<Resource>body(served.body()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 

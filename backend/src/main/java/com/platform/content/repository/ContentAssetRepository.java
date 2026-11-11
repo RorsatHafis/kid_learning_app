@@ -24,6 +24,11 @@ public interface ContentAssetRepository extends JpaRepository<ContentAsset, UUID
     /** Any asset still holding these bytes (the stored file is shared by every owner's copy). */
     boolean existsBySha256(String sha256);
 
+    /** M11: any asset holding these bytes in this storage (null: Bookeyond-hosted). */
+    @Query(value = "SELECT EXISTS (SELECT 1 FROM content_assets a WHERE a.sha256 = :sha256 AND a.storage_connection_id IS NOT DISTINCT FROM :connection)",
+            nativeQuery = true)
+    boolean existsBySha256In(@Param("sha256") String sha256, @Param("connection") UUID connectionId);
+
     /**
      * Holds these bytes' lock until the transaction ends (TD-26). Everything that stores, repairs or deletes a
      * stored file, or creates a row for one, takes it first, so a file is never deleted between another upload
@@ -37,7 +42,9 @@ public interface ContentAssetRepository extends JpaRepository<ContentAsset, UUID
     // so a file uploaded twice is counted once, and deleting a row frees its size at once.
 
     /** Bytes an owner keeps (archived media too: it still takes space until it is deleted). */
-    @Query(value = "SELECT COALESCE(SUM(a.size_bytes), 0) FROM content_assets a WHERE a.sha256 IS NOT NULL AND a.owner_account_id = :ownerId",
+    @Query(value = "SELECT COALESCE(SUM(a.size_bytes), 0) FROM content_assets a WHERE a.sha256 IS NOT NULL AND a.owner_account_id = :ownerId"
+            // M11: a school's own storage is the school's, outside Bookeyond's allowance.
+            + " AND a.storage_connection_id IS NULL",
             nativeQuery = true)
     long sumSizeByOwner(@Param("ownerId") UUID ownerId);
 
