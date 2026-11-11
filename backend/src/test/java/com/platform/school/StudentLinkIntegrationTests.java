@@ -130,6 +130,9 @@ class StudentLinkIntegrationTests {
         assertThat(delete("/api/v1/children/" + childId + "/schools/" + school.getId(), parent).statusCode()).isBetween(200, 204);
         assertThat(jdbc.queryForObject("select status from school_student_links where id = ?::uuid", String.class, third)).isEqualTo("ENDED");
         assertThat(json(get(classPath + "/student-links", teacher), 200).get("links")).isEmpty();
+        // The family's export keeps its answers to the school (its consent records).
+        String export = get("/api/v1/account/data-export", parent).body();
+        assertThat(export).contains("schoolRecordLinks").contains("Dara Kim").contains("DECLINED").contains("ENDED");
     }
 
     // ---------------------------------------------------------------------------------------------------------------

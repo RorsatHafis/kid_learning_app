@@ -136,7 +136,13 @@ public class FamilyDataExportService {
                             List<com.platform.child.caregiver.CaregiverService.Caregiver> caregivers,
                             List<EnrollmentOverview> learningPaths, List<CurriculumProgress> skills,
                             List<CompletedActivity> completedActivities, List<AnswerData> answers,
-                            List<ParentInsightResponse> insightHistory, List<SchoolAccessRecord> schoolAccess) {
+                            List<ParentInsightResponse> insightHistory, List<SchoolAccessRecord> schoolAccess,
+                            /* M12 (V96): schools' requests to connect their record with the child, and the family's answers. */
+                            List<SchoolRecordLink> schoolRecordLinks) {
+    }
+
+    /** A school's record connected (or asked to be) with the child: the family's consent record. */
+    public record SchoolRecordLink(String school, String record, String status, Instant askedAt, Instant decidedAt, Instant endedAt) {
     }
 
     /** One answer as the child gave it. {@code answer} is readable text; {@code submitted} is the raw value stored. */
@@ -186,7 +192,14 @@ public class FamilyDataExportService {
                 skills.progressFor(child.getId()),
                 journeys.completedActivities(child.getId(), ALL), answersOf(child.getId()),
                 insights.listRecent(child.getId()).stream().map(ParentInsightResponse::from).toList(),
-                schoolAccess.accessHistoryOf(accountId, child.getId()));
+                schoolAccess.accessHistoryOf(accountId, child.getId()),
+                drawingFeedback == null ? List.of() : drawingFeedback.query("""
+                        select s.name, st.full_name, l.status, l.requested_at, l.decided_at, l.ended_at from school_student_links l
+                        join schools s on s.id = l.school_id join school_students st on st.id = l.student_id
+                        where l.child_id = ? order by l.requested_at
+                        """, (rs, i) -> new SchoolRecordLink(rs.getString(1), rs.getString(2), rs.getString(3), rs.getTimestamp(4).toInstant(),
+                        rs.getTimestamp(5) == null ? null : rs.getTimestamp(5).toInstant(),
+                        rs.getTimestamp(6) == null ? null : rs.getTimestamp(6).toInstant()), child.getId()));
     }
 
     private List<AnswerData> answersOf(UUID childId) {
