@@ -3417,6 +3417,21 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
 - **Fresh full e2e round (local, 2026-11-10):** desktop-1280 28 passed / 3 skipped by design; phone-360 23 passed /
   2 skipped. No failures. The "More settings unsaved" note above is already done (detailsUnsaved.test.tsx).
 
+### 2026-11-11: approved direction reviewed against the code (EXP-1, WORLD-1, STREAK-1, LAND-1, FLEX-1)
+- **EXP-1** - built: pages/sections, dialogs/menus (leave as well as arrive), travel between learning places, starting
+  and finishing an activity, parent <-> child hand-over, steps lit since, tab pill, filling bars, buddy reactions to
+  answers and taps, **responsive objects (new: the place's landmark answers a tap, 188d6a8)**. Defect fixed: the
+  buddy showed "encourage" after a saved drawing.
+- **WORLD-1** - built: six distinct places, depth/parallax, ambient life, travel in/out, the child's corners, places
+  on the landing; **reusable environment system (new: places are lists of reusable ambient layers)**.
+  **Owner-dependent only:** artwork for the rice fields (landmark + backdrop), the garden backdrop and the large
+  open-river panorama - each then one entry (painting, light, landmark, layers).
+- **STREAK-1** - built (flame, growth reaction, milestone at completion, parent line, landing line).
+  **Owner-dependent:** milestone moment on home/shelf, and whether "best" may ever show.
+- **LAND-1**, **FLEX-1** - built (see 2026-11-04/05 entries).
+- **Learning policy (owner):** D-18 (bring a skill back another day), D-20 (second try) - block nothing else.
+- Verified: world/child/brand/landing Vitest 96; landmarkTap.test; family-phone e2e at 360 px taps the bridge (axe clean).
+
 ### CHECKPOINT 2026-11-10 (end of window) - the next session starts here
 - **Owner requirements 2026-11-10: all five built and verified.** 96ae031 (1, 2), eda943b (3, 4), 25a3e9f (fixture
   regression), a845e64 (5), c5347c3 (sign-up budget), c5e49d9 (a11y re-measure), 868c144 (switch e2e).

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { addChild, uniqueEmail, walkPages, registerThroughEmail } from "./support";
+import { addChild, expectNoViolations, openSubject, uniqueEmail, walkPages, registerThroughEmail } from "./support";
 
 /**
  * A family on a phone: a parent signs up and adds a child with a subject, then every page the family area and the
@@ -61,5 +61,13 @@ test("family on a phone: the family area and the child's space fit the screen @p
   await page.getByRole("link", { name: /^Play .+ again$/ }).first().click();
   await page.getByRole("button", { name: "Let's go" }).waitFor();
   await expect(page.locator('[data-place="bridge"]')).toBeVisible();
+
+  // EXP-1: in the subject's place, the landmark answers a tap.
+  await page.goto(`/learn/${childId}`);
+  await openSubject(page, "Maths");
+  const landmark = page.locator('[data-place="bridge"] > button').first();
+  await landmark.click();
+  await expect(landmark.locator("img")).toHaveClass(/animate-landmark-tap/);
+  await expectNoViolations(page, "child: a place after its landmark is tapped");
   console.log(`phone walk: family ${familyPages.length}, child ${childPages.length} pages`);
 });
