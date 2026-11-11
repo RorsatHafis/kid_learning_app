@@ -295,6 +295,10 @@ function Editor({ detail, onChange, onReload }: { detail: QuestionDetail; onChan
             ) : (
               <p className="text-sm text-ink-soft">{m.loadingPreview}</p>
             )}
+            {/* D-20: whether a wrong answer gets one more try - the server's rule, told to the author. */}
+            {detail.questionType !== "DRAWING" && latest.secondTry !== undefined && (
+              <p className="mt-3 text-[0.8125rem] leading-snug text-ink-soft">{latest.secondTry ? m.secondTryYes : m.secondTryNo}</p>
+            )}
           </Panel>
           {liveVersion && <WithdrawalPanel kind="QUESTION" versionId={liveVersion.id} versionNumber={liveVersion.versionNumber} />}
           <Panel title={m.versions}>

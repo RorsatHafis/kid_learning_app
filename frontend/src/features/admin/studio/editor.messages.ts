@@ -124,6 +124,9 @@ export const editorMessages = defineMessages(
       loadingPreview: "Loading preview…",
       previewAs: "As a child reading",
       previewEnglishInstead: "Shown in English: its Khmer isn't complete yet, so a child reading Khmer gets it in English.",
+      // D-20 (owner decision 2026-11-11)
+      secondTryYes: "After a wrong answer the child gets one more try, with the answer held back. Right the second time counts as weaker evidence than right first time.",
+      secondTryNo: "No second try for this question: with true or false or only two items, a second guess can't really be wrong. The child sees the answer straight away.",
       versions: "Versions",
       detailsSaved: "Details saved.",
       questionsSaved: "Questions saved.",
@@ -282,6 +285,8 @@ export const editorMessages = defineMessages(
       loadingPreview: "កំពុងផ្ទុកការមើលជាមុន…",
       previewAs: "ដូចកុមារដែលអាន",
       previewEnglishInstead: "បង្ហាញជាភាសាអង់គ្លេស៖ ភាសាខ្មែររបស់វាមិនទាន់ពេញលេញ ដូច្នេះកុមារដែលអានភាសាខ្មែរ ទទួលបានវាជាភាសាអង់គ្លេស។",
+      secondTryYes: "បន្ទាប់ពីចម្លើយខុស កុមារទទួលបានការព្យាយាមម្ដងទៀត ដោយមិនទាន់បង្ហាញចម្លើយ។ ត្រូវនៅលើកទីពីរ ត្រូវបានរាប់ជាភស្តុតាងខ្សោយជាងត្រូវនៅលើកទីមួយ។",
+      secondTryNo: "សំណួរនេះមិនមានការព្យាយាមលើកទីពីរទេ៖ ជាមួយត្រូវ ឬខុស ឬមានតែពីរធាតុ ការទាយលើកទីពីរមិនអាចខុសបានទេ។ កុមារឃើញចម្លើយភ្លាមៗ។",
       versions: "កំណែ",
       detailsSaved: "បានរក្សាទុកព័ត៌មានលម្អិត។",
       questionsSaved: "បានរក្សាទុកសំណួរ។",

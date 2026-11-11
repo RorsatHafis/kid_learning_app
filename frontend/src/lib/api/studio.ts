@@ -334,6 +334,8 @@ export interface SortItemDetail {
 export interface QuestionVersionDetail extends VersionSummary {
   /** V91: a DRAWING's guide; null for other types. */
   drawingGuide?: import("@/features/drawing/drawing").DrawingGuide | null;
+  /** D-20: a child's wrong answer to this version gets one more try (decided by the server). */
+  secondTry?: boolean;
   prompt: string;
   correctAnswer: string | null;
   difficultyLevel: number | null;

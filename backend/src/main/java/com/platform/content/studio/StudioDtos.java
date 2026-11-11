@@ -258,7 +258,9 @@ public final class StudioDtos {
                                         List<UUID> skillIds, List<SortGroupDetail> groups, List<SortItemDetail> sortItems,
                                         String hint, String explanation, KhmerDetail khmer,
                                         /** V91: a DRAWING's guide as JSON; null for other types. */
-                                        @com.fasterxml.jackson.annotation.JsonRawValue String drawingGuide) {
+                                        @com.fasterxml.jackson.annotation.JsonRawValue String drawingGuide,
+                                        /** D-20: a child's wrong answer to this version gets one more try (the server's rule). */
+                                        boolean secondTry) {
     }
 
     /**

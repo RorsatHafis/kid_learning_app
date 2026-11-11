@@ -868,6 +868,9 @@ public class StudioService {
         }).toList();
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.platform.learning.service.AnswerRetryService retryPolicy;
+
     @Transactional(readOnly = true)
     public QuestionDetail question(UUID accountId, UUID questionId) {
         Question question = guard.requireQuestionWrite(accountId, questionId);
@@ -898,7 +901,7 @@ public class StudioService {
                                     .map(item -> new SortItemDetail(item.getId(), item.getLabel(), item.getSortGroup(),
                                             refs.get(item.getImageAssetId()), refs.get(item.getAudioAssetId()))).toList() : List.of(),
                             version.getHint(), version.getExplanation(), khmerDetail(question.getQuestionType(), version, options),
-                            version.getDrawingGuide());
+                            version.getDrawingGuide(), retryPolicy != null && retryPolicy.allows(question, version));
                 })
                 .toList(), question.getStatus() == CatalogStatus.ARCHIVED);
     }
