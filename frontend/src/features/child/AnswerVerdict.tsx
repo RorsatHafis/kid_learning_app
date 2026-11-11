@@ -59,13 +59,21 @@ export function AnswerVerdict({
           </span>
           <div className="flex-1 text-center sm:text-left">
             <p className={cn("font-display text-[1.875rem] font-bold leading-tight", happy ? "text-light-deep" : "text-tonle-800")}>
-              {kept ? d.savedHeadline : result.correct ? m[RIGHT_HEADLINES[index % RIGHT_HEADLINES.length]] : m.notQuite}
+              {kept
+                ? d.savedHeadline
+                : result.correct
+                  ? result.secondTry
+                    ? m.secondTryRight
+                    : m[RIGHT_HEADLINES[index % RIGHT_HEADLINES.length]]
+                  : m.notQuite}
             </p>
             <p className="mt-1 text-lg font-medium text-ink">
               {kept
                 ? d.savedText
                 : result.correct
-                ? m.lanternLit
+                ? result.secondTry
+                  ? m.secondTryLine
+                  : m.lanternLit
                 : result.correctAnswer?.matches?.length
                   ? m.matchesMixed
                   : result.correctAnswer?.text

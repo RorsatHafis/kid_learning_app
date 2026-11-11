@@ -64,6 +64,16 @@ public class ReviewSchedule extends AuditableEntity {
         return new ReviewSchedule(reviewItemId, now, 1, BigDecimal.valueOf(2.5));
     }
 
+    /**
+     * D-18 (owner decision 2026-11-11): a skill that isn't secure yet but isn't failing either is first looked at again
+     * on {@code dueAt} (the child's next learning day) - spaced from there by {@link #recordOutcome}.
+     */
+    public static ReviewSchedule spaced(UUID reviewItemId, Instant dueAt) {
+        Assert.notNull(reviewItemId, "reviewItemId must not be null");
+        Assert.notNull(dueAt, "dueAt must not be null");
+        return new ReviewSchedule(reviewItemId, dueAt, 1, BigDecimal.valueOf(2.5));
+    }
+
     public void recordOutcome(boolean successful, Instant now) {
         if (successful) {
             this.intervalDays = Math.max(1, BigDecimal.valueOf(intervalDays).multiply(easeFactor)

@@ -146,10 +146,16 @@ class QuestionGuidanceIntegrationTests {
         // The explanation isn't in what the child gets before answering.
         assertThat(content.toString()).doesNotContain(EXPLANATION).doesNotContain("explanation");
 
-        // A wrong answer: right answer and explanation come back with it.
-        JsonNode wrong = json(post("/api/v1/activity-attempts/" + played.attemptId() + "/answers", answer(guided, "\"4\""),
+        // A wrong answer: since D-20 (owner decision 2026-11-11) one more try first, the answer held back meanwhile;
+        // asking to see it brings the right answer and the explanation.
+        JsonNode first = json(post("/api/v1/activity-attempts/" + played.attemptId() + "/answers", answer(guided, "\"4\""),
                 played.parent()), 201);
-        assertThat(wrong.get("correct").asBoolean()).isFalse();
+        assertThat(first.get("correct").asBoolean()).isFalse();
+        assertThat(first.get("retryAvailable").asBoolean()).isTrue();
+        assertThat(first.get("correctAnswer").isNull()).isTrue();
+        assertThat(first.toString()).doesNotContain(EXPLANATION);
+        JsonNode wrong = json(post("/api/v1/activity-attempts/" + played.attemptId() + "/answers/" + first.get("id").asString()
+                + "/reveal", "", played.parent()), 200);
         assertThat(wrong.get("correctAnswer").get("text").asString()).isEqualTo("3");
         assertThat(wrong.get("explanation").asString()).isEqualTo(EXPLANATION);
         // A question without one answers as before.

@@ -277,6 +277,12 @@ export interface AnswerRecord {
   submittedAnswer?: string;
   /** V91: false for a drawing - kept as the answer, never scored ({@code correct} means nothing then). */
   scored?: boolean;
+  /** D-20: the first answer was wrong and one more try is open; the answer and explanation are held back meanwhile. */
+  retryAvailable?: boolean;
+  /** D-20: the second try, once made - its verdict is the server's. */
+  retry?: { submittedAnswer: string; correct: boolean; hintUsed: boolean } | null;
+  /** D-20: the child asked to see the answer instead of trying again. */
+  revealed?: boolean;
 }
 
 // ---- learning/service/LearningJourneyService.java (records served as-is by LearningJourneyController) ----
@@ -430,6 +436,8 @@ export interface CompletedActivity {
   hintedAnswers?: number;
   /** V91: drawings in it - kept, never scored, so outside correct/total. */
   drawings?: number;
+  /** D-20: wrong first answers the child got right on the one more try (outside correct). */
+  rightOnSecondTry?: number;
 }
 
 // ---- learner/service/EvidenceStandard.java, learning/service/SkillProgressService.java ----

@@ -81,7 +81,7 @@ class AuthorizationSweepIntegrationTests {
     /** What any signed-in parent may open without naming a resource: their own account and family, or public data. */
     private static final Set<String> A_PARENTS_OWN_OR_PUBLIC = Set.of(
             "/api/v1/account", "/api/v1/account/second-factor", "/api/v1/account/phone", "/api/v1/account/devices",
-            "/api/v1/account/data-export", "/api/v1/children", "/api/v1/caregiving", "/api/v1/family/plan",
+            "/api/v1/account/data-export", "/api/v1/account/plan-choice", "/api/v1/children", "/api/v1/caregiving", "/api/v1/family/plan",
             "/api/v1/family/payments", "/api/v1/family/learning-day", "/api/v1/payments/methods", "/api/v1/curricula",
             "/api/v1/site/statements", "/api/v1/site/copy", "/api/v1/site/plans", "/api/v1/site/subjects", "/api/v1/site/faq", "/api/v1/demo/activities", "/api/v1/auth/legal");
 
@@ -266,6 +266,15 @@ class AuthorizationSweepIntegrationTests {
         ids.put("enrollmentId", journey.get("enrollmentId").asString());
         ids.put("attemptId", attemptId);
         ids.put("activityAttemptId", attemptId);
+        // D-20: the family child's wrong first answer with its retry open - another account must not retry or reveal it.
+        String answerId = UUID.randomUUID().toString();
+        jdbc.update("""
+                insert into answer_records (id, activity_attempt_id, question_version_id, submitted_answer, is_correct, retry_offered)
+                select ?::uuid, ?::uuid, question_version_id, 'sweep', false, true from activity_items
+                where activity_version_id = (select activity_version_id from activity_attempts where id = ?::uuid)
+                order by sequence_order limit 1
+                """, answerId, attemptId, attemptId);
+        ids.put("answerId", answerId);
         ids.put("activityId", activity.get("id").asString());
         ids.put("activityVersionId", activity.get("versions").get(0).get("id").asString());
         ids.put("versionId", questionVersion);

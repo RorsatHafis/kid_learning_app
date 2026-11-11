@@ -106,6 +106,7 @@ function ActivityRow({ activity, childId }: { activity: CompletedActivity; child
           {/* V91: drawings are kept, never scored - counted apart, and shown under Drawings. */}
           {(activity.drawings ?? 0) > 0 && <span className="text-ink-soft">{m.drawings(activity.drawings!)}</span>}
           {(activity.hintedAnswers ?? 0) > 0 && <span className="text-ink-soft">{m.withHint(activity.hintedAnswers!)}</span>}
+          {(activity.rightOnSecondTry ?? 0) > 0 && <span className="text-ink-soft">{m.secondTry(activity.rightOnSecondTry!)}</span>}
           {activity.skills.length > 0 && <span className="text-ink-soft">{activity.skills.map((s) => s.name).join(", ")}</span>}
           {activity.source === "REVIEW" && <span className="font-semibold text-light-deep">{m.smartReview}</span>}
           {activity.source === null && <span className="text-ink-soft">{m.freePractice}</span>}

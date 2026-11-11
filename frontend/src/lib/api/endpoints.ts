@@ -241,6 +241,11 @@ export const activityAttemptApi = {
     apiClient.post<StartedAttempt>(`/children/${childId}/activity-attempts`, input),
   get: (attemptId: string) => apiClient.get<ActivityAttempt>(`/activity-attempts/${attemptId}`),
   listAnswers: (attemptId: string) => apiClient.get<AnswerRecord[]>(`/activity-attempts/${attemptId}/answers`),
+  // D-20 (learning/web/ActivityAttemptController): one more try at a wrongly answered question, or the answer instead.
+  retryAnswer: (attemptId: string, answerId: string, input: { submittedAnswer: string; timeSpentSeconds?: number; hintUsed?: boolean }) =>
+    apiClient.post<AnswerRecord>(`/activity-attempts/${attemptId}/answers/${answerId}/retry`, input),
+  revealAnswer: (attemptId: string, answerId: string) =>
+    apiClient.post<AnswerRecord>(`/activity-attempts/${attemptId}/answers/${answerId}/reveal`),
   /** submittedAnswer per question type (backend AnswerScoringService):
    * MULTIPLE_CHOICE → the chosen option's id; TRUE_FALSE → "true" | "false";
    * SHORT_ANSWER → text; NUMERIC → a number. An invalid value is rejected with

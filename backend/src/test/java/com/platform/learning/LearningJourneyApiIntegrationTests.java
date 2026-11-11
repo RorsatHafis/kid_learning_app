@@ -133,6 +133,12 @@ class LearningJourneyApiIntegrationTests {
                     "{\"questionVersionId\":\"" + item.get("questionVersionId").asString()
                             + "\",\"submittedAnswer\":\"999\",\"idempotencyKey\":\"" + UUID.randomUUID() + "\"}", token), 201);
             assertThat(answer.get("correct").asBoolean()).isFalse();
+            // D-20: one more try is offered first; asking to see the answer closes it with the answer.
+            if (answer.get("retryAvailable").asBoolean()) {
+                assertThat(answer.get("correctAnswer").isNull()).isTrue();
+                answer = json(post("/api/v1/activity-attempts/" + attemptId + "/answers/" + answer.get("id").asString() + "/reveal", "",
+                        token), 200);
+            }
             correctAnswers.add(answer.get("correctAnswer").get("text").asString());
         }
         assertThat(correctAnswers).containsExactly("2", "3");

@@ -142,8 +142,14 @@ public class FamilyDataExportService {
     /** One answer as the child gave it. {@code answer} is readable text; {@code submitted} is the raw value stored. */
     /** {@code hintUsed} (D-16): the child opened the hint first; false also for answers from before it was recorded. */
     /** {@code scored}: false for a drawing (V91) - kept as drawn, with no right or wrong; {@code feedback}: grown-ups' words on it. */
+    /** {@code secondTry} (D-20): what followed a wrong first answer offered one more try - null when none was. */
     public record AnswerData(Instant answeredAt, UUID attemptId, String activity, String question, String answer,
-                             String submitted, boolean correct, boolean hintUsed, boolean scored, List<String> feedback) {
+                             String submitted, boolean correct, boolean hintUsed, boolean scored, List<String> feedback,
+                             SecondTry secondTry) {
+    }
+
+    /** D-20: the second answer (readable and as sent) and its verdict, or {@code askedToSeeAnswer} when there was none. */
+    public record SecondTry(boolean askedToSeeAnswer, String answer, String submitted, Boolean correct) {
     }
 
     @Transactional
@@ -227,7 +233,13 @@ public class FamilyDataExportService {
                                         record.getSubmittedAnswer(), record.isCorrect(), record.isHintUsed(), record.isScored(),
                                         record.isScored() ? List.of() : drawingFeedback.queryForList(
                                                 "select body from drawing_feedback where answer_record_id = ? order by created_at, id",
-                                                String.class, record.getId()));
+                                                String.class, record.getId()),
+                                        !record.isRetryOffered() ? null : drawingFeedback.query(
+                                                "select outcome, submitted_answer, is_correct from answer_retries where answer_record_id = ?",
+                                                (rs, n) -> "RETRIED".equals(rs.getString(1))
+                                                        ? new SecondTry(false, readable(rs.getString(2), choices), rs.getString(2), rs.getBoolean(3))
+                                                        : new SecondTry(true, null, null, null),
+                                                record.getId()).stream().findFirst().orElse(null));
                             });
                 })
                 .toList();

@@ -100,6 +100,7 @@ class LearningLoopCompletionIntegrationTests {
     @Autowired private LearningPathRepository learningPathRepository;
     @Autowired private LearningPathService learningPathService;
     @Autowired private ActivityAttemptService activityAttemptService;
+    @Autowired private com.platform.learning.service.AnswerRetryService answerRetryService;
     @Autowired private PostCompletionService postCompletionService;
     @Autowired private SmartReviewService smartReviewService;
     @Autowired private AdaptationDecisionRepository adaptationDecisionRepository;
@@ -195,10 +196,13 @@ class LearningLoopCompletionIntegrationTests {
     void concurrentReviewEvaluationsConvergeOnOneReviewItem() throws Exception {
         Catalog catalog = catalog();
         Learner learner = enroll(catalog);
-        // Low mastery on s1: answers are evidence as they are submitted, and nothing evaluates Smart Review until a
+        // Low mastery on s1: answers are evidence as they are submitted - since D-20 a wrong one once its retry closes,
+        // which the child does here by asking to see the answers - and nothing evaluates Smart Review until a
         // completion (since X26 a completed free practice re-evaluates it too), so the practice is left open here.
         ActivityAttempt practice = activityAttemptService.startAttempt(learner.childId(), catalog.easy().getId(), null, null);
         answerAll(practice, false);
+        activityAttemptService.listAnswers(practice.getId()).stream().filter(a -> a.isRetryOffered())
+                .forEach(a -> answerRetryService.reveal(practice.getId(), a.getId()));
         assertThat(smartReviewService.findItem(learner.childId(), catalog.s1().getId())).isEmpty();
 
         List<Optional<ReviewItem>> results = concurrently(8,
@@ -259,10 +263,14 @@ class LearningLoopCompletionIntegrationTests {
 
             AdaptationDecision decision = adaptationDecisionRepository.findByActivityAttemptId(mixed.getId()).orElseThrow();
             contexts.add(decision.getContext());
-            // Review is evaluated per skill: the weak one flagged, the strong one not.
+            // Review is evaluated per skill: the weak one flagged and due now; the strong one - right answers from one
+            // learning day only, so not secure yet (D-17) - revisited only on another day (D-18, owner decision 2026-11-11).
             assertThat(smartReviewService.findItem(learner.childId(), catalog.s2().getId()))
                     .hasValueSatisfying(review -> assertThat(review.getStatus()).isEqualTo(ReviewItemStatus.ACTIVE));
-            assertThat(smartReviewService.findItem(learner.childId(), catalog.s1().getId())).isEmpty();
+            String dueLater = "select count(*) from review_schedules s join review_items r on r.id = s.review_item_id "
+                    + "where r.child_id = ? and r.skill_id = ? and s.due_at > now()";
+            assertThat(count(dueLater, learner.childId(), catalog.s2().getId())).isZero();
+            assertThat(count(dueLater, learner.childId(), catalog.s1().getId())).isEqualTo(1);
         }
         assertThat(contexts.get(0).get("governingSkillId")).isEqualTo(catalog.s2().getId().toString());
         assertThat(contexts.get(0).get("exercisedSkillIds")).isEqualTo(contexts.get(1).get("exercisedSkillIds"));

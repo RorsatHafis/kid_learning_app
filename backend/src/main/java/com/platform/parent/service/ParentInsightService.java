@@ -249,8 +249,14 @@ public class ParentInsightService {
         supportingData.put("skillId", String.valueOf(skill.getId()));
         supportingData.put("reviewItemId", String.valueOf(reviewItem.getId()));
 
+        // D-18: a review is either remediation (answers mostly wrong) or a skill that isn't secure yet coming back on
+        // another day - the sentence says which, so right answers are never described as needing more practice.
+        boolean struggling = masteryEngine.listSkillStates(childId).stream()
+                .filter(state -> state.getSkillId().equals(skill.getId()))
+                .anyMatch(state -> state.getMasteryProbability().compareTo(java.math.BigDecimal.valueOf(0.5)) < 0);
         return ParentInsight.generate(childId, ParentInsightType.RECOMMENDATION,
-                skill.getName() + " may benefit from additional practice.", null, supportingData);
+                struggling ? skill.getName() + " may benefit from additional practice."
+                        : skill.getName() + " comes back on another day, to check it has stuck.", null, supportingData);
     }
 
     /**

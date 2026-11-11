@@ -3486,3 +3486,29 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   with RegistrationVerification 7, Payment 4, FamilyErasure 6, ServerTextCoverage 3, PublicPlans 1; backend unit
   suite green; Vitest 567/567 (planChoice.test 4); e2e plan-choice.spec 2/2 at 1280 and 360 (landing -> plans ->
   register -> email link -> checkout -> bank transfer confirmed by an administrator; keep free; axe clean).
+
+### 2026-11-11: D-20 (one retry) and D-18 (spaced review of non-secure skills) - built
+- **D-20:** a wrong first answer is offered one more go when a guess can't simply be right the second time (typed,
+  sorting; choice/matching/ordering with 3+ items; never true/false, two-item or drawing - server's
+  `AnswerRetryService.allows`). `answer_records` stays append-only: V93 adds `retry_offered` (fixed on insert) and the
+  append-only `answer_retries` (RETRIED with the server-scored second answer, or DECLINED). While open, the right
+  answer and explanation are withheld; the question counts once when the retry closes - right second try = 0.5 of a
+  right first answer (`platform.learning.retry.second-try-credit`, `LEARNING_SECOND_TRY_CREDIT`, owner-tunable; not yet
+  in the env example file, which is owner-managed), wrong / "Show me the answer" / moving on / finishing / stopping
+  the path = a miss. D-16 holds (hinted first answer: no mastery; hinted second: the miss only). The score counts
+  right first answers. Evidence writes from closing retries take the child's row lock (two activities finishing at
+  once on one skill). Player: "Not quite - have another go!", a clear question, "Show me the answer", "You got it on
+  your second try!". Parent recent activity: "n more right on a second try"; the family export includes each second
+  try. Endpoints `POST /activity-attempts/{id}/answers/{answerId}/retry|reveal` (learner only; authorization sweep
+  covers them). Resuming skips past an answered question: its open retry then closes as a miss.
+- **D-18:** Smart Review revisits every skill the evidence doesn't show secure (EvidenceStandard: needs practice or
+  progressing, D-17's one-day case included) - failing skills (mastery < 0.5) due at once as before, others first on
+  the child's next learning day, then SM-2 spacing by outcome - and retires a review only once the skill is secure.
+  Parent insight says which: "may benefit from additional practice" (struggling) or "comes back on another day, to
+  check it has stuck" (EN/KM); the parent wording about Smart Review updated.
+- **Tests:** AnswerRetryIntegrationTests 3, NotYetSecureReviewIntegrationTests 2; updated for the owner's changed
+  behaviour (one try -> retry; one-day secure now revisited): QuestionGuidance, LearningJourneyApi,
+  LearningLoopCompletion, GoldenLearningJourney, ParentInsightTruthfulness; AuthorizationSweep fills `answerId`. Full
+  integration suite 584 (all passing after these updates, on the run before the final insight wording - those classes
+  re-run green), unit suite green, Vitest 569/569, e2e accessibility 4/4 + golden-journeys 6/6 at 1280 (second try
+  right; second try wrong shows the answer; the activity completes).

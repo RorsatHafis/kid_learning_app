@@ -26,6 +26,10 @@ public class JourneyStopService {
 
     private final EnrollmentRepository enrollments;
     private final NamedParameterJdbcTemplate jdbc;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.platform.learning.repository.ActivityAttemptRepository attemptRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private AnswerRetryService retryService;
 
     public JourneyStopService(EnrollmentRepository enrollments, NamedParameterJdbcTemplate jdbc) {
         this.enrollments = enrollments;
@@ -48,6 +52,15 @@ public class JourneyStopService {
                     + "To stop it, end the school's access on this page.");
         }
         enrollment.withdraw();
+        // D-20: a retry still open in an activity on this path closes as a miss first, so its evidence stays.
+        if (retryService != null && attemptRepository != null) {
+            jdbc.queryForList("""
+                    select a.id from activity_attempts a where a.status = 'IN_PROGRESS' and a.learning_path_item_id in (
+                        select i.id from learning_path_items i join learning_paths p on p.id = i.learning_path_id
+                        where p.enrollment_id = :enrollment)
+                    """, Map.of("enrollment", enrollmentId), java.util.UUID.class)
+                    .forEach(id -> attemptRepository.findByIdForUpdate(id).ifPresent(retryService::settleOpen));
+        }
         // An activity left open on this path is closed; its answers stay.
         jdbc.update("""
                 update activity_attempts set status = 'ABANDONED', completed_at = now(), version = version + 1

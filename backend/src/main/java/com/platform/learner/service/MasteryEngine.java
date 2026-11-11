@@ -87,12 +87,24 @@ public class MasteryEngine {
      */
     @Transactional
     public LearnerSkillState recordEvidence(UUID childId, UUID skillId, boolean correct, UUID triggeredByAttemptId) {
+        return recordEvidence(childId, skillId, correct ? BigDecimal.ONE : BigDecimal.ZERO, triggeredByAttemptId);
+    }
+
+    /**
+     * D-20: one observation whose outcome may lie between a miss (0) and a right first answer (1) - a right second try
+     * counts for {@code RetryProperties.secondTryCredit}. Still one piece of evidence; the counters call it right only
+     * when it is a full right answer.
+     */
+    @Transactional
+    public LearnerSkillState recordEvidence(UUID childId, UUID skillId, BigDecimal observedOutcome, UUID triggeredByAttemptId) {
+        Assert.isTrue(observedOutcome != null && observedOutcome.signum() >= 0 && observedOutcome.compareTo(BigDecimal.ONE) <= 0,
+                "an observation's outcome must lie in [0, 1]");
+        boolean correct = observedOutcome.compareTo(BigDecimal.ONE) == 0;
         LearnerSkillState state = skillStateRepository.findByChildIdAndSkillId(childId, skillId)
                 .orElseGet(() -> skillStateRepository.save(LearnerSkillState.initial(childId, skillId)));
 
         int newEvidenceCount = state.getEvidenceCount() + 1;
-        BigDecimal outcome = correct ? BigDecimal.ONE : BigDecimal.ZERO;
-        BigDecimal delta = outcome.subtract(state.getMasteryProbability()).multiply(stepSize(newEvidenceCount));
+        BigDecimal delta = observedOutcome.subtract(state.getMasteryProbability()).multiply(stepSize(newEvidenceCount));
         BigDecimal newMastery = clamp(state.getMasteryProbability().add(delta));
 
         BigDecimal newConfidence = clamp(

@@ -98,15 +98,40 @@ public final class ActivityAttemptDtos {
             boolean hintUsed,
             String submittedAnswer,
             /* V91: false for a drawing - recorded, with no right or wrong ({@code correct} means nothing then). */
-            boolean scored
+            boolean scored,
+            /*
+             * D-20: the first answer was wrong and the child may try once more. While true, the right answer and the
+             * explanation are held back (null).
+             */
+            boolean retryAvailable,
+            /* D-20: the second try, once made (null: none - or the child asked to see the answer: {@code revealed}). */
+            RetryView retry,
+            /* D-20: the child asked to see the answer instead of trying again (or moved on). */
+            boolean revealed
     ) {
+        /** {@code correct} is the server's verdict on the second answer. */
+        public record RetryView(String submittedAnswer, boolean correct, boolean hintUsed) {
+        }
+
         public static AnswerRecordResponse from(AnswerRecord record, AnswerFeedbackService.CorrectAnswer correctAnswer,
                                                 String explanation) {
+            return from(record, correctAnswer, explanation, null);
+        }
+
+        public static AnswerRecordResponse from(AnswerRecord record, AnswerFeedbackService.CorrectAnswer correctAnswer,
+                                                String explanation, com.platform.learning.entity.AnswerRetry retry) {
+            boolean open = record.isRetryOffered() && retry == null;
             return new AnswerRecordResponse(
                     record.getId(), record.getQuestionVersionId(), record.isCorrect(),
-                    record.getTimeSpentSeconds(), record.getOccurredAt(), correctAnswer, explanation, record.isHintUsed(),
-                    record.getSubmittedAnswer(), record.isScored());
+                    record.getTimeSpentSeconds(), record.getOccurredAt(), open ? null : correctAnswer, open ? null : explanation,
+                    record.isHintUsed(), record.getSubmittedAnswer(), record.isScored(), open,
+                    retry != null && retry.isRetried() ? new RetryView(retry.getSubmittedAnswer(), retry.isCorrect(), retry.isHintUsed()) : null,
+                    retry != null && !retry.isRetried());
         }
+    }
+
+    /** D-20: the child's second answer to a question whose first answer was wrong. */
+    public record RetryAnswerRequest(@NotBlank String submittedAnswer, Integer timeSpentSeconds, Boolean hintUsed) {
     }
 
     /** {@code insertedLearningPathItemId} is what the frontend should treat as "what's next" - it's already on the path. */

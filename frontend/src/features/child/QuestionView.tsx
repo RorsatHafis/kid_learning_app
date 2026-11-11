@@ -26,6 +26,8 @@ export interface AnswerResult {
   correctAnswer: CorrectAnswer | null;
   /** Y41: the author's explanation, with the answer; null when the question has none. */
   explanation?: string | null;
+  /** D-20: the verdict is on the second try. */
+  secondTry?: boolean;
 }
 
 /** A picture choice shows its picture; its label is what a screen reader says. */

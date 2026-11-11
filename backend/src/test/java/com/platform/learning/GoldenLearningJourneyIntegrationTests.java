@@ -91,6 +91,7 @@ class GoldenLearningJourneyIntegrationTests {
     /** Upper bound on activities one learner plays; the paths here finish well inside it. */
     private static final int MAX_STEPS = 30;
 
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
     @Autowired private SubjectRepository subjectRepository;
     @Autowired private AgeHubRepository ageHubRepository;
     @Autowired private CurriculumRepository curriculumRepository;
@@ -161,7 +162,10 @@ class GoldenLearningJourneyIntegrationTests {
 
         // ---- Smart Review: only the struggling learner, for the actual weak skill, ----
         // ---- placed on their path by the server and played through next-activity ----
-        assertThat(smartReviewService.listActive(a.childId())).isEmpty();
+        // D-18 (owner decision 2026-11-11): A's right answers came in one day, so the skill comes back on another day -
+        // scheduled, not due now; only B's weak skill is due and placed.
+        assertThat(smartReviewService.listActive(a.childId())).allSatisfy(item -> assertThat(jdbc.queryForObject(
+                "select due_at > now() from review_schedules where review_item_id = ?", Boolean.class, item.getId())).isTrue());
         assertThat(smartReviewService.listActive(b.childId())).extracting(ReviewItem::getSkillId)
                 .containsExactly(within10SkillId);
         assertThat(learningPathService.listItems(a.pathId()))
@@ -176,9 +180,13 @@ class GoldenLearningJourneyIntegrationTests {
         List<ParentInsight> insightsB = parentInsightService.generateInsights(b.childId());
 
         assertThat(insightsA)
-                .as("the strong learner must not receive a weakness/recommendation insight")
+                .as("the strong learner must not receive a weakness insight or be told they need more practice")
                 .noneMatch(i -> i.getInsightType() == ParentInsightType.WEAKNESS)
-                .noneMatch(i -> i.getInsightType() == ParentInsightType.RECOMMENDATION);
+                .noneMatch(i -> i.getInsightType() == ParentInsightType.RECOMMENDATION
+                        && i.getHeadline().endsWith("may benefit from additional practice."));
+        // D-18 (owner decision 2026-11-11): right answers from one day come back on another day, said as exactly that.
+        assertThat(insightsA).filteredOn(i -> i.getInsightType() == ParentInsightType.RECOMMENDATION)
+                .allMatch(i -> i.getHeadline().endsWith("comes back on another day, to check it has stuck."));
         assertThat(insightsA).anyMatch(i -> i.getInsightType() == ParentInsightType.STRENGTH
                 || i.getInsightType() == ParentInsightType.PROGRESS);
 

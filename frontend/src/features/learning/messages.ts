@@ -31,7 +31,8 @@ export const learningMessages = defineMessages(
         `${after}answers on ${skill} were mostly incorrect, so the path adds more practice before moving on.`,
       challenge: (after: string, skill: string) =>
         `${after}answers on ${skill} were consistently correct, so the path steps up the difficulty.`,
-      review: (skill: string) => `Smart Review: recent answers on ${skill} were mostly incorrect, so it is scheduled for review.`,
+      // D-18: review covers every skill the answers don't show secure yet - failing ones at once, others another day.
+      review: (skill: string) => `Smart Review: answers on ${skill} don't show it secure yet, so it comes back to practise again.`,
       decided: (day: string) => `Decided ${day}.`,
       assigned: (skill: string | null, className: string | null) =>
         `${skill ? `Practice on ${skill}, assigned` : "Assigned"} by ${className ? `a teacher of ${className}` : "a teacher"}.`,
@@ -102,7 +103,7 @@ export const learningMessages = defineMessages(
       challenge: (after: string, skill: string) =>
         `${after}ចម្លើយលើ ${skill} ត្រឹមត្រូវជាប់លាប់ ដូច្នេះដំណើររៀនបង្កើនកម្រិតពិបាក។`,
       review: (skill: string) =>
-        `ការរំលឹកឆ្លាតវៃ៖ ចម្លើយថ្មីៗលើ ${skill} ភាគច្រើនមិនត្រឹមត្រូវ ដូច្នេះវាត្រូវបានកំណត់ពេលសម្រាប់រំលឹកឡើងវិញ។`,
+        `ការរំលឹកឆ្លាតវៃ៖ ចម្លើយលើ ${skill} មិនទាន់បង្ហាញថាវារឹងមាំនៅឡើយទេ ដូច្នេះវាត្រឡប់មកវិញដើម្បីហាត់ម្ដងទៀត។`,
       decided: (day: string) => `បានសម្រេច ${day}។`,
       assigned: (skill: string | null, className: string | null) =>
         `${skill ? `ការហាត់លើ ${skill} ដែល` : ""}ត្រូវបានចាត់ឱ្យដោយ${className ? `គ្រូនៃថ្នាក់ ${className}` : "គ្រូម្នាក់"}។`,

@@ -242,7 +242,7 @@ export const familyMessages = defineMessages(
       whatNext: "What happens next",
       startedNotFinished: "Started, not finished · ",
       decides: (child: string) =>
-        `Bookeyond decides each next step from ${child}'s answers: more practice when answers show it's needed, a harder activity when a skill is secure, and Smart Review when it slips.`,
+        `Bookeyond decides each next step from ${child}'s answers: more practice when answers show it's needed, a harder activity when a skill is secure, and Smart Review on other days until it is.`,
       notAnswered: (child: string) => `${child} hasn't answered on this skill yet.`,
       acrossActivities: (n: number) => ` across ${n} ${plural(n, "activity", "activities")}`,
       answersRight: (right: number, scored: number, across: string) => `${right} of ${scored} answers right${across}`,
@@ -337,6 +337,8 @@ export const familyMessages = defineMessages(
       minutes: (n: number) => `about ${n} min`,
       correct: (right: number, total: number) => `${right} of ${total} answers correct`,
       drawings: (n: number) => (n === 1 ? "1 drawing (see Drawings)" : `${n} drawings (see Drawings)`),
+      // D-20: right after one more try - not counted as right first time, and weaker evidence.
+      secondTry: (n: number) => (n === 1 ? "1 more right on a second try" : `${n} more right on a second try`),
       withHint: (n: number) => (n === 1 ? "1 with a hint - practice, not counted as shown on their own" : `${n} with a hint - practice, not counted as shown on their own`),
       smartReview: "Smart Review",
       freePractice: "free practice",
@@ -640,7 +642,7 @@ export const familyMessages = defineMessages(
       whatNext: "អ្វីដែលនឹងកើតឡើងបន្ទាប់",
       startedNotFinished: "បានចាប់ផ្ដើម មិនទាន់បញ្ចប់ · ",
       decides: (child: string) =>
-        `Bookeyond សម្រេចជំហានបន្ទាប់នីមួយៗពីចម្លើយរបស់ ${child}៖ ការហាត់បន្ថែមនៅពេលចម្លើយបង្ហាញថាត្រូវការ សកម្មភាពពិបាកជាងនៅពេលជំនាញរឹងមាំ និងការរំលឹកឆ្លាតវៃនៅពេលវាធ្លាក់ចុះ។`,
+        `Bookeyond សម្រេចជំហានបន្ទាប់នីមួយៗពីចម្លើយរបស់ ${child}៖ ការហាត់បន្ថែមនៅពេលចម្លើយបង្ហាញថាត្រូវការ សកម្មភាពពិបាកជាងនៅពេលជំនាញរឹងមាំ និងការរំលឹកឆ្លាតវៃនៅថ្ងៃផ្សេងទៀត រហូតដល់វារឹងមាំ។`,
       notAnswered: (child: string) => `${child} មិនទាន់បានឆ្លើយលើជំនាញនេះនៅឡើយទេ។`,
       acrossActivities: (n: number) => ` ក្នុងសកម្មភាព ${n}`,
       answersRight: (right: number, scored: number, across: string) => `ចម្លើយត្រូវ ${right} ក្នុងចំណោម ${scored}${across}`,
@@ -734,6 +736,7 @@ export const familyMessages = defineMessages(
       minutes: (n: number) => `ប្រហែល ${n} នាទី`,
       correct: (right: number, total: number) => `ចម្លើយត្រូវ ${right} ក្នុងចំណោម ${total}`,
       drawings: (n: number) => `រូបគំនូរ ${n} (មើលផ្នែក រូបគំនូរ)`,
+      secondTry: (n: number) => `ត្រូវបន្ថែម ${n} នៅលើកទីពីរ`,
       withHint: (n: number) => `${n} ដោយប្រើតម្រុយ - ជាការហាត់រៀន មិនរាប់ថាបានបង្ហាញដោយខ្លួនឯងទេ`,
       smartReview: "ការរំលឹកឆ្លាតវៃ",
       freePractice: "ការហាត់ដោយសេរី",

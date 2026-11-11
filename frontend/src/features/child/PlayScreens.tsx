@@ -243,6 +243,10 @@ export function Question({
   // first send and is resent unchanged with the key (D-16).
   const idempotencyKeys = useRef(new Map<string, { key: string; hintUsed: boolean }>());
   const [hintOpenedFor, setHintOpenedFor] = useState<string | null>(null);
+  // D-20: a wrong first answer the server offered one more try at (cleared when the question changes).
+  const [retrying, setRetrying] = useState<{ record: AnswerRecord; submitted: string; hintOpened: boolean } | null>(null);
+  const [revealing, setRevealing] = useState(false);
+  useEffect(() => setRetrying(null), [index]);
   const continueRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -252,16 +256,74 @@ export function Question({
   if (!item) return null;
 
   function reveal(record: AnswerRecord, submitted: string) {
+    // D-20: still open - one more go, with the answer held back. The question isn't over yet.
+    if (record.retryAvailable) {
+      playCue("incorrect");
+      setRetrying({ record, submitted, hintOpened: false });
+      setIsSubmitting(false);
+      return;
+    }
+    setRetrying(null);
     // V91: a drawing is kept, never marked - it is met like a right answer, with no verdict on it.
     const scored = record.scored !== false;
-    playCue(!scored || record.correct ? "correct" : "incorrect");
-    onAnswered({ submitted, correct: record.correct, scored, correctAnswer: record.correctAnswer, explanation: record.explanation ?? null });
+    const final = record.retry ?? null;
+    const correct = final ? final.correct : record.correct;
+    playCue(!scored || correct ? "correct" : "incorrect");
+    onAnswered({
+      submitted: final ? final.submittedAnswer : submitted,
+      correct,
+      scored,
+      correctAnswer: record.correctAnswer,
+      explanation: record.explanation ?? null,
+      secondTry: final !== null,
+    });
+  }
+
+  async function showAnswer() {
+    if (!retrying || revealing) return;
+    setRevealing(true);
+    setSubmitError(null);
+    try {
+      reveal(await activityAttemptApi.revealAnswer(attemptId, retrying.record.id), retrying.submitted);
+    } catch {
+      const recorded = await findRecordedAnswer(attemptId, item.questionVersionId);
+      if (recorded && !recorded.retryAvailable) reveal(recorded, retrying.submitted);
+      else setSubmitError("answerNotSent");
+    } finally {
+      setRevealing(false);
+    }
   }
 
   async function handleAnswer(submittedAnswer: string) {
     if (isSubmitting) return; // a rapid double-tap must not fire two submits
     setIsSubmitting(true);
     setSubmitError(null);
+    if (retrying) {
+      // D-20: the second try - scored by the server, once; a lost reply is found again from the recorded answer.
+      try {
+        reveal(
+          await activityAttemptApi.retryAnswer(attemptId, retrying.record.id, {
+            submittedAnswer,
+            timeSpentSeconds: Math.max(1, Math.round((Date.now() - startedAt) / 1000)),
+            hintUsed: retrying.hintOpened,
+          }),
+          submittedAnswer,
+        );
+      } catch (err) {
+        const recorded = await findRecordedAnswer(attemptId, item.questionVersionId);
+        if (recorded && !recorded.retryAvailable) {
+          reveal(recorded, submittedAnswer);
+          return;
+        }
+        if (err instanceof ApiError && err.status === 409) {
+          onResync();
+          return;
+        }
+        setSubmitError(err instanceof ApiError && err.status === 422 ? "answerDoesntFit" : "answerNotSent");
+        setIsSubmitting(false);
+      }
+      return;
+    }
     let sent = idempotencyKeys.current.get(submittedAnswer);
     if (!sent) {
       sent = { key: crypto.randomUUID(), hintUsed: hintOpenedFor === item.questionVersionId };
@@ -342,13 +404,33 @@ export function Question({
         </div>
 
         <div className="flex flex-col gap-8 px-5 pb-9 pt-10 sm:px-12 sm:pb-11 sm:pt-12">
+          {retrying && !result && (
+            <div role="status" className="flex flex-col items-center gap-1 rounded-[20px] bg-tonle-50 px-5 py-4 text-center ring-1 ring-tonle-100 motion-safe:animate-rise-in">
+              <p className="font-display text-2xl font-bold text-tonle-800">{m.tryAgainHeadline}</p>
+              <p className="text-base font-medium text-ink">{m.tryAgainText}</p>
+            </div>
+          )}
           <QuestionView
+            // D-20: the second try starts from a clear question (the first answer is kept by the server).
+            key={retrying ? "second-try" : "first-try"}
             item={item}
             onAnswer={handleAnswer}
-            disabled={isSubmitting}
+            disabled={isSubmitting || revealing}
             result={result}
-            onHintOpened={() => setHintOpenedFor(item.questionVersionId)}
+            onHintOpened={() =>
+              retrying ? setRetrying({ ...retrying, hintOpened: true }) : setHintOpenedFor(item.questionVersionId)
+            }
           />
+          {retrying && !result && (
+            <button
+              type="button"
+              onClick={() => void showAnswer()}
+              disabled={revealing || isSubmitting}
+              className="mx-auto min-h-12 rounded-pill px-5 text-base font-bold text-tonle-800 underline-offset-4 hover:underline disabled:opacity-60"
+            >
+              {m.showMeAnswer}
+            </button>
+          )}
           {submitError && (
             <p role="alert" className="text-center text-base font-semibold text-brick-deep">
               {m[submitError]}

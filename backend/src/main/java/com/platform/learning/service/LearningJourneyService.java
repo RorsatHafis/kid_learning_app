@@ -263,11 +263,15 @@ public class LearningJourneyService {
                                     int totalAnswers, Instant startedAt, Instant completedAt, List<SkillRef> skills,
                                     DecisionSummary decision, int hintedAnswers,
                                     /** V91: drawings in it - answers, not scored, so not in correct/total. */
-                                    int drawings) {
+                                    int drawings,
+                                    /** D-20: wrong first answers the child got right on the one more try (not in correct). */
+                                    int rightOnSecondTry) {
     }
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private JourneyPlanCheck planCheck;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.platform.learning.repository.AnswerRetryRepository answerRetries;
 
     // ------------------------------------------------------------------ queries
 
@@ -567,6 +571,9 @@ public class LearningJourneyService {
         int drawings = (int) answers.stream().filter(answer -> !answer.isScored()).count();
         answers = answers.stream().filter(AnswerRecord::isScored).toList();
         int correct = (int) answers.stream().filter(AnswerRecord::isCorrect).count();
+        List<UUID> offered = answers.stream().filter(AnswerRecord::isRetryOffered).map(AnswerRecord::getId).toList();
+        int rightOnSecondTry = offered.isEmpty() || answerRetries == null ? 0
+                : (int) answerRetries.findByAnswerRecordIdIn(offered).stream().filter(r -> r.isRetried() && r.isCorrect()).count();
 
         DecisionSummary decision = lookups.decisionOf(attempt.getId())
                 .map(recorded -> new DecisionSummary(recorded.getDecisionType(),
@@ -580,7 +587,8 @@ public class LearningJourneyService {
         String subjectName = lookups.subjectName(activity.getSubjectId());
         return new CompletedActivity(attempt.getId(), version.getId(), titleFor(activity, version), subjectName, source,
                 attempt.getScore(), correct, answers.size(), attempt.getStartedAt(), attempt.getCompletedAt(),
-                lookups.skillsOf(version.getId()), decision, (int) answers.stream().filter(AnswerRecord::isHintUsed).count(), drawings);
+                lookups.skillsOf(version.getId()), decision, (int) answers.stream().filter(AnswerRecord::isHintUsed).count(), drawings,
+                rightOnSecondTry);
     }
 
     /** Null for a class's (teacher-owned) path, whose fit is the school's to judge, or when the child's age is unknown. */

@@ -49,6 +49,8 @@ public class ActivityAttemptController {
     private final FamilyAccessGuard familyAccessGuard;
     private final com.platform.family.service.ChildAccess childAccess;
     private final AnswerFeedbackService answerFeedbackService;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.platform.learning.service.AnswerRetryService answerRetryService;
 
     public ActivityAttemptController(ActivityAttemptService activityAttemptService,
                                       PostCompletionService postCompletionService, FamilyAccessGuard familyAccessGuard, com.platform.family.service.ChildAccess childAccess,
@@ -61,8 +63,31 @@ public class ActivityAttemptController {
     }
 
     private AnswerRecordResponse toResponse(AnswerRecord record) {
+        com.platform.learning.entity.AnswerRetry retry = record.isRetryOffered()
+                ? answerRetryService.retriesOf(List.of(record.getId())).get(record.getId()) : null;
         return AnswerRecordResponse.from(record, answerFeedbackService.correctAnswerFor(record),
-                answerFeedbackService.explanationFor(record));
+                answerFeedbackService.explanationFor(record), retry);
+    }
+
+    /** D-20: the second try at a question whose first answer was wrong - scored by the server, recorded once. */
+    @PostMapping("/api/v1/activity-attempts/{attemptId}/answers/{answerId}/retry")
+    public ResponseEntity<AnswerRecordResponse> retryAnswer(@PathVariable UUID attemptId, @PathVariable UUID answerId,
+                                                            @Valid @RequestBody ActivityAttemptDtos.RetryAnswerRequest request,
+                                                            @AuthenticationPrincipal UUID accountId) {
+        ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
+        childAccess.requireLearner(accountId, attempt.getChildId());
+        AnswerRecord record = answerRetryService.retry(attemptId, answerId, request.submittedAnswer(), request.timeSpentSeconds(),
+                Boolean.TRUE.equals(request.hintUsed()));
+        return ResponseEntity.ok(toResponse(record));
+    }
+
+    /** D-20: the child would rather see the answer than try again. */
+    @PostMapping("/api/v1/activity-attempts/{attemptId}/answers/{answerId}/reveal")
+    public ResponseEntity<AnswerRecordResponse> revealAnswer(@PathVariable UUID attemptId, @PathVariable UUID answerId,
+                                                             @AuthenticationPrincipal UUID accountId) {
+        ActivityAttempt attempt = activityAttemptService.getAttempt(attemptId);
+        childAccess.requireLearner(accountId, attempt.getChildId());
+        return ResponseEntity.ok(toResponse(answerRetryService.reveal(attemptId, answerId)));
     }
 
     @PostMapping("/api/v1/children/{childId}/activity-attempts")

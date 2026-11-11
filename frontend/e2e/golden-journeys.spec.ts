@@ -50,6 +50,13 @@ test.describe("golden journeys", () => {
       await page.getByRole("textbox").fill(answer);
       await page.getByRole("button", { name: "Check" }).click();
       await expect(page.getByText(answered === 0 ? /not quite|let.s|answer is/i : /got it|right|great/i).filter({ visible: true }).first()).toBeVisible();
+      if (answered === 0) {
+        // D-20 (owner decision 2026-11-11): the miss gets one more go - right this time, met as a second try.
+        await expect(page.getByText("Not quite — have another go!")).toBeVisible();
+        await page.getByRole("textbox").fill(answerFor(prompt));
+        await page.getByRole("button", { name: "Check" }).click();
+        await expect(page.getByText("You got it on your second try!")).toBeVisible();
+      }
       answered++;
       const finish = page.getByRole("button", { name: /finish/i });
       if (await finish.isVisible()) {

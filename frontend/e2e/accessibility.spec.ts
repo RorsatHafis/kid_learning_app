@@ -56,6 +56,10 @@ test.describe("accessibility @phone", () => {
     await expectNoViolations(page, "question");
     await page.getByRole("textbox").fill("99");
     await page.getByRole("button", { name: "Check" }).click();
+    // D-20 (owner decision 2026-11-11): one more go after a wrong typed answer, the answer held back meanwhile.
+    await expect(page.getByText("Not quite — have another go!")).toBeVisible();
+    await expectNoViolations(page, "one more go after a wrong answer");
+    await page.getByRole("button", { name: "Show me the answer" }).click();
     await expect(page.getByRole("button", { name: /next|finish/i })).toBeVisible();
     await expectNoViolations(page, "feedback after a wrong answer");
 
@@ -69,6 +73,15 @@ test.describe("accessibility @phone", () => {
       await page.getByRole("button", { name: /^Next/ }).click();
       await page.getByRole("textbox").fill("1");
       await page.getByRole("button", { name: "Check" }).click();
+      // D-20: a wrong typed answer gets one more go; wrong again, the right answer is shown and the walk moves on.
+      const showMe = page.getByRole("button", { name: "Show me the answer" });
+      await expect(page.getByRole("button", { name: /^(Next|Finish)/ }).or(showMe)).toBeVisible();
+      if (await showMe.isVisible()) {
+        await page.getByRole("textbox").fill("1");
+        await page.getByRole("button", { name: "Check" }).click();
+        await expect(page.getByText("Not quite — good try!")).toBeVisible();
+        await expect(page.getByText(/^The answer is /)).toBeVisible();
+      }
       await expect(page.getByRole("button", { name: /^(Next|Finish)/ })).toBeVisible();
     }
     await expect(page.getByRole("heading", { name: /complete!|Perfect!/ })).toBeVisible();
@@ -96,6 +109,10 @@ test.describe("accessibility @phone", () => {
       await page.getByRole("textbox").fill("1");
       await page.getByRole("button", { name: "Check" }).click();
       const finish = page.getByRole("button", { name: /^Finish/ });
+      // D-20: a wrong typed answer gets one more go; this walk asks to see the answer.
+      const showMe = page.getByRole("button", { name: "Show me the answer" });
+      await expect(page.getByRole("button", { name: /^(Next|Finish)/ }).or(showMe)).toBeVisible();
+      if (await showMe.isVisible()) await showMe.click();
       await expect(page.getByRole("button", { name: /^(Next|Finish)/ })).toBeVisible();
       if (await finish.isVisible()) {
         await finish.click();

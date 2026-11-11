@@ -35,7 +35,10 @@ final class InsightText {
                     m -> "កូនរបស់អ្នកកំពុងកសាងទំនុកចិត្តនៅឡើយ លើផ្នែកនៃ " + m.group(1) + " ដែលបានហាត់រហូតមកដល់ពេលនេះ។"),
             rule("Your child is still developing confidence with (.+)\\.",
                     m -> "កូនរបស់អ្នកកំពុងកសាងទំនុកចិត្តនៅឡើយ ជាមួយ " + m.group(1) + "។"),
-            rule("(.+) may benefit from additional practice\\.", m -> m.group(1) + " អាចត្រូវការការហាត់បន្ថែម។"));
+            rule("(.+) may benefit from additional practice\\.", m -> m.group(1) + " អាចត្រូវការការហាត់បន្ថែម។"),
+            // D-18: a skill that isn't secure yet, revisited on another day.
+            rule("(.+) comes back on another day, to check it has stuck\\.",
+                    m -> m.group(1) + " នឹងត្រឡប់មកវិញនៅថ្ងៃផ្សេងទៀត ដើម្បីពិនិត្យថាវាចាំបានយូរ។"));
 
     private InsightText() {
     }

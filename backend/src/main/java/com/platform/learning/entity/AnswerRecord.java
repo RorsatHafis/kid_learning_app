@@ -48,6 +48,10 @@ public class AnswerRecord extends ImmutableEvent {
     @Column(name = "scored", nullable = false, updatable = false)
     private boolean scored = true;
 
+    /** D-20 (V93): a wrong first answer that was offered one retry (decided by the server when it is written). */
+    @Column(name = "retry_offered", nullable = false, updatable = false)
+    private boolean retryOffered;
+
     protected AnswerRecord() {
         // JPA
     }
@@ -94,6 +98,18 @@ public class AnswerRecord extends ImmutableEvent {
 
     public boolean isScored() {
         return scored;
+    }
+
+    public boolean isRetryOffered() {
+        return retryOffered;
+    }
+
+    /** D-20: before it is first saved - a wrong answer the child may try once more. */
+    public AnswerRecord offeringRetry() {
+        Assert.isTrue(!correct && scored, "Only a wrong, scored answer is offered a retry");
+        Assert.isNull(getId(), "A retry is offered when the answer is first recorded");
+        this.retryOffered = true;
+        return this;
     }
 
     /** V91: a drawing - the child's answer, kept like any other, with no right or wrong. */

@@ -58,6 +58,8 @@ public class ActivityAttemptService {
     private final ChildRepository childRepository;
     private final IdempotencyService idempotencyService;
     private final AnswerSubmissionWriter answerSubmissionWriter;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private AnswerRetryService answerRetryService;
     private final LearningPathItemRepository learningPathItemRepository;
     private final LearningPathRepository learningPathRepository;
     private final EnrollmentRepository enrollmentRepository;
@@ -326,6 +328,8 @@ public class ActivityAttemptService {
         if (attempt.getStatus() == ActivityAttemptStatus.COMPLETED) {
             return attempt;
         }
+        // D-20: a retry still open closes as a miss before the attempt is scored and its decisions are made.
+        if (answerRetryService != null && attempt.getStatus() == ActivityAttemptStatus.IN_PROGRESS) answerRetryService.settleOpen(attempt);
         BigDecimal score = calculateScore(attempt);
         Instant completedAt = Instant.now();
         attempt.complete(completedAt, score);
@@ -408,6 +412,10 @@ public class ActivityAttemptService {
         ActivityAttempt attempt = getAttempt(activityAttemptId);
         if (attempt.getStatus() == ActivityAttemptStatus.ABANDONED) {
             return attempt;
+        }
+        // D-20: stopping keeps an open retry's miss as evidence.
+        if (answerRetryService != null && attempt.getStatus() == ActivityAttemptStatus.IN_PROGRESS) {
+            answerRetryService.settleOpen(attemptRepository.findByIdForUpdate(activityAttemptId).orElseThrow());
         }
         attempt.abandon(Instant.now());
         return attempt;

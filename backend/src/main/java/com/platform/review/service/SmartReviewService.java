@@ -1,5 +1,8 @@
 package com.platform.review.service;
 
+import com.platform.learner.service.EvidenceStandard;
+import com.platform.learner.service.LearningDays;
+
 import com.platform.common.entity.PublicationStatus;
 import com.platform.common.web.ResourceNotFoundException;
 import com.platform.content.entity.ActivityVersion;
@@ -44,6 +47,7 @@ import java.util.UUID;
  */
 @Service
 public class SmartReviewService {
+    // (imports kept local below: EvidenceStandard and LearningDays live in learner.service)
 
     /** Mastery below this, with enough evidence to trust the number, is what "needs reinforcement" means here. */
     private static final BigDecimal REVIEW_TRIGGER_THRESHOLD = BigDecimal.valueOf(0.5);
@@ -57,6 +61,10 @@ public class SmartReviewService {
     private final ActivityVersionRepository activityVersionRepository;
     private final LearningPathService learningPathService;
     private final PathContentScope pathContentScope;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private EvidenceStandard evidenceStandard;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private LearningDays learningDays;
 
     public SmartReviewService(ReviewItemRepository reviewItemRepository, ReviewScheduleRepository reviewScheduleRepository,
                                ReviewAttemptRepository reviewAttemptRepository,
@@ -86,9 +94,21 @@ public class SmartReviewService {
     public Optional<ReviewItem> evaluateAndSchedule(UUID childId, UUID skillId) {
         Optional<LearnerSkillState> maybeState = skillStateRepository.findByChildIdAndSkillId(childId, skillId);
 
-        boolean needsReview = maybeState.isPresent()
+        // Remediation: low mastery with enough evidence to trust it - due at once.
+        boolean remediation = maybeState.isPresent()
                 && maybeState.get().getEvidenceCount() >= MIN_EVIDENCE_FOR_REVIEW
                 && maybeState.get().getMasteryProbability().compareTo(REVIEW_TRIGGER_THRESHOLD) < 0;
+        // D-18 (owner decision 2026-11-11): every skill the evidence doesn't show secure yet - "needs practice" or
+        // "progressing", by the same standard parents read (D-17 included: secure-level answers from one day only) - is
+        // revisited with spaced review until it is secure.
+        boolean notYetSecure = false;
+        if (maybeState.isPresent() && evidenceStandard != null && learningDays != null) {
+            int days = learningDays.evidenceDays(childId).getOrDefault(skillId, 0);
+            EvidenceStandard.SkillStanding standing = evidenceStandard.standingFor(maybeState.get(), days);
+            notYetSecure = standing == EvidenceStandard.SkillStanding.NEEDS_PRACTICE
+                    || standing == EvidenceStandard.SkillStanding.PROGRESSING;
+        }
+        boolean needsReview = remediation || notYetSecure;
 
         // Battle 5D (N2): create-if-absent is decided by the database, then the row is
         // locked, so concurrent evaluations of one (child, skill) converge on a single
@@ -110,8 +130,11 @@ public class SmartReviewService {
         }
 
         // Serialized by the item lock above; uq_review_schedules_review_item is the backstop.
+        // A failing skill is due at once; one that is only not secure yet, on the child's next learning day.
         reviewScheduleRepository.findByReviewItemId(item.getId())
-                .orElseGet(() -> reviewScheduleRepository.save(ReviewSchedule.initial(item.getId(), Instant.now())));
+                .orElseGet(() -> reviewScheduleRepository.save(remediation || learningDays == null
+                        ? ReviewSchedule.initial(item.getId(), Instant.now())
+                        : ReviewSchedule.spaced(item.getId(), nextLearningDay(childId))));
 
         return Optional.of(item);
     }
@@ -270,6 +293,12 @@ public class SmartReviewService {
     @Transactional(readOnly = true)
     public List<ReviewItem> listActive(UUID childId) {
         return reviewItemRepository.findByChildIdAndStatus(childId, ReviewItemStatus.ACTIVE);
+    }
+
+    /** The start of the child's next learning day (in the child's learning-day zone). */
+    private Instant nextLearningDay(UUID childId) {
+        java.time.ZoneId zone = learningDays.zoneOf(childId);
+        return LearningDays.dayOf(Instant.now(), zone).plusDays(1).atStartOfDay(zone).toInstant();
     }
 
     /** N7: only content the path's scope admits (see {@link PathContentScope}). */

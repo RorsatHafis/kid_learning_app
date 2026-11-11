@@ -85,7 +85,12 @@ class ParentInsightTruthfulnessIntegrationTests {
         assertThat(objective.getStatus()).isEqualTo(LearnerObjectiveStatus.IN_PROGRESS);
 
         List<ParentInsight> current = parentInsightService.currentInsights(child);
-        assertThat(current).extracting(ParentInsight::getInsightType).containsExactly(ParentInsightType.PROGRESS);
+        // D-18 (owner decision 2026-11-11): right answers from one day aren't secure yet, so the skill comes back on
+        // another day - said as that, never as needing more practice.
+        assertThat(current).extracting(ParentInsight::getInsightType)
+                .containsExactlyInAnyOrder(ParentInsightType.PROGRESS, ParentInsightType.RECOMMENDATION);
+        assertThat(current).filteredOn(insight -> insight.getInsightType() == ParentInsightType.RECOMMENDATION)
+                .extracting(ParentInsight::getHeadline).allMatch(headline -> headline.endsWith("comes back on another day, to check it has stuck."));
     }
 
     @Test

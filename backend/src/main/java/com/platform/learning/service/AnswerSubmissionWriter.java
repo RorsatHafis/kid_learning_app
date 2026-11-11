@@ -46,6 +46,8 @@ class AnswerSubmissionWriter {
     private final IdempotencyService idempotencyService;
     private final MasteryEngine masteryEngine;
     private final ActivityAttemptRepository attemptRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private AnswerRetryService retryService;
 
     AnswerSubmissionWriter(QuestionVersionRepository questionVersionRepository, QuestionRepository questionRepository,
                            QuestionVersionSkillRepository questionSkillRepository, AnswerRecordRepository answerRecordRepository,
@@ -91,6 +93,9 @@ class AnswerSubmissionWriter {
                             .formatted(activityAttemptId, questionVersionId));
         }
 
+        // D-20: answering another question closes any retry still open in this attempt (as a miss).
+        if (retryService != null) retryService.settleOpen(attempt);
+
         QuestionVersion version = questionVersionRepository.findById(questionVersionId)
                 .orElseThrow(() -> new ResourceNotFoundException("QuestionVersion", questionVersionId));
         Question question = questionRepository.findById(version.getQuestionId())
@@ -111,13 +116,15 @@ class AnswerSubmissionWriter {
         }
         boolean correct = scoringService.score(question.getQuestionType(), version, submittedAnswer);
 
-        AnswerRecord record = answerRecordRepository.save(
-                AnswerRecord.record(activityAttemptId, questionVersionId, submittedAnswer, correct, timeSpentSeconds, hintUsed));
+        AnswerRecord answer = AnswerRecord.record(activityAttemptId, questionVersionId, submittedAnswer, correct, timeSpentSeconds, hintUsed);
+        // D-20: a wrong answer may get one retry; its evidence then waits for what follows (AnswerRetryService).
+        if (!correct && retryService != null && retryService.allows(question, version)) answer.offeringRetry();
+        AnswerRecord record = answerRecordRepository.save(answer);
 
         // D-16: an answer given after opening the hint is practice ("worked through with help"), not evidence the child
         // showed the skill on their own - so it is recorded and scored but moves no mastery, right or wrong (counting
         // only hinted mistakes would teach children that asking for help costs them).
-        if (!hintUsed) {
+        if (!hintUsed && !record.isRetryOffered()) {
             // The version answered decides the skills (PD-08): its tags were frozen when it was published.
             List<QuestionVersionSkill> taggedSkills = questionSkillRepository.findByQuestionVersionIdOrderByCreatedAtAscIdAsc(questionVersionId);
             for (QuestionVersionSkill taggedSkill : taggedSkills) {
