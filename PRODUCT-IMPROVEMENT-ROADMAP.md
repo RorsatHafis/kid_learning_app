@@ -3512,3 +3512,13 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   integration suite 584 (all passing after these updates, on the run before the final insight wording - those classes
   re-run green), unit suite green, Vitest 569/569, e2e accessibility 4/4 + golden-journeys 6/6 at 1280 (second try
   right; second try wrong shows the answer; the activity completes).
+
+### CHECKPOINT 2026-11-11 (evening) - owner decisions built; what is left needs owner inputs
+- Built today on the owner's answers: plans chosen before registering (family and school, e2e both paths), D-20 one
+  retry (resume included; parent recent activity, skill story, export, Studio note), D-18 spaced review of non-secure
+  skills, admin self-service wording corrected, SB4 recorded (no premium feature restrictions).
+- Head 98015e2 pushed for the milestone CI run (backend unit + integration, frontend, e2e stack).
+- **Left, each waiting on an owner input:** WORLD-1 artwork; Khmer native review (PD-14); ABA PayWay merchant
+  credentials (online card/KHQR - bank transfer and invoices work now); D-08, D-12 (QR library), D-14, D-19; device
+  speech; M12 school phases S1-S6; SB1-SB3, SB5-SB9 (only needed when those features are wanted).
+- **Exact next task:** check the milestone CI; then build whichever owner input arrives first.
