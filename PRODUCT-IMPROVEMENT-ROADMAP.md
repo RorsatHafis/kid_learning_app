@@ -3427,7 +3427,7 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   **Owner-dependent only:** artwork for the rice fields (landmark + backdrop), the garden backdrop and the large
   open-river panorama - each then one entry (painting, light, landmark, layers).
 - **STREAK-1** - built (flame, growth reaction, milestone at completion, parent line, landing line).
-  **Owner-dependent:** milestone moment on home/shelf, and whether "best" may ever show.
+  **Owner-dependent:** any milestone moment on home/shelf beyond the card ("best" is never shown - decided).
 - **LAND-1**, **FLEX-1** - built (see 2026-11-04/05 entries).
 - **Learning policy (owner):** D-18 (bring a skill back another day), D-20 (second try) - block nothing else.
 - Verified: world/child/brand/landing Vitest 96; landmarkTap.test; family-phone e2e at 360 px taps the bridge (axe clean).
@@ -3445,3 +3445,17 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
 - **Exact next task:** check CI on the head; if green and the owner has answered the drawing decisions, build
   DRAWING (backend type + guide + stroke answer + unscored handling, then player canvas, then Studio form);
   otherwise Phase 2 defects/simplification from a fresh local P3 round (all specs, three projects).
+
+### CHECKPOINT 2026-11-11 - roadmap reviewed end to end; what is left needs the owner
+- **Since the last checkpoint:** 3d28027 (families are told other plans add subjects; a drawing-only activity never
+  reads "0 of 0 correct"), 7a3d7e3 (a class's empty drawings list names no child), the 11-11 direction review above.
+- **Verified:** CI green on 7a3d7e3 (backend unit + integration, frontend lint/types/tests/build/audit, deployment
+  files, e2e journeys + accessibility). Local e2e on the current jar: tablet-768 23 passed / 2 skipped by design;
+  desktop-1280 28/3 and phone-360 23/2 on 2026-11-10 (same code apart from the two small fixes). Role screens at
+  360 px reviewed (parent progress, child home and shelf, admin plans and Studio curriculum, principal plan).
+- **Built and not waiting on anything:** nothing found. Every remaining item needs an owner decision or asset:
+  D-18 (bring a skill back another day), D-20 (second try), free plan vs class-assigned journeys, free plan name,
+  streak milestone on home/shelf beyond the card, WORLD-1 artwork (rice fields, garden backdrop, open-river panorama),
+  Khmer native review (PD-14), subscription items SB1-SB9 / FEATURE_NOT_IN_PLAN, D-08, D-12 (QR library), D-14, D-19,
+  device speech, M12 school phases (S1-S6), customer payment-screenshot upload.
+- **Exact next task:** build whichever of the above the owner answers first; otherwise a fresh defect round.
