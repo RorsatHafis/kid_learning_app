@@ -275,6 +275,17 @@ class AuthorizationSweepIntegrationTests {
                 order by sequence_order limit 1
                 """, answerId, attemptId, attemptId);
         ids.put("answerId", answerId);
+        // M12: a school record in the class and a request to connect it with the family's child - another account
+        // must not read, change, connect or end them.
+        String studentId = UUID.randomUUID().toString();
+        jdbc.update("insert into school_students (id, school_id, full_name) values (?::uuid, ?, 'Sweep Student')", studentId, school.getId());
+        jdbc.update("insert into class_students (id, school_class_id, student_id, started_on) values (?::uuid, ?, ?::uuid, current_date)",
+                UUID.randomUUID().toString(), schoolClass.getId(), studentId);
+        String linkId = UUID.randomUUID().toString();
+        jdbc.update("insert into school_student_links (id, school_id, student_id, child_id, status) values (?::uuid, ?, ?::uuid, ?::uuid, 'PENDING')",
+                linkId, school.getId(), studentId, childId);
+        ids.put("studentId", studentId);
+        ids.put("linkId", linkId);
         ids.put("activityId", activity.get("id").asString());
         ids.put("activityVersionId", activity.get("versions").get(0).get("id").asString());
         ids.put("versionId", questionVersion);
