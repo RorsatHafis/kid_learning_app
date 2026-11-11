@@ -20,12 +20,24 @@ import {
   type Register,
   type SchoolStudent,
 } from "@/lib/api/attendance";
+import type { SchoolClassSummary } from "@/lib/api/types";
 import { WorkspaceSection } from "./ClassWorkspace";
 import { attendanceMessages } from "./attendance.messages";
 
 // ------------------------------------------------------------------ students
 
-export function ClassStudentsPanel({ classId, archived, onChanged }: { classId: string; archived: boolean; onChanged?: () => void }) {
+export function ClassStudentsPanel({
+  classId,
+  archived,
+  onChanged,
+  otherClasses = [],
+}: {
+  classId: string;
+  archived: boolean;
+  onChanged?: () => void;
+  /** Other classes of the same school the viewer works with, to bring students from (the server checks both). */
+  otherClasses?: SchoolClassSummary[];
+}) {
   const m = useMessages(attendanceMessages);
   const [version, setVersion] = useState(0);
   const students = useAsync(() => attendanceApi.students(classId), [classId, version]);
@@ -51,6 +63,7 @@ export function ClassStudentsPanel({ classId, archived, onChanged }: { classId: 
             </ul>
           )}
           {!archived && <AddStudents classId={classId} onAdded={changed} />}
+          {!archived && otherClasses.length > 0 && <MoveStudents classId={classId} sources={otherClasses} onMoved={changed} />}
         </div>
       )}
     </WorkspaceSection>
@@ -206,41 +219,68 @@ function StudentRow({
   );
 }
 
+/**
+ * One student per line: "Name, number" as typed, or two columns (name, then number) pasted from a spreadsheet, which
+ * arrive separated by a tab. The number is optional either way.
+ */
+export function parseStudentLines(text: string): { name: string; number: string | null }[] {
+  return text
+    .split(/\r?\n/)
+    .filter((line) => line.trim())
+    .map((line) => {
+      if (line.includes("\t")) {
+        const [name = "", number = ""] = line.split("\t").map((cell) => cell.trim());
+        return { name, number: number || null };
+      }
+      const trimmed = line.trim();
+      const comma = trimmed.lastIndexOf(",");
+      return comma > 0
+        ? { name: trimmed.slice(0, comma).trim(), number: trimmed.slice(comma + 1).trim() || null }
+        : { name: trimmed, number: null };
+    })
+    .filter((student) => student.name);
+}
+
 function AddStudents({ classId, onAdded }: { classId: string; onAdded: () => void }) {
   const m = useMessages(attendanceMessages);
   const id = useId();
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  // Names the server held back because a student of that name is in another class (likely the same student).
+  const [held, setHeld] = useState<{ name: string; number: string | null; className: string }[]>([]);
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    const students = text
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const comma = line.lastIndexOf(",");
-        return comma > 0 ? { name: line.slice(0, comma).trim(), number: line.slice(comma + 1).trim() || null } : { name: line, number: null };
-      });
-    if (students.length === 0) return;
+  async function send(students: { name: string; number: string | null }[], sameNameIsNew: boolean) {
     setBusy(true);
     setNote(null);
     try {
-      const result = await attendanceApi.addStudents(classId, students);
+      const result = await attendanceApi.addStudents(classId, students, sameNameIsNew);
       setText("");
-      setNote({
-        ok: true,
-        text: [m.added(result.added.length), result.alreadyInClass.length > 0 ? m.alreadyIn(result.alreadyInClass.join(", ")) : null]
-          .filter(Boolean)
-          .join(" "),
-      });
-      onAdded();
+      setHeld(
+        result.atSchool.map((h) => ({
+          name: h.name,
+          number: students.find((s) => s.name.toLowerCase() === h.name.toLowerCase())?.number ?? null,
+          className: h.className,
+        })),
+      );
+      const parts = [
+        result.added.length > 0 || (result.alreadyInClass.length === 0 && result.atSchool.length === 0) ? m.added(result.added.length) : null,
+        result.alreadyInClass.length > 0 ? m.alreadyIn(result.alreadyInClass.join(", ")) : null,
+      ].filter(Boolean);
+      setNote(parts.length > 0 ? { ok: true, text: parts.join(" ") } : null);
+      if (result.added.length > 0) onAdded();
     } catch (err) {
       setNote({ ok: false, text: errorText(err, m.failed) });
     } finally {
       setBusy(false);
     }
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    const students = parseStudentLines(text);
+    if (students.length === 0) return;
+    await send(students, false);
   }
 
   return (
@@ -258,9 +298,155 @@ function AddStudents({ classId, onAdded }: { classId: string; onAdded: () => voi
           {note.text}
         </p>
       )}
+      {held.length > 0 && (
+        <div role="status" className="flex flex-col gap-2 rounded-[14px] bg-light-soft p-3 text-sm text-ink ring-1 ring-light">
+          <p className="font-medium">{m.heldLead}</p>
+          <ul className="list-disc pl-5">
+            {held.map((h) => (
+              <li key={h.name}>{m.heldIn(h.name, h.className)}</li>
+            ))}
+          </ul>
+          <p className="text-ink-soft">{m.heldHow}</p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="w-fit"
+            disabled={busy}
+            onClick={() => void send(held.map(({ name, number }) => ({ name, number })), true)}
+          >
+            {m.heldAdd(held.length)}
+          </Button>
+        </div>
+      )}
       <Button type="submit" size="sm" className="w-fit" disabled={busy || !text.trim()}>
         {busy ? m.adding : m.add}
       </Button>
+    </form>
+  );
+}
+
+/** Brings students from another class of the school as the same records (a new year's class, a change of class). */
+function MoveStudents({ classId, sources, onMoved }: { classId: string; sources: SchoolClassSummary[]; onMoved: () => void }) {
+  const m = useMessages(attendanceMessages);
+  const id = useId();
+  const [fromId, setFromId] = useState("");
+  const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [version, setVersion] = useState(0);
+  const students = useAsync(() => (fromId ? attendanceApi.students(fromId) : Promise.resolve(null)), [fromId, version]);
+  // Classes in use first, then archived ones (last year's), each by name.
+  const ordered = useMemo(
+    () => [...sources].sort((a, b) => Number(a.archived) - Number(b.archived) || a.name.localeCompare(b.name)),
+    [sources],
+  );
+
+  function pick(next: string) {
+    setFromId(next);
+    setChosen(new Set());
+    setNote(null);
+  }
+
+  function toggle(studentId: string) {
+    setChosen((current) => {
+      const next = new Set(current);
+      if (next.has(studentId)) next.delete(studentId);
+      else next.add(studentId);
+      return next;
+    });
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!fromId || chosen.size === 0) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      const result = await attendanceApi.moveStudents(classId, fromId, [...chosen]);
+      setChosen(new Set());
+      setVersion((v) => v + 1);
+      setNote({
+        ok: true,
+        text: [
+          result.added.length > 0 ? m.moved(result.added.length) : null,
+          result.alreadyInClass.length > 0 ? m.alreadyIn(result.alreadyInClass.join(", ")) : null,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      });
+      onMoved();
+    } catch (err) {
+      setNote({ ok: false, text: errorText(err, m.failed) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const list = students.data ?? null;
+  return (
+    <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3 border-t border-line pt-4" aria-labelledby={`${id}-title`}>
+      <div className="flex flex-col gap-1">
+        <h3 id={`${id}-title`} className="text-sm font-semibold text-ink">
+          {m.moveTitle}
+        </h3>
+        <p className="max-w-prose text-[0.8125rem] text-ink-soft">{m.moveLead}</p>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={`${id}-from`} className="text-sm font-medium text-ink">
+          {m.moveFrom}
+        </label>
+        <select id={`${id}-from`} value={fromId} onChange={(e) => pick(e.target.value)} className={cn(selectClasses, "sm:max-w-xs")}>
+          <option value="">{m.moveChoose}</option>
+          {ordered.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.archived ? m.archivedClass(c.name) : c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      {fromId && students.isLoading && !list && <LoadingState label={m.loading} />}
+      {fromId && students.error && <ErrorState error={students.error} onRetry={students.refetch} />}
+      {list && list.length === 0 && <p className="text-sm text-ink-soft">{m.moveNobody}</p>}
+      {list && list.length > 0 && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="sr-only">{m.moveTitle}</legend>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={() => setChosen(new Set(list.map((s) => s.id)))}>
+              {m.moveAll}
+            </Button>
+            <Button type="button" size="sm" variant="outline" disabled={chosen.size === 0} onClick={() => setChosen(new Set())}>
+              {m.moveNone}
+            </Button>
+          </div>
+          <ul className="flex max-h-72 flex-col divide-y divide-line overflow-y-auto rounded-[14px] ring-1 ring-line">
+            {list.map((student) => (
+              <li key={student.id}>
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-2 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={chosen.has(student.id)}
+                    onChange={() => toggle(student.id)}
+                    className="h-5 w-5 shrink-0 accent-tonle-700"
+                  />
+                  <span className="font-medium">{student.name}</span>
+                  {student.number && <span className="text-ink-soft">{m.number(student.number)}</span>}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+      )}
+      {note && (
+        <p role={note.ok ? "status" : "alert"} className={note.ok ? "text-sm text-palm-deep" : "text-sm font-medium text-brick-deep"}>
+          {note.text}
+        </p>
+      )}
+      {list && list.length > 0 && (
+        <Button type="submit" size="sm" className="w-fit" disabled={busy || chosen.size === 0}>
+          {busy ? m.moving : m.moveSome(chosen.size)}
+        </Button>
+      )}
     </form>
   );
 }

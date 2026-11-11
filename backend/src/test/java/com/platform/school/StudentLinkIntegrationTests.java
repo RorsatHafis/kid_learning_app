@@ -116,6 +116,16 @@ class StudentLinkIntegrationTests {
         assertThat(connected.get("links").get(0).get("childName").asString()).isEqualTo("Dara");
         // Nothing of the family's is copied into the school's record.
         assertThat(jdbc.queryForObject("select full_name from school_students where id = ?::uuid", String.class, student)).isEqualTo("Dara Kim");
+        // Moved to another class (a new year's), the record keeps its connection - and back again.
+        SchoolClass grade2 = schoolService.createClass(school.getId(), "Grade 2");
+        String grade2Path = "/api/v1/schools/classes/" + grade2.getId();
+        json(post(grade2Path + "/students/move", "{\"fromClassId\":\"" + schoolClass.getId() + "\",\"studentIds\":[\"" + student + "\"]}",
+                principal), 200);
+        assertThat(json(get(grade2Path + "/student-links", principal), 200).get("links").get(0).get("status").asString()).isEqualTo("ACTIVE");
+        assertThat(json(get(classPath + "/student-links", teacher), 200).get("links")).isEmpty();
+        json(post(classPath + "/students/move", "{\"fromClassId\":\"" + grade2.getId() + "\",\"studentIds\":[\"" + student + "\"]}",
+                principal), 200);
+        assertThat(json(get(classPath + "/student-links", teacher), 200).get("links").get(0).get("childName").asString()).isEqualTo("Dara");
 
         // The family disconnects; asked again, the family can decline.
         json(delete("/api/v1/children/" + childId + "/school-links/" + linkId, parent), 200);

@@ -63,7 +63,15 @@ public class AttendanceService {
     public record NewStudent(String name, String number) {
     }
 
-    public record Added(List<Student> added, List<String> alreadyInClass) {
+    /**
+     * {@code atSchool}: names held back because a student of that name is already in another of the school's classes -
+     * most likely the same student, who is brought over (same record) rather than typed again; added only when the
+     * caller confirms they are a different student.
+     */
+    public record Added(List<Student> added, List<String> alreadyInClass, List<AtSchool> atSchool) {
+    }
+
+    public record AtSchool(String name, UUID classId, String className) {
     }
 
     /** {@code status} null: not marked yet. {@code corrected}: the mark was changed after it was first recorded. */
@@ -91,9 +99,13 @@ public class AttendanceService {
         return studentsOn(classId, today());
     }
 
-    /** Adds students to the class (new school records); a name already in the class is left out and said so. */
+    /**
+     * Adds students to the class (new school records); a name already in the class is left out and said so. A name
+     * already in another of the school's classes is held back unless {@code sameNameIsNew}: a second record for the
+     * same student would split their history (records are never deleted).
+     */
     @Transactional
-    public Added add(UUID accountId, UUID classId, List<NewStudent> students) {
+    public Added add(UUID accountId, UUID classId, List<NewStudent> students, boolean sameNameIsNew) {
         SchoolClass schoolClass = writable(accountId, classId);
         if (students == null || students.isEmpty()) {
             throw new IllegalArgumentException("Add at least one student's name.");
@@ -105,6 +117,7 @@ public class AttendanceService {
         studentsOn(classId, today()).forEach(s -> present.add(s.name().toLowerCase(Locale.ROOT)));
         List<Student> added = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
+        List<AtSchool> atSchool = new ArrayList<>();
         LocalDate today = today();
         for (NewStudent student : students) {
             String name = student.name() == null ? "" : student.name().strip().replaceAll("\\s+", " ");
@@ -115,6 +128,19 @@ public class AttendanceService {
             if (!present.add(name.toLowerCase(Locale.ROOT))) {
                 skipped.add(name);
                 continue;
+            }
+            if (!sameNameIsNew) {
+                List<AtSchool> elsewhere = jdbc.query("""
+                        select c.id, c.name from class_students cs
+                        join school_students s on s.id = cs.student_id
+                        join school_classes c on c.id = cs.school_class_id
+                        where s.school_id = ? and lower(s.full_name) = lower(?) and cs.ended_on is null and c.id <> ?
+                        order by (c.status = 'ARCHIVED'), lower(c.name), c.id limit 1
+                        """, (rs, i) -> new AtSchool(name, rs.getObject(1, UUID.class), rs.getString(2)), schoolClass.getSchoolId(), name, classId);
+                if (!elsewhere.isEmpty()) {
+                    atSchool.add(elsewhere.getFirst());
+                    continue;
+                }
             }
             if (number != null && Boolean.TRUE.equals(jdbc.queryForObject(
                     "select exists (select 1 from school_students where school_id = ? and student_number = ?)", Boolean.class,
@@ -128,11 +154,68 @@ public class AttendanceService {
                     UUID.randomUUID(), classId, id, Date.valueOf(today));
             added.add(new Student(id, name, number, today));
         }
-        if (added.isEmpty() && skipped.isEmpty()) {
+        if (added.isEmpty() && skipped.isEmpty() && atSchool.isEmpty()) {
             throw new IllegalArgumentException("Add at least one student's name.");
         }
-        record(accountId, "SCHOOL_STUDENTS_ADDED", "SCHOOL_CLASS", classId, Map.of("count", added.size()));
-        return new Added(added, skipped);
+        if (!added.isEmpty()) {
+            record(accountId, "SCHOOL_STUDENTS_ADDED", "SCHOOL_CLASS", classId, Map.of("count", added.size()));
+        }
+        return new Added(added, skipped, atSchool);
+    }
+
+    /**
+     * Brings students from another class of the same school into this one - a new year's class or a transfer - as the
+     * same school records, so their number, attendance history and any parent connection go with them (re-adding by
+     * name would make a second record). From a class still in use, they leave it today; an archived class is left
+     * as it was, its history frozen. Needs the staff of both classes (a principal, or a teacher of both).
+     */
+    @Transactional
+    public Added move(UUID accountId, UUID classId, UUID fromClassId, List<UUID> studentIds) {
+        SchoolClass target = writable(accountId, classId);
+        SchoolClass source = guard.requireClassStaff(accountId, fromClassId);
+        if (!source.getSchoolId().equals(target.getSchoolId())) {
+            throw new com.platform.common.web.ResourceNotFoundException("SchoolClass", fromClassId);
+        }
+        if (fromClassId.equals(classId)) {
+            throw new IllegalArgumentException("Choose another class to bring students from.");
+        }
+        if (studentIds == null || studentIds.isEmpty()) {
+            throw new IllegalArgumentException("Choose at least one student.");
+        }
+        if (studentIds.size() > MAX_ADD) {
+            throw new IllegalArgumentException("Add at most 200 students at a time.");
+        }
+        // One change at a time per class, as the register (two people moving the same students can't both succeed).
+        jdbc.queryForList("select id from school_classes where id in (?, ?) order by id for update", UUID.class, classId, fromClassId);
+        LocalDate today = today();
+        Set<UUID> here = new java.util.HashSet<>();
+        studentsOn(classId, today).forEach(st -> here.add(st.id()));
+        List<Student> moved = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+        for (UUID studentId : new java.util.LinkedHashSet<>(studentIds)) {
+            requireInClass(fromClassId, studentId);
+            String name = jdbc.queryForObject("select full_name from school_students where id = ?", String.class, studentId);
+            if (here.contains(studentId)) {
+                skipped.add(name);
+                continue;
+            }
+            if (!source.isArchived()) {
+                jdbc.update("""
+                        update class_students set ended_on = greatest(started_on, ?) where school_class_id = ? and student_id = ? and ended_on is null
+                        """, Date.valueOf(today), fromClassId, studentId);
+            }
+            jdbc.update("insert into class_students (id, school_class_id, student_id, started_on) values (?, ?, ?, ?)",
+                    UUID.randomUUID(), classId, studentId, Date.valueOf(today));
+            moved.add(studentsOn(classId, today).stream().filter(st -> st.id().equals(studentId)).findFirst().orElseThrow());
+        }
+        if (moved.isEmpty() && skipped.isEmpty()) {
+            throw new IllegalArgumentException("Choose at least one student.");
+        }
+        if (!moved.isEmpty()) {
+            record(accountId, "SCHOOL_STUDENTS_MOVED", "SCHOOL_CLASS", classId,
+                    Map.of("count", moved.size(), "fromClassId", fromClassId.toString(), "fromArchived", source.isArchived()));
+        }
+        return new Added(moved, skipped, List.of());
     }
 
     /** Corrects a student's name or number (the school's own record). */
@@ -225,7 +308,7 @@ public class AttendanceService {
                 throw new IllegalArgumentException("That student isn't in this class on that day.");
             }
             List<Map<String, Object>> existing = jdbc.queryForList(
-                    "select id, status, note from attendance_marks where student_id = ? and day = ? for update", mark.studentId(), Date.valueOf(on));
+                    "select id, school_class_id, status, note from attendance_marks where student_id = ? and day = ? for update", mark.studentId(), Date.valueOf(on));
             if (existing.isEmpty()) {
                 jdbc.update("""
                         insert into attendance_marks (id, school_id, school_class_id, student_id, day, status, note, recorded_by, recorded_at)
@@ -236,6 +319,9 @@ public class AttendanceService {
                 continue;
             }
             Map<String, Object> before = existing.getFirst();
+            if (!classId.equals(before.get("school_class_id"))) {
+                throw new IllegalStateException("This student's attendance for that day was already taken in another class.");
+            }
             if (status.equals(before.get("status")) && java.util.Objects.equals(note, before.get("note"))) {
                 continue;
             }

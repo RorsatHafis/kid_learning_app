@@ -25,6 +25,8 @@ export function PrincipalClassPage() {
   useDocumentTitle(schoolClass.data?.name);
   const schoolId = schoolClass.data?.schoolId;
   const staff = useAsync(() => (schoolId ? schoolApi.staff(schoolId) : Promise.resolve([])), [schoolId]);
+  // M12: the school's other classes, to bring students from (a new year's class, a change of class).
+  const siblings = useAsync(() => (schoolId ? schoolApi.schoolClasses(schoolId) : Promise.resolve([])), [schoolId]);
   const [refreshKey, setRefreshKey] = useState(0);
   const page = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState("");
@@ -153,7 +155,12 @@ export function PrincipalClassPage() {
             skillHref={(skillId) => `/principal/classes/${classId}/skills/${skillId}`}
           />
           <ClassDrawingsPanel classId={classId} />
-          <ClassStudentsPanel classId={classId} archived={schoolClass.data.archived} onChanged={() => setRefreshKey((k) => k + 1)} />
+          <ClassStudentsPanel
+            classId={classId}
+            archived={schoolClass.data.archived}
+            onChanged={() => setRefreshKey((k) => k + 1)}
+            otherClasses={(siblings.data ?? []).filter((c) => c.id !== classId)}
+          />
           <ClassCurriculaPanel
             classId={classId}
             archived={schoolClass.data.archived}

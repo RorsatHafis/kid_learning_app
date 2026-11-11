@@ -32,7 +32,11 @@ public class AttendanceController {
     public record NewStudentRequest(@Size(max = 120) String name, @Size(max = 40) String number) {
     }
 
-    public record AddStudentsRequest(@NotNull @Size(max = 200) List<@Valid NewStudentRequest> students) {
+    /** {@code sameNameIsNew}: the caller confirms these are new students although the name is in another class. */
+    public record AddStudentsRequest(@NotNull @Size(max = 200) List<@Valid NewStudentRequest> students, Boolean sameNameIsNew) {
+    }
+
+    public record MoveStudentsRequest(@NotNull UUID fromClassId, @NotNull @Size(max = 200) List<@NotNull UUID> studentIds) {
     }
 
     public record UpdateStudentRequest(@Size(max = 120) String name, @Size(max = 40) String number) {
@@ -54,7 +58,13 @@ public class AttendanceController {
     public AttendanceService.Added add(@AuthenticationPrincipal UUID accountId, @PathVariable UUID classId,
                                        @Valid @RequestBody AddStudentsRequest request) {
         return attendance.add(accountId, classId, request.students().stream()
-                .map(s -> new AttendanceService.NewStudent(s.name(), s.number())).toList());
+                .map(s -> new AttendanceService.NewStudent(s.name(), s.number())).toList(), Boolean.TRUE.equals(request.sameNameIsNew()));
+    }
+
+    @PostMapping("/api/v1/schools/classes/{classId}/students/move")
+    public AttendanceService.Added move(@AuthenticationPrincipal UUID accountId, @PathVariable UUID classId,
+                                        @Valid @RequestBody MoveStudentsRequest request) {
+        return attendance.move(accountId, classId, request.fromClassId(), request.studentIds());
     }
 
     @PutMapping("/api/v1/schools/classes/{classId}/students/{studentId}")

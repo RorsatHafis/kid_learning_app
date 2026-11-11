@@ -3564,3 +3564,18 @@ review), now or later? (4) is a drawing kept like other answers (export, erasure
   to the owner), privacy draft processors filled, SCHOOL-AGREEMENT-DRAFT.md added - all for qualified Cambodian review.
 - **Still owner-dependent:** hosting regions (Railway/Vercel/Brevo), legal facts and review, artwork, Khmer review,
   ABA PayWay credentials, pricing decisions on storage quotas, school trials (not built, per decision).
+
+### 2026-11-11 (evening): M12 student records follow a student between classes
+- **Defect found:** a student could not move to another class (a new year's or a transfer) - re-adding by name made a
+  second school record (splitting attendance history and dropping a family connection), and with student numbers the
+  add was refused outright. **Built:** `POST /api/v1/schools/classes/{id}/students/move {fromClassId, studentIds}` -
+  the same records, number, history and consent link; from a class in use they leave it today, an archived class
+  keeps its list; staff of both classes only (principal, or a teacher of both), same school only; audited
+  (`SCHOOL_STUDENTS_MOVED`). A mark already taken that day in another class is not overwritten (409).
+- **Duplicates:** adding a name already in another of the school's classes is held back with where they are; the
+  person brings them over or confirms "different student" (`sameNameIsNew`). Names pasted as two spreadsheet columns
+  (tab-separated) are read as name + number.
+- Tests: AttendanceIntegrationTests (+move, hold-back), StudentLinkIntegrationTests (link travels), attendance Vitest
+  (+4), school-journey e2e at 360 px (move step with axe) - passed locally. EN/KM; Khmer joins the PD-14 review.
+- **Owner decision surfaced (not built):** whether parents see their child's school attendance or send absence notes
+  through the consent link (the module map lists "absence reasons from guardians"; today the link shares nothing).

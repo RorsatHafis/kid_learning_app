@@ -16,6 +16,8 @@ import { staffMessages } from "@/features/school/staff.messages";
 export function ClassRosterPage() {
   const { classId = "" } = useParams<{ classId: string }>();
   const schoolClass = useAsync(() => schoolApi.schoolClass(classId), [classId]);
+  // M12: the teacher's other classes in the same school, to bring students from.
+  const mine = useAsync(() => schoolApi.myClasses(), []);
   const [refreshKey, setRefreshKey] = useState(0);
   const m = useMessages(staffMessages);
   const page = useRef<HTMLDivElement>(null);
@@ -54,7 +56,12 @@ export function ClassRosterPage() {
             onChanged={() => setRefreshKey((k) => k + 1)}
           />
           <ClassDrawingsPanel classId={classId} />
-          <ClassStudentsPanel classId={classId} archived={schoolClass.data.archived} onChanged={() => setRefreshKey((k) => k + 1)} />
+          <ClassStudentsPanel
+            classId={classId}
+            archived={schoolClass.data.archived}
+            onChanged={() => setRefreshKey((k) => k + 1)}
+            otherClasses={(mine.data ?? []).filter((c) => c.id !== classId && c.schoolId === schoolClass.data?.schoolId)}
+          />
           {!schoolClass.data.archived && <JoinCodePanel classId={classId} className={schoolClass.data.name} />}
         </>
       )}

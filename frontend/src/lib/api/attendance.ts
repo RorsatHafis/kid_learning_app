@@ -50,10 +50,21 @@ export interface AttendanceMonth {
   rows: MonthRow[];
 }
 
+/** What adding did: who was added, who was already here, and names held back because they're in another class. */
+export interface AddedStudents {
+  added: SchoolStudent[];
+  alreadyInClass: string[];
+  atSchool: { name: string; classId: string; className: string }[];
+}
+
 export const attendanceApi = {
   students: (classId: string) => apiClient.get<SchoolStudent[]>(`/schools/classes/${classId}/students`),
-  addStudents: (classId: string, students: { name: string; number?: string | null }[]) =>
-    apiClient.post<{ added: SchoolStudent[]; alreadyInClass: string[] }>(`/schools/classes/${classId}/students`, { students }),
+  /** `sameNameIsNew`: these are new students even though the name is already in another of the school's classes. */
+  addStudents: (classId: string, students: { name: string; number?: string | null }[], sameNameIsNew = false) =>
+    apiClient.post<AddedStudents>(`/schools/classes/${classId}/students`, { students, sameNameIsNew }),
+  /** Brings students (the same school records) from another class of the same school into this one. */
+  moveStudents: (classId: string, fromClassId: string, studentIds: string[]) =>
+    apiClient.post<AddedStudents>(`/schools/classes/${classId}/students/move`, { fromClassId, studentIds }),
   updateStudent: (classId: string, studentId: string, name: string, number: string | null) =>
     apiClient.put<SchoolStudent>(`/schools/classes/${classId}/students/${studentId}`, { name, number }),
   leave: (classId: string, studentId: string) => apiClient.post<void>(`/schools/classes/${classId}/students/${studentId}/leave`),

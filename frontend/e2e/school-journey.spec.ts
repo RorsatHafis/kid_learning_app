@@ -297,6 +297,23 @@ test("school: principal signs up, confirms their email, sets up the school; an i
   await expect(manage.getByRole("status")).toHaveText("Restored.");
   await page.keyboard.press("Escape");
 
+  // M12: a new class brings a student from Grade 1 as the same record (number and history kept; a family connection
+  // moving with it is covered by StudentLinkIntegrationTests - this family ended the school's access above).
+  await workspaceLink(page, "Classes");
+  await page.getByLabel("New class").fill("Grade 2 A");
+  await page.getByRole("button", { name: "Add class" }).click();
+  await page.getByRole("link", { name: /Grade 2 A/ }).first().click();
+  const grade2 = page.getByRole("region", { name: "Students" });
+  await grade2.getByLabel("From the class").selectOption({ label: "Grade 1 Lotus" });
+  await grade2.getByRole("checkbox", { name: /Sokha Chan/ }).check();
+  await expectNoViolations(page, "principal: bring students from another class");
+  await grade2.getByRole("button", { name: "Bring 1 student here" }).click();
+  await expect(grade2.getByText("1 student is now in this class.")).toBeVisible();
+  const moved = grade2.getByRole("list").first().getByRole("listitem").filter({ hasText: "Sokha Chan" });
+  await expect(moved.getByText("No. S-001")).toBeVisible();
+  await page.goto(classUrl);
+  await expect(page.getByRole("region", { name: "Students" }).getByText("Sokha Chan")).toHaveCount(0);
+
   // X22: the teacher's own content, on the Studio's screens - the platform's catalog read-only to them.
   await teacher.goto("/teacher/studio");
   await expect(teacher.getByRole("heading", { level: 1, name: "Subjects" })).toBeVisible();

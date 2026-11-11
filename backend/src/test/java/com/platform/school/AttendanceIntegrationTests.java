@@ -141,6 +141,92 @@ class AttendanceIntegrationTests {
         assertThat(jdbc.queryForObject("select count(*) from school_child_access where school_id = ?", Integer.class, schoolClass.getSchoolId())).isZero();
     }
 
+    @Test
+    void studentsMoveToAnotherClassAsTheSameRecordsWithTheirHistory() throws Exception {
+        Staff principal = staff(PlatformRole.PRINCIPAL);
+        Staff teacher = staff(PlatformRole.TEACHER);
+        SchoolClass grade1 = classTaughtBy(principal, teacher);
+        String from = "/api/v1/schools/classes/" + grade1.getId();
+        JsonNode added = json(post(from + "/students", "{\"students\":[{\"name\":\"Sokha Chan\",\"number\":\"S-101\"},{\"name\":\"Dara Kim\"}]}",
+                teacher.token()), 201);
+        String sokha = added.get("added").get(0).get("id").asString();
+        String dara = added.get("added").get(1).get("id").asString();
+        json(put(from + "/attendance", "{\"marks\":[{\"studentId\":\"" + sokha + "\",\"status\":\"PRESENT\"}]}", teacher.token()), 200);
+
+        SchoolClass grade2 = schoolService.createClass(grade1.getSchoolId(), "Grade 2");
+        String to = "/api/v1/schools/classes/" + grade2.getId();
+        String both = "{\"fromClassId\":\"" + grade1.getId() + "\",\"studentIds\":[\"" + sokha + "\",\"" + dara + "\"]}";
+        // The teacher of Grade 1 only can't place students in a class they don't teach.
+        assertThat(post(to + "/students/move", both, teacher.token()).statusCode()).isIn(403, 404);
+
+        // The principal moves them: the same records (number kept, no second record); they leave Grade 1 today.
+        JsonNode moved = json(post(to + "/students/move", both, principal.token()), 200);
+        assertThat(moved.get("added").valueStream().map(s -> s.get("id").asString())).containsExactlyInAnyOrder(sokha, dara);
+        assertThat(moved.get("added").valueStream().filter(s -> s.get("id").asString().equals(sokha)).findFirst().orElseThrow()
+                .get("number").asString()).isEqualTo("S-101");
+        assertThat(jdbc.queryForObject("select count(*) from school_students where school_id = ?", Integer.class, grade1.getSchoolId())).isEqualTo(2);
+        assertThat(json(get(from + "/students", teacher.token()), 200)).isEmpty();
+        assertThat(json(get(to + "/students", principal.token()), 200)).hasSize(2);
+        // Grade 1's history stays Grade 1's: the mark and the month are still there.
+        assertThat(jdbc.queryForObject("select school_class_id from attendance_marks where student_id = ?::uuid", UUID.class, sokha))
+                .isEqualTo(grade1.getId());
+        assertThat(json(get(from + "/attendance/month", teacher.token()), 200).get("rows")).hasSize(2);
+        assertThat(jdbc.queryForObject("select count(*) from audit_events where action = 'SCHOOL_STUDENTS_MOVED' and resource_id = ?",
+                Integer.class, grade2.getId())).isEqualTo(1);
+
+        // Today's mark, taken in Grade 1, isn't overwritten from Grade 2; an unmarked student is marked as usual.
+        JsonNode taken = json(put(to + "/attendance", "{\"marks\":[{\"studentId\":\"" + sokha + "\",\"status\":\"ABSENT\"}],"
+                + "\"reason\":\"Moved class\"}", principal.token()), 409);
+        assertThat(taken.get("detail").asString()).contains("already taken in another class");
+        json(put(to + "/attendance", "{\"marks\":[{\"studentId\":\"" + dara + "\",\"status\":\"PRESENT\"}]}", principal.token()), 200);
+
+        // Refused: students no longer in the class named, the same class, nobody chosen, another school's class.
+        assertThat(post(to + "/students/move", both, principal.token()).statusCode()).isEqualTo(404);
+        assertThat(post(to + "/students/move", "{\"fromClassId\":\"" + grade2.getId() + "\",\"studentIds\":[\"" + dara + "\"]}",
+                principal.token()).statusCode()).isEqualTo(400);
+        assertThat(post(to + "/students/move", "{\"fromClassId\":\"" + grade1.getId() + "\",\"studentIds\":[]}", principal.token())
+                .statusCode()).isEqualTo(400);
+        Staff stranger = staff(PlatformRole.PRINCIPAL);
+        School elsewhere = schoolService.createSchool("Another School", stranger.id());
+        PaidSchools.pay(context, elsewhere.getId());
+        SchoolClass theirs = schoolService.createClass(elsewhere.getId(), "Theirs");
+        assertThat(post("/api/v1/schools/classes/" + theirs.getId() + "/students/move", "{\"fromClassId\":\"" + grade2.getId()
+                + "\",\"studentIds\":[\"" + dara + "\"]}", stranger.token()).statusCode()).isIn(403, 404);
+        assertThat(json(get(to + "/students", principal.token()), 200)).hasSize(2);
+
+        // From an archived class (last year's): its list stays as it was; the students join the new class.
+        jdbc.update("update school_classes set status = 'ARCHIVED' where id = ?", grade2.getId());
+        SchoolClass grade3 = schoolService.createClass(grade1.getSchoolId(), "Grade 3");
+        JsonNode rolled = json(post("/api/v1/schools/classes/" + grade3.getId() + "/students/move", "{\"fromClassId\":\"" + grade2.getId()
+                + "\",\"studentIds\":[\"" + dara + "\",\"" + dara + "\"]}", principal.token()), 200);
+        assertThat(rolled.get("added")).hasSize(1);
+        assertThat(json(get(to + "/students", principal.token()), 200)).hasSize(2);
+        assertThat(json(get("/api/v1/schools/classes/" + grade3.getId() + "/students", principal.token()), 200)).hasSize(1);
+        // Already there: said so, not added twice.
+        JsonNode again = json(post("/api/v1/schools/classes/" + grade3.getId() + "/students/move", "{\"fromClassId\":\"" + grade2.getId()
+                + "\",\"studentIds\":[\"" + dara + "\"]}", principal.token()), 200);
+        assertThat(again.get("alreadyInClass").get(0).asString()).isEqualTo("Dara Kim");
+        assertThat(again.get("added")).isEmpty();
+
+        // Typing a name already in another class (here: last year's) isn't a new record unless the caller says so:
+        // it is held back with where they are, so the same student is brought over instead of split in two.
+        SchoolClass grade4 = schoolService.createClass(grade1.getSchoolId(), "Grade 4");
+        String four = "/api/v1/schools/classes/" + grade4.getId();
+        JsonNode held = json(post(four + "/students", "{\"students\":[{\"name\":\"sokha chan\"},{\"name\":\"Vannak Ly\"}]}", principal.token()), 201);
+        assertThat(held.get("added")).hasSize(1);
+        assertThat(held.get("atSchool").get(0).get("name").asString()).isEqualTo("sokha chan");
+        assertThat(held.get("atSchool").get(0).get("className").asString()).isEqualTo("Grade 2");
+        assertThat(held.get("atSchool").get(0).get("classId").asString()).isEqualTo(grade2.getId().toString());
+        int records = jdbc.queryForObject("select count(*) from school_students where school_id = ?", Integer.class, grade1.getSchoolId());
+        // Confirmed as a different student with the same name: added.
+        JsonNode confirmed = json(post(four + "/students", "{\"students\":[{\"name\":\"Sokha Chan\"}],\"sameNameIsNew\":true}",
+                principal.token()), 201);
+        assertThat(confirmed.get("added")).hasSize(1);
+        assertThat(confirmed.get("atSchool")).isEmpty();
+        assertThat(jdbc.queryForObject("select count(*) from school_students where school_id = ?", Integer.class, grade1.getSchoolId()))
+                .isEqualTo(records + 1);
+    }
+
     // ---------------------------------------------------------------------------------------------------------------
 
     private record Staff(UUID id, String token) {

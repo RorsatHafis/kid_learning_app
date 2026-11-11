@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ClassAttendancePanel, ClassStudentsPanel } from "./ClassAttendance";
+import { ClassAttendancePanel, ClassStudentsPanel, parseStudentLines } from "./ClassAttendance";
 
 function respond(status: number, body?: unknown) {
   return new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -77,7 +77,7 @@ describe("a class's register (M12)", () => {
       vi.fn(async (_url: string, init?: RequestInit) => {
         if (init?.method === "POST") {
           posted.push(JSON.parse(init.body as string));
-          return respond(201, { added: [SOKHA], alreadyInClass: ["Dara Kim"] });
+          return respond(201, { added: [SOKHA], alreadyInClass: ["Dara Kim"], atSchool: [] });
         }
         return respond(200, []);
       }),
@@ -88,6 +88,97 @@ describe("a class's register (M12)", () => {
     await user.type(screen.getByLabelText("Names, one per line"), "Sokha Chan, S-001{enter}Dara Kim");
     await user.click(screen.getByRole("button", { name: "Add students" }));
     expect(await screen.findByRole("status")).toHaveTextContent("1 student added. Already in the class, so not added again: Dara Kim.");
-    expect(posted[0]).toEqual({ students: [{ name: "Sokha Chan", number: "S-001" }, { name: "Dara Kim", number: null }] });
+    expect(posted[0]).toEqual({ students: [{ name: "Sokha Chan", number: "S-001" }, { name: "Dara Kim", number: null }], sameNameIsNew: false });
+  });
+
+  it("brings chosen students from another class as the same records", async () => {
+    const posted: { url: string; body: unknown }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const path = String(url).replace(/^.*\/api\/v1/, "");
+        if (init?.method === "POST") {
+          posted.push({ url: path, body: JSON.parse(init.body as string) });
+          return respond(200, { added: [SOKHA], alreadyInClass: [] });
+        }
+        if (path === "/schools/classes/last-year/students") return respond(200, [SOKHA, DARA]);
+        return respond(200, []);
+      }),
+    );
+    const user = userEvent.setup();
+    render(
+      <ClassStudentsPanel
+        classId="c1"
+        archived={false}
+        otherClasses={[
+          { id: "last-year", schoolId: "sch", name: "Grade 1 (2025)", archived: true },
+          { id: "c2", schoolId: "sch", name: "Grade 2B", archived: false },
+        ]}
+      />,
+    );
+    const from = await screen.findByLabelText("From the class");
+    // Classes in use first; an archived one says so.
+    expect(within(from).getAllByRole("option").map((o) => o.textContent)).toEqual(["Choose a class", "Grade 2B", "Grade 1 (2025) (archived)"]);
+    await user.selectOptions(from, "last-year");
+    const bring = await screen.findByRole("button", { name: "Bring 0 students here" });
+    expect(bring).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: /Sokha Chan/ }));
+    await user.click(screen.getByRole("button", { name: "Bring 1 student here" }));
+    expect(await screen.findByText("1 student is now in this class.")).toBeInTheDocument();
+    expect(posted[0]).toEqual({ url: "/schools/classes/c1/students/move", body: { fromClassId: "last-year", studentIds: ["s1"] } });
+  });
+
+  it("holds back a name already in another class, and adds it only when they're different students", async () => {
+    const posted: { students: { name: string; number: string | null }[]; sameNameIsNew: boolean }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        if (init?.method === "POST") {
+          const body = JSON.parse(init.body as string);
+          posted.push(body);
+          return body.sameNameIsNew
+            ? respond(201, { added: [SOKHA], alreadyInClass: [], atSchool: [] })
+            : respond(201, { added: [DARA], alreadyInClass: [], atSchool: [{ name: "Sokha Chan", classId: "c9", className: "Grade 1 (2025)" }] });
+        }
+        return respond(200, []);
+      }),
+    );
+    const user = userEvent.setup();
+    render(<ClassStudentsPanel classId="c1" archived={false} />);
+    await user.type(await screen.findByLabelText("Names, one per line"), "Sokha Chan, S-001{enter}Dara Kim");
+    await user.click(screen.getByRole("button", { name: "Add students" }));
+    expect(await screen.findByText("1 student added.")).toBeInTheDocument();
+    expect(screen.getByText("Already at the school in another class, so not added yet:")).toBeInTheDocument();
+    expect(screen.getByText("Sokha Chan, in Grade 1 (2025)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add as a new student" }));
+    expect(await screen.findByText("1 student added.")).toBeInTheDocument();
+    expect(screen.queryByText(/not added yet/)).not.toBeInTheDocument();
+    expect(posted[0].sameNameIsNew).toBe(false);
+    // Only the held name is sent again, with its number, confirmed as a new student.
+    expect(posted[1]).toEqual({ students: [{ name: "Sokha Chan", number: "S-001" }], sameNameIsNew: true });
+  });
+
+  it("reads names typed with a comma or pasted as two spreadsheet columns", () => {
+    expect(parseStudentLines("Sokha Chan, S-001\r\nDara Kim\n\n  Chan, Sreymom , \nVannak Ly\tS-004\nBopha Kim\t\nPisey Ouk\tS-006\tGrade 1\n\tS-007")).toEqual([
+      { name: "Sokha Chan", number: "S-001" },
+      { name: "Dara Kim", number: null },
+      { name: "Chan, Sreymom", number: null },
+      { name: "Vannak Ly", number: "S-004" },
+      { name: "Bopha Kim", number: null },
+      { name: "Pisey Ouk", number: "S-006" },
+    ]);
+  });
+
+  it("offers no move without another class, nor in an archived class", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => respond(200, [])));
+    const { unmount } = render(<ClassStudentsPanel classId="c1" archived={false} />);
+    expect(await screen.findByText(/No students yet/)).toBeInTheDocument();
+    expect(screen.queryByText("Bring students from another class")).not.toBeInTheDocument();
+    unmount();
+    render(
+      <ClassStudentsPanel classId="c1" archived otherClasses={[{ id: "c2", schoolId: "sch", name: "Grade 2B", archived: false }]} />,
+    );
+    expect(await screen.findByText(/No students yet/)).toBeInTheDocument();
+    expect(screen.queryByText("Bring students from another class")).not.toBeInTheDocument();
   });
 });
